@@ -76,7 +76,6 @@ pub struct Storage {
 // Cannot borrow password/salt because threadpool requires 'static...
 async fn derive_key(password: String, salt_path: PathBuf) -> Result<[u8; 32], Error> {
     use actix_threadpool::BlockingError;
-    use crypto::scrypt;
     use std::io::Read;
 
     actix_threadpool::run(move || -> Result<_, failure::Error> {
@@ -84,9 +83,9 @@ async fn derive_key(password: String, salt_path: PathBuf) -> Result<[u8; 32], Er
         let mut salt = [0u8; 8];
         ensure!(salt_file.read(&mut salt)? == 8, "salt file too short");
 
-        let params = scrypt::ScryptParams::new(14, 8, 1);
+        let params = scrypt::ScryptParams::new(14, 8, 1)?;
         let mut key = [0u8; 32];
-        scrypt::scrypt(password.as_bytes(), &salt, &params, &mut key);
+        scrypt::scrypt(password.as_bytes(), &salt, &params, &mut key)?;
         log::trace!("Computed the key, salt was {:?}", salt);
         Ok(key)
     })
