@@ -1,10 +1,12 @@
+use crate::store::sql_types::*;
+
 table! {
     message (id) {
         id -> Nullable<Integer>,
         session_id -> Nullable<Integer>,
         source -> Nullable<Text>,
         #[sql_name="message"]
-        text -> Nullable<Text>,
+        text -> Nullable<SqliteString>,
         timestamp -> Nullable<Integer>,
         sent -> Nullable<Integer>,
         received -> Nullable<Integer>,

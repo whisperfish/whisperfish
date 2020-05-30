@@ -4,6 +4,8 @@ use std::rc::Rc;
 use diesel::prelude::*;
 use failure::*;
 
+pub mod sql_types;
+
 /// Location of the storage.
 ///
 /// Path is for persistent storage.
