@@ -1,4 +1,10 @@
+use actix::prelude::*;
 use qmetaobject::*;
+
+use crate::sfos::SailfishApp;
+
+mod socket;
+use socket::SessionActor;
 
 #[derive(QObject, Default)]
 #[allow(non_snake_case)]
@@ -8,4 +14,98 @@ pub struct ClientWorker {
     messageReceipt: qt_signal!(),
     notifyMessage: qt_signal!(),
     promptResetPeerIdentity: qt_signal!(),
+
+    actor: Option<Addr<ClientActor>>,
+}
+
+enum SessionState {
+    Running(Addr<SessionActor>),
+    Unconnected,
+}
+
+const ROOT_CA: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/", "rootCA.crt"));
+
+/// ClientActor keeps track of the connection state.
+pub struct ClientActor {
+    inner: QObjectBox<ClientWorker>,
+    client: awc::Client,
+
+    state: SessionState,
+}
+
+impl ClientActor {
+    pub fn new(app: &mut SailfishApp) -> Self {
+        use awc::{ClientBuilder, Connector};
+        use std::sync::Arc;
+
+        let inner = QObjectBox::new(ClientWorker::default());
+        app.set_object_property("ClientWorker".into(), inner.pinned());
+
+        let useragent = format!("Whisperfish-{}", env!("CARGO_PKG_VERSION"));
+
+        let mut ssl_config = rustls::ClientConfig::new();
+        ssl_config
+            .root_store
+            .add_pem_file(&mut std::io::Cursor::new(ROOT_CA))
+            .unwrap();
+
+        let client = ClientBuilder::new()
+            .connector(Connector::new().rustls(Arc::new(ssl_config)).finish())
+            .header("X-Signal-Agent", useragent)
+            .finish();
+
+        Self {
+            inner,
+            client,
+            state: SessionState::Unconnected,
+        }
+    }
+}
+
+impl Actor for ClientActor {
+    type Context = actix::Context<Self>;
+
+    fn started(&mut self, ctx: &mut Self::Context) {
+        self.inner.pinned().borrow_mut().actor = Some(ctx.address());
+    }
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct StartConnecting(pub Option<String>);
+
+// XXX: attach a reason?
+#[derive(Message)]
+#[rtype(result = "()")]
+struct SessionStopped;
+
+impl Handler<StartConnecting> for ClientActor {
+    type Result = ResponseActFuture<Self, ()>;
+
+    fn handle(
+        &mut self,
+        StartConnecting(_password): StartConnecting,
+        ctx: &mut Self::Context,
+    ) -> Self::Result {
+        // FIXME: retry connecting, check whether there's a plausible connection, wait for a
+        // connection, ...
+        Box::pin(
+            SessionActor::new(ctx.address(), self.client.clone())
+                .into_actor(self)
+                .map(|session, act, _ctx| {
+                    act.state = SessionState::Running(
+                        session.expect("FIXME: could not immediately connect."),
+                    );
+                }),
+        )
+    }
+}
+
+impl Handler<SessionStopped> for ClientActor {
+    type Result = ();
+
+    fn handle(&mut self, _msg: SessionStopped, _ctx: &mut Self::Context) -> Self::Result {
+        log::debug!("SessionActor stopped");
+        // FIXME: restart
+    }
 }
