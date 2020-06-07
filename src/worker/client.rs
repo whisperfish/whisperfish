@@ -2,10 +2,10 @@ use actix::prelude::*;
 use qmetaobject::*;
 
 use crate::sfos::SailfishApp;
-use crate::store::{StorageReady, Storage};
+use crate::store::{Storage, StorageReady};
 
 mod socket;
-use socket::SessionActor;
+use socket::*;
 
 #[derive(QObject, Default)]
 #[allow(non_snake_case)]
@@ -24,12 +24,9 @@ enum SessionState {
     Unconnected,
 }
 
-const ROOT_CA: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/", "rootCA.crt"));
-
 /// ClientActor keeps track of the connection state.
 pub struct ClientActor {
     inner: QObjectBox<ClientWorker>,
-    client: awc::Client,
 
     state: SessionState,
     storage: Option<Storage>,
@@ -37,28 +34,11 @@ pub struct ClientActor {
 
 impl ClientActor {
     pub fn new(app: &mut SailfishApp) -> Self {
-        use awc::{ClientBuilder, Connector};
-        use std::sync::Arc;
-
         let inner = QObjectBox::new(ClientWorker::default());
         app.set_object_property("ClientWorker".into(), inner.pinned());
 
-        let useragent = format!("Whisperfish-{}", env!("CARGO_PKG_VERSION"));
-
-        let mut ssl_config = rustls::ClientConfig::new();
-        ssl_config
-            .root_store
-            .add_pem_file(&mut std::io::Cursor::new(ROOT_CA))
-            .unwrap();
-
-        let client = ClientBuilder::new()
-            .connector(Connector::new().rustls(Arc::new(ssl_config)).finish())
-            .header("X-Signal-Agent", useragent)
-            .finish();
-
         Self {
             inner,
-            client,
             state: SessionState::Unconnected,
             storage: None,
         }
@@ -73,11 +53,6 @@ impl Actor for ClientActor {
     }
 }
 
-// XXX: attach a reason?
-#[derive(Message)]
-#[rtype(result = "()")]
-struct SessionStopped;
-
 impl Handler<StorageReady> for ClientActor {
     type Result = ResponseActFuture<Self, ()>;
 
@@ -86,11 +61,11 @@ impl Handler<StorageReady> for ClientActor {
         StorageReady(storage): StorageReady,
         ctx: &mut Self::Context,
     ) -> Self::Result {
-        self.storage = Some(storage);
+        self.storage = Some(storage.clone());
         // FIXME: retry connecting, check whether there's a plausible connection, wait for a
         // connection, ...
         Box::pin(
-            SessionActor::new(ctx.address(), self.client.clone())
+            SessionActor::new(ctx.address().recipient(), storage)
                 .into_actor(self)
                 .map(|session, act, _ctx| {
                     act.state = SessionState::Running(
