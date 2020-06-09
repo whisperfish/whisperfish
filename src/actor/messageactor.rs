@@ -11,6 +11,10 @@ pub struct FetchSession(pub i64);
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
+pub struct FetchMessage(pub i32);
+
+#[derive(actix::Message)]
+#[rtype(result = "()")]
 pub struct FetchAllMessages(pub i64);
 
 pub struct MessageActor {
@@ -64,6 +68,22 @@ impl Handler<FetchSession> for MessageActor {
             .pinned()
             .borrow_mut()
             .handle_fetch_session(sess.expect("FIXME No session returned!"));
+    }
+}
+
+impl Handler<FetchMessage> for MessageActor {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        FetchMessage(id): FetchMessage,
+        _ctx: &mut Self::Context
+    ) -> Self::Result {
+        let message = self.storage.as_ref().unwrap().fetch_message(id);
+        self.inner
+            .pinned()
+            .borrow_mut()
+            .handle_fetch_message(message.expect("FIXME No message returned!"));
     }
 }
 

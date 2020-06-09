@@ -50,6 +50,7 @@ pub struct MessageModel {
     groupChanged: qt_signal!(),
 
     load: qt_method!(fn(&self, sid: i64, peer_name: QString)),
+    add: qt_method!(fn(&self, id: i32)),
 }
 
 impl MessageModel {
@@ -75,6 +76,25 @@ impl MessageModel {
         );
         log::trace!("Dispatched actor::FetchSession({})", sid);
     }
+
+    /// Adds a message to QML list.
+    ///
+    /// This retrieves a `Message` by the given id and adds it to the UI.
+    ///
+    /// Note that the id argument was i64 in Go.
+    fn add(&mut self, id: i32) {
+        use futures::prelude::*;
+        Arbiter::spawn(
+            self.actor
+                .as_ref()
+                .unwrap()
+                .send(actor::FetchMessage(id))
+                .map(Result::unwrap)
+        );
+        log::trace!("Dispatched actor::FetchMessage({})", id);
+    }
+
+    // Event handlers below this line
 
     pub fn handle_fetch_session(&mut self, sess: session::Session) {
         log::trace!("handle_fetch_session({})", sess.message);
@@ -108,6 +128,18 @@ impl MessageModel {
                 .map(Result::unwrap),
         );
         log::trace!("Dispatched actor::FetchAllMessages({})", sess.id);
+    }
+
+    pub fn handle_fetch_message(&mut self, message: store::Message) {
+        log::trace!("handle_fetch_message({})", message.id);
+
+        let tail = self.row_count();
+
+        (self as &mut dyn QAbstractListModel).begin_insert_rows(tail, tail + 1);
+
+        self.messages.insert(tail as usize, message);
+
+        (self as &mut dyn QAbstractListModel).end_insert_rows();
     }
 
     pub fn handle_fetch_all_messages(&mut self, messages: Vec<store::Message>) {
