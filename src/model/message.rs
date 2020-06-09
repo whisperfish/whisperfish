@@ -248,6 +248,12 @@ impl MessageModel {
         self.messages.extend(messages);
 
         (self as &mut dyn QAbstractListModel).end_insert_rows();
+
+        // XXX testing
+        log::trace!("TEST_ADD msg len: {}", self.row_count());
+        log::trace!("TEST_ADD last msg id: {}", self.messages[self.row_count() as usize - 1].id);
+        self.add(self.messages[self.row_count() as usize - 1].id);
+        log::trace!("TEST_ADD afterwards len: {}", self.row_count());
     }
 
     pub fn handle_delete_message(&mut self, id: i32, idx: usize, del_rows: usize) {
