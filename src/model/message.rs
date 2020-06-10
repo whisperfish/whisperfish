@@ -51,6 +51,8 @@ pub struct MessageModel {
 
     load: qt_method!(fn(&self, sid: i64, peer_name: QString)),
     add: qt_method!(fn(&self, id: i32)),
+    markSent: qt_method!(fn(&self, id: i32)),
+    markReceived: qt_method!(fn(&self, id: i32)),
 }
 
 impl MessageModel {
@@ -92,6 +94,69 @@ impl MessageModel {
                 .map(Result::unwrap)
         );
         log::trace!("Dispatched actor::FetchMessage({})", id);
+    }
+
+    /// Mark a message sent in QML.
+    ///
+    /// Called through QML. Maybe QML doesn't know how
+    /// to pass booleans, because this and `mark_received`
+    /// simply wrap the real workhorse.
+    ///
+    /// Note that the id argument was i64 in Go.
+    #[allow(non_snake_case)] // XXX: QML expects these as-is; consider changing later]
+    fn markSent(&mut self, id: i32) {
+        self.mark(id, true, false)
+    }
+
+    /// Mark a message received in QML.
+    ///
+    /// Called through QML. Maybe QML doesn't know how
+    /// to pass booleans, because this and `mark_sent`
+    /// simply wrap the real workhorse.
+    ///
+    /// Note that the id argument was i64 in Go.
+    #[allow(non_snake_case)] // XXX: QML expects these as-is; consider changing later]
+    fn markReceived(&mut self, id: i32) {
+        self.mark(id, false, true)
+    }
+
+    /// Mark a message sent or received in QML. No database involved.
+    ///
+    /// Note that the id argument was i64 in Go.
+    fn mark(&mut self, id: i32, mark_sent: bool, mark_received: bool) {
+        if mark_sent && mark_received {
+            log::trace!("Cannot mark message both sent and received");
+            return;
+        }
+
+        if !mark_sent && !mark_received {
+            log::trace!("Cannot mark message both not sent and not received");
+            return;
+        }
+
+        if let Some((i, msg)) = self
+            .messages
+            .iter()
+            .enumerate()
+            .find(|(_, msg)| msg.id == id)
+        {
+            // let index = (self as &mut dyn QAbstractItemModel).create_index(i as i32, 0, 0 as usize);
+            if mark_sent {
+                log::trace!("Mark message {} sent '{}'", id, mark_sent);
+
+                // msg.sent = true;
+                // msg.queued = false;
+                // (self as &mut dyn QAbstractListModel).data_changed(index, index);  // , MessageRoles::Sent);
+                // (self as &mut dyn QAbstractListModel).data_changed(index, index);  // , MessageRoles::Queued);
+            } else if mark_received {
+                log::trace!("Mark message {} received '{}'", id, mark_received);
+
+                // msg.received = true;
+                // (self as &mut dyn QAbstractListModel).data_changed(index, index);  // , MessageRoles::Received);
+            }
+        } else {
+            log::error!("Message not found");
+        }
     }
 
     // Event handlers below this line
