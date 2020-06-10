@@ -53,6 +53,11 @@ pub struct MessageModel {
 }
 
 impl MessageModel {
+    fn row_count(&self) -> i32 {
+        log::trace!("rowCount called, returning {}", self.messages.len());
+        self.messages.len() as i32
+    }
+
     fn load(&mut self, sid: i64, peer_name: QString) {
         (self as &mut dyn QAbstractListModel).begin_reset_model();
 
