@@ -218,6 +218,24 @@ impl Storage {
                     Err(_) => None,
                 }
     }
+
+    pub fn delete_message(&self, id: i32) -> Option<usize> {
+        let db = self.db.lock();
+        let conn = db.unwrap();
+
+        log::trace!("Called delete_message({})", id);
+
+        // XXX: Assume `sentq` has nothing pending, as the Go version does
+        let query = diesel::delete(message::table.filter(message::columns::id.eq(id)));
+
+        let debug = debug_query::<diesel::sqlite::Sqlite, _>(&query);
+        log::trace!("{}", debug.to_string());
+
+        match query.execute(&*conn) {
+            Ok(data) => Some(data),
+            Err(_) => None,
+        }
+    }
 }
 
 #[cfg(test)]

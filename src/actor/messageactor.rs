@@ -17,6 +17,10 @@ pub struct FetchMessage(pub i32);
 #[rtype(result = "()")]
 pub struct FetchAllMessages(pub i64);
 
+#[derive(actix::Message)]
+#[rtype(result = "()")]
+pub struct DeleteMessage(pub i32, pub usize);
+
 pub struct MessageActor {
     inner: QObjectBox<MessageModel>,
     storage: Option<Storage>,
@@ -100,5 +104,21 @@ impl Handler<FetchAllMessages> for MessageActor {
             .pinned()
             .borrow_mut()
             .handle_fetch_all_messages(messages.expect("FIXME No messages returned!"));
+    }
+}
+
+impl Handler<DeleteMessage> for MessageActor {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        DeleteMessage(id, idx): DeleteMessage,
+        _ctx: &mut Self::Context
+    ) -> Self::Result {
+        let del_rows = self.storage.as_ref().unwrap().delete_message(id);
+        self.inner
+            .pinned()
+            .borrow_mut()
+            .handle_delete_message(id, idx, del_rows.expect("FIXME no rows deleted"));
     }
 }

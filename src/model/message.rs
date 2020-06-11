@@ -53,6 +53,7 @@ pub struct MessageModel {
     add: qt_method!(fn(&self, id: i32)),
     markSent: qt_method!(fn(&self, id: i32)),
     markReceived: qt_method!(fn(&self, id: i32)),
+    remove: qt_method!(fn(&self, id: usize)),
 }
 
 impl MessageModel {
@@ -159,6 +160,34 @@ impl MessageModel {
         }
     }
 
+    /// Remove a message from both QML and database
+    ///
+    /// Note the Go code said main thread only. This is
+    /// satisfied in Rust by sending the request to the
+    /// main thread.
+    pub fn remove(&self, idx: usize) {
+        let msg = &self.messages[idx];
+
+        if let Some((i, msg)) = self
+            .messages
+            .iter()
+            .enumerate()
+            .find(|(i, msg)| *i == idx)
+        {
+            use futures::prelude::*;
+            Arbiter::spawn(
+                self.actor
+                    .as_ref()
+                    .unwrap()
+                    .send(actor::DeleteMessage(msg.id, i))
+                    .map(Result::unwrap),
+            );
+            log::trace!("Dispatched actor::DeleteMessage({}, {})", msg.id, i);
+        } else {
+            log::error!("[remove] Message not found at index {}", idx);
+        }
+    }
+
     // Event handlers below this line
 
     pub fn handle_fetch_session(&mut self, sess: session::Session) {
@@ -219,6 +248,17 @@ impl MessageModel {
         self.messages.extend(messages);
 
         (self as &mut dyn QAbstractListModel).end_insert_rows();
+    }
+
+    pub fn handle_delete_message(&mut self, id: i32, idx: usize, del_rows: usize) {
+        log::trace!("handle_delete_message({}) deleted {} rows, remove qml idx {}",
+                    id, del_rows, idx);
+
+        (self as &mut dyn QAbstractListModel).begin_remove_rows(idx as i32, idx as i32);
+
+        self.messages.remove(idx);
+
+        (self as &mut dyn QAbstractListModel).end_remove_rows();
     }
 }
 
