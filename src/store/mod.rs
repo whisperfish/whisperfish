@@ -8,6 +8,7 @@ use crate::model::session::*;
 use crate::model::message::*;
 
 use actix::prelude::*;
+use chrono::Local;
 
 use diesel::prelude::*;
 use diesel::expression::sql_literal::sql;
@@ -35,6 +36,24 @@ pub struct Message {
     pub hasattachment: bool,
     pub outgoing: bool,
     pub queued: bool,
+}
+
+/// Diesel requires a separate model when inserting
+#[derive(Insertable)]
+#[table_name="message"]
+pub struct NewMessage<'msgcreation> {
+    // XXX: Go code had `sid` here but it's only dealth with later in processing
+    pub source: String,
+    pub text: String,
+    pub timestamp: i64,
+    pub sent: &'msgcreation bool,
+    pub received: &'msgcreation bool,
+    pub flags: &'msgcreation i32,
+    pub attachment: Option<String>,
+    pub mime_type: Option<String>,
+    pub has_attachment: &'msgcreation bool,
+    pub outgoing: &'msgcreation bool,
+    // XXX: Go code had `queued` here but that's never been a proper field
 }
 
 

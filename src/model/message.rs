@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+extern crate diesel;
+
 use crate::actor;
 use crate::model::session;
 use crate::model::*;
@@ -8,6 +10,7 @@ use crate::store;
 use actix::prelude::*;
 use diesel::prelude::*;
 use qmetaobject::*;
+use std::fs;
 
 define_model_roles! {
     enum MessageRoles for store::Message {
@@ -54,6 +57,7 @@ pub struct MessageModel {
     markSent: qt_method!(fn(&self, id: i32)),
     markReceived: qt_method!(fn(&self, id: i32)),
     remove: qt_method!(fn(&self, id: usize)),
+    createMessage: qt_method!(fn(&self, source: String, msg: String, group_name: String, attachment: String, add: bool) -> i32),
 }
 
 impl MessageModel {
@@ -186,6 +190,79 @@ impl MessageModel {
         } else {
             log::error!("[remove] Message not found at index {}", idx);
         }
+    }
+
+    /// Create a new outgoing message, save to database and queue for delivery.
+    ///
+    /// If `add` is true then the new message will be appended to the model.
+    /// When called from the `NewMessage` page, `add` should be set to `false`
+    /// because there is no active session.
+    ///
+    /// Returns the session ID the message was created under.
+    #[allow(non_snake_case)] // XXX: QML expects these as-is; consider changing later]
+    pub fn createMessage(&self, source: String, msg: String, group_name: String, attachment: String, add: bool) -> i32 {
+        // If group name or source is a comma separated list then create a group.
+        let recipients: Vec<&str> = source.split(",").collect();
+
+        if group_name.len() > 0 || recipients.len() > 1 {
+            log::trace!("TODO textsecure.NewGroup(groupName, recipients) but in Rust");
+            // let group = libsignal_protocol.new_group(group_name, recipients);
+            // source = group.hex_id();
+        }
+
+        log::trace!("queue message {}", msg);
+	    let new_msg = self.queue_message(source, msg, attachment /* , &'aal group */);
+
+        // if add {
+        // }
+
+        // self.send_message(new_msg.id);
+
+        // return new_msg.id;
+        0
+    }
+
+    /// Prepare outgoing message for delivery to Signal and save message to queue.
+    ///
+    /// The message will be fetched from the queue by the SendWorker in a separate
+    /// actix-qt thread and sent to Signal
+    ///
+    /// This is synchronous because we don't want to add the message to QML or
+    /// emit the SendMessage signal if adding to the database fails.
+    pub fn queue_message(&self, src: String, msg: String, attachment: String /*, group: &'aal TextSecure.Group */) -> Option<store::NewMessage> {
+        let mut new_msg = store::NewMessage {
+            // XXX: Diesel, by documentation, wants lifetimed references but nothing works that way
+            source: src,
+            text: msg,
+            timestamp: Local::now().timestamp_nanos(),
+
+            outgoing: &true,
+
+            // TODO: Attachment dealth with in a future squash
+            has_attachment: &false,
+            attachment: Some(String::new()),
+            mime_type: Some(String::new()),
+
+            // Not sent until queue is processed
+            sent: &false,
+            received: &false,
+            flags: &0,
+        };
+
+        /*
+        if attachment.len() > 0 {
+            if !fs::metadata(attachment).is_ok() {
+                return None;
+            }
+            new_msg.attachment = Option<attachment::String>;
+            new_msg.mime_type = Some(String::from("application/binary"));  // TODO: Not really
+            new_msg.has_attachment = &true;
+        } else {
+            new_msg.attachment = Option<attachment = None>;
+        };
+        */
+
+        return Some(new_msg);
     }
 
     // Event handlers below this line
