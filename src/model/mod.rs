@@ -9,7 +9,7 @@ macro_rules! define_model_roles {
         $(let field = $via_fn(field);)*
         field.into()
     }};
-    (enum $enum_name:ident for $diesel_model:ident {
+    (enum $enum_name:ident for $diesel_model:ty {
      $($role:ident($($retrieval:tt)*): $name:expr),* $(,)?
     }) => {
         #[derive(Clone, Copy, Debug, PartialEq, Eq)]
