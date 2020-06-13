@@ -13,6 +13,8 @@ mod qrc;
 mod sfos;
 
 mod model;
+mod actor;
+
 mod worker;
 
 mod schema;

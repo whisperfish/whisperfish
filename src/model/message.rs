@@ -1,21 +1,39 @@
 use std::collections::HashMap;
 
-use crate::model::*;
-use crate::sfos::*;
-use crate::store::{Storage, StorageReady};
+use crate::actor;
 use crate::model::session;
+use crate::model::*;
+use crate::store;
 
 use actix::prelude::*;
 use diesel::prelude::*;
 use qmetaobject::*;
 
-#[derive(QObject, Default)]
-#[allow(non_snake_case)]  // XXX: QML expects these as-is; consider changing later
-struct MessageModel {
-    base: qt_base_class!(trait QAbstractListModel),
-    actor: Option<Addr<MessageActor>>,
+define_model_roles! {
+    enum MessageRoles for store::Message {
+        ID(id):                                         "id",
+        SID(sid):                                       "sid",
+        Source(source via QString::from):               "source",
+        Message(message via QString::from):             "message",
+        Timestamp(timestamp via qdatetime_from_i64):    "timestamp",
+        Sent(sent):                                     "sent",
+        Received(received):                             "received",
+        Flags(flags):                                   "flags",
+        Attachment(attachment via qstring_from_option): "attachment",
+        MimeType(mimetype via qstring_from_option):     "mimetype",
+        HasAttachment(hasattachment):                   "hasattachment",
+        Outgoing(outgoing):                             "outgoing",
+        Queued(queued):                                 "queued",
+    }
+}
 
-    messages: Vec<Message>,
+#[derive(QObject, Default)]
+#[allow(non_snake_case)] // XXX: QML expects these as-is; consider changing later
+pub struct MessageModel {
+    base: qt_base_class!(trait QAbstractListModel),
+    pub actor: Option<Addr<actor::MessageActor>>,
+
+    messages: Vec<store::Message>,
 
     peerIdentity: qt_property!(QString; NOTIFY peerIdentityChanged),
     peerName: qt_property!(QString; NOTIFY peerNameChanged),
@@ -34,76 +52,6 @@ struct MessageModel {
     load: qt_method!(fn(&self, sid: i64, peer_name: QString)),
 }
 
-struct FetchSession(i64);
-impl actix::Message for FetchSession {
-    type Result = ();
-}
-
-struct FetchAllMessages(i64);
-impl actix::Message for FetchAllMessages {
-    type Result = ();
-}
-
-pub struct MessageActor {
-    inner: QObjectBox<MessageModel>,
-    storage: Option<Storage>,
-}
-
-#[derive(Queryable)]
-pub struct Message {
-    pub id: i32,
-    pub sid: i64,
-    pub source: String,
-    pub message: String,  // NOTE: "text" in schema, doesn't apparently matter
-    pub timestamp: i64,
-    pub sent: bool,
-    pub received: bool,
-    pub flags: i32,
-    pub attachment: Option<String>,
-    pub mimetype: Option<String>,
-    pub hasattachment: bool,
-    pub outgoing: bool,
-    pub queued: bool,
-}
-
-impl MessageActor {
-    pub fn new(app: &mut SailfishApp) -> Self {
-        let inner = QObjectBox::new(MessageModel::default());
-        app.set_object_property("MessageModel".into(), inner.pinned());
-
-        Self {
-            inner,
-            storage: None,
-        }
-    }
-}
-
-impl Actor for MessageActor {
-    type Context = Context<Self>;
-
-    fn started(&mut self, ctx: &mut Self::Context) {
-        self.inner.pinned().borrow_mut().actor = Some(ctx.address());
-    }
-}
-
-define_model_roles! {
-    enum MessageRoles for Message {
-        ID(id):                                         "id",
-        SID(sid):                                       "sid",
-        Source(source via QString::from):               "source",
-        Message(message via QString::from):             "message",
-        Timestamp(timestamp via qdatetime_from_i64):    "timestamp",
-        Sent(sent):                                     "sent",
-        Received(received):                             "received",
-        Flags(flags):                                   "flags",
-        Attachment(attachment via qstring_from_option): "attachment",
-        MimeType(mimetype via qstring_from_option):     "mimetype",
-        HasAttachment(hasattachment):                   "hasattachment",
-        Outgoing(outgoing):                             "outgoing",
-        Queued(queued):                                 "queued",
-    }
-}
-
 impl MessageModel {
     fn load(&mut self, sid: i64, peer_name: QString) {
         (self as &mut dyn QAbstractListModel).begin_reset_model();
@@ -113,11 +61,17 @@ impl MessageModel {
         (self as &mut dyn QAbstractListModel).end_reset_model();
 
         use futures::prelude::*;
-        Arbiter::spawn(self.actor.as_ref().unwrap().send(FetchSession(sid)).map(Result::unwrap));
-        log::trace!("Dispatched FetchSession({})", sid);
+        Arbiter::spawn(
+            self.actor
+                .as_ref()
+                .unwrap()
+                .send(actor::FetchSession(sid))
+                .map(Result::unwrap),
+        );
+        log::trace!("Dispatched actor::FetchSession({})", sid);
     }
 
-    fn handle_fetch_session(&mut self, sess: session::Session) {
+    pub fn handle_fetch_session(&mut self, sess: session::Session) {
         log::trace!("handle_fetch_session({})", sess.message);
         self.sessionId = sess.id;
         self.sessionIdChanged();
@@ -141,12 +95,22 @@ impl MessageModel {
 
         // TODO: contact identity key
         use futures::prelude::*;
-        Arbiter::spawn(self.actor.as_ref().unwrap().send(FetchAllMessages(sess.id)).map(Result::unwrap));
-        log::trace!("Dispatched FetchAllMessages({})", sess.id);
+        Arbiter::spawn(
+            self.actor
+                .as_ref()
+                .unwrap()
+                .send(actor::FetchAllMessages(sess.id))
+                .map(Result::unwrap),
+        );
+        log::trace!("Dispatched actor::FetchAllMessages({})", sess.id);
     }
 
-    pub fn handle_fetch_all_messages(&mut self, messages: Vec<Message>) {
-        log::trace!("handle_fetch_all_messages({}) count {}", messages[0].sid, messages.len());
+    pub fn handle_fetch_all_messages(&mut self, messages: Vec<store::Message>) {
+        log::trace!(
+            "handle_fetch_all_messages({}) count {}",
+            messages[0].sid,
+            messages.len()
+        );
 
         (self as &mut dyn QAbstractListModel).begin_insert_rows(0, messages.len() as i32);
 
@@ -168,42 +132,5 @@ impl QAbstractListModel for MessageModel {
 
     fn role_names(&self) -> HashMap<i32, QByteArray> {
         MessageRoles::role_names()
-    }
-}
-
-impl Handler<StorageReady> for MessageActor {
-    type Result = ();
-
-    fn handle(
-        &mut self,
-        StorageReady(storage): StorageReady,
-        ctx: &mut Self::Context,
-    ) -> Self::Result {
-        self.storage = Some(storage);
-        log::trace!("MessageActor has a registered storage");
-    }
-}
-
-impl Handler<FetchSession> for MessageActor {
-    type Result = ();
-
-    fn handle(&mut self,
-              FetchSession(sid): FetchSession,
-              _ctx: &mut Self::Context
-    ) -> Self::Result {
-        let sess = self.storage.as_ref().unwrap().fetch_session(sid);
-        self.inner.pinned().borrow_mut().handle_fetch_session(sess.expect("FIXME No session returned!"));
-    }
-}
-
-impl Handler<FetchAllMessages> for MessageActor {
-    type Result = ();
-
-    fn handle(&mut self,
-              FetchAllMessages(sid): FetchAllMessages,
-              _ctx: &mut Self::Context
-    ) -> Self::Result {
-        let messages = self.storage.as_ref().unwrap().fetch_all_messages(sid);
-        self.inner.pinned().borrow_mut().handle_fetch_all_messages(messages.expect("FIXME No messages returned!"));
     }
 }

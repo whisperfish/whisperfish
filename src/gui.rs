@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use crate::{model, sfos::SailfishApp, worker, Settings};
+use crate::{actor, model, sfos::SailfishApp, worker, Settings};
 use crate::store::{Storage, StorageReady};
 
 use actix::prelude::*;
@@ -9,7 +9,7 @@ use qmetaobject::*;
 
 pub struct WhisperfishApp {
     pub session_actor: Addr<model::SessionActor>,
-    pub message_actor: Addr<model::MessageActor>,
+    pub message_actor: Addr<actor::MessageActor>,
     pub contact_model: QObjectBox<model::ContactModel>,
     pub device_model: QObjectBox<model::DeviceModel>,
     pub prompt: QObjectBox<model::Prompt>,
@@ -44,7 +44,7 @@ pub async fn run() -> Result<(), failure::Error> {
     app.set_application_version(version.clone());
     app.install_default_translator().unwrap();
 
-    let message_actor = model::MessageActor::new(&mut app).start();
+    let message_actor = actor::MessageActor::new(&mut app).start();
     let session_actor = model::SessionActor::new(&mut app).start();
 
     let whisperfish = Rc::new(WhisperfishApp {

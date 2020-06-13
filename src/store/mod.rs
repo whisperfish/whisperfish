@@ -15,6 +15,24 @@ use failure::*;
 #[rtype(result = "()")]
 pub struct StorageReady(pub Storage);
 
+/// Message as it relates to the schema
+#[derive(Queryable)]
+pub struct Message {
+    pub id: i32,
+    pub sid: i64,
+    pub source: String,
+    pub message: String,  // NOTE: "text" in schema, doesn't apparently matter
+    pub timestamp: i64,
+    pub sent: bool,
+    pub received: bool,
+    pub flags: i32,
+    pub attachment: Option<String>,
+    pub mimetype: Option<String>,
+    pub hasattachment: bool,
+    pub outgoing: bool,
+    pub queued: bool,
+}
+
 
 /// Location of the storage.
 ///
@@ -151,7 +169,7 @@ impl Storage {
                              }
     }
 
-    pub fn fetch_all_messages(&self, sid: i64) -> Option<Vec<crate::model::message::Message>> {
+    pub fn fetch_all_messages(&self, sid: i64) -> Option<Vec<Message>> {
         let db = self.db.lock();
         let conn = db.unwrap();
 
@@ -171,7 +189,7 @@ impl Storage {
         let debug = debug_query::<diesel::sqlite::Sqlite, _>(&query);
         log::trace!("{}", debug.to_string());
 
-        match query.load::<crate::model::message::Message>(&*conn) {
+        match query.load::<Message>(&*conn) {
                     Ok(data) => Some(data),
                     Err(_) => None,
                 }
