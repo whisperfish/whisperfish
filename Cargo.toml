@@ -26,7 +26,7 @@ failure = "0.1.6"
 libsignal-protocol = "0.1.1"
 log = "0.4.8"
 env_logger = "0.7"
-scrypt = { version="0.2", default-features = false }
+scrypt = { version="0.3", default-features = false }
 hex="0.4"
 
 diesel = { version = "1.4", features = ["sqlite"] }
