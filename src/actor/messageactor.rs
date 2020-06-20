@@ -1,6 +1,7 @@
+use crate::gui::StorageReady;
 use crate::model::message::MessageModel;
 use crate::sfos::SailfishApp;
-use crate::store::{Storage, StorageReady};
+use crate::store::Storage;
 
 use actix::prelude::*;
 use qmetaobject::*;
@@ -51,7 +52,7 @@ impl Handler<StorageReady> for MessageActor {
 
     fn handle(
         &mut self,
-        StorageReady(storage): StorageReady,
+        StorageReady(storage, _config): StorageReady,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
         self.storage = Some(storage);

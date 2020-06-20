@@ -4,38 +4,8 @@ use failure::*;
 use qmetaobject::*;
 
 use crate::gui::WhisperfishApp;
+use crate::settings::SignalConfig;
 use crate::store::{self, Storage};
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct SignalConfig {
-    /// Our telephone number
-    tel: String,
-    /// The TextSecure server URL
-    server: String,
-    #[serde(rename = "rootCA")]
-    /// The TLS signing certificate of the server we connect to
-    root_ca: String,
-    #[serde(rename = "proxy")]
-    /// HTTP Proxy URL if one is being used
-    proxy_server: String,
-    /// Code verification method during registration (SMS/VOICE/DEV)
-    verification_type: String,
-    /// Directory for the persistent storage
-    storage_dir: String,
-    /// Whether to store plaintext keys and session state (only for development)
-    unencrypted_storage: bool,
-    /// Password to the storage
-    storage_password: String,
-    #[serde(rename = "loglevel")]
-    /// Verbosity of the logging messages
-    log_level: String,
-    /// Override for the default HTTP User Agent header field
-    user_agent: String,
-    #[serde(rename = "alwaysTrustPeerID")]
-    /// Workaround until proper handling of peer reregistering with new ID.
-    always_trust_peer_id: bool,
-}
 
 #[derive(QObject, Default)]
 #[allow(non_snake_case)]
@@ -58,7 +28,7 @@ pub struct SetupWorker {
     /// Emitted when any of the properties change.
     setupChanged: qt_signal!(),
 
-    config: Option<SignalConfig>,
+    pub config: Option<SignalConfig>,
 }
 
 impl SetupWorker {

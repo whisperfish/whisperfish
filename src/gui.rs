@@ -2,13 +2,22 @@ use std::cell::RefCell;
 #[allow(unused_imports)]
 use std::rc::Rc;
 
-use crate::store::{Storage, StorageReady};
-#[allow(unused_imports)]
-use crate::{actor, model, settings::Settings, sfos::SailfishApp, worker};
+use crate::store::Storage;
+#[allow(unused_imports)] // XXX: review
+use crate::{
+    actor, model,
+    settings::{Settings, SignalConfig},
+    sfos::SailfishApp,
+    worker,
+};
 
 use actix::prelude::*;
 use futures::prelude::*;
 use qmetaobject::*;
+
+#[derive(actix::Message, Clone)]
+#[rtype(result = "()")]
+pub struct StorageReady(pub Storage, pub SignalConfig);
 
 pub struct WhisperfishApp {
     pub session_actor: Addr<model::SessionActor>,
@@ -30,7 +39,8 @@ pub struct WhisperfishApp {
 impl WhisperfishApp {
     pub async fn storage_ready(&self) {
         let storage = self.storage.borrow().as_ref().unwrap().clone();
-        let msg = StorageReady(storage);
+        let config = self.setup_worker.pinned().borrow().config.clone().unwrap();
+        let msg = StorageReady(storage, config);
 
         let mut sends = futures::stream::FuturesUnordered::<
             Box<dyn Future<Output = Result<(), String>> + std::marker::Unpin>,

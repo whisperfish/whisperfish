@@ -1,8 +1,9 @@
 use actix::prelude::*;
 use qmetaobject::*;
 
+use crate::gui::StorageReady;
 use crate::sfos::SailfishApp;
-use crate::store::{Storage, StorageReady};
+use crate::store::Storage;
 
 mod socket;
 use socket::*;
@@ -58,7 +59,7 @@ impl Handler<StorageReady> for ClientActor {
 
     fn handle(
         &mut self,
-        StorageReady(storage): StorageReady,
+        StorageReady(storage, config): StorageReady,
         ctx: &mut Self::Context,
     ) -> Self::Result {
         self.storage = Some(storage.clone());

@@ -1,5 +1,36 @@
 use qmetaobject::*;
 
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SignalConfig {
+    /// Our telephone number
+    pub tel: String,
+    /// The TextSecure server URL
+    pub server: String,
+    #[serde(rename = "rootCA")]
+    /// The TLS signing certificate of the server we connect to
+    pub root_ca: String,
+    #[serde(rename = "proxy")]
+    /// HTTP Proxy URL if one is being used
+    pub proxy_server: String,
+    /// Code verification method during registration (SMS/VOICE/DEV)
+    pub verification_type: String,
+    /// Directory for the persistent storage
+    pub storage_dir: String,
+    /// Whether to store plaintext keys and session state (only for development)
+    pub unencrypted_storage: bool,
+    /// Password to the storage
+    pub storage_password: String,
+    #[serde(rename = "loglevel")]
+    /// Verbosity of the logging messages
+    pub log_level: String,
+    /// Override for the default HTTP User Agent header field
+    pub user_agent: String,
+    #[serde(rename = "alwaysTrustPeerID")]
+    /// Workaround until proper handling of peer reregistering with new ID.
+    pub always_trust_peer_id: bool,
+}
+
 cpp! {{
     #include <QtCore/QSettings>
 }}
