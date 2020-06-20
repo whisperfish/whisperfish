@@ -5,8 +5,12 @@ use crate::gui::StorageReady;
 use crate::sfos::SailfishApp;
 use crate::store::Storage;
 
-mod socket;
-use socket::*;
+use libsignal_service::prelude::*;
+use libsignal_service_actix::prelude::*;
+
+const WS_URL: &str = "wss://textsecure-service.whispersystems.org/v1/websocket/";
+const SERVICE_URL: &str = "https://textsecure-service.whispersystems.org/";
+const ROOT_CA: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/", "rootCA.crt"));
 
 #[derive(QObject, Default)]
 #[allow(non_snake_case)]
@@ -21,7 +25,7 @@ pub struct ClientWorker {
 }
 
 enum SessionState {
-    Running(Addr<SessionActor>),
+    Running(MessageReceiver<AwcPushService>),
     Unconnected,
 }
 
@@ -55,7 +59,7 @@ impl Actor for ClientActor {
 }
 
 impl Handler<StorageReady> for ClientActor {
-    type Result = ResponseActFuture<Self, ()>;
+    type Result = ResponseFuture<()>;
 
     fn handle(
         &mut self,
@@ -63,25 +67,31 @@ impl Handler<StorageReady> for ClientActor {
         ctx: &mut Self::Context,
     ) -> Self::Result {
         self.storage = Some(storage.clone());
-        // FIXME: retry connecting, check whether there's a plausible connection, wait for a
-        // connection, ...
-        Box::pin(
-            SessionActor::new(ctx.address().recipient(), storage)
-                .into_actor(self)
-                .map(|session, act, _ctx| {
-                    act.state = SessionState::Running(
-                        session.expect("FIXME: could not immediately connect."),
-                    );
-                }),
-        )
-    }
-}
 
-impl Handler<SessionStopped> for ClientActor {
-    type Result = ();
+        let useragent = format!("Whisperfish-{}", env!("CARGO_PKG_VERSION"));
+        let service_cfg = ServiceConfiguration {
+            service_urls: vec![SERVICE_URL.to_string()],
+            cdn_urls: vec![],
+            contact_discovery_url: vec![],
+        };
+        Box::pin(async move {
+            let phonenumber = phonenumber::parse(None, config.tel).unwrap();
+            let e164 = phonenumber
+                .format()
+                .mode(phonenumber::Mode::E164)
+                .to_string();
+            log::info!("E164: {}", e164);
+            let password = Some(storage.signal_password().await.unwrap());
+            let credentials = Credentials {
+                uuid: None,
+                e164,
+                password,
+            };
+            let service = AwcPushService::new(service_cfg, credentials, &useragent, &ROOT_CA);
 
-    fn handle(&mut self, _msg: SessionStopped, _ctx: &mut Self::Context) -> Self::Result {
-        log::debug!("SessionActor stopped");
-        // FIXME: restart
+            let mut receiver = MessageReceiver::new(service);
+            let messages = receiver.retrieve_messages().await.unwrap();
+            log::info!("{} pending messages received.", messages.len());
+        })
     }
 }
