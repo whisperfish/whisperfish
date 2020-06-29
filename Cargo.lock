@@ -1133,12 +1133,10 @@ name = "harbour-whisperfish"
 version = "0.6.0-alpha.2"
 dependencies = [
  "actix",
- "actix-codec",
  "actix-rt",
  "actix-threadpool",
  "actix_derive",
  "aes 0.4.0",
- "awc",
  "block-modes 0.5.0",
  "chrono",
  "cpp",
@@ -1166,7 +1164,6 @@ dependencies = [
  "qmetaobject",
  "regex",
  "rstest",
- "rustls",
  "scrypt",
  "serde",
  "serde_yaml",

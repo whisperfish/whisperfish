@@ -11,9 +11,6 @@ description = "Private messaging using Signal for SailfishOS."
 
 [dependencies]
 actix = "0.10.0-alpha.3"
-awc = { version = "2.0.0-alpha.2", features=["rustls"] }
-actix-codec = { version = "0.2.0" }
-rustls = "0.17"
 aes = "0.4.0"
 block-modes = "0.5.0"
 hmac = "0.8.0"
