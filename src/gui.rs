@@ -45,17 +45,17 @@ impl WhisperfishApp {
                 .send(msg.clone())
                 .map_err(|e| format!("MessageActor {:?}", e)),
         ));
+        sends.push(Box::new(
+            self.client_actor
+                .send(msg)
+                .map_err(|e| format!("ClientActor {:?}", e)),
+        ));
 
         while let Some(res) = sends.next().await {
             if let Err(e) = res {
                 log::error!("Error handling StorageReady: {}", e);
             }
         }
-    }
-
-    pub async fn password_ready(&self, password: &str) {
-        self.client_actor.send(worker::client::StartConnecting(Some(password.to_string()))).await
-            .expect("Client Actor should not be busy.")
     }
 }
 

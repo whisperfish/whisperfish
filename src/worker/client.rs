@@ -2,6 +2,7 @@ use actix::prelude::*;
 use qmetaobject::*;
 
 use crate::sfos::SailfishApp;
+use crate::store::{StorageReady, Storage};
 
 mod socket;
 use socket::SessionActor;
@@ -31,6 +32,7 @@ pub struct ClientActor {
     client: awc::Client,
 
     state: SessionState,
+    storage: Option<Storage>,
 }
 
 impl ClientActor {
@@ -58,6 +60,7 @@ impl ClientActor {
             inner,
             client,
             state: SessionState::Unconnected,
+            storage: None,
         }
     }
 }
@@ -70,23 +73,20 @@ impl Actor for ClientActor {
     }
 }
 
-#[derive(Message)]
-#[rtype(result = "()")]
-pub struct StartConnecting(pub Option<String>);
-
 // XXX: attach a reason?
 #[derive(Message)]
 #[rtype(result = "()")]
 struct SessionStopped;
 
-impl Handler<StartConnecting> for ClientActor {
+impl Handler<StorageReady> for ClientActor {
     type Result = ResponseActFuture<Self, ()>;
 
     fn handle(
         &mut self,
-        StartConnecting(_password): StartConnecting,
+        StorageReady(storage): StorageReady,
         ctx: &mut Self::Context,
     ) -> Self::Result {
+        self.storage = Some(storage);
         // FIXME: retry connecting, check whether there's a plausible connection, wait for a
         // connection, ...
         Box::pin(

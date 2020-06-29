@@ -127,7 +127,6 @@ impl SetupWorker {
                 .await
                 .ok_or(format_err!("No password provided"))?
                 .into();
-            app.password_ready(&password).await;
 
             Storage::open_with_password(&store::default_location()?, password).await?
         } else {
