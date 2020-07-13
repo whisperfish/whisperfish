@@ -8,7 +8,6 @@ use crate::store::Storage;
 use libsignal_service::prelude::*;
 use libsignal_service_actix::prelude::*;
 
-const WS_URL: &str = "wss://textsecure-service.whispersystems.org/v1/websocket/";
 const SERVICE_URL: &str = "https://textsecure-service.whispersystems.org/";
 const ROOT_CA: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/", "rootCA.crt"));
 
@@ -25,8 +24,17 @@ pub struct ClientWorker {
 }
 
 enum SessionState {
-    Running(MessageReceiver<AwcPushService>),
+    Running(AwcPushService),
     Unconnected,
+}
+
+impl SessionState {
+    fn unwrap_service(self) -> AwcPushService {
+        match self {
+            SessionState::Running(ref s) => s.clone(),
+            SessionState::Unconnected => panic!("unwrap_service"),
+        }
+    }
 }
 
 /// ClientActor keeps track of the connection state.
@@ -59,12 +67,12 @@ impl Actor for ClientActor {
 }
 
 impl Handler<StorageReady> for ClientActor {
-    type Result = ResponseFuture<()>;
+    type Result = ResponseActFuture<Self, ()>;
 
     fn handle(
         &mut self,
         StorageReady(storage, config): StorageReady,
-        ctx: &mut Self::Context,
+        _ctx: &mut Self::Context,
     ) -> Self::Result {
         self.storage = Some(storage.clone());
 
@@ -74,24 +82,42 @@ impl Handler<StorageReady> for ClientActor {
             cdn_urls: vec![],
             contact_discovery_url: vec![],
         };
-        Box::pin(async move {
-            let phonenumber = phonenumber::parse(None, config.tel).unwrap();
-            let e164 = phonenumber
-                .format()
-                .mode(phonenumber::Mode::E164)
-                .to_string();
-            log::info!("E164: {}", e164);
-            let password = Some(storage.signal_password().await.unwrap());
-            let credentials = Credentials {
-                uuid: None,
-                e164,
-                password,
-            };
-            let service = AwcPushService::new(service_cfg, credentials, &useragent, &ROOT_CA);
+        Box::pin(
+            async move {
+                let phonenumber = phonenumber::parse(None, config.tel).unwrap();
+                let e164 = phonenumber
+                    .format()
+                    .mode(phonenumber::Mode::E164)
+                    .to_string();
+                log::info!("E164: {}", e164);
+                let password = Some(storage.signal_password().await.unwrap());
+                let signaling_key = storage.signaling_key().await.unwrap();
+                let credentials = Credentials {
+                    uuid: None,
+                    e164,
+                    password,
+                    signaling_key,
+                };
 
-            let mut receiver = MessageReceiver::new(service);
-            let messages = receiver.retrieve_messages().await.unwrap();
-            log::info!("{} pending messages received.", messages.len());
-        })
+                let service =
+                    AwcPushService::new(service_cfg, credentials.clone(), &useragent, &ROOT_CA);
+                let mut receiver = MessageReceiver::new(service.clone());
+
+                let pipe = receiver.create_message_pipe(credentials).await.unwrap();
+                let stream = pipe.stream();
+                (service, stream)
+            }
+            .into_actor(self)
+            .map(|(service, pipe), act, ctx| {
+                act.state = SessionState::Running(service);
+                ctx.add_stream(pipe);
+            }),
+        )
+    }
+}
+
+impl StreamHandler<Result<Envelope, ServiceError>> for ClientActor {
+    fn handle(&mut self, _msg: Result<Envelope, ServiceError>, _ctx: &mut Self::Context) {
+        unimplemented!()
     }
 }
