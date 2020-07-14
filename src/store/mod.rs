@@ -10,6 +10,9 @@ use diesel::expression::sql_literal::sql;
 use diesel::debug_query;
 
 use failure::*;
+use libsignal_protocol::keys::IdentityKeyPair;
+use libsignal_protocol::stores::IdentityKeyStore;
+use libsignal_protocol::{Buffer,InternalError};
 use libsignal_service::models as svcmodels;
 use libsignal_service::{GROUP_UPDATE_FLAG, GROUP_LEAVE_FLAG};
 
@@ -192,6 +195,9 @@ pub struct Storage {
     pub db: Arc<Mutex<SqliteConnection>>,
     // aesKey + macKey
     keys: Option<[u8; 16 + 20]>,
+    // IdentityKeyStore - `Option<>` because of deferred setup
+    registration_id: Option<u32>,
+    identity: Option<IdentityKeyPair>,
 }
 
 // Cannot borrow password/salt because threadpool requires 'static...
@@ -245,10 +251,15 @@ impl Storage {
     pub fn open<T: AsRef<Path>>(db_path: &StorageLocation<T>) -> Result<Storage, Error> {
         let db = db_path.open_db()?;
 
-        Ok(Storage {
+        let storage = Storage {
             db: Arc::new(Mutex::new(db)),
             keys: None,
-        })
+            registration_id: None,
+            identity: None,
+        };
+        storage.setup_identity_key_store();
+
+        Ok(storage)
     }
 
     pub async fn open_with_password<T: AsRef<Path>>(
@@ -282,10 +293,28 @@ impl Storage {
         // 2. decrypt storage
         let keys = Some(storage_key.await?);
 
-        Ok(Storage {
+        let storage = Storage {
             db: Arc::new(Mutex::new(db)),
-            keys,
-        })
+            keys: None,
+            registration_id: None,
+            identity: None,
+        };
+        storage.setup_identity_key_store();
+
+        Ok(storage)
+    }
+
+    fn setup_identity_key_store(&self) {
+        let regid_fname = Path::new("/home/nemo/.local/share/harbour-whisperfish/storage/identity/regid");
+        let regid_file = std::fs::File::open(&regid_fname);
+        let regid_str = std::fs::read_to_string(&regid_file);
+
+        self.trust_on_first_use = true;
+        self.trusted_identities = Default::default();
+
+        self.registration_id = regid_str.parse::<u32>().unwrap();
+
+        self.identity = None; // This is probably something that would also panic on failure
     }
 
     /// Asynchronously loads the signal HTTP password from storage and decrypts it.
@@ -749,6 +778,28 @@ impl Storage {
 
         query.execute(&*conn).ok()
     }
+}
+
+impl IdentityKeyStore for Storage {
+    fn local_registration_id(&self) -> Result<u32, InternalError> {
+        Ok(self.registration_id)
+    }
+
+    fn identity_key_pair(&self) -> Result<(Buffer, Buffer), InternalError> {
+        let public = self
+            .identity
+            .public()
+            .serialize()
+            .map_err(|_| InternalError::Unknown)?;
+        let private = self
+            .identity
+            .private()
+            .serialize()
+            .map_err(|_| InternalError::Unknown)?;
+
+        Ok((public, private))
+    }
+
 }
 
 #[cfg(test)]
