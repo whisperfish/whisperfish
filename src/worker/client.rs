@@ -23,26 +23,14 @@ pub struct ClientWorker {
     actor: Option<Addr<ClientActor>>,
 }
 
-enum SessionState {
-    Running(AwcPushService),
-    Unconnected,
-}
-
-impl SessionState {
-    fn unwrap_service(self) -> AwcPushService {
-        match self {
-            SessionState::Running(ref s) => s.clone(),
-            SessionState::Unconnected => panic!("unwrap_service"),
-        }
-    }
-}
-
 /// ClientActor keeps track of the connection state.
 pub struct ClientActor {
     inner: QObjectBox<ClientWorker>,
 
-    state: SessionState,
+    /// Some(Service) when connected, otherwise None
+    service: Option<AwcPushService>,
     storage: Option<Storage>,
+    cipher: Option<ServiceCipher>,
 }
 
 impl ClientActor {
@@ -52,8 +40,9 @@ impl ClientActor {
 
         Self {
             inner,
-            state: SessionState::Unconnected,
+            service: None,
             storage: None,
+            cipher: None,
         }
     }
 }
@@ -109,7 +98,7 @@ impl Handler<StorageReady> for ClientActor {
             }
             .into_actor(self)
             .map(|(service, pipe), act, ctx| {
-                act.state = SessionState::Running(service);
+                act.service = Some(service);
                 ctx.add_stream(pipe);
             }),
         )
@@ -117,7 +106,21 @@ impl Handler<StorageReady> for ClientActor {
 }
 
 impl StreamHandler<Result<Envelope, ServiceError>> for ClientActor {
-    fn handle(&mut self, _msg: Result<Envelope, ServiceError>, _ctx: &mut Self::Context) {
-        unimplemented!()
+    fn handle(&mut self, msg: Result<Envelope, ServiceError>, _ctx: &mut Self::Context) {
+        let msg = match msg {
+            Ok(msg) => msg,
+            Err(e) => {
+                // XXX: we might want to dispatch on this error.
+                log::error!("MessagePipe pushed an error: {:?}", e);
+                return;
+            }
+        };
+
+        // XXX: figure out edge cases in which these are *not* initialized.
+        let _service = self.service.as_mut().expect("service running");
+        let _storage = self.storage.as_mut().expect("storage initialized");
+        let cipher = self.cipher.as_mut().expect("cipher initialized");
+
+        let content = cipher.open_envelope(msg);
     }
 }
