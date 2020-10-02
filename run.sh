@@ -43,4 +43,10 @@ ssh "nemo@${SSH_TARGET}" sdk-deploy-rpm "/tmp/${RPM}"
 
 echo "Starting harbour-whisperfish"
 # Use -t to force-allocate a terminal, it triggers Qt to log warnings.
-ssh -t "nemo@${SSH_TARGET}" "RUST_BACKTRACE=full invoker --type=qtquick2 /usr/bin/harbour-whisperfish --verbose"
+test ${WF_RUNSH_LOG_TO_FILE:-0} == 1 &&
+    {
+        ssh -t nemo@$SSH_TARGET "RUST_BACKTRACE=full invoker --type=qtquick2 /usr/bin/harbour-whisperfish --verbose >> /home/nemo/log/fluistervis-$(date -u +%Y-%m-%dT%H:%M:%S) 2>&1"
+    } ||
+    {
+        ssh -t "nemo@${SSH_TARGET}" "RUST_BACKTRACE=full invoker --type=qtquick2 /usr/bin/harbour-whisperfish --verbose"
+    }
