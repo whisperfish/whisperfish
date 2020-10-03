@@ -25,6 +25,15 @@ pub struct FetchAllMessages(pub i64);
 #[rtype(result = "()")]
 pub struct DeleteMessage(pub i32, pub usize);
 
+#[derive(actix::Message)]
+#[rtype(result = "()")]
+pub struct QueueMessage {
+    pub source: String,
+    pub message: String,
+    pub attachment: String,
+    pub group: String,
+}
+
 pub struct MessageActor {
     inner: QObjectBox<MessageModel>,
     storage: Option<Storage>,
@@ -125,5 +134,42 @@ impl Handler<DeleteMessage> for MessageActor {
             idx,
             del_rows.expect("FIXME no rows deleted"),
         );
+    }
+}
+
+impl Handler<QueueMessage> for MessageActor {
+    type Result = ();
+
+    fn handle(&mut self, msg: QueueMessage, _ctx: &mut Self::Context) -> Self::Result {
+        assert!(
+            &msg.attachment == "",
+            "Sending attachments is unimplemented"
+        );
+        assert!(&msg.group == "", "Sending group messages is unimplemented");
+
+        let storage = self.storage.as_mut().unwrap();
+        let (msg, _session) = storage.process_message(
+            crate::store::NewMessage {
+                session_id: None,
+                source: msg.source,
+                text: msg.message,
+                timestamp: chrono::Utc::now().timestamp_millis(),
+                has_attachment: msg.attachment.len() != 0,
+                attachment: if msg.attachment.len() != 0 {
+                    Some(msg.attachment)
+                } else {
+                    None
+                },
+                flags: 0,
+                outgoing: true,
+                mime_type: None,
+                received: false,
+                sent: false,
+            },
+            None,
+            false,
+        );
+
+        storage.queue_message(&msg);
     }
 }
