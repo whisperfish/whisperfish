@@ -20,8 +20,8 @@ table! {
 
 table! {
     sentq (message_id) {
-        message_id -> Nullable<Integer>,
-        timestamp -> Nullable<Timestamp>,
+        message_id -> Integer,
+        timestamp -> BigInt,
     }
 }
 
