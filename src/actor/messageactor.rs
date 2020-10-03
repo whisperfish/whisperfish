@@ -171,5 +171,7 @@ impl Handler<QueueMessage> for MessageActor {
         );
 
         storage.queue_message(&msg);
+
+        self.inner.pinned().borrow_mut().handle_queue_message(msg);
     }
 }

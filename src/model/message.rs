@@ -59,6 +59,8 @@ pub struct MessageModel {
         ) -> i64
     ),
 
+    sendMessage: qt_signal!(mid: i32),
+
     load: qt_method!(fn(&self, sid: i64, peer_name: QString)),
     add: qt_method!(fn(&self, id: i32)),
     remove: qt_method!(fn(&self, id: usize)),
@@ -94,16 +96,20 @@ impl MessageModel {
                 .map(Result::unwrap),
         );
 
-        // TODO: Go version modified the `self` model appropriately,
-        //       with the `add`/`_add` parameter.
-        // if add {
-        // 	model.BeginInsertRows(core.NewQModelIndex(), 0, 0)
-        // 	model.messages = append([]*store.Message{msg}, model.messages...)
-        // 	model.EndInsertRows()
-        // }
-
         // TODO: QML should *not* synchronously wait for a session ID to be returned.
         -1
+    }
+
+    pub fn handle_queue_message(&mut self, msg: crate::store::Message) {
+        self.sendMessage(msg.id);
+
+        // TODO: Go version modified the `self` model appropriately,
+        //       with the `add`/`_add` parameter from createMessage.
+        // if add {
+        (self as &mut dyn QAbstractListModel).begin_insert_rows(0, 0);
+        self.messages.insert(0, msg);
+        (self as &mut dyn QAbstractListModel).end_insert_rows();
+        // }
     }
 
     fn load(&mut self, sid: i64, _peer_name: QString) {
