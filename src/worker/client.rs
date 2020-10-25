@@ -8,6 +8,7 @@ use crate::sfos::SailfishApp;
 use crate::store::Storage;
 
 use libsignal_protocol::Context;
+use libsignal_service::configuration::SignalServers;
 use libsignal_service::content::{AttachmentPointer, ContentBody, DataMessage, GroupType};
 use libsignal_service::prelude::*;
 use libsignal_service_actix::prelude::*;
@@ -394,7 +395,7 @@ impl Handler<StorageReady> for ClientActor {
                     .to_string();
                 log::info!("E164: {}", e164);
                 let password = Some(storage.signal_password().await.unwrap());
-                let signaling_key = storage.signaling_key().await.unwrap();
+                let signaling_key = Some(storage.signaling_key().await.unwrap());
                 let credentials = Credentials {
                     uuid: None,
                     e164: e164.clone(),
