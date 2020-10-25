@@ -3,6 +3,7 @@ use std::path::Path;
 
 use libsignal_protocol::stores::SerializedSession;
 use libsignal_protocol::stores::{IdentityKeyStore, PreKeyStore, SessionStore, SignedPreKeyStore};
+use libsignal_protocol::Error as SignalProtocolError;
 use libsignal_protocol::InternalError;
 use libsignal_protocol::{Address, Buffer};
 
@@ -97,7 +98,7 @@ impl Storage {
 }
 
 impl IdentityKeyStore for Storage {
-    fn identity_key_pair(&self) -> Result<(Buffer, Buffer), InternalError> {
+    fn identity_key_pair(&self) -> Result<(Buffer, Buffer), SignalProtocolError> {
         log::trace!("identity_key_pair");
         let protocol_store = self.protocol_store.lock().expect("mutex");
         // (public, private)
@@ -107,11 +108,11 @@ impl IdentityKeyStore for Storage {
         Ok((public, Buffer::from(&protocol_store.identity_key[32..])))
     }
 
-    fn local_registration_id(&self) -> Result<u32, InternalError> {
+    fn local_registration_id(&self) -> Result<u32, SignalProtocolError> {
         Ok(self.protocol_store.lock().expect("mutex").regid)
     }
 
-    fn is_trusted_identity(&self, addr: Address, key: &[u8]) -> Result<bool, InternalError> {
+    fn is_trusted_identity(&self, addr: Address, key: &[u8]) -> Result<bool, SignalProtocolError> {
         if let Some(path) = self.identity_path(&addr) {
             if !path.is_file() {
                 // TOFU
@@ -123,17 +124,17 @@ impl IdentityKeyStore for Storage {
             }
         } else {
             log::warn!("Trying trusted identity with uuid, currently unsupported.");
-            Err(InternalError::InvalidArgument)
+            Err(InternalError::InvalidArgument)?
         }
     }
 
-    fn save_identity(&self, addr: Address, key: &[u8]) -> Result<(), InternalError> {
+    fn save_identity(&self, addr: Address, key: &[u8]) -> Result<(), SignalProtocolError> {
         if let Some(path) = self.identity_path(&addr) {
             write_file_sync(self.keys.unwrap(), path, key).expect("save identity key");
             Ok(())
         } else {
             log::warn!("Trying to save trusted identity with uuid, currently unsupported.");
-            Err(InternalError::InvalidArgument)
+            Err(InternalError::InvalidArgument)?
         }
     }
 }
@@ -148,7 +149,7 @@ impl PreKeyStore for Storage {
         Ok(())
     }
 
-    fn store(&self, id: u32, body: &[u8]) -> Result<(), InternalError> {
+    fn store(&self, id: u32, body: &[u8]) -> Result<(), SignalProtocolError> {
         log::trace!("Storing prekey {}", id);
         let path = self.prekey_path(id);
         let contents = quirk::pre_key_to_0_5(body).unwrap();
@@ -161,7 +162,7 @@ impl PreKeyStore for Storage {
         self.prekey_path(id).is_file()
     }
 
-    fn remove(&self, id: u32) -> Result<(), InternalError> {
+    fn remove(&self, id: u32) -> Result<(), SignalProtocolError> {
         log::trace!("Removing prekey {}", id);
         let path = self.prekey_path(id);
         std::fs::remove_file(path).unwrap();
@@ -170,7 +171,10 @@ impl PreKeyStore for Storage {
 }
 
 impl SessionStore for Storage {
-    fn load_session(&self, addr: Address) -> Result<Option<SerializedSession>, InternalError> {
+    fn load_session(
+        &self,
+        addr: Address,
+    ) -> Result<Option<SerializedSession>, SignalProtocolError> {
         let path = if let Some(path) = self.session_path(&addr) {
             path
         } else {
@@ -232,7 +236,7 @@ impl SessionStore for Storage {
         Ok(ids)
     }
 
-    fn contains_session(&self, addr: Address) -> Result<bool, InternalError> {
+    fn contains_session(&self, addr: Address) -> Result<bool, SignalProtocolError> {
         let path = self.session_path(&addr);
         if let Some(path) = path {
             Ok(path.is_file())
@@ -255,13 +259,13 @@ impl SessionStore for Storage {
         Ok(())
     }
 
-    fn delete_session(&self, addr: Address) -> Result<(), InternalError> {
+    fn delete_session(&self, addr: Address) -> Result<(), SignalProtocolError> {
         let path = self.session_path(&addr).expect("path for session deletion");
         std::fs::remove_file(path).unwrap();
         Ok(())
     }
 
-    fn delete_all_sessions(&self, _: &[u8]) -> Result<usize, InternalError> {
+    fn delete_all_sessions(&self, _: &[u8]) -> Result<usize, SignalProtocolError> {
         todo!("delete_all_sessions")
     }
 }
@@ -278,7 +282,7 @@ impl SignedPreKeyStore for Storage {
         Ok(())
     }
 
-    fn store(&self, id: u32, body: &[u8]) -> Result<(), InternalError> {
+    fn store(&self, id: u32, body: &[u8]) -> Result<(), SignalProtocolError> {
         log::trace!("Storing prekey {}", id);
         let path = self.prekey_path(id);
         let contents = quirk::signed_pre_key_to_0_5(body).unwrap();
@@ -291,7 +295,7 @@ impl SignedPreKeyStore for Storage {
         self.signed_prekey_path(id).is_file()
     }
 
-    fn remove(&self, id: u32) -> Result<(), InternalError> {
+    fn remove(&self, id: u32) -> Result<(), SignalProtocolError> {
         log::trace!("Removing signed prekey {}", id);
         let path = self.signed_prekey_path(id);
         std::fs::remove_file(path).unwrap();
