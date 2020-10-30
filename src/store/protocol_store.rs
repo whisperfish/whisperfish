@@ -196,6 +196,13 @@ impl SessionStore for Storage {
     }
 
     fn get_sub_device_sessions(&self, addr: &[u8]) -> Result<std::vec::Vec<i32>, InternalError> {
+        log::trace!(
+            "Looking for sub_device sessions for {}",
+            String::from_utf8_lossy(addr)
+        );
+        // Strip `+'
+        let addr = &addr[1..];
+
         let session_dir = crate::store::default_location()
             .unwrap()
             .join("storage")
@@ -215,7 +222,10 @@ impl SessionStore for Storage {
                 let name = entry.file_name();
                 let name = name.as_os_str().as_bytes();
 
+                log::trace!("parsing {:?}", entry);
+
                 if name.len() < addr.len() + 2 {
+                    log::trace!("filename {:?} not long enough", entry);
                     return None;
                 }
 
@@ -228,6 +238,7 @@ impl SessionStore for Storage {
                     let id = std::str::from_utf8(&name[(addr.len() + 1)..]).ok()?;
                     id.parse().ok()
                 } else {
+                    log::trace!("filename {:?} without prefix match", entry);
                     None
                 }
             })
