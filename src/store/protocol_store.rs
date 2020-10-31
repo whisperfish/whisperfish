@@ -242,6 +242,7 @@ impl SessionStore for Storage {
                     None
                 }
             })
+            .filter(|id| *id != libsignal_service::push_service::DEFAULT_DEVICE_ID)
             .collect();
 
         Ok(ids)
