@@ -12,7 +12,13 @@ use libsignal_service::configuration::SignalServers;
 use libsignal_service::content::DataMessageFlags;
 use libsignal_service::content::{AttachmentPointer, ContentBody, DataMessage, GroupType};
 use libsignal_service::prelude::*;
+use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 use libsignal_service_actix::prelude::*;
+
+#[derive(Message)]
+#[rtype(result = "()")]
+/// Enqueue a message on socket by MID
+pub struct SendMessage(pub i32);
 
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -362,6 +368,64 @@ impl Actor for ClientActor {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         self.inner.pinned().borrow_mut().actor = Some(ctx.address());
+    }
+}
+
+impl Handler<SendMessage> for ClientActor {
+    type Result = ();
+
+    // Equiv of worker/send.go
+    fn handle(&mut self, SendMessage(mid): SendMessage, _ctx: &mut Self::Context) {
+        log::info!("ClientActor::SendMessage({:?})", mid);
+        let storage = self.storage.as_mut().unwrap();
+        let msg = storage.fetch_message(mid).unwrap();
+
+        let sender = MessageSender::new(
+            self.service.clone().unwrap(),
+            self.cipher.clone().unwrap(),
+            DEFAULT_DEVICE_ID,
+        );
+        let session = storage.fetch_session(msg.sid).unwrap();
+
+        if !msg.queued {
+            log::warn!("Message is not queued, refusing to transmit.");
+            return;
+        }
+
+        Arbiter::spawn(async move {
+            if msg.flags == 1 {
+                log::warn!("End session unimplemented");
+            } else if let Some(_attachment) = msg.attachment {
+                // Note, in the Go code these conditions were in opposite order (if att == nil)
+                log::warn!("Sending attachment unimplemented");
+            } else {
+                if session.is_group {
+                    log::warn!("Sending group messages unimplemented");
+                } else {
+                    // XXX online status goes in that bool
+                    let online = false;
+                    let content = DataMessage {
+                        body: Some(msg.message),
+                        flags: None,
+                        timestamp: Some(msg.timestamp as u64),
+                        // XXX: depends on the features in the message!
+                        required_protocol_version: Some(0),
+
+                        ..Default::default()
+                    };
+                    log::trace!("Transmitting {:?}", content);
+                    let recipient = ServiceAddress {
+                        e164: session.source,
+                        relay: None,
+                        uuid: None,
+                    };
+                    sender
+                        .send_message(&recipient, content, msg.timestamp as u64, online)
+                        .await
+                        .unwrap();
+                }
+            }
+        })
     }
 }
 
