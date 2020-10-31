@@ -9,6 +9,7 @@ use crate::store::Storage;
 
 use libsignal_protocol::Context;
 use libsignal_service::configuration::SignalServers;
+use libsignal_service::content::DataMessageFlags;
 use libsignal_service::content::{AttachmentPointer, ContentBody, DataMessage, GroupType};
 use libsignal_service::prelude::*;
 use libsignal_service_actix::prelude::*;
@@ -168,6 +169,13 @@ impl ClientActor {
         let settings = crate::settings::Settings::default();
 
         let storage = self.storage.as_mut().expect("storage");
+
+        if msg.flags() & DataMessageFlags::EndSession as u32 != 0 {
+            use libsignal_protocol::stores::SessionStore;
+            if let Err(e) = storage.delete_all_sessions(source.as_bytes()) {
+                log::error!("End session requested, but could not end session: {:?}", e);
+            }
+        }
 
         let mut new_message = crate::store::NewMessage {
             source: source,

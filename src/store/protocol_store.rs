@@ -276,8 +276,63 @@ impl SessionStore for Storage {
         Ok(())
     }
 
-    fn delete_all_sessions(&self, _: &[u8]) -> Result<usize, SignalProtocolError> {
-        todo!("delete_all_sessions")
+    fn delete_all_sessions(&self, addr: &[u8]) -> Result<usize, SignalProtocolError> {
+        log::warn!(
+            "Deleting all sessions for {}",
+            String::from_utf8_lossy(addr)
+        );
+        // Strip `+'
+        assert_eq!(addr[0], b'+', "expecting session with phone number");
+        let addr = &addr[1..];
+
+        let session_dir = crate::store::default_location()
+            .unwrap()
+            .join("storage")
+            .join("sessions");
+
+        let entries = std::fs::read_dir(session_dir)
+            .expect("initialized storage")
+            .filter_map(|entry| {
+                let entry = entry.expect("directory listing");
+                if !entry.path().is_file() {
+                    log::warn!("Non-file session entry: {:?}. Skipping", entry);
+                    return None;
+                }
+
+                // XXX: *maybe* Signal could become a cross-platform desktop app.
+                use std::os::unix::ffi::OsStrExt;
+                let name = entry.file_name();
+                let name = name.as_os_str().as_bytes();
+
+                log::trace!("parsing {:?}", entry);
+
+                if name.len() < addr.len() + 2 {
+                    log::trace!("filename {:?} not long enough", entry);
+                    return None;
+                }
+
+                if &name[..addr.len()] == addr {
+                    if name[addr.len()] != '_' as u8 {
+                        log::warn!("Weird session directory entry: {:?}. Skipping", entry);
+                        return None;
+                    }
+                    // skip underscore
+                    let id = std::str::from_utf8(&name[(addr.len() + 1)..]).ok()?;
+                    let _: u32 = id.parse().ok()?;
+                    Some(entry.path())
+                } else {
+                    log::trace!("filename {:?} without prefix match", entry);
+                    None
+                }
+            });
+
+        let mut count = 0;
+        for entry in entries {
+            std::fs::remove_file(entry)?;
+            count += 1;
+        }
+
+        Ok(count)
     }
 }
 
