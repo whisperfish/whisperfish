@@ -60,6 +60,13 @@ structopt = "0.3.16"
 
 rpassword = "5.0"
 
+# [patch."https://github.com/Michael-F-Bryan/libsignal-service-rs"]
+# libsignal-service = { path = "/home/mjt/src/git_checkouts/libsignal-service-rs/libsignal-service" }
+# libsignal-service-actix = { path = "/home/mjt/src/git_checkouts/libsignal-service-rs/libsignal-service-actix" }
+
+# [patch."https://github.com/Michael-F-Bryan/libsignal-protocol-rs"]
+# libsignal-protocol = { path = "/home/mjt/src/git_checkouts/libsignal-protocol-rs/libsignal-protocol" }
+
 [build-dependencies]
 cpp_build = "0.5"
 cc = "1.0"
