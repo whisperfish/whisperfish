@@ -59,6 +59,16 @@ Page {
 
             Button {
                 anchors.horizontalCenter: parent.horizontalCenter
+                //: Support on Liberapay
+                //% "Support on Liberapay"
+                text: qsTrId("whisperfish-liberapay")
+                onClicked: {
+                    Qt.openUrlExternally("https://liberapay.com/rubdos/")
+                }
+            }
+
+            Button {
+                anchors.horizontalCenter: parent.horizontalCenter
                 //: Source Code
                 //% "Source Code"
                 text: qsTrId("whisperfish-source-code")
