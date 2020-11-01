@@ -400,6 +400,7 @@ impl Handler<SendMessage> for ClientActor {
         log::trace!("Sending message: {:?}", msg);
 
         let local_addr = self.local_addr.clone().unwrap();
+        let storage = storage.clone();
         Arbiter::spawn(async move {
             let group = if let Some(group_id) = session.group_id.as_ref() {
                 if group_id != "" {
@@ -518,6 +519,9 @@ impl Handler<SendMessage> for ClientActor {
                     Err(e) => log::error!("Error sending message: {}", e),
                 }
             }
+
+            // Mark as sent
+            storage.dequeue_message(mid);
         })
     }
 }
