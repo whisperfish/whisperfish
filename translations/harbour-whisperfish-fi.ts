@@ -69,20 +69,26 @@
         <extracomment>Whisperfish description</extracomment>
         <translation>Signal-sovellus Sailfish-käyttöjärjestelmään</translation>
     </message>
+    <message id="whisperfish-copyright">
+        <location filename="../qml/pages/About.qml" line="49"/>
+        <source>Copyright</source>
+        <extracomment>Copyright</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-source-code">
-        <location filename="../qml/pages/About.qml" line="58"/>
+        <location filename="../qml/pages/About.qml" line="64"/>
         <source>Source Code</source>
         <extracomment>Source Code</extracomment>
         <translation>Lähdekoodi</translation>
     </message>
     <message id="whisperfish-bug-report">
-        <location filename="../qml/pages/About.qml" line="68"/>
+        <location filename="../qml/pages/About.qml" line="74"/>
         <source>Report a Bug</source>
         <extracomment>Report a Bug</extracomment>
         <translation>Raportoi sovellusvirheestä</translation>
     </message>
     <message id="whisperfish-extra-copyright">
-        <location filename="../qml/pages/About.qml" line="77"/>
+        <location filename="../qml/pages/About.qml" line="83"/>
         <source>Additional Copyright</source>
         <extracomment>Additional Copyright</extracomment>
         <translation type="unfinished"></translation>

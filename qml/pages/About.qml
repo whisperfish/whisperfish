@@ -43,12 +43,18 @@ Page {
                 text: qsTrId("whisperfish-description")
             }
 
+            SectionHeader {
+                //: Copyright
+                //% "Copyright"
+                text: qsTrId("whisperfish-copyright")
+            }
+
             TextArea {
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: parent.width
                 horizontalAlignment: TextEdit.Center
                 readOnly: true
-                text: "Copyright: Andrew E. Bruno\nLicense: GPLv3"
+                text: "Andrew E. Bruno (2016-2018)\nRuben De Smet (2019-2020)\nMarkus Törnqvist (2019-2020)\nLicense: AGPLv3 & GPLv3"
             }
 
             Button {
@@ -57,7 +63,7 @@ Page {
                 //% "Source Code"
                 text: qsTrId("whisperfish-source-code")
                 onClicked: {
-                    Qt.openUrlExternally("https://github.com/aebruno/whisperfish")
+                    Qt.openUrlExternally("https://gitlab.com/rubdos/whisperfish")
                 }
             }
 
@@ -67,7 +73,7 @@ Page {
                 //% "Report a Bug"
                 text: qsTrId("whisperfish-bug-report")
                 onClicked: {
-                    Qt.openUrlExternally("https://github.com/aebruno/whisperfish/issues")
+                    Qt.openUrlExternally("https://gitlab.com/rubdos/whisperfish/issues")
                 }
             }
 
@@ -78,7 +84,27 @@ Page {
             }
 
             Label {
-                text: "Signal client library for Go (C) Jani Monoses"
+                text: "libsignal-protocol-c by Signal"
+                anchors.horizontalCenter: parent.horizontalCenter
+                wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                width: (parent ? parent.width : Screen.width) - Theme.paddingLarge * 2
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignLeft
+                x: Theme.paddingLarge
+            }
+
+            Label {
+                text: "libsignal-protocol-rs by Ruben De Smet, Gabriel Féron, Michael Bryan, and Shady Khalifa"
+                anchors.horizontalCenter: parent.horizontalCenter
+                wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                width: (parent ? parent.width : Screen.width) - Theme.paddingLarge * 2
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignLeft
+                x: Theme.paddingLarge
+            }
+
+            Label {
+                text: "libsignal-service-rs by Ruben De Smet, Gabriel Féron, and Michael Bryan"
                 anchors.horizontalCenter: parent.horizontalCenter
                 wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                 width: (parent ? parent.width : Screen.width) - Theme.paddingLarge * 2
