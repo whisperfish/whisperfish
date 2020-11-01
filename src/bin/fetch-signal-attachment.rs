@@ -147,9 +147,13 @@ async fn main() -> Result<(), Error> {
 
     storage.register_attachment(
         mid,
-        attachment_path.to_str().expect("attachment path utf-8"),
+        attachment_path
+            .canonicalize()
+            .unwrap()
+            .to_str()
+            .expect("attachment path utf-8"),
         &opt.mime_type,
     );
-    log::info!("Attachment registred with message {:?}", msg);
+    log::info!("Attachment registered with message {:?}", msg);
     Ok(())
 }
