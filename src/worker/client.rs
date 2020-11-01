@@ -380,7 +380,7 @@ impl Handler<SendMessage> for ClientActor {
         let storage = self.storage.as_mut().unwrap();
         let msg = storage.fetch_message(mid).unwrap();
 
-        let sender = MessageSender::new(
+        let mut sender = MessageSender::new(
             self.service.clone().unwrap(),
             self.cipher.clone().unwrap(),
             DEFAULT_DEVICE_ID,
