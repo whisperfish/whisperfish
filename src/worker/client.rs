@@ -11,7 +11,7 @@ use libsignal_protocol::Context;
 use libsignal_service::configuration::SignalServers;
 use libsignal_service::content::DataMessageFlags;
 use libsignal_service::content::{
-    AttachmentPointer, ContentBody, DataMessage, GroupContext, GroupType,
+    AttachmentPointer, ContentBody, DataMessage, GroupContext, GroupType, SyncMessage,
 };
 use libsignal_service::prelude::*;
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
@@ -431,6 +431,8 @@ impl Handler<SendMessage> for ClientActor {
             };
             log::trace!("Transmitting {:?}", content);
 
+            let mut needs_sync = false;
+
             if msg.flags == 1 {
                 log::warn!("End session unimplemented");
             } else if let Some(_attachment) = msg.attachment {
@@ -450,23 +452,70 @@ impl Handler<SendMessage> for ClientActor {
                             continue;
                         }
                         // Clone + async closure means we can use an immutable borrow.
-                        if let Err(e) = sender
+                        match sender
                             .send_message(recipient, content.clone(), timestamp, online)
                             .await
                         {
-                            log::error!("Error sending message: {}", e);
+                            Ok(s) => {
+                                if s.needs_sync {
+                                    needs_sync = true;
+                                }
+                            }
+                            Err(e) => log::error!("Error sending message: {}", e),
                         }
                     }
                 } else {
                     let recipient = ServiceAddress {
-                        e164: session.source,
+                        e164: session.source.clone(),
                         relay: None,
                         uuid: None,
                     };
-                    sender
-                        .send_message(&recipient, content, msg.timestamp as u64, online)
+
+                    match sender
+                        .send_message(recipient, content.clone(), timestamp, online)
                         .await
-                        .unwrap();
+                    {
+                        Ok(s) => {
+                            if s.needs_sync {
+                                needs_sync = true;
+                            }
+                        }
+                        Err(e) => log::error!("Error sending message: {}", e),
+                    }
+                }
+            }
+
+            if needs_sync {
+                // Sync messages for connected devices
+                use libsignal_service::content::sync_message;
+
+                let container = SyncMessage {
+                    sent: Some(sync_message::Sent {
+                        destination_e164: if session.is_group {
+                            None
+                        } else {
+                            Some(session.source)
+                        },
+                        message: Some(content),
+                        timestamp: Some(timestamp),
+
+                        ..Default::default()
+                    }),
+
+                    ..Default::default()
+                };
+                log::trace!("Transmitting {:?}", container);
+
+                match sender
+                    .send_message(local_addr, container, timestamp, online)
+                    .await
+                {
+                    Ok(s) => {
+                        if s.needs_sync {
+                            log::warn!("Still got a needs_sync");
+                        }
+                    }
+                    Err(e) => log::error!("Error sending message: {}", e),
                 }
             }
         })
