@@ -26,7 +26,7 @@ pub struct FetchAllMessages(pub i64);
 #[rtype(result = "()")]
 pub struct DeleteMessage(pub i32, pub usize);
 
-#[derive(actix::Message)]
+#[derive(actix::Message, Debug)]
 #[rtype(result = "()")]
 pub struct QueueMessage {
     pub source: String,
@@ -143,11 +143,12 @@ impl Handler<QueueMessage> for MessageActor {
     type Result = ();
 
     fn handle(&mut self, msg: QueueMessage, _ctx: &mut Self::Context) -> Self::Result {
+        log::trace!("MessageActor::handle({:?})", msg);
         assert!(
             &msg.attachment == "",
             "Sending attachments is unimplemented"
         );
-        assert!(&msg.group == "", "Sending group messages is unimplemented");
+        assert!(&msg.group == "", "Creating a new group is unimplemented");
 
         let storage = self.storage.as_mut().unwrap();
         let (msg, _session) = storage.process_message(
