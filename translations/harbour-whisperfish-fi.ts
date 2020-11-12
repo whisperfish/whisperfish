@@ -477,7 +477,7 @@
         <source>+18875550100</source>
         <oldsource>18875550100</oldsource>
         <extracomment>Phone number placeholder</extracomment>
-        <translation type="unfinished">358401234567</translation>
+        <translation>+358401234567</translation>
     </message>
     <message id="whisperfish-share-contacts-label">
         <location filename="../qml/pages/Register.qml" line="58"/>
@@ -489,19 +489,19 @@
         <location filename="../qml/pages/Register.qml" line="70"/>
         <source>Verification method</source>
         <extracomment>Verification method</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Rekisteröitymismenetelmä</translation>
     </message>
     <message id="whisperfish-use-voice-verification">
         <location filename="../qml/pages/Register.qml" line="81"/>
         <source>Use voice verification</source>
         <extracomment>Voice verification</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Käytä äänipohjaista rekisteröitymistä</translation>
     </message>
     <message id="whisperfish-use-text-verification">
         <location filename="../qml/pages/Register.qml" line="76"/>
         <source>Use text verification</source>
         <extracomment>Text verification</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Käytä tekstipohjaista rekisteröitymistä</translation>
     </message>
     <message id="whisperfish-voice-registration-directions">
         <location filename="../qml/pages/Register.qml" line="98"/>
@@ -513,7 +513,7 @@
         <location filename="../qml/pages/Register.qml" line="109"/>
         <source>Signal will text you a 6-digit verification code.</source>
         <extracomment>Registration directions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Signal lähettää sinulle viestinä 6-numeroisen rekisteröintikoodin.</translation>
     </message>
     <message id="whisperfish-reset-peer-accept">
         <location filename="../qml/pages/PeerIdentityChanged.qml" line="24"/>
@@ -757,7 +757,7 @@
         <source>123456</source>
         <oldsource>Code</oldsource>
         <extracomment>Verify code placeholder</extracomment>
-        <translation type="unfinished">Koodi</translation>
+        <translation>Koodi</translation>
     </message>
     <message id="whisperfish-voice-verify-code-instructions">
         <location filename="../qml/pages/Verify.qml" line="61"/>
@@ -770,7 +770,7 @@
         <source>Signal will text you a 6-digit verification code. Please enter it here, using only numbers.</source>
         <oldsource>Signal will text you a 6-digit verification code. Please enter it here.</oldsource>
         <extracomment>Text verification code instructions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Signal lähettää sinulle viestinä 6-numeroisen rekisteröintikoodin. Syötä se tähän käyttäen pelkkiä numeroita.</translation>
     </message>
     <message id="whisperfish-verify-contact-identity-title">
         <location filename="../qml/pages/VerifyIdentity.qml" line="44"/>
