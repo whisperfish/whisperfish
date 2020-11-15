@@ -67,9 +67,9 @@ pub use prompt::*;
 use chrono::prelude::*;
 use qmetaobject::*;
 
-fn qdatetime_from_i64(timestamp: i64) -> QDateTime {
-    let dt = Utc
-        .timestamp(timestamp / 1000, (timestamp % 1000) as u32)
+fn qdatetime_from_naive(timestamp: NaiveDateTime) -> QDateTime {
+    // Naive in model is Utc, naive displayed should be Local
+    let dt = DateTime::<Utc>::from_utc(timestamp, Utc)
         .with_timezone(&Local)
         .naive_local();
     let date = QDate::from_y_m_d(dt.year(), dt.month() as i32, dt.day() as i32);

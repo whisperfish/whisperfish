@@ -16,7 +16,7 @@ define_model_roles! {
         SID(sid):                                       "sid",
         Source(source via QString::from):               "source",
         Message(message via QString::from):             "message",
-        Timestamp(timestamp via qdatetime_from_i64):    "timestamp",
+        Timestamp(timestamp via qdatetime_from_naive):  "timestamp",
         Sent(sent):                                     "sent",
         Received(received):                             "received",
         Flags(flags):                                   "flags",
@@ -63,16 +63,16 @@ pub struct MessageModel {
         ) -> i64
     ),
 
-    sendMessage: qt_method!(fn(&self, mid: i32)),
+    sendMessage: qt_method!(fn(&self, mid: i64)),
 
     load: qt_method!(fn(&self, sid: i64, peer_name: QString)),
-    add: qt_method!(fn(&self, id: i32)),
+    add: qt_method!(fn(&self, id: i64)),
     remove: qt_method!(fn(&self, id: usize)),
 
     numericFingerprint: qt_method!(fn(&self, localId: QString, remoteId: QString) -> QString),
 
-    markSent: qt_method!(fn(&self, id: i32)),
-    markReceived: qt_method!(fn(&self, id: i32)),
+    markSent: qt_method!(fn(&self, id: i64)),
+    markReceived: qt_method!(fn(&self, id: i64)),
 }
 
 impl MessageModel {
@@ -134,7 +134,7 @@ impl MessageModel {
 
     #[allow(non_snake_case)]
     /// Called when a message should be queued to be sent to OWS
-    fn sendMessage(&mut self, mid: i32) {
+    fn sendMessage(&mut self, mid: i64) {
         Arbiter::spawn(
             self.client_actor
                 .as_mut()
@@ -181,7 +181,7 @@ impl MessageModel {
     /// This retrieves a `Message` by the given id and adds it to the UI.
     ///
     /// Note that the id argument was i64 in Go.
-    fn add(&mut self, id: i32) {
+    fn add(&mut self, id: i64) {
         Arbiter::spawn(
             self.actor
                 .as_ref()
@@ -230,7 +230,7 @@ impl MessageModel {
     ///
     /// Note that the id argument was i64 in Go.
     #[allow(non_snake_case)] // XXX: QML expects these as-is; consider changing later]
-    fn markSent(&mut self, id: i32) {
+    fn markSent(&mut self, id: i64) {
         self.mark(id, true, false)
     }
 
@@ -242,14 +242,14 @@ impl MessageModel {
     ///
     /// Note that the id argument was i64 in Go.
     #[allow(non_snake_case)] // XXX: QML expects these as-is; consider changing later]
-    fn markReceived(&mut self, id: i32) {
+    fn markReceived(&mut self, id: i64) {
         self.mark(id, false, true)
     }
 
     /// Mark a message sent or received in QML. No database involved.
     ///
     /// Note that the id argument was i64 in Go.
-    fn mark(&mut self, id: i32, mark_sent: bool, mark_received: bool) {
+    fn mark(&mut self, id: i64, mark_sent: bool, mark_received: bool) {
         if mark_sent && mark_received {
             log::trace!("Cannot mark message both sent and received");
             return;
@@ -346,7 +346,7 @@ impl MessageModel {
         (self as &mut dyn QAbstractListModel).end_insert_rows();
     }
 
-    pub fn handle_delete_message(&mut self, id: i32, idx: usize, del_rows: usize) {
+    pub fn handle_delete_message(&mut self, id: i64, idx: usize, del_rows: usize) {
         log::trace!(
             "handle_delete_message({}) deleted {} rows, remove qml idx {}",
             id,

@@ -1,0 +1,19 @@
+diff --git a/src/schema.rs b/src/schema.rs
+index b8c2c41..df73513 100644
+--- a/src/schema.rs
++++ b/src/schema.rs
+@@ -1,12 +1,13 @@
+ table! {
+     message (id) {
+         id -> BigInt,
+         session_id -> BigInt,
+         source -> Text,
+-        message -> Text,
++        #[sql_name = "message"]
++        text -> Text,
+         timestamp -> Timestamp,
+         sent -> Bool,
+         received -> Bool,
+         flags -> Integer,
+         attachment -> Nullable<Text>,
+         mime_type -> Nullable<Text>,

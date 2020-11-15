@@ -16,7 +16,7 @@ pub struct FetchSession {
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
-pub struct FetchMessage(pub i32);
+pub struct FetchMessage(pub i64);
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
@@ -24,7 +24,7 @@ pub struct FetchAllMessages(pub i64);
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
-pub struct DeleteMessage(pub i32, pub usize);
+pub struct DeleteMessage(pub i64, pub usize);
 
 #[derive(actix::Message, Debug)]
 #[rtype(result = "()")]
@@ -155,7 +155,7 @@ impl Handler<QueueMessage> for MessageActor {
                 session_id: None,
                 source: msg.source,
                 text: msg.message,
-                timestamp: chrono::Utc::now().timestamp_millis(),
+                timestamp: chrono::Utc::now().naive_utc(),
                 has_attachment,
                 mime_type: if has_attachment {
                     Some(

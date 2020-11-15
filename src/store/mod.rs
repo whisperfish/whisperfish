@@ -5,6 +5,7 @@ use crate::schema::message;
 use crate::schema::sentq;
 use crate::schema::session;
 
+use chrono::prelude::*;
 use diesel::debug_query;
 use diesel::expression::sql_literal::sql;
 use diesel::prelude::*;
@@ -24,7 +25,7 @@ pub struct Session {
     pub id: i64,
     pub source: String,
     pub message: String,
-    pub timestamp: i64,
+    pub timestamp: NaiveDateTime,
     pub sent: bool,
     pub received: bool,
     pub unread: bool,
@@ -42,7 +43,7 @@ pub struct Session {
 pub struct NewSession {
     pub source: String,
     pub message: String,
-    pub timestamp: i64,
+    pub timestamp: NaiveDateTime,
     pub sent: bool,
     pub received: bool,
     pub unread: bool,
@@ -57,11 +58,11 @@ pub struct NewSession {
 /// Message as it relates to the schema
 #[derive(Queryable, Debug)]
 pub struct Message {
-    pub id: i32,
+    pub id: i64,
     pub sid: i64,
     pub source: String,
     pub message: String, // NOTE: "text" in schema, doesn't apparently matter
-    pub timestamp: i64,
+    pub timestamp: NaiveDateTime,
     pub sent: bool,
     pub received: bool,
     pub flags: i32,
@@ -79,7 +80,7 @@ pub struct NewMessage {
     pub session_id: Option<i64>,
     pub source: String,
     pub text: String,
-    pub timestamp: i64,
+    pub timestamp: NaiveDateTime,
     pub sent: bool,
     pub received: bool,
     pub flags: i32,
@@ -685,7 +686,7 @@ impl Storage {
     /// Marks the message with a certain timestamp as received.
     ///
     /// Copy from Go's MarkMessageReceived.
-    pub fn mark_message_received(&self, timestamp: u64) -> Option<(Session, Message)> {
+    pub fn mark_message_received(&self, timestamp: NaiveDateTime) -> Option<(Session, Message)> {
         let message = self.fetch_message_by_timestamp(timestamp)?;
         log::trace!("mark_message_received: {:?}", message);
         let session = self.fetch_session(message.sid)?;
@@ -701,7 +702,7 @@ impl Storage {
                 session::table.filter(
                     session::id
                         .eq(&session.id)
-                        .and(session::timestamp.eq(timestamp as i64)),
+                        .and(session::timestamp.eq(timestamp)),
                 ),
             )
             .set(session::received.eq(true))
@@ -794,7 +795,7 @@ impl Storage {
             for msg_id in message::table
                 .select(message::columns::id)
                 .filter(message::columns::session_id.eq(id))
-                .load::<i32>(&*conn)
+                .load::<i64>(&*conn)
                 .unwrap()
             {
                 let query =
@@ -905,7 +906,7 @@ impl Storage {
         Some(msg)
     }
 
-    pub fn register_attachment(&mut self, mid: i32, path: &str, mime_type: &str) {
+    pub fn register_attachment(&mut self, mid: i64, path: &str, mime_type: &str) {
         // XXX: multiple attachments https://gitlab.com/rubdos/whisperfish/-/issues/11
 
         let db = self.db.lock();
@@ -996,7 +997,7 @@ impl Storage {
             .ok()
     }
 
-    pub fn fetch_message_by_timestamp(&self, ts: u64) -> Option<Message> {
+    pub fn fetch_message_by_timestamp(&self, ts: NaiveDateTime) -> Option<Message> {
         let db = self.db.lock();
         let conn = db.unwrap();
 
@@ -1021,7 +1022,7 @@ impl Storage {
                     "CASE WHEN sentq.message_id > 0 THEN 1 ELSE 0 END AS queued",
                 ),
             ))
-            .filter(message::columns::timestamp.eq(ts as i64));
+            .filter(message::columns::timestamp.eq(ts));
 
         let debug = debug_query::<diesel::sqlite::Sqlite, _>(&query);
         log::trace!("{}", debug.to_string());
@@ -1029,7 +1030,7 @@ impl Storage {
         query.first(&*conn).ok()
     }
 
-    pub fn fetch_message(&self, id: i32) -> Option<Message> {
+    pub fn fetch_message(&self, id: i64) -> Option<Message> {
         let db = self.db.lock();
         let conn = db.unwrap();
 
@@ -1095,7 +1096,7 @@ impl Storage {
         query.load::<Message>(&*conn).ok()
     }
 
-    pub fn delete_message(&self, id: i32) -> Option<usize> {
+    pub fn delete_message(&self, id: i64) -> Option<usize> {
         let db = self.db.lock();
         let conn = db.unwrap();
 
@@ -1123,7 +1124,7 @@ impl Storage {
             .unwrap();
     }
 
-    pub fn dequeue_message(&self, mid: i32) {
+    pub fn dequeue_message(&self, mid: i64) {
         let db = self.db.lock();
         let conn = db.unwrap();
 
