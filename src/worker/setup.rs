@@ -18,6 +18,8 @@ pub struct SetupWorker {
     clientFailed: qt_signal!(),
     setupComplete: qt_signal!(),
 
+    requiresCaptcha: qt_signal!(),
+
     phoneNumber: qt_property!(QString; NOTIFY setupChanged),
     registered: qt_property!(bool; NOTIFY setupChanged),
     locked: qt_property!(bool; NOTIFY setupChanged),
@@ -31,9 +33,22 @@ pub struct SetupWorker {
     setupChanged: qt_signal!(),
 
     pub config: Option<SignalConfig>,
+
+    /// Emitted when captcha has been filed
+    captchaFiled: qt_method!(fn(&mut self)),
+    captcha_filed_listeners: Vec<futures::channel::oneshot::Sender<()>>,
 }
 
 impl SetupWorker {
+    #[allow(non_snake_case)]
+    fn captchaFiled(&mut self) {
+        for listener in self.captcha_filed_listeners.drain(..) {
+            if let Err(_) = listener.send(()) {
+                log::warn!("Request for captcha fulfilled, but nobody listens.");
+            }
+        }
+    }
+
     pub async fn run(app: Rc<WhisperfishApp>) {
         log::info!("SetupWorker::run");
         let this = app.setup_worker.pinned();
@@ -206,19 +221,21 @@ impl SetupWorker {
         let mut rng = rand::thread_rng();
         let password: String = rng.sample_iter(&Alphanumeric).take(24).collect();
 
-        let res = app
+        while app
             .client_actor
             .send(super::client::Register {
                 e164: e164.clone(),
                 password: password.clone(),
                 use_voice: this.borrow().useVoice,
             })
-            .await??;
-
-        if res == super::client::RegistrationResponse::CaptchaRequired {
-            return Err(format_err!(
-                "Signal wants you to complete a captcha. Please file a bug report against Whisperfish."
-            ));
+            .await??
+            == super::client::RegistrationResponse::CaptchaRequired
+        {
+            log::info!("Captcha required");
+            let (tx, rx) = futures::channel::oneshot::channel();
+            this.borrow_mut().captcha_filed_listeners.push(tx);
+            this.borrow_mut().requiresCaptcha();
+            rx.await?;
         }
 
         let code: String = app
