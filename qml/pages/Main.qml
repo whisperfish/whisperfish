@@ -41,6 +41,9 @@ Page {
             //% "ERROR - Failed to setup Signal client"
             setupRemorse.execute(qsTrId("whisperfish-error-setup-client"), function() { console.log("Failed to setup Signal client") })
         }
+        onRequiresCaptcha: {
+            pageStack.push(Qt.resolvedUrl("RegistrationCaptcha.qml"))
+        }
     }
 
     RemorsePopup { id: setupRemorse }

@@ -899,5 +899,11 @@ Settings page share contacts</extracomment>
         <extracomment>Group members</extracomment>
         <translation>Groepsleden</translation>
     </message>
+    <message id="whisperfish-registration-captcha-title">
+        <location filename="../qml/pages/RegistrationCaptcha.qml" line="10"/>
+        <source>Registration Captcha</source>
+        <extracomment>Title for captcha web view</extracomment>
+        <translation>Registratiecaptcha</translation>
+    </message>
 </context>
 </TS>
