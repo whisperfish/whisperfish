@@ -59,8 +59,8 @@ impl ContactModel {
     }
 
     fn name(&self, source: QString) -> QString {
-        use crate::schema::contacts;
-        use crate::schema::phoneNumbers;
+        use crate::contacts_schema::contacts;
+        use crate::contacts_schema::phoneNumbers;
 
         let settings = Settings::default();
         let country_code = settings.get_string("country_code");
@@ -99,8 +99,8 @@ impl ContactModel {
 
     pub fn refresh(&mut self) {
         log::info!("Refreshing contacts");
-        use crate::schema::contacts;
-        use crate::schema::phoneNumbers;
+        use crate::contacts_schema::contacts;
+        use crate::contacts_schema::phoneNumbers;
 
         let settings = crate::settings::Settings::default();
         let country_code = settings.get_string("country_code");

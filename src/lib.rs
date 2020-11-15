@@ -17,6 +17,7 @@ pub mod model;
 
 pub mod worker;
 
+pub mod contacts_schema;
 pub mod schema;
 
 pub mod settings;
