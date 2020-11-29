@@ -1,5 +1,7 @@
 use rstest::rstest;
 
+use chrono::prelude::*;
+
 use harbour_whisperfish::store::{NewGroup, NewMessage, NewSession};
 
 mod common;
@@ -20,7 +22,7 @@ fn test_fetch_group_session(in_memory_db: InMemoryDb) {
     let session_config = NewSession {
         source: String::from("+358501234567"),
         message: String::from("whisperfish on paras:DDDD ja signal:DDD"),
-        timestamp: 0,
+        timestamp: Utc::now().naive_utc(),
         sent: true,
         received: false,
         unread: false,
@@ -53,7 +55,7 @@ fn test_fetch_session_with_other(in_memory_db: InMemoryDb) {
     let session_config_1 = NewSession {
         source: String::from("foo"),
         message: String::from("first"),
-        timestamp: 0,
+        timestamp: Utc::now().naive_utc(),
         sent: true,
         received: false,
         unread: false,
@@ -67,7 +69,7 @@ fn test_fetch_session_with_other(in_memory_db: InMemoryDb) {
     let session_config_2 = NewSession {
         source: String::from("31337"),
         message: String::from("31337"),
-        timestamp: 0,
+        timestamp: Utc::now().naive_utc(),
         sent: false,
         received: true,
         unread: false,
@@ -124,7 +126,7 @@ fn test_receive_messages_no_session(in_memory_db: InMemoryDb) {
             session_id: Some(1),
             source: String::from("a number"),
             text: String::from(format!("MSG {}", i)),
-            timestamp: i,
+            timestamp: Utc::now().naive_utc(),
             sent: false,
             received: true,
             flags: 0,
@@ -155,7 +157,7 @@ fn test_process_message_no_session_source(in_memory_db: InMemoryDb) {
         session_id: Some(1),
         source: String::from("a number"),
         text: String::from("MSG 1"),
-        timestamp: 0,
+        timestamp: Utc::now().naive_utc(),
         sent: false,
         received: true,
         flags: 0,
@@ -185,7 +187,7 @@ fn test_process_message_unresolved_session_source_resolved(in_memory_db: InMemor
         session_id: None,
         source: String::from("a number"),
         text: String::from("MSG 1"),
-        timestamp: 0,
+        timestamp: Utc::now().naive_utc(),
         sent: false,
         received: true,
         flags: 0,
@@ -213,7 +215,7 @@ fn test_process_message_exists_session_source(in_memory_db: InMemoryDb) {
     let session_config = NewSession {
         source: String::from("+358501234567"),
         message: String::from("whisperfish on paras:DDDD ja signal:DDD"),
-        timestamp: 0,
+        timestamp: Utc.timestamp(0, 0).naive_utc(),
         sent: true,
         received: false,
         unread: false,
@@ -230,14 +232,16 @@ fn test_process_message_exists_session_source(in_memory_db: InMemoryDb) {
     let sess1_res = in_memory_db.fetch_session(1);
     assert!(sess1_res.is_some());
     let sess1 = sess1_res.unwrap();
-    assert_eq!(sess1.timestamp, 0);
+    assert_eq!(sess1.timestamp, Utc.timestamp(0, 0).naive_utc());
 
-    for i in 1..11 {
+    for second in 1..11 {
+        let timestamp = Utc.timestamp(second, 0).naive_utc();
+
         let new_message = NewMessage {
             session_id: Some(1),
             source: String::from("+358501234567"),
             text: String::from("nyt joni ne velat!"),
-            timestamp: i,
+            timestamp,
             sent: false,
             received: true,
             flags: 0,
@@ -255,14 +259,14 @@ fn test_process_message_exists_session_source(in_memory_db: InMemoryDb) {
         let latest_sess = latest_sess_res.unwrap();
 
         assert_eq!(latest_sess.id, sess1.id);
-        assert_eq!(latest_sess.timestamp, i);
+        assert_eq!(latest_sess.timestamp, timestamp);
 
         // Test a message was created
         let res = in_memory_db.fetch_latest_message();
         assert!(res.is_some());
 
         let msg = res.unwrap();
-        assert_eq!(msg.timestamp, i);
+        assert_eq!(msg.timestamp, timestamp);
     }
 }
 
@@ -274,7 +278,7 @@ fn test_dev_message_update(in_memory_db: InMemoryDb) {
     let session_config = NewSession {
         source: String::from("+358501234567"),
         message: String::from("whisperfish on paras:DDDD ja signal:DDD"),
-        timestamp: 0,
+        timestamp: Utc::now().naive_utc(),
         sent: true,
         received: false,
         unread: false,
@@ -293,7 +297,7 @@ fn test_dev_message_update(in_memory_db: InMemoryDb) {
         session_id: Some(1),
         source: String::from("+358501234567"),
         text: String::from("nyt joni ne velat!"),
-        timestamp: 123,
+        timestamp: Utc::now().naive_utc(),
         sent: false,
         received: true,
         flags: 0,
@@ -316,7 +320,7 @@ fn test_dev_message_update(in_memory_db: InMemoryDb) {
         session_id: Some(1),
         source: String::from("+358501234567"),
         text: String::from("nyt joni ne velat!"),
-        timestamp: 123,
+        timestamp: Utc::now().naive_utc(),
         sent: false,
         received: true,
         flags: 0,
@@ -346,7 +350,7 @@ fn test_process_message_with_group(in_memory_db: InMemoryDb) {
         session_id: Some(1),
         source: String::from("a number"),
         text: String::from("MSG 1"),
-        timestamp: 0,
+        timestamp: Utc::now().naive_utc(),
         sent: false,
         received: true,
         flags: 0,
