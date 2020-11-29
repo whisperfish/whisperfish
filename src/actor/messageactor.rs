@@ -10,21 +10,21 @@ use qmetaobject::*;
 #[derive(actix::Message)]
 #[rtype(result = "()")]
 pub struct FetchSession {
-    pub id: i64,
+    pub id: i32,
     pub mark_read: bool,
 }
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
-pub struct FetchMessage(pub i64);
+pub struct FetchMessage(pub i32);
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
-pub struct FetchAllMessages(pub i64);
+pub struct FetchAllMessages(pub i32);
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
-pub struct DeleteMessage(pub i64, pub usize);
+pub struct DeleteMessage(pub i32, pub usize);
 
 #[derive(actix::Message, Debug)]
 #[rtype(result = "()")]

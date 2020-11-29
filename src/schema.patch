@@ -5,8 +5,8 @@ index b8c2c41..df73513 100644
 @@ -1,12 +1,13 @@
  table! {
      message (id) {
-         id -> BigInt,
-         session_id -> BigInt,
+         id -> Integer,
+         session_id -> Integer,
          source -> Text,
 -        message -> Text,
 +        #[sql_name = "message"]

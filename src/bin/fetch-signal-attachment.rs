@@ -34,7 +34,7 @@ struct Opt {
     ///
     /// Specify either this or `timestamp`
     #[structopt(short, long)]
-    message_id: i64,
+    message_id: i32,
 
     /// Extension for file
     #[structopt(short, long)]

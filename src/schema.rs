@@ -1,7 +1,7 @@
 table! {
     message (id) {
-        id -> BigInt,
-        session_id -> BigInt,
+        id -> Integer,
+        session_id -> Integer,
         source -> Text,
         #[sql_name = "message"]
         text -> Text,
@@ -18,14 +18,14 @@ table! {
 
 table! {
     sentq (message_id) {
-        message_id -> BigInt,
+        message_id -> Integer,
         timestamp -> Timestamp,
     }
 }
 
 table! {
     session (id) {
-        id -> BigInt,
+        id -> Integer,
         source -> Text,
         message -> Text,
         timestamp -> Timestamp,

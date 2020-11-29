@@ -41,7 +41,7 @@ pub struct MessageModel {
     peerName: qt_property!(QString; NOTIFY peerNameChanged),
     peerTel: qt_property!(QString; NOTIFY peerTelChanged),
     groupMembers: qt_property!(QString; NOTIFY groupMembersChanged),
-    sessionId: qt_property!(i64; NOTIFY sessionIdChanged),
+    sessionId: qt_property!(i32; NOTIFY sessionIdChanged),
     group: qt_property!(bool; NOTIFY groupChanged),
 
     peerIdentityChanged: qt_signal!(),
@@ -60,19 +60,19 @@ pub struct MessageModel {
             groupName: QString,
             attachment: QString,
             add: bool,
-        ) -> i64
+        ) -> i32
     ),
 
-    sendMessage: qt_method!(fn(&self, mid: i64)),
+    sendMessage: qt_method!(fn(&self, mid: i32)),
 
-    load: qt_method!(fn(&self, sid: i64, peer_name: QString)),
-    add: qt_method!(fn(&self, id: i64)),
+    load: qt_method!(fn(&self, sid: i32, peer_name: QString)),
+    add: qt_method!(fn(&self, id: i32)),
     remove: qt_method!(fn(&self, id: usize)),
 
     numericFingerprint: qt_method!(fn(&self, localId: QString, remoteId: QString) -> QString),
 
-    markSent: qt_method!(fn(&self, id: i64)),
-    markReceived: qt_method!(fn(&self, id: i64)),
+    markSent: qt_method!(fn(&self, id: i32)),
+    markReceived: qt_method!(fn(&self, id: i32)),
 }
 
 impl MessageModel {
@@ -109,7 +109,7 @@ impl MessageModel {
         groupName: QString,
         attachment: QString,
         _add: bool,
-    ) -> i64 {
+    ) -> i32 {
         let source = source.to_string();
         let message = message.to_string();
         let group = groupName.to_string();
@@ -134,7 +134,7 @@ impl MessageModel {
 
     #[allow(non_snake_case)]
     /// Called when a message should be queued to be sent to OWS
-    fn sendMessage(&mut self, mid: i64) {
+    fn sendMessage(&mut self, mid: i32) {
         Arbiter::spawn(
             self.client_actor
                 .as_mut()
@@ -156,7 +156,7 @@ impl MessageModel {
         // }
     }
 
-    fn load(&mut self, sid: i64, _peer_name: QString) {
+    fn load(&mut self, sid: i32, _peer_name: QString) {
         (self as &mut dyn QAbstractListModel).begin_reset_model();
 
         self.messages.clear();
@@ -181,7 +181,7 @@ impl MessageModel {
     /// This retrieves a `Message` by the given id and adds it to the UI.
     ///
     /// Note that the id argument was i64 in Go.
-    fn add(&mut self, id: i64) {
+    fn add(&mut self, id: i32) {
         Arbiter::spawn(
             self.actor
                 .as_ref()
@@ -230,7 +230,7 @@ impl MessageModel {
     ///
     /// Note that the id argument was i64 in Go.
     #[allow(non_snake_case)] // XXX: QML expects these as-is; consider changing later]
-    fn markSent(&mut self, id: i64) {
+    fn markSent(&mut self, id: i32) {
         self.mark(id, true, false)
     }
 
@@ -242,14 +242,14 @@ impl MessageModel {
     ///
     /// Note that the id argument was i64 in Go.
     #[allow(non_snake_case)] // XXX: QML expects these as-is; consider changing later]
-    fn markReceived(&mut self, id: i64) {
+    fn markReceived(&mut self, id: i32) {
         self.mark(id, false, true)
     }
 
     /// Mark a message sent or received in QML. No database involved.
     ///
     /// Note that the id argument was i64 in Go.
-    fn mark(&mut self, id: i64, mark_sent: bool, mark_received: bool) {
+    fn mark(&mut self, id: i32, mark_sent: bool, mark_received: bool) {
         if mark_sent && mark_received {
             log::trace!("Cannot mark message both sent and received");
             return;
@@ -346,7 +346,7 @@ impl MessageModel {
         (self as &mut dyn QAbstractListModel).end_insert_rows();
     }
 
-    pub fn handle_delete_message(&mut self, id: i64, idx: usize, del_rows: usize) {
+    pub fn handle_delete_message(&mut self, id: i32, idx: usize, del_rows: usize) {
         log::trace!(
             "handle_delete_message({}) deleted {} rows, remove qml idx {}",
             id,

@@ -18,9 +18,9 @@ pub struct SessionModel {
     content: Vec<Session>,
 
     count: qt_method!(fn(&self) -> usize),
-    add: qt_method!(fn(&self, id: i64, mark_read: bool)),
+    add: qt_method!(fn(&self, id: i32, mark_read: bool)),
     remove: qt_method!(fn(&self, idx: usize)),
-    removeById: qt_method!(fn(&self, id: i64)),
+    removeById: qt_method!(fn(&self, id: i32)),
     reload: qt_method!(fn(&self)),
 
     markRead: qt_method!(fn(&mut self, id: usize)),
@@ -34,7 +34,7 @@ impl SessionModel {
     }
 
     /// Add or replace a Session in the model.
-    fn add(&self, id: i64, mark_read: bool) {
+    fn add(&self, id: i32, mark_read: bool) {
         Arbiter::spawn(
             self.actor
                 .as_ref()
@@ -67,7 +67,7 @@ impl SessionModel {
 
     /// Removes session by id. This removes the session from the list model and
     /// deletes it from the database.
-    fn removeById(&self, id: i64) {
+    fn removeById(&self, id: i32) {
         let idx = self
             .content
             .iter()
@@ -99,7 +99,7 @@ impl SessionModel {
             .content
             .iter_mut()
             .enumerate()
-            .find(|(_, s)| s.id == id as i64)
+            .find(|(_, s)| s.id == id as i32)
         {
             Arbiter::spawn(
                 self.actor

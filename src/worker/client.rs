@@ -31,21 +31,21 @@ fn millis_to_naive_chrono(ts: u64) -> NaiveDateTime {
 #[derive(Message)]
 #[rtype(result = "()")]
 /// Enqueue a message on socket by MID
-pub struct SendMessage(pub i64);
+pub struct SendMessage(pub i32);
 
 #[derive(Message)]
 #[rtype(result = "()")]
-struct AttachmentDownloaded(i64);
+struct AttachmentDownloaded(i32);
 
 #[derive(QObject, Default)]
 #[allow(non_snake_case)]
 pub struct ClientWorker {
     base: qt_base_class!(trait QObject),
-    messageReceived: qt_signal!(sid: i64, mid: i64),
-    messageReceipt: qt_signal!(sid: i64, mid: i64),
-    notifyMessage: qt_signal!(sid: i64, source: QString, message: QString, isGroup: bool),
+    messageReceived: qt_signal!(sid: i32, mid: i32),
+    messageReceipt: qt_signal!(sid: i32, mid: i32),
+    notifyMessage: qt_signal!(sid: i32, source: QString, message: QString, isGroup: bool),
     promptResetPeerIdentity: qt_signal!(),
-    messageSent: qt_signal!(sid: i64, mid: i64, message: QString),
+    messageSent: qt_signal!(sid: i32, mid: i32, message: QString),
 
     connected: qt_property!(bool; NOTIFY connectedChanged),
     connectedChanged: qt_signal!(),
@@ -387,7 +387,7 @@ impl Actor for ClientActor {
 #[derive(Message)]
 #[rtype(result = "()")]
 struct FetchAttachment {
-    mid: i64,
+    mid: i32,
     dest: PathBuf,
     ptr: AttachmentPointer,
 }

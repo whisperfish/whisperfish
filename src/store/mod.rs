@@ -22,7 +22,7 @@ embed_migrations!();
 /// Session as it relates to the schema
 #[derive(Queryable, Debug, Clone)]
 pub struct Session {
-    pub id: i64,
+    pub id: i32,
     pub source: String,
     pub message: String,
     pub timestamp: NaiveDateTime,
@@ -58,8 +58,8 @@ pub struct NewSession {
 /// Message as it relates to the schema
 #[derive(Queryable, Debug)]
 pub struct Message {
-    pub id: i64,
-    pub sid: i64,
+    pub id: i32,
+    pub sid: i32,
     pub source: String,
     pub message: String, // NOTE: "text" in schema, doesn't apparently matter
     pub timestamp: NaiveDateTime,
@@ -77,7 +77,7 @@ pub struct Message {
 #[derive(Insertable)]
 #[table_name = "message"]
 pub struct NewMessage {
-    pub session_id: Option<i64>,
+    pub session_id: Option<i32>,
     pub source: String,
     pub text: String,
     pub timestamp: NaiveDateTime,
@@ -728,7 +728,7 @@ impl Storage {
             .ok()
     }
 
-    pub fn fetch_session(&self, sid: i64) -> Option<Session> {
+    pub fn fetch_session(&self, sid: i32) -> Option<Session> {
         let db = self.db.lock();
         let conn = db.unwrap();
 
@@ -761,7 +761,7 @@ impl Storage {
             .ok()
     }
 
-    pub fn delete_session(&self, id: i64) {
+    pub fn delete_session(&self, id: i32) {
         let db = self.db.lock();
         let conn = db.unwrap();
 
@@ -795,7 +795,7 @@ impl Storage {
             for msg_id in message::table
                 .select(message::columns::id)
                 .filter(message::columns::session_id.eq(id))
-                .load::<i64>(&*conn)
+                .load::<i32>(&*conn)
                 .unwrap()
             {
                 let query =
@@ -906,7 +906,7 @@ impl Storage {
         Some(msg)
     }
 
-    pub fn register_attachment(&mut self, mid: i64, path: &str, mime_type: &str) {
+    pub fn register_attachment(&mut self, mid: i32, path: &str, mime_type: &str) {
         // XXX: multiple attachments https://gitlab.com/rubdos/whisperfish/-/issues/11
 
         let db = self.db.lock();
@@ -1030,7 +1030,7 @@ impl Storage {
         query.first(&*conn).ok()
     }
 
-    pub fn fetch_message(&self, id: i64) -> Option<Message> {
+    pub fn fetch_message(&self, id: i32) -> Option<Message> {
         let db = self.db.lock();
         let conn = db.unwrap();
 
@@ -1063,7 +1063,7 @@ impl Storage {
         query.first(&*conn).ok()
     }
 
-    pub fn fetch_all_messages(&self, sid: i64) -> Option<Vec<Message>> {
+    pub fn fetch_all_messages(&self, sid: i32) -> Option<Vec<Message>> {
         let db = self.db.lock();
         let conn = db.unwrap();
 
@@ -1096,7 +1096,7 @@ impl Storage {
         query.load::<Message>(&*conn).ok()
     }
 
-    pub fn delete_message(&self, id: i64) -> Option<usize> {
+    pub fn delete_message(&self, id: i32) -> Option<usize> {
         let db = self.db.lock();
         let conn = db.unwrap();
 
@@ -1124,7 +1124,7 @@ impl Storage {
             .unwrap();
     }
 
-    pub fn dequeue_message(&self, mid: i64) {
+    pub fn dequeue_message(&self, mid: i32) {
         let db = self.db.lock();
         let conn = db.unwrap();
 

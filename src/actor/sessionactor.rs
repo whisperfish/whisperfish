@@ -23,7 +23,7 @@ pub struct MarkSessionRead {
 #[derive(actix::Message)]
 #[rtype(result = "()")]
 pub struct DeleteSession {
-    pub id: i64,
+    pub id: i32,
     pub idx: usize,
 }
 

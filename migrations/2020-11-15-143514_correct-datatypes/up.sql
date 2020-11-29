@@ -16,7 +16,7 @@
 
 -- diff: message -> TEXT, many NOT NULLs, introduction of BOOLEAN
 CREATE TABLE new_session (
-    id BIGINT PRIMARY KEY NOT NULL,
+    id INTEGER PRIMARY KEY NOT NULL,
     source TEXT NOT NULL,
     message TEXT NOT NULL,
     timestamp TIMESTAMP NOT NULL,
@@ -43,8 +43,8 @@ ALTER TABLE new_session RENAME TO session;
 
 -- diff: most NOT NULL, source and mime_type become TEXT
 CREATE TABLE new_message (
-    id BIGINT PRIMARY KEY NOT NULL,
-    session_id BIGINT NOT NULL,
+    id INTEGER PRIMARY KEY NOT NULL,
+    session_id INTEGER NOT NULL,
     source TEXT NOT NULL,
     message TEXT NOT NULL,
     timestamp TIMESTAMP NOT NULL,
@@ -73,7 +73,7 @@ ALTER TABLE new_message RENAME TO message;
 
 -- diff: NOT NULL
 CREATE TABLE new_sentq (
-    message_id BIGINT PRIMARY KEY NOT NULL,
+    message_id INTEGER PRIMARY KEY NOT NULL,
     timestamp TIMESTAMP NOT NULL,
 
     FOREIGN KEY(message_id) REFERENCES message(id)
