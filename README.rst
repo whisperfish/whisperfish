@@ -114,6 +114,8 @@ By Whisperfish 1.0.0, we want to use the real SailfishOS SDK, since it offers Ru
    sdk-manage develpkg install SailfishOS-latest-armv7hl sailfish-components-webview-qt5 qt5-qtwebsockets-devel openssl-devel dbus-devel
 
 5. Make a copy of ``dotenv.example`` to ``.env``, adapt it to your configuration and source it.
+   Note you can make the ``run.sh`` script log to a file by following the example instructions,
+   with the warning that some of the logged information is sensitive.
 
 6. For building on the host, ie. running ``cargo test`` or whatever you may desire, the Debian
    requirements are in ``Dockerfile.builder``, reproduced here::

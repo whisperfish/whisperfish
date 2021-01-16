@@ -39,5 +39,9 @@ export SSH_TARGET=xperia.rubdos.be
 # Architecture of the target device when using ./run.sh script
 export TARGET_ARCH=armv7-unknown-linux-gnueabihf
 
+# Make run.sh log to a file, set to 1 to enable at your own peril
+# as the logfile will contain sensitive information
+export WF_RUNSH_LOG_TO_FILE=0
+
 # Overload potential Python virtualenv support in your shell prompt
 # export VIRTUAL_ENV=whisperfish
