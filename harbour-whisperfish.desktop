@@ -6,4 +6,8 @@ Name=Whisperfish
 Exec=invoker --type=qtquick2 --single-instance /usr/bin/harbour-whisperfish %u
 Icon=harbour-whisperfish
 X-Desktop-File-Install-Version=0.20
+
 MimeType=x-scheme-handler/signalcaptcha;
+X-Maemo-Service=be.rubdos.whisperfish.captcha
+X-Maemo-Method=be.rubdos.whisperfish.captcha.handleToken
+X-Maemo-Object-Path=/be/rubdos/whisperfish

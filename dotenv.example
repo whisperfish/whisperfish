@@ -24,6 +24,9 @@ export MER_ARCH=armv7hl
 # we can generate these flags in build.rs
 export RUSTFLAGS="-C link-args=-Wl,-rpath-link,$MERSDK/targets/$MER_TARGET-$MER_ARCH/usr/lib64/,-rpath-link,$MERSDK/targets/$MER_TARGET-$MER_ARCH/usr/lib/,-rpath-link,$MERSDK/targets/$MER_TARGET-$MER_ARCH/lib/,-rpath-link,$MERSDK/targets/$MER_TARGET-$MER_ARCH/lib64/"
 
+# https://github.com/diwic/dbus-rs/blob/master/libdbus-sys/cross_compile.md
+export PKG_CONFIG_ALLOW_CROSS=1
+
 # If you want to use the included ./run.sh script,
 # set this variable to your hostname or IP address of your SailfishOS device.
 export SSH_TARGET=xperia.rubdos.be

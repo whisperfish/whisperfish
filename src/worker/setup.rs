@@ -98,7 +98,7 @@ impl SetupWorker {
         let (tx, rx) = futures::channel::oneshot::channel();
         this.borrow_mut().captcha_filed_listeners.push(tx);
         this.borrow_mut().requiresCaptcha();
-        rx.await;
+        rx.await.unwrap();
         // XXX XX DEBUG
 
         if !this.borrow().registered {

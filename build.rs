@@ -291,7 +291,7 @@ fn main() {
     } else {
         &[]
     };
-    let libs = ["EGL"];
+    let libs = ["EGL", "dbus-1"];
     for lib in libs.iter().chain(sailfish_libs.iter()) {
         println!("cargo:rustc-link-lib{}={}", macos_lib_search, lib);
     }

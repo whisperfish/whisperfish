@@ -1,9 +1,9 @@
 import QtQuick 2.2
 import Sailfish.Silica 1.0
-import Sailfish.WebView 1.0
+import org.nemomobile.dbus 2.0
 
-WebViewPage {
-    id: webviewpage
+Page {
+    id: captchaPage
 
     allowedOrientations: Orientation.All
 
@@ -21,18 +21,14 @@ WebViewPage {
 
 	}
 
-    WebViewFlickable {
-		anchors {
-			top: parent.top//titleField.bottom
-			left: parent.left
-			right: parent.right
-			bottom: parent.bottom
-		}
+    DBusAdaptor {
+        service: "be.rubdos.whisperfish.captcha"
+        path: "/be/rubdos/whisperfish"
+        iface: "be.rubdos.whisperfish.captcha"
 
-        WebView {
-            anchors.fill: parent
-            active: true
-			url: "https://signalcaptchas.org/registration/generate.html"
+        function handleToken(tokenUrl) {
+            console.log("Got a token URL:", tokenUrl);
+            titleField.text = tokenUrl;
         }
     }
 }

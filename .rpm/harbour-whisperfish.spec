@@ -60,3 +60,6 @@ rm -rf %{buildroot}
 %{_datadir}/applications/%{name}.desktop
 %{_datadir}/icons/hicolor/*/apps/%{name}.png
 %{_datadir}/lipstick/notificationcategories/%{name}-message.conf
+
+%post
+/usr/bin/update-desktop-database -q

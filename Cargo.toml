@@ -14,6 +14,7 @@ actix = "0.11.0-beta"
 rand = "0.8"
 aes = "0.6.0"
 block-modes = "0.7.0"
+dbus = "0.9"
 hmac = "0.10.0"
 sha2 = "0.9.0"
 pbkdf2 = { version = "0.6.0", default-features = false }
@@ -100,6 +101,7 @@ harbour-whisperfish = { path = "/usr/bin/harbour-whisperfish" }
 
 [package.metadata.rpm.files]
 "../harbour-whisperfish.desktop" = { path = "/usr/share/applications/harbour-whisperfish.desktop" }
+# "../harbour-whisperfish-helper.desktop" = { path = "/usr/share/applications/harbour-whisperfish-helper.desktop" }
 "../harbour-whisperfish-message.conf" = { path = "/usr/share/lipstick/notificationcategories/harbour-whisperfish-message.conf" }
 "../icons/86x86/harbour-whisperfish.png" = { path = "/usr/share/icons/hicolor/86x86/apps/harbour-whisperfish.png" }
 
