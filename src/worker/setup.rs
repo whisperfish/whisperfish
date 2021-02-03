@@ -94,6 +94,13 @@ impl SetupWorker {
         this.borrow_mut().phoneNumber = config.tel.unwrap_or("".into()).into();
         this.borrow_mut().uuid = config.uuid.unwrap_or("".into()).into();
 
+        // XXX XX DEBUG
+        let (tx, rx) = futures::channel::oneshot::channel();
+        this.borrow_mut().captcha_filed_listeners.push(tx);
+        this.borrow_mut().requiresCaptcha();
+        rx.await;
+        // XXX XX DEBUG
+
         if !this.borrow().registered {
             if let Err(e) = SetupWorker::register(app.clone()).await {
                 log::error!("Error in registration: {}", e);
