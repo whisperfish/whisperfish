@@ -1,28 +1,38 @@
 import QtQuick 2.2
 import Sailfish.Silica 1.0
+import Sailfish.WebView 1.0
 
-Page {
-    id: captchaPage
-    objectName: "captchaPage"
+WebViewPage {
+    id: webviewpage
 
-    //: Title for captcha web view
-    //% "Registration Captcha"
-    title: qsTrId("whisperfish-registration-captcha-title")
+    allowedOrientations: Orientation.All
 
-    Component {
-        id: webViewComponent
+	Label {
+		id: titleField
+		anchors {
+			left: parent.left
+			right: parent.right
+			top: parent.top
+		}
 
-        SilicaWebView {
-            id: webView
+		//: Title for captcha web view
+		//% "Registration Captcha"
+		text: qsTrId("whisperfish-registration-captcha-title")
 
-            url: "https://signalcaptchas.org/registration/generate.html"
+	}
 
-            experimental.overview: true
-            experimental.customLayoutWidth: webViewPage.width / (0.5 + QMLUtils.pScale)
+    WebViewFlickable {
+		anchors {
+			top: parent.top//titleField.bottom
+			left: parent.left
+			right: parent.right
+			bottom: parent.bottom
+		}
 
-            onLoadingChanged: {
-                busy = loading
-            }
+        WebView {
+            anchors.fill: parent
+            active: true
+			url: "https://signalcaptchas.org/registration/generate.html"
         }
     }
 }

@@ -287,7 +287,7 @@ fn main() {
     }
 
     let sailfish_libs: &[&str] = if cross_compile {
-        &["nemonotifications", "sailfishapp"]
+        &["nemonotifications", "sailfishapp", "qt5embedwidget"]
     } else {
         &[]
     };
