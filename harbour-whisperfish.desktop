@@ -3,11 +3,6 @@ Encoding=UTF-8
 Version=1.0
 Type=Application
 Name=Whisperfish
-Exec=invoker --type=qtquick2 --single-instance /usr/bin/harbour-whisperfish %u
+Exec=invoker --type=qtquick2 --single-instance /usr/bin/harbour-whisperfish
 Icon=harbour-whisperfish
 X-Desktop-File-Install-Version=0.20
-
-MimeType=x-scheme-handler/signalcaptcha;
-X-Maemo-Service=be.rubdos.whisperfish.captcha
-X-Maemo-Method=be.rubdos.whisperfish.captcha.handleToken
-X-Maemo-Object-Path=/be/rubdos/whisperfish

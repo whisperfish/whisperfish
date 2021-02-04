@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Whisperfish Captcha Helper
+Exec=/usr/bin/harbour-whisperfish %u
+NoDisplay=true
+Icon=harbour-whisperfish
+X-MeeGo-Logical-Id=whisperfish-ap-name
+X-MeeGo-Translation-Catalog=harbour-whisperfish
+Comment=Sailfish MimeType Handler for Signal captchas in Whisperfish
+MimeType=x-scheme-handler/signalcaptcha;
+X-Maemo-Service=be.rubdos.whisperfish.captcha
+X-Maemo-Method=be.rubdos.whisperfish.captcha.handleToken
+X-Maemo-Object-Path=/be/rubdos/whisperfish
+X-Desktop-File-Install-Version=0.23

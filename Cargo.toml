@@ -101,7 +101,7 @@ harbour-whisperfish = { path = "/usr/bin/harbour-whisperfish" }
 
 [package.metadata.rpm.files]
 "../harbour-whisperfish.desktop" = { path = "/usr/share/applications/harbour-whisperfish.desktop" }
-# "../harbour-whisperfish-helper.desktop" = { path = "/usr/share/applications/harbour-whisperfish-helper.desktop" }
+"../harbour-whisperfish-helper.desktop" = { path = "/usr/share/applications/harbour-whisperfish-helper.desktop" }
 "../harbour-whisperfish-message.conf" = { path = "/usr/share/lipstick/notificationcategories/harbour-whisperfish-message.conf" }
 "../icons/86x86/harbour-whisperfish.png" = { path = "/usr/share/icons/hicolor/86x86/apps/harbour-whisperfish.png" }
 
