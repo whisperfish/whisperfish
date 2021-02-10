@@ -33,7 +33,7 @@ cargo-rpm --help
 cargo rpm build --verbose --target $RUST_ARCH
 
 # Only upload on tags or master
-if [ -z "$CI_COMMIT_TAG" ] || [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
+if [ -n "$CI_COMMIT_TAG" ] || [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
     RPM_PATH=(target/*/release/rpmbuild/RPMS/*/*.rpm)
     RPM_PATH="${RPM_PATH[0]}"
     RPM=$(basename $RPM_PATH)
