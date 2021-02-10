@@ -86,6 +86,9 @@ opt-level = 0
 [profile.dev.package.qmetaobject]
 opt-level = 0
 
+[profile.release]
+lto = "thin"
+
 [package.metadata.rpm]
 # DOES NOT get overwritten through `cargo rpm build --target xxx`,
 # means we can *lie* to RPM for issue #24.
