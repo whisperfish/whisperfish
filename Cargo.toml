@@ -87,7 +87,8 @@ opt-level = 0
 opt-level = 0
 
 [profile.release]
-lto = "fat"
+# This flag is set in CI using RUSTFLAGS
+# lto = "fat"
 
 [package.metadata.rpm]
 # DOES NOT get overwritten through `cargo rpm build --target xxx`,
