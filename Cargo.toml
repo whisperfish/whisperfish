@@ -87,7 +87,7 @@ opt-level = 0
 opt-level = 0
 
 [profile.release]
-lto = "thin"
+lto = "fat"
 
 [package.metadata.rpm]
 # DOES NOT get overwritten through `cargo rpm build --target xxx`,
