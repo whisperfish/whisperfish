@@ -208,4 +208,16 @@ ApplicationWindow
         showMainPage()
         pageStack.push(Qt.resolvedUrl("pages/NewMessage.qml"), { }, operationType)
     }
+
+    function __translation_stub() {
+        // QML-lupdate mirror for harbour-whisperfish.profile
+
+        //: Permission for Whisperfish data storage
+        //% "Whisperfish data storage"
+        var f = qsTrId("permission-la-data");
+
+        //: Permission description for Whisperfish data storage
+        //% "Store configuration and messages"
+        var f = qsTrId("permission-la-data_description");
+    }
 }
