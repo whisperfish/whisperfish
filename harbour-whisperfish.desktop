@@ -5,6 +5,11 @@ Type=Application
 Name=Whisperfish
 X-Nemo-Application-Type=qtquick2
 X-Nemo-Single-Instance=no
-Exec=harbour-whisperfish
+Exec=/usr/bin/sailjail -p harbour-whisperfish.desktop /usr/bin/harbour-whisperfish
 Icon=harbour-whisperfish
 X-Desktop-File-Install-Version=0.20
+
+[X-Sailjail]
+Permissions=Internet;Pictures;Contacts;Notifications;Phone;Privileged;Mozilla;MediaIndexing
+OrganizationName=be.rubdos
+ApplicationName=harbour-whisperfish

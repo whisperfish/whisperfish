@@ -19,6 +19,8 @@ Requires:   nemo-qml-plugin-notifications-qt5
 Requires:   sailfish-components-webview-qt5
 Requires:   openssl-libs
 Requires:   dbus
+Requires:   sailjail
+Requires:   sailjail-permissions
 
 # This comment lists SailfishOS-version specific code,
 # for future reference, to track the reasoning behind the minimum SailfishOS version.
