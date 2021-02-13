@@ -63,6 +63,7 @@ ApplicationWindow
             //% "New Message"
             m.body = qsTrId("whisperfish-notification-default-message")
         }
+        m.appName = "Whisperfish"
         m.category = "harbour-whisperfish-message"
         m.previewSummary = name
         m.previewBody = m.body
