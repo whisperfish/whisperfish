@@ -107,6 +107,7 @@ harbour-whisperfish = { path = "/usr/bin/harbour-whisperfish" }
 
 [package.metadata.rpm.files]
 "../harbour-whisperfish.desktop" = { path = "/usr/share/applications/harbour-whisperfish.desktop" }
+"../rpm/whisperfish-launcher.sh" = { path = "/usr/bin/whisperfish-launcher", mode = "755" }
 "../harbour-whisperfish-message.conf" = { path = "/usr/share/lipstick/notificationcategories/harbour-whisperfish-message.conf" }
 "../harbour-whisperfish.profile" = { path = "/etc/sailjail/permissions/harbour-whisperfish.profile" }
 "../icons/86x86/harbour-whisperfish.png" = { path = "/usr/share/icons/hicolor/86x86/apps/harbour-whisperfish.png" }
