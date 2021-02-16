@@ -25,7 +25,7 @@ fn qmake_query(var: &str) -> String {
     let qmake = std::env::var("QMAKE").unwrap_or("qmake".to_string());
     String::from_utf8(
         Command::new(qmake)
-            .env("QT_SELECT", "qt5")
+            .env("QT_SELECT", "5")
             .args(&["-query", var])
             .output()
             .expect("Failed to execute qmake. Make sure 'qmake' is in your path")
@@ -428,8 +428,10 @@ fn main() {
         );
     }
 
-    let sailfish_libs: &[&str] = if cross_compile {
-        &["nemonotifications", "sailfishapp", "qt5embedwidget"]
+    let sailfish_libs: &[&str] = if true {
+        // I was not able to get ld link against `nemonotificationas` in the sfdk build env
+        //&["nemonotifications", "sailfishapp", "qt5embedwidget"]
+        &["sailfishapp", "qt5embedwidget"]
     } else {
         &[]
     };
