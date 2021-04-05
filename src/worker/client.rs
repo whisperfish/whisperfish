@@ -74,7 +74,7 @@ pub struct ClientWorker {
 pub struct ClientActor {
     inner: QObjectBox<ClientWorker>,
 
-    credentials: Option<Credentials>,
+    credentials: Option<ServiceCredentials>,
     local_addr: Option<ServiceAddress>,
     storage: Option<Storage>,
     cipher: Option<ServiceCipher>,
@@ -118,7 +118,10 @@ impl ClientActor {
         AwcPushService::new(service_cfg, None, &useragent)
     }
 
-    fn authenticated_service_with_credentials(&self, credentials: Credentials) -> AwcPushService {
+    fn authenticated_service_with_credentials(
+        &self,
+        credentials: ServiceCredentials,
+    ) -> AwcPushService {
         let useragent = format!("Whisperfish-{}", env!("CARGO_PKG_VERSION"));
         let service_cfg = self.service_cfg();
 
@@ -828,7 +831,7 @@ impl Handler<StorageReady> for ClientActor {
         Box::pin(request_password.into_actor(self).map(
             move |(uuid, phonenumber, password, signaling_key), act, ctx| {
                 // Store credentials
-                let credentials = Credentials {
+                let credentials = ServiceCredentials {
                     uuid,
                     phonenumber: phonenumber.clone(),
                     password: Some(password),
@@ -993,7 +996,7 @@ impl Handler<Register> for ClientActor {
             captcha,
         } = reg;
 
-        let push_service = self.authenticated_service_with_credentials(Credentials {
+        let push_service = self.authenticated_service_with_credentials(ServiceCredentials {
             uuid: None,
             phonenumber: phonenumber.clone(),
             password: Some(password),
@@ -1048,7 +1051,7 @@ impl Handler<ConfirmRegistration> for ClientActor {
             libsignal_protocol::generate_registration_id(&self.context, 0).unwrap();
         log::trace!("registration_id: {}", registration_id);
 
-        let mut push_service = self.authenticated_service_with_credentials(Credentials {
+        let mut push_service = self.authenticated_service_with_credentials(ServiceCredentials {
             uuid: None,
             phonenumber,
             password: Some(password),

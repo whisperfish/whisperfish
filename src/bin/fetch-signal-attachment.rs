@@ -94,7 +94,7 @@ async fn main() -> Result<(), Error> {
         .to_string();
     log::info!("E164: {}", e164);
     let signaling_key = Some(storage.signaling_key().await.unwrap());
-    let credentials = Credentials {
+    let credentials = ServiceCredentials {
         uuid,
         phonenumber,
         password: None,
