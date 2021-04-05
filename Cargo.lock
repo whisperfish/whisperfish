@@ -193,15 +193,6 @@ checksum = "ee2a4ec343196209d6594e19543ae87a39f96d5534d7174822a3ad825dd6ed7e"
 
 [[package]]
 name = "aead"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cf01b9b56e767bb57b94ebf91a58b338002963785cdd7013e21c0d4679471e4"
-dependencies = [
- "generic-array 0.12.4",
-]
-
-[[package]]
-name = "aead"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fc95d1bdb8e6666b2b217308eeeb09f2d6728d104be3e31916cc74d15420331"
@@ -211,23 +202,12 @@ dependencies = [
 
 [[package]]
 name = "aes"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "54eb1d8fe354e5fc611daf4f2ea97dd45a765f4f1e4512306ec183ae2e8f20c9"
-dependencies = [
- "aes-soft 0.3.3",
- "aesni 0.6.0",
- "block-cipher-trait",
-]
-
-[[package]]
-name = "aes"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "884391ef1066acaa41e766ba8f596341b96e93ce34f9a43e7d24bf0a0eaf0561"
 dependencies = [
- "aes-soft 0.6.4",
- "aesni 0.10.0",
+ "aes-soft",
+ "aesni",
  "cipher",
 ]
 
@@ -237,8 +217,8 @@ version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7729c3cde54d67063be556aeac75a81330d802f0259500ca40cb52967f975763"
 dependencies = [
- "aes-soft 0.6.4",
- "aesni 0.10.0",
+ "aes-soft",
+ "aesni",
  "cipher",
  "ctr",
 ]
@@ -249,8 +229,8 @@ version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5278b5fabbb9bd46e24aa69b2fdea62c99088e0a950a9be40e3e0101298f88da"
 dependencies = [
- "aead 0.3.2",
- "aes 0.6.0",
+ "aead",
+ "aes",
  "cipher",
  "ctr",
  "ghash",
@@ -259,27 +239,17 @@ dependencies = [
 
 [[package]]
 name = "aes-gcm-siv"
-version = "0.4.1"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed8c21a21a0afb20aeb41328e980939e99fa02f136ae7317665e892d2760912a"
+checksum = "202a43562bc3e159554b7590f5fd1f432d9e8de0cc2c2ce4bb8d194a34b3b0f3"
 dependencies = [
- "aead 0.2.0",
- "aes 0.3.2",
- "block-cipher-trait",
- "polyval 0.3.3",
+ "aead",
+ "aes",
+ "cipher",
+ "ctr",
+ "polyval",
  "subtle 2.4.0",
  "zeroize",
-]
-
-[[package]]
-name = "aes-soft"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfd7e7ae3f9a1fb5c03b389fc6bb9a51400d0c13053f0dca698c832bfd893a0d"
-dependencies = [
- "block-cipher-trait",
- "byteorder",
- "opaque-debug 0.2.3",
 ]
 
 [[package]]
@@ -290,16 +260,6 @@ checksum = "be14c7498ea50828a38d0e24a765ed2effe92a705885b57d029cd67d45744072"
 dependencies = [
  "cipher",
  "opaque-debug 0.3.0",
-]
-
-[[package]]
-name = "aesni"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f70a6b5f971e473091ab7cfb5ffac6cde81666c4556751d8d5620ead8abf100"
-dependencies = [
- "block-cipher-trait",
- "opaque-debug 0.2.3",
 ]
 
 [[package]]
@@ -490,15 +450,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4152116fd6e9dadb291ae18fc1ec3575ed6d84c29642d97890f4b4a3417297e4"
 dependencies = [
  "generic-array 0.14.4",
-]
-
-[[package]]
-name = "block-cipher-trait"
-version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c924d49bd09e7c06003acda26cd9742e796e34282ec6c1189404dee0c1f4774"
-dependencies = [
- "generic-array 0.12.4",
 ]
 
 [[package]]
@@ -1189,7 +1140,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97304e4cd182c3846f7575ced3890c53012ce534ad9114046b0a9e00bb30a375"
 dependencies = [
  "opaque-debug 0.3.0",
- "polyval 0.4.5",
+ "polyval",
 ]
 
 [[package]]
@@ -1226,7 +1177,7 @@ dependencies = [
  "actix-rt",
  "actix-threadpool",
  "actix_derive",
- "aes 0.6.0",
+ "aes",
  "block-modes",
  "cc",
  "chrono",
@@ -1483,7 +1434,7 @@ name = "libsignal-protocol"
 version = "0.1.1-alpha.0"
 source = "git+https://github.com/Michael-F-Bryan/libsignal-protocol-rs#0fdf7c30ff0e1f207ac219252e7e961b5e14b937"
 dependencies = [
- "aes 0.6.0",
+ "aes",
  "aes-ctr",
  "backtrace",
  "base64",
@@ -1511,7 +1462,7 @@ name = "libsignal-service"
 version = "0.1.0"
 source = "git+https://github.com/Michael-F-Bryan/libsignal-service-rs?branch=master#3e5d4951492fa51b3a6a8049531e8b4646042550"
 dependencies = [
- "aes 0.6.0",
+ "aes",
  "aes-ctr",
  "aes-gcm",
  "async-trait",
@@ -1946,23 +1897,13 @@ dependencies = [
 
 [[package]]
 name = "polyval"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ec3341498978de3bfd12d1b22f1af1de22818f5473a11e8a6ef997989e3a212"
-dependencies = [
- "cfg-if 0.1.10",
- "universal-hash 0.3.0",
-]
-
-[[package]]
-name = "polyval"
 version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eebcc4aa140b9abd2bc40d9c3f7ccec842679cd79045ac3a7ac698c1a064b7cd"
 dependencies = [
  "cpuid-bool 0.2.0",
  "opaque-debug 0.3.0",
- "universal-hash 0.4.0",
+ "universal-hash",
 ]
 
 [[package]]
@@ -3028,16 +2969,6 @@ checksum = "f7fe0bb3479651439c9112f72b6c505038574c9fbb575ed1bf3b797fa39dd564"
 
 [[package]]
 name = "universal-hash"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df0c900f2f9b4116803415878ff48b63da9edb268668e08cf9292d7503114a01"
-dependencies = [
- "generic-array 0.12.4",
- "subtle 2.4.0",
-]
-
-[[package]]
-name = "universal-hash"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8326b2c654932e3e4f9196e69d08fdf7cfd718e1dc6f66b347e6024a0c961402"
@@ -3283,9 +3214,9 @@ checksum = "81a974bcdd357f0dca4d41677db03436324d45a4c9ed2d0b873a5a360ce41c36"
 [[package]]
 name = "zkgroup"
 version = "0.7.2"
-source = "git+https://github.com/signalapp/zkgroup#d3cb5dbd3098f1e8f82864974eda20c25f5d7d24"
+source = "git+https://gitlab.com/rubdos/zkgroup-whisperfish?branch=whisperfork#873af13879ca914f3f38b6d2893a9168a0a8bb44"
 dependencies = [
- "aead 0.2.0",
+ "aead",
  "aes-gcm-siv",
  "bincode",
  "curve25519-dalek",
