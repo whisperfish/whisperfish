@@ -1,7 +1,7 @@
 use crate::gui::StorageReady;
 use crate::model::message::MessageModel;
 use crate::sfos::SailfishApp;
-use crate::store::{orm, NewGroupV1, Storage};
+use crate::store::{orm, GroupV1, Storage};
 use crate::worker::ClientActor;
 
 use actix::prelude::*;
@@ -239,7 +239,7 @@ impl Handler<QueueGroupMessage> for MessageActor {
                 is_read: true,
             },
             // XXX this "API" is horrible.
-            Some(NewGroupV1 {
+            Some(GroupV1 {
                 id: hex::decode(msg.group_id).expect("valid group id"),
                 name: msg.group_name,
                 members: Vec::new(),

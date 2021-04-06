@@ -94,7 +94,7 @@ pub struct NewMessage {
 
 /// ID-free Group model for insertions
 #[derive(Clone, Debug)]
-pub struct NewGroupV1 {
+pub struct GroupV1 {
     pub id: Vec<u8>,
     /// Group name
     pub name: String,
@@ -638,7 +638,7 @@ impl Storage {
     pub fn process_message(
         &self,
         mut new_message: NewMessage,
-        group: Option<NewGroupV1>,
+        group: Option<GroupV1>,
     ) -> (orm::Message, orm::Session) {
         let session = if let Some(group) = group.as_ref() {
             self.fetch_or_insert_session_by_group_v1(group)
@@ -1363,7 +1363,7 @@ impl Storage {
             .expect("a session has been inserted")
     }
 
-    pub fn fetch_or_insert_session_by_group_v1(&self, group: &NewGroupV1) -> orm::Session {
+    pub fn fetch_or_insert_session_by_group_v1(&self, group: &GroupV1) -> orm::Session {
         let db = self.db.lock();
 
         let group_id = hex::encode(&group.id);

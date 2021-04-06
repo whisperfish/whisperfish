@@ -217,7 +217,7 @@ impl ClientActor {
                 t => log::warn!("Unhandled group type {:?}", t),
             }
 
-            Some(crate::store::NewGroupV1 {
+            Some(crate::store::GroupV1 {
                 id: group.id().to_vec(),
                 name: group.name().to_string(),
                 members: group.members_e164.clone(),
