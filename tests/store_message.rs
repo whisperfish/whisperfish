@@ -45,7 +45,7 @@ async fn insert_and_fetch_group_session(storage: impl Future<Output = InMemoryDb
     let group_id = hex::decode(group_id_hex).unwrap();
 
     let group = NewGroupV1 {
-        id: &group_id,
+        id: group_id,
         name: "Spurdospärde".into(),
         members: vec!["+32474".into(), "+32475".into()],
     };
@@ -296,7 +296,7 @@ async fn process_inbound_group_message_without_sender(storage: impl Future<Outpu
     // Here the client worker will have resolved a group exists
     let group_id = vec![42u8, 126u8, 71u8, 75u8];
     let group = NewGroupV1 {
-        id: &group_id,
+        id: group_id,
         name: String::from("Spurdospärde"),
         members: vec![
             String::from("Joni"),
@@ -342,7 +342,7 @@ async fn process_outbound_group_message_without_sender(storage: impl Future<Outp
     // Here the client worker will have resolved a group exists
     let group_id = vec![42u8, 126u8, 71u8, 75u8];
     let group = NewGroupV1 {
-        id: &group_id,
+        id: group_id,
         name: String::from("Spurdospärde"),
         members: vec![
             String::from("Joni"),
@@ -388,7 +388,7 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
     // Here the client worker will have resolved a group exists
     let group_id = vec![42u8, 126u8, 71u8, 75u8];
     let group = NewGroupV1 {
-        id: &group_id,
+        id: group_id,
         name: String::from("Spurdospärde"),
         members: vec![
             String::from("Joni"),

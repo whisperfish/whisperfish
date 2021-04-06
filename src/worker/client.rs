@@ -218,7 +218,7 @@ impl ClientActor {
             }
 
             Some(crate::store::NewGroupV1 {
-                id: group.id(),
+                id: group.id().to_vec(),
                 name: group.name().to_string(),
                 members: group.members_e164.clone(),
             })

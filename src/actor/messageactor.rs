@@ -240,7 +240,7 @@ impl Handler<QueueGroupMessage> for MessageActor {
             },
             // XXX this "API" is horrible.
             Some(NewGroupV1 {
-                id: &hex::decode(msg.group_id).expect("valid group id"),
+                id: hex::decode(msg.group_id).expect("valid group id"),
                 name: msg.group_name,
                 members: Vec::new(),
             }),
