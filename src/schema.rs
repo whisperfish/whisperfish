@@ -45,6 +45,26 @@ table! {
     group_v1s (id) {
         id -> Text,
         name -> Text,
+        expected_v2_id -> Nullable<Text>,
+    }
+}
+
+table! {
+    group_v2_members (group_v2_id, recipient_id) {
+        group_v2_id -> Text,
+        recipient_id -> Integer,
+        member_since -> Timestamp,
+        joined_at_revision -> Integer,
+        role -> Integer,
+    }
+}
+
+table! {
+    group_v2s (id) {
+        id -> Text,
+        name -> Text,
+        master_key -> Text,
+        revision -> Integer,
     }
 }
 
@@ -120,6 +140,7 @@ table! {
         id -> Integer,
         direct_message_recipient_id -> Nullable<Integer>,
         group_v1_id -> Nullable<Text>,
+        group_v2_id -> Nullable<Text>,
         is_archived -> Bool,
         is_pinned -> Bool,
         is_silent -> Bool,
@@ -150,6 +171,8 @@ table! {
 
 joinable!(attachments -> messages (message_id));
 joinable!(group_v1_members -> recipients (recipient_id));
+joinable!(group_v2_members -> group_v2s (group_v2_id));
+joinable!(group_v2_members -> recipients (recipient_id));
 joinable!(messages -> recipients (sender_recipient_id));
 joinable!(messages -> sessions (session_id));
 joinable!(reactions -> messages (message_id));
@@ -157,12 +180,15 @@ joinable!(reactions -> recipients (author));
 joinable!(receipts -> messages (message_id));
 joinable!(receipts -> recipients (recipient_id));
 joinable!(sessions -> group_v1s (group_v1_id));
+joinable!(sessions -> group_v2s (group_v2_id));
 joinable!(sessions -> recipients (direct_message_recipient_id));
 
 allow_tables_to_appear_in_same_query!(
     attachments,
     group_v1_members,
     group_v1s,
+    group_v2_members,
+    group_v2s,
     messages,
     reactions,
     receipts,

@@ -1231,6 +1231,7 @@ dependencies = [
  "uuid",
  "vergen",
  "version_check",
+ "zkgroup",
 ]
 
 [[package]]

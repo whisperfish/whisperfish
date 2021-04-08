@@ -217,16 +217,32 @@ impl ClientActor {
                 t => log::warn!("Unhandled group type {:?}", t),
             }
 
-            Some(crate::store::GroupV1 {
-                id: group.id().to_vec(),
-                name: group.name().to_string(),
-                members: group.members_e164.clone(),
-            })
+            Some(
+                crate::store::GroupV1 {
+                    id: group.id().to_vec(),
+                    name: group.name().to_string(),
+                    members: group.members_e164.clone(),
+                }
+                .into(),
+            )
+        } else if let Some(group) = msg.group_v2.as_ref() {
+            // XXX handle group.group_change
+            let mut key_stack = [0u8; zkgroup::GROUP_MASTER_KEY_LEN];
+            key_stack.clone_from_slice(&group.master_key.as_ref().expect("group message with key"));
+            let key = GroupMasterKey::new(key_stack);
+            let secret = GroupSecretParams::derive_from_master_key(key);
+            Some(
+                crate::store::GroupV2 {
+                    secret,
+                    revision: group.revision(),
+                }
+                .into(),
+            )
         } else {
             None
         };
 
-        let (message, session) = storage.process_message(new_message, group);
+        let (message, session) = storage.process_message(new_message, group.as_ref());
 
         if settings.get_bool("attachment_log") && !msg.attachments.is_empty() {
             log::trace!("Logging message to the attachment log");

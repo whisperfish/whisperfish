@@ -239,11 +239,14 @@ impl Handler<QueueGroupMessage> for MessageActor {
                 is_read: true,
             },
             // XXX this "API" is horrible.
-            Some(GroupV1 {
-                id: hex::decode(msg.group_id).expect("valid group id"),
-                name: msg.group_name,
-                members: Vec::new(),
-            }),
+            Some(
+                &GroupV1 {
+                    id: hex::decode(msg.group_id).expect("valid group id"),
+                    name: msg.group_name,
+                    members: Vec::new(),
+                }
+                .into(),
+            ),
         );
 
         self.inner.pinned().borrow_mut().handle_queue_message(msg);

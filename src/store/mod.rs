@@ -15,6 +15,7 @@ use diesel::prelude::*;
 use futures::io::AsyncRead;
 
 use failure::*;
+use zkgroup::api::groups::GroupSecretParams;
 
 mod protocol_store;
 use protocol_store::ProtocolStore;
@@ -92,6 +93,24 @@ pub struct NewMessage {
     pub outgoing: bool,
 }
 
+#[derive(Clone, Debug)]
+pub enum GroupContext {
+    GroupV1(GroupV1),
+    GroupV2(GroupV2),
+}
+
+impl From<GroupV1> for GroupContext {
+    fn from(v1: GroupV1) -> GroupContext {
+        GroupContext::GroupV1(v1)
+    }
+}
+
+impl From<GroupV2> for GroupContext {
+    fn from(v2: GroupV2) -> GroupContext {
+        GroupContext::GroupV2(v2)
+    }
+}
+
 /// ID-free Group model for insertions
 #[derive(Clone, Debug)]
 pub struct GroupV1 {
@@ -100,6 +119,21 @@ pub struct GroupV1 {
     pub name: String,
     /// List of E164
     pub members: Vec<String>,
+}
+
+#[derive(Clone)]
+pub struct GroupV2 {
+    pub secret: GroupSecretParams,
+    pub revision: u32,
+}
+
+impl std::fmt::Debug for GroupV2 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GroupV2")
+            .field("id", &self.secret.get_group_identifier())
+            .field("revision", &self.revision)
+            .finish()
+    }
 }
 
 /// Saves a given attachment into a random-generated path. Returns the path.
@@ -652,17 +686,21 @@ impl Storage {
     pub fn process_message(
         &self,
         mut new_message: NewMessage,
-        group: Option<GroupV1>,
+        group: Option<&GroupContext>,
     ) -> (orm::Message, orm::Session) {
-        let session = if let Some(group) = group.as_ref() {
-            self.fetch_or_insert_session_by_group_v1(group)
-        } else {
-            let recipient = self.merge_and_fetch_recipient(
-                new_message.source_e164.as_deref(),
-                new_message.source_uuid.as_deref(),
-                TrustLevel::Certain,
-            );
-            self.fetch_or_insert_session_by_recipient_id(recipient.id)
+        let session = match group {
+            None => {
+                let recipient = self.merge_and_fetch_recipient(
+                    new_message.source_e164.as_deref(),
+                    new_message.source_uuid.as_deref(),
+                    TrustLevel::Certain,
+                );
+                self.fetch_or_insert_session_by_recipient_id(recipient.id)
+            }
+            Some(GroupContext::GroupV1(group)) => self.fetch_or_insert_session_by_group_v1(group),
+            Some(GroupContext::GroupV2(group)) => {
+                unimplemented!()
+            }
         };
 
         new_message.session_id = Some(session.id);
@@ -1393,6 +1431,7 @@ impl Storage {
         let new_group = orm::GroupV1 {
             id: group_id.clone(),
             name: group.name.clone(),
+            expected_v2_id: None,
         };
 
         // Group does not exist, insert first.

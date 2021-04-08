@@ -38,6 +38,7 @@ thiserror = "1"
 libsignal-protocol = { git = "https://github.com/Michael-F-Bryan/libsignal-protocol-rs" }
 libsignal-service = { git = "https://github.com/Michael-F-Bryan/libsignal-service-rs", branch = "master" }
 libsignal-service-actix = { git = "https://github.com/Michael-F-Bryan/libsignal-service-rs", branch = "master" }
+zkgroup = { git = "https://github.com/signalapp/zkgroup" }
 log = "0.4.8"
 env_logger = "0.8"
 scrypt = { version = "0.6", default-features = false, features=["std"] }

@@ -8,6 +8,7 @@ use super::schema::*;
 pub struct GroupV1 {
     pub id: String,
     pub name: String,
+    pub expected_v2_id: Option<String>,
 }
 
 #[derive(Queryable, Insertable, Debug, Clone)]
@@ -15,6 +16,24 @@ pub struct GroupV1Member {
     pub group_v1_id: String,
     pub recipient_id: i32,
     pub member_since: Option<NaiveDateTime>,
+}
+
+#[derive(Queryable, Insertable, Debug, Clone)]
+pub struct GroupV2 {
+    pub id: String,
+    pub name: String,
+
+    pub master_key: String,
+    pub revision: i32,
+}
+
+#[derive(Queryable, Insertable, Debug, Clone)]
+pub struct GroupV2Member {
+    pub group_v2_id: String,
+    pub recipient_id: i32,
+    pub member_since: NaiveDateTime,
+    pub joined_at_revision: i32,
+    pub role: i32,
 }
 
 #[derive(Queryable, Debug, Clone)]
@@ -97,6 +116,7 @@ pub struct DbSession {
 
     pub direct_message_recipient_id: Option<i32>,
     pub group_v1_id: Option<String>,
+    pub group_v2_id: Option<String>,
 
     pub is_archived: bool,
     pub is_pinned: bool,
@@ -212,6 +232,7 @@ impl From<(DbSession, Option<Recipient>, Option<GroupV1>)> for Session {
 
             direct_message_recipient_id: _,
             group_v1_id: _,
+            group_v2_id: _,
 
             is_archived,
             is_pinned,
