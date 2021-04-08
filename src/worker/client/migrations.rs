@@ -13,6 +13,10 @@ use whoami::*;
 mod e164_to_uuid;
 use e164_to_uuid::*;
 
+/// Migrations related to groupv2
+mod groupv2;
+use groupv2::*;
+
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct Migrations;
@@ -22,5 +26,6 @@ impl Handler<Migrations> for ClientActor {
     fn handle(&mut self, _: Migrations, ctx: &mut Self::Context) {
         ctx.notify(WhoAmI);
         ctx.notify(E164ToUuid);
+        ctx.notify(ComputeGroupV2ExpectedIds);
     }
 }
