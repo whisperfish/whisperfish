@@ -19,7 +19,8 @@ use libsignal_service::configuration::SignalServers;
 use libsignal_service::content::sync_message::Request as SyncRequest;
 use libsignal_service::content::DataMessageFlags;
 use libsignal_service::content::{
-    sync_message, AttachmentPointer, ContentBody, DataMessage, GroupContext, GroupType, Metadata,
+    sync_message, AttachmentPointer, ContentBody, DataMessage, GroupContext, GroupContextV2,
+    GroupType, Metadata,
 };
 use libsignal_service::prelude::*;
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
@@ -285,6 +286,7 @@ impl ClientActor {
         if settings.get_bool("enable_notify") && !is_sync_sent {
             let name: &str = match &session.r#type {
                 orm::SessionType::GroupV1(group) => &group.name,
+                orm::SessionType::GroupV2(group) => &group.name,
                 orm::SessionType::DirectMessage(recipient) => recipient.e164_or_uuid(),
             };
 
@@ -654,6 +656,16 @@ impl Handler<SendMessage> for ClientActor {
                 } else {
                     None
                 };
+                let group_v2 = if let orm::SessionType::GroupV2(group) = &session.r#type {
+                    let master_key = hex::decode(&group.master_key).expect("hex group id in db");
+                    Some(GroupContextV2 {
+                        master_key: Some(master_key),
+                        revision: Some(group.revision as u32),
+                        group_change: None,
+                    })
+                } else {
+                    None
+                };
 
                 // XXX online status goes in that bool
                 let online = false;
@@ -665,6 +677,7 @@ impl Handler<SendMessage> for ClientActor {
                     // XXX: depends on the features in the message!
                     required_protocol_version: Some(0),
                     group,
+                    group_v2,
 
                     ..Default::default()
                 };
@@ -727,6 +740,31 @@ impl Handler<SendMessage> for ClientActor {
                 match &session.r#type {
                     orm::SessionType::GroupV1(group) => {
                         let members = storage.fetch_group_members_by_group_v1_id(&group.id);
+                        let members = members
+                            .iter()
+                            .filter_map(|(_member, recipient)| {
+                                let member = recipient.to_service_address();
+
+                                if local_addr.matches(&member) {
+                                    None
+                                } else {
+                                    Some(member)
+                                }
+                            })
+                            .collect::<Vec<_>>();
+                        // Clone + async closure means we can use an immutable borrow.
+                        let results = sender
+                            .send_message_to_group(&members, None, content, timestamp, online)
+                            .await;
+                        for result in results {
+                            if let Err(e) = result {
+                                // XXX maybe don't mark as sent
+                                log::error!("Error sending message: {}", e);
+                            }
+                        }
+                    }
+                    orm::SessionType::GroupV2(group) => {
+                        let members = storage.fetch_group_members_by_group_v2_id(&group.id);
                         let members = members
                             .iter()
                             .filter_map(|(_member, recipient)| {

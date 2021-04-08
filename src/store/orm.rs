@@ -197,6 +197,10 @@ impl Session {
         self.r#type.is_group_v1()
     }
 
+    pub fn is_group_v2(&self) -> bool {
+        self.r#type.is_group_v2()
+    }
+
     pub fn unwrap_dm(&self) -> &Recipient {
         self.r#type.unwrap_dm()
     }
@@ -206,9 +210,21 @@ impl Session {
     }
 }
 
-impl From<(DbSession, Option<Recipient>, Option<GroupV1>)> for Session {
+impl
+    From<(
+        DbSession,
+        Option<Recipient>,
+        Option<GroupV1>,
+        Option<GroupV2>,
+    )> for Session
+{
     fn from(
-        (session, recipient, groupv1): (DbSession, Option<Recipient>, Option<GroupV1>),
+        (session, recipient, groupv1, groupv2): (
+            DbSession,
+            Option<Recipient>,
+            Option<GroupV1>,
+            Option<GroupV2>,
+        ),
     ) -> Session {
         assert_eq!(
             session.direct_message_recipient_id.is_some(),
@@ -220,10 +236,16 @@ impl From<(DbSession, Option<Recipient>, Option<GroupV1>)> for Session {
             groupv1.is_some(),
             "groupv1 session requires groupv1"
         );
+        assert_eq!(
+            session.group_v2_id.is_some(),
+            groupv2.is_some(),
+            "groupv2 session requires groupv2"
+        );
 
-        let t = match (recipient, groupv1) {
-            (Some(recipient), None) => SessionType::DirectMessage(recipient),
-            (None, Some(gv1)) => SessionType::GroupV1(gv1),
+        let t = match (recipient, groupv1, groupv2) {
+            (Some(recipient), None, None) => SessionType::DirectMessage(recipient),
+            (None, Some(gv1), None) => SessionType::GroupV1(gv1),
+            (None, None, Some(gv2)) => SessionType::GroupV2(gv2),
             _ => unreachable!("case handled above"),
         };
 
@@ -268,6 +290,7 @@ impl From<(DbSession, Option<Recipient>, Option<GroupV1>)> for Session {
 pub enum SessionType {
     DirectMessage(Recipient),
     GroupV1(GroupV1),
+    GroupV2(GroupV2),
 }
 
 impl SessionType {
@@ -277,6 +300,10 @@ impl SessionType {
 
     pub fn is_group_v1(&self) -> bool {
         matches!(self, Self::GroupV1(_))
+    }
+
+    pub fn is_group_v2(&self) -> bool {
+        matches!(self, Self::GroupV2(_))
     }
 
     pub fn unwrap_dm(&self) -> &Recipient {
@@ -291,6 +318,14 @@ impl SessionType {
         assert!(self.is_group_v1(), "unwrap panicked at unwrap_group_v1()");
         match self {
             Self::GroupV1(g) => g,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn unwrap_group_v2(&self) -> &GroupV2 {
+        assert!(self.is_group_v2(), "unwrap panicked at unwrap_group_v2()");
+        match self {
+            Self::GroupV2(g) => g,
             _ => unreachable!(),
         }
     }

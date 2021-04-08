@@ -459,6 +459,24 @@ impl MessageModel {
                 );
                 self.groupMembersChanged();
             }
+            orm::SessionType::GroupV2(group) => {
+                self.peerTel = QString::from("");
+                self.peerUuid = QString::from("");
+                self.peerName = QString::from(group.name.deref());
+                self.peerChanged();
+
+                self.group = true;
+                self.groupId = QString::from(group.id);
+                self.groupChanged();
+
+                self.groupMembers = QString::from(
+                    self.group_members
+                        .iter()
+                        .map(|(_, r)| r.e164_or_uuid())
+                        .join(","),
+                );
+                self.groupMembersChanged();
+            }
             orm::SessionType::DirectMessage(recipient) => {
                 self.group = false;
                 self.groupId = QString::from("");

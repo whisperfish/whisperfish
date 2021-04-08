@@ -433,11 +433,16 @@ macro_rules! fetch_session {
         let query = {
             let $fragment = schema::sessions::table
                 .left_join(schema::recipients::table)
-                .left_join(schema::group_v1s::table);
+                .left_join(schema::group_v1s::table)
+                .left_join(schema::group_v2s::table);
             $b
         };
-        let triple: Option<(orm::DbSession, Option<orm::Recipient>, Option<orm::GroupV1>)> =
-            query.first(&*db).ok();
+        let triple: Option<(
+            orm::DbSession,
+            Option<orm::Recipient>,
+            Option<orm::GroupV1>,
+            Option<orm::GroupV2>,
+        )> = query.first(&*db).ok();
         triple.map(Into::into)
     }};
 }
@@ -447,11 +452,16 @@ macro_rules! fetch_sessions {
         let query = {
             let $fragment = schema::sessions::table
                 .left_join(schema::recipients::table)
-                .left_join(schema::group_v1s::table);
+                .left_join(schema::group_v1s::table)
+                .left_join(schema::group_v2s::table);
             $b
         };
-        let triples: Vec<(orm::DbSession, Option<orm::Recipient>, Option<orm::GroupV1>)> =
-            query.load(&*db).unwrap();
+        let triples: Vec<(
+            orm::DbSession,
+            Option<orm::Recipient>,
+            Option<orm::GroupV1>,
+            Option<orm::GroupV2>,
+        )> = query.load(&*db).unwrap();
         triples.into_iter().map(orm::Session::from).collect()
     }};
 }
@@ -698,9 +708,7 @@ impl Storage {
                 self.fetch_or_insert_session_by_recipient_id(recipient.id)
             }
             Some(GroupContext::GroupV1(group)) => self.fetch_or_insert_session_by_group_v1(group),
-            Some(GroupContext::GroupV2(group)) => {
-                unimplemented!()
-            }
+            Some(GroupContext::GroupV2(group)) => self.fetch_or_insert_session_by_group_v2(group),
         };
 
         new_message.session_id = Some(session.id);
@@ -1378,6 +1386,18 @@ impl Storage {
             .unwrap()
     }
 
+    pub fn fetch_group_members_by_group_v2_id(
+        &self,
+        id: &str,
+    ) -> Vec<(orm::GroupV2Member, orm::Recipient)> {
+        let db = self.db.lock();
+        schema::group_v2_members::table
+            .inner_join(schema::recipients::table)
+            .filter(schema::group_v2_members::group_v2_id.eq(id))
+            .load(&*db)
+            .unwrap()
+    }
+
     pub fn fetch_or_insert_session_by_e164(&self, e164: &str) -> orm::Session {
         log::trace!("Called fetch_or_insert_session_by_e164({})", e164);
         let db = self.db.lock();
@@ -1458,6 +1478,51 @@ impl Storage {
         use schema::sessions::dsl::*;
         diesel::insert_into(sessions)
             .values((group_v1_id.eq(group_id),))
+            .execute(&*db)
+            .unwrap();
+
+        self.fetch_latest_session()
+            .expect("a session has been inserted")
+    }
+
+    pub fn fetch_or_insert_session_by_group_v2(&self, group: &GroupV2) -> orm::Session {
+        let db = self.db.lock();
+
+        let group_id = group.secret.get_group_identifier();
+        let group_id_hex = hex::encode(group_id);
+
+        log::trace!(
+            "Called fetch_or_insert_session_by_group_v2({})",
+            group_id_hex
+        );
+
+        if let Some(session) = fetch_session!(self.db.lock(), |query| {
+            query.filter(schema::sessions::columns::group_v2_id.eq(&group_id_hex))
+        }) {
+            return session;
+        }
+
+        let master_key =
+            bincode::serialize(&group.secret.get_master_key()).expect("serialized master key");
+        let new_group = orm::GroupV2 {
+            id: group_id_hex.clone(),
+            // XXX qTr?
+            name: "New V2 group (updating)".into(),
+            master_key: hex::encode(master_key),
+            revision: group.revision as i32,
+        };
+
+        // Group does not exist, insert first.
+        diesel::insert_into(schema::group_v2s::table)
+            .values(&new_group)
+            .execute(&*db)
+            .unwrap();
+
+        // XXX somehow schedule this group for member list/name updating.
+
+        use schema::sessions::dsl::*;
+        diesel::insert_into(sessions)
+            .values((group_v2_id.eq(group_id_hex),))
             .execute(&*db)
             .unwrap();
 

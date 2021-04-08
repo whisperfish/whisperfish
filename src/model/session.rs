@@ -311,6 +311,7 @@ impl AugmentedSession {
     fn group_name(&self) -> Option<&str> {
         match &self.session.r#type {
             orm::SessionType::GroupV1(group) => Some(&group.name),
+            orm::SessionType::GroupV2(group) => Some(&group.name),
             orm::SessionType::DirectMessage(_) => None,
         }
     }
@@ -319,6 +320,13 @@ impl AugmentedSession {
     fn group_members(&self) -> Option<String> {
         match &self.session.r#type {
             orm::SessionType::GroupV1(_group) => Some(
+                self.group_members
+                    .iter()
+                    .map(|(_, r)| r.e164_or_uuid())
+                    .join(","),
+            ),
+            orm::SessionType::GroupV2(_group) => Some(
+                // XXX v2
                 self.group_members
                     .iter()
                     .map(|(_, r)| r.e164_or_uuid())
@@ -335,6 +343,7 @@ impl AugmentedSession {
     fn source(&self) -> &str {
         match &self.session.r#type {
             orm::SessionType::GroupV1(_group) => "",
+            orm::SessionType::GroupV2(_group) => "",
             orm::SessionType::DirectMessage(recipient) => recipient.e164_or_uuid(),
         }
     }
