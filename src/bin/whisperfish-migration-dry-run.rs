@@ -296,7 +296,7 @@ fn main() -> Result<(), failure::Error> {
     println!("Here above, the dry run should have produced at least two sets of statistics of your data.");
     println!("These should give a decent indication to whether some data has been lost. Please report a bug if so.");
 
-    let violations: Vec<ForeignKeyViolation> = diesel::sql_query("PRAGMA foreign_key_check;")
+    let violations: Vec<ForeignKeyViolation> = diesel::sql_query("PRAGMA main.foreign_key_check;")
         .load(&db)
         .unwrap();
 
