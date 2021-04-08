@@ -593,8 +593,22 @@ impl Storage {
         // XXX: Do we have to signal somehow that the password was wrong?
         //      Offer retries?
 
-        // Run migrations
-        embedded_migrations::run(&db)?;
+        // Run migrations.
+        // We execute the transactions without foreign key checking enabled.
+        // This is because foreign_keys=OFF implies that foreign key references are
+        // not renamed when their parent table is renamed on *old SQLite version*.
+        // https://stackoverflow.com/questions/67006159/how-to-re-parent-a-table-foreign-key-in-sqlite-after-recreating-the-parent
+        // We can very probably do normal foreign_key checking again when we are on a more recent
+        // SQLite.
+        // That said, our check_foreign_keys() does output more useful information for when things
+        // go haywire, albeit a bit later.
+        db.execute("PRAGMA foreign_keys = OFF;").unwrap();
+        db.transaction(|| -> Result<(), failure::Error> {
+            embedded_migrations::run(&db)?;
+            crate::check_foreign_keys(&db)?;
+            Ok(())
+        })?;
+        db.execute("PRAGMA foreign_keys = ON;").unwrap();
 
         Ok(db)
     }

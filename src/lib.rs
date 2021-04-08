@@ -38,3 +38,35 @@ pub fn conf_dir() -> std::path::PathBuf {
 
     conf_dir
 }
+
+/// Checks if the db contains foreign key violations.
+pub fn check_foreign_keys(db: &diesel::SqliteConnection) -> Result<(), failure::Error> {
+    use diesel::prelude::*;
+    use diesel::sql_types::*;
+
+    #[derive(Queryable, QueryableByName, Debug)]
+    pub struct ForeignKeyViolation {
+        #[sql_type = "Text"]
+        table: String,
+        #[sql_type = "Integer"]
+        rowid: i32,
+        #[sql_type = "Text"]
+        parent: String,
+        #[sql_type = "Integer"]
+        fkid: i32,
+    }
+
+    db.execute("PRAGMA foreign_keys = ON;").unwrap();
+    let violations: Vec<ForeignKeyViolation> = diesel::sql_query("PRAGMA main.foreign_key_check;")
+        .load(db)
+        .unwrap();
+
+    if !violations.is_empty() {
+        failure::bail!(
+            "There are foreign key violations. Here the are: {:?}",
+            violations
+        );
+    } else {
+        Ok(())
+    }
+}

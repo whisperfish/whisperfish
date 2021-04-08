@@ -99,10 +99,14 @@ mod original_data {
     }
 }
 
+fn assert_foreign_keys(db: &SqliteConnection) {
+    harbour_whisperfish::check_foreign_keys(db).expect("foreign keys intact");
+}
+
 #[fixture]
 fn empty_db() -> SqliteConnection {
     let conn = SqliteConnection::establish(":memory:").unwrap();
-    conn.execute("PRAGMA foreign_keys = ON;").unwrap();
+    conn.execute("PRAGMA foreign_keys = OFF;").unwrap();
 
     conn
 }
@@ -166,6 +170,7 @@ fn fixed_go_db(empty_db: SqliteConnection, mut migrations: MigrationList) -> Sql
         &mut std::io::stdout(),
     )
     .unwrap();
+    assert_foreign_keys(&empty_db);
     empty_db
 }
 
@@ -183,6 +188,7 @@ fn initial_dbs(db: SqliteConnection) {}
 #[apply(initial_dbs)]
 fn run_plain_migrations(db: SqliteConnection) {
     embedded_migrations::run(&db).unwrap();
+    assert_foreign_keys(&db);
 }
 
 #[apply(initial_dbs)]
@@ -190,6 +196,7 @@ fn one_by_one(db: SqliteConnection, migrations: MigrationList) {
     for (migration_name, migration) in migrations {
         dbg!(migration_name);
         diesel_migrations::run_migrations(&db, vec![migration], &mut std::io::stdout()).unwrap();
+        assert_foreign_keys(&db);
     }
 
     assert!(!diesel_migrations::any_pending_migrations(&db).unwrap());
@@ -324,6 +331,7 @@ fn bunch_of_empty_sessions(original_go_db: SqliteConnection) {
     );
 
     embedded_migrations::run(&db).unwrap();
+    assert_foreign_keys(&db);
     assert_bunch_of_empty_sessions(db);
 }
 
@@ -457,6 +465,7 @@ fn direct_session_with_messages(original_go_db: SqliteConnection) {
     );
 
     embedded_migrations::run(&db).unwrap();
+    assert_foreign_keys(&db);
     assert_direct_session_with_messages(db);
 }
 
@@ -576,6 +585,7 @@ fn group_sessions_with_messages(original_go_db: SqliteConnection) {
     );
 
     embedded_migrations::run(&db).unwrap();
+    assert_foreign_keys(&db);
     assert_group_sessions_with_messages(db);
 }
 
@@ -634,6 +644,7 @@ fn timestamp_conversion(original_go_db: SqliteConnection) {
     }
 
     embedded_migrations::run(&db).unwrap();
+    assert_foreign_keys(&db);
 
     for (i, ts) in timestamps.into_iter().enumerate() {
         use orm::current::*;
