@@ -1440,7 +1440,10 @@ impl Storage {
 
         let group_id = hex::encode(&group.id);
 
-        log::trace!("Called fetch_or_insert_session_by_group_v1({})", group_id);
+        log::trace!(
+            "Called fetch_or_insert_session_by_group_v1({}[..])",
+            &group_id[..8]
+        );
 
         if let Some(session) = fetch_session!(self.db.lock(), |query| {
             query.filter(schema::sessions::columns::group_v1_id.eq(&group_id))
