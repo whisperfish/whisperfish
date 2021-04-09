@@ -1520,14 +1520,51 @@ impl Storage {
 
         // XXX somehow schedule this group for member list/name updating.
 
-        use schema::sessions::dsl::*;
-        diesel::insert_into(sessions)
-            .values((group_v2_id.eq(group_id_hex),))
-            .execute(&*db)
-            .unwrap();
+        // Two things could have happened by now:
+        // - Migration: there is an existing session for a groupv1 with this V2 id.
+        // - New group
 
-        self.fetch_latest_session()
-            .expect("a session has been inserted")
+        let migration_v1_session: Option<(orm::GroupV1, Option<orm::DbSession>)> =
+            schema::group_v1s::table
+                .filter(schema::group_v1s::expected_v2_id.eq(&new_group.id))
+                .left_join(schema::sessions::table)
+                .first(&*db)
+                .optional()
+                .expect("db");
+
+        use schema::sessions::dsl::*;
+        match migration_v1_session {
+            Some((_group, Some(session))) => {
+                log::info!(
+                    "Group V2 migration detected. Updating session to point to the new group."
+                );
+                // XXX this probably needs to influence the GUI too...
+                let count = diesel::update(sessions)
+                    .set((
+                        group_v1_id.eq::<Option<String>>(None),
+                        group_v2_id.eq(&new_group.id),
+                    ))
+                    .execute(&*db)
+                    .expect("session updated");
+                // XXX consider removing the group_v1
+                assert_eq!(count, 1, "session should have been updated");
+                // Refetch session because the info therein is stale.
+                self.fetch_session_by_id(session.id)
+                    .expect("existing session")
+            }
+            Some((_group, None)) => {
+                unreachable!("Former group V1 found.  We expect the branch above to have returned a session for it.");
+            }
+            None => {
+                diesel::insert_into(sessions)
+                    .values((group_v2_id.eq(&new_group.id),))
+                    .execute(&*db)
+                    .unwrap();
+
+                self.fetch_latest_session()
+                    .expect("a session has been inserted")
+            }
+        }
     }
 
     pub fn delete_session(&self, id: i32) {
