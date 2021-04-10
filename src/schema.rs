@@ -65,6 +65,7 @@ table! {
         name -> Text,
         master_key -> Text,
         revision -> Integer,
+        invite_link_password -> Nullable<Binary>,
         access_required_for_attributes -> Integer,
         access_required_for_members -> Integer,
         access_required_for_add_from_invite_link -> Integer,

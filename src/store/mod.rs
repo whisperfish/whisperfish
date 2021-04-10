@@ -1518,6 +1518,8 @@ impl Storage {
             master_key: hex::encode(master_key),
             revision: group.revision as i32,
 
+            invite_link_password: None,
+
             // We don't know the ACL levels.
             // 0 means UNKNOWN
             access_required_for_attributes: 0,

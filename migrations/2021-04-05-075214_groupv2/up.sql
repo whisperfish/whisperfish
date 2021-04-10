@@ -13,6 +13,8 @@ CREATE TABLE group_v2s (
     master_key VARCHAR(64) NOT NULL,
     revision INTEGER NOT NULL DEFAULT 0,
 
+    invite_link_password BLOB,
+
     -- Access control.
     -- enum AccessRequired {
     --  UNKNOWN       = 0;

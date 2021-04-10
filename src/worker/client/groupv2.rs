@@ -49,6 +49,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         .set((
                             name.eq(&group.title),
                             revision.eq(group.revision as i32),
+                            invite_link_password.eq(&group.invite_link_password),
                             access_required_for_attributes.eq(acl.attributes),
                             access_required_for_members.eq(acl.members),
                             access_required_for_add_from_invite_link.eq(acl.add_from_invite_link),

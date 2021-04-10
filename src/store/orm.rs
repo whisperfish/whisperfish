@@ -26,6 +26,8 @@ pub struct GroupV2 {
     pub master_key: String,
     pub revision: i32,
 
+    pub invite_link_password: Option<Vec<u8>>,
+
     pub access_required_for_attributes: i32,
     pub access_required_for_members: i32,
     pub access_required_for_add_from_invite_link: i32,
