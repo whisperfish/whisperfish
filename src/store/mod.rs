@@ -1517,6 +1517,12 @@ impl Storage {
             name: "New V2 group (updating)".into(),
             master_key: hex::encode(master_key),
             revision: group.revision as i32,
+
+            // We don't know the ACL levels.
+            // 0 means UNKNOWN
+            access_required_for_attributes: 0,
+            access_required_for_members: 0,
+            access_required_for_add_from_invite_link: 0,
         };
 
         // Group does not exist, insert first.

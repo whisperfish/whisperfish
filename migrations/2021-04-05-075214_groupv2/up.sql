@@ -11,7 +11,19 @@ CREATE TABLE group_v2s (
     name TEXT NOT NULL,
 
     master_key VARCHAR(64) NOT NULL,
-    revision INTEGER NOT NULL DEFAULT 0
+    revision INTEGER NOT NULL DEFAULT 0,
+
+    -- Access control.
+    -- enum AccessRequired {
+    --  UNKNOWN       = 0;
+    --  ANY           = 1;
+    --  MEMBER        = 2;
+    --  ADMINISTRATOR = 3;
+    --  UNSATISFIABLE = 4;
+    --}
+    access_required_for_attributes INTEGER NOT NULL DEFAULT 0,
+    access_required_for_members INTEGER NOT NULL DEFAULT 0,
+    access_required_for_add_from_invite_link INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE group_v2_members (
