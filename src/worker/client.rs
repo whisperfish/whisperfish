@@ -37,6 +37,9 @@ use migrations::*;
 mod linked_devices;
 pub use linked_devices::*;
 
+mod groupv2;
+pub use groupv2::*;
+
 use crate::millis_to_naive_chrono;
 
 #[derive(Message)]
@@ -111,6 +114,10 @@ impl ClientActor {
             start_time: Local::now(),
             store_context: None,
         })
+    }
+
+    fn uuid(&self) -> Option<Uuid> {
+        self.credentials.as_ref().and_then(|c| c.uuid.clone())
     }
 
     fn unauthenticated_service(&self) -> AwcPushService {

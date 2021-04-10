@@ -2,6 +2,7 @@ use std::panic::AssertUnwindSafe;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
+use libsignal_service::groups_v2::InMemoryCredentialsCache;
 use parking_lot::ReentrantMutex;
 
 use crate::millis_to_naive_chrono;
@@ -239,6 +240,7 @@ pub struct Storage {
     // aesKey + macKey
     keys: Option<[u8; 16 + 20]>,
     protocol_store: Arc<Mutex<ProtocolStore>>,
+    credential_cache: Arc<Mutex<InMemoryCredentialsCache>>,
     path: PathBuf,
 }
 
@@ -580,6 +582,7 @@ impl Storage {
             db: Arc::new(AssertUnwindSafe(ReentrantMutex::new(db))),
             keys,
             protocol_store: Arc::new(Mutex::new(protocol_store)),
+            credential_cache: Arc::new(Mutex::new(InMemoryCredentialsCache::default())),
             path: path.to_path_buf(),
         })
     }
@@ -606,6 +609,7 @@ impl Storage {
             db: Arc::new(AssertUnwindSafe(ReentrantMutex::new(db))),
             keys,
             protocol_store: Arc::new(Mutex::new(protocol_store)),
+            credential_cache: Arc::new(Mutex::new(InMemoryCredentialsCache::default())),
             path: path.to_path_buf(),
         })
     }
@@ -1802,6 +1806,10 @@ impl Storage {
             .get_identity(addr)?
             .ok_or_else(|| failure::format_err!("No such identity"))?;
         Ok(hex::encode_upper(ident.as_slice()))
+    }
+
+    pub fn credential_cache(&self) -> std::sync::MutexGuard<InMemoryCredentialsCache> {
+        self.credential_cache.lock().expect("mutex")
     }
 }
 
