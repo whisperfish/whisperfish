@@ -35,13 +35,24 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                     GroupsManager::new(authenticated_service, &mut *credential_cache, zk_params);
                 let credentials = gm.get_authorization_for_today(uuid, request.secret).await?;
                 let group = gm.get_group(request.secret, credentials).await?;
-                // We now know the group's name
+                // We now know the group's name and properties
+                // XXX this is an assumption that we might want to check.
+                let acl = group
+                    .access_control
+                    .as_ref()
+                    .expect("access control present in DecryptedGroup");
                 {
                     // XXX if the group does not exist, consider inserting here.
                     let db = storage.db.lock();
                     use crate::schema::group_v2s::dsl::*;
                     diesel::update(group_v2s)
-                        .set((name.eq(&group.title), revision.eq(group.revision as i32)))
+                        .set((
+                            name.eq(&group.title),
+                            revision.eq(group.revision as i32),
+                            access_required_for_attributes.eq(acl.attributes),
+                            access_required_for_members.eq(acl.members),
+                            access_required_for_add_from_invite_link.eq(acl.add_from_invite_link),
+                        ))
                         .filter(id.eq(&group_id_hex))
                         .execute(&*db)
                         .expect("update groupv2 name");
