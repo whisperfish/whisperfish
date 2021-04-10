@@ -57,6 +57,19 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         .execute(&*db)
                         .expect("update groupv2 name");
                 }
+                {
+                    let timeout = group
+                        .disappearing_messages_timer
+                        .as_ref()
+                        .map(|d| d.duration as i32);
+                    let db = storage.db.lock();
+                    use crate::schema::sessions::dsl::*;
+                    diesel::update(sessions)
+                        .set((expiring_message_timeout.eq(timeout),))
+                        .filter(group_v2_id.eq(&group_id_hex))
+                        .execute(&*db)
+                        .expect("update session disappearing_messages_timer");
+                }
 
                 // We know the group's members.
                 // First assert their existence in the database.
