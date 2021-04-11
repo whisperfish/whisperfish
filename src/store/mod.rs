@@ -239,7 +239,7 @@ pub struct Storage {
     pub db: Arc<AssertUnwindSafe<ReentrantMutex<SqliteConnection>>>,
     // aesKey + macKey
     keys: Option<[u8; 16 + 20]>,
-    protocol_store: Arc<Mutex<ProtocolStore>>,
+    pub(crate) protocol_store: Arc<Mutex<ProtocolStore>>,
     credential_cache: Arc<Mutex<InMemoryCredentialsCache>>,
     path: PathBuf,
 }
@@ -718,6 +718,31 @@ impl Storage {
         new_message.session_id = Some(session.id);
         let message = self.create_message(&new_message);
         (message, session)
+    }
+
+    pub fn self_uuid(&self) -> Option<uuid::Uuid> {
+        let cfg = self.read_config().expect("config");
+        let uuid_str = if let Some(uuid) = cfg.uuid.as_deref() {
+            uuid
+        } else {
+            log::warn!("No uuid set.");
+            return None;
+        };
+
+        Some(uuid::Uuid::parse_str(uuid_str).expect("parsable self uuid"))
+    }
+
+    pub fn fetch_self_recipient(&self) -> Option<orm::Recipient> {
+        let cfg = self.read_config().expect("config");
+        let e164 = if let Some(e164) = cfg.tel.as_deref() {
+            e164
+        } else {
+            log::warn!("No e164 set, cannot fetch self.");
+            return None;
+        };
+        let uuid = self.self_uuid();
+        let uuid = uuid.map(|x| x.to_string());
+        Some(self.merge_and_fetch_recipient(Some(e164), uuid.as_deref(), TrustLevel::Certain))
     }
 
     pub fn fetch_recipient_by_e164(&self, new_e164: &str) -> Option<orm::Recipient> {

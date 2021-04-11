@@ -94,6 +94,21 @@ pub struct Recipient {
 }
 
 impl Recipient {
+    pub fn profile_key(&self) -> Option<[u8; 32]> {
+        if let Some(pk) = self.profile_key.as_ref() {
+            if pk.len() != 32 {
+                log::warn!("Profile key is {} bytes", pk.len());
+                None
+            } else {
+                let mut key = [0u8; 32];
+                key.copy_from_slice(pk);
+                Some(key)
+            }
+        } else {
+            None
+        }
+    }
+
     pub fn to_service_address(&self) -> libsignal_service::ServiceAddress {
         libsignal_service::ServiceAddress {
             phonenumber: self

@@ -1,6 +1,7 @@
 use actix::prelude::*;
 
 use libsignal_service::profile_name::ProfileName;
+use libsignal_service::push_service::DeviceCapabilities;
 use rand::Rng;
 use zkgroup::profiles::ProfileKey;
 
@@ -17,6 +18,11 @@ pub struct GenerateEmptyProfileIfNeeded;
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct MultideviceSyncProfile;
+
+/// Synchronize profile attributes.
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct RefreshProfileAttributes;
 
 impl Handler<MultideviceSyncProfile> for ClientActor {
     type Result = ResponseFuture<()>;
@@ -36,35 +42,15 @@ impl Handler<GenerateEmptyProfileIfNeeded> for ClientActor {
     type Result = ResponseFuture<()>;
     fn handle(&mut self, _: GenerateEmptyProfileIfNeeded, ctx: &mut Self::Context) -> Self::Result {
         let storage = self.storage.clone().unwrap();
-        let cfg = storage.read_config().expect("read config");
         let service = self.authenticated_service();
         let context = libsignal_protocol::Context::default();
         let client = ctx.address();
 
         Box::pin(async move {
-            let e164 = if let Some(e164) = cfg.tel.as_deref() {
-                e164
-            } else {
-                log::warn!("No uuid set, cannot generate empty profile.");
-                // XXX retry?
-                return;
-            };
-            let uuid_str = if let Some(uuid) = cfg.uuid.as_deref() {
-                uuid
-            } else {
-                log::warn!("No uuid set, cannot generate empty profile.");
-                // XXX retry?
-                return;
-            };
-            let uuid = match uuid::Uuid::parse_str(uuid_str) {
-                Ok(uuid) => uuid,
-                Err(e) => {
-                    log::error!("Not creating profile, because uuid unparsable: {}", e);
-                    return;
-                }
-            };
-            let self_recipient =
-                storage.merge_and_fetch_recipient(Some(e164), Some(uuid_str), TrustLevel::Certain);
+            let uuid = storage.self_uuid().expect("self uuid");
+            let self_recipient = storage
+                .fetch_self_recipient()
+                .expect("self recipient should be set by now");
             if let Some(key) = self_recipient.profile_key {
                 log::trace!(
                     "Profile key is already set ({} bytes); not overwriting",
@@ -82,13 +68,51 @@ impl Handler<GenerateEmptyProfileIfNeeded> for ClientActor {
 
             // Now also set the database
             storage.update_profile_key(
-                Some(e164),
-                Some(uuid_str),
+                None,
+                Some(&uuid.to_string()),
                 &profile_key.get_bytes(),
                 TrustLevel::Certain,
             );
 
             client.send(MultideviceSyncProfile).await.unwrap();
+            client.send(RefreshProfileAttributes).await.unwrap();
+        })
+    }
+}
+
+impl Handler<RefreshProfileAttributes> for ClientActor {
+    type Result = ResponseFuture<()>;
+    fn handle(&mut self, _: RefreshProfileAttributes, _ctx: &mut Self::Context) -> Self::Result {
+        let storage = self.storage.clone().unwrap();
+        let registration_id = storage.protocol_store.lock().unwrap().regid;
+        let service = self.authenticated_service();
+        let context = libsignal_protocol::Context::default();
+
+        Box::pin(async move {
+            let self_recipient = storage.fetch_self_recipient().expect("self set by now");
+
+            let mut am = AccountManager::new(context, service, self_recipient.profile_key());
+            am.set_account_attributes(
+                None,            // signaling key
+                registration_id, // regid
+                false,           // voice
+                false,           // video
+                true,            // fetches_messages
+                None,            // pin
+                None,            // reg lock
+                None,            // unidentified_access_key
+                false,           //unresticted UA
+                true,            // discoverable by phone
+                DeviceCapabilities {
+                    uuid: true,
+                    gv2: true,
+                    storage: false,
+                    gv1_migration: true,
+                },
+            )
+            .await
+            .expect("upload profile");
+            log::info!("Profile attributes refreshed");
         })
     }
 }

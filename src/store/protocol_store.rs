@@ -13,8 +13,8 @@ mod quirk;
 use super::*;
 
 pub struct ProtocolStore {
-    identity_key: Vec<u8>,
-    regid: u32,
+    pub(crate) identity_key: Vec<u8>,
+    pub(crate) regid: u32,
 }
 
 fn addr_to_path_component<'a>(addr: &'a (impl AsRef<[u8]> + ?Sized + 'a)) -> &'a str {
