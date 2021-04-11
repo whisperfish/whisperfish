@@ -142,8 +142,13 @@ fn print_current_stats(db: &SqliteConnection) -> Result<(), failure::Error> {
             .select(count(id))
             .filter(uuid.is_not_null())
             .first(db)?;
+        let profile_key_count: i64 = recipients
+            .select(count(id))
+            .filter(profile_key.is_not_null())
+            .first(db)?;
         println!("├ of which have a phone number: {}", e164_count);
-        println!("└ of which have a uuid: {}", uuid_count);
+        println!("├ of which have a uuid: {}", uuid_count);
+        println!("└ of which have a profile key: {}", profile_key_count);
     }
     {
         use schema::sessions::dsl::*;

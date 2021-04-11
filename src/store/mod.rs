@@ -32,7 +32,7 @@ no_arg_sql_function!(
 );
 
 /// How much trust you put into the correctness of the data.
-#[derive(Clone, Eq, Debug, PartialEq)]
+#[derive(Clone, Copy, Eq, Debug, PartialEq)]
 pub enum TrustLevel {
     /// Set to Certain if the supplied information is from a trusted source,
     /// such as an envelope.
@@ -767,6 +767,39 @@ impl Storage {
             .expect("db")
             .flatten();
         by_uuid.or(by_e164)
+    }
+
+    pub fn update_profile_key(
+        &self,
+        e164: Option<&str>,
+        uuid: Option<&str>,
+        new_profile_key: &[u8],
+        trust_level: TrustLevel,
+    ) -> orm::Recipient {
+        // XXX check profile_key length
+        let recipient = self.merge_and_fetch_recipient(e164, uuid, trust_level);
+
+        let is_unset = recipient.profile_key.is_none()
+            || recipient.profile_key.as_ref().map(Vec::len) == Some(0);
+
+        if is_unset || trust_level == TrustLevel::Certain {
+            if recipient.profile_key.as_deref() == Some(new_profile_key) {
+                log::trace!("Profile key up-to-date");
+                return recipient;
+            }
+
+            use crate::schema::recipients::dsl::*;
+            let db = self.db.lock();
+            diesel::update(recipients)
+                .set(profile_key.eq(new_profile_key))
+                .filter(id.eq(recipient.id))
+                .execute(&*db)
+                .expect("existing record updated");
+            log::info!("Updated profile key for {}", recipient.e164_or_uuid());
+        }
+        // Re-fetch recipient with updated key
+        self.fetch_recipient_by_id(recipient.id)
+            .expect("fetch existing record")
     }
 
     /// Equivalent of Androids `RecipientDatabase::getAndPossiblyMerge`.
@@ -1559,6 +1592,7 @@ impl Storage {
                         group_v1_id.eq::<Option<String>>(None),
                         group_v2_id.eq(&new_group.id),
                     ))
+                    .filter(id.eq(session.id))
                     .execute(&*db)
                     .expect("session updated");
                 // XXX consider removing the group_v1
