@@ -37,6 +37,9 @@ use migrations::*;
 mod linked_devices;
 pub use linked_devices::*;
 
+mod profile;
+pub use profile::*;
+
 mod groupv2;
 pub use groupv2::*;
 

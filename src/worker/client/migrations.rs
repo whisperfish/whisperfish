@@ -27,5 +27,6 @@ impl Handler<Migrations> for ClientActor {
         ctx.notify(WhoAmI);
         ctx.notify(E164ToUuid);
         ctx.notify(ComputeGroupV2ExpectedIds);
+        ctx.notify(GenerateEmptyProfileIfNeeded);
     }
 }
