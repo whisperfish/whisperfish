@@ -659,6 +659,13 @@ impl Handler<SendMessage> for ClientActor {
             return Box::pin(async {}.into_actor(self).map(|_, _, _| ()));
         }
 
+        let self_uuid = storage.read_config().expect("cfg").uuid;
+        let self_recipient = if let Some(uuid) = self_uuid {
+            Some(storage.fetch_or_insert_recipient_by_uuid(&uuid))
+        } else {
+            None
+        };
+
         log::trace!("Sending for session: {:?}", session);
         log::trace!("Sending message: {:?}", msg);
 
@@ -698,6 +705,7 @@ impl Handler<SendMessage> for ClientActor {
                     group,
                     group_v2,
 
+                    profile_key: self_recipient.and_then(|r| r.profile_key),
                     ..Default::default()
                 };
 

@@ -49,4 +49,3 @@ impl Handler<ComputeGroupV2ExpectedIds> for ClientActor {
         })
     }
 }
-
