@@ -246,18 +246,28 @@ impl ClientActor {
                 .into(),
             )
         } else if let Some(group) = msg.group_v2.as_ref() {
-            // XXX handle group.group_change
             let mut key_stack = [0u8; zkgroup::GROUP_MASTER_KEY_LEN];
             key_stack.clone_from_slice(&group.master_key.as_ref().expect("group message with key"));
             let key = GroupMasterKey::new(key_stack);
             let secret = GroupSecretParams::derive_from_master_key(key);
-            Some(
-                crate::store::GroupV2 {
-                    secret,
-                    revision: group.revision(),
-                }
-                .into(),
-            )
+
+            let store_v2 = crate::store::GroupV2 {
+                secret,
+                revision: group.revision(),
+            };
+
+            // XXX handle group.group_change like a real client
+            if let Some(_change) = group.group_change.as_ref() {
+                log::warn!("We're not handling raw group changes yet. Let's trigger a group refresh for now.");
+                ctx.notify(RequestGroupV2Info(store_v2.clone()));
+            } else if !storage.group_v2_exists(&store_v2) {
+                log::info!(
+                    "We don't know this group. We'll request it's structure from the serve."
+                );
+                ctx.notify(RequestGroupV2Info(store_v2.clone()));
+            }
+
+            Some(store_v2.into())
         } else {
             None
         };

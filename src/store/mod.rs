@@ -1448,6 +1448,19 @@ impl Storage {
             .unwrap()
     }
 
+    pub fn group_v2_exists(&self, group: &GroupV2) -> bool {
+        let group_id = group.secret.get_group_identifier();
+        let group_id_hex = hex::encode(group_id);
+
+        let db = self.db.lock();
+        let group: Option<orm::GroupV2> = schema::group_v2s::table
+            .filter(schema::group_v2s::id.eq(group_id_hex))
+            .first(&*db)
+            .optional()
+            .expect("db");
+        group.is_some()
+    }
+
     pub fn fetch_group_members_by_group_v2_id(
         &self,
         id: &str,
