@@ -1184,6 +1184,7 @@ dependencies = [
  "actix-threadpool",
  "actix_derive",
  "aes",
+ "bincode",
  "block-modes",
  "cc",
  "chrono",
@@ -1467,7 +1468,7 @@ dependencies = [
 [[package]]
 name = "libsignal-service"
 version = "0.1.0"
-source = "git+https://github.com/Michael-F-Bryan/libsignal-service-rs#3e5d4951492fa51b3a6a8049531e8b4646042550"
+source = "git+https://github.com/Michael-F-Bryan/libsignal-service-rs#6aa798acb398e526dfa7f3ffddf70c48dee4ff26"
 dependencies = [
  "aes",
  "aes-ctr",
@@ -1500,7 +1501,7 @@ dependencies = [
 [[package]]
 name = "libsignal-service-actix"
 version = "0.1.0"
-source = "git+https://github.com/Michael-F-Bryan/libsignal-service-rs#3e5d4951492fa51b3a6a8049531e8b4646042550"
+source = "git+https://github.com/Michael-F-Bryan/libsignal-service-rs#6aa798acb398e526dfa7f3ffddf70c48dee4ff26"
 dependencies = [
  "actix",
  "actix-http",
@@ -3043,7 +3044,7 @@ checksum = "e7141e445af09c8919f1d5f8a20dae0b20c3b57a45dee0d5823c6ed5d237f15a"
 dependencies = [
  "bitflags",
  "chrono",
- "rustc_version 0.2.3",
+ "rustc_version 0.3.3",
 ]
 
 [[package]]
