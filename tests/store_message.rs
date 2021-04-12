@@ -305,8 +305,10 @@ async fn process_inbound_group_message_without_sender(storage: impl Future<Outpu
         ],
     };
 
-    let (message_inserted, session_inserted) =
-        storage.process_message(new_message, Some(&group.into()));
+    let (message_inserted, session_inserted) = storage.process_message(
+        new_message,
+        Some(storage.fetch_or_insert_session_by_group_v1(&group)),
+    );
 
     // Test a session was created
     let session = storage
@@ -352,8 +354,10 @@ async fn process_outbound_group_message_without_sender(storage: impl Future<Outp
         ],
     };
 
-    let (message_inserted, session_inserted) =
-        storage.process_message(new_message, Some(&group.into()));
+    let (message_inserted, session_inserted) = storage.process_message(
+        new_message,
+        Some(storage.fetch_or_insert_session_by_group_v1(&group)),
+    );
 
     // Test a session was created
     let session = storage
@@ -399,8 +403,10 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
         ],
     };
 
-    let (message_inserted, session_inserted) =
-        storage.process_message(new_message, Some(&group.into()));
+    let (message_inserted, session_inserted) = storage.process_message(
+        new_message,
+        Some(storage.fetch_or_insert_session_by_group_v1(&group)),
+    );
 
     // Test a session was created
     let session = storage

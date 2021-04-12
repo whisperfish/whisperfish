@@ -196,12 +196,11 @@ impl MessageModel {
         &mut self,
         group_id: QString,
         message: QString,
-        group_name: QString,
+        _group_name: QString,
         attachment: QString,
         _add: bool,
     ) -> i32 {
         let group_id = group_id.to_string();
-        let group_name = group_name.to_string();
         let message = message.to_string();
         let attachment = attachment.to_string();
 
@@ -209,11 +208,19 @@ impl MessageModel {
             self.actor
                 .as_ref()
                 .unwrap()
-                .send(actor::QueueGroupMessage {
-                    group_id,
-                    group_name,
-                    message,
-                    attachment,
+                // XXX hackermannnnnn
+                .send(match group_id.len() {
+                    32 => actor::QueueGroupMessage::GroupV1Message {
+                        group_id,
+                        message,
+                        attachment,
+                    },
+                    64 => actor::QueueGroupMessage::GroupV2Message {
+                        group_id,
+                        message,
+                        attachment,
+                    },
+                    _ => unreachable!("Illegal group ID"),
                 })
                 .map(Result::unwrap),
         );

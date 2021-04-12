@@ -700,20 +700,16 @@ impl Storage {
     pub fn process_message(
         &self,
         mut new_message: NewMessage,
-        group: Option<&GroupContext>,
+        session: Option<orm::Session>,
     ) -> (orm::Message, orm::Session) {
-        let session = match group {
-            None => {
-                let recipient = self.merge_and_fetch_recipient(
-                    new_message.source_e164.as_deref(),
-                    new_message.source_uuid.as_deref(),
-                    TrustLevel::Certain,
-                );
-                self.fetch_or_insert_session_by_recipient_id(recipient.id)
-            }
-            Some(GroupContext::GroupV1(group)) => self.fetch_or_insert_session_by_group_v1(group),
-            Some(GroupContext::GroupV2(group)) => self.fetch_or_insert_session_by_group_v2(group),
-        };
+        let session = session.unwrap_or_else(|| {
+            let recipient = self.merge_and_fetch_recipient(
+                new_message.source_e164.as_deref(),
+                new_message.source_uuid.as_deref(),
+                TrustLevel::Certain,
+            );
+            self.fetch_or_insert_session_by_recipient_id(recipient.id)
+        });
 
         new_message.session_id = Some(session.id);
         let message = self.create_message(&new_message);
@@ -1563,6 +1559,32 @@ impl Storage {
             .expect("a session has been inserted")
     }
 
+    pub fn fetch_session_by_group_v1_id(&self, group_id_hex: &str) -> Option<orm::Session> {
+        if group_id_hex.len() != 32 {
+            log::warn!(
+                "Trying to fetch GV1 with ID of {} != 32 chars",
+                group_id_hex.len()
+            );
+            return None;
+        }
+        fetch_session!(self.db.lock(), |query| {
+            query.filter(schema::sessions::columns::group_v1_id.eq(&group_id_hex))
+        })
+    }
+
+    pub fn fetch_session_by_group_v2_id(&self, group_id_hex: &str) -> Option<orm::Session> {
+        if group_id_hex.len() != 64 {
+            log::warn!(
+                "Trying to fetch GV2 with ID of {} != 64 chars",
+                group_id_hex.len()
+            );
+            return None;
+        }
+        fetch_session!(self.db.lock(), |query| {
+            query.filter(schema::sessions::columns::group_v2_id.eq(&group_id_hex))
+        })
+    }
+
     pub fn fetch_or_insert_session_by_group_v2(&self, group: &GroupV2) -> orm::Session {
         let db = self.db.lock();
 
@@ -1587,7 +1609,7 @@ impl Storage {
             // XXX qTr?
             name: "New V2 group (updating)".into(),
             master_key: hex::encode(master_key),
-            revision: group.revision as i32,
+            revision: 0,
 
             invite_link_password: None,
 

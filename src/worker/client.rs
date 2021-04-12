@@ -238,12 +238,11 @@ impl ClientActor {
             }
 
             Some(
-                crate::store::GroupV1 {
+                storage.fetch_or_insert_session_by_group_v1(&crate::store::GroupV1 {
                     id: group.id().to_vec(),
                     name: group.name().to_string(),
                     members: group.members_e164.clone(),
-                }
-                .into(),
+                }),
             )
         } else if let Some(group) = msg.group_v2.as_ref() {
             let mut key_stack = [0u8; zkgroup::GROUP_MASTER_KEY_LEN];
@@ -267,12 +266,12 @@ impl ClientActor {
                 ctx.notify(RequestGroupV2Info(store_v2.clone()));
             }
 
-            Some(store_v2.into())
+            Some(storage.fetch_or_insert_session_by_group_v2(&store_v2))
         } else {
             None
         };
 
-        let (message, session) = storage.process_message(new_message, group.as_ref());
+        let (message, session) = storage.process_message(new_message, group);
 
         if settings.get_bool("attachment_log") && !msg.attachments.is_empty() {
             log::trace!("Logging message to the attachment log");

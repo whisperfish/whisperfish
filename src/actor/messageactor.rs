@@ -1,7 +1,7 @@
 use crate::gui::StorageReady;
 use crate::model::message::MessageModel;
 use crate::sfos::SailfishApp;
-use crate::store::{orm, GroupV1, Storage};
+use crate::store::{orm, Storage};
 use crate::worker::ClientActor;
 
 use actix::prelude::*;
@@ -36,11 +36,17 @@ pub struct QueueMessage {
 
 #[derive(actix::Message, Debug)]
 #[rtype(result = "()")]
-pub struct QueueGroupMessage {
-    pub group_id: String,
-    pub group_name: String,
-    pub message: String,
-    pub attachment: String,
+pub enum QueueGroupMessage {
+    GroupV1Message {
+        group_id: String,
+        message: String,
+        attachment: String,
+    },
+    GroupV2Message {
+        group_id: String,
+        message: String,
+        attachment: String,
+    },
 }
 
 #[derive(Message)]
@@ -207,19 +213,44 @@ impl Handler<QueueGroupMessage> for MessageActor {
 
         let storage = self.storage.as_mut().unwrap();
 
-        let has_attachment = !msg.attachment.is_empty();
+        let (group, message, attachment) = match msg {
+            QueueGroupMessage::GroupV1Message {
+                group_id,
+                message,
+                attachment,
+            } => (
+                storage
+                    .fetch_session_by_group_v1_id(&group_id)
+                    .expect("existing session"),
+                message,
+                attachment,
+            ),
+            QueueGroupMessage::GroupV2Message {
+                group_id,
+                message,
+                attachment,
+            } => (
+                storage
+                    .fetch_session_by_group_v2_id(&group_id)
+                    .expect("existing session"),
+                message,
+                attachment,
+            ),
+        };
+
+        let has_attachment = !attachment.is_empty();
 
         let (msg, _session) = storage.process_message(
             crate::store::NewMessage {
                 session_id: None,
                 source_e164: None,
                 source_uuid: None,
-                text: msg.message,
+                text: message,
                 timestamp: chrono::Utc::now().naive_utc(),
                 has_attachment,
                 mime_type: if has_attachment {
                     Some(
-                        mime_guess::from_path(&msg.attachment)
+                        mime_guess::from_path(&attachment)
                             .first_or_octet_stream()
                             .essence_str()
                             .into(),
@@ -228,7 +259,7 @@ impl Handler<QueueGroupMessage> for MessageActor {
                     None
                 },
                 attachment: if has_attachment {
-                    Some(msg.attachment)
+                    Some(attachment)
                 } else {
                     None
                 },
@@ -238,15 +269,7 @@ impl Handler<QueueGroupMessage> for MessageActor {
                 sent: false,
                 is_read: true,
             },
-            // XXX this "API" is horrible.
-            Some(
-                &GroupV1 {
-                    id: hex::decode(msg.group_id).expect("valid group id"),
-                    name: msg.group_name,
-                    members: Vec::new(),
-                }
-                .into(),
-            ),
+            Some(group),
         );
 
         self.inner.pinned().borrow_mut().handle_queue_message(msg);
