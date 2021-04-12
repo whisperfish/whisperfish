@@ -120,7 +120,7 @@ impl ClientActor {
     }
 
     fn uuid(&self) -> Option<Uuid> {
-        self.credentials.as_ref().and_then(|c| c.uuid.clone())
+        self.credentials.as_ref().and_then(|c| c.uuid)
     }
 
     fn unauthenticated_service(&self) -> AwcPushService {

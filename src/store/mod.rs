@@ -95,6 +95,7 @@ pub struct NewMessage {
 }
 
 #[derive(Clone, Debug)]
+#[allow(clippy::large_enum_variant)]
 pub enum GroupContext {
     GroupV1(GroupV1),
     GroupV2(GroupV2),
@@ -1605,7 +1606,7 @@ impl Storage {
         let master_key =
             bincode::serialize(&group.secret.get_master_key()).expect("serialized master key");
         let new_group = orm::GroupV2 {
-            id: group_id_hex.clone(),
+            id: group_id_hex,
             // XXX qTr?
             name: "New V2 group (updating)".into(),
             master_key: hex::encode(master_key),
