@@ -214,6 +214,10 @@ impl Session {
         self.r#type.is_dm()
     }
 
+    pub fn is_group(&self) -> bool {
+        self.r#type.is_group_v1() || self.r#type.is_group_v2()
+    }
+
     pub fn is_group_v1(&self) -> bool {
         self.r#type.is_group_v1()
     }
@@ -228,6 +232,10 @@ impl Session {
 
     pub fn unwrap_group_v1(&self) -> &GroupV1 {
         self.r#type.unwrap_group_v1()
+    }
+
+    pub fn unwrap_group_v2(&self) -> &GroupV2 {
+        self.r#type.unwrap_group_v2()
     }
 }
 

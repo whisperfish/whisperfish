@@ -14,7 +14,7 @@ use qmetaobject::*;
 struct SessionsLoaded(
     Vec<(
         orm::Session,
-        Vec<(orm::GroupV1Member, orm::Recipient)>,
+        Vec<orm::Recipient>,
         orm::Message,
         Vec<orm::Attachment>,
         Vec<(orm::Receipt, orm::Recipient)>,
@@ -114,7 +114,18 @@ impl Handler<FetchSession> for SessionActor {
 
         let group_members = if sess.is_group_v1() {
             let group = sess.unwrap_group_v1();
-            storage.fetch_group_members_by_group_v1_id(&group.id)
+            storage
+                .fetch_group_members_by_group_v1_id(&group.id)
+                .into_iter()
+                .map(|(_, r)| r)
+                .collect()
+        } else if sess.is_group_v2() {
+            let group = sess.unwrap_group_v2();
+            storage
+                .fetch_group_members_by_group_v2_id(&group.id)
+                .into_iter()
+                .map(|(_, r)| r)
+                .collect()
         } else {
             Vec::new()
         };
@@ -188,7 +199,18 @@ impl Handler<LoadAllSessions> for SessionActor {
 
                         let group_members = if session.is_group_v1() {
                             let group = session.unwrap_group_v1();
-                            storage.fetch_group_members_by_group_v1_id(&group.id)
+                            storage
+                                .fetch_group_members_by_group_v1_id(&group.id)
+                                .into_iter()
+                                .map(|(_, r)| r)
+                                .collect()
+                        } else if session.is_group_v2() {
+                            let group = session.unwrap_group_v2();
+                            storage
+                                .fetch_group_members_by_group_v2_id(&group.id)
+                                .into_iter()
+                                .map(|(_, r)| r)
+                                .collect()
                         } else {
                             Vec::new()
                         };
