@@ -143,6 +143,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                                 .and(group_v2_members::group_v2_id.eq(&group_id_hex)),
                         )
                         .load(&*db)?;
+                    log::trace!("Have {} stale members", stale_members.len());
                     let dropped = diesel::delete(group_v2_members::table)
                         .filter(
                             group_v2_members::group_v2_id
@@ -161,6 +162,10 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         let uuid = uuid::Uuid::from_slice(&member.uuid).expect("caught earlier");
                         let recipient =
                             storage.fetch_or_insert_recipient_by_uuid(&uuid.to_string());
+                        log::trace!(
+                            "Asserting {} as a member of the group",
+                            recipient.e164_or_uuid()
+                        );
 
                         // Upsert in Diesel 2.0... Manually for now.
                         let membership: Option<orm::GroupV2Member> = group_v2_members::table
@@ -172,6 +177,10 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                             .first(&*db)
                             .optional()?;
                         if let Some(membership) = membership {
+                            log::trace!(
+                                "  Member {} already in db. Updating membership.",
+                                recipient.e164_or_uuid()
+                            );
                             log::info!("Existing membership {:?}; updating", membership);
                             diesel::update(group_v2_members::table)
                                 .set((group_v2_members::role.eq(member.role as i32),))
@@ -182,7 +191,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                                 )
                                 .execute(&*db)?;
                         } else {
-                            log::info!("New member, inserting.");
+                            log::info!("  Member is new, inserting.");
                             diesel::insert_into(group_v2_members::table)
                                 .values((
                                     group_v2_members::group_v2_id.eq(&group_id_hex.clone()),
