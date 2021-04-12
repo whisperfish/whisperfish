@@ -407,6 +407,7 @@ define_model_roles! {
         Id(id):                                                            "id",
         Source(fn source(&self) via QString::from):                        "source",
         IsGroup(fn is_group_v1(&self)):                                    "isGroup",
+        IsGroupV2(fn is_group_v2(&self)):                                  "isGroupV2",
         GroupName(fn group_name(&self) via qstring_from_option):           "groupName",
         GroupMembers(fn group_members(&self) via qstring_from_option):     "groupMembers",
         Message(last_message.text via qstring_from_option):                "message",
