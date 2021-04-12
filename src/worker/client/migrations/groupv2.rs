@@ -28,6 +28,11 @@ impl Handler<ComputeGroupV2ExpectedIds> for ClientActor {
             for pending_v1_id_hex in pending_ids {
                 let pending_v1_id =
                     hex::decode(&pending_v1_id_hex).expect("correct hex values in db");
+                if pending_v1_id.len() != 16 {
+                    log::warn!("Illegal group ID in db");
+                    continue;
+                }
+
                 let master_key =
                     libsignal_service::groups_v2::utils::derive_v2_migration_master_key(
                         &context,
