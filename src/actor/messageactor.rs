@@ -107,10 +107,18 @@ impl Handler<FetchSession> for MessageActor {
             .expect("FIXME No session returned!");
         let group_members = if sess.is_group_v1() {
             let group = sess.unwrap_group_v1();
-            storage.fetch_group_members_by_group_v1_id(&group.id)
+            storage
+                .fetch_group_members_by_group_v1_id(&group.id)
+                .into_iter()
+                .map(|(_, r)| r)
+                .collect()
         } else if sess.is_group_v2() {
             let group = sess.unwrap_group_v2();
-            storage.fetch_group_members_by_group_v2_id(&group.id)
+            storage
+                .fetch_group_members_by_group_v2_id(&group.id)
+                .into_iter()
+                .map(|(_, r)| r)
+                .collect()
         } else {
             Vec::new()
         };
