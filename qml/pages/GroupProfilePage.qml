@@ -66,7 +66,22 @@ Page {
         header: Column {
             width: parent.width
 
-            PageHeader { title: groupName }
+            PageHeader {
+                title: groupName
+                description: {
+                    // TODO Consider removing the description label for updated groups
+                    //      because this should become the standard. Only show a hint
+                    //      for non-updated groups.
+                    // This can be expanded once there are more group versions.
+                    //: Indicator for updated groups
+                    //% "Updated to the new group format"
+                    if (MessageModel.groupV2) qsTrId("whisperfish-group-updated-to-groupv2")
+                    //: Indicator for not yet updated groups
+                    //% "Not updated to the new group format"
+                    else if (MessageModel.groupV1) qsTrId("whisperfish-group-not-updated-to-groupv2")
+                    else "" // we could shown an error here, or we don't
+                }
+            }
 
             ProfilePicture {
                 id: groupAvatarItem
