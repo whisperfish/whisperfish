@@ -63,6 +63,19 @@ fn log_error<T>(res: anyhow::Result<T>) -> anyhow::Result<T> {
     res
 }
 
+impl serialize::ToSql<Integer, diesel::sqlite::Sqlite> for StoryType
+where
+    i32: serialize::ToSql<Integer, diesel::sqlite::Sqlite>,
+{
+    fn to_sql<'b>(
+        &'b self,
+        out: &mut serialize::Output<'b, '_, diesel::sqlite::Sqlite>,
+    ) -> serialize::Result {
+        out.set_value(*self as i32);
+        Ok(serialize::IsNull::No)
+    }
+}
+
 impl serialize::ToSql<Integer, diesel::sqlite::Sqlite> for UnidentifiedAccessMode
 where
     i32: serialize::ToSql<Integer, diesel::sqlite::Sqlite>,

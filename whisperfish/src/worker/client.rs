@@ -19,6 +19,7 @@ use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::sender::SendMessageResult;
 use libsignal_service::sender::SentMessage;
 use uuid::Uuid;
+use whisperfish_store::orm::StoryType;
 use whisperfish_store::TrustLevel;
 use zkgroup::profiles::ProfileKey;
 
@@ -622,6 +623,7 @@ impl ClientActor {
             is_read: is_sync_sent,
             quote_timestamp: msg.quote.as_ref().and_then(|x| x.id),
             expires_in: session.expiring_message_timeout,
+            story_type: StoryType::None,
         };
 
         let message = storage.create_message(&new_message);
@@ -1199,6 +1201,7 @@ impl Handler<QueueMessage> for ClientActor {
             is_unidentified: false,
             quote_timestamp: quote.map(|msg| msg.server_timestamp.timestamp_millis() as u64),
             expires_in: session.expiring_message_timeout,
+            story_type: StoryType::None,
         });
 
         ctx.notify(SendMessage(msg.id));
@@ -1474,6 +1477,7 @@ impl Handler<EndSession> for ClientActor {
             is_unidentified: false,
             quote_timestamp: None,
             expires_in: session.expiring_message_timeout,
+            story_type: StoryType::None,
         });
         ctx.notify(SendMessage(msg.id));
     }
@@ -2025,6 +2029,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                                 is_unidentified: false,
                                 quote_timestamp: None,
                                 expires_in: session.expiring_message_timeout,
+                                story_type: StoryType::None,
                             };
                             storage.create_message(&msg);
 

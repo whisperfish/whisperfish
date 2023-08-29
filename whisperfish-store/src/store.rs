@@ -6,7 +6,7 @@ pub mod observer;
 mod protocol_store;
 mod utils;
 
-use self::orm::{AugmentedMessage, UnidentifiedAccessMode};
+use self::orm::{AugmentedMessage, StoryType, UnidentifiedAccessMode};
 use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
 use crate::schema;
@@ -108,6 +108,7 @@ pub struct NewMessage {
     pub is_unidentified: bool,
     pub quote_timestamp: Option<u64>,
     pub expires_in: Option<std::time::Duration>,
+    pub story_type: StoryType,
 }
 
 pub struct StoreProfile {
@@ -2184,6 +2185,7 @@ impl Storage {
                     flags.eq(new_message.flags),
                     quote_id.eq(quoted_message_id),
                     expires_in.eq(new_message.expires_in.map(|x| x.as_secs() as i32)),
+                    story_type.eq(new_message.story_type as i32),
                 ))
                 .execute(&mut *self.db())
                 .expect("inserting a message")
