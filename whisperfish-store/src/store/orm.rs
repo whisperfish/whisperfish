@@ -1133,6 +1133,28 @@ impl AugmentedSession {
     }
 }
 
+#[derive(Clone, Copy, Debug, FromSqlRow, PartialEq, Eq, AsExpression)]
+#[diesel(sql_type = Integer)]
+#[repr(i32)]
+pub enum StoryType {
+    None = 0,
+    StoryWithReplies = 1,
+    StoryWithoutReplies = 2,
+    TextStoryWithReplies = 3,
+    TextStoryWithoutReplies = 4,
+}
+
+impl StoryType {
+    pub fn from_params(allows_replies: bool, text_attachment: bool) -> Self {
+        match (allows_replies, text_attachment) {
+            (false, false) => Self::StoryWithoutReplies,
+            (true, false) => Self::StoryWithReplies,
+            (false, true) => Self::TextStoryWithoutReplies,
+            (true, true) => Self::TextStoryWithReplies,
+        }
+    }
+}
+
 pub fn shorten(text: &str, limit: usize) -> std::borrow::Cow<'_, str> {
     let limit = text
         .char_indices()
