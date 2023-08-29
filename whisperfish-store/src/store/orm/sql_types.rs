@@ -14,12 +14,10 @@ where
     i32: deserialize::FromSql<Integer, DB>,
 {
     fn from_sql(bytes: <DB>::RawValue<'_>) -> deserialize::Result<Self> {
-        match i32::from_sql(bytes)? {
-            0 => Ok(UnidentifiedAccessMode::Unknown),
-            1 => Ok(UnidentifiedAccessMode::Disabled),
-            2 => Ok(UnidentifiedAccessMode::Enabled),
-            3 => Ok(UnidentifiedAccessMode::Unrestricted),
-            x => Err(format!("Unrecognized variant {}", x).into()),
+        let i = i32::from_sql(bytes)?;
+        match UnidentifiedAccessMode::try_from(i) {
+            Ok(x) => Ok(x),
+            Err(_) => Err(format!("Unrecognized UnidentifiedAccessMode variant {}", i).into()),
         }
     }
 }
