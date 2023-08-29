@@ -113,6 +113,7 @@ diesel::table! {
         is_remote_deleted -> Bool,
         sending_has_failed -> Bool,
         quote_id -> Nullable<Integer>,
+        story_type -> Integer,
     }
 }
 

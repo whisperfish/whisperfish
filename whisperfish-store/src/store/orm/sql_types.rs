@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use anyhow::Context;
 use diesel::{
     backend, deserialize, serialize,
@@ -6,7 +8,21 @@ use diesel::{
 use phonenumber::PhoneNumber;
 use uuid::Uuid;
 
-use super::UnidentifiedAccessMode;
+use super::{StoryType, UnidentifiedAccessMode};
+
+impl<DB> deserialize::FromSql<Integer, DB> for StoryType
+where
+    DB: backend::Backend,
+    i32: deserialize::FromSql<Integer, DB>,
+{
+    fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
+        let i = i32::from_sql(bytes)?;
+        match StoryType::try_from(i) {
+            Ok(x) => Ok(x),
+            Err(_) => Err(format!("Unrecognized StoryType variant {}", i).into()),
+        }
+    }
+}
 
 impl<DB> deserialize::FromSql<Integer, DB> for UnidentifiedAccessMode
 where

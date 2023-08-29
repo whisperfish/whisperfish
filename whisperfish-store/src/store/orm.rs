@@ -95,7 +95,7 @@ impl Display for GroupV2Member {
     }
 }
 
-#[derive(Queryable, Debug, Clone, PartialEq, Eq)]
+#[derive(Queryable, Identifiable, Debug, Clone, PartialEq, Eq)]
 pub struct Message {
     pub id: i32,
     pub session_id: i32,
@@ -119,6 +119,8 @@ pub struct Message {
     pub sending_has_failed: bool,
 
     pub quote_id: Option<i32>,
+
+    pub story_type: StoryType,
 }
 
 impl Display for Message {
@@ -174,6 +176,7 @@ impl Default for Message {
             is_remote_deleted: Default::default(),
             sending_has_failed: Default::default(),
             quote_id: Default::default(),
+            story_type: StoryType::None,
         }
     }
 }
@@ -1142,6 +1145,27 @@ pub enum StoryType {
     StoryWithoutReplies = 2,
     TextStoryWithReplies = 3,
     TextStoryWithoutReplies = 4,
+}
+
+impl std::convert::TryFrom<i32> for StoryType {
+    type Error = ();
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::None),
+            1 => Ok(Self::StoryWithReplies),
+            2 => Ok(Self::StoryWithoutReplies),
+            3 => Ok(Self::TextStoryWithReplies),
+            4 => Ok(Self::TextStoryWithoutReplies),
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<StoryType> for i32 {
+    fn from(value: StoryType) -> Self {
+        value as i32
+    }
 }
 
 impl StoryType {
