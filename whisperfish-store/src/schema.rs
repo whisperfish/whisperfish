@@ -39,6 +39,26 @@ diesel::table! {
 }
 
 diesel::table! {
+    distribution_list_members (distribution_id, recipient_id) {
+        distribution_id -> Text,
+        recipient_id -> Integer,
+        privacy_mode -> Integer,
+    }
+}
+
+diesel::table! {
+    distribution_lists (distribution_id) {
+        name -> Text,
+        distribution_id -> Text,
+        recipient_id -> Nullable<Integer>,
+        allows_replies -> Bool,
+        deletion_timestamp -> Nullable<Timestamp>,
+        is_unknown -> Bool,
+        privacy_mode -> Integer,
+    }
+}
+
+diesel::table! {
     group_v1_members (group_v1_id, recipient_id) {
         group_v1_id -> Text,
         recipient_id -> Integer,
@@ -235,6 +255,9 @@ diesel::table! {
 }
 
 diesel::joinable!(attachments -> messages (message_id));
+diesel::joinable!(distribution_list_members -> distribution_lists (distribution_id));
+diesel::joinable!(distribution_list_members -> recipients (recipient_id));
+diesel::joinable!(distribution_lists -> recipients (recipient_id));
 diesel::joinable!(group_v1_members -> group_v1s (group_v1_id));
 diesel::joinable!(group_v1_members -> recipients (recipient_id));
 diesel::joinable!(group_v2_members -> group_v2s (group_v2_id));
@@ -251,6 +274,8 @@ diesel::joinable!(sessions -> recipients (direct_message_recipient_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     attachments,
+    distribution_list_members,
+    distribution_lists,
     group_v1_members,
     group_v1s,
     group_v2_members,
