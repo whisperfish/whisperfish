@@ -39,9 +39,9 @@ diesel::table! {
 }
 
 diesel::table! {
-    distribution_list_members (distribution_id, recipient_id) {
+    distribution_list_members (distribution_id, session_id) {
         distribution_id -> Text,
-        recipient_id -> Integer,
+        session_id -> Integer,
         privacy_mode -> Integer,
     }
 }
@@ -50,7 +50,7 @@ diesel::table! {
     distribution_lists (distribution_id) {
         name -> Text,
         distribution_id -> Text,
-        recipient_id -> Nullable<Integer>,
+        session_id -> Nullable<Integer>,
         allows_replies -> Bool,
         deletion_timestamp -> Nullable<Timestamp>,
         is_unknown -> Bool,
@@ -254,10 +254,20 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    story_sends (message_id, session_id) {
+        message_id -> Integer,
+        session_id -> Integer,
+        sent_timestamp -> Timestamp,
+        allows_replies -> Bool,
+        distribution_id -> Text,
+    }
+}
+
 diesel::joinable!(attachments -> messages (message_id));
 diesel::joinable!(distribution_list_members -> distribution_lists (distribution_id));
-diesel::joinable!(distribution_list_members -> recipients (recipient_id));
-diesel::joinable!(distribution_lists -> recipients (recipient_id));
+diesel::joinable!(distribution_list_members -> sessions (session_id));
+diesel::joinable!(distribution_lists -> sessions (session_id));
 diesel::joinable!(group_v1_members -> group_v1s (group_v1_id));
 diesel::joinable!(group_v1_members -> recipients (recipient_id));
 diesel::joinable!(group_v2_members -> group_v2s (group_v2_id));
@@ -271,6 +281,9 @@ diesel::joinable!(receipts -> recipients (recipient_id));
 diesel::joinable!(sessions -> group_v1s (group_v1_id));
 diesel::joinable!(sessions -> group_v2s (group_v2_id));
 diesel::joinable!(sessions -> recipients (direct_message_recipient_id));
+diesel::joinable!(story_sends -> distribution_lists (distribution_id));
+diesel::joinable!(story_sends -> messages (message_id));
+diesel::joinable!(story_sends -> sessions (session_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     attachments,
@@ -292,4 +305,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     sessions,
     signed_prekeys,
     stickers,
+    story_sends,
 );
