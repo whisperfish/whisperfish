@@ -624,6 +624,7 @@ impl ClientActor {
             quote_timestamp: msg.quote.as_ref().and_then(|x| x.id),
             expires_in: session.expiring_message_timeout,
             story_type: StoryType::None,
+            server_guid: metadata.server_guid,
         };
 
         let message = storage.create_message(&new_message);
@@ -1202,6 +1203,7 @@ impl Handler<QueueMessage> for ClientActor {
             quote_timestamp: quote.map(|msg| msg.server_timestamp.timestamp_millis() as u64),
             expires_in: session.expiring_message_timeout,
             story_type: StoryType::None,
+            server_guid: None,
         });
 
         ctx.notify(SendMessage(msg.id));
@@ -1478,6 +1480,7 @@ impl Handler<EndSession> for ClientActor {
             quote_timestamp: None,
             expires_in: session.expiring_message_timeout,
             story_type: StoryType::None,
+            server_guid: None,
         });
         ctx.notify(SendMessage(msg.id));
     }
@@ -2030,6 +2033,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                                 quote_timestamp: None,
                                 expires_in: session.expiring_message_timeout,
                                 story_type: StoryType::None,
+                                server_guid: None,
                             };
                             storage.create_message(&msg);
 

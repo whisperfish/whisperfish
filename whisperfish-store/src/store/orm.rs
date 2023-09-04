@@ -121,6 +121,9 @@ pub struct Message {
     pub quote_id: Option<i32>,
 
     pub story_type: StoryType,
+
+    #[diesel(deserialize_as = OptionUuidString, serialize_as = OptionUuidString)]
+    pub server_guid: Option<Uuid>,
 }
 
 impl Display for Message {
@@ -177,6 +180,7 @@ impl Default for Message {
             sending_has_failed: Default::default(),
             quote_id: Default::default(),
             story_type: StoryType::None,
+            server_guid: Default::default(),
         }
     }
 }

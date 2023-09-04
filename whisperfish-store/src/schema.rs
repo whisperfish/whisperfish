@@ -134,6 +134,7 @@ diesel::table! {
         sending_has_failed -> Bool,
         quote_id -> Nullable<Integer>,
         story_type -> Integer,
+        server_guid -> Nullable<Text>,
     }
 }
 

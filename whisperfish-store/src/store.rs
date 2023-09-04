@@ -95,6 +95,7 @@ pub struct NewMessage {
     pub session_id: i32,
     pub source_e164: Option<PhoneNumber>,
     pub source_uuid: Option<Uuid>,
+    pub server_guid: Option<Uuid>,
     pub text: String,
     pub timestamp: NaiveDateTime,
     pub sent: bool,
@@ -2166,6 +2167,7 @@ impl Storage {
             diesel::insert_into(messages)
                 .values((
                     session_id.eq(session),
+                    server_guid.eq(new_message.server_guid.as_ref().map(Uuid::to_string)),
                     text.eq(&new_message.text),
                     sender_recipient_id.eq(sender_id),
                     received_timestamp.eq(if !new_message.outgoing {

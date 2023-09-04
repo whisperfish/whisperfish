@@ -1,0 +1,2 @@
+ALTER TABLE messages
+    ADD COLUMN server_guid VARCHAR(36) DEFAULT NULL;
