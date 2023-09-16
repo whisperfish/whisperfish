@@ -100,15 +100,14 @@ impl Handler<UpdateTypingNotifications> for SessionActor {
 
         let storage = self.storage.clone().unwrap();
         let fetch_sessions = async move {
-            let mut map = HashMap::new();
+            let mut map: HashMap<i32, Vec<orm::Recipient>> = HashMap::new();
             for typing in &typings {
-                // XXX check whether certain is allowed here
-                let sender_recipient = storage.merge_and_fetch_recipient(
-                    None,
-                    Some(typing.sender.uuid),
-                    None,
-                    crate::store::TrustLevel::Certain,
-                );
+                let sender_recipient = storage.fetch_recipient_by_uuid(typing.sender.uuid);
+                if sender_recipient.is_none() {
+                    continue;
+                }
+                let sender_recipient = sender_recipient.unwrap();
+
                 let group_id = typing.inner.group_id.as_ref().map(hex::encode);
                 let session = match &group_id {
                     // Group V1
@@ -126,17 +125,16 @@ impl Handler<UpdateTypingNotifications> for SessionActor {
                     // 1:1
                     None => storage.fetch_session_by_recipient_id(sender_recipient.id),
                 };
-                let session = if let Some(session) = session {
-                    session
-                } else {
-                    let group_id = group_id.unwrap();
-                    // XXX Don't bail for a single failure.
-                    anyhow::bail!(
-                        "No session found for {} with group {:?}...",
-                        sender_recipient,
-                        shorten(&group_id, 12)
+                if session.is_none() {
+                    tracing::trace!(
+                        "No session found for sender {:?} in {:?}",
+                        sender_recipient.uuid,
+                        shorten(group_id.unwrap_or("1:1".to_string()).as_ref(), 12),
                     );
-                };
+                    continue;
+                }
+                let session = session.unwrap();
+
                 let session: &mut Vec<orm::Recipient> = map.entry(session.id).or_default();
                 if !session.iter().any(|x| x.id == sender_recipient.id) {
                     session.push(sender_recipient);
@@ -149,14 +147,12 @@ impl Handler<UpdateTypingNotifications> for SessionActor {
         Box::pin(
             fetch_sessions
                 .into_actor(self)
-                .map(|result, _act, _ctx| match result {
+                .map(|result, act, _ctx| match result {
                     Ok(typings) => {
-                        tracing::info!("Sending typings {:?} to model", typings);
-                        // TODO: put this back to some model
-                        // act.inner
-                        //     .pinned()
-                        //     .borrow_mut()
-                        //     .handle_update_typing(typings);
+                        if !typings.is_empty() {
+                            tracing::info!("Sending typings {:?} to model", typings);
+                            act.handle_update_typing(&typings);
+                        }
                     }
                     Err(e) => tracing::error!("Could not process typings: {}", e),
                 }),
