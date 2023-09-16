@@ -33,10 +33,6 @@ Page {
         groupId: session.groupId ? session.groupId : -1
     }
 
-    function setTyping(message) {
-        pageHeader.isTypingMessage = message;
-    }
-
     onStatusChanged: {
         if (status == PageStatus.Active) {
             // XXX this should be a call into the client/application state/...
