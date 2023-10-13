@@ -43,6 +43,8 @@ tempfile = { version = "3.4.0", default-features = false }
 tokio = { version = "1.26.0", features = ["fs", "macros"] }
 uuid = { version = "1.5", features=["v4"] }
 
+tracing = "0.1"
+
 libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features = ["unsend-futures"] }
 
 [build-dependencies]
