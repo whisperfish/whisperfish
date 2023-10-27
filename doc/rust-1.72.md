@@ -1,6 +1,6 @@
 # Compiling Whisperfish with Rust 1.72
 
-Currently, only i486 compiler is available, but it's enough for updating dependencies (removing all the pinned versions, hopefully). It's also possible to run it in the Sailfish OS emulator, which is i486.
+Currently, only i486 compiler is available (aarch64 and armv7hl can burrently be only partially compiled), but it's enough for updating dependencies (removing all the pinned versions, hopefully). It's also possible to run it in the Sailfish OS emulator, which is i486.
 
 Note: I'm doing this all in the SFDK global context, but nothing shouldn't prevent from using a project scope for the settings.
 
@@ -14,9 +14,20 @@ SFDK has the ability to pick up a packages from the host to fulfill depencies. M
 
     $ sfdk config --global --push output-prefix ~/SFOS/RPMS
 
-Eventually, the location `~/SFOS/RPMS/SailfishOs-4.5.0.18-i486` will be auto-created, and there's where we want to put the files:
+Eventually, the location `~/SFOS/RPMS/SailfishOs-4.5.0.18-i486` will be auto-created, and there's where we want to download the Rust and LLVM packages:
 
-    $ ls ~/SFOS/RPMS/SailfishOS-4.5.0.18-i486
+    $ mkdir -p ~/SFOS/RPMS/SailfishOS-4.5.0.18-i486
+    $ cd ~/SFOS/RPMS/SailfishOS-4.5.0.18-i486
+    $ URL=https://direc.kapsi.fi/rpms/i486
+    $ for FILE in \
+        llvm-libs-14.0.6-0.i486.rpm \
+        cargo-1.72.1+git1-1.i486.rpm \
+        rust-1.72.1+git1-1.i486.rpm \
+        rust-std-static-i686-unknown-linux-gnu-1.72.1+git1-1.i486.rpm; \
+        do
+            curl $URL/$FILE --output $FILE
+        done
+    $ ls
     llvm-libs-14.0.6-0.i486.rpm
     cargo-1.72.1+git1-1.i486.rpm
     rust-1.72.1+git1-1.i486.rpm
@@ -36,11 +47,11 @@ Eventually, the location `~/SFOS/RPMS/SailfishOs-4.5.0.18-i486` will be auto-cre
 
 This is the "interesting" part of this process -- we'll have to install the packages manually into the Sailfish SDK tooling. This is due to the relationship betweeh build target, build tooling and scratchbox in general, which is something not clear to me -- but nevertheless, it needs to be done, and it works.
 
-Since the packages can't be simply copied into the tooling filesystem, you have to prepare the files on a HTTP server so you can access them. (We are working out a location to push the files to so others can just download them from there.) Once that's done, enter the tooling and download the files:
+Since the packages can't be simply copied into the tooling filesystem, you have to prepare the files on a HTTP server so you can access them. Enter the tooling and (again) download the files:
 
     $ sfdk tools exec SailfishOS-4.5.0.18 bash
     # cd ~ ; mkdir RPMS ; cd RPMS
-    # URL=http://example.com/path
+    # URL=https://direc.kapsi.fi/rpms/i486
     # for FILE in \
         llvm-libs-14.0.6-0.i486.rpm \
         cargo-1.72.1+git1-1.i486.rpm \
