@@ -1,6 +1,6 @@
 use super::*;
 use libsignal_service::protocol::{
-    self, Context, GenericSignedPreKey, IdentityKeyPair, SignalProtocolError,
+    self, GenericSignedPreKey, IdentityKeyPair, SignalProtocolError,
 };
 use libsignal_service::provisioning::generate_registration_id;
 use libsignal_service::session_store::SessionStoreExt;
@@ -126,10 +126,7 @@ impl Storage {
 impl protocol::ProtocolStore for Storage {}
 
 impl Storage {
-    pub async fn get_local_pni_registration_id(
-        &self,
-        _: Context,
-    ) -> Result<u32, SignalProtocolError> {
+    pub async fn get_local_pni_registration_id(&self) -> Result<u32, SignalProtocolError> {
         let path = self.path.join("storage").join("identity").join("pni_regid");
         if !tokio::fs::try_exists(&path).await.expect("fs error") {
             log::info!("Generating PNI regid");
@@ -168,10 +165,7 @@ impl Storage {
 
 #[async_trait::async_trait(?Send)]
 impl protocol::IdentityKeyStore for Storage {
-    async fn get_identity_key_pair(
-        &self,
-        _: Context,
-    ) -> Result<IdentityKeyPair, SignalProtocolError> {
+    async fn get_identity_key_pair(&self) -> Result<IdentityKeyPair, SignalProtocolError> {
         let identity_key_pair = self.aci_identity_key_pair.read().await;
 
         if let Some(identity_key_pair) = *identity_key_pair {
@@ -207,7 +201,7 @@ impl protocol::IdentityKeyStore for Storage {
         }
     }
 
-    async fn get_local_registration_id(&self, _: Context) -> Result<u32, SignalProtocolError> {
+    async fn get_local_registration_id(&self) -> Result<u32, SignalProtocolError> {
         log::trace!("Reading regid");
         let _lock = self.protocol_store.read().await;
 
@@ -237,7 +231,6 @@ impl protocol::IdentityKeyStore for Storage {
         key: &IdentityKey,
         // XXX
         _direction: Direction,
-        _ctx: Context,
     ) -> Result<bool, SignalProtocolError> {
         if let Some(trusted_key) = self.fetch_identity_key(addr) {
             Ok(trusted_key == *key)
@@ -253,7 +246,6 @@ impl protocol::IdentityKeyStore for Storage {
         &mut self,
         addr: &ProtocolAddress,
         key: &IdentityKey,
-        _: Context,
     ) -> Result<bool, SignalProtocolError> {
         Ok(self.store_identity_key(addr, key))
     }
@@ -261,7 +253,6 @@ impl protocol::IdentityKeyStore for Storage {
     async fn get_identity(
         &self,
         addr: &ProtocolAddress,
-        _: Context,
     ) -> Result<Option<IdentityKey>, SignalProtocolError> {
         Ok(self.fetch_identity_key(addr))
     }
@@ -269,11 +260,7 @@ impl protocol::IdentityKeyStore for Storage {
 
 #[async_trait::async_trait(?Send)]
 impl protocol::PreKeyStore for Storage {
-    async fn get_pre_key(
-        &self,
-        prekey_id: PreKeyId,
-        _: Context,
-    ) -> Result<PreKeyRecord, SignalProtocolError> {
+    async fn get_pre_key(&self, prekey_id: PreKeyId) -> Result<PreKeyRecord, SignalProtocolError> {
         log::trace!("Loading prekey {}", prekey_id);
         use crate::schema::prekeys::dsl::*;
         use diesel::prelude::*;
@@ -294,7 +281,6 @@ impl protocol::PreKeyStore for Storage {
         &mut self,
         prekey_id: PreKeyId,
         body: &PreKeyRecord,
-        _: Context,
     ) -> Result<(), SignalProtocolError> {
         log::trace!("Storing prekey {}", prekey_id);
         use crate::schema::prekeys::dsl::*;
@@ -311,11 +297,7 @@ impl protocol::PreKeyStore for Storage {
         Ok(())
     }
 
-    async fn remove_pre_key(
-        &mut self,
-        prekey_id: PreKeyId,
-        _: Context,
-    ) -> Result<(), SignalProtocolError> {
+    async fn remove_pre_key(&mut self, prekey_id: PreKeyId) -> Result<(), SignalProtocolError> {
         log::trace!("Removing prekey {}", prekey_id);
         use crate::schema::prekeys::dsl::*;
         use diesel::prelude::*;
@@ -350,7 +332,6 @@ impl protocol::SessionStore for Storage {
     async fn load_session(
         &self,
         addr: &ProtocolAddress,
-        _: Context,
     ) -> Result<Option<SessionRecord>, SignalProtocolError> {
         log::trace!("Loading session for {}", addr);
         use crate::schema::session_records::dsl::*;
@@ -376,13 +357,12 @@ impl protocol::SessionStore for Storage {
         &mut self,
         addr: &ProtocolAddress,
         session: &protocol::SessionRecord,
-        context: Context,
     ) -> Result<(), SignalProtocolError> {
         log::trace!("Storing session for {}", addr);
         use crate::schema::session_records::dsl::*;
         use diesel::prelude::*;
 
-        if self.contains_session(addr, context).await? {
+        if self.contains_session(addr).await? {
             diesel::update(session_records)
                 .filter(
                     address
@@ -413,11 +393,7 @@ impl Storage {
     ///
     /// This does *not* lock the protocol store.  If a transactional check is required, use the
     /// lock from outside.
-    async fn contains_session(
-        &self,
-        addr: &ProtocolAddress,
-        _: Context,
-    ) -> Result<bool, SignalProtocolError> {
+    async fn contains_session(&self, addr: &ProtocolAddress) -> Result<bool, SignalProtocolError> {
         use crate::schema::session_records::dsl::*;
         use diesel::dsl::*;
         use diesel::prelude::*;
@@ -558,7 +534,6 @@ impl protocol::SignedPreKeyStore for Storage {
     async fn get_signed_pre_key(
         &self,
         signed_prekey_id: SignedPreKeyId,
-        _: Context,
     ) -> Result<SignedPreKeyRecord, SignalProtocolError> {
         log::trace!("Loading signed prekey {}", signed_prekey_id);
         use crate::schema::signed_prekeys::dsl::*;
@@ -580,7 +555,6 @@ impl protocol::SignedPreKeyStore for Storage {
         &mut self,
         signed_prekey_id: SignedPreKeyId,
         body: &SignedPreKeyRecord,
-        _: Context,
     ) -> Result<(), SignalProtocolError> {
         log::trace!("Storing prekey {}", signed_prekey_id);
         use crate::schema::signed_prekeys::dsl::*;
@@ -604,7 +578,6 @@ impl protocol::KyberPreKeyStore for Storage {
     async fn mark_kyber_pre_key_used(
         &mut self,
         kyber_prekey_id: KyberPreKeyId,
-        _: Context,
     ) -> Result<(), SignalProtocolError> {
         // TODO: only remove the kyber pre key if it concerns an ephemeral pre key; last-resort
         // keys should be retained!  See libsignal-service/src/account_manager.rs `if use_last_resort_key`
@@ -622,7 +595,6 @@ impl protocol::KyberPreKeyStore for Storage {
     async fn get_kyber_pre_key(
         &self,
         kyber_prekey_id: KyberPreKeyId,
-        _: Context,
     ) -> Result<KyberPreKeyRecord, SignalProtocolError> {
         log::trace!("Loading Kyber prekey {}", kyber_prekey_id);
         use crate::schema::kyber_prekeys::dsl::*;
@@ -644,7 +616,6 @@ impl protocol::KyberPreKeyStore for Storage {
         &mut self,
         kyber_prekey_id: KyberPreKeyId,
         body: &KyberPreKeyRecord,
-        _: Context,
     ) -> Result<(), SignalProtocolError> {
         log::trace!("Storing Kyber prekey {}", kyber_prekey_id);
         use crate::schema::kyber_prekeys::dsl::*;
@@ -670,7 +641,6 @@ impl SenderKeyStore for Storage {
         addr: &ProtocolAddress,
         distr_id: Uuid,
         record: &SenderKeyRecord,
-        _: Context,
     ) -> Result<(), SignalProtocolError> {
         log::trace!("Storing sender key {} {}", addr, distr_id);
 
@@ -695,7 +665,6 @@ impl SenderKeyStore for Storage {
         &mut self,
         addr: &ProtocolAddress,
         distr_id: Uuid,
-        _: Context,
     ) -> Result<Option<SenderKeyRecord>, SignalProtocolError> {
         log::trace!("Loading sender key {} {}", addr, distr_id);
 

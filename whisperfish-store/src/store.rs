@@ -2604,7 +2604,7 @@ impl Storage {
     /// Returns a binary peer identity
     pub async fn peer_identity(&self, addr: ProtocolAddress) -> Result<Vec<u8>, anyhow::Error> {
         let ident = self
-            .get_identity(&addr, None)
+            .get_identity(&addr)
             .await?
             .context("No such identity")?;
         Ok(ident.serialize().into())
