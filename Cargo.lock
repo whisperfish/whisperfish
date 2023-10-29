@@ -461,12 +461,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "block-modes"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e2211b0817f061502a8dd9f11a37e879e79763e3c698d2418cf824d8cb2f21e"
-
-[[package]]
 name = "block-padding"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1669,7 +1663,7 @@ dependencies = [
  "async-trait",
  "base64 0.13.1",
  "bincode",
- "block-modes 0.8.1",
+ "block-modes",
  "bytes",
  "chrono",
  "derivative",
@@ -2936,6 +2930,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "secrecy"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0673d6a6449f5e7d12a1caf424fd9363e2af3a4953023ed455e3c4beef4597c0"
+dependencies = [
+ "zeroize",
+]
+
+[[package]]
 name = "semver"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3749,10 +3752,11 @@ dependencies = [
  "actix-rt",
  "anyhow",
  "base64 0.21.5",
- "block-modes 0.9.1",
  "blurhash",
+ "cbc",
  "cc",
  "chrono",
+ "cipher 0.4.4",
  "cmake",
  "cpp",
  "cpp_build",
@@ -3765,7 +3769,6 @@ dependencies = [
  "futures",
  "getrandom 0.2.10",
  "hex",
- "hmac",
  "image",
  "itertools 0.11.0",
  "libsignal-protocol",
@@ -3786,6 +3789,7 @@ dependencies = [
  "qrcode",
  "qttypes",
  "rand 0.7.3",
+ "rand_core 0.6.4",
  "regex",
  "rstest",
  "rstest_reuse",
@@ -3823,11 +3827,13 @@ version = "0.6.0-dev"
 dependencies = [
  "actix",
  "actix-rt",
+ "aes 0.8.3",
  "anyhow",
  "async-trait",
  "bincode",
- "block-modes 0.9.1",
+ "cbc",
  "chrono",
+ "cipher 0.4.4",
  "criterion",
  "diesel",
  "diesel_migrations",
@@ -3850,6 +3856,7 @@ dependencies = [
  "rstest",
  "rstest_reuse",
  "scrypt",
+ "secrecy",
  "serde",
  "serde_yaml",
  "sha-1",

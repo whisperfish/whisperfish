@@ -18,7 +18,8 @@ aes = "0.8"
 anyhow = "1.0"
 async-trait = "0.1"
 bincode = "1.2.1"
-block-modes = "0.9"
+cbc = "0.1"
+cipher = "0.4"
 chrono = "0.4"
 diesel = { version = "2.0", features = ["sqlite", "chrono"] }
 diesel_migrations = "2.0"
@@ -35,6 +36,7 @@ prost = "0.9"
 rand = "0.8"
 regex = "1.7"
 scrypt = { version = "0.11.0", default-features = false, features = ["std"] }
+secrecy = "0.7"
 serde = {version = "1.0", features = ["derive"]}
 serde_yaml = "0.8"
 sha2 = "0.10"
