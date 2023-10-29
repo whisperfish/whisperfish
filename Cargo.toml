@@ -13,6 +13,9 @@ members = [
 qmetaobject = { git = "https://github.com/whisperfish/qmetaobject-rs", branch = "whisperfork" }
 qttypes = { git = "https://github.com/whisperfish/qmetaobject-rs", branch = "whisperfork" }
 
+# Required for libsignal's lizard2 patches to c25519
+curve25519-dalek = { git = 'https://github.com/signalapp/curve25519-dalek', tag = 'signal-curve25519-4.0.0' }
+
 # Smart dev mode: Compile most stuff in release mode, except for the things
 # that are actually maintained by our community
 [profile.dev.package."*"]
