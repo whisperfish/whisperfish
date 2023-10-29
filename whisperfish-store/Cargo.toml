@@ -14,30 +14,31 @@ harness = false
 
 [dependencies]
 actix = "0.13"
+aes = "0.8"
 anyhow = "1.0"
 async-trait = "0.1"
 bincode = "1.2.1"
-block-modes = "0.8"
+block-modes = "0.9"
 chrono = "0.4"
 diesel = { version = "2.0", features = ["sqlite", "chrono"] }
 diesel_migrations = "2.0"
 dirs = "4.0"
 fs_extra = "1.2.0"
 hex = "0.4"
-hmac = "0.11"
-itertools = "0.10.3"
+hmac = "0.12"
+itertools = "0.11"
 libsqlite3-sys = { version = "0.25.2", features = ["sqlcipher"] }
 log = "0.4"
-pbkdf2 = { version = "0.9.0", default-features = false }
+pbkdf2 = { version = "0.12", default-features = false }
 phonenumber = "0.3.1"
-prost = "0.10"
-rand = "0.7"
+prost = "0.9"
+rand = "0.8"
 regex = "1.7"
 scrypt = { version = "0.11.0", default-features = false, features = ["std"] }
 serde = {version = "1.0", features = ["derive"]}
 serde_yaml = "0.8"
-sha2 = "0.9"
-sha-1 = "0.9"
+sha2 = "0.10"
+sha-1 = "0.10"
 tempfile = { version = "3.4.0", default-features = false }
 tokio = { version = "1.26.0", features = ["fs", "macros"] }
 uuid = { version = "1.3", features=["v4"] }
@@ -46,7 +47,7 @@ libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs
 
 [build-dependencies]
 anyhow = "1.0"
-prost-build = "0.10"
+prost-build = "0.9"
 
 [dev-dependencies]
 actix-rt = "2.8.0"
