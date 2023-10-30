@@ -606,7 +606,7 @@ impl Storage {
             .fetch_session_by_id(message.session_id)
             .expect("session exists");
 
-        let target_author_uuid = Uuid::parse_str(reaction.target_author_uuid())
+        let target_author_uuid = Uuid::parse_str(reaction.target_author_aci())
             .map_err(|_| log::error!("ignoring reaction with invalid uuid"))
             .ok()?;
 

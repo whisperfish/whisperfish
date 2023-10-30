@@ -620,7 +620,7 @@ async fn test_recipient_actions() {
     let reaction = Reaction {
         emoji: Some("❤".into()),
         remove: Some(false),
-        target_author_uuid: Some(recip.uuid.unwrap().to_string()),
+        target_author_aci: Some(recip.uuid.unwrap().to_string()),
         target_sent_timestamp: Some(msg.server_timestamp.timestamp_millis() as _),
     };
     let data_msg = DataMessage {

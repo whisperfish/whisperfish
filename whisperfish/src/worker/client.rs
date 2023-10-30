@@ -241,6 +241,7 @@ fn whisperfish_device_capabilities() -> DeviceCapabilities {
         change_number: false,
         gift_badges: false,
         stories: false,
+        pnp: false, // What is PNP?
     }
 }
 
@@ -547,7 +548,7 @@ impl ClientActor {
 
         let is_unidentified = if let Some(sent) = &sync_sent {
             sent.unidentified_status.iter().any(|x| {
-                Some(x.destination_uuid()) == source_uuid.as_ref().map(Uuid::to_string).as_deref()
+                Some(x.destination_service_id()) == source_uuid.as_ref().map(Uuid::to_string).as_deref()
                     && x.unidentified()
             })
         } else {
@@ -710,7 +711,6 @@ impl ClientActor {
                             ContactDetails {
                                 // XXX: expire timer from dm session
                                 number: recipient.e164.as_ref().map(PhoneNumber::to_string),
-                                uuid: recipient.uuid.as_ref().map(Uuid::to_string),
                                 name: recipient.profile_joined_name.clone(),
                                 profile_key: recipient.profile_key,
                                 // XXX other profile stuff
@@ -806,11 +806,11 @@ impl ClientActor {
 
                     if let Some(message) = &sent.message {
                         let uuid = sent
-                            .destination_uuid
+                            .destination_service_id
                             .as_deref()
                             .map(Uuid::parse_str)
                             .transpose()
-                            .map_err(|_| log::warn!("Unparsable UUID {}", sent.destination_uuid()))
+                            .map_err(|_| log::warn!("Unparsable UUID {}", sent.destination_service_id()))
                             .ok()
                             .flatten();
                         let phonenumber = sent
@@ -851,7 +851,7 @@ impl ClientActor {
                     for read in &message.read {
                         // XXX: this should probably not be based on ts alone.
                         let ts = read.timestamp();
-                        let source = read.sender_uuid();
+                        let source = read.sender_aci();
                         // Signal uses timestamps in milliseconds, chrono has nanoseconds
                         let ts = millis_to_naive_chrono(ts);
                         log::trace!(
@@ -1241,7 +1241,7 @@ impl Handler<SendMessage> for ClientActor {
 
                         Quote {
                             id: Some(quoted_message.server_timestamp.timestamp_millis() as u64),
-                            author_uuid: quote_sender.as_ref().and_then(|r| r.uuid.as_ref().map(Uuid::to_string)),
+                            author_aci: quote_sender.as_ref().and_then(|r| r.uuid.as_ref().map(Uuid::to_string)),
                             text: quoted_message.text.clone(),
 
                             ..Default::default()
@@ -1616,7 +1616,7 @@ impl Handler<SendReaction> for ClientActor {
                     reaction: Some(Reaction {
                         emoji: Some(emoji.clone()),
                         remove: Some(remove),
-                        target_author_uuid: sender_recipient.uuid.map(|u| u.to_string()),
+                        target_author_aci: sender_recipient.uuid.map(|u| u.to_string()),
                         target_sent_timestamp: Some(
                             message.server_timestamp.timestamp_millis() as u64
                         ),
