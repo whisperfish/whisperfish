@@ -720,26 +720,6 @@ impl ClientActor {
 
                     sender.send_contact_details(&local_addr, None, contacts, false, true).await?;
                 },
-                Type::Groups => {
-                    use libsignal_service::sender::GroupDetails;
-                    let sessions = storage.fetch_group_sessions();
-
-                    let groups = sessions.into_iter().map(|session| {
-                        let group = session.unwrap_group_v1();
-                        let members = storage.fetch_group_members_by_group_v1_id(&group.id);
-                        GroupDetails {
-                            name: Some(group.name.clone()),
-                            members_e164: members.iter().filter_map(|(_member, recipient)| recipient.e164.as_ref().map(PhoneNumber::to_string)).collect(),
-                            // XXX: update proto file and add more.
-                            // members: members.iter().filter_map(|(_member, recipient)| Member {e164: recipient.e164}).collect(),
-                            // avatar, active?, color, ..., many cool things to add here!
-                            // Tagging issue #204
-                            ..Default::default()
-                        }
-                    });
-
-                    sender.send_groups_details(&local_addr, None, groups, false).await?;
-                }
                 Type::Blocked => {
                     anyhow::bail!("Unimplemented {:?}", req.r#type());
                 }
