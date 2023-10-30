@@ -10,11 +10,10 @@ members = [
 ]
 
 [patch.crates-io]
-qmetaobject = { git = "https://github.com/whisperfish/qmetaobject-rs", branch = "whisperfork" }
-qttypes = { git = "https://github.com/whisperfish/qmetaobject-rs", branch = "whisperfork" }
-
 # Required for libsignal's lizard2 patches to c25519
 curve25519-dalek = { git = 'https://github.com/signalapp/curve25519-dalek', tag = 'signal-curve25519-4.0.0' }
+qttypes = { git = 'https://github.com/woboq/qmetaobject-rs.git', rev = '15381012a43ae3106aae205592cd6b713756c58a' }
+qmetaobject = { git = 'https://github.com/woboq/qmetaobject-rs.git', rev = '15381012a43ae3106aae205592cd6b713756c58a' }
 
 # Smart dev mode: Compile most stuff in release mode, except for the things
 # that are actually maintained by our community
