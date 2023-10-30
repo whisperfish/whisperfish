@@ -28,8 +28,6 @@ percent-encoding = "2.2"
 libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main" }
 libsignal-service-actix = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main" }
 
-# These two are here *just* to enable the `whisperfork` feature flag through the `sailfish` feature gate.
-# Cargo patch sections don't support these.
 libsignal-protocol = { git = "https://github.com/signalapp/libsignal", tag = "v0.32.0" }
 zkgroup = { git = "https://github.com/signalapp/libsignal", tag = "v0.32.0" }
 
