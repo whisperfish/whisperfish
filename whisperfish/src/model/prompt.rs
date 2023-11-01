@@ -135,8 +135,10 @@ impl Prompt {
         let mut image_uri = String::from("data:image/png;base64,");
         {
             use base64::engine::general_purpose as engine;
-            let mut image_b64enc =
-                base64::write::EncoderStringWriter::from_consumer(&mut image_uri, &engine::STANDARD);
+            let mut image_b64enc = base64::write::EncoderStringWriter::from_consumer(
+                &mut image_uri,
+                &engine::STANDARD,
+            );
             image::png::PngEncoder::new(&mut image_b64enc)
                 .encode(
                     &image_buf,

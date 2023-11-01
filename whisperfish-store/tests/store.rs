@@ -440,7 +440,11 @@ async fn test_create_and_open_storage(
     let rng = rand::thread_rng();
 
     // Signaling password for REST API
-    let password: String = rng.sample_iter(&Alphanumeric).take(24).map(char::from).collect();
+    let password: String = rng
+        .sample_iter(&Alphanumeric)
+        .take(24)
+        .map(char::from)
+        .collect();
 
     // Signaling key that decrypts the incoming Signal messages
     let mut rng = rand::thread_rng();
@@ -523,7 +527,11 @@ async fn test_recipient_actions() {
     let rng = rand::thread_rng();
 
     // Signaling password for REST API
-    let password: String = rng.sample_iter(&Alphanumeric).take(24).map(char::from).collect();
+    let password: String = rng
+        .sample_iter(&Alphanumeric)
+        .take(24)
+        .map(char::from)
+        .collect();
 
     // Signaling key that decrypts the incoming Signal messages
     let mut rng = rand::thread_rng();

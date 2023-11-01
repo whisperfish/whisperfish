@@ -744,7 +744,11 @@ mod tests {
         let rng = rand::thread_rng();
 
         // Signaling password for REST API
-        let password: String = rng.sample_iter(&Alphanumeric).take(24).map(char::from).collect();
+        let password: String = rng
+            .sample_iter(&Alphanumeric)
+            .take(24)
+            .map(char::from)
+            .collect();
 
         // Signaling key that decrypts the incoming Signal messages
         let mut rng = rand::thread_rng();
@@ -832,11 +836,7 @@ mod tests {
         //assert_eq!(id_key1.unwrap(), store.get_identity_key_pair().await.unwrap());
         assert_eq!(
             id_key1.serialize(),
-            storage
-                .get_identity_key_pair()
-                .await
-                .unwrap()
-                .serialize()
+            storage.get_identity_key_pair().await.unwrap().serialize()
         );
     }
 
@@ -854,10 +854,7 @@ mod tests {
         let regid_1 = storage.get_local_registration_id().await.unwrap();
 
         // Get access to the protocol store
-        assert_eq!(
-            regid_1,
-            storage.get_local_registration_id().await.unwrap()
-        );
+        assert_eq!(regid_1, storage.get_local_registration_id().await.unwrap());
     }
 
     #[rstest(password, case(Some("some password")), case(None))]
@@ -885,14 +882,8 @@ mod tests {
         assert!(!storage.save_identity(&addr2, &key2).await.unwrap());
 
         // Now, we should get both keys
-        assert_eq!(
-            storage.get_identity(&addr1).await.unwrap(),
-            Some(key1)
-        );
-        assert_eq!(
-            storage.get_identity(&addr2).await.unwrap(),
-            Some(key2)
-        );
+        assert_eq!(storage.get_identity(&addr1).await.unwrap(), Some(key1));
+        assert_eq!(storage.get_identity(&addr2).await.unwrap(), Some(key2));
 
         // After removing key2, it shouldn't be there
         storage.delete_identity(&addr2).await.unwrap();
@@ -996,10 +987,7 @@ mod tests {
         );
 
         // After removing key2, it shouldn't be there
-        storage
-            .remove_pre_key(PreKeyId::from(id2))
-            .await
-            .unwrap();
+        storage.remove_pre_key(PreKeyId::from(id2)).await.unwrap();
         // XXX Doesn't implement equality *arg*
         assert_eq!(
             storage
@@ -1105,22 +1093,10 @@ mod tests {
         assert!(storage.load_session(&addr2).await.unwrap().is_none());
 
         // Store all four sessions: three different names, one name with two different device ids.
-        storage
-            .store_session(&addr1, &session1)
-            .await
-            .unwrap();
-        storage
-            .store_session(&addr2, &session2)
-            .await
-            .unwrap();
-        storage
-            .store_session(&addr3, &session3)
-            .await
-            .unwrap();
-        storage
-            .store_session(&addr4, &session4)
-            .await
-            .unwrap();
+        storage.store_session(&addr1, &session1).await.unwrap();
+        storage.store_session(&addr2, &session2).await.unwrap();
+        storage.store_session(&addr3, &session3).await.unwrap();
+        storage.store_session(&addr4, &session4).await.unwrap();
 
         // Now, we should get the sessions to the first two addresses
         assert_eq!(

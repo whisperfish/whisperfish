@@ -40,7 +40,8 @@ impl StorageEncryption {
                 &salt_storage,
                 1024,
                 &mut key_storage,
-            ).expect("derive pbkdf2 storage key");
+            )
+            .expect("derive pbkdf2 storage key");
             log::trace!("Computed the storage key, salt was {:?}", salt_storage);
 
             // Derive database key
@@ -63,9 +64,9 @@ impl StorageEncryption {
     /// Encrypt data in place. Uses the storage key. IV and MAC are appended to the msg vector.
     pub fn encrypt(&self, msg: &mut Vec<u8>) {
         // Load traits
+        use aes::cipher::{block_padding::Pkcs7, BlockEncryptMut, KeyIvInit};
         use hmac::Mac;
         use rand::RngCore;
-        use aes::cipher::{block_padding::Pkcs7, BlockEncryptMut, KeyIvInit};
         type Aes128CbcEnc = cbc::Encryptor<aes::Aes128>;
 
         // Generate random IV
@@ -76,8 +77,7 @@ impl StorageEncryption {
         //
         // Create cipher object
         let key = &self.key_storage.expose_secret()[0..16];
-        let cipher =
-            Aes128CbcEnc::new(key.into(), &iv.into());
+        let cipher = Aes128CbcEnc::new(key.into(), &iv.into());
 
         // The encrypt function expects a vector with the message and appropriate space for
         // padding. Padding is always necessary even if message length is a multiple of aes block
@@ -118,8 +118,8 @@ impl StorageEncryption {
 
     /// Decrypts message in place. Expects IV and MAC also in msg vector.
     pub fn decrypt(&self, msg: &mut Vec<u8>) -> Result<(), anyhow::Error> {
-        use hmac::Mac;
         use aes::cipher::{block_padding::Pkcs7, BlockDecryptMut, KeyIvInit};
+        use hmac::Mac;
         type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
         use cipher::generic_array::GenericArray;
 
@@ -148,9 +148,7 @@ impl StorageEncryption {
             .map_err(|_| anyhow::anyhow!("MAC verification failed"))?;
 
         // Decrypt message
-        let cipher =
-            Aes128CbcDec::new_from_slices(key, iv)
-            .expect("CBC initialization error");
+        let cipher = Aes128CbcDec::new_from_slices(key, iv).expect("CBC initialization error");
         let cleartext_len = cipher
             .decrypt_padded_mut::<Pkcs7>(content)
             .context("AES CBC decryption error")?

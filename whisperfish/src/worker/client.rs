@@ -1961,8 +1961,8 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             Ok(Incoming::Envelope(e)) => e,
             Ok(Incoming::QueueEmpty) => {
                 log::info!("Message queue is empty!");
-                return
-            },
+                return;
+            }
             Err(e) => {
                 // XXX: we might want to dispatch on this error.
                 log::error!("MessagePipe pushed an error: {:?}", e);
