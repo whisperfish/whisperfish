@@ -32,7 +32,7 @@ fn derive_db_key(password: &str, salt_path: &Path) -> Result<[u8; 32], anyhow::E
     let mut salt = [0u8; 8];
     anyhow::ensure!(salt_file.read(&mut salt)? == 8, "salt file not 8 bytes");
 
-    let params = scrypt::Params::new(14, 8, 1)?;
+    let params = scrypt::Params::new(14, 8, 1, 32)?;
     let mut key = [0u8; 32];
     scrypt::scrypt(password.as_bytes(), &salt, &params, &mut key)?;
     log::trace!("Computed the key, salt was {:?}", salt);

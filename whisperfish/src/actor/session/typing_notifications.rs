@@ -38,7 +38,7 @@ impl Handler<TypingNotification> for SessionActor {
         ctx: &mut Self::Context,
     ) -> Self::Result {
         let started = if let Some(timestamp) = typing.timestamp {
-            DateTime::<Utc>::from_utc(crate::store::millis_to_naive_chrono(timestamp), Utc)
+            DateTime::from_timestamp(timestamp as _, 0).unwrap()
         } else {
             Utc::now()
         };

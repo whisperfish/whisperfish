@@ -201,7 +201,7 @@ fi
 MAJOR_VERSION=$(echo $TARGET_VERSION | awk -F. '{print $1 FS $2}')
 
 cargo build \
-          -j 4 \
+          -j 1 \
           -vv \
           --release \
           --no-default-features \

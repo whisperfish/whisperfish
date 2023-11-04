@@ -12,6 +12,7 @@ pub use self::linked_devices::*;
 use self::migrations::MigrationCondVar;
 pub use self::profile_upload::*;
 use self::unidentified::UnidentifiedCertificates;
+use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::Sent;
 use libsignal_service::push_service::RegistrationMethod;
@@ -548,7 +549,8 @@ impl ClientActor {
 
         let is_unidentified = if let Some(sent) = &sync_sent {
             sent.unidentified_status.iter().any(|x| {
-                Some(x.destination_service_id()) == source_uuid.as_ref().map(Uuid::to_string).as_deref()
+                Some(x.destination_service_id())
+                    == source_uuid.as_ref().map(Uuid::to_string).as_deref()
                     && x.unidentified()
             })
         } else {
@@ -711,6 +713,7 @@ impl ClientActor {
                             ContactDetails {
                                 // XXX: expire timer from dm session
                                 number: recipient.e164.as_ref().map(PhoneNumber::to_string),
+                                aci: recipient.uuid.as_ref().map(Uuid::to_string),
                                 name: recipient.profile_joined_name.clone(),
                                 profile_key: recipient.profile_key,
                                 // XXX other profile stuff
@@ -810,7 +813,9 @@ impl ClientActor {
                             .as_deref()
                             .map(Uuid::parse_str)
                             .transpose()
-                            .map_err(|_| log::warn!("Unparsable UUID {}", sent.destination_service_id()))
+                            .map_err(|_| {
+                                log::warn!("Unparsable UUID {}", sent.destination_service_id())
+                            })
                             .ok()
                             .flatten();
                         let phonenumber = sent
@@ -933,6 +938,9 @@ impl ClientActor {
             }
             ContentBody::CallMessage(_call) => {
                 log::info!("{:?} is calling.", metadata.sender);
+            }
+            _ => {
+                log::info!("TODO")
             }
         }
     }
@@ -1861,7 +1869,7 @@ impl Handler<Restart> for ClientActor {
                 migrations_ready.await;
                 let mut receiver = MessageReceiver::new(service.clone());
 
-                let pipe = receiver.create_message_pipe(credentials).await?;
+                let pipe = receiver.create_message_pipe(credentials, false).await?;
                 let ws = pipe.ws();
                 Result::<_, ServiceError>::Ok((pipe, ws))
             }
@@ -1947,10 +1955,14 @@ impl Handler<RefreshProfile> for ClientActor {
     }
 }
 
-impl StreamHandler<Result<Envelope, ServiceError>> for ClientActor {
-    fn handle(&mut self, msg: Result<Envelope, ServiceError>, ctx: &mut Self::Context) {
+impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
+    fn handle(&mut self, msg: Result<Incoming, ServiceError>, ctx: &mut Self::Context) {
         let msg = match msg {
-            Ok(msg) => msg,
+            Ok(Incoming::Envelope(e)) => e,
+            Ok(Incoming::QueueEmpty) => {
+                log::info!("Message queue is empty!");
+                return
+            },
             Err(e) => {
                 // XXX: we might want to dispatch on this error.
                 log::error!("MessagePipe pushed an error: {:?}", e);
