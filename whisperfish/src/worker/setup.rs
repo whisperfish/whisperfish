@@ -194,7 +194,7 @@ impl SetupWorker {
         use rand::distributions::Alphanumeric;
         use rand::{Rng, RngCore};
         let rng = rand::thread_rng();
-        let password: String = rng.sample_iter(&Alphanumeric).take(24).collect();
+        let password: String = rng.sample_iter(&Alphanumeric).take(24).map(char::from).collect();
         // XXX in rand 0.8, this needs to be a Vec<u8> and be converted afterwards.
         // let password = std::str::from_utf8(&password)?.to_string();
 

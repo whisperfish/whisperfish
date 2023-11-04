@@ -329,7 +329,7 @@ impl ClientActor {
         let local_addr = self.local_addr.unwrap();
         let device_id = self.config.get_device_id();
         async move {
-            let u_ws = u_service.ws("/v1/websocket/", None, false).await?;
+            let u_ws = u_service.ws("/v1/websocket/", &[], None, false).await?;
             Ok(MessageSender::new(
                 ws,
                 u_ws,

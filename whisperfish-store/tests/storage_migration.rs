@@ -24,6 +24,7 @@ async fn create_old_storage(
     let password: String = rng
         .sample_iter(&rand::distributions::Alphanumeric)
         .take(24)
+        .map(char::from)
         .collect();
 
     // Signaling key that decrypts the incoming Signal messages
@@ -65,7 +66,7 @@ fn create_random_protocol_address() -> libsignal_service::protocol::ProtocolAddr
     let mut rng = rand::thread_rng();
 
     let user_id = uuid::Uuid::new_v4();
-    let device_id = rng.gen_range(2, 20);
+    let device_id = rng.gen_range(2..=20);
 
     libsignal_service::protocol::ProtocolAddress::new(
         user_id.to_string(),
@@ -92,7 +93,7 @@ async fn read_own_identity_key(storage_password: Option<String>) {
     let storage = create_old_storage(storage_password.as_deref(), &location).await;
 
     // Get own identity key
-    let own_identity_key_1 = storage.get_identity_key_pair(None).await.unwrap();
+    let own_identity_key_1 = storage.get_identity_key_pair().await.unwrap();
 
     // Drop storage
     drop(storage);
@@ -103,7 +104,7 @@ async fn read_own_identity_key(storage_password: Option<String>) {
     let storage = open_storage(storage_password, &location).await;
 
     // Get own identity key
-    let own_identity_key_2 = storage.get_identity_key_pair(None).await.unwrap();
+    let own_identity_key_2 = storage.get_identity_key_pair().await.unwrap();
 
     // Test equality
     assert_eq!(
@@ -123,7 +124,7 @@ async fn read_regid(storage_password: Option<String>) {
     let storage = create_old_storage(storage_password.as_deref(), &location).await;
 
     // Get own identity key
-    let regid_1 = storage.get_local_registration_id(None).await.unwrap();
+    let regid_1 = storage.get_local_registration_id().await.unwrap();
 
     // Drop storage
     drop(storage);
@@ -134,7 +135,7 @@ async fn read_regid(storage_password: Option<String>) {
     let storage = open_storage(storage_password, &location).await;
 
     // Get own identity key
-    let regid_2 = storage.get_local_registration_id(None).await.unwrap();
+    let regid_2 = storage.get_local_registration_id().await.unwrap();
 
     // Test equality
     assert_eq!(regid_1, regid_2);
@@ -211,7 +212,7 @@ async fn read_other_identity_key(storage_password: Option<String>) {
     let key = create_random_identity_key();
 
     // Store identity key
-    storage.save_identity(&addr, &key, None).await.unwrap();
+    storage.save_identity(&addr, &key).await.unwrap();
 
     // Drop storage
     drop(storage);
@@ -222,7 +223,7 @@ async fn read_other_identity_key(storage_password: Option<String>) {
     let storage = open_storage(storage_password, &location).await;
 
     // Get saved identity key
-    let key_2 = storage.get_identity(&addr, None).await.unwrap().unwrap();
+    let key_2 = storage.get_identity(&addr).await.unwrap().unwrap();
 
     // Test equality
     assert_eq!(key, key_2);
@@ -302,13 +303,13 @@ async fn test_2022_06_migration(
         DeviceId::from(device_id),
     );
 
-    let identity_key_1 = storage.get_identity(&addr_1, None).await.unwrap();
-    let identity_key_2 = storage.get_identity(&addr_2, None).await.unwrap();
+    let identity_key_1 = storage.get_identity(&addr_1).await.unwrap();
+    let identity_key_2 = storage.get_identity(&addr_2).await.unwrap();
     assert!(identity_key_1.is_some());
     assert!(identity_key_2.is_some());
 
-    let session_1 = storage.load_session(&addr_1, None).await.unwrap();
-    let session_2 = storage.load_session(&addr_2, None).await.unwrap();
+    let session_1 = storage.load_session(&addr_1).await.unwrap();
+    let session_2 = storage.load_session(&addr_2).await.unwrap();
     assert!(session_1.is_some());
     assert!(session_2.is_some());
 

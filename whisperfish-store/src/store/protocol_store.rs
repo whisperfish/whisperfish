@@ -744,7 +744,7 @@ mod tests {
         let rng = rand::thread_rng();
 
         // Signaling password for REST API
-        let password: String = rng.sample_iter(&Alphanumeric).take(24).collect();
+        let password: String = rng.sample_iter(&Alphanumeric).take(24).map(char::from).collect();
 
         // Signaling key that decrypts the incoming Signal messages
         let mut rng = rand::thread_rng();
@@ -777,7 +777,7 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let user_id = uuid::Uuid::new_v4();
-        let device_id = rng.gen_range(2, 20);
+        let device_id = rng.gen_range(2..=20);
 
         let svc = ServiceAddress::from(user_id);
         let prot = ProtocolAddress::new(user_id.to_string(), DeviceId::from(device_id));
@@ -825,15 +825,15 @@ mod tests {
         let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // Copy the identity key pair
-        let id_key1 = storage.get_identity_key_pair(None).await.unwrap();
+        let id_key1 = storage.get_identity_key_pair().await.unwrap();
 
         // Get access to the protocol store
         // XXX IdentityKeyPair does not implement the std::fmt::Debug trait *arg*
-        //assert_eq!(id_key1.unwrap(), store.get_identity_key_pair(None).await.unwrap());
+        //assert_eq!(id_key1.unwrap(), store.get_identity_key_pair().await.unwrap());
         assert_eq!(
             id_key1.serialize(),
             storage
-                .get_identity_key_pair(None)
+                .get_identity_key_pair()
                 .await
                 .unwrap()
                 .serialize()
@@ -851,12 +851,12 @@ mod tests {
         let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // Copy the regid
-        let regid_1 = storage.get_local_registration_id(None).await.unwrap();
+        let regid_1 = storage.get_local_registration_id().await.unwrap();
 
         // Get access to the protocol store
         assert_eq!(
             regid_1,
-            storage.get_local_registration_id(None).await.unwrap()
+            storage.get_local_registration_id().await.unwrap()
         );
     }
 
@@ -876,34 +876,34 @@ mod tests {
 
         // In the beginning, the storage should be emtpy and return an error
         // XXX Doesn't implement equality *arg*
-        assert_eq!(storage.get_identity(&addr1, None).await.unwrap(), None);
-        assert_eq!(storage.get_identity(&addr2, None).await.unwrap(), None);
+        assert_eq!(storage.get_identity(&addr1).await.unwrap(), None);
+        assert_eq!(storage.get_identity(&addr2).await.unwrap(), None);
 
         // We store both keys and should get false because there wasn't a key with that address
         // yet
-        assert!(!storage.save_identity(&addr1, &key1, None).await.unwrap());
-        assert!(!storage.save_identity(&addr2, &key2, None).await.unwrap());
+        assert!(!storage.save_identity(&addr1, &key1).await.unwrap());
+        assert!(!storage.save_identity(&addr2, &key2).await.unwrap());
 
         // Now, we should get both keys
         assert_eq!(
-            storage.get_identity(&addr1, None).await.unwrap(),
+            storage.get_identity(&addr1).await.unwrap(),
             Some(key1)
         );
         assert_eq!(
-            storage.get_identity(&addr2, None).await.unwrap(),
+            storage.get_identity(&addr2).await.unwrap(),
             Some(key2)
         );
 
         // After removing key2, it shouldn't be there
         storage.delete_identity(&addr2).await.unwrap();
         // XXX Doesn't implement equality *arg*
-        assert_eq!(storage.get_identity(&addr2, None).await.unwrap(), None);
+        assert_eq!(storage.get_identity(&addr2).await.unwrap(), None);
 
         // We can now overwrite key1 with key1 and should get true returned
-        assert!(storage.save_identity(&addr1, &key1, None).await.unwrap());
+        assert!(storage.save_identity(&addr1, &key1).await.unwrap());
 
         // We can now overwrite key1 with key2 and should get false returned
-        assert!(!storage.save_identity(&addr1, &key2, None).await.unwrap());
+        assert!(!storage.save_identity(&addr1, &key2).await.unwrap());
     }
 
     // Direction does not matter yet
@@ -922,20 +922,20 @@ mod tests {
 
         // Test trust on first use
         assert!(storage
-            .is_trusted_identity(&addr1, &key1, Direction::Receiving, None)
+            .is_trusted_identity(&addr1, &key1, Direction::Receiving)
             .await
             .unwrap());
 
         // Test inserted key
-        storage.save_identity(&addr1, &key1, None).await.unwrap();
+        storage.save_identity(&addr1, &key1).await.unwrap();
         assert!(storage
-            .is_trusted_identity(&addr1, &key1, Direction::Receiving, None)
+            .is_trusted_identity(&addr1, &key1, Direction::Receiving)
             .await
             .unwrap());
 
         // Test wrong key
         assert!(!storage
-            .is_trusted_identity(&addr1, &key2, Direction::Receiving, None)
+            .is_trusted_identity(&addr1, &key2, Direction::Receiving)
             .await
             .unwrap());
     }
@@ -958,7 +958,7 @@ mod tests {
         // XXX Doesn't implement equality *arg*
         assert_eq!(
             storage
-                .get_pre_key(PreKeyId::from(id1), None)
+                .get_pre_key(PreKeyId::from(id1))
                 .await
                 .unwrap_err()
                 .to_string(),
@@ -967,18 +967,18 @@ mod tests {
 
         // Storing both keys and testing retrieval
         storage
-            .save_pre_key(PreKeyId::from(id1), &key1, None)
+            .save_pre_key(PreKeyId::from(id1), &key1)
             .await
             .unwrap();
         storage
-            .save_pre_key(PreKeyId::from(id2), &key2, None)
+            .save_pre_key(PreKeyId::from(id2), &key2)
             .await
             .unwrap();
 
         // Now, we should get both keys
         assert_eq!(
             storage
-                .get_pre_key(PreKeyId::from(id1), None)
+                .get_pre_key(PreKeyId::from(id1))
                 .await
                 .unwrap()
                 .serialize()
@@ -987,7 +987,7 @@ mod tests {
         );
         assert_eq!(
             storage
-                .get_pre_key(PreKeyId::from(id2), None)
+                .get_pre_key(PreKeyId::from(id2))
                 .await
                 .unwrap()
                 .serialize()
@@ -997,13 +997,13 @@ mod tests {
 
         // After removing key2, it shouldn't be there
         storage
-            .remove_pre_key(PreKeyId::from(id2), None)
+            .remove_pre_key(PreKeyId::from(id2))
             .await
             .unwrap();
         // XXX Doesn't implement equality *arg*
         assert_eq!(
             storage
-                .get_pre_key(PreKeyId::from(id2), None)
+                .get_pre_key(PreKeyId::from(id2))
                 .await
                 .unwrap_err()
                 .to_string(),
@@ -1012,7 +1012,7 @@ mod tests {
 
         // Let's check whether we can overwrite a key
         storage
-            .save_pre_key(PreKeyId::from(id1), &key2, None)
+            .save_pre_key(PreKeyId::from(id1), &key2)
             .await
             .unwrap();
     }
@@ -1035,7 +1035,7 @@ mod tests {
         // XXX Doesn't implement equality *arg*
         assert_eq!(
             storage
-                .get_signed_pre_key(SignedPreKeyId::from(id1), None)
+                .get_signed_pre_key(SignedPreKeyId::from(id1))
                 .await
                 .unwrap_err()
                 .to_string(),
@@ -1044,18 +1044,18 @@ mod tests {
 
         // Storing both keys and testing retrieval
         storage
-            .save_signed_pre_key(SignedPreKeyId::from(id1), &key1, None)
+            .save_signed_pre_key(SignedPreKeyId::from(id1), &key1)
             .await
             .unwrap();
         storage
-            .save_signed_pre_key(SignedPreKeyId::from(id2), &key2, None)
+            .save_signed_pre_key(SignedPreKeyId::from(id2), &key2)
             .await
             .unwrap();
 
         // Now, we should get both keys
         assert_eq!(
             storage
-                .get_signed_pre_key(SignedPreKeyId::from(id1), None)
+                .get_signed_pre_key(SignedPreKeyId::from(id1))
                 .await
                 .unwrap()
                 .serialize()
@@ -1064,7 +1064,7 @@ mod tests {
         );
         assert_eq!(
             storage
-                .get_signed_pre_key(SignedPreKeyId::from(id2), None)
+                .get_signed_pre_key(SignedPreKeyId::from(id2))
                 .await
                 .unwrap()
                 .serialize()
@@ -1074,7 +1074,7 @@ mod tests {
 
         // Let's check whether we can overwrite a key
         storage
-            .save_signed_pre_key(SignedPreKeyId::from(id1), &key2, None)
+            .save_signed_pre_key(SignedPreKeyId::from(id1), &key2)
             .await
             .unwrap();
     }
@@ -1101,31 +1101,31 @@ mod tests {
         let session4 = SessionRecord::new_fresh();
 
         // In the beginning, the storage should be emtpy and return an error
-        assert!(storage.load_session(&addr1, None).await.unwrap().is_none());
-        assert!(storage.load_session(&addr2, None).await.unwrap().is_none());
+        assert!(storage.load_session(&addr1).await.unwrap().is_none());
+        assert!(storage.load_session(&addr2).await.unwrap().is_none());
 
         // Store all four sessions: three different names, one name with two different device ids.
         storage
-            .store_session(&addr1, &session1, None)
+            .store_session(&addr1, &session1)
             .await
             .unwrap();
         storage
-            .store_session(&addr2, &session2, None)
+            .store_session(&addr2, &session2)
             .await
             .unwrap();
         storage
-            .store_session(&addr3, &session3, None)
+            .store_session(&addr3, &session3)
             .await
             .unwrap();
         storage
-            .store_session(&addr4, &session4, None)
+            .store_session(&addr4, &session4)
             .await
             .unwrap();
 
         // Now, we should get the sessions to the first two addresses
         assert_eq!(
             storage
-                .load_session(&addr1, None)
+                .load_session(&addr1)
                 .await
                 .unwrap()
                 .unwrap()
@@ -1135,7 +1135,7 @@ mod tests {
         );
         assert_eq!(
             storage
-                .load_session(&addr2, None)
+                .load_session(&addr2)
                 .await
                 .unwrap()
                 .unwrap()
@@ -1146,7 +1146,7 @@ mod tests {
 
         // Let's check whether we can overwrite a key
         storage
-            .store_session(&addr1, &session2, None)
+            .store_session(&addr1, &session2)
             .await
             .expect("Overwrite session");
 
@@ -1164,8 +1164,8 @@ mod tests {
 
         // If we call delete all sessions, all sessions of one person/address should be removed
         assert_eq!(storage.delete_all_sessions(&svc3).await.unwrap(), 2);
-        assert!(storage.load_session(&addr3, None).await.unwrap().is_none());
-        assert!(storage.load_session(&addr4, None).await.unwrap().is_none());
+        assert!(storage.load_session(&addr3).await.unwrap().is_none());
+        assert!(storage.load_session(&addr4).await.unwrap().is_none());
 
         // If we delete the first two sessions, they shouldn't be in the store anymore
         SessionStoreExt::delete_session(&storage, &addr1)
@@ -1174,8 +1174,8 @@ mod tests {
         SessionStoreExt::delete_session(&storage, &addr2)
             .await
             .unwrap();
-        assert!(storage.load_session(&addr1, None).await.unwrap().is_none());
-        assert!(storage.load_session(&addr2, None).await.unwrap().is_none());
+        assert!(storage.load_session(&addr1).await.unwrap().is_none());
+        assert!(storage.load_session(&addr2).await.unwrap().is_none());
     }
 
     #[rstest(password, case(Some("some password")), case(None))]
@@ -1196,15 +1196,15 @@ mod tests {
 
         // Now, we add our keys
         storage
-            .save_pre_key(PreKeyId::from(0), &key1, None)
+            .save_pre_key(PreKeyId::from(0), &key1)
             .await
             .unwrap();
         storage
-            .save_pre_key(PreKeyId::from(1), &key2, None)
+            .save_pre_key(PreKeyId::from(1), &key2)
             .await
             .unwrap();
         storage
-            .save_signed_pre_key(SignedPreKeyId::from(0), &key3, None)
+            .save_signed_pre_key(SignedPreKeyId::from(0), &key3)
             .await
             .unwrap();
 

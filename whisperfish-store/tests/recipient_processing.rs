@@ -16,7 +16,7 @@ fn phonenumber() -> ::phonenumber::PhoneNumber {
     let mut e164 = String::from("+32474");
     let mut rng = rand::thread_rng();
     for _ in 0..6 {
-        let num = rng.gen_range(0, 10);
+        let num = rng.gen_range(0..=10);
         e164.push(char::from_digit(num, 10).unwrap());
     }
     ::phonenumber::parse(None, E164).unwrap()
