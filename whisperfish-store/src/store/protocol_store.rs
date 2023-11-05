@@ -738,8 +738,6 @@ mod tests {
         use rand::distributions::Alphanumeric;
         use rand::{Rng, RngCore};
 
-        env_logger::try_init().ok();
-
         let location = super::temp();
         let rng = rand::thread_rng();
 
@@ -823,8 +821,6 @@ mod tests {
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn own_identity_key_pair(password: Option<&str>) {
-        env_logger::try_init().ok();
-
         // create a new storage
         let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
@@ -845,8 +841,6 @@ mod tests {
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn own_regid(password: Option<&str>) {
-        env_logger::try_init().ok();
-
         // create a new storage
         let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
@@ -860,8 +854,6 @@ mod tests {
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn save_retrieve_identity_key(password: Option<&str>) {
-        env_logger::try_init().ok();
-
         // Create a new storage
         let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
 
@@ -901,8 +893,6 @@ mod tests {
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn is_trusted_identity(password: Option<&str>) {
-        env_logger::try_init().ok();
-
         // Create a new storage
         let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
 
@@ -934,8 +924,6 @@ mod tests {
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn save_retrieve_prekey(password: Option<&str>) {
-        env_logger::try_init().ok();
-
         // Create a new storage
         let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
 
@@ -1008,8 +996,6 @@ mod tests {
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn save_retrieve_signed_prekey(password: Option<&str>) {
-        env_logger::try_init().ok();
-
         // Create a new storage
         let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
 
@@ -1070,8 +1056,6 @@ mod tests {
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn save_retrieve_session(password: Option<&str>) {
-        env_logger::try_init().ok();
-
         // Create a new storage
         let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
 
@@ -1157,8 +1141,6 @@ mod tests {
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn get_next_pre_key_ids(password: Option<&str>) {
-        env_logger::try_init().ok();
-
         // Create a new storage
         let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
 

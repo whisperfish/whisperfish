@@ -84,7 +84,6 @@ mod tests {
         // case("0018875550100")
     )]
     fn e164_phone_number_acceptance_test(phone: &str) {
-        env_logger::try_init().ok();
         assert!(
             format_with_country(phone, "").is_some(),
             "phone '{}' is not accepted without country",
@@ -100,7 +99,6 @@ mod tests {
         case("08875550100", "US")
     )]
     fn local_phone_number_acceptance_test(phone: &str, country: &str) {
-        env_logger::try_init().ok();
         assert!(
             format_with_country(phone, country).is_some(),
             "phone '{}' with country '{}' is not accepted",

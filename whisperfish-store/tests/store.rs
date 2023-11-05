@@ -364,8 +364,6 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
 //     use rand::distributions::Alphanumeric;
 //     use rand::{Rng, RngCore};
 //
-//     env_logger::try_init().ok();
-//
 //     let location = whisperfish_store::temp();
 //     let rng = rand::thread_rng();
 //
@@ -433,8 +431,6 @@ async fn test_create_and_open_storage(
 ) -> Result<(), anyhow::Error> {
     use rand::distributions::Alphanumeric;
     use rand::{Rng, RngCore};
-
-    env_logger::try_init().ok();
 
     let location = whisperfish_store::temp();
     let rng = rand::thread_rng();
@@ -520,8 +516,6 @@ async fn test_create_and_open_storage(
 async fn test_recipient_actions() {
     use rand::distributions::Alphanumeric;
     use rand::{Rng, RngCore};
-
-    env_logger::try_init().ok();
 
     let location = whisperfish_store::temp();
     let rng = rand::thread_rng();

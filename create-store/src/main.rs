@@ -104,8 +104,6 @@ async fn add_dummy_data(storage: &mut store::Storage) {
 
 #[actix_rt::main]
 async fn main() -> Result<(), anyhow::Error> {
-    env_logger::init();
-
     let opt = Opt::from_args();
 
     // TODO: probably source more config flags, see harbour-whisperfish main.rs

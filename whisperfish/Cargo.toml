@@ -91,7 +91,6 @@ actix-rt = "2.8.0"
 # Git version for async tests. 0.6.5 will contain this feature,
 # so revert to crates.io on release
 criterion = "0.3.5"
-env_logger = "0.9"
 rstest = { version = "0.10" }
 rstest_reuse = { version = "0.1.0" }
 

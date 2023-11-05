@@ -44,8 +44,6 @@ struct Opt {
 
 #[actix_rt::main]
 async fn main() -> Result<(), anyhow::Error> {
-    env_logger::init();
-
     let mut opt = Opt::from_args();
 
     let config = whisperfish::config::SignalConfig::read_from_file()?;

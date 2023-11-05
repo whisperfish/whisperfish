@@ -273,8 +273,6 @@ async fn test_2022_06_migration(
     use std::str::FromStr;
     use whisperfish_store::migrations::session_to_db::SessionStorageMigration;
 
-    env_logger::try_init().ok();
-
     let path = current_storage::StorageLocation::Path(copy_to_temp(path).await);
     let storage = whisperfish_store::Storage::open(
         Arc::new(SignalConfig::default()),
