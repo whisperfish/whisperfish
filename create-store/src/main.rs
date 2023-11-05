@@ -1,22 +1,22 @@
+use clap::Parser;
 use libsignal_service::protocol::*;
 use std::{path::PathBuf, sync::Arc};
-use structopt::StructOpt;
 use whisperfish::{config::SignalConfig, store};
 
 /// Initializes a storage, meant for creating storage migration tests.
-#[derive(StructOpt, Debug)]
-#[structopt(name = "create-store")]
-struct Opt {
+#[derive(Parser, Debug)]
+#[structopt(name = "create-store", author, version, about, long_about = None)]
+struct Opts {
     /// Whisperfish storage password
-    #[structopt(short, long)]
+    #[clap(short, long)]
     password: Option<String>,
 
     /// Path where the storage will be created
-    #[structopt(parse(from_os_str))]
+    #[clap(parse(from_os_str))]
     path: PathBuf,
 
     /// Whether to fill the storage with dummy data
-    #[structopt(short, long)]
+    #[clap(short, long)]
     fill_dummy: bool,
 }
 
@@ -104,7 +104,7 @@ async fn add_dummy_data(storage: &mut store::Storage) {
 
 #[actix_rt::main]
 async fn main() -> Result<(), anyhow::Error> {
-    let opt = Opt::from_args();
+    let opt: Opts = Parser::parse_from(std::env::args_os());
 
     // TODO: probably source more config flags, see harbour-whisperfish main.rs
     let config = match whisperfish::config::SignalConfig::read_from_file() {

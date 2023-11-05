@@ -1,16 +1,16 @@
 use anyhow::Context;
+use clap::Parser;
 use dbus::blocking::Connection;
 use signal_hook::{consts::SIGINT, iterator::Signals};
 use single_instance::SingleInstance;
 use std::{os::unix::prelude::OsStrExt, thread, time::Duration};
-use structopt::StructOpt;
 use whisperfish::*;
 
 use simplelog::*;
 
 /// Unofficial but advanced Signal client for Sailfish OS
-#[derive(StructOpt, Debug)]
-#[structopt(name = "harbour-whisperfish")]
+#[derive(Parser, Debug)]
+#[clap(name = "harbour-whisperfish", author, version, about, long_about = None)]
 struct Opts {
     /// Captcha override
     ///
@@ -19,22 +19,22 @@ struct Opts {
     /// it is possible to inject a signalcaptcha URL.
     ///
     /// This is as a work around for <https://gitlab.com/whisperfish/whisperfish/-/issues/378>
-    #[structopt(short, long)]
+    #[clap(short = 'c', long)]
     captcha: Option<String>,
 
     /// Verbosity.
     ///
     /// Equivalent with setting
     /// `QT_LOGGING_TO_CONSOLE=1 RUST_LOG=libsignal_service=trace,libsignal_service_actix=trace,whisperfish=trace`.
-    #[structopt(short, long)]
+    #[clap(short = 'v', long)]
     verbose: bool,
 
     /// Whether whisperfish was launched from autostart. Also accepts '-prestart'
-    #[structopt(short, long)]
+    #[clap(long)]
     prestart: bool,
 
     /// Send a signal to shutdown Whisperfish
-    #[structopt(long)]
+    #[clap(long)]
     quit: bool,
 }
 
@@ -70,7 +70,7 @@ fn main() {
     });
 
     // Then, handle command line arguments and overwrite settings from config file if necessary
-    let opt = Opts::from_iter(args);
+    let opt: Opts = Parser::parse_from(args);
 
     if opt.quit {
         if let Err(e) = dbus_quit_app() {

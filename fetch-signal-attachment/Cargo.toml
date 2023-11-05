@@ -11,7 +11,7 @@ whisperfish = { path = "../whisperfish" }
 futures = "0.3"
 libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main" }
 libsignal-service-actix = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main" }
-structopt = "0.3"
+clap = { version = "3.2", features = ["derive"] }
 mime_classifier = "0.0.1"
 log = "0.4"
 anyhow = "1.0"
