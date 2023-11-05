@@ -314,8 +314,7 @@ fn main() -> Result<(), anyhow::Error> {
 
     if !result.contains("file is not a database") {
         println!("We now ask you your Whisperfish password.");
-        let password =
-            rpassword::read_password_from_tty(Some("Whisperfish storage password: ")).unwrap();
+        let password = rpassword::prompt_password("Whisperfish storage password: ").unwrap();
 
         let db_salt_path = storage.join("db").join("salt");
         let db_key = derive_db_key(&password, &db_salt_path)?;
