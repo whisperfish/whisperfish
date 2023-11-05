@@ -1,3 +1,5 @@
+use image::codecs::png::PngEncoder;
+use image::ImageEncoder;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
 use std::future::Future;
@@ -128,7 +130,7 @@ impl Prompt {
     }
 
     pub fn show_link_qr(&mut self, url: String) {
-        let code = qrcode::QrCode::new(url.as_str()).expect("to generate qrcode for linking URI");
+        let code = qrencode::QrCode::new(url.as_str()).expect("to generate qrcode for linking URI");
         let image_buf = code.render::<image::Luma<u8>>().build();
 
         // Export generate QR code pixmap data into a PNG data:-URI string
@@ -139,12 +141,12 @@ impl Prompt {
                 &mut image_uri,
                 &engine::STANDARD,
             );
-            image::png::PngEncoder::new(&mut image_b64enc)
-                .encode(
+            PngEncoder::new(&mut image_b64enc)
+                .write_image(
                     &image_buf,
                     image_buf.width(),
                     image_buf.height(),
-                    <image::Luma<u8> as image::Pixel>::COLOR_TYPE,
+                    image::ColorType::L8,
                 )
                 .expect("to write QR code image to data:-URI");
         }
