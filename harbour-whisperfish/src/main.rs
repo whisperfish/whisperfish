@@ -147,7 +147,9 @@ fn main() {
     let mut config_builder = ConfigBuilder::new();
 
     config_builder
-        .set_time_format_str("%Y-%m-%d %H:%M:%S%.3f")
+        .set_time_format_custom(format_description!(
+            "[year]-[month]-[day] [hour]:[minute]:[second]"
+        ))
         .add_filter_allow_str("whisperfish")
         .add_filter_allow_str("libsignal_service")
         .add_filter_allow_str("libsignal_service_actix")
