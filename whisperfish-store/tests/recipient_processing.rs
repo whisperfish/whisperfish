@@ -7,19 +7,14 @@ use rstest::{fixture, rstest};
 use std::future::Future;
 use uuid::{uuid, Uuid};
 
-const E164: &str = "+32474000000";
 const UUID: Uuid = uuid!("dc6bf7f6-9946-4e01-89f6-dc3abdb2f71b");
 const UUID2: Uuid = uuid!("c25f3e9a-2cfd-4eb0-8a53-b22eb025667d");
 
 #[fixture]
 fn phonenumber() -> ::phonenumber::PhoneNumber {
-    let mut e164 = String::from("+32474");
     let mut rng = rand::thread_rng();
-    for _ in 0..6 {
-        let num = rng.gen_range(0..=10);
-        e164.push(char::from_digit(num, 10).unwrap());
-    }
-    ::phonenumber::parse(None, E164).unwrap()
+    let e164 = format!("+3247{}", rng.gen_range(4000000..=4999999));
+    ::phonenumber::parse(None, e164).unwrap()
 }
 
 #[fixture]

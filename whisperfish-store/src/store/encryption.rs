@@ -267,7 +267,13 @@ mod tests {
         //
         // Create key
         let mut key = [0u8; 16 + 20];
-        pbkdf2::pbkdf2::<hmac::Hmac<sha1::Sha1>>(my_key.as_bytes(), &my_salt, 1024, &mut key);
+        assert!(pbkdf2::pbkdf2::<hmac::Hmac<sha1::Sha1>>(
+            my_key.as_bytes(),
+            &my_salt,
+            1024,
+            &mut key
+        )
+        .is_ok());
 
         // Generate random IV
         use rand::RngCore;
@@ -279,7 +285,7 @@ mod tests {
         type Aes128CbcEnc = cbc::Encryptor<aes::Aes128>;
 
         // Encrypt
-        let cipher = Aes128CbcEnc::new(GenericArray::from_mut_slice(&mut key), &iv.into());
+        let cipher = Aes128CbcEnc::new(GenericArray::from_mut_slice(&mut key[..16]), &iv.into());
         let ciphertext = cipher.encrypt_padded_vec_mut::<Pkcs7>(my_cleartext);
 
         let mac = {

@@ -38,7 +38,11 @@ impl Handler<TypingNotification> for SessionActor {
         ctx: &mut Self::Context,
     ) -> Self::Result {
         let started = if let Some(timestamp) = typing.timestamp {
-            DateTime::from_timestamp(timestamp as _, 0).unwrap()
+            DateTime::from_timestamp(
+                (timestamp / 1000) as i64,
+                ((timestamp % 1000) * 1_000_000) as u32,
+            )
+            .unwrap()
         } else {
             Utc::now()
         };
