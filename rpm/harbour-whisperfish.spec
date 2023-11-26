@@ -93,6 +93,9 @@ BuildRequires:  automake
 rustc --version
 cargo --version
 
+export PROTOC=/usr/bin/protoc
+protoc --version
+
 %if %{with sccache}
 %ifnarch %ix86
 export RUSTC_WRAPPER=sccache
