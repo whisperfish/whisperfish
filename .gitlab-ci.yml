@@ -59,7 +59,7 @@ stages:
         - Cargo.lock
 
 .build:sailfishos:latest:shareplugin: &build-shareplugin
-  image: registry.gitlab.com/whisperfish/sailo-rs/rust-$MER_ARCH-$SFOS_VERSION:latest
+  image: coderus/sailfishos-platform-sdk-$MER_ARCH:$SFOS_VERSION
   stage: build
   artifacts:
     paths:
@@ -141,7 +141,7 @@ build:sailfishos:latest:shareplugin_v2:aarch64:
 # end shareplugin v2
 
 .build-sailfishos: &build-sailfishos
-  image: registry.gitlab.com/whisperfish/sailo-rs/rust-$MER_ARCH-$SFOS_VERSION:latest
+  image: coderus/sailfishos-platform-sdk-$MER_ARCH:$SFOS_VERSION
   stage: build
   variables:
     CARGO_HOME: /home/mersdk/cargo
