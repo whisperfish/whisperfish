@@ -1,5 +1,5 @@
 variables: &variables
-  SFOS_VERSION: 4.5.0.18
+  SFOS_VERSION: 4.5.0.16
   GIT_FETCH_EXTRA_FLAGS: --tags
   RUST_BACKTRACE: full
 
