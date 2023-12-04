@@ -12,6 +12,9 @@ sdk-manage tooling maintain SailfishOS-$SFOS_VERSION \
     zypper install -y \
         zlib-devel \
 
+echo adding $PWD as safe directory in git
+git config --global --add safe.directory $PWD
+
 if [ -z "$CI_COMMIT_TAG" ]; then
     CARGO_VERSION="$(grep -m1 -e '^version\s=\s"' whisperfish/Cargo.toml | sed -e 's/.*"\(.*-dev\).*"/\1/')"
     GIT_REF="$(git rev-parse --short HEAD)"

@@ -2,6 +2,9 @@
 
 set -e
 
+echo adding $PWD as safe directory in git
+git config --global --add safe.directory $PWD
+
 echo "Building for $SFOS_VERSION"
 # The MB2 image comes with a default user.
 # We need to copy the source over, because of that.
