@@ -272,7 +272,7 @@ Loader {
         id: detailComponent
         Column {
             id: detailColumn
-            enabled: listView !== null && !listView.isSelecting
+            enabled: listView != null && !listView.isSelecting
 
             function componentForMime(mimeType) {
                 if (/^audio\//.test(mimeType)) return detail_audioComponent
@@ -292,7 +292,7 @@ Loader {
 
             Item {
                 width: parent.width
-                height: showMoreDetail.sourceComponent !== null ? parent.height/maxDetails : 0
+                height: showMoreDetail.sourceComponent != null ? parent.height/maxDetails : 0
 
                 Loader {
                     id: showMoreDetail

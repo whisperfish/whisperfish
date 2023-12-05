@@ -14,7 +14,7 @@ MouseArea {
 
     // check _effectiveEnableClick in derived types, not enableDefaultClickAction
     property bool _effectiveEnableClick: _hasAttach && enableDefaultClickAction
-    property bool _hasAttach: attach !== null
+    property bool _hasAttach: attach != null
 
     function mimeToIcon(mimeType) {
         if (root.icon !== '') return root.icon

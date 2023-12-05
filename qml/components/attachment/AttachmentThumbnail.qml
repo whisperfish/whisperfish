@@ -12,7 +12,7 @@ MouseArea {
     property var attachments: null
     property var message: null
     property bool highlighted: containsPress
-    property bool _hasAttach: attach !== null
+    property bool _hasAttach: attach != null
     property bool _isAnimated: _hasAttach ? /\.(gif)$/i.test(attach.data) : false
     property bool _isVideo: _hasAttach ? /^video\//.test(attach.type) : false
     property bool _isAnimatedPaused: false
