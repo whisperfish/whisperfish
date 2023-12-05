@@ -44,7 +44,7 @@ MouseArea {
             var _debugMode = SettingsBridge.debug_mode
             var _viewPage = _isVideo ? '../../pages/ViewVideoPage.qml' : '../../pages/ViewImagePage.qml'
 
-            pageStack.push(_viewPage, {
+            pageStack.push(Qt.resolvedUrl(_viewPage), {
                 'title': message ? recipient.name : "",
                 // TODO don't show the file path once attachments work reliably (#many)
                 //      and attachments are saved in a WF-controlled directory (#253)

@@ -351,6 +351,7 @@ Loader {
         AttachmentItemAudio {
             // XXX When we're able to run Rust 1.a-bit-more, with qmetaobject 0.2.7+, we have QVariantMap.
             attach: JSON.parse(detailAttachments.get(currentAttachmentIndex))
+            recipientId: message.senderRecipientId
             onPressAndHold: root.pressAndHold(mouse)
         }
     }
