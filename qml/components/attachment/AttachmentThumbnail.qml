@@ -48,7 +48,9 @@ MouseArea {
                 'title': message ? recipient.name : "",
                 // TODO don't show the file path once attachments work reliably (#many)
                 //      and attachments are saved in a WF-controlled directory (#253)
-                'subtitle': attach.original_name && attach.original_name.length > 0 ? attach.original_name : attach.data,
+                'subtitle': attach.original_name != null && attach.original_name.length > 0
+                    ? attach.original_name
+                    : attach.data,
                 // when not in debug mode, it is ok to fade the file path if it is too long
                 'titleOverlay.subtitleItem.wrapMode': _debugMode ? Text.Wrap : Text.NoWrap,
                 'path': attach.data,

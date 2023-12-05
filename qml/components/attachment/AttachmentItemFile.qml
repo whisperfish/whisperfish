@@ -38,7 +38,13 @@ AttachmentItemBase {
             elide: Text.ElideLeft
         }
         Label {
-            text: _hasAttach ? (attach.original_name.length > 0 ? attach.original_name : lastPartOfPath(attach.data)) : ''
+            text: _hasAttach
+                ? (
+                    attach.original_name != null && attach.original_name.length > 0
+                    ? attach.original_name
+                    : lastPartOfPath(attach.data)
+                )
+                : ''
             highlighted: item.highlighted ? true : undefined
             color: highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
             width: parent.width - Theme.paddingSmall
