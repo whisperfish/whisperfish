@@ -14,16 +14,20 @@ AttachmentItemBase {
         recipientId: item.recipientId
     }
 
-    onClicked: pageStack.push(Qt.resolvedUrl('../../pages/ViewFilePage.qml'), {
-        'title': recipientId > -1 ? recipient.name : "",
-        // Translated in QuotedMessagePreview.qml
-        'subtitle': qsTrId('whisperfish-quoted-message-preview-attachment'),
-        'titleOverlay.subtitleItem.wrapMode': SettingsBridge.debug_mode ? Text.Wrap : Text.NoWrap,
-        'path': attach.data,
-        'attachmentId': attach.id,
-        'isViewOnce': false, // TODO: Implement attachment can only be viewed once
-        'attachment': attach,
-    })
+    onClicked: {
+        if (_effectiveEnableClick) {
+            pageStack.push(Qt.resolvedUrl('../../pages/ViewFilePage.qml'), {
+                title: recipientId > -1 ? recipient.name : "",
+                // Translated in QuotedMessagePreview.qml
+                subtitle: qsTrId('whisperfish-quoted-message-preview-attachment'),
+                'titleOverlay.subtitleItem.wrapMode': SettingsBridge.debug_mode ? Text.Wrap : Text.NoWrap,
+                path: attach.data,
+                attachmentId: attach.id,
+                isViewOnce: false, // TODO: Implement attachment can only be viewed once
+                attachment: attach,
+            })
+        }
+    }
 
     Column {
         anchors {

@@ -46,6 +46,9 @@ Page {
             width: Math.min(page.width, page.height)
             height: Theme.itemSizeExtraLarge
             attach: page.attachment
+            showThumbnail: true
+            enableDefaultClickAction: false
+            highlighted: false
         }
     }
 }
