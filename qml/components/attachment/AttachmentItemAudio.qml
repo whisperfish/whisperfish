@@ -58,30 +58,7 @@ AttachmentItemBase {
                 onClicked: audioMessage.playbackState === Audio.PlayingState
                            ? audioMessage.pause()
                            : audioMessage.play()
-                clip: true
-                Rectangle {
-                    z: -1
-                    anchors { fill: parent; margins: -parent.width/2 }
-                    rotation: 45
-                    gradient: Gradient {
-                        GradientStop { position: 0.0; color: "transparent" }
-                        GradientStop { position: 0.4; color: "transparent" }
-                        GradientStop { position: 1.0; color: Theme.rgba(Theme.secondaryColor, 0.1) }
-                    }
-                }
-            }
-        }
-
-        Column {
-            id: stopButton
-            IconButton {
-                width: item.height
-                height: item.height
-                enabled: audioMessage.position > 0
-                         && audioMessage.position < audioMessage.duration
-                         && audioMessage.playbackState == Audio.PlayingState
-                icon.source: "image://theme/icon-m-stop"
-                onClicked: audioMessage.stop()
+                onPressAndHold: audioMessage.stop()
                 clip: true
                 Rectangle {
                     z: -1
