@@ -74,13 +74,14 @@ AttachmentItemBase {
         }
 
         Column {
-            Label {
-                highlighted: item.highlighted ? true : undefined
-                text: Math.round(audioMessage.position / 1000) + "s" + audioMessage.durationTenths
+            Item {
                 height: attachmentRow.height
-                width: attachmentRow.width - playPauseColumn.width - rewindColumn.width - Theme.paddingSmall
-                elide: Text.ElideLeft
-                verticalAlignment: Text.AlignVCenter
+                width: attachmentRow.width - playPauseColumn.width - Theme.paddingSmall
+                Image {
+                    fillMode: Image.PreserveAspectFit
+                    source: "/home/defaultuser/Downloads/waveform.png"
+                    anchors.fill: parent
+                }
             }
         }
     }
