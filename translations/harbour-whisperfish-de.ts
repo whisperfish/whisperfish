@@ -153,7 +153,7 @@
         <location filename="../qml/pages/MainPage.qml" line="265"/>
         <source>Start a new conversation through a linked device, or let someone message you</source>
         <extracomment>No messages found, hint on what to do</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Starten Sie ein neues Gespräch über ein verlinktes Gerät oder lassen Sie jemanden, Ihnen eine Nachricht senden</translation>
     </message>
     <message id="whisperfish-no-archived-messages-hint-text">
         <location filename="../qml/pages/MainPage.qml" line="275"/>
@@ -270,7 +270,7 @@
         <location filename="../qml/pages/About.qml" line="273"/>
         <source>German translators</source>
         <extracomment>German (de) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Deutsche Übersetzer/innen</translation>
     </message>
     <message id="whisperfish-translators-fr">
         <location filename="../qml/pages/About.qml" line="296"/>
