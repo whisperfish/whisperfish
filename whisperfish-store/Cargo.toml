@@ -4,7 +4,7 @@ cargo-features = ["strip"]
 name = "whisperfish-store"
 version = "0.6.0-dev"
 authors = ["Ruben De Smet <ruben.de.smet@rubdos.be>"]
-edition = "2018"
+edition = "2021"
 license = "AGPL-3.0-or-later"
 description = "Private messaging using Signal for SailfishOS -- core."
 
@@ -14,39 +14,33 @@ harness = false
 
 [dependencies]
 actix = "0.13"
-aes = "0.7"
 anyhow = "1.0"
 async-trait = "0.1"
 bincode = "1.2.1"
 block-modes = "0.8"
-chrono = "=0.4.25"
+chrono = "0.4"
 diesel = { version = "2.0", features = ["sqlite", "chrono"] }
 diesel_migrations = "2.0"
 dirs = "4.0"
 fs_extra = "1.2.0"
 hex = "0.4"
-hmac = "=0.11"
+hmac = "0.11"
 itertools = "0.10.3"
 libsqlite3-sys = { version = "0.25.2", features = ["sqlcipher"] }
-log = "=0.4.18"
-# Newer versions don't compile with Rust 1.52 (nightly-2021-05-06),
-# which is what Sailfish SDK 3.9.3 (4.4.0.58) comes with
-# Due to that, we need to pin the sha2 and sha-1 versions too.
-pbkdf2 = { version = "=0.9.0", default-features = false }
-phonenumber = "=0.3.1"
+log = "0.4"
+pbkdf2 = { version = "0.9.0", default-features = false }
+phonenumber = "0.3.1"
 prost = "0.10"
 rand = "0.7"
-regex = "=1.7.3"
-scrypt = { version = "=0.8.1", default-features = false, features = ["std"] }
-secrecy = "0.7"
+regex = "1.7"
+scrypt = { version = "0.11.0", default-features = false, features = ["std"] }
 serde = {version = "1.0", features = ["derive"]}
-# Serde 0.8.26 requires Rust 1.56 (aka edition 2021)
-serde_yaml = "=0.8.25"
-sha2 = "=0.9"
-sha-1 = "=0.9"
+serde_yaml = "0.8"
+sha2 = "0.9"
+sha-1 = "0.9"
 tempfile = { version = "3.4.0", default-features = false }
-tokio = { version="=1.26.0", features = ["fs", "macros"] }
-uuid = { version = "=1.3.2", features=["v4"] }
+tokio = { version = "1.26.0", features = ["fs", "macros"] }
+uuid = { version = "1.3", features=["v4"] }
 
 libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features = ["unsend-futures"] }
 
@@ -58,9 +52,8 @@ prost-build = "0.10"
 actix-rt = "2.8.0"
 # Git version for async tests. 0.6.5 will contain this feature,
 # so revert to crates.io on release
-criterion = "=0.3.5"
-# 0.10 requires Rust 1.60
-env_logger = "=0.9.3"
+criterion = "0.3.5"
+env_logger = "0.9"
 futures = "0.3"
 rstest = "0.10"
 rstest_reuse = "0.1.0"

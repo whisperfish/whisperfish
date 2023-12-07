@@ -4,7 +4,7 @@ cargo-features = ["strip"]
 name = "harbour-whisperfish"
 version = "0.6.0-dev"
 authors = ["Ruben De Smet <ruben.de.smet@rubdos.be>"]
-edition = "2018"
+edition = "2021"
 license = "AGPL-3.0-or-later"
 description = "Private messaging using Signal for SailfishOS."
 
@@ -12,12 +12,12 @@ description = "Private messaging using Signal for SailfishOS."
 whisperfish = { path = "../whisperfish" }
 dbus = "0.9"
 single-instance = "0.3.3"
-log = "=0.4.18"
+log = "0.4"
 simplelog = "0.11.2"
 anyhow = "1.0"
 structopt = "0.3"
-chrono = "=0.4.25"
-regex = "=1.7.3"
+chrono = "0.4"
+regex = "1.7"
 signal-hook = "0.3.15"
 
 [features]

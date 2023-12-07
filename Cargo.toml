@@ -1,4 +1,5 @@
 [workspace]
+resolver = "2"
 members = [
     "create-store",
     "fetch-signal-attachment",
@@ -8,48 +9,14 @@ members = [
     "whisperfish-migration-dry-run"
 ]
 
-[patch."https://github.com/signalapp/libsignal"]
-libsignal-protocol = { git = "https://gitlab.com/whisperfish/libsignal-client", branch = "whisperfork" }
-zkgroup = { git = "https://gitlab.com/whisperfish/libsignal-client", branch = "whisperfork" }
-poksho = { git = "https://gitlab.com/whisperfish/libsignal-client", branch = "whisperfork" }
-zkcredential = { git = "https://gitlab.com/whisperfish/libsignal-client", branch = "whisperfork" }
-
 [patch.crates-io]
-curve25519-dalek = { git = 'https://github.com/signalapp/curve25519-dalek', branch = 'lizard2' }
-
 qmetaobject = { git = "https://github.com/whisperfish/qmetaobject-rs", branch = "whisperfork" }
 qttypes = { git = "https://github.com/whisperfish/qmetaobject-rs", branch = "whisperfork" }
-pqcrypto-internals = { git = "https://github.com/whisperfish/pqcrypto", branch = "whisperfork" }
-
-openssl-src = { git = "https://github.com/whisperfish/openssl-src-rs", branch = "111.25.0-111" }
-
-# 1.52 compatibility was merely a ![feature()]
-symphonia = { git = "https://github.com/whisperfish/Symphonia", branch = "whisperfork" }
-symphonia-core = { git = "https://github.com/whisperfish/Symphonia", branch = "whisperfork" }
-
-# qmetaobject = { path="../qmetaobject-rs/qmetaobject" }
-# qttypes = { path="../qmetaobject-rs/qttypes" }
-
-# [patch."https://github.com/whisperfish/libsignal-service-rs"]
-# libsignal-service = { path = "/home/rsmet/src/libsignal-service-rs/libsignal-service" }
-# libsignal-service-actix = { path = "/home/rsmet/src/libsignal-service-rs/libsignal-service-actix/" }
 
 # Smart dev mode: Compile most stuff in release mode, except for the things
 # that are actually maintained by our community
 [profile.dev.package."*"]
 opt-level = 3
-
-[profile.dev.package.libsignal-protocol]
-opt-level = 0
-
-[profile.dev.package.libsignal-service]
-opt-level = 0
-
-[profile.dev.package.libsignal-service-actix]
-opt-level = 0
-
-[profile.dev.package.qmetaobject]
-opt-level = 0
 
 [profile.release]
 # This flag is set in CI using CARGO_PROFILE_RELEASE_LTO=thin

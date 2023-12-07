@@ -48,9 +48,9 @@ Recommends:   harbour-whisperfish-shareplugin
 # - Contacts/contacts.db phoneNumbers.normalizedNumber: introduced in 3.3
 Requires:   sailfish-version >= 3.3
 
-BuildRequires:  rust >= 1.52.1+git3-1
-BuildRequires:  rust-std-static >= 1.52.1+git3-1
-BuildRequires:  cargo >= 1.52.1+git3-1
+BuildRequires:  rust >= 1.72
+BuildRequires:  rust-std-static >= 1.72
+BuildRequires:  cargo >= 1.72
 BuildRequires:  git
 BuildRequires:  protobuf-compiler
 BuildRequires:  nemo-qml-plugin-notifications-qt5-devel
@@ -59,6 +59,7 @@ BuildRequires:  dbus-devel
 BuildRequires:  gcc-c++
 BuildRequires:  zlib-devel
 BuildRequires:  coreutils
+BuildRequires:  perl-IPC-Cmd
 
 BuildRequires:  meego-rpm-config
 
@@ -200,7 +201,7 @@ fi
 MAJOR_VERSION=$(echo $TARGET_VERSION | awk -F. '{print $1 FS $2}')
 
 cargo build \
-          -j 1 \
+          -j 4 \
           -vv \
           --release \
           --no-default-features \
