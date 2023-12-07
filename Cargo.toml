@@ -23,6 +23,10 @@ pqcrypto-internals = { git = "https://github.com/whisperfish/pqcrypto", branch =
 
 openssl-src = { git = "https://github.com/whisperfish/openssl-src-rs", branch = "111.25.0-111" }
 
+# 1.52 compatibility was merely a ![feature()]
+symphonia = { git = "https://github.com/whisperfish/Symphonia", branch = "whisperfork" }
+symphonia-core = { git = "https://github.com/whisperfish/Symphonia", branch = "whisperfork" }
+
 # qmetaobject = { path="../qmetaobject-rs/qmetaobject" }
 # qttypes = { path="../qmetaobject-rs/qttypes" }
 
