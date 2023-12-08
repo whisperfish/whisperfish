@@ -35,17 +35,14 @@ cpp! {{
         {
             int width = 100;
             int height = 40;
-            double time = 0.;
 
             int *widthp = &width;
             int *heightp = &height;
-            double *timep = &time;
 
             int _r = rust!(WF_rustlegraph_compute_dims [
                 id : &QString as "const QString &",
                 widthp : &mut i32 as "int *",
-                heightp : &mut i32 as "int *",
-                timep : &mut f64 as "double *"
+                heightp : &mut i32 as "int *"
             ] -> i32 as "int" {
                 let id = id.to_string();
                 if id.is_empty() {
@@ -55,11 +52,9 @@ cpp! {{
                 let mut id = id.split(':');
                 id.next().unwrap();
                 let dims = id.next().unwrap();
-                let time = id.next().unwrap();
                 let mut dims = dims.split('x');
                 *widthp = dims.next().unwrap().parse().unwrap();
                 *heightp = dims.next().unwrap().parse().unwrap();
-                *timep = time.parse().unwrap();
 
                 0
             });
@@ -88,7 +83,6 @@ cpp! {{
                 buf : *mut u8 as "uchar *",
                 width : u32 as "int",
                 height : u32 as "int",
-                time : f64 as "double",
                 size_in_bytes : usize as "size_t",
                 ctx : *mut VizualizerMap as "void *"
             ] -> i32 as "int" {
@@ -96,7 +90,8 @@ cpp! {{
                 if id.is_empty() {
                     return -1;
                 }
-                let (id, _time) = id.rsplit_once(':').unwrap();
+                let (id, time) = id.rsplit_once(':').unwrap();
+                let time: f64 = time.parse().unwrap();
                 let slice = unsafe { std::slice::from_raw_parts_mut(buf, size_in_bytes) };
 
                 let vizualizers = ctx.as_ref().expect("no null pointers").borrow();

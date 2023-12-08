@@ -123,10 +123,14 @@ impl RustleGraph {
         self.reinit();
     }
 
-    // XXX Techincally, thet ID should have the color encoded too.
     fn image_id(&self) -> String {
         if self.vizualizer.is_some() {
-            format!("{}:{}x{}", self.attachmentId, self.width, self.height)
+            let p = qcolor_to_image(self.pastColor);
+            let f = qcolor_to_image(self.futureColor);
+            format!(
+                "{}:{}x{}:{:?}-{:?}",
+                self.attachmentId, self.width, self.height, p, f
+            )
         } else {
             String::new()
         }
