@@ -95,15 +95,18 @@ impl RustleGraph {
                         // XXX error handling!
                         let file = File::open(&path).expect("existing attachment");
                         log::debug!("Generating a RustleGraph of {}x{}", self.width, self.height);
-                        self.vizualizer = Some(Arc::new(
-                            Vizualizer::new(
-                                self.vizualizer_params(),
-                                Box::new(file),
-                                Some(&att.content_type),
-                                Some(std::path::Path::new(&path)),
-                            )
-                            .unwrap(),
-                        ));
+                        let viz = Vizualizer::new(
+                            self.vizualizer_params(),
+                            Box::new(file),
+                            Some(&att.content_type),
+                            Some(std::path::Path::new(&path)),
+                        );
+                        match viz {
+                            Ok(viz) => self.vizualizer = Some(Arc::new(viz)),
+                            Err(e) => {
+                                log::error!("Vizualization failed: {}", e);
+                            }
+                        }
                     }
                 }
             }
