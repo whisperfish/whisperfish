@@ -1724,7 +1724,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-attachments-loader-show-more" numerus="yes">
-        <location filename="../qml/components/message/AttachmentsLoader.qml" line="328"/>
+        <location filename="../qml/components/message/AttachmentsLoader.qml" line="330"/>
         <source>and %n more</source>
         <oldsource>and %1 more</oldsource>
         <extracomment>Note if some message attachments are hidden instead of being shown inline</extracomment>
@@ -1766,7 +1766,8 @@ Settings page share contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-quoted-message-preview-attachment">
-        <location filename="../qml/components/attachment/AttachmentItemFile.qml" line="20"/>
+        <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="24"/>
+        <location filename="../qml/components/attachment/AttachmentItemFile.qml" line="22"/>
         <location filename="../qml/components/QuotedMessagePreview.qml" line="130"/>
         <source>Attachment</source>
         <extracomment>Placeholder text if quoted message preview contains no text, only attachments</extracomment>
@@ -2134,6 +2135,7 @@ Settings page share contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-export-file-menu">
+        <location filename="../qml/pages/ViewAudioPage.qml" line="28"/>
         <location filename="../qml/pages/ViewFilePage.qml" line="28"/>
         <source>Export file</source>
         <extracomment>Copy the attachment file out of Whisperfish</extracomment>
