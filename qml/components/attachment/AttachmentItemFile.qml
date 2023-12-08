@@ -14,16 +14,20 @@ AttachmentItemBase {
         recipientId: item.recipientId
     }
 
-    onClicked: pageStack.push(Qt.resolvedUrl('../../pages/ViewFilePage.qml'), {
-        'title': recipientId > -1 ? recipient.name : "",
-        // Translated in QuotedMessagePreview.qml
-        'subtitle': qsTrId('whisperfish-quoted-message-preview-attachment'),
-        'titleOverlay.subtitleItem.wrapMode': SettingsBridge.debug_mode ? Text.Wrap : Text.NoWrap,
-        'path': attach.data,
-        'attachmentId': attach.id,
-        'isViewOnce': false, // TODO: Implement attachment can only be viewed once
-        'attachment': attach,
-    })
+    onClicked: {
+        if (_effectiveEnableClick) {
+            pageStack.push(Qt.resolvedUrl('../../pages/ViewFilePage.qml'), {
+                title: recipientId > -1 ? recipient.name : "",
+                // Translated in QuotedMessagePreview.qml
+                subtitle: qsTrId('whisperfish-quoted-message-preview-attachment'),
+                'titleOverlay.subtitleItem.wrapMode': SettingsBridge.debug_mode ? Text.Wrap : Text.NoWrap,
+                path: attach.data,
+                attachmentId: attach.id,
+                isViewOnce: false, // TODO: Implement attachment can only be viewed once
+                attachment: attach,
+            })
+        }
+    }
 
     Column {
         anchors {
@@ -38,7 +42,13 @@ AttachmentItemBase {
             elide: Text.ElideLeft
         }
         Label {
-            text: _hasAttach ? (attach.original_name.length > 0 ? attach.original_name : lastPartOfPath(attach.data)) : ''
+            text: _hasAttach
+                ? (
+                    attach.original_name != null && attach.original_name.length > 0
+                    ? attach.original_name
+                    : lastPartOfPath(attach.data)
+                )
+                : ''
             highlighted: item.highlighted ? true : undefined
             color: highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
             width: parent.width - Theme.paddingSmall

@@ -20,7 +20,9 @@ crate::observing_model! {
     } WITH OPTIONAL PROPERTIES FROM attachment WITH ROLE AttachmentRoles {
         r#type MimeType,
         data Data,
+        original_name OriginalName,
         visual_hash VisualHash,
+        is_voice_note IsVoiceNote,
     }
 }
 
@@ -71,11 +73,12 @@ impl EventObserving for AttachmentImpl {
 define_model_roles! {
     enum AttachmentRoles for orm::Attachment {
         // There's a lot more useful stuff to expose.
-        Id(id):                                         "id",
-        MimeType(content_type via QString::from):       "type",
-        Data(attachment_path via qstring_from_option):  "data",
+        Id(id):                                          "id",
+        MimeType(content_type via QString::from):        "type",
+        Data(attachment_path via qstring_from_option):   "data",
         OriginalName(file_name via qstring_from_option): "original_name",
-        VisualHash(visual_hash via qstring_from_option):  "visual_hash",
+        VisualHash(visual_hash via qstring_from_option): "visual_hash",
+        IsVoiceNote(is_voice_note):                      "is_voice_note",
     }
 }
 

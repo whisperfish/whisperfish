@@ -4,7 +4,7 @@ import "../components/attachment"
 
 Page {
     id: page
-    objectName: "viewImagePage"
+    objectName: "viewAudioPage"
 
     allowedOrientations: Orientation.All
     property alias title: header.title
@@ -36,7 +36,7 @@ Page {
             id: header
         }
 
-        AttachmentItemFile {
+        AttachmentItemAudio {
             id: attachment
             anchors {
                 horizontalCenter: parent.horizontalCenter
@@ -46,7 +46,7 @@ Page {
             width: Math.min(page.width, page.height)
             height: Theme.itemSizeExtraLarge
             attach: page.attachment
-            showThumbnail: true
+            showThumbnail: false
             enableDefaultClickAction: false
             highlighted: false
         }

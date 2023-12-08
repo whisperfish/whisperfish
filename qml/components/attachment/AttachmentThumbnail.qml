@@ -12,7 +12,7 @@ MouseArea {
     property var attachments: null
     property var message: null
     property bool highlighted: containsPress
-    property bool _hasAttach: attach !== null
+    property bool _hasAttach: attach != null
     property bool _isAnimated: _hasAttach ? /\.(gif)$/i.test(attach.data) : false
     property bool _isVideo: _hasAttach ? /^video\//.test(attach.type) : false
     property bool _isAnimatedPaused: false
@@ -44,11 +44,13 @@ MouseArea {
             var _debugMode = SettingsBridge.debug_mode
             var _viewPage = _isVideo ? '../../pages/ViewVideoPage.qml' : '../../pages/ViewImagePage.qml'
 
-            pageStack.push(_viewPage, {
+            pageStack.push(Qt.resolvedUrl(_viewPage), {
                 'title': message ? recipient.name : "",
                 // TODO don't show the file path once attachments work reliably (#many)
                 //      and attachments are saved in a WF-controlled directory (#253)
-                'subtitle': attach.original_name && attach.original_name.length > 0 ? attach.original_name : attach.data,
+                'subtitle': attach.original_name != null && attach.original_name.length > 0
+                    ? attach.original_name
+                    : attach.data,
                 // when not in debug mode, it is ok to fade the file path if it is too long
                 'titleOverlay.subtitleItem.wrapMode': _debugMode ? Text.Wrap : Text.NoWrap,
                 'path': attach.data,

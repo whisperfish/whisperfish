@@ -10,11 +10,12 @@ MouseArea {
     property bool highlighted: containsPress
     property string icon: ''
     property bool enableDefaultClickAction: true
+    property bool showThumbnail: _hasAttach && !(attach.is_voice_note || /^audio\//.test(attach.type))
     default property alias contents: attachmentContentItem.data
 
     // check _effectiveEnableClick in derived types, not enableDefaultClickAction
     property bool _effectiveEnableClick: _hasAttach && enableDefaultClickAction
-    property bool _hasAttach: attach !== null
+    property bool _hasAttach: attach != null
 
     function mimeToIcon(mimeType) {
         if (root.icon !== '') return root.icon
@@ -34,8 +35,11 @@ MouseArea {
         anchors.fill: parent
         spacing: Theme.paddingMedium
         Item {
-            height: parent.height; width: height
+            id: thumbItem
+            height: parent.height
+            width: visible ? height : 0
             clip: true
+            visible: showThumbnail
             Rectangle {
                 anchors { fill: parent; margins: -parent.width/2 }
                 rotation: 45
@@ -64,7 +68,7 @@ MouseArea {
 
         Item {
             id: attachmentContentItem
-            width: parent.width - parent.height /* icon width */ - parent.spacing
+            width: parent.width - thumbItem.width - parent.spacing
             height: parent.height
 
             /* children... */

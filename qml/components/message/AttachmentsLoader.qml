@@ -272,7 +272,7 @@ Loader {
         id: detailComponent
         Column {
             id: detailColumn
-            enabled: listView !== null && !listView.isSelecting
+            enabled: listView != null && !listView.isSelecting
 
             function componentForMime(mimeType) {
                 if (/^audio\//.test(mimeType)) return detail_audioComponent
@@ -285,23 +285,25 @@ Loader {
                 property int currentAttachmentIndex: 0
                 width: parent.width
                 height: parent.height/Math.min(maxDetails, detailAttachmentCount)
+                // XXX When we're able to run Rust 1.a-bit-more, with qmetaobject 0.2.7+, we have QVariantMap.
                 sourceComponent: detailAttachmentCount >= 1
-                                ? parent.componentForMime(detailAttachments.get(currentAttachmentIndex).type)
+                                ? parent.componentForMime(JSON.parse(detailAttachments.get(currentAttachmentIndex)).type)
                                 : null
             }
 
             Item {
                 width: parent.width
-                height: showMoreDetail.sourceComponent !== null ? parent.height/maxDetails : 0
+                height: showMoreDetail.sourceComponent != null ? parent.height/maxDetails : 0
 
                 Loader {
                     id: showMoreDetail
                     anchors.fill: parent
                     property int currentAttachmentIndex: 1
                     opacity: detailOverlay.visible ? Theme.opacityFaint : 1.0
-                    sourceComponent: detailAttachmentCount >= maxDetails ?
-                                         detailColumn.componentForMime(detailAttachments[0].type) : null
-
+                    // XXX When we're able to run Rust 1.a-bit-more, with qmetaobject 0.2.7+, we have QVariantMap.
+                    sourceComponent: detailAttachmentCount >= maxDetails
+                                    ? detailColumn.componentForMime(JSON.parse(detailAttachments.get(currentAttachmentIndex)).type)
+                                    : null
                 }
 
                 OpacityRampEffect {
@@ -338,6 +340,7 @@ Loader {
     Component {
         id: detail_contactComponent
         AttachmentItemContact {
+            // XXX When we're able to run Rust 1.a-bit-more, with qmetaobject 0.2.7+, we have QVariantMap.
             attach: JSON.parse(detailAttachments.get(currentAttachmentIndex))
             onPressAndHold: root.pressAndHold(mouse)
         }
@@ -346,7 +349,9 @@ Loader {
     Component {
         id: detail_audioComponent
         AttachmentItemAudio {
+            // XXX When we're able to run Rust 1.a-bit-more, with qmetaobject 0.2.7+, we have QVariantMap.
             attach: JSON.parse(detailAttachments.get(currentAttachmentIndex))
+            recipientId: message.senderRecipientId
             onPressAndHold: root.pressAndHold(mouse)
         }
     }
@@ -354,6 +359,7 @@ Loader {
     Component {
         id: detail_fileComponent
         AttachmentItemFile {
+            // XXX When we're able to run Rust 1.a-bit-more, with qmetaobject 0.2.7+, we have QVariantMap.
             attach: JSON.parse(detailAttachments.get(currentAttachmentIndex))
             recipientId: message.senderRecipientId
             onPressAndHold: root.pressAndHold(mouse)
