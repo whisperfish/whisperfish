@@ -1,0 +1,125 @@
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    sync::{Arc, Weak},
+};
+
+use crate::platform::QQmlEngine;
+use cpp::cpp;
+use qttypes::QString;
+
+type VizualizerMap = Arc<RefCell<HashMap<String, Weak<rustlegraph::Vizualizer>>>>;
+
+pub fn install(app: &mut QQmlEngine, vizualizers: VizualizerMap) {
+    let vizualizers: *mut VizualizerMap = Box::leak(Box::new(vizualizers));
+    cpp!(unsafe [app as "QQmlEngine *", vizualizers as "void *"] {
+        app->addImageProvider(QLatin1String("rustlegraph"), new RustleGraphImageProvider(vizualizers));
+    });
+}
+
+cpp! {{
+    #include <QtQuick/QQuickImageProvider>
+
+    class RustleGraphImageProvider : public QQuickImageProvider
+    {
+        // XXX Destructor should destroy the ctx in Rust!
+        void *ctx;
+    public:
+        RustleGraphImageProvider(void *ctx)
+                   : QQuickImageProvider(QQuickImageProvider::Image),
+                     ctx(ctx)
+        {
+        }
+
+        QImage requestImage(const QString &id, QSize *size, const QSize &requestedSize) override
+        {
+            int width = 100;
+            int height = 40;
+            double time = 0.;
+
+            int *widthp = &width;
+            int *heightp = &height;
+            double *timep = &time;
+
+            int _r = rust!(WF_rustlegraph_compute_dims [
+                id : &QString as "const QString &",
+                widthp : &mut i32 as "int *",
+                heightp : &mut i32 as "int *",
+                timep : &mut f64 as "double *"
+            ] -> i32 as "int" {
+                let id = id.to_string();
+                if id.is_empty() {
+                    return -1;
+                }
+
+                let mut id = id.split(':');
+                id.next().unwrap();
+                let dims = id.next().unwrap();
+                let time = id.next().unwrap();
+                let mut dims = dims.split('x');
+                *widthp = dims.next().unwrap().parse().unwrap();
+                *heightp = dims.next().unwrap().parse().unwrap();
+                *timep = time.parse().unwrap();
+
+                0
+            });
+
+            QImage img(requestedSize.width() > 0 ? requestedSize.width() : width,
+                           requestedSize.height() > 0 ? requestedSize.height() : height,
+                           QImage::Format::Format_RGBA8888);
+
+            width = img.width();
+            height = img.height();
+
+            if (size)
+               *size = QSize(width, height);
+
+            img.fill(0);
+            uchar *buf = img.bits();
+
+            #if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
+            size_t size_in_bytes = img.sizeInBytes();
+            #else
+            size_t size_in_bytes = img.byteCount();
+            #endif
+
+            rust!(WF_inject_rustlegraph [
+                id : &QString as "const QString &",
+                buf : *mut u8 as "uchar *",
+                width : u32 as "int",
+                height : u32 as "int",
+                time : f64 as "double",
+                size_in_bytes : usize as "size_t",
+                ctx : *mut VizualizerMap as "void *"
+            ] -> i32 as "int" {
+                let id = id.to_string();
+                if id.is_empty() {
+                    return -1;
+                }
+                let (id, _time) = id.rsplit_once(':').unwrap();
+                let slice = unsafe { std::slice::from_raw_parts_mut(buf, size_in_bytes) };
+
+                let vizualizers = ctx.as_ref().expect("no null pointers").borrow();
+                if let Some(viz) = vizualizers.get(&id.to_string()) {
+                    if let Some(viz) = viz.upgrade() {
+                        let mut img = image::ImageBuffer::<image::Rgba<u8>, &mut [u8]>::from_raw(width, height, slice).expect("correct dimensions");
+                        if let Err(e) = viz.render_to_image(rustlegraph::Time { seconds: time as u64, frac: time.fract()}, &mut img) {
+                            log::error!("Could not render RustleGraph: {}", e);
+                            return -2;
+                        }
+                    } else {
+                        log::trace!("Viz was dropped at {}", id.to_string());
+                        return -3;
+                    }
+                } else {
+                    log::trace!("RustleGraph `{}' not found", id.to_string());
+                    return -4;
+                }
+
+                0
+            });
+
+            return img;
+        }
+    };
+} }

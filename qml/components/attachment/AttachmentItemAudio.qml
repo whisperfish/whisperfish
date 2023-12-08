@@ -16,6 +16,30 @@ AttachmentItemBase {
         recipientId: item.recipientId
     }
 
+    RustleGraph {
+        id: rustlegraph
+        app: AppState
+        attachmentId: attach.id
+
+        // When the graph becomes interactive for scrolling, we might want to make these into primaryColor and  + secondaryColor
+        pastColor: Theme.highlightColor
+        futureColor: Theme.secondaryHighlightColor
+
+        width: rustlegraphImage.width
+        height: rustlegraphImage.height
+        // timestamp: audioMessage.position ? (audioMessage.position / 1000.0) : 0.0
+    }
+
+    // Qt 5.9+ can just use the notifyInterval of Audio, but we have to trick the animation into being smooth.
+    Timer {
+        running: audioMessage.playbackState == Audio.PlayingState
+        repeat: true
+        interval: 20 // ms, 50fps
+        onTriggered: {
+            rustlegraph.timestamp = audioMessage.position / 1000.
+        }
+    }
+
     onClicked: {
         if (_effectiveEnableClick) {
             pageStack.push(Qt.resolvedUrl('../../pages/ViewAudioPage.qml'), {
@@ -40,7 +64,10 @@ AttachmentItemBase {
             ? " (" +  Math.round(duration / 1000) + "s)"
             : durationTenths
         )
+        // Qt 5.9+
+        // notifyInterval: 20 // ms
     }
+
     Row {
         id: attachmentRow
         anchors {
@@ -78,8 +105,9 @@ AttachmentItemBase {
                 height: attachmentRow.height
                 width: attachmentRow.width - playPauseColumn.width - Theme.paddingSmall
                 Image {
+                    id: rustlegraphImage
                     fillMode: Image.PreserveAspectFit
-                    source: "/home/defaultuser/Downloads/waveform.png"
+                    source: "image://rustlegraph/" + rustlegraph.imageId
                     anchors.fill: parent
                 }
             }

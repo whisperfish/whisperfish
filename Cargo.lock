@@ -2754,10 +2754,12 @@ dependencies = [
 [[package]]
 name = "rustlegraph"
 version = "0.1.0"
-source = "git+https://gitlab.com/whisperfish/rustlegraph?branch=main#412ec74b3ef094b0a50fe539a6a272390198f484"
+source = "git+https://gitlab.com/whisperfish/rustlegraph?branch=main#8d90cf0424f85ca66d85efbcd7102b9ef670c682"
 dependencies = [
  "image",
+ "log",
  "symphonia",
+ "thiserror",
 ]
 
 [[package]]
@@ -3139,6 +3141,8 @@ source = "git+https://github.com/whisperfish/Symphonia?branch=whisperfork#0bb9d7
 dependencies = [
  "lazy_static",
  "symphonia-bundle-mp3",
+ "symphonia-codec-aac",
+ "symphonia-codec-alac",
  "symphonia-core",
  "symphonia-format-isomp4",
  "symphonia-format-ogg",
@@ -3156,6 +3160,25 @@ dependencies = [
  "log",
  "symphonia-core",
  "symphonia-metadata",
+]
+
+[[package]]
+name = "symphonia-codec-aac"
+version = "0.5.2"
+source = "git+https://github.com/whisperfish/Symphonia?branch=whisperfork#0bb9d776dc3cf639f046595aad84335f707a1299"
+dependencies = [
+ "lazy_static",
+ "log",
+ "symphonia-core",
+]
+
+[[package]]
+name = "symphonia-codec-alac"
+version = "0.5.2"
+source = "git+https://github.com/whisperfish/Symphonia?branch=whisperfork#0bb9d776dc3cf639f046595aad84335f707a1299"
+dependencies = [
+ "log",
+ "symphonia-core",
 ]
 
 [[package]]
