@@ -44,8 +44,12 @@ AttachmentItemBase {
         if (_effectiveEnableClick) {
             pageStack.push(Qt.resolvedUrl('../../pages/ViewAudioPage.qml'), {
                 title: recipientId > -1 ? recipient.name : "",
-                // Translated in QuotedMessagePreview.qml
-                subtitle: qsTrId('whisperfish-quoted-message-preview-attachment'),
+                subtitle: attach.is_voice_note
+                    //: Page header subtitle for a voice note
+                    //% "Voice note"
+                    ? qsTrId('whisperfish-quoted-message-preview-voice-note')
+                    // Translated in QuotedMessagePreview.qml
+                    : qsTrId('whisperfish-quoted-message-preview-attachment'),
                 'titleOverlay.subtitleItem.wrapMode': SettingsBridge.debug_mode ? Text.Wrap : Text.NoWrap,
                 path: attach.data,
                 attachmentId: attach.id,
@@ -71,8 +75,8 @@ AttachmentItemBase {
     Row {
         id: attachmentRow
         anchors {
-            left: parent.left; right: parent.right
-            verticalCenter: parent.verticalCenter
+            left: parent.left
+            right: parent.right
         }
         Column {
             id: playPauseColumn
@@ -88,7 +92,7 @@ AttachmentItemBase {
                 onPressAndHold: audioMessage.stop()
                 clip: true
                 Rectangle {
-                    z: -1
+                    z: -2
                     anchors { fill: parent; margins: -parent.width/2 }
                     rotation: 45
                     gradient: Gradient {
@@ -96,6 +100,22 @@ AttachmentItemBase {
                         GradientStop { position: 0.4; color: "transparent" }
                         GradientStop { position: 1.0; color: Theme.rgba(Theme.secondaryColor, 0.1) }
                     }
+                }
+
+                IconButton {
+                    z: -1
+                    anchors {
+                        top: parent.top
+                        right: parent.right
+                    }
+                    enabled: false
+                    visible: attach.is_voice_note
+                    icon.source: "image://theme/icon-cover-unmute"
+                    width: parent.height * 0.3
+                    height: width
+                    icon.width: width
+                    icon.height: width
+                    highlighted: parent.highlighted
                 }
             }
         }
