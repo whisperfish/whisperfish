@@ -69,12 +69,10 @@ cpp! {{
                 0
             });
 
-            QImage img(requestedSize.width() > 0 ? requestedSize.width() : width,
-                           requestedSize.height() > 0 ? requestedSize.height() : height,
-                           QImage::Format::Format_RGBA8888);
+            width = requestedSize.width() > 0 ? requestedSize.width() : width;
+            height = requestedSize.height() > 0 ? requestedSize.height() : height;
 
-            width = img.width();
-            height = img.height();
+            QImage img(width, height, QImage::Format::Format_RGBA8888);
 
             if (size)
                *size = QSize(width, height);
