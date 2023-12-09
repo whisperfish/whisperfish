@@ -220,6 +220,11 @@ Page {
                 id: recipient
                 recipientUuid: model.uuid
                 app: AppState
+                property string identifiedText:  !SettingsBridge.debug_mode && !isSelf ? "" :
+                    // 0 = Unknown, 1 = Disabled, 2 = Enabled, 3 = Unlimited
+                    unidentifiedAccessMode >= 2
+                    ? "🔑 " // key
+                    : "🔓 " // unlocked padlock
             }
 
             menu: Component {
@@ -334,15 +339,16 @@ Page {
                     }
                     Label {
                         font.pixelSize: Theme.fontSizeMedium
-                        text: item.isSelf ?
-                                  //: Title for the user's entry in a list of group members
-                                  //% "You"
-                                  qsTrId("whisperfish-group-member-name-self") :
-                                  (item.isUnknownContact ?
-                                      //: Unknown contact in group member list
-                                      //% "Unknown"
-                                      qsTrId("whisperfish-unknown-contact") :
-                                      name)
+                        text: recipient.identifiedText +
+                            item.isSelf
+                            //: Title for the user's entry in a list of group members
+                            //% "You"
+                            ? qsTrId("whisperfish-group-member-name-self")
+                            : item.isUnknownContact
+                                //: Unknown contact in group member list
+                                //% "Unknown"
+                                ? qsTrId("whisperfish-unknown-contact")
+                                : name
                     }
                     LinkedText {
                         id: phonenumberLink
