@@ -14,16 +14,17 @@ pub struct RustleGraph {
     width: qt_property!(u32; WRITE set_width),
     height: qt_property!(u32; WRITE set_height),
 
-    duration: qt_property!(f64; READ get_duration NOTIFY something_changed),
+    duration: qt_property!(f64; READ get_duration NOTIFY duration_updated),
 
     timestamp: qt_property!(f64; WRITE set_time),
 
-    imageId: qt_property!(QString; READ get_image_id NOTIFY something_changed),
+    imageId: qt_property!(QString; READ get_image_id NOTIFY image_updated),
 
     pastColor: qt_property!(QColor; WRITE set_past_color),
     futureColor: qt_property!(QColor; WRITE set_future_color),
 
-    something_changed: qt_signal!(),
+    image_updated: qt_signal!(),
+    duration_updated: qt_signal!(),
 
     vizualizer: Option<Arc<Vizualizer>>,
 }
@@ -72,7 +73,7 @@ impl RustleGraph {
     fn set_time(&mut self, time: f64) {
         self.timestamp = time;
         // Don't reinitialize here.
-        self.something_changed();
+        self.image_updated();
     }
 
     fn get_duration(&self) -> f64 {
@@ -111,7 +112,8 @@ impl RustleGraph {
                 if let Some(att) = storage.fetch_attachment(self.attachmentId) {
                     if !att.is_voice_note {
                         log::warn!("Attachment is not a voice note.");
-                        self.something_changed();
+                        self.image_updated();
+                        self.duration_updated();
                         return;
                     }
                     if let Some(path) = att.attachment_path {
@@ -139,7 +141,8 @@ impl RustleGraph {
                     log::info!("Replaced an old Rustlegraph; probably doing double work here");
                 }
             }
-            self.something_changed();
+            self.image_updated();
+            self.duration_updated();
         }
     }
 
