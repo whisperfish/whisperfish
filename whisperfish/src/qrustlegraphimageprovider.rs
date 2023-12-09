@@ -29,6 +29,7 @@ cpp! {{
                      ctx(ctx)
         {
         }
+        RustleGraphImageProvider(RustleGraphImageProvider &other) = delete;
 
         ~RustleGraphImageProvider() {
             rust!(WF_rustlegraph_destructor [
