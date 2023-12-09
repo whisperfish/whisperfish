@@ -220,11 +220,6 @@ Page {
                 id: recipient
                 recipientUuid: model.uuid
                 app: AppState
-                property string identifiedText:  !SettingsBridge.debug_mode && !isSelf ? "" :
-                    // 0 = Unknown, 1 = Disabled, 2 = Enabled, 3 = Unlimited
-                    unidentifiedAccessMode >= 2
-                    ? "🔑 " // key
-                    : "🔓 " // unlocked padlock
             }
 
             menu: Component {
@@ -337,18 +332,31 @@ Page {
                         // where does the extra top padding come from?
                         verticalCenterOffset: -Theme.paddingSmall
                     }
-                    Label {
-                        font.pixelSize: Theme.fontSizeMedium
-                        text: recipient.identifiedText +
-                            item.isSelf
-                            //: Title for the user's entry in a list of group members
-                            //% "You"
-                            ? qsTrId("whisperfish-group-member-name-self")
-                            : item.isUnknownContact
-                                //: Unknown contact in group member list
-                                //% "Unknown"
-                                ? qsTrId("whisperfish-unknown-contact")
-                                : name
+                    Row {
+                        spacing: Theme.paddingSmall
+                        Label {
+                            visible: SettingsBridge.debug_mode && !isSelf
+                            width: visible ? implicitWidth : 0
+                            height: nameLabel.height
+                            font.pixelSize: Theme.fontSizeTiny
+                            // 0 = Unknown, 1 = Disabled, 2 = Enabled, 3 = Unlimited
+                            color: recipient.unidentifiedAccessMode  >= 2 ? "green" : "red"
+                            text: '🔒'
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        Label {
+                            id: nameLabel
+                            font.pixelSize: Theme.fontSizeMedium
+                            text: item.isSelf
+                                //: Title for the user's entry in a list of group members
+                                //% "You"
+                                ? qsTrId("whisperfish-group-member-name-self")
+                                : item.isUnknownContact
+                                    //: Unknown contact in group member list
+                                    //% "Unknown"
+                                    ? qsTrId("whisperfish-unknown-contact")
+                                    : name
+                        }
                     }
                     LinkedText {
                         id: phonenumberLink
