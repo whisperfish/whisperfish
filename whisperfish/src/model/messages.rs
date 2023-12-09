@@ -320,7 +320,8 @@ define_model_roles! {
         Failed(sending_has_failed):                           "failed",
         RemoteDeleted(is_remote_deleted):                     "remoteDeleted",
 
-        Attachments(fn attachments(&self)): "attachments",
+        Attachments(fn attachments(&self)):                   "attachments",
+        IsVoiceNote(is_voice_note):                           "isVoiceNote",
 
         Unidentified(use_unidentified):                       "unidentifiedSender",
         QuotedMessageId(quote_id via qvariant_from_option):   "quotedMessageId",

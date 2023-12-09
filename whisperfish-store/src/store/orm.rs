@@ -1029,6 +1029,14 @@ impl AugmentedSession {
         }
     }
 
+    pub fn is_voice_note(&self) -> bool {
+        if let Some(m) = &self.last_message {
+            m.is_voice_note
+        } else {
+            false
+        }
+    }
+
     pub fn draft(&self) -> String {
         self.draft.clone().unwrap_or_default()
     }

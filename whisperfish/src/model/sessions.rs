@@ -291,6 +291,7 @@ define_model_roles! {
         IsPinned(fn is_pinned(&self)):                                     "isPinned",
         Viewed(fn viewed(&self)):                                          "viewCount",
         HasAttachment(fn has_attachment(&self)):                           "hasAttachment",
+        IsVoiceNote(fn is_voice_note(&self)):                              "isVoiceNote",
         HasAvatar(fn has_avatar(&self)):                                   "hasAvatar",
         Draft(fn draft(&self) via QString::from):                          "draft",
     }
