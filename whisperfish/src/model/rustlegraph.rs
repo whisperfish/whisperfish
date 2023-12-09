@@ -92,8 +92,13 @@ impl RustleGraph {
                         return;
                     }
                     if let Some(path) = att.attachment_path {
-                        // XXX error handling!
-                        let file = File::open(&path).expect("existing attachment");
+                        let file = match File::open(&path) {
+                            Ok(file) => file,
+                            Err(e) => {
+                                log::warn!("Could not open {}: {}", path, e);
+                                return;
+                            }
+                        };
                         log::debug!("Generating a RustleGraph of {}x{}", self.width, self.height);
                         let viz = Vizualizer::new(
                             self.vizualizer_params(),
