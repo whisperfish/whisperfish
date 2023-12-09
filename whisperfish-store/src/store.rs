@@ -2332,8 +2332,19 @@ impl Storage {
             .get_result(&mut *self.db())
             .expect("db");
 
+        let is_voice_note = if attachments == 1 {
+            schema::attachments::table
+                .filter(schema::attachments::message_id.eq(message_id))
+                .select(schema::attachments::is_voice_note)
+                .get_result(&mut *self.db())
+                .expect("db")
+        } else {
+            false
+        };
+
         Some(AugmentedMessage {
             inner: message,
+            is_voice_note,
             receipts,
             attachments: attachments as usize,
         })
@@ -2379,12 +2390,18 @@ impl Storage {
             schema::messages::columns::id.desc(),
         );
 
-        // message_id, attachment count
-        let attachments: Vec<(i32, i64)> = schema::attachments::table
+        // message_id, is_voice_note, attachment count
+        let attachments: Vec<(i32, Option<i16>, i64)> = schema::attachments::table
             .inner_join(schema::messages::table)
             .group_by(schema::attachments::message_id)
             .select((
                 schema::attachments::message_id,
+                // We could also define a boolean or aggregate function...
+                // Googling instructions for that is difficult though, since "diesel aggregate or"
+                // yields you machines that consume fuel.
+                diesel::dsl::max(diesel::dsl::sql::<diesel::sql_types::SmallInt>(
+                    "attachments.is_voice_note",
+                )),
                 diesel::dsl::count_distinct(schema::attachments::id),
             ))
             .filter(schema::messages::session_id.eq(sid))
@@ -2412,15 +2429,18 @@ impl Storage {
 
         let mut aug_messages = Vec::with_capacity(messages.len());
         for message in messages {
-            let attachments = if attachments
+            let (attachments, is_voice_note) = if attachments
                 .peek()
-                .map(|(id, _)| *id == message.id)
+                .map(|(id, _, _)| *id == message.id)
                 .unwrap_or(false)
             {
-                let (_, attachments) = attachments.next().unwrap();
-                attachments as usize
+                let (_, voice_note, attachments) = attachments.next().unwrap();
+                (
+                    attachments as usize,
+                    voice_note.map(|x| x > 0).unwrap_or(false),
+                )
             } else {
-                0
+                (0, false)
             };
             let receipts = if receipts
                 .peek()
@@ -2435,6 +2455,7 @@ impl Storage {
 
             aug_messages.push(orm::AugmentedMessage {
                 inner: message,
+                is_voice_note,
                 attachments,
                 receipts,
             });

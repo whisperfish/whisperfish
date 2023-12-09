@@ -827,6 +827,7 @@ impl SessionType {
 pub struct AugmentedMessage {
     pub inner: Message,
     pub attachments: usize,
+    pub is_voice_note: bool,
     pub receipts: Vec<(Receipt, Recipient)>,
 }
 
@@ -1283,6 +1284,7 @@ mod tests {
         AugmentedMessage {
             attachments: 2,
             inner: get_message(),
+            is_voice_note: false,
             receipts: vec![(
                 Receipt {
                     message_id: 1,
