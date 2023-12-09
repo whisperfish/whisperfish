@@ -80,9 +80,21 @@ impl RustleGraph {
         if self.width == 0 || self.height == 0 || self.width > 10000 || self.height > 10000 {
             return;
         }
-        self.vizualizer = None;
+
         if let Some(app) = self.app.as_pinned() {
             let app = app.borrow();
+
+            // Cleanup the hashmap a bit.
+            if let Some(cleanup) = self.vizualizer.take() {
+                drop(cleanup);
+                app.rustlegraphs.borrow_mut().retain(|k, v| {
+                    if v.strong_count() == 0 {
+                        log::trace!("Removing RustleGraph {} from cache", k);
+                    }
+                    v.strong_count() > 0
+                });
+            }
+
             // Generate the vizualizer if we have all the data
             if let Some(storage) = app.storage.borrow().clone() {
                 if let Some(att) = storage.fetch_attachment(self.attachmentId) {

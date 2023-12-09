@@ -104,8 +104,8 @@ cpp! {{
                 let time: f64 = time.parse().unwrap();
                 let slice = unsafe { std::slice::from_raw_parts_mut(buf, size_in_bytes) };
 
-                let vizualizers = ctx.as_ref().expect("no null pointers").borrow();
-                if let Some(viz) = vizualizers.get(&id.to_string()) {
+                let mut vizualizers = ctx.as_ref().expect("no null pointers").borrow_mut();
+                if let Some(viz) = vizualizers.get(id) {
                     if let Some(viz) = viz.upgrade() {
                         let mut img = image::ImageBuffer::<image::Rgba<u8>, &mut [u8]>::from_raw(width, height, slice).expect("correct dimensions");
                         if let Err(e) = viz.render_to_image(rustlegraph::Time { seconds: time as u64, frac: time.fract()}, &mut img) {
@@ -114,6 +114,7 @@ cpp! {{
                         }
                     } else {
                         log::trace!("Viz was dropped at {}", id.to_string());
+                        vizualizers.remove(id);
                         return -3;
                     }
                 } else {
