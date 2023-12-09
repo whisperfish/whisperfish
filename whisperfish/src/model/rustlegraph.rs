@@ -14,6 +14,8 @@ pub struct RustleGraph {
     width: qt_property!(u32; WRITE set_width),
     height: qt_property!(u32; WRITE set_height),
 
+    duration: qt_property!(f64; READ get_duration NOTIFY something_changed),
+
     timestamp: qt_property!(f64; WRITE set_time),
 
     imageId: qt_property!(QString; READ get_image_id NOTIFY something_changed),
@@ -71,6 +73,15 @@ impl RustleGraph {
         self.timestamp = time;
         // Don't reinitialize here.
         self.something_changed();
+    }
+
+    fn get_duration(&self) -> f64 {
+        if let Some(viz) = self.vizualizer.as_ref() {
+            let time = viz.time();
+            time.seconds as f64 + time.frac
+        } else {
+            0.
+        }
     }
 
     fn reinit(&mut self) {
