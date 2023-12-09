@@ -2754,7 +2754,7 @@ dependencies = [
 [[package]]
 name = "rustlegraph"
 version = "0.1.0"
-source = "git+https://gitlab.com/whisperfish/rustlegraph?branch=main#a03f76dbb563729c6b064e805b110be54f94dca7"
+source = "git+https://gitlab.com/whisperfish/rustlegraph?branch=main#633cefa2f0dfd3cfbfca6fa3b42d0eb2cc49dda8"
 dependencies = [
  "image",
  "log",
