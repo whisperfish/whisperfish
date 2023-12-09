@@ -29,11 +29,19 @@ ListItem {
     property string message:
         (_debugMode ? "[" + model.id + "] " : "") +
         (hasAttachment
-            ? ("📎 " + (model.message === ''
-                //: Session contains an attachment label
-                //% "Attachment"
-                ? qsTrId("whisperfish-session-has-attachment") : '')
-            ) : ''
+            ? (model.isVoiceNote
+                ? ("🎤 " + (model.message === ''
+                    //: Session is a voice note
+                    //% "Voice Message"
+                    ? qsTrId("whisperfish-session-is-voice-note") : '')
+                )
+                : ("📎 " + (model.message === ''
+                    //: Session contains an attachment label
+                    //% "Attachment"
+                    ? qsTrId("whisperfish-session-has-attachment") : '')
+                )
+            )
+            : ''
             //: Placeholder note for a deleted message
             //% "this message was deleted"
         ) + (model.message !== undefined ? (model.remoteDeleted ? qsTrId("whisperfish-message-deleted-note") : model.message) : '')
