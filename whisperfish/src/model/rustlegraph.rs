@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use std::{fs::File, sync::Arc};
+use std::sync::Arc;
 
 use image::Rgba;
 use qmetaobject::prelude::*;
@@ -104,19 +104,11 @@ impl RustleGraph {
                         return;
                     }
                     if let Some(path) = att.attachment_path {
-                        let file = match File::open(&path) {
-                            Ok(file) => file,
-                            Err(e) => {
-                                log::warn!("Could not open {}: {}", path, e);
-                                return;
-                            }
-                        };
                         log::debug!("Generating a RustleGraph of {}x{}", self.width, self.height);
-                        let viz = Vizualizer::new(
+                        let viz = Vizualizer::from_file(
                             self.vizualizer_params(),
-                            Box::new(file),
                             Some(&att.content_type),
-                            Some(std::path::Path::new(&path)),
+                            std::path::Path::new(&path),
                         );
                         match viz {
                             Ok(viz) => self.vizualizer = Some(Arc::new(viz)),
