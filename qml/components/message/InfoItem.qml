@@ -37,7 +37,7 @@ Item {
         }
     }
 
-    HighlightImage {
+    Label {
         id: privacyIcon
         anchors {
             verticalCenter: parent.verticalCenter
@@ -45,10 +45,12 @@ Item {
         }
 
         visible: SettingsBridge.debug_mode
-        width: visible ? infoLabel.height : 0
+        width: visible ? implicitWidth : 0
         height: infoLabel.height
         color: unidentifiedSender ? "green" : "red"
-        source: "image://theme/icon-m-device-lock"
+        font.pixelSize: Theme.fontSizeTiny
+        text: '🔒'
+        verticalAlignment: Text.AlignVCenter
     }
 
     HighlightImage {
