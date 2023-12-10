@@ -53,6 +53,28 @@ Item {
         verticalAlignment: Text.AlignVCenter
     }
 
+    ExpirationIndicator {
+        id: expirationIcon
+        visible: width > 0
+        width: expiresIn > 0 && running ? infoLabel.height : 0
+        height: infoLabel.height
+        color: Theme.rgba(Theme.highlightColor, Theme.opacityOverlay)
+
+        expiresIn: modelData.expiresIn != null ? modelData.expiresIn : -1
+        expiryStarted: modelData.expiryStarted
+
+        Behavior on width { NumberAnimation { duration: 150 } }
+
+        Timer {
+            running: expirationIcon.expiresIn > 0 && expirationIcon.running
+            repeat: true
+            interval: 1000
+            onTriggered: {
+                expirationIcon.requestPaint()
+            }
+        }
+    }
+
     HighlightImage {
         id: statusIcon
         visible: isOutbound
