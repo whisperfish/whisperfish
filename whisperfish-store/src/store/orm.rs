@@ -827,6 +827,7 @@ impl SessionType {
 pub struct AugmentedMessage {
     pub inner: Message,
     pub attachments: usize,
+    pub is_voice_note: bool,
     pub receipts: Vec<(Receipt, Recipient)>,
 }
 
@@ -1023,6 +1024,14 @@ impl AugmentedSession {
     pub fn has_attachment(&self) -> bool {
         if let Some(m) = &self.last_message {
             m.attachments > 0
+        } else {
+            false
+        }
+    }
+
+    pub fn is_voice_note(&self) -> bool {
+        if let Some(m) = &self.last_message {
+            m.is_voice_note
         } else {
             false
         }
@@ -1283,6 +1292,7 @@ mod tests {
         AugmentedMessage {
             attachments: 2,
             inner: get_message(),
+            is_voice_note: false,
             receipts: vec![(
                 Receipt {
                     message_id: 1,
