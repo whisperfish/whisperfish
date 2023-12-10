@@ -1850,7 +1850,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="50"/>
         <source>Voice note</source>
         <extracomment>Page header subtitle for a voice note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Spraakbericht</translation>
     </message>
     <message id="whisperfish-quoted-message-preview-attachment">
         <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="52"/>
