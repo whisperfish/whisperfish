@@ -1848,8 +1848,14 @@ Settings page share contacts</extracomment>
         <extracomment>Text shown on quotes when the sender of a quote is unknown</extracomment>
         <translation type="unfinished"></translation>
     </message>
+    <message id="whisperfish-quoted-message-preview-voice-note">
+        <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="50"/>
+        <source>Voice note</source>
+        <extracomment>Page header subtitle for a voice note</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-quoted-message-preview-attachment">
-        <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="24"/>
+        <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="52"/>
         <location filename="../qml/components/attachment/AttachmentItemFile.qml" line="22"/>
         <location filename="../qml/components/QuotedMessagePreview.qml" line="130"/>
         <source>Attachment</source>
