@@ -325,6 +325,9 @@ define_model_roles! {
 
         Unidentified(use_unidentified):                       "unidentifiedSender",
         QuotedMessageId(quote_id via qvariant_from_option):   "quotedMessageId",
+
+        ExpiresIn(expires_in via int_from_option):            "expiresIn",
+        ExpiryStarted(expiry_started via qdatetime_from_naive_option): "expiryStarted",
     }
 }
 

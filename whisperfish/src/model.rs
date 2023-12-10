@@ -136,6 +136,10 @@ where
     }
 }
 
+fn int_from_option(val: Option<i32>) -> i32 {
+    val.unwrap_or(-1)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
