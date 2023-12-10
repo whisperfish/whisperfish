@@ -6,6 +6,7 @@ pub mod gui;
 pub mod model;
 pub mod platform;
 pub mod qblurhashimageprovider;
+pub mod qrustlegraphimageprovider;
 pub mod qtlog;
 pub mod worker;
 

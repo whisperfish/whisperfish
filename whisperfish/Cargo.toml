@@ -89,10 +89,15 @@ tempfile = { version = "3.4.0", default-features = false }
 
 secrecy = "0.7"
 
+rustlegraph = { git = "https://gitlab.com/whisperfish/rustlegraph", branch = "main" }
+
 regex = "=1.7.3"
 
 sailors = { git = "https://gitlab.com/whisperfish/sailo-rs.git", optional = true }
 whisperfish-store = { path = "../whisperfish-store" }
+
+# Added directly because of whisperfork feature flag
+symphonia = { verion = "0.5", default-features = false }
 
 [build-dependencies]
 cmake = "=0.1.48"
@@ -112,7 +117,7 @@ rstest_reuse = { version = "0.1.0" }
 
 [features]
 bundled-sqlcipher = ["libsqlite3-sys/bundled-sqlcipher", "whisperfish-store/bundled-sqlcipher"]
-sailfish = ["bundled-sqlcipher", "bundled-openssl", "sailors", "libsignal-protocol/whisperfork", "zkgroup/whisperfork", "whisperfish-store/sailfish"]
+sailfish = ["bundled-sqlcipher", "bundled-openssl", "sailors", "libsignal-protocol/whisperfork", "zkgroup/whisperfork", "whisperfish-store/sailfish", "symphonia/whisperfork"]
 harbour = ["sailfish"]
 
 bundled-openssl = ["libsqlite3-sys/bundled-sqlcipher-vendored-openssl", "whisperfish-store/bundled-openssl"]

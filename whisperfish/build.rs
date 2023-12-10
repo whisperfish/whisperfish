@@ -69,7 +69,12 @@ fn main() {
         .build("src/lib.rs");
 
     // Add lib.rs to the list, because it's the root of the CPP tree
-    let contains_cpp = ["config/settings.rs", "lib.rs", "qblurhashimageprovider.rs"];
+    let contains_cpp = [
+        "config/settings.rs",
+        "lib.rs",
+        "qblurhashimageprovider.rs",
+        "qrustlegraphimageprovider.rs",
+    ];
     for f in &contains_cpp {
         println!("cargo:rerun-if-changed=src/{}", f);
     }

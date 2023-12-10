@@ -60,6 +60,7 @@ pub mod grouped_reactions;
 pub mod messages;
 pub mod reactions;
 pub mod recipient;
+pub mod rustlegraph;
 pub mod sessions;
 
 pub mod prompt;
@@ -75,6 +76,7 @@ pub use self::messages::*;
 pub use self::prompt::*;
 pub use self::reactions::*;
 pub use self::recipient::*;
+pub use self::rustlegraph::*;
 pub use self::sessions::*;
 
 use chrono::prelude::*;

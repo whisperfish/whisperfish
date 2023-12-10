@@ -5,7 +5,9 @@ use actix::prelude::*;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
+use std::sync::{Arc, Weak};
 
 #[derive(actix::Message, Clone)]
 #[rtype(result = "()")]
@@ -37,6 +39,7 @@ pub struct AppState {
     unsentCount: qt_method!(fn(&self) -> i32),
 
     pub storage: RefCell<Option<Storage>>,
+    pub rustlegraphs: Arc<RefCell<HashMap<String, Weak<rustlegraph::Vizualizer>>>>,
 }
 
 impl AppState {
@@ -130,6 +133,7 @@ impl AppState {
             mayExit: Default::default(),
 
             storage: RefCell::default(),
+            rustlegraphs: Arc::new(RefCell::new(HashMap::new())),
             isEncrypted: Default::default(),
 
             messageCount: Default::default(),
@@ -230,6 +234,8 @@ pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
             // Register types
             {
                 let uri = cstr!("be.rubdos.whisperfish");
+                qml_register_type::<model::RustleGraph>(uri, 1, 0, cstr!("RustleGraph"));
+
                 qml_register_type::<model::Sessions>(uri, 1, 0, cstr!("Sessions"));
                 qml_register_type::<model::Session>(uri, 1, 0, cstr!("Session"));
                 qml_register_type::<model::CreateConversation>(
@@ -253,7 +259,10 @@ pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
             app.set_title("Whisperfish".into());
             app.set_application_version(version.clone());
             app.install_default_translator().unwrap();
+
+            let app_state = AppState::new();
             crate::qblurhashimageprovider::install(app.engine());
+            crate::qrustlegraphimageprovider::install(app.engine(), app_state.rustlegraphs.clone());
 
             // XXX Spaghetti
             let session_actor = actor::SessionActor::new(&mut app).start();
@@ -266,7 +275,7 @@ pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
             let message_actor = actor::MessageActor::new(&mut app, client_actor.clone()).start();
 
             let whisperfish = Rc::new(WhisperfishApp {
-                app_state: QObjectBox::new(AppState::new()),
+                app_state: QObjectBox::new(app_state),
                 session_actor,
                 message_actor,
                 client_actor,
