@@ -4,46 +4,39 @@ import QtQuick 2.6
 import Sailfish.Silica 1.0
 
 // This component must be a child of MessageDelegate.
-Item {
+Row {
     id: infoRow
-    width: privacyIcon.width + statusIcon.width + infoLabel.width + debugLabel.width + showMoreRow.width
-    height: Math.max(infoLabel.height, debugLabel.height, showMoreRow.height)
+    height: Math.max(infoLabel.height, debugLabel.height, showMoreColumn.height)
 
-    Row {
-        id: showMoreRow
-        visible: showExpand
-        width: visible ? implicitWidth : 0
-        spacing: Theme.paddingSmall
-        layoutDirection: isOutbound ? Qt.LeftToRight : Qt.RightToLeft
-        anchors {
-            verticalCenter: parent.verticalCenter
-            left: parent.left
-        }
+    Column {
+        id: showMoreColumn
+        Row {
+            visible: showExpand
+            width: visible ? implicitWidth : 0
+            spacing: Theme.paddingSmall
+            layoutDirection: isOutbound ? Qt.LeftToRight : Qt.RightToLeft
 
-        Item { width: Theme.paddingSmall; height: parent.height }
-        Label {
-            font.pixelSize: Theme.fontSizeExtraSmall
-            text: "\u2022 \u2022 \u2022" // three dots
-        }
-        Label {
-            text: isExpanded ?
-                      //: Hint for very long messages, while expanded
-                      //% "show less"
-                      qsTrId("whisperfish-message-show-less") :
-                      //: Hint for very long messages, while not expanded
-                      //% "show more"
-                      qsTrId("whisperfish-message-show-more")
-            font.pixelSize: Theme.fontSizeExtraSmall
+            Item { width: Theme.paddingSmall; height: parent.height }
+            Label {
+                font.pixelSize: Theme.fontSizeExtraSmall
+                text: "\u2022 \u2022 \u2022" // three dots
+            }
+            Label {
+                text: isExpanded ?
+                        //: Hint for very long messages, while expanded
+                        //% "show less"
+                        qsTrId("whisperfish-message-show-less") :
+                        //: Hint for very long messages, while not expanded
+                        //% "show more"
+                        qsTrId("whisperfish-message-show-more")
+                font.pixelSize: Theme.fontSizeExtraSmall
+            }
         }
     }
 
     Label {
         id: privacyIcon
-        anchors {
-            verticalCenter: parent.verticalCenter
-            left: showMoreRow.visible ? showMoreRow.right : parent.left
-        }
-
+        anchors.verticalCenter: parent.verticalCenter
         visible: SettingsBridge.debug_mode
         width: visible ? implicitWidth : 0
         height: infoLabel.height
@@ -80,10 +73,7 @@ Item {
         visible: isOutbound
         width: visible ? infoLabel.height : 0
         height: infoLabel.height
-        anchors {
-            verticalCenter: parent.verticalCenter
-            left: privacyIcon.right
-        }
+        anchors.verticalCenter: parent.verticalCenter
         color: infoLabel.color
         source: {
             if (!hasData) "../../../icons/icon-s-queued.png" // cf. below
@@ -100,10 +90,7 @@ Item {
 
     Label {
         id: infoLabel
-        anchors {
-            verticalCenter: parent.verticalCenter
-            left: statusIcon.right
-        }
+        anchors.verticalCenter: parent.verticalCenter
         text: hasData ?
                   (modelData.timestamp ?
                        Format.formatDate(modelData.timestamp, Formatter.TimeValue) :
@@ -122,10 +109,7 @@ Item {
 
     Label {
         id: debugLabel
-        anchors {
-            verticalCenter: parent.verticalCenter
-            left: infoLabel.right
-        }
+        anchors.verticalCenter: parent.verticalCenter
         visible: SettingsBridge.debug_mode
         width: visible ? implicitWidth : 0
         text: (visible && modelData) ? " [%1] ".arg(modelData.id) : ""
