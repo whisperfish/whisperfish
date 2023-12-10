@@ -102,7 +102,7 @@ impl Display for QueueMessage {
 /// This will construct a DataMessage, and pass it to a DeliverMessage
 pub struct SendMessage(pub i32);
 
-/// Delivers a constructed T: Into<ContentBody> to a session.
+/// Delivers a constructed `T: Into<ContentBody>` to a session.
 ///
 /// Returns true when delivered via unidentified sending.
 #[derive(Message)]
