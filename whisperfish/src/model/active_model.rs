@@ -148,7 +148,7 @@ impl<T: QObject + 'static> ModelContext<T> {
     }
 }
 
-/// An actor that accompanies the [ObservingModel], responsible to dispatch events to the contained
+/// An actor that accompanies the `ObservingModel`, responsible to dispatch events to the contained
 /// model.
 ///
 /// The contained model is a weak pointer, such that the actor will stop when the model goes out of

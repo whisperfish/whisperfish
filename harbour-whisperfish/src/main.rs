@@ -14,11 +14,11 @@ use simplelog::*;
 struct Opts {
     /// Captcha override
     ///
-    /// By opening https://signalcaptchas.org/registration/generate.html in a browser,
+    /// By opening <https://signalcaptchas.org/registration/generate.html> in a browser,
     /// and intercepting the redirect (by using the console),
     /// it is possible to inject a signalcaptcha URL.
     ///
-    /// This is as a work around for https://gitlab.com/whisperfish/whisperfish/-/issues/378
+    /// This is as a work around for <https://gitlab.com/whisperfish/whisperfish/-/issues/378>
     #[structopt(short, long)]
     captcha: Option<String>,
 
