@@ -21,6 +21,7 @@ pub struct SessionMethods {
     removeIdentities: qt_method!(fn(&self, recipients_id: i32)),
 
     saveDraft: qt_method!(fn(&self, sid: i32, draft: String)),
+    startMessageExpiry: qt_method!(fn(&self, message_id: i32)),
 }
 
 impl SessionMethods {
@@ -106,5 +107,17 @@ impl SessionMethods {
                 .map(Result::unwrap),
         );
         log::trace!("Dispatched SafeDraft for {}", sid);
+    }
+
+    #[with_executor]
+    fn startMessageExpiry(&self, message_id: i32) {
+        actix::spawn(
+            self.actor
+                .as_ref()
+                .unwrap()
+                .send(StartMessageExpiry { message_id })
+                .map(Result::unwrap),
+        );
+        log::trace!("Dispatched StartMessageExpiry for {}", message_id);
     }
 }

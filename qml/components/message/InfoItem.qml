@@ -66,6 +66,13 @@ Row {
                 expirationIcon.requestPaint()
             }
         }
+
+        Component.onCompleted: {
+            if (modelData.expiresIn > 0 && modelData.expiryStarted == null)  {
+                SessionModel.startMessageExpiry(modelData.id)
+                console.log("TODO: Start expirt for message", modelData.id)
+            }
+        }
     }
 
     HighlightImage {

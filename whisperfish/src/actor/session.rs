@@ -80,6 +80,12 @@ pub struct SaveDraft {
     pub draft: String,
 }
 
+#[derive(actix::Message)]
+#[rtype(result = "()")]
+pub struct StartMessageExpiry {
+    pub message_id: i32,
+}
+
 pub struct SessionActor {
     inner: QObjectBox<SessionMethods>,
     storage: Option<Storage>,
@@ -195,6 +201,21 @@ impl Handler<SaveDraft> for SessionActor {
         _ctx: &mut Self::Context,
     ) -> Self::Result {
         self.storage.as_ref().unwrap().save_draft(sid, draft);
+    }
+}
+
+impl Handler<StartMessageExpiry> for SessionActor {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        StartMessageExpiry { message_id }: StartMessageExpiry,
+        _ctx: &mut Self::Context,
+    ) -> Self::Result {
+        self.storage
+            .as_ref()
+            .unwrap()
+            .start_message_expiry(message_id);
     }
 }
 
