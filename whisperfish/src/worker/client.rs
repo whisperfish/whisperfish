@@ -458,6 +458,8 @@ impl ClientActor {
             log::info!("Message was ProfileKeyUpdate; not inserting.");
         }
 
+        let expiration_timer_update =
+            msg.flags() & DataMessageFlags::ExpirationTimerUpdate as u32 != 0;
         let alt_body = if let Some(reaction) = &msg.reaction {
             if let Some((message, session)) = storage.process_reaction(
                 &sender_recipient
@@ -479,7 +481,7 @@ impl ClientActor {
                 );
             }
             None
-        } else if msg.flags() & DataMessageFlags::ExpirationTimerUpdate as u32 != 0 {
+        } else if expiration_timer_update {
             Some(format!("Expiration timer has been changed ({:?} seconds).  This is only partially implemented in Whisperfish.", msg.expire_timer))
         } else if let Some(GroupContextV2 {
             group_change: Some(ref _group_change),
@@ -615,7 +617,11 @@ impl ClientActor {
             attachment: None,
             is_read: is_sync_sent,
             quote_timestamp: msg.quote.as_ref().and_then(|x| x.id),
-            expires_in: session.expiring_message_timeout,
+            // Don't auto-destroy the update message
+            expires_in: match expiration_timer_update {
+                false => session.expiring_message_timeout,
+                true => None,
+            },
         };
 
         let message = storage.create_message(&new_message);
