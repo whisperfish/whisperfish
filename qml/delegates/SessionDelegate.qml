@@ -24,6 +24,7 @@ ListItem {
     property bool isPreviewViewed: model.viewCount > 0 // TODO investigate: not updated for new message (#151, #55?)
     property bool isPreviewSent: model.sent // TODO cf. isPreviewReceived (#151)
     property bool hasAttachment: model.hasAttachment
+    property int expiringMessages: model.expiringMessageTimeout != -1
     property string name: model.isGroup ? model.groupName : getRecipientName(model.recipientE164, model.recipientName, true)
     property string emoji: model.recipientEmoji
     property string message:
@@ -244,7 +245,6 @@ ListItem {
 
         Row {
             id: timeLabel
-            spacing: Theme.paddingSmall
             anchors {
                 leftMargin: Theme.paddingSmall
                 right: parent.right; rightMargin: Theme.horizontalPageMargin
@@ -263,7 +263,7 @@ ListItem {
 
             Label {
                 anchors.verticalCenter: parent.verticalCenter
-                text: date
+                text: (expiringMessages ? "⏱ " : "") + date
                 highlighted: _labelsHighlighted
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: highlighted ? (isUnread ? Theme.highlightColor :

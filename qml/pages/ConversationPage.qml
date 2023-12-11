@@ -15,6 +15,7 @@ Page {
     property string conversationName: session.isGroup ? session.groupName : getRecipientName(session.recipientE164, session.recipientName, true)
     property string profilePicture: session.isGroup ? getGroupAvatar(session.groupId) : getRecipientAvatar(session.recipientE164, session.recipientUuid)
     property alias sessionId: session.sessionId
+    property int expiringMessages: session.expiringMessageTimeout != -1
     property DockedPanel activePanel: actionsPanel.open ? actionsPanel : panel
 
     property int _selectedCount: messages.selectedCount // proxy to avoid some costly lookups
@@ -67,7 +68,7 @@ Page {
 
     ConversationPageHeader {
         id: pageHeader
-        title: conversationName
+        title: conversationName + (expiringMessages ? "⏱" : "")
         isGroup: session.isGroup
         anchors.top: parent.top
         description: {

@@ -294,6 +294,7 @@ define_model_roles! {
         IsVoiceNote(fn is_voice_note(&self)):                              "isVoiceNote",
         HasAvatar(fn has_avatar(&self)):                                   "hasAvatar",
         Draft(fn draft(&self) via QString::from):                          "draft",
+        ExpiringMessageTimeout(expiring_message_timeout via int_from_duration_option): "expiringMessageTimeout",
     }
 }
 
