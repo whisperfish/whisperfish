@@ -16,8 +16,10 @@ use crate::{config::SignalConfig, millis_to_naive_chrono};
 use anyhow::Context;
 use chrono::prelude::*;
 use diesel::debug_query;
+use diesel::dsl::sql;
 use diesel::prelude::*;
 use diesel::result::*;
+use diesel::sql_types::{Bool, Timestamp};
 use diesel_migrations::EmbeddedMigrations;
 use itertools::Itertools;
 use libsignal_service::groups_v2::InMemoryCredentialsCache;
@@ -1956,6 +1958,34 @@ impl Storage {
         if affected_rows > 0 {
             self.observe_update(schema::messages::table, message_id);
         }
+    }
+
+    pub fn fetch_expired_message_ids(&self) -> Vec<(i32, NaiveDateTime)> {
+        log::trace!("Called fetch_expired_message_ids()");
+        self.fetch_message_ids_by_expiry(true)
+    }
+
+    pub fn fetch_expiring_message_ids(&self) -> Vec<(i32, NaiveDateTime)> {
+        log::trace!("Called fetch_expiring_message_ids()");
+        self.fetch_message_ids_by_expiry(false)
+    }
+
+    fn fetch_message_ids_by_expiry(&self, already_expired: bool) -> Vec<(i32, NaiveDateTime)> {
+        schema::messages::table
+            .select((
+                schema::messages::id,
+                sql::<Timestamp>(
+                    "DATETIME(expiry_started, '+' || expires_in || ' seconds') as delete_after",
+                ),
+            ))
+            .filter(
+                sql::<Bool>("delete_after")
+                    .sql(if already_expired { "<=" } else { ">" })
+                    .sql("DATETIME('now')"),
+            )
+            .order_by(sql::<Timestamp>("delete_after").asc())
+            .load(&mut *self.db())
+            .expect("messages by expiry timestamp")
     }
 
     pub fn mark_session_read(&self, sid: i32) {
