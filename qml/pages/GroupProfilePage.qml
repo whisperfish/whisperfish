@@ -131,6 +131,14 @@ Page {
             }
 
             Item { width: parent.width; height: Theme.paddingLarge }
+
+            ExpiringMessagesComboBox {
+                id: expiringMessages
+                width: parent.width
+                duration: session.expiringMessageTimeout
+            }
+
+            Item { width: parent.width; height: Theme.paddingLarge }
         }
 
         VerticalScrollDecorator { flickable: flick }
