@@ -618,9 +618,10 @@ impl ClientActor {
             is_read: is_sync_sent,
             quote_timestamp: msg.quote.as_ref().and_then(|x| x.id),
             // Don't auto-destroy the update message
-            expires_in: match expiration_timer_update {
-                false => session.expiring_message_timeout,
-                true => None,
+            expires_in: if !expiration_timer_update {
+                session.expiring_message_timeout
+            } else {
+                None
             },
         };
 
