@@ -1947,17 +1947,20 @@ impl Storage {
     pub fn start_message_expiry(&self, message_id: i32) {
         log::trace!("Called start_message_expiry({})", message_id);
 
-        let affected_rows =
-            diesel::update(schema::messages::table.filter(schema::messages::id.eq(message_id)))
-                .set(schema::messages::expiry_started.eq(Some(chrono::Utc::now().naive_utc())))
-                .execute(&mut *self.db())
-                .expect("set message expiry");
+        let affected_rows = diesel::update(
+            schema::messages::table.filter(
+                schema::messages::id
+                    .eq(message_id)
+                    .and(schema::messages::expiry_started.is_null()),
+            ),
+        )
+        .set(schema::messages::expiry_started.eq(Some(chrono::Utc::now().naive_utc())))
+        .execute(&mut *self.db())
+        .expect("set message expiry");
 
         log::trace!("save_draft() affected {} rows", affected_rows);
 
-        if affected_rows > 0 {
-            self.observe_update(schema::messages::table, message_id);
-        }
+        self.observe_update(schema::messages::table, message_id);
     }
 
     pub fn fetch_expired_message_ids(&self) -> Vec<(i32, NaiveDateTime)> {
