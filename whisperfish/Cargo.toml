@@ -68,7 +68,7 @@ base64 = "0.21"
 
 tempfile = { version = "3.4.0", default-features = false }
 
-rustlegraph = { git = "https://gitlab.com/whisperfish/rustlegraph", branch = "main" }
+rustlegraph = { git = "https://gitlab.com/direc85/rustlegraph", branch = "bump-image" }
 
 regex = "1.7.3"
 
