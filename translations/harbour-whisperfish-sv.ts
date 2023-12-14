@@ -14,7 +14,7 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="36"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Röstmeddelande</translation>
     </message>
     <message id="whisperfish-session-delete-all">
         <location filename="../qml/delegates/SessionDelegate.qml" line="68"/>
