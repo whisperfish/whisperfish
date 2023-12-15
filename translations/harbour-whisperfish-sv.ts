@@ -14,7 +14,7 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="36"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Röst meddelande</translation>
     </message>
     <message id="whisperfish-session-delete-all">
         <location filename="../qml/delegates/SessionDelegate.qml" line="68"/>
@@ -1966,9 +1966,10 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-quoted-message-preview-voice-note">
         <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="50"/>
-        <source>Voice note</source>
+        <source>Voice Message</source>
+        <oldsource>Voice note</oldsource>
         <extracomment>Page header subtitle for a voice note</extracomment>
-        <translation>Röst meddelande</translation>
+        <translation type="unfinished">Röst meddelande</translation>
     </message>
     <message id="whisperfish-quoted-message-preview-attachment">
         <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="52"/>

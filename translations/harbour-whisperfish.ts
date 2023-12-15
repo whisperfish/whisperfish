@@ -1763,7 +1763,8 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-quoted-message-preview-voice-note">
         <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="50"/>
-        <source>Voice note</source>
+        <source>Voice Message</source>
+        <oldsource>Voice note</oldsource>
         <extracomment>Page header subtitle for a voice note</extracomment>
         <translation type="unfinished"></translation>
     </message>
