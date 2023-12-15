@@ -46,7 +46,7 @@ AttachmentItemBase {
                 title: recipientId > -1 ? recipient.name : "",
                 subtitle: attach.is_voice_note
                     //: Page header subtitle for a voice note
-                    //% "Voice note"
+                    //% "Voice Message"
                     ? qsTrId('whisperfish-quoted-message-preview-voice-note')
                     // Translated in QuotedMessagePreview.qml
                     : qsTrId('whisperfish-quoted-message-preview-attachment'),
