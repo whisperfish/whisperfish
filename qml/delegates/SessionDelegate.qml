@@ -42,9 +42,16 @@ ListItem {
                 )
             )
             : ''
+        ) +
+        (model.remoteDeleted
             //: Placeholder note for a deleted message
             //% "this message was deleted"
-        ) + (model.message !== undefined ? (model.remoteDeleted ? qsTrId("whisperfish-message-deleted-note") : model.message) : '')
+            ? qsTrId("whisperfish-message-deleted-note")
+            : (model.message !== undefined
+                ? model.message
+                : ''
+            )
+        )
 
     signal relocateItem(int sessionId)
 
