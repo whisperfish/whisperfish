@@ -200,8 +200,9 @@ then
 TARGET_VERSION=$(grep VERSION_ID /etc/sailfish-release | cut -d "=" -f2)
 fi
 
-# To make comparing easier: 4.4.0.58 >> 4.4
-MAJOR_VERSION=$(echo $TARGET_VERSION | awk -F. '{print $1 FS $2}')
+# Workaround a Scratchbox bug - /tmp/[...]/symbols.o not found
+export TMPDIR=${TMPDIR:-$(realpath "%{_sourcedir}/../.tmp")}
+mkdir -p $TMPDIR
 
 cargo build \
           -j 1 \
