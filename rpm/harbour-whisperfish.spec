@@ -48,9 +48,9 @@ Recommends:   harbour-whisperfish-shareplugin
 # - Contacts/contacts.db phoneNumbers.normalizedNumber: introduced in 3.3
 Requires:   sailfish-version >= 3.3
 
-BuildRequires:  rust >= 1.72
-BuildRequires:  rust-std-static >= 1.72
-BuildRequires:  cargo >= 1.72
+BuildRequires:  rust >= 1.75
+BuildRequires:  rust-std-static >= 1.75
+BuildRequires:  cargo >= 1.75
 BuildRequires:  git
 BuildRequires:  protobuf-compiler
 BuildRequires:  nemo-qml-plugin-notifications-qt5-devel

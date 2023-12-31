@@ -1,84 +1,77 @@
-# Compiling Whisperfish with Rust 1.72
+# Compiling Whisperfish with Rust 1.75
 
-Currently, only i486 compiler is available (aarch64 and armv7hl can burrently be only partially compiled), but it's enough for updating dependencies (removing all the pinned versions, hopefully). It's also possible to run it in the Sailfish OS emulator, which is i486.
-
-Note: I'm doing this all in the SFDK global context, but nothing shouldn't prevent from using a project scope for the settings.
+As of 2024-12-29, (self-compiled) Rust 1.75.0 is available for Sailfish SDK 3.10.4 (Sailfish OS 4.5)! The download links are provided in this readme, until Rust 1.75.0 is officially available from Jolla.
 
 ## 1) Install Sailfish SDK
 
-The instructions assume you have a freshly-installed Sailfish SDK 3.10.4 (the Docker variant) ready. My setup has the project folder as `~/SFOS`, your setup likely has something different. The only build target used is SailfishOS-4.5.0.18-i486 and it's installed by default - as aarch64 and armv7hl targets too.
+The instructions assume you have a freshly-installed Sailfish SDK 3.10.4 (the Docker variant) ready. All three architectures are supported and the build process should be identical.
 
-## 2) Prepare the local package repository
+My setup has the project folder as `~/SFOS`, your setup likely has something different. This guide also assumes you have Whisperfish already cloned in `~/SFOS/whisperfish`.
 
-SFDK has the ability to pick up a packages from the host to fulfill depencies. My "repository root folder" is `~/SFOS/RPMS`. First, create the folder and setup the location by running:
+## 2) Update the Whisperfish .spec
 
-    $ sfdk config --global --push output-prefix ~/SFOS/RPMS
+These should already be in place in the `rust-1.72-instructions` branch
 
-Eventually, the location `~/SFOS/RPMS/SailfishOs-4.5.0.18-i486` will be auto-created, and there's where we want to download the Rust and LLVM packages:
+    BuildRequires: rust >= 1.75
+    BuildRequires: rust-std-static >= 1.75
+    BuildRequires: cargo >= 1.75
 
-    $ mkdir -p ~/SFOS/RPMS/SailfishOS-4.5.0.18-i486
-    $ cd ~/SFOS/RPMS/SailfishOS-4.5.0.18-i486
-    $ URL=https://direc.kapsi.fi/rpms/i486
-    $ for FILE in \
-        llvm-libs-14.0.6-0.i486.rpm \
-        cargo-1.72.1+git1-1.i486.rpm \
-        rust-1.72.1+git1-1.i486.rpm \
-        rust-std-static-i686-unknown-linux-gnu-1.72.1+git1-1.i486.rpm; \
+We also need to workaround a bug/behavior in Scratchbox. `%build` section needs this somewhere before `cargo build`:
+
+    export TMPDIR=${TMPDIR:-$(realpath "%{_sourcedir}/../.tmp")}
+    mkdir -p $TMPDIR
+
+This sets the default temp dir inside the source folder, and not in the default `/tmp`. Without this, `rustc` isn't able to create `symbols.o` and other files to the temp directory, which leads to failed linking step.
+
+## 2) Add repositories
+
+I've prepared repositories for all architectures, which makes the package installation much more convenient. Let's start with adding the repository to the tooling first:
+
+    $ cd ~/SFOS/whisperfish
+    $ sfdk tools exec SailfishOS-4.5.0.18 bash -c \
+        "zypper ar --no-gpgcheck https://direc.kapsi.fi/sailfish-repo/i486 direc85 && zypper ref && zypper up --allow-vendor-change"
+    $ sfdk tools exec SailfishOS-4.5.0.18 bash -c "zypper in --allow-vendor-change rust cargo rust-std-static-aarch64-unknown-linux-gnu rust-std-static-armv7-unknown-linux-gnueabihf"
+
+Next, let's add the repositories to the build targets:
+
+    $ for ARCH in i486 aarch64 armv7hl
         do
-            curl $URL/$FILE --output $FILE
-        done
-    $ ls
-    llvm-libs-14.0.6-0.i486.rpm
-    cargo-1.72.1+git1-1.i486.rpm
-    rust-1.72.1+git1-1.i486.rpm
-    rust-std-static-i686-unknown-linux-gnu-1.72.1+git1-1.i486.rpm
-
-## 3) Update the Whisperfish .spec file to use the new Rust (I was lazy so I went the short route):
-
-    BuildRequires: rust >= 1.72
-    BuildRequires: rust-std-static >= 1.72
-    BuildRequires: cargo >= 1.72
-
-## 4) Set the build target
-
-    $ sfdk config --global --push target SailfishOS-4.5.0.18-i486
-
-## 5) Download the packages into the tooling root
-
-This is the "interesting" part of this process -- we'll have to install the packages manually into the Sailfish SDK tooling. This is due to the relationship betweeh build target, build tooling and scratchbox in general, which is something not clear to me -- but nevertheless, it needs to be done, and it works.
-
-Since the packages can't be simply copied into the tooling filesystem, you have to prepare the files on a HTTP server so you can access them. Enter the tooling and (again) download the files:
-
-    $ sfdk tools exec SailfishOS-4.5.0.18 bash
-    # cd ~ ; mkdir RPMS ; cd RPMS
-    # URL=https://direc.kapsi.fi/rpms/i486
-    # for FILE in \
-        llvm-libs-14.0.6-0.i486.rpm \
-        cargo-1.72.1+git1-1.i486.rpm \
-        rust-1.72.1+git1-1.i486.rpm \
-        rust-std-static-i686-unknown-linux-gnu-1.72.1+git1-1.i486.rpm; \
-        do
-            curl $URL/$FILE --output $FILE
+        sfdk config --push target SailfishOS-4.5.0.18-$ARCH; sfdk build-shell --maintain bash -c \
+            "zypper ar --no-gpgcheck https://direc.kapsi.fi/sailfish-repo/$ARCH direc85 && zypper ref && zypper up --allow-vendor-change"
         done
 
-## 6) Install the packages in the tooling
+Because of some version conflicts (I should have bumped the rust-std-static package versions) an exact manual installation is still required:
 
-Install the packages with Zypper as usual. There will be questions asked, as we don't update the whole "LLVM stack". Yeah, this gets a bit ugly... (I think even with the full stack updated the core dependencies would still be broken.) When asked, choose option 3 -- breake package dependencies.
+    $ sfdk -c target=SailfishOS-4.5.0.18-i486 build-shell --maintain bash -c \
+        "zypper in --from direc85 --oldpackage --allow-vendor-change rust cargo rust-std-static-i686-unknown-linux-gnu"
+    $ sfdk -c target=SailfishOS-4.5.0.18-aarch64 build-shell --maintain bash -c \
+        "zypper in --from direc85 --oldpackage --allow-vendor-change rust cargo rust-std-static-i686-unknown-linux-gnu rust-std-static-aarch64-unknown-linux-gnu"
+    $ sfdk -c target=SailfishOS-4.5.0.18-armv7hl build-shell --maintain bash -c \
+        "zypper in --from direc85 --oldpackage --allow-vendor-change rust cargo rust-std-static-i686-unknown-linux-gnu rust-std-static-armv7-unknown-linux-gnueabihf"
 
-    # zypper install ~/RPMS/*.rpm
+## 5) Compile Whisperfish
 
-## 7) Compile Whisperfish
+> **Important:** If you compiled Wishperfish before with Rust 1.52 or 1.72, you **must** run `cargo clean` to clear the old build cache!
+>
+> This seems to be best indicated by the following error message:
+>
+>     error[E0786]: found invalid metadata files for crate `std`
 
 It's time:
 
-    $ sfdk build
+    $ for ARCH in i486 armv7hl aarch64
+        do
+            sfdk -c target=SailfishOS-4.5.0.18-$ARCH build
+        done
     [...]
-    The following 22 NEW packages are going to be installed:
-      cargo                                    1.72.1+git1-1
-      llvm-libs                                14.0.6-0
-      rust                                     1.72.1+git1-1
-      rust-std-static-i686-unknown-linux-gnu   1.72.1+git1-1
-      [...]
+    The following 35 NEW packages are going to be installed:
+      cargo                                    1.75.0+git1-1
+      llvm-libs                                15.0.7-0
+      rust                                     1.75.0+git1-1
+      rust-std-static-i686-unknown-linux-gnu   1.75.0+git1-1
+    [...]
+
+At this stage, when Rust 1.75 is still new to SFOS, it's recommended to build all three architectures to catch any problems.
 
 You'll note that the dependencies are installed in the build target too, but this alone isn't enough -- that's why we had to manually install them in the tooling. (I hope my terminology is correct...)
 
@@ -86,18 +79,20 @@ The packages download and install. Now, the moment of truth: what `rustc` and `c
 
     [...]
     + rustc --version
-    rustc 1.72.1-nightly (d5c2e9c34 2023-09-13) (built from a source tarball)
+    rustc 1.75.0-nightly (82e1608df 2023-12-21) (built from a source tarball)
     + cargo --version
-    cargo 1.72.1-nightly
+    cargo 1.75.0-nightly
     [...]
 
-Now the usual advice applies -- grab yourself a nice, hot cup of coffee while Whisperfish builds! If you're adventurous, you can update the `-j 1` parameter of `cargo build` with in the .spec file with your core count, keep an eye on the progress (and CPU usage) and *when it hangs*, hit Ctrl-C and restart-continue the process by running `sfdk build` again. After Whisperfish is build the first time, and changes are made only to Whisperfish sources, using parallel compilation never seems to crash, however. It saves less time then, but as it's the repeated step in application development, it does end up saving quite a nice amount of time!
+Now the usual advice applies -- grab yourself a nice, hot cup of coffee while Whisperfish builds! If you're adventurous, you can update the `-j 1` parameter of `cargo build` with in the .spec file with your core count, keep an eye on the progress (and CPU usage) and *when it hangs*, hit Ctrl-C and run `sfdk build` again. I've also found that it tends to hang a little less often when I use `taskset 0x55555 cargo build` with `-j 8 \` on my 16c32t-core machine. After Whisperfish is build the first time, and changes are made only to Whisperfish sources, using parallel compilation never seems to crash, however. It saves less time then, but as it's *the* repeated step in development, it does end up saving quite a nice amount of time! The "bad" news is that changing the `-j` flag triggers a full rebuild now, which is quite inconvenient.
 
-After it's done, check out the shiny, new RPM:
+After it's done, check out the shiny, new RPM files:
 
-    $ ls ~/SFOS/RPMS/SailfishOS-4.5.0.18-i486/harbour-whisperfish*
+    $ ls ~/SFOS/RPMS/SailfishOS-4.5.0.18-*/harbour-whisperfish*
+    /home/matti/SFOS/RPMS/SailfishOS-4.5.0.18-aarch64/harbour-whisperfish-0.6.0-0.aarch64.rpm
+    /home/matti/SFOS/RPMS/SailfishOS-4.5.0.18-armv7hl/harbour-whisperfish-0.6.0-0.armv7hl.rpm
     /home/matti/SFOS/RPMS/SailfishOS-4.5.0.18-i486/harbour-whisperfish-0.6.0-0.i486.rpm
 
 My RPM name is shorter, because I use `no-fix-version` -- use it if you will:
 
-    $ sfdk config --global --push no-fix-version
+    sfdk config --global --push no-fix-version
