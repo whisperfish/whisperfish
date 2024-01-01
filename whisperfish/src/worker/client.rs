@@ -1356,8 +1356,9 @@ impl Handler<SendMessage> for ClientActor {
                                 // Recipient with profile key, but could not send unidentified.
                                 // Mark as disabled.
                                 log::info!(
-                                    "Setting unidentified access mode for {:?} as {:?}",
-                                    recipient,
+                                    "Setting unidentified access mode for {:?} from {:?} to {:?}",
+                                    recipient.uuid.unwrap(),
+                                    recipient.unidentified_access_mode,
                                     target_state
                                 );
                                 storage.set_recipient_unidentified(recipient.id, target_state);

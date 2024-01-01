@@ -1310,6 +1310,30 @@ impl Storage {
         Ok(dest_id)
     }
 
+    pub fn fetch_session_ids_by_recipient_id(&self, r_id: i32) -> Vec<i32> {
+        use crate::schema::group_v2_members::dsl::group_v2_id as gv2id;
+        use crate::schema::group_v2_members::dsl::recipient_id;
+        use crate::schema::sessions::dsl::*;
+
+        let session_list = sessions
+            .select(id)
+            .filter(
+                direct_message_recipient_id.eq(r_id).or(group_v2_id.eq_any(
+                    schema::group_v2_members::table
+                        .select(gv2id.nullable())
+                        .filter(recipient_id.eq(r_id)),
+                )),
+            )
+            .load::<i32>(&mut *self.db())
+            .expect("session ids by recipient id");
+        log::trace!(
+            "fetch_session_ids_by_recipient_id({}) => {:?}",
+            r_id,
+            session_list
+        );
+        session_list
+    }
+
     pub fn fetch_recipient_by_uuid(&self, recipient_uuid: Uuid) -> Option<orm::Recipient> {
         use crate::schema::recipients::dsl::*;
 

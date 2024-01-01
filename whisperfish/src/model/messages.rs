@@ -239,6 +239,12 @@ impl EventObserving for SessionImpl {
                     .borrow_mut()
                     .observe(storage, id, event);
                 // XXX how to trigger a Qt signal now?
+            } else if event.for_table(schema::recipients::table) {
+                // XXX `let` expressions in this position are unstable: https://github.com/rust-lang/rust/issues/53667
+                if let Some(sess) = storage.fetch_session_by_recipient_id(id) {
+                    self.session = storage.fetch_session_by_id_augmented(sess.id);
+                    // XXX how to trigger a Qt signal now?
+                }
             } else {
                 log::debug!(
                     "Falling back to reloading the whole Session for event {:?}",

@@ -183,6 +183,20 @@ impl Event {
                 .map(|relation| &relation.key)
         }
     }
+
+    pub fn new(
+        r#type: EventType,
+        table: Table,
+        r#key: PrimaryKey,
+        relations: Vec<Relation>,
+    ) -> Event {
+        Self {
+            r#type,
+            table,
+            key,
+            relations,
+        }
+    }
 }
 
 impl Interest {
