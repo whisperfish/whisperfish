@@ -171,8 +171,7 @@ pub struct ClientWorker {
     promptResetPeerIdentity: qt_signal!(),
     messageSent: qt_signal!(sid: i32, mid: i32, message: QString),
     messageNotSent: qt_signal!(sid: i32, mid: i32),
-    // FIXME: Rust "r#type" to Qt "type" doesn't work
-    proofRequested: qt_signal!(token: QString, r#type: QString),
+    proofRequested: qt_signal!(token: QString, kind: QString),
     proofCaptchaResult: qt_signal!(success: bool),
 
     send_typing_notification: qt_method!(fn(&self, id: i32, is_start: bool)),
@@ -1384,7 +1383,7 @@ impl Handler<SendMessage> for ClientActor {
                                         if options.contains(&recaptcha) {
                                             addr.send(ProofRequired {
                                                 token: token.to_owned(),
-                                                r#type: recaptcha,
+                                                kind: recaptcha,
                                             })
                                             .await
                                             .expect("deliver captcha required");
@@ -2478,7 +2477,7 @@ impl ClientWorker {
         actix::spawn(async move {
             if let Err(e) = actor
                 .send(ProofResponse {
-                    _type: "recaptcha".into(),
+                    kind: "recaptcha".into(),
                     token,
                     response,
                 })
@@ -2518,7 +2517,7 @@ impl Handler<CompactDb> for ClientActor {
 #[rtype(result = "()")]
 pub struct ProofRequired {
     token: String,
-    r#type: String,
+    kind: String,
 }
 
 impl Handler<ProofRequired> for ClientActor {
@@ -2528,14 +2527,15 @@ impl Handler<ProofRequired> for ClientActor {
         self.inner
             .pinned()
             .borrow()
-            .proofRequested(proof.token.into(), proof.r#type.into());
+            .proofRequested(proof.token.into(), proof.kind.into());
     }
 }
 
+#[allow(unused)]
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct ProofResponse {
-    _type: String,
+    kind: String,
     token: String,
     response: String,
 }
