@@ -699,7 +699,7 @@ async fn test_recipient_actions() {
 
 // XXX: These tests worked back when Storage had the message_handler implemented.
 // This has since been moved to ClientActor, and testing that requires Qt-enabled tests.
-// https://gitlab.com/rubdos/whisperfish/-/issues/82
+// https://gitlab.com/whisperfish/whisperfish/-/issues/82
 
 // #[rstest]
 // fn message_handler_without_group(storage: InMemoryDb) {

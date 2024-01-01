@@ -73,7 +73,7 @@ mod tests {
     use rstest::*;
 
     // 00-prefixed numbers tracking issue:
-    // https://github.com/rustonaut/rust-phonenumber/issues/29
+    // https://github.com/whisperfish/rust-phonenumber/issues/29
     #[rstest(
         phone,
         case("+32474123456"),

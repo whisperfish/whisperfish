@@ -4,7 +4,7 @@
 //! byte-array fields have a quirky behaviour. This module provides methods to add and remove those
 //! quirks.
 //!
-//! This module maps on <https://gitlab.com/rubdos/whisperfish/-/issues/74>.
+//! This module maps on <https://gitlab.com/whisperfish/whisperfish/-/issues/74>.
 
 use libsignal_service::protocol::SignalProtocolError;
 use prost::Message;

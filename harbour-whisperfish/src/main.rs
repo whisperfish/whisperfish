@@ -57,8 +57,8 @@ fn main() {
     }
 
     // Sailjail only accepts -prestart on the command line as optional argument,
-    // structopt however only supports --prestart.
-    // See: https://github.com/clap-rs/clap/issues/1210
+    // clap however only supports --prestart.
+    // See: https://github.com/clap-rs/clap/issues/2468
     // and https://github.com/sailfishos/sailjail/commit/8a239de9451685a82a2ee17fef0c1d33a089c28c
     // XXX: Get rid of this when the situation changes
     let args = std::env::args_os().map(|arg| {
