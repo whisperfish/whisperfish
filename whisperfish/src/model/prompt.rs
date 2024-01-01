@@ -213,10 +213,8 @@ impl Prompt {
     #[allow(non_snake_case)]
     #[with_executor]
     fn startCaptcha(&mut self) {
-        // Rust 2021
-        #[allow(clippy::needless_borrow)]
         Command::new("/usr/bin/sailfish-qml")
-            .args(&["harbour-whisperfish"])
+            .args(["harbour-whisperfish"])
             .spawn()
             .expect("/usr/bin/sailfish-qml not found, libsailfishapp-launcher not installed?");
     }

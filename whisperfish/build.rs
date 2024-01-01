@@ -13,24 +13,18 @@ OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-// XXX Rust 2021
-//     Many functions take `impl IntoIterator<&str>`, which is satisfied in Rust 2021 by [&str; _]
-//     arrays, but not in 2018.  Clippy considers this an error, so we disable the lint globally
-//     for now in build.rs.
-#![allow(clippy::needless_borrow)]
-
 use std::process::Command;
 
 fn qmake_query(var: &str) -> Result<String, std::io::Error> {
     let output = match std::env::var("QMAKE") {
-        Ok(env_var_value) => Command::new(env_var_value).args(&["-query", var]).output(),
+        Ok(env_var_value) => Command::new(env_var_value).args(["-query", var]).output(),
         Err(_env_var_err) => Command::new("qmake")
-            .args(&["-query", var])
+            .args(["-query", var])
             .output()
             .or_else(|command_err| {
                 // Some Linux distributions (Fedora, Arch) rename qmake to qmake-qt5.
                 if command_err.kind() == std::io::ErrorKind::NotFound {
-                    Command::new("qmake-qt5").args(&["-query", var]).output()
+                    Command::new("qmake-qt5").args(["-query", var]).output()
                 } else {
                     Err(command_err)
                 }
@@ -60,7 +54,7 @@ fn main() {
     let mut cfg = cpp_build::Config::new();
 
     // This is kinda hacky. Sorry.
-    cfg.include(&qt_include_path)
+    cfg.include(qt_include_path)
         .include(format!("{}/QtCore", qt_include_path))
         // -W deprecated-copy triggers some warnings in old Jolla's Qt distribution.
         // It is annoying to look at while developing, and we cannot do anything about it
