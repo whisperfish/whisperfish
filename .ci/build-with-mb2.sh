@@ -53,6 +53,7 @@ bucket = "$SCCACHE_BUCKET"
 endpoint = "$SCCACHE_ENDPOINT"
 use_ssl = false
 key_prefix = "$SCCACHE_S3_KEY_PREFIX"
+no_credentials = false
 EOF
 
 MAJOR_VERSION=$(echo $TARGET_VERSION | awk -F. '{print $1 FS $2}')
