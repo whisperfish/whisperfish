@@ -9,7 +9,7 @@ use crate::gui::StorageReady;
 use crate::platform::QmlApp;
 use crate::store::{orm, Storage};
 use actix::prelude::*;
-use libsignal_protocol::{DeviceId, ProtocolAddress};
+use libsignal_service::protocol::{DeviceId, ProtocolAddress};
 use qmetaobject::prelude::*;
 use std::collections::VecDeque;
 

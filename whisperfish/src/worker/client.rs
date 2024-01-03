@@ -46,7 +46,7 @@ use libsignal_service::content::{
 use libsignal_service::prelude::*;
 use libsignal_service::proto::typing_message::Action;
 use libsignal_service::proto::{receipt_message, ReceiptMessage};
-use libsignal_service::protocol::*;
+use libsignal_service::protocol::{self, *};
 use libsignal_service::push_service::{
     AccountAttributes, DeviceCapabilities, DeviceId, RegistrationSessionMetadataResponse,
     ServiceIds, VerificationTransport, VerifyAccountResponse,
@@ -2267,8 +2267,8 @@ pub struct RegisterLinkedResponse {
     pub pni_registration_id: u32,
     pub device_id: DeviceId,
     pub service_ids: ServiceIds,
-    pub aci_identity_key_pair: libsignal_protocol::IdentityKeyPair,
-    pub pni_identity_key_pair: libsignal_protocol::IdentityKeyPair,
+    pub aci_identity_key_pair: protocol::IdentityKeyPair,
+    pub pni_identity_key_pair: protocol::IdentityKeyPair,
     pub profile_key: Vec<u8>,
 }
 
@@ -2309,28 +2309,28 @@ impl Handler<RegisterLinked> for ClientActor {
                                     .send(url.to_string())
                                     .expect("to forward provisioning URL to caller");
                             }
-                            SecondaryDeviceProvisioning::NewDeviceRegistration {
-                                phone_number,
-                                device_id,
-                                registration_id,
-                                pni_registration_id,
-                                profile_key,
-                                service_ids,
-                                aci_private_key,
-                                aci_public_key,
-                                pni_private_key,
-                                pni_public_key,
-                            } => {
-                                let aci_identity_key_pair =
-                                    libsignal_protocol::IdentityKeyPair::new(
-                                        libsignal_protocol::IdentityKey::new(aci_public_key),
-                                        aci_private_key,
-                                    );
-                                let pni_identity_key_pair =
-                                    libsignal_protocol::IdentityKeyPair::new(
-                                        libsignal_protocol::IdentityKey::new(pni_public_key),
-                                        pni_private_key,
-                                    );
+                            SecondaryDeviceProvisioning::NewDeviceRegistration(
+                                NewDeviceRegistration {
+                                    phone_number,
+                                    device_id,
+                                    registration_id,
+                                    pni_registration_id,
+                                    profile_key,
+                                    service_ids,
+                                    aci_private_key,
+                                    aci_public_key,
+                                    pni_private_key,
+                                    pni_public_key,
+                                },
+                            ) => {
+                                let aci_identity_key_pair = protocol::IdentityKeyPair::new(
+                                    protocol::IdentityKey::new(aci_public_key),
+                                    aci_private_key,
+                                );
+                                let pni_identity_key_pair = protocol::IdentityKeyPair::new(
+                                    protocol::IdentityKey::new(pni_public_key),
+                                    pni_private_key,
+                                );
 
                                 res = Result::<RegisterLinkedResponse, anyhow::Error>::Ok(
                                     RegisterLinkedResponse {

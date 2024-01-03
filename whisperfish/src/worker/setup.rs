@@ -16,8 +16,8 @@ pub struct RegistrationResult {
     phonenumber: PhoneNumber,
     service_ids: ServiceIds,
     device_id: DeviceId,
-    aci_identity_key_pair: Option<libsignal_protocol::IdentityKeyPair>,
-    pni_identity_key_pair: Option<libsignal_protocol::IdentityKeyPair>,
+    aci_identity_key_pair: Option<libsignal_service::protocol::IdentityKeyPair>,
+    pni_identity_key_pair: Option<libsignal_service::protocol::IdentityKeyPair>,
     profile_key: Option<Vec<u8>>,
 }
 
