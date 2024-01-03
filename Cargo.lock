@@ -1716,7 +1716,7 @@ dependencies = [
 [[package]]
 name = "libsignal-service"
 version = "0.1.0"
-source = "git+https://github.com/direc85/libsignal-service-rs?branch=frankenbranch#1e9e0fb2efbf1466e2ad5500cb247c00e33df2f7"
+source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=main#9d55addebe010f0acbcabdfc02ab41979c1863e0"
 dependencies = [
  "aes",
  "aes-gcm",
@@ -1750,7 +1750,7 @@ dependencies = [
 [[package]]
 name = "libsignal-service-actix"
 version = "0.1.0"
-source = "git+https://github.com/direc85/libsignal-service-rs?branch=frankenbranch#1e9e0fb2efbf1466e2ad5500cb247c00e33df2f7"
+source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=main#9d55addebe010f0acbcabdfc02ab41979c1863e0"
 dependencies = [
  "actix",
  "actix-http",
@@ -2873,7 +2873,7 @@ dependencies = [
 [[package]]
 name = "rustlegraph"
 version = "0.1.0"
-source = "git+https://gitlab.com/direc85/rustlegraph?branch=bump-image#ce80e4b9531020f8eda93ec257a7953412b456a4"
+source = "git+https://gitlab.com/whisperfish/rustlegraph?branch=main#3a0418d4678069a8dbd84fca1306e413e5ab1855"
 dependencies = [
  "image",
  "log",

@@ -10,7 +10,7 @@ description = "An utility for whisperfish, mainly used to test storage"
 whisperfish = { path = "../whisperfish" }
 rand = "0.8"
 clap = { version = "3.2", features = ["derive"] }
-libsignal-service = { git = "https://github.com/direc85/libsignal-service-rs", branch = "frankenbranch" }
+libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main" }
 actix-rt = "2.8.0"
 anyhow = "1.0"
 uuid = { version = "1.5", features=["v4"] }
