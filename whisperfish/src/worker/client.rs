@@ -108,18 +108,12 @@ pub struct SendMessage(pub i32);
 /// Returns true when delivered via unidentified sending.
 #[derive(Message)]
 #[rtype(result = "Result<Vec<SendMessageResult>, anyhow::Error>")]
-struct DeliverMessage<T> {
+struct DeliverMessage<T, Session> {
     content: T,
     timestamp: u64,
     online: bool,
     for_story: bool,
-    target: Target,
-}
-
-#[allow(clippy::large_enum_variant)]
-enum Target {
-    Uuid(Uuid),
-    Session(orm::Session),
+    session: Session,
 }
 
 #[derive(actix::Message)]
@@ -385,7 +379,7 @@ impl ClientActor {
         ctx.notify(DeliverMessage {
             content,
             timestamp: Utc::now().timestamp_millis() as u64,
-            target: Target::Uuid(metadata.sender.uuid),
+            session: metadata.sender.uuid,
             online: false,
             for_story: false,
         });
@@ -1328,7 +1322,7 @@ impl Handler<SendMessage> for ClientActor {
                         content,
                         online: false,
                         timestamp,
-                        target: Target::Session(session),
+                        session,
                         for_story: false,
                     })
                     .await?;
@@ -1542,7 +1536,7 @@ impl Handler<SendTypingNotification> for ClientActor {
                     content,
                     online: true,
                     timestamp: now,
-                    target: Target::Session(session),
+                    session,
                     for_story: false,
                 })
                 .await?
@@ -1645,7 +1639,7 @@ impl Handler<SendReaction> for ClientActor {
                     content,
                     online: false,
                     timestamp: now.timestamp_millis() as u64,
-                    target: Target::Session(session),
+                    session,
                     for_story: false,
                 })
                 .await?
@@ -1696,15 +1690,64 @@ impl Handler<ReactionSent> for ClientActor {
     }
 }
 
-impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
+impl<T: Into<ContentBody> + Send + 'static> Handler<DeliverMessage<T, uuid::Uuid>> for ClientActor {
     type Result = ResponseFuture<Result<Vec<SendMessageResult>, anyhow::Error>>;
 
-    fn handle(&mut self, msg: DeliverMessage<T>, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(
+        &mut self,
+        msg: DeliverMessage<T, uuid::Uuid>,
+        ctx: &mut Self::Context,
+    ) -> Self::Result {
+        let storage = self.storage.as_ref().unwrap();
+        let session_type =
+            orm::SessionType::DirectMessage(storage.fetch_or_insert_recipient_by_uuid(msg.session));
+        let msg = DeliverMessage {
+            content: msg.content,
+            timestamp: msg.timestamp,
+            online: msg.online,
+            session: session_type,
+            for_story: msg.for_story,
+        };
+        let addr = ctx.address();
+        Box::pin(async move { addr.send(msg).await? })
+    }
+}
+
+impl<T: Into<ContentBody> + Send + 'static> Handler<DeliverMessage<T, orm::Session>>
+    for ClientActor
+{
+    type Result = ResponseFuture<Result<Vec<SendMessageResult>, anyhow::Error>>;
+
+    fn handle(
+        &mut self,
+        msg: DeliverMessage<T, orm::Session>,
+        ctx: &mut Self::Context,
+    ) -> Self::Result {
+        let msg = DeliverMessage {
+            content: msg.content,
+            timestamp: msg.timestamp,
+            online: msg.online,
+            session: msg.session.r#type,
+            for_story: msg.for_story,
+        };
+        let addr = ctx.address();
+        Box::pin(async move { addr.send(msg).await? })
+    }
+}
+
+impl<T: Into<ContentBody>> Handler<DeliverMessage<T, orm::SessionType>> for ClientActor {
+    type Result = ResponseFuture<Result<Vec<SendMessageResult>, anyhow::Error>>;
+
+    fn handle(
+        &mut self,
+        msg: DeliverMessage<T, orm::SessionType>,
+        _ctx: &mut Self::Context,
+    ) -> Self::Result {
         let DeliverMessage {
             content,
             timestamp,
             online,
-            target,
+            session: session_type,
             for_story,
         } = msg;
         let content = content.into();
@@ -1719,14 +1762,6 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
 
         Box::pin(async move {
             let mut sender = sender.await?;
-
-            let session_type = match target {
-                Target::Uuid(u) => match storage.fetch_recipient_by_uuid(u) {
-                    None => anyhow::bail!("No recipient for uuid {}", u),
-                    Some(r) => orm::SessionType::DirectMessage(r),
-                },
-                Target::Session(s) => s.r#type,
-            };
 
             let results = match &session_type {
                 orm::SessionType::GroupV1(_group) => {
@@ -2652,7 +2687,7 @@ impl Handler<DeleteMessageForAll> for ClientActor {
             for_story: false,
             timestamp: now,
             online: false,
-            target: Target::Session(session),
+            session,
         };
 
         // XXX: We can't get a result back, I think we should?
