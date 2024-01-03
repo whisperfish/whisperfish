@@ -95,7 +95,7 @@
         <translation>Αρχειοθέτηση συζήτησης</translation>
     </message>
     <message id="whisperfish-session-delete">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="401"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="399"/>
         <source>Delete conversation</source>
         <extracomment>Delete all messages from session menu</extracomment>
         <translation>Διαγραφή συνομιλίας</translation>
