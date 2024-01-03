@@ -51,6 +51,7 @@ cat > ~/.config/sccache/config << EOF
 [cache.s3]
 bucket = "$SCCACHE_BUCKET"
 endpoint = "$SCCACHE_ENDPOINT"
+region = "auto"
 use_ssl = false
 key_prefix = "$SCCACHE_S3_KEY_PREFIX"
 no_credentials = false
