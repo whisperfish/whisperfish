@@ -225,19 +225,40 @@ impl protocol::IdentityKeyStore for Storage {
 
 impl Storage {
     pub fn pni_storage(&self) -> PniStorage {
-        PniStorage(self.clone())
+        PniStorage::new(self.clone())
     }
 
     pub fn aci_storage(&self) -> AciStorage {
-        AciStorage(self.clone())
+        AciStorage::new(self.clone())
     }
 }
 
-pub struct AciStorage(Storage);
-pub struct PniStorage(Storage);
+pub struct IdentityStorage<T>(Storage, std::marker::PhantomData<T>);
+impl<T> IdentityStorage<T> {
+    pub fn new(storage: Storage) -> Self {
+        Self(storage, Default::default())
+    }
+}
+pub struct Aci;
+pub type AciStorage = IdentityStorage<Aci>;
+pub struct Pni;
+pub type PniStorage = IdentityStorage<Pni>;
+trait Identity {
+    fn identity() -> orm::Identity;
+}
+impl Identity for Aci {
+    fn identity() -> orm::Identity {
+        orm::Identity::Aci
+    }
+}
+impl Identity for Pni {
+    fn identity() -> orm::Identity {
+        orm::Identity::Pni
+    }
+}
 
 #[async_trait::async_trait(?Send)]
-impl PreKeysStore for AciStorage {
+impl<T: Identity> PreKeysStore for IdentityStorage<T> {
     async fn next_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
         use diesel::dsl::*;
         use diesel::prelude::*;
@@ -247,6 +268,7 @@ impl PreKeysStore for AciStorage {
 
             prekeys
                 .select(max(id))
+                .filter(identity.eq(T::identity()))
                 .first(&mut *self.0.db())
                 .expect("db")
         };
@@ -262,6 +284,7 @@ impl PreKeysStore for AciStorage {
 
             signed_prekeys
                 .select(max(id))
+                .filter(identity.eq(T::identity()))
                 .first(&mut *self.0.db())
                 .expect("db")
         };
@@ -277,6 +300,7 @@ impl PreKeysStore for AciStorage {
 
             kyber_prekeys
                 .select(max(id))
+                .filter(identity.eq(T::identity()))
                 .first(&mut *self.0.db())
                 .expect("db")
         };
@@ -299,18 +323,18 @@ impl PreKeysStore for AciStorage {
     }
 }
 
-// #[async_trait::async_trait(?Send)]
-// impl PreKeysStore for PniStorage {}
-
 #[async_trait::async_trait(?Send)]
-impl protocol::PreKeyStore for AciStorage {
+impl<T: Identity> protocol::PreKeyStore for IdentityStorage<T> {
     async fn get_pre_key(&self, prekey_id: PreKeyId) -> Result<PreKeyRecord, SignalProtocolError> {
         tracing::trace!("Loading prekey {}", prekey_id);
         use crate::schema::prekeys::dsl::*;
         use diesel::prelude::*;
 
         let prekey_record: Option<orm::Prekey> = prekeys
-            .filter(id.eq(u32::from(prekey_id) as i32))
+            .filter(
+                id.eq(u32::from(prekey_id) as i32)
+                    .and(identity.eq(T::identity())),
+            )
             .first(&mut *self.0.db())
             .optional()
             .expect("db");
@@ -334,6 +358,7 @@ impl protocol::PreKeyStore for AciStorage {
             .values(orm::Prekey {
                 id: u32::from(prekey_id) as _,
                 record: body.serialize()?,
+                identity: T::identity(),
             })
             .execute(&mut *self.0.db())
             .expect("db");
@@ -347,7 +372,10 @@ impl protocol::PreKeyStore for AciStorage {
         use diesel::prelude::*;
 
         diesel::delete(prekeys)
-            .filter(id.eq(u32::from(prekey_id) as i32))
+            .filter(
+                id.eq(u32::from(prekey_id) as i32)
+                    .and(identity.eq(T::identity())),
+            )
             .execute(&mut *self.0.db())
             .expect("db");
         Ok(())
@@ -355,7 +383,7 @@ impl protocol::PreKeyStore for AciStorage {
 }
 
 #[async_trait::async_trait(?Send)]
-impl protocol::KyberPreKeyStore for AciStorage {
+impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
     async fn mark_kyber_pre_key_used(
         &mut self,
         kyber_prekey_id: KyberPreKeyId,
@@ -367,7 +395,10 @@ impl protocol::KyberPreKeyStore for AciStorage {
         use diesel::prelude::*;
 
         diesel::delete(kyber_prekeys)
-            .filter(id.eq((u32::from(kyber_prekey_id)) as i32))
+            .filter(
+                id.eq((u32::from(kyber_prekey_id)) as i32)
+                    .and(identity.eq(T::identity())),
+            )
             .execute(&mut *self.0.db())
             .expect("db");
         Ok(())
@@ -382,7 +413,10 @@ impl protocol::KyberPreKeyStore for AciStorage {
         use diesel::prelude::*;
 
         let prekey_record: Option<orm::KyberPrekey> = kyber_prekeys
-            .filter(id.eq(u32::from(kyber_prekey_id) as i32))
+            .filter(
+                id.eq(u32::from(kyber_prekey_id) as i32)
+                    .and(identity.eq(T::identity())),
+            )
             .first(&mut *self.0.db())
             .optional()
             .expect("db");
@@ -407,6 +441,7 @@ impl protocol::KyberPreKeyStore for AciStorage {
             .values(orm::KyberPrekey {
                 id: u32::from(kyber_prekey_id) as _,
                 record: body.serialize()?,
+                identity: T::identity(),
             })
             .execute(&mut *self.0.db())
             .expect("db");
@@ -637,7 +672,7 @@ impl SessionStoreExt for Storage {
 }
 
 #[async_trait::async_trait(?Send)]
-impl protocol::SignedPreKeyStore for AciStorage {
+impl<T: Identity> protocol::SignedPreKeyStore for IdentityStorage<T> {
     async fn get_signed_pre_key(
         &self,
         signed_prekey_id: SignedPreKeyId,
@@ -647,7 +682,10 @@ impl protocol::SignedPreKeyStore for AciStorage {
         use diesel::prelude::*;
 
         let prekey_record: Option<orm::SignedPrekey> = signed_prekeys
-            .filter(id.eq(u32::from(signed_prekey_id) as i32))
+            .filter(
+                id.eq(u32::from(signed_prekey_id) as i32)
+                    .and(identity.eq(T::identity())),
+            )
             .first(&mut *self.0.db())
             .optional()
             .expect("db");
@@ -672,6 +710,7 @@ impl protocol::SignedPreKeyStore for AciStorage {
             .values(orm::SignedPrekey {
                 id: u32::from(signed_prekey_id) as _,
                 record: body.serialize()?,
+                identity: T::identity(),
             })
             .execute(&mut *self.0.db())
             .expect("db");

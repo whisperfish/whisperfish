@@ -107,9 +107,13 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use crate::store::orm::IdentityMapping;
+
     kyber_prekeys (id) {
         id -> Integer,
         record -> Binary,
+        identity -> IdentityMapping,
     }
 }
 
@@ -139,9 +143,13 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use crate::store::orm::IdentityMapping;
+
     prekeys (id) {
         id -> Integer,
         record -> Binary,
+        identity -> IdentityMapping,
     }
 }
 
@@ -230,9 +238,13 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use crate::store::orm::IdentityMapping;
+
     signed_prekeys (id) {
         id -> Integer,
         record -> Binary,
+        identity -> IdentityMapping,
     }
 }
 

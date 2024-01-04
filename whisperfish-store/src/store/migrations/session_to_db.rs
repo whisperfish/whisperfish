@@ -1,6 +1,6 @@
 mod quirk;
 
-use crate::store::orm::{Prekey, SessionRecord, SignedPrekey};
+use crate::store::orm::{self, Prekey, SessionRecord, SignedPrekey};
 use crate::store::Storage;
 use libsignal_service::protocol::{self, IdentityKey, PreKeyId, ProtocolAddress, SignedPreKeyId};
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
@@ -165,6 +165,7 @@ impl SessionStorageMigration {
                 let prekey_record = Prekey {
                     id: u32::from(prekey) as _,
                     record: buf,
+                    identity: orm::Identity::Aci,
                 };
                 let res = diesel::insert_into(prekeys)
                     .values(prekey_record)
@@ -244,6 +245,7 @@ impl SessionStorageMigration {
                 let signed_prekey_record = SignedPrekey {
                     id: u32::from(prekey) as _,
                     record: buf,
+                    identity: orm::Identity::Aci,
                 };
                 let res = diesel::insert_into(signed_prekeys)
                     .values(signed_prekey_record)

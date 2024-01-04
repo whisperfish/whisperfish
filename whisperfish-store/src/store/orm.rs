@@ -355,10 +355,17 @@ impl Display for IdentityRecord {
     }
 }
 
+#[derive(diesel_derive_enum::DbEnum, Debug, Clone)]
+pub enum Identity {
+    Aci,
+    Pni,
+}
+
 #[derive(Queryable, Identifiable, Insertable, Debug, Clone)]
 pub struct SignedPrekey {
     pub id: i32,
     pub record: Vec<u8>,
+    pub identity: Identity,
 }
 
 impl Display for SignedPrekey {
@@ -371,6 +378,7 @@ impl Display for SignedPrekey {
 pub struct Prekey {
     pub id: i32,
     pub record: Vec<u8>,
+    pub identity: Identity,
 }
 
 impl Display for Prekey {
@@ -383,6 +391,7 @@ impl Display for Prekey {
 pub struct KyberPrekey {
     pub id: i32,
     pub record: Vec<u8>,
+    pub identity: Identity,
 }
 
 impl Display for KyberPrekey {
