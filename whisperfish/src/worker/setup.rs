@@ -1,9 +1,8 @@
 use crate::gui::WhisperfishApp;
 use crate::store::{Storage, TrustLevel};
 use anyhow::Context;
-use libsignal_service::push_service::{
-    DeviceId, ServiceIds, VerificationTransport, DEFAULT_DEVICE_ID,
-};
+use libsignal_service::protocol;
+use libsignal_service::push_service::{ServiceIds, VerificationTransport, DEFAULT_DEVICE_ID};
 use phonenumber::PhoneNumber;
 use qmetaobject::prelude::*;
 use std::rc::Rc;
@@ -15,10 +14,10 @@ pub struct RegistrationResult {
     pni_regid: u32,
     phonenumber: PhoneNumber,
     service_ids: ServiceIds,
-    device_id: DeviceId,
+    device_id: protocol::DeviceId,
     aci_identity_key_pair: Option<libsignal_service::protocol::IdentityKeyPair>,
     pni_identity_key_pair: Option<libsignal_service::protocol::IdentityKeyPair>,
-    profile_key: Option<Vec<u8>>,
+    profile_key: Option<[u8; 32]>,
 }
 
 #[derive(QObject, Default)]
@@ -225,11 +224,11 @@ impl SetupWorker {
 
         this.phonenumber = Some(reg.phonenumber.clone());
         this.uuid = Some(reg.service_ids.aci);
-        this.deviceId = reg.device_id.device_id;
+        this.deviceId = reg.device_id.into();
 
         config.set_tel(reg.phonenumber.clone());
         config.set_uuid(reg.service_ids.aci);
-        config.set_device_id(reg.device_id.device_id);
+        config.set_device_id(reg.device_id.into());
 
         // Install storage
         let storage = Storage::new(
@@ -355,9 +354,7 @@ impl SetupWorker {
                 aci: res.uuid,
                 pni: res.pni,
             },
-            device_id: DeviceId {
-                device_id: DEFAULT_DEVICE_ID,
-            },
+            device_id: protocol::DeviceId::from(DEFAULT_DEVICE_ID),
             aci_identity_key_pair: None,
             pni_identity_key_pair: None,
             profile_key: None,

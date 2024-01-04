@@ -48,8 +48,8 @@ use libsignal_service::proto::typing_message::Action;
 use libsignal_service::proto::{receipt_message, ReceiptMessage};
 use libsignal_service::protocol::{self, *};
 use libsignal_service::push_service::{
-    AccountAttributes, DeviceCapabilities, DeviceId, RegistrationSessionMetadataResponse,
-    ServiceIds, VerificationTransport, VerifyAccountResponse,
+    AccountAttributes, DeviceCapabilities, RegistrationSessionMetadataResponse, ServiceIds,
+    VerificationTransport, VerifyAccountResponse,
 };
 use libsignal_service::sender::AttachmentSpec;
 use libsignal_service::websocket::SignalWebSocket;
@@ -2268,11 +2268,11 @@ pub struct RegisterLinkedResponse {
     pub phone_number: PhoneNumber,
     pub registration_id: u32,
     pub pni_registration_id: u32,
-    pub device_id: DeviceId,
+    pub device_id: protocol::DeviceId,
     pub service_ids: ServiceIds,
     pub aci_identity_key_pair: protocol::IdentityKeyPair,
     pub pni_identity_key_pair: protocol::IdentityKeyPair,
-    pub profile_key: Vec<u8>,
+    pub profile_key: [u8; 32],
 }
 
 impl Handler<RegisterLinked> for ClientActor {
@@ -2318,7 +2318,7 @@ impl Handler<RegisterLinked> for ClientActor {
                                     device_id,
                                     registration_id,
                                     pni_registration_id,
-                                    profile_key,
+                                    profile_key: ProfileKey { bytes: profile_key },
                                     service_ids,
                                     aci_private_key,
                                     aci_public_key,
