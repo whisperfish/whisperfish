@@ -2283,19 +2283,23 @@ impl Handler<RegisterLinked> for ClientActor {
 
         let push_service = self.unauthenticated_service();
 
-        let mut provision_manager: LinkingManager<AwcPushService> =
-            LinkingManager::new(push_service, reg.password.clone());
-
         let (tx, mut rx) = futures::channel::mpsc::channel(1);
 
-        let mut tx_uri = Some(reg.tx_uri);
-        let signaling_key = reg.signaling_key;
+        let _signaling_key = reg.signaling_key;
+
+        let mut aci_store = self.storage.as_mut().unwrap().aci_storage();
+        let mut pni_store = self.storage.as_mut().unwrap().pni_storage();
 
         let registration_procedure = async move {
+            let mut tx_uri = Some(reg.tx_uri);
             let (fut1, fut2) = future::join(
-                provision_manager.provision_secondary_device(
+                link_device(
+                    &mut aci_store,
+                    &mut pni_store,
                     &mut rand::thread_rng(),
-                    signaling_key,
+                    push_service,
+                    &reg.password,
+                    &reg.device_name,
                     tx,
                 ),
                 async move {
