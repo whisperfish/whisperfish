@@ -434,23 +434,6 @@ impl protocol::PreKeyStore for Storage {
     }
 }
 
-impl Storage {
-    // XXX Rewrite in terms of get_pre_key
-    #[allow(dead_code)]
-    async fn contains_pre_key(&self, prekey_id: u32) -> bool {
-        tracing::trace!("Checking for prekey {}", prekey_id);
-        use crate::schema::prekeys::dsl::*;
-        use diesel::prelude::*;
-
-        let prekey_record: Option<orm::Prekey> = prekeys
-            .filter(id.eq(prekey_id as i32))
-            .first(&mut *self.db())
-            .optional()
-            .expect("db");
-        prekey_record.is_some()
-    }
-}
-
 #[async_trait::async_trait(?Send)]
 impl protocol::SessionStore for Storage {
     async fn load_session(
