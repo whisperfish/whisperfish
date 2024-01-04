@@ -112,7 +112,7 @@ struct DeliverMessage<T> {
     timestamp: u64,
     online: bool,
     for_story: bool,
-    session: orm::Session,
+    session_type: orm::SessionType,
 }
 
 #[derive(actix::Message)]
@@ -370,21 +370,23 @@ impl ClientActor {
         message: &DataMessage,
         metadata: &Metadata,
     ) -> Option<()> {
-        let uuid = metadata.sender.uuid;
-        let storage = self.storage.as_mut().expect("storage");
-        let recipient = storage.fetch_recipient(None, Some(uuid))?;
-        let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
-
         let content = ReceiptMessage {
             r#type: Some(receipt_message::Type::Delivery as _),
             timestamp: vec![message.timestamp?],
         };
 
+        let storage = self.storage.as_ref().unwrap();
+
+        let session_type = orm::SessionType::DirectMessage(
+            storage
+                .fetch_recipient_by_uuid(metadata.sender.uuid)
+                .expect("needs-receipt sender recipient"),
+        );
+
         ctx.notify(DeliverMessage {
             content,
             timestamp: Utc::now().timestamp_millis() as u64,
-            // XXX Session ID is artificial here.
-            session,
+            session_type,
             online: false,
             for_story: false,
         });
@@ -1331,7 +1333,7 @@ impl Handler<SendMessage> for ClientActor {
                         content,
                         online: false,
                         timestamp,
-                        session,
+                        session_type: session.r#type,
                         for_story: false,
                     })
                     .await?;
@@ -1545,7 +1547,7 @@ impl Handler<SendTypingNotification> for ClientActor {
                     content,
                     online: true,
                     timestamp: now,
-                    session,
+                    session_type: session.r#type,
                     for_story: false,
                 })
                 .await?
@@ -1648,7 +1650,7 @@ impl Handler<SendReaction> for ClientActor {
                     content,
                     online: false,
                     timestamp: now.timestamp_millis() as u64,
-                    session,
+                    session_type: session.r#type,
                     for_story: false,
                 })
                 .await?
@@ -1707,7 +1709,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
             content,
             timestamp,
             online,
-            session,
+            session_type: session,
             for_story,
         } = msg;
         let content = content.into();
@@ -1722,7 +1724,8 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
 
         Box::pin(async move {
             let mut sender = sender.await?;
-            let results = match &session.r#type {
+
+            let results = match &session {
                 orm::SessionType::GroupV1(_group) => {
                     // FIXME
                     log::error!("Cannot send to Group V1 anymore.");
@@ -2646,7 +2649,7 @@ impl Handler<DeleteMessageForAll> for ClientActor {
             for_story: false,
             timestamp: now,
             online: false,
-            session,
+            session_type: session.r#type,
         };
 
         // XXX: We can't get a result back, I think we should?
