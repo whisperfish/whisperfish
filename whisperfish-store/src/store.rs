@@ -1844,6 +1844,27 @@ impl Storage {
             return session;
         }
 
+        // The GroupV2 may still exist, even though the session does not.
+        let group_v2: Option<crate::orm::GroupV2> = schema::group_v2s::table
+            .filter(schema::group_v2s::id.eq(group_id_hex.clone()))
+            .first(&mut *self.db())
+            .optional()
+            .unwrap();
+        if let Some(group) = group_v2 {
+            diesel::insert_into(sessions)
+                .values(group_v2_id.eq(&group.id))
+                .execute(&mut *self.db())
+                .unwrap();
+
+            let session = self
+                .fetch_latest_session()
+                .expect("a session has been inserted");
+            self.observe_insert(sessions, session.id)
+                .with_relation(schema::group_v2s::table, group.id);
+            return session;
+        }
+
+        // At this point neither the GroupV2 nor the session exists.
         let master_key =
             bincode::serialize(&group.secret.get_master_key()).expect("serialized master key");
         let new_group = orm::GroupV2 {
