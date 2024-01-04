@@ -309,7 +309,7 @@ impl protocol::PreKeyStore for AciStorage {
         use crate::schema::prekeys::dsl::*;
         use diesel::prelude::*;
 
-        let prekey_record: Option<crate::store::orm::Prekey> = prekeys
+        let prekey_record: Option<orm::Prekey> = prekeys
             .filter(id.eq(u32::from(prekey_id) as i32))
             .first(&mut *self.0.db())
             .optional()
@@ -331,7 +331,7 @@ impl protocol::PreKeyStore for AciStorage {
         use diesel::prelude::*;
 
         diesel::insert_into(prekeys)
-            .values(crate::store::orm::Prekey {
+            .values(orm::Prekey {
                 id: u32::from(prekey_id) as _,
                 record: body.serialize()?,
             })
@@ -381,7 +381,7 @@ impl protocol::KyberPreKeyStore for AciStorage {
         use crate::schema::kyber_prekeys::dsl::*;
         use diesel::prelude::*;
 
-        let prekey_record: Option<crate::store::orm::KyberPrekey> = kyber_prekeys
+        let prekey_record: Option<orm::KyberPrekey> = kyber_prekeys
             .filter(id.eq(u32::from(kyber_prekey_id) as i32))
             .first(&mut *self.0.db())
             .optional()
@@ -404,7 +404,7 @@ impl protocol::KyberPreKeyStore for AciStorage {
 
         // Insert or replace?
         diesel::insert_into(kyber_prekeys)
-            .values(crate::store::orm::KyberPrekey {
+            .values(orm::KyberPrekey {
                 id: u32::from(kyber_prekey_id) as _,
                 record: body.serialize()?,
             })
@@ -442,7 +442,7 @@ impl Storage {
         use crate::schema::prekeys::dsl::*;
         use diesel::prelude::*;
 
-        let prekey_record: Option<crate::store::orm::Prekey> = prekeys
+        let prekey_record: Option<orm::Prekey> = prekeys
             .filter(id.eq(prekey_id as i32))
             .first(&mut *self.db())
             .optional()
@@ -461,7 +461,7 @@ impl protocol::SessionStore for Storage {
         use crate::schema::session_records::dsl::*;
         use diesel::prelude::*;
 
-        let session_record: Option<crate::store::orm::SessionRecord> = session_records
+        let session_record: Option<orm::SessionRecord> = session_records
             .filter(
                 address
                     .eq(addr.name())
@@ -663,7 +663,7 @@ impl protocol::SignedPreKeyStore for AciStorage {
         use crate::schema::signed_prekeys::dsl::*;
         use diesel::prelude::*;
 
-        let prekey_record: Option<crate::store::orm::SignedPrekey> = signed_prekeys
+        let prekey_record: Option<orm::SignedPrekey> = signed_prekeys
             .filter(id.eq(u32::from(signed_prekey_id) as i32))
             .first(&mut *self.0.db())
             .optional()
@@ -686,7 +686,7 @@ impl protocol::SignedPreKeyStore for AciStorage {
 
         // Insert or replace?
         diesel::insert_into(signed_prekeys)
-            .values(crate::store::orm::SignedPrekey {
+            .values(orm::SignedPrekey {
                 id: u32::from(signed_prekey_id) as _,
                 record: body.serialize()?,
             })
@@ -827,7 +827,7 @@ impl Storage {
         use crate::schema::signed_prekeys::dsl::*;
         use diesel::prelude::*;
 
-        let signed_prekey_record: Option<crate::store::orm::SignedPrekey> = signed_prekeys
+        let signed_prekey_record: Option<orm::SignedPrekey> = signed_prekeys
             .filter(id.eq(signed_prekey_id as i32))
             .first(&mut *self.db())
             .optional()
