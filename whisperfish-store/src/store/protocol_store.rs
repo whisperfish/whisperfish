@@ -1,4 +1,5 @@
 use super::*;
+use libsignal_service::pre_keys::PreKeysStore;
 use libsignal_service::protocol::{
     self, GenericSignedPreKey, IdentityKeyPair, SignalProtocolError,
 };
@@ -80,43 +81,6 @@ impl ProtocolStore {
 }
 
 impl Storage {
-    /// Returns a tuple of the next free signed pre-key ID, the next Kyber pre-key ID, and the next free pre-key ID
-    #[tracing::instrument(skip(self))]
-    pub async fn next_pre_key_ids(&self) -> (u32, u32, u32) {
-        use diesel::dsl::*;
-        use diesel::prelude::*;
-
-        let prekey_max: Option<i32> = {
-            use crate::schema::prekeys::dsl::*;
-
-            prekeys.select(max(id)).first(&mut *self.db()).expect("db")
-        };
-
-        let kyber_max: Option<i32> = {
-            use crate::schema::kyber_prekeys::dsl::*;
-
-            kyber_prekeys
-                .select(max(id))
-                .first(&mut *self.db())
-                .expect("db")
-        };
-
-        let signed_prekey_max: Option<i32> = {
-            use crate::schema::signed_prekeys::dsl::*;
-
-            signed_prekeys
-                .select(max(id))
-                .first(&mut *self.db())
-                .expect("db")
-        };
-
-        (
-            (signed_prekey_max.unwrap_or(-1) + 1) as u32,
-            (kyber_max.unwrap_or(-1) + 1) as u32,
-            (prekey_max.unwrap_or(-1) + 1) as u32,
-        )
-    }
-
     pub async fn delete_identity(&self, addr: &ProtocolAddress) -> Result<(), SignalProtocolError> {
         self.delete_identity_key(addr);
         Ok(())
@@ -259,8 +223,87 @@ impl protocol::IdentityKeyStore for Storage {
     }
 }
 
+impl Storage {
+    pub fn pni_storage(&self) -> PniStorage {
+        PniStorage(self.clone())
+    }
+
+    pub fn aci_storage(&self) -> AciStorage {
+        AciStorage(self.clone())
+    }
+}
+
+pub struct AciStorage(Storage);
+pub struct PniStorage(Storage);
+
 #[async_trait::async_trait(?Send)]
-impl protocol::PreKeyStore for Storage {
+impl PreKeysStore for AciStorage {
+    async fn next_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
+        use diesel::dsl::*;
+        use diesel::prelude::*;
+
+        let prekey_max: Option<i32> = {
+            use crate::schema::prekeys::dsl::*;
+
+            prekeys
+                .select(max(id))
+                .first(&mut *self.0.db())
+                .expect("db")
+        };
+        Ok((prekey_max.unwrap_or(-1) + 1) as u32)
+    }
+
+    async fn next_signed_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
+        use diesel::dsl::*;
+        use diesel::prelude::*;
+
+        let signed_prekey_max: Option<i32> = {
+            use crate::schema::signed_prekeys::dsl::*;
+
+            signed_prekeys
+                .select(max(id))
+                .first(&mut *self.0.db())
+                .expect("db")
+        };
+        Ok((signed_prekey_max.unwrap_or(-1) + 1) as u32)
+    }
+
+    async fn next_pq_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
+        use diesel::dsl::*;
+        use diesel::prelude::*;
+
+        let kyber_max: Option<i32> = {
+            use crate::schema::kyber_prekeys::dsl::*;
+
+            kyber_prekeys
+                .select(max(id))
+                .first(&mut *self.0.db())
+                .expect("db")
+        };
+        Ok((kyber_max.unwrap_or(-1) + 1) as u32)
+    }
+
+    async fn set_next_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
+        assert_eq!(self.next_pre_key_id().await?, id);
+        Ok(())
+    }
+
+    async fn set_next_signed_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
+        assert_eq!(self.next_signed_pre_key_id().await?, id);
+        Ok(())
+    }
+
+    async fn set_next_pq_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
+        assert_eq!(self.next_pq_pre_key_id().await?, id);
+        Ok(())
+    }
+}
+
+// #[async_trait::async_trait(?Send)]
+// impl PreKeysStore for PniStorage {}
+
+#[async_trait::async_trait(?Send)]
+impl protocol::PreKeyStore for AciStorage {
     async fn get_pre_key(&self, prekey_id: PreKeyId) -> Result<PreKeyRecord, SignalProtocolError> {
         tracing::trace!("Loading prekey {}", prekey_id);
         use crate::schema::prekeys::dsl::*;
@@ -268,7 +311,7 @@ impl protocol::PreKeyStore for Storage {
 
         let prekey_record: Option<crate::store::orm::Prekey> = prekeys
             .filter(id.eq(u32::from(prekey_id) as i32))
-            .first(&mut *self.db())
+            .first(&mut *self.0.db())
             .optional()
             .expect("db");
         if let Some(pkr) = prekey_record {
@@ -292,7 +335,7 @@ impl protocol::PreKeyStore for Storage {
                 id: u32::from(prekey_id) as _,
                 record: body.serialize()?,
             })
-            .execute(&mut *self.db())
+            .execute(&mut *self.0.db())
             .expect("db");
 
         Ok(())
@@ -305,9 +348,89 @@ impl protocol::PreKeyStore for Storage {
 
         diesel::delete(prekeys)
             .filter(id.eq(u32::from(prekey_id) as i32))
-            .execute(&mut *self.db())
+            .execute(&mut *self.0.db())
             .expect("db");
         Ok(())
+    }
+}
+
+#[async_trait::async_trait(?Send)]
+impl protocol::KyberPreKeyStore for AciStorage {
+    async fn mark_kyber_pre_key_used(
+        &mut self,
+        kyber_prekey_id: KyberPreKeyId,
+    ) -> Result<(), SignalProtocolError> {
+        // TODO: only remove the kyber pre key if it concerns an ephemeral pre key; last-resort
+        // keys should be retained!  See libsignal-service/src/account_manager.rs `if use_last_resort_key`
+        tracing::trace!("Removing Kyber prekey {}", kyber_prekey_id);
+        use crate::schema::kyber_prekeys::dsl::*;
+        use diesel::prelude::*;
+
+        diesel::delete(kyber_prekeys)
+            .filter(id.eq((u32::from(kyber_prekey_id)) as i32))
+            .execute(&mut *self.0.db())
+            .expect("db");
+        Ok(())
+    }
+
+    async fn get_kyber_pre_key(
+        &self,
+        kyber_prekey_id: KyberPreKeyId,
+    ) -> Result<KyberPreKeyRecord, SignalProtocolError> {
+        tracing::trace!("Loading Kyber prekey {}", kyber_prekey_id);
+        use crate::schema::kyber_prekeys::dsl::*;
+        use diesel::prelude::*;
+
+        let prekey_record: Option<crate::store::orm::KyberPrekey> = kyber_prekeys
+            .filter(id.eq(u32::from(kyber_prekey_id) as i32))
+            .first(&mut *self.0.db())
+            .optional()
+            .expect("db");
+        if let Some(pkr) = prekey_record {
+            Ok(KyberPreKeyRecord::deserialize(&pkr.record)?)
+        } else {
+            Err(SignalProtocolError::InvalidSignedPreKeyId)
+        }
+    }
+
+    async fn save_kyber_pre_key(
+        &mut self,
+        kyber_prekey_id: KyberPreKeyId,
+        body: &KyberPreKeyRecord,
+    ) -> Result<(), SignalProtocolError> {
+        tracing::trace!("Storing Kyber prekey {}", kyber_prekey_id);
+        use crate::schema::kyber_prekeys::dsl::*;
+        use diesel::prelude::*;
+
+        // Insert or replace?
+        diesel::insert_into(kyber_prekeys)
+            .values(crate::store::orm::KyberPrekey {
+                id: u32::from(kyber_prekey_id) as _,
+                record: body.serialize()?,
+            })
+            .execute(&mut *self.0.db())
+            .expect("db");
+
+        Ok(())
+    }
+}
+
+#[async_trait::async_trait(?Send)]
+impl protocol::PreKeyStore for Storage {
+    async fn get_pre_key(&self, prekey_id: PreKeyId) -> Result<PreKeyRecord, SignalProtocolError> {
+        self.aci_storage().get_pre_key(prekey_id).await
+    }
+
+    async fn save_pre_key(
+        &mut self,
+        prekey_id: PreKeyId,
+        body: &PreKeyRecord,
+    ) -> Result<(), SignalProtocolError> {
+        self.aci_storage().save_pre_key(prekey_id, body).await
+    }
+
+    async fn remove_pre_key(&mut self, prekey_id: PreKeyId) -> Result<(), SignalProtocolError> {
+        self.aci_storage().remove_pre_key(prekey_id).await
     }
 }
 
@@ -531,7 +654,7 @@ impl SessionStoreExt for Storage {
 }
 
 #[async_trait::async_trait(?Send)]
-impl protocol::SignedPreKeyStore for Storage {
+impl protocol::SignedPreKeyStore for AciStorage {
     async fn get_signed_pre_key(
         &self,
         signed_prekey_id: SignedPreKeyId,
@@ -542,7 +665,7 @@ impl protocol::SignedPreKeyStore for Storage {
 
         let prekey_record: Option<crate::store::orm::SignedPrekey> = signed_prekeys
             .filter(id.eq(u32::from(signed_prekey_id) as i32))
-            .first(&mut *self.db())
+            .first(&mut *self.0.db())
             .optional()
             .expect("db");
         if let Some(pkr) = prekey_record {
@@ -567,10 +690,32 @@ impl protocol::SignedPreKeyStore for Storage {
                 id: u32::from(signed_prekey_id) as _,
                 record: body.serialize()?,
             })
-            .execute(&mut *self.db())
+            .execute(&mut *self.0.db())
             .expect("db");
 
         Ok(())
+    }
+}
+
+#[async_trait::async_trait(?Send)]
+impl protocol::SignedPreKeyStore for Storage {
+    async fn get_signed_pre_key(
+        &self,
+        signed_prekey_id: SignedPreKeyId,
+    ) -> Result<SignedPreKeyRecord, SignalProtocolError> {
+        self.aci_storage()
+            .get_signed_pre_key(signed_prekey_id)
+            .await
+    }
+
+    async fn save_signed_pre_key(
+        &mut self,
+        signed_prekey_id: SignedPreKeyId,
+        body: &SignedPreKeyRecord,
+    ) -> Result<(), SignalProtocolError> {
+        self.aci_storage()
+            .save_signed_pre_key(signed_prekey_id, body)
+            .await
     }
 }
 
@@ -580,37 +725,16 @@ impl protocol::KyberPreKeyStore for Storage {
         &mut self,
         kyber_prekey_id: KyberPreKeyId,
     ) -> Result<(), SignalProtocolError> {
-        // TODO: only remove the kyber pre key if it concerns an ephemeral pre key; last-resort
-        // keys should be retained!  See libsignal-service/src/account_manager.rs `if use_last_resort_key`
-        tracing::trace!("Removing Kyber prekey {}", kyber_prekey_id);
-        use crate::schema::kyber_prekeys::dsl::*;
-        use diesel::prelude::*;
-
-        diesel::delete(kyber_prekeys)
-            .filter(id.eq((u32::from(kyber_prekey_id)) as i32))
-            .execute(&mut *self.db())
-            .expect("db");
-        Ok(())
+        self.aci_storage()
+            .mark_kyber_pre_key_used(kyber_prekey_id)
+            .await
     }
 
     async fn get_kyber_pre_key(
         &self,
         kyber_prekey_id: KyberPreKeyId,
     ) -> Result<KyberPreKeyRecord, SignalProtocolError> {
-        tracing::trace!("Loading Kyber prekey {}", kyber_prekey_id);
-        use crate::schema::kyber_prekeys::dsl::*;
-        use diesel::prelude::*;
-
-        let prekey_record: Option<crate::store::orm::KyberPrekey> = kyber_prekeys
-            .filter(id.eq(u32::from(kyber_prekey_id) as i32))
-            .first(&mut *self.db())
-            .optional()
-            .expect("db");
-        if let Some(pkr) = prekey_record {
-            Ok(KyberPreKeyRecord::deserialize(&pkr.record)?)
-        } else {
-            Err(SignalProtocolError::InvalidSignedPreKeyId)
-        }
+        self.aci_storage().get_kyber_pre_key(kyber_prekey_id).await
     }
 
     async fn save_kyber_pre_key(
@@ -618,20 +742,9 @@ impl protocol::KyberPreKeyStore for Storage {
         kyber_prekey_id: KyberPreKeyId,
         body: &KyberPreKeyRecord,
     ) -> Result<(), SignalProtocolError> {
-        tracing::trace!("Storing Kyber prekey {}", kyber_prekey_id);
-        use crate::schema::kyber_prekeys::dsl::*;
-        use diesel::prelude::*;
-
-        // Insert or replace?
-        diesel::insert_into(kyber_prekeys)
-            .values(crate::store::orm::KyberPrekey {
-                id: u32::from(kyber_prekey_id) as _,
-                record: body.serialize()?,
-            })
-            .execute(&mut *self.db())
-            .expect("db");
-
-        Ok(())
+        self.aci_storage()
+            .save_kyber_pre_key(kyber_prekey_id, body)
+            .await
     }
 }
 

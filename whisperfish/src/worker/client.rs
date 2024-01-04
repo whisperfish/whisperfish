@@ -16,6 +16,7 @@ use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::Sent;
 use libsignal_service::push_service::RegistrationMethod;
+use libsignal_service::push_service::ServiceIdType;
 use libsignal_service::sender::SendMessageResult;
 use tracing_futures::Instrument;
 use uuid::Uuid;
@@ -2437,18 +2438,24 @@ impl Handler<RefreshPreKeys> for ClientActor {
         let storage = self.storage.clone().unwrap();
 
         let proc = async move {
-            let (next_signed_pre_key_id, next_kyber_pre_key_id, pre_keys_offset_id) =
-                storage.next_pre_key_ids().await;
+            am.update_pre_key_bundle(
+                &mut storage.clone(),
+                &mut storage.aci_storage(),
+                ServiceIdType::AccountIdentity,
+                &mut rand::thread_rng(),
+                false,
+            )
+            .await?;
 
             am.update_pre_key_bundle(
                 &mut storage.clone(),
+                &mut storage.pni_storage(),
+                ServiceIdType::PhoneNumberIdentity,
                 &mut rand::thread_rng(),
-                next_signed_pre_key_id,
-                next_kyber_pre_key_id,
-                pre_keys_offset_id,
                 false,
             )
-            .await
+            .await?;
+            Result::<(), ServiceError>::Ok(())
         }
         .instrument(tracing::trace_span!("RefreshPreKeys"));
         // XXX: store the last refresh time somewhere.
