@@ -1492,7 +1492,7 @@ impl Handler<EndSession> for ClientActor {
             is_read: true,
             is_unidentified: false,
             quote_timestamp: None,
-            expires_in: session.expiring_message_timeout,
+            expires_in: None, // Don't expire system messages
         });
         ctx.notify(SendMessage(msg.id));
     }
