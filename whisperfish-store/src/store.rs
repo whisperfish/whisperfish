@@ -2007,10 +2007,27 @@ impl Storage {
     }
 
     pub fn delete_expired_messages(&self) -> usize {
-        diesel::delete(schema::messages::table)
+        let deleted = self.fetch_expired_message_ids();
+
+        let deletions: usize = diesel::delete(schema::messages::table)
             .filter(sql::<Timestamp>(DELETE_AFTER).le(sql::<Timestamp>("DATETIME('now')")))
+            // .returning(schema::messages::id)
+            // .load(&mut *self.db())
             .execute(&mut *self.db())
-            .expect("delete expired messages")
+            .expect("delete expired messages");
+
+        // XXX This observes race conditions
+        // We can implement this cleanly with the above `returning` clause,
+        // but this is only available in Sqlite 3.35.0 and up.
+        // Diesel does not seem to know it is available yet.
+        assert_eq!(deletions, deleted.len());
+        log::trace!("delete_expired_messages() affected {} rows", deletions);
+
+        for deletion in deleted {
+            self.observe_delete(schema::messages::table, PrimaryKey::RowId(deletion.0));
+        }
+
+        deletions
     }
 
     pub fn mark_session_read(&self, sid: i32) {
