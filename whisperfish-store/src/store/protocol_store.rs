@@ -1,5 +1,4 @@
 use super::*;
-use libsignal_service::pre_keys::PreKeysStore;
 use libsignal_service::protocol::{
     self, GenericSignedPreKey, IdentityKeyPair, SignalProtocolError,
 };
@@ -257,65 +256,6 @@ impl protocol::IdentityKeyStore for Storage {
         addr: &ProtocolAddress,
     ) -> Result<Option<IdentityKey>, SignalProtocolError> {
         Ok(self.fetch_identity_key(addr))
-    }
-}
-
-impl PreKeysStore for Storage {
-    fn pre_keys_offset_id(&self) -> Result<u32, SignalProtocolError> {
-        use diesel::dsl::*;
-        use diesel::prelude::*;
-
-        let prekey_max: Option<i32> = {
-            use crate::schema::prekeys::dsl::*;
-
-            prekeys.select(max(id)).first(&mut *self.db()).expect("db")
-        };
-        Ok((prekey_max.unwrap_or(-1) + 1) as u32)
-    }
-
-    fn next_signed_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
-        use diesel::dsl::*;
-        use diesel::prelude::*;
-
-        let signed_prekey_max: Option<i32> = {
-            use crate::schema::signed_prekeys::dsl::*;
-
-            signed_prekeys
-                .select(max(id))
-                .first(&mut *self.db())
-                .expect("db")
-        };
-        Ok((signed_prekey_max.unwrap_or(-1) + 1) as u32)
-    }
-
-    fn next_pq_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
-        use diesel::dsl::*;
-        use diesel::prelude::*;
-
-        let kyber_max: Option<i32> = {
-            use crate::schema::kyber_prekeys::dsl::*;
-
-            kyber_prekeys
-                .select(max(id))
-                .first(&mut *self.db())
-                .expect("db")
-        };
-        Ok((kyber_max.unwrap_or(-1) + 1) as u32)
-    }
-
-    fn set_pre_keys_offset_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
-        assert_eq!(self.pre_keys_offset_id()?, id);
-        Ok(())
-    }
-
-    fn set_next_signed_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
-        assert_eq!(self.next_signed_pre_key_id()?, id);
-        Ok(())
-    }
-
-    fn set_next_pq_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
-        assert_eq!(self.next_pq_pre_key_id()?, id);
-        Ok(())
     }
 }
 
