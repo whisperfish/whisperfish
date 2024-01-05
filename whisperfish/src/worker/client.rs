@@ -631,6 +631,10 @@ impl ClientActor {
 
         let message = storage.create_message(&new_message);
 
+        if let Some(h) = self.message_expiry_notification_handle.as_ref() {
+            h.send(()).expect("send message expiry notification");
+        }
+
         if settings.get_bool("attachment_log") && !msg.attachments.is_empty() {
             log::trace!("Logging message to the attachment log");
             // XXX Sync code, but it's not the only sync code in here...
@@ -1220,6 +1224,10 @@ impl Handler<QueueMessage> for ClientActor {
             quote_timestamp: quote.map(|msg| msg.server_timestamp.timestamp_millis() as u64),
             expires_in: session.expiring_message_timeout,
         });
+
+        if let Some(h) = self.message_expiry_notification_handle.as_ref() {
+            h.send(()).expect("send message expiry notification");
+        }
 
         ctx.notify(SendMessage(msg.id));
     }
