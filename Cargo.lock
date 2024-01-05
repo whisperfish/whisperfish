@@ -3868,7 +3868,6 @@ dependencies = [
  "qrencode",
  "qttypes",
  "rand",
- "rand_core",
  "regex",
  "rstest",
  "rstest_reuse",
