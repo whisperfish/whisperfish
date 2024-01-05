@@ -30,7 +30,7 @@ I've prepared repositories for all architectures, which makes the package instal
     $ cd ~/SFOS/whisperfish
     $ sfdk tools exec SailfishOS-4.5.0.18 bash -c \
         "zypper ar --no-gpgcheck https://direc.kapsi.fi/sailfish-repo/i486 direc85 && zypper ref && zypper up --allow-vendor-change"
-    $ sfdk tools exec SailfishOS-4.5.0.18 bash -c "zypper in --allow-vendor-change rust cargo rust-std-static-aarch64-unknown-linux-gnu rust-std-static-armv7-unknown-linux-gnueabihf"
+    $ sfdk tools exec SailfishOS-4.5.0.18 bash -c "zypper in --allow-vendor-change rust cargo rust-std-static-aarch64-unknown-linux-gnu rust-std-static-armv7-unknown-linux-gnueabihf rust-std-static-i686-unknown-linux-gnu"
 
 Next, let's add the repositories to the build targets:
 
