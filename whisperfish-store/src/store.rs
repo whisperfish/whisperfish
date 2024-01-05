@@ -36,6 +36,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use uuid::Uuid;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
+const DELETE_AFTER: &str = "DATETIME(expiry_started, '+' || expires_in || ' seconds')";
 
 sql_function!(
     // Represents the Sqlite last_insert_rowid() function
@@ -1977,9 +1978,7 @@ impl Storage {
         schema::messages::table
             .select((
                 schema::messages::id,
-                sql::<Timestamp>(
-                    "DATETIME(expiry_started, '+' || expires_in || ' seconds') as delete_after",
-                ),
+                sql::<Timestamp>(DELETE_AFTER).sql("AS delete_after"),
             ))
             .filter(
                 sql::<Bool>("delete_after")
