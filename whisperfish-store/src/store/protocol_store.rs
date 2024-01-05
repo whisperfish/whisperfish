@@ -467,14 +467,6 @@ impl Storage {
 
         ret
     }
-
-    pub fn aci_storage(&self) -> Self {
-        self.clone()
-    }
-
-    pub fn pni_storage(&self) -> Self {
-        unimplemented!("PNI storage is not yet implemented");
-    }
 }
 // END identity key
 
