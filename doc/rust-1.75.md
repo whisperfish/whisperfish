@@ -8,28 +8,13 @@ The instructions assume you have a freshly-installed Sailfish SDK 3.10.4 (the Do
 
 My setup has the project folder as `~/SFOS`, your setup likely has something different. This guide also assumes you have Whisperfish already cloned in `~/SFOS/whisperfish`.
 
-## 2) Update the Whisperfish .spec
-
-These should already be in place in the `rust-1.72-instructions` branch
-
-    BuildRequires: rust >= 1.75
-    BuildRequires: rust-std-static >= 1.75
-    BuildRequires: cargo >= 1.75
-
-We also need to workaround a bug/behavior in Scratchbox. `%build` section needs this somewhere before `cargo build`:
-
-    export TMPDIR=${TMPDIR:-$(realpath "%{_sourcedir}/../.tmp")}
-    mkdir -p $TMPDIR
-
-This sets the default temp dir inside the source folder, and not in the default `/tmp`. Without this, `rustc` isn't able to create `symbols.o` and other files to the temp directory, which leads to failed linking step.
-
 ## 2) Add repositories
 
 I've prepared repositories for all architectures, which makes the package installation much more convenient. Let's start with adding the repository to the tooling first:
 
     $ cd ~/SFOS/whisperfish
     $ sfdk tools exec SailfishOS-4.5.0.18 bash -c \
-        "zypper ar --no-gpgcheck https://direc.kapsi.fi/sailfish-repo/i486 direc85 && zypper ref && zypper up --allow-vendor-change"
+        "zypper ar --no-gpgcheck https://nas.rubdos.be/~rsmet/sailfish-repo/ rubdos && zypper ref"
     $ sfdk tools exec SailfishOS-4.5.0.18 bash -c "zypper in --allow-vendor-change rust cargo rust-std-static-aarch64-unknown-linux-gnu rust-std-static-armv7-unknown-linux-gnueabihf rust-std-static-i686-unknown-linux-gnu"
 
 Next, let's add the repositories to the build targets:
@@ -37,19 +22,10 @@ Next, let's add the repositories to the build targets:
     $ for ARCH in i486 aarch64 armv7hl
         do
         sfdk config --push target SailfishOS-4.5.0.18-$ARCH; sfdk build-shell --maintain bash -c \
-            "zypper ar --no-gpgcheck https://direc.kapsi.fi/sailfish-repo/$ARCH direc85 && zypper ref && zypper up --allow-vendor-change"
+            "zypper ar --no-gpgcheck https://nas.rubdos.be/~rsmet/sailfish-repo/ rubdos && zypper ref"
         done
 
-Because of some version conflicts (I should have bumped the rust-std-static package versions) an exact manual installation is still required:
-
-    $ sfdk -c target=SailfishOS-4.5.0.18-i486 build-shell --maintain bash -c \
-        "zypper in --from direc85 --oldpackage --allow-vendor-change rust cargo rust-std-static-i686-unknown-linux-gnu"
-    $ sfdk -c target=SailfishOS-4.5.0.18-aarch64 build-shell --maintain bash -c \
-        "zypper in --from direc85 --oldpackage --allow-vendor-change rust cargo rust-std-static-i686-unknown-linux-gnu rust-std-static-aarch64-unknown-linux-gnu"
-    $ sfdk -c target=SailfishOS-4.5.0.18-armv7hl build-shell --maintain bash -c \
-        "zypper in --from direc85 --oldpackage --allow-vendor-change rust cargo rust-std-static-i686-unknown-linux-gnu rust-std-static-armv7-unknown-linux-gnueabihf"
-
-## 5) Compile Whisperfish
+## 3) Compile Whisperfish
 
 > **Important:** If you compiled Wishperfish before with Rust 1.52 or 1.72, you **must** run `cargo clean` to clear the old build cache!
 >
