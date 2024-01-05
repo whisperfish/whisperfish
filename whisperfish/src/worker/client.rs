@@ -3,6 +3,7 @@ pub mod migrations;
 
 mod groupv2;
 mod linked_devices;
+mod message_expiry;
 mod profile;
 mod profile_upload;
 mod unidentified;
@@ -21,6 +22,7 @@ use uuid::Uuid;
 use whisperfish_store::TrustLevel;
 use zkgroup::profiles::ProfileKey;
 
+use super::message_expiry::ExpiredMessagesStream;
 use super::profile_refresh::OutdatedProfileStream;
 use crate::actor::SendReaction;
 use crate::actor::SessionActor;
@@ -227,6 +229,7 @@ pub struct ClientActor {
     start_time: DateTime<Local>,
 
     outdated_profile_stream_handle: Option<SpawnHandle>,
+    message_expiry_notification_handle: Option<tokio::sync::mpsc::UnboundedSender<()>>,
 
     registration_session: Option<RegistrationSessionMetadataResponse>,
 }
@@ -277,6 +280,7 @@ impl ClientActor {
             start_time: Local::now(),
 
             outdated_profile_stream_handle: None,
+            message_expiry_notification_handle: None,
 
             registration_session: None,
         })
@@ -1876,10 +1880,20 @@ struct Restart;
 impl Handler<Restart> for ClientActor {
     type Result = ResponseActFuture<Self, ()>;
 
-    fn handle(&mut self, _: Restart, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, _: Restart, ctx: &mut Self::Context) -> Self::Result {
         let service = self.authenticated_service();
         let credentials = self.credentials.clone().unwrap();
         let migrations_ready = self.migration_state.ready();
+
+        if self.message_expiry_notification_handle.is_none() {
+            let (message_expiry_notification_handle, message_expiry_notification) =
+                tokio::sync::mpsc::unbounded_channel();
+            ctx.add_stream(ExpiredMessagesStream::new(
+                self.storage.clone().unwrap(),
+                message_expiry_notification,
+            ));
+            self.message_expiry_notification_handle = Some(message_expiry_notification_handle);
+        }
 
         self.inner.pinned().borrow_mut().connected = false;
         self.inner.pinned().borrow().connectedChanged();

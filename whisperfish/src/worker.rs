@@ -1,5 +1,6 @@
 pub mod client;
 
+mod message_expiry;
 mod profile_refresh;
 mod setup;
 

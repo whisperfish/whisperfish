@@ -1993,6 +1993,26 @@ impl Storage {
             .collect()
     }
 
+    pub fn fetch_next_expiring_message_id(&self) -> Option<(i32, DateTime<Utc>)> {
+        schema::messages::table
+            .select((
+                schema::messages::id,
+                sql::<Timestamp>(DELETE_AFTER).sql("AS delete_after"),
+            ))
+            .order_by(sql::<Timestamp>("delete_after").asc())
+            .first(&mut *self.db())
+            .optional()
+            .expect("messages by expiry timestamp")
+            .map(|(id, ndt)| (id, DateTime::<Utc>::from_utc(ndt, Utc)))
+    }
+
+    pub fn delete_expired_messages(&self) -> usize {
+        diesel::delete(schema::messages::table)
+            .filter(sql::<Timestamp>(DELETE_AFTER).le(sql::<Timestamp>("DATETIME('now')")))
+            .execute(&mut *self.db())
+            .expect("delete expired messages")
+    }
+
     pub fn mark_session_read(&self, sid: i32) {
         log::trace!("Called mark_session_read({})", sid);
 
