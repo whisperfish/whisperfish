@@ -872,6 +872,7 @@ impl ClientActor {
                         // XXX: this should probably not be based on ts alone.
                         let ts = read.timestamp();
                         let source = read.sender_aci();
+                        // XXX: Also handle PNI
                         // Signal uses timestamps in milliseconds, chrono has nanoseconds
                         let ts = millis_to_naive_chrono(ts);
                         tracing::trace!(
