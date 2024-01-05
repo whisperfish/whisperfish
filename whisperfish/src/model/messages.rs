@@ -240,11 +240,29 @@ impl EventObserving for SessionImpl {
                     .observe(storage, id, event);
                 // XXX how to trigger a Qt signal now?
             } else if event.for_table(schema::recipients::table) {
-                // XXX `let` expressions in this position are unstable: https://github.com/rust-lang/rust/issues/53667
-                if let Some(sess) = storage.fetch_session_by_recipient_id(id) {
-                    self.session = storage.fetch_session_by_id_augmented(sess.id);
-                    // XXX how to trigger a Qt signal now?
+                let Some(new_recipient) = storage.fetch_recipient_by_id(id) else {
+                    if let Some(sess) = storage.fetch_session_by_recipient_id(id) {
+                        self.session = storage.fetch_session_by_id_augmented(sess.id);
+                    } else {
+                        self.session = None;
+                    }
+                    return;
+                };
+                if let Some(session) = &mut self.session {
+                    match &mut session.inner.r#type {
+                        orm::SessionType::DirectMessage(recipient) => {
+                            assert!(recipient.id == id);
+                            *recipient = new_recipient
+                        }
+                        orm::SessionType::GroupV1(_) => {
+                            // Groups currently don't list recipients in this model.
+                        }
+                        orm::SessionType::GroupV2(_) => {
+                            // Groups currently don't list recipients in this model.
+                        }
+                    }
                 }
+                // XXX how to trigger a Qt signal now?
             } else {
                 log::debug!(
                     "Falling back to reloading the whole Session for event {:?}",

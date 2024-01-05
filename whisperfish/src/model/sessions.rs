@@ -5,7 +5,7 @@ use crate::store::observer::{EventObserving, Interest};
 use crate::store::{orm, schema, Storage};
 use qmetaobject::prelude::*;
 use std::collections::HashMap;
-use whisperfish_store::observer::{Event, EventType, Table};
+use whisperfish_store::observer::Event;
 
 /// QML-constructable object that interacts with a list of sessions.
 ///
@@ -136,16 +136,32 @@ impl SessionListModel {
             .and_then(|x| x.as_i32());
 
         if let Some(recipient_id) = recipient_id {
-            // XXX `let` expressions in this position are unstable: https://github.com/rust-lang/rust/issues/53667
-            if session_id.is_none() && message_id.is_none() && attachment_id.is_none() {
-                for sid in storage.fetch_session_ids_by_recipient_id(recipient_id) {
-                    self.observe(
-                        storage,
-                        Event::new(EventType::Update, Table::Sessions, sid.into(), vec![]),
-                    )
+            if let Some(new_recipient) = storage.fetch_recipient_by_id(recipient_id) {
+                let mut updates = Vec::new();
+                for (idx, session) in self.content.iter_mut().enumerate() {
+                    match &mut session.inner.r#type {
+                        orm::SessionType::DirectMessage(recipient) => {
+                            if recipient.id == recipient_id {
+                                *recipient = new_recipient.clone();
+                                updates.push(idx);
+                            }
+                        }
+                        orm::SessionType::GroupV1(_group) => {
+                            // Groups don't have recipients in this model
+                        }
+                        orm::SessionType::GroupV2(_) => {
+                            // Groups don't have recipients in this model
+                        }
+                    }
+                }
+                if session_id.is_none() && message_id.is_none() && attachment_id.is_none() {
+                    return;
+                }
+                for idx in updates {
+                    let idx = self.row_index(idx as i32);
+                    self.data_changed(idx, idx);
                 }
             }
-            return;
         }
 
         if attachment_id.is_some() && event.is_update() {
