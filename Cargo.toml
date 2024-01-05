@@ -20,6 +20,18 @@ qmetaobject = { git = 'https://github.com/woboq/qmetaobject-rs.git', rev = '1538
 [profile.dev.package."*"]
 opt-level = 3
 
+[profile.dev.package.libsignal-protocol]
+opt-level = 0
+
+[profile.dev.package.libsignal-service]
+opt-level = 0
+
+[profile.dev.package.libsignal-service-actix]
+opt-level = 0
+
+[profile.dev.package.qmetaobject]
+opt-level = 0
+
 [profile.release]
 # This flag is set in CI using CARGO_PROFILE_RELEASE_LTO=thin
 # lto = "thin"
