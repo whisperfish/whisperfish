@@ -1959,7 +1959,7 @@ impl Storage {
         .execute(&mut *self.db())
         .expect("set message expiry");
 
-        log::trace!("save_draft() affected {} rows", affected_rows);
+        log::trace!("start_message_expiry() affected {} rows", affected_rows);
 
         self.observe_update(schema::messages::table, message_id);
     }
