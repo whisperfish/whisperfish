@@ -2048,7 +2048,7 @@ impl StreamHandler<Result<Envelope, ServiceError>> for ClientActor {
                                 outgoing: false,
                                 is_unidentified: false,
                                 quote_timestamp: None,
-                                expires_in: session.expiring_message_timeout,
+                                expires_in: None, // Don't expire system messages
                             };
                             storage.create_message(&msg);
 
