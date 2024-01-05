@@ -14,7 +14,7 @@ pub struct SettingsBridge {
     // stringListValue: qt_method!(fn (&self, key: String, value: String)),
     avatarExists: qt_method!(fn(&self, key: String) -> bool),
 
-    inner: *mut QSettings,
+    inner: QSettings,
 
     debug_mode: qt_property!(bool; READ get_debug_mode WRITE set_debug_mode NOTIFY debug_mode_changed),
     enable_typing_indicators: qt_property!(bool; READ get_enable_typing_indicators WRITE set_enable_typing_indicators NOTIFY enable_typing_indicators_changed),
@@ -69,7 +69,7 @@ impl Default for SettingsBridge {
 
             avatarExists: Default::default(),
 
-            inner: &mut QSettings::from_path(
+            inner: QSettings::from_path(
                 dirs::config_dir()
                     .context("Could not get xdg config directory path")
                     .unwrap()
@@ -129,30 +129,24 @@ impl Default for SettingsBridge {
 impl Drop for SettingsBridge {
     fn drop(&mut self) {
         {
-            self.inner().sync();
+            // XXX Do we need to sync manually here?
+            // Maybe this is implemented in qtypes?
+            self.inner.sync();
         }
     }
 }
 
 impl SettingsBridge {
-    fn inner(&self) -> &QSettings {
-        unsafe { self.inner.as_ref().unwrap() }
-    }
-
-    fn inner_mut(&mut self) -> &mut QSettings {
-        unsafe { self.inner.as_mut().unwrap() }
-    }
-
     fn contains(&self, key: &str) -> bool {
-        self.inner().contains(key)
+        self.inner.contains(key)
     }
 
     fn value_bool(&self, key: &str) -> bool {
-        self.inner().value_bool(key)
+        self.inner.value_bool(key)
     }
 
     pub fn set_bool(&mut self, key: &str, value: bool) {
-        self.inner_mut().set_bool(key, value);
+        self.inner.set_bool(key, value);
     }
 
     pub fn set_bool_if_unset(&mut self, key: &str, value: bool) {
@@ -162,11 +156,11 @@ impl SettingsBridge {
     }
 
     fn value_string(&self, key: &str) -> String {
-        self.inner().value_string(key)
+        self.inner.value_string(key)
     }
 
     pub fn set_string(&mut self, key: &str, value: &str) {
-        self.inner_mut().set_string(key, value);
+        self.inner.set_string(key, value);
     }
 
     pub fn set_string_if_unset(&mut self, key: &str, value: &str) {
@@ -427,15 +421,14 @@ impl SettingsBridge {
     }
 
     pub fn migrate_qsettings_paths(&mut self) {
-        let settings = self.inner_mut();
         let old_path = ".local/share/harbour-whisperfish";
         let new_path = ".local/share/be.rubdos/harbour-whisperfish";
         let keys = ["attachment_dir", "camera_dir"];
         for key in keys.iter() {
-            if settings.contains("attachment_dir") {
-                settings.set_string(
+            if self.inner.contains("attachment_dir") {
+                self.inner.set_string(
                     key,
-                    settings
+                    self.inner
                         .value_string(key)
                         .to_string()
                         .replace(old_path, new_path)
