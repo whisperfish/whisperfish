@@ -342,6 +342,7 @@ impl SessionStorageMigration {
                     address: addr.name().to_string(),
                     device_id: u32::from(addr.device_id()) as i32,
                     record: buf,
+                    identity: orm::Identity::Aci,
                 };
                 let res = diesel::insert_into(session_records)
                     .values(session_record)

@@ -325,6 +325,7 @@ pub struct SessionRecord {
     pub address: String,
     pub device_id: i32,
     pub record: Vec<u8>,
+    pub identity: Identity,
 }
 
 impl Display for SessionRecord {
@@ -343,6 +344,7 @@ impl Display for SessionRecord {
 pub struct IdentityRecord {
     pub address: String,
     pub record: Vec<u8>,
+    pub identity: Identity,
 }
 
 impl Display for IdentityRecord {
@@ -408,6 +410,7 @@ pub struct SenderKeyRecord {
     pub distribution_id: String,
     pub record: Vec<u8>,
     pub created_at: NaiveDateTime,
+    pub identity: Identity,
 }
 
 impl Display for SenderKeyRecord {
@@ -447,6 +450,7 @@ impl Recipient {
     }
 
     pub fn to_service_address(&self) -> Option<libsignal_service::ServiceAddress> {
+        // XXX what about PNI?
         self.uuid
             .map(|uuid| libsignal_service::ServiceAddress { uuid })
     }

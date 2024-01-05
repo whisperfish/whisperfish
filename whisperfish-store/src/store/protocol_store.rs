@@ -4,6 +4,7 @@ use libsignal_service::protocol::{
     self, GenericSignedPreKey, IdentityKeyPair, SignalProtocolError,
 };
 use libsignal_service::provisioning::generate_registration_id;
+use libsignal_service::push_service::ServiceIdType;
 use libsignal_service::session_store::SessionStoreExt;
 use std::path::Path;
 
@@ -87,70 +88,124 @@ impl Storage {
     }
 }
 
-#[async_trait::async_trait(?Send)]
-impl protocol::ProtocolStore for Storage {}
-
 impl Storage {
-    pub async fn get_local_pni_registration_id(&self) -> Result<u32, SignalProtocolError> {
-        let path = self.path.join("storage").join("identity").join("pni_regid");
-        if !tokio::fs::try_exists(&path).await.expect("fs error") {
-            tracing::info!("Generating PNI regid");
-            let regid = generate_registration_id(&mut rand::thread_rng());
+    pub fn pni_storage(&self) -> PniStorage {
+        PniStorage::new(self.clone())
+    }
 
-            // Encrypt regid if necessary and write to file
-            self.write_file(&path, format!("{}", regid).into_bytes())
-                .await
-                .map_err(|e| {
-                    SignalProtocolError::InvalidArgument(format!("Cannot write PNI regid {}", e))
-                })?;
-        }
+    pub fn aci_storage(&self) -> AciStorage {
+        AciStorage::new(self.clone())
+    }
 
-        tracing::trace!("Reading PNI regid");
-        let _lock = self.protocol_store.read().await;
-
-        let regid = self.read_file(path).await.map_err(|e| {
-            SignalProtocolError::InvalidArgument(format!("Cannot read PNI regid {}", e))
-        })?;
-        let regid = String::from_utf8(regid).map_err(|e| {
-            SignalProtocolError::InvalidArgument(format!(
-                "Convert PNI regid from bytes to string {}",
-                e
-            ))
-        })?;
-        let regid = regid.parse().map_err(|e| {
-            SignalProtocolError::InvalidArgument(format!(
-                "Convert PNI regid from string to number {}",
-                e
-            ))
-        })?;
-
-        Ok(regid)
+    pub fn aci_or_pni(&self, service_id: ServiceIdType) -> AciOrPniStorage {
+        IdentityStorage(self.clone(), AciOrPni(service_id))
     }
 }
 
+#[derive(Clone)]
+pub struct IdentityStorage<T>(Storage, T);
+impl<T: Default> IdentityStorage<T> {
+    pub fn new(storage: Storage) -> Self {
+        Self(storage, Default::default())
+    }
+}
+#[derive(Default, Clone)]
+pub struct Aci;
+pub type AciStorage = IdentityStorage<Aci>;
+#[derive(Default, Clone)]
+pub struct Pni;
+pub type PniStorage = IdentityStorage<Pni>;
+// Dynamic dispatch between Aci and Pni
+#[derive(Clone)]
+pub struct AciOrPni(ServiceIdType);
+pub type AciOrPniStorage = IdentityStorage<AciOrPni>;
+pub trait Identity {
+    fn identity(&self) -> orm::Identity;
+    fn identity_key_filename(&self) -> &'static str;
+    fn regid_filename(&self) -> &'static str;
+}
+impl Identity for Aci {
+    fn identity(&self) -> orm::Identity {
+        orm::Identity::Aci
+    }
+    fn identity_key_filename(&self) -> &'static str {
+        "identity_key"
+    }
+    fn regid_filename(&self) -> &'static str {
+        "regid"
+    }
+}
+impl Identity for Pni {
+    fn identity(&self) -> orm::Identity {
+        orm::Identity::Pni
+    }
+    fn identity_key_filename(&self) -> &'static str {
+        "pni_identity_key"
+    }
+    fn regid_filename(&self) -> &'static str {
+        "pni_regid"
+    }
+}
+impl Identity for AciOrPni {
+    fn identity(&self) -> orm::Identity {
+        match self.0 {
+            ServiceIdType::AccountIdentity => orm::Identity::Aci,
+            ServiceIdType::PhoneNumberIdentity => orm::Identity::Pni,
+        }
+    }
+    fn identity_key_filename(&self) -> &'static str {
+        match self.0 {
+            ServiceIdType::AccountIdentity => "identity_key",
+            ServiceIdType::PhoneNumberIdentity => "pni_identity_key",
+        }
+    }
+    fn regid_filename(&self) -> &'static str {
+        match self.0 {
+            ServiceIdType::AccountIdentity => "regid",
+            ServiceIdType::PhoneNumberIdentity => "pni_regid",
+        }
+    }
+}
+
+// impl std::ops::Deref for AciOrPniStorage {
+//     type Target = Storage;
+//
+//     fn deref(&self) -> &Self::Target {
+//         &self.0
+//     }
+// }
+
 #[async_trait::async_trait(?Send)]
-impl protocol::IdentityKeyStore for Storage {
+impl protocol::ProtocolStore for IdentityStorage<AciOrPni> {}
+#[async_trait::async_trait(?Send)]
+impl protocol::ProtocolStore for IdentityStorage<Aci> {}
+// #[async_trait::async_trait(?Send)]
+// impl protocol::ProtocolStore for IdentityStorage<Pni> {}
+
+#[async_trait::async_trait(?Send)]
+impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
     async fn get_identity_key_pair(&self) -> Result<IdentityKeyPair, SignalProtocolError> {
-        let identity_key_pair = self.aci_identity_key_pair.read().await;
+        let identity_key_pair = self.0.aci_identity_key_pair.read().await;
 
         if let Some(identity_key_pair) = *identity_key_pair {
             Ok(identity_key_pair)
         } else {
             drop(identity_key_pair);
 
-            let mut identity_key_pair = self.aci_identity_key_pair.write().await;
+            let mut identity_key_pair = self.0.aci_identity_key_pair.write().await;
 
-            let _lock = self.protocol_store.read().await;
+            let _lock = self.0.protocol_store.read().await;
 
             tracing::trace!("Reading own identity key pair");
             let path = self
+                .0
                 .path
                 .join("storage")
                 .join("identity")
-                .join("identity_key");
+                .join(self.1.identity_key_filename());
             let key_pair = {
                 use std::convert::TryFrom;
-                let mut buf = self.read_file(path).await.map_err(|e| {
+                let mut buf = self.0.read_file(path).await.map_err(|e| {
                     SignalProtocolError::InvalidArgument(format!(
                         "Cannot read own identity key {}",
                         e
@@ -168,10 +223,15 @@ impl protocol::IdentityKeyStore for Storage {
 
     async fn get_local_registration_id(&self) -> Result<u32, SignalProtocolError> {
         tracing::trace!("Reading regid");
-        let _lock = self.protocol_store.read().await;
+        let _lock = self.0.protocol_store.read().await;
 
-        let path = self.path.join("storage").join("identity").join("regid");
-        let regid = self.read_file(path).await.map_err(|e| {
+        let path = self
+            .0
+            .path
+            .join("storage")
+            .join("identity")
+            .join(self.1.regid_filename());
+        let regid = self.0.read_file(path).await.map_err(|e| {
             SignalProtocolError::InvalidArgument(format!("Cannot read regid {}", e))
         })?;
         let regid = String::from_utf8(regid).map_err(|e| {
@@ -197,7 +257,7 @@ impl protocol::IdentityKeyStore for Storage {
         // XXX
         _direction: Direction,
     ) -> Result<bool, SignalProtocolError> {
-        if let Some(trusted_key) = self.fetch_identity_key(addr) {
+        if let Some(trusted_key) = self.get_identity(addr).await? {
             Ok(trusted_key == *key)
         } else {
             // Trust on first use
@@ -212,48 +272,105 @@ impl protocol::IdentityKeyStore for Storage {
         addr: &ProtocolAddress,
         key: &IdentityKey,
     ) -> Result<bool, SignalProtocolError> {
-        Ok(self.store_identity_key(addr, key))
+        use crate::schema::identity_records::dsl::*;
+        let previous = self.get_identity(addr).await?;
+
+        let ret = previous.as_ref() == Some(key);
+
+        if previous.is_some() {
+            diesel::update(identity_records)
+                .filter(address.eq(addr.name()))
+                .set(record.eq(key.serialize().to_vec()))
+                .execute(&mut *self.0.db())
+                .expect("db");
+        } else {
+            diesel::insert_into(identity_records)
+                .values((
+                    address.eq(addr.name()),
+                    record.eq(key.serialize().to_vec()),
+                    identity.eq(self.1.identity()),
+                ))
+                .execute(&mut *self.0.db())
+                .expect("db");
+        }
+
+        Ok(ret)
     }
 
     async fn get_identity(
         &self,
         addr: &ProtocolAddress,
     ) -> Result<Option<IdentityKey>, SignalProtocolError> {
-        Ok(self.fetch_identity_key(addr))
+        use crate::schema::identity_records::dsl::*;
+        let addr = addr.name();
+        Ok(identity_records
+            .filter(address.eq(addr).and(identity.eq(self.1.identity())))
+            .first(&mut *self.0.db())
+            .optional()
+            .expect("db")
+            .map(|found: orm::IdentityRecord| {
+                IdentityKey::decode(&found.record).expect("only valid identity keys in db")
+            }))
     }
 }
 
-impl Storage {
-    pub fn pni_storage(&self) -> PniStorage {
-        PniStorage::new(self.clone())
+#[async_trait::async_trait(?Send)]
+impl<T: Identity> protocol::SessionStore for IdentityStorage<T> {
+    async fn load_session(
+        &self,
+        addr: &ProtocolAddress,
+    ) -> Result<Option<SessionRecord>, SignalProtocolError> {
+        tracing::trace!("Loading session for {}", addr);
+        use crate::schema::session_records::dsl::*;
+        use diesel::prelude::*;
+
+        let session_record: Option<orm::SessionRecord> = session_records
+            .filter(
+                address
+                    .eq(addr.name())
+                    .and(device_id.eq(u32::from(addr.device_id()) as i32)),
+            )
+            .first(&mut *self.0.db())
+            .optional()
+            .expect("db");
+        if let Some(session_record) = session_record {
+            Ok(Some(SessionRecord::deserialize(&session_record.record)?))
+        } else {
+            Ok(None)
+        }
     }
 
-    pub fn aci_storage(&self) -> AciStorage {
-        AciStorage::new(self.clone())
-    }
-}
+    async fn store_session(
+        &mut self,
+        addr: &ProtocolAddress,
+        session: &protocol::SessionRecord,
+    ) -> Result<(), SignalProtocolError> {
+        tracing::trace!("Storing session for {}", addr);
+        use crate::schema::session_records::dsl::*;
+        use diesel::prelude::*;
 
-pub struct IdentityStorage<T>(Storage, std::marker::PhantomData<T>);
-impl<T> IdentityStorage<T> {
-    pub fn new(storage: Storage) -> Self {
-        Self(storage, Default::default())
-    }
-}
-pub struct Aci;
-pub type AciStorage = IdentityStorage<Aci>;
-pub struct Pni;
-pub type PniStorage = IdentityStorage<Pni>;
-trait Identity {
-    fn identity() -> orm::Identity;
-}
-impl Identity for Aci {
-    fn identity() -> orm::Identity {
-        orm::Identity::Aci
-    }
-}
-impl Identity for Pni {
-    fn identity() -> orm::Identity {
-        orm::Identity::Pni
+        if self.contains_session(addr).await? {
+            diesel::update(session_records)
+                .filter(
+                    address
+                        .eq(addr.name())
+                        .and(device_id.eq(u32::from(addr.device_id()) as i32)),
+                )
+                .set(record.eq(session.serialize()?))
+                .execute(&mut *self.0.db())
+                .expect("updated session");
+        } else {
+            diesel::insert_into(session_records)
+                .values((
+                    address.eq(addr.name()),
+                    device_id.eq(u32::from(addr.device_id()) as i32),
+                    record.eq(session.serialize()?),
+                ))
+                .execute(&mut *self.0.db())
+                .expect("updated session");
+        }
+
+        Ok(())
     }
 }
 
@@ -268,7 +385,7 @@ impl<T: Identity> PreKeysStore for IdentityStorage<T> {
 
             prekeys
                 .select(max(id))
-                .filter(identity.eq(T::identity()))
+                .filter(identity.eq(self.1.identity()))
                 .first(&mut *self.0.db())
                 .expect("db")
         };
@@ -284,7 +401,7 @@ impl<T: Identity> PreKeysStore for IdentityStorage<T> {
 
             signed_prekeys
                 .select(max(id))
-                .filter(identity.eq(T::identity()))
+                .filter(identity.eq(self.1.identity()))
                 .first(&mut *self.0.db())
                 .expect("db")
         };
@@ -300,7 +417,7 @@ impl<T: Identity> PreKeysStore for IdentityStorage<T> {
 
             kyber_prekeys
                 .select(max(id))
-                .filter(identity.eq(T::identity()))
+                .filter(identity.eq(self.1.identity()))
                 .first(&mut *self.0.db())
                 .expect("db")
         };
@@ -333,7 +450,7 @@ impl<T: Identity> protocol::PreKeyStore for IdentityStorage<T> {
         let prekey_record: Option<orm::Prekey> = prekeys
             .filter(
                 id.eq(u32::from(prekey_id) as i32)
-                    .and(identity.eq(T::identity())),
+                    .and(identity.eq(self.1.identity())),
             )
             .first(&mut *self.0.db())
             .optional()
@@ -358,7 +475,7 @@ impl<T: Identity> protocol::PreKeyStore for IdentityStorage<T> {
             .values(orm::Prekey {
                 id: u32::from(prekey_id) as _,
                 record: body.serialize()?,
-                identity: T::identity(),
+                identity: self.1.identity(),
             })
             .execute(&mut *self.0.db())
             .expect("db");
@@ -374,7 +491,7 @@ impl<T: Identity> protocol::PreKeyStore for IdentityStorage<T> {
         diesel::delete(prekeys)
             .filter(
                 id.eq(u32::from(prekey_id) as i32)
-                    .and(identity.eq(T::identity())),
+                    .and(identity.eq(self.1.identity())),
             )
             .execute(&mut *self.0.db())
             .expect("db");
@@ -397,7 +514,7 @@ impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
         diesel::delete(kyber_prekeys)
             .filter(
                 id.eq((u32::from(kyber_prekey_id)) as i32)
-                    .and(identity.eq(T::identity())),
+                    .and(identity.eq(self.1.identity())),
             )
             .execute(&mut *self.0.db())
             .expect("db");
@@ -415,7 +532,7 @@ impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
         let prekey_record: Option<orm::KyberPrekey> = kyber_prekeys
             .filter(
                 id.eq(u32::from(kyber_prekey_id) as i32)
-                    .and(identity.eq(T::identity())),
+                    .and(identity.eq(self.1.identity())),
             )
             .first(&mut *self.0.db())
             .optional()
@@ -441,7 +558,7 @@ impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
             .values(orm::KyberPrekey {
                 id: u32::from(kyber_prekey_id) as _,
                 record: body.serialize()?,
-                identity: T::identity(),
+                identity: self.1.identity(),
             })
             .execute(&mut *self.0.db())
             .expect("db");
@@ -469,68 +586,7 @@ impl protocol::PreKeyStore for Storage {
     }
 }
 
-#[async_trait::async_trait(?Send)]
-impl protocol::SessionStore for Storage {
-    async fn load_session(
-        &self,
-        addr: &ProtocolAddress,
-    ) -> Result<Option<SessionRecord>, SignalProtocolError> {
-        tracing::trace!("Loading session for {}", addr);
-        use crate::schema::session_records::dsl::*;
-        use diesel::prelude::*;
-
-        let session_record: Option<orm::SessionRecord> = session_records
-            .filter(
-                address
-                    .eq(addr.name())
-                    .and(device_id.eq(u32::from(addr.device_id()) as i32)),
-            )
-            .first(&mut *self.db())
-            .optional()
-            .expect("db");
-        if let Some(session_record) = session_record {
-            Ok(Some(SessionRecord::deserialize(&session_record.record)?))
-        } else {
-            Ok(None)
-        }
-    }
-
-    async fn store_session(
-        &mut self,
-        addr: &ProtocolAddress,
-        session: &protocol::SessionRecord,
-    ) -> Result<(), SignalProtocolError> {
-        tracing::trace!("Storing session for {}", addr);
-        use crate::schema::session_records::dsl::*;
-        use diesel::prelude::*;
-
-        if self.contains_session(addr).await? {
-            diesel::update(session_records)
-                .filter(
-                    address
-                        .eq(addr.name())
-                        .and(device_id.eq(u32::from(addr.device_id()) as i32)),
-                )
-                .set(record.eq(session.serialize()?))
-                .execute(&mut *self.db())
-                .expect("updated session");
-        } else {
-            diesel::insert_into(session_records)
-                .values((
-                    address.eq(addr.name()),
-                    device_id.eq(u32::from(addr.device_id()) as i32),
-                    record.eq(session.serialize()?),
-                ))
-                .execute(&mut *self.db())
-                .expect("updated session");
-        }
-
-        Ok(())
-    }
-}
-
-impl Storage {
-    #[allow(dead_code)]
+impl<T: Identity> IdentityStorage<T> {
     /// Check whether session exists.
     ///
     /// This does *not* lock the protocol store.  If a transactional check is required, use the
@@ -545,9 +601,10 @@ impl Storage {
             .filter(
                 address
                     .eq(addr.name())
-                    .and(device_id.eq(u32::from(addr.device_id()) as i32)),
+                    .and(device_id.eq(u32::from(addr.device_id()) as i32))
+                    .and(identity.eq(self.1.identity())),
             )
-            .first(&mut *self.db())
+            .first(&mut *self.0.db())
             .expect("db");
         Ok(count != 0)
     }
@@ -555,22 +612,7 @@ impl Storage {
 
 // BEGIN identity key block
 impl Storage {
-    /// Fetches the identity matching `addr` from the database
-    ///
-    /// Does not lock the protocol storage.
-    fn fetch_identity_key(&self, addr: &ProtocolAddress) -> Option<IdentityKey> {
-        use crate::schema::identity_records::dsl::*;
-        let addr = addr.name();
-        let found: orm::IdentityRecord = identity_records
-            .filter(address.eq(addr))
-            .first(&mut *self.db())
-            .optional()
-            .expect("db")?;
-
-        Some(IdentityKey::decode(&found.record).expect("only valid identity keys in db"))
-    }
-
-    /// Removes the identity matching `addr` from the database
+    /// Removes the identity matching `addr` from the database, independent of PNI or ACI.
     ///
     /// Does not lock the protocol storage.
     pub fn delete_identity_key(&self, addr: &ProtocolAddress) -> bool {
@@ -583,36 +625,11 @@ impl Storage {
 
         amount == 1
     }
-
-    /// (Over)writes the identity key for a given address.
-    ///
-    /// Returns whether the identity key has been altered.
-    fn store_identity_key(&self, addr: &ProtocolAddress, key: &IdentityKey) -> bool {
-        use crate::schema::identity_records::dsl::*;
-        let previous = self.fetch_identity_key(addr);
-
-        let ret = previous.as_ref() == Some(key);
-
-        if previous.is_some() {
-            diesel::update(identity_records)
-                .filter(address.eq(addr.name()))
-                .set(record.eq(key.serialize().to_vec()))
-                .execute(&mut *self.db())
-                .expect("db");
-        } else {
-            diesel::insert_into(identity_records)
-                .values((address.eq(addr.name()), record.eq(key.serialize().to_vec())))
-                .execute(&mut *self.db())
-                .expect("db");
-        }
-
-        ret
-    }
 }
 // END identity key
 
 #[async_trait::async_trait(?Send)]
-impl SessionStoreExt for Storage {
+impl<T: Identity> SessionStoreExt for IdentityStorage<T> {
     async fn get_sub_device_sessions(
         &self,
         addr: &ServiceAddress,
@@ -627,7 +644,7 @@ impl SessionStoreExt for Storage {
                     .eq(addr.uuid.to_string())
                     .and(device_id.ne(libsignal_service::push_service::DEFAULT_DEVICE_ID as i32)),
             )
-            .load(&mut *self.db())
+            .load(&mut *self.0.db())
             .expect("db");
         Ok(records.into_iter().map(|x| x as u32).collect())
     }
@@ -641,7 +658,7 @@ impl SessionStoreExt for Storage {
                     .eq(addr.name())
                     .and(device_id.eq(u32::from(addr.device_id()) as i32)),
             )
-            .execute(&mut *self.db())
+            .execute(&mut *self.0.db())
             .expect("db");
 
         if num != 1 {
@@ -664,7 +681,7 @@ impl SessionStoreExt for Storage {
 
         let num = diesel::delete(session_records)
             .filter(address.eq(addr.uuid.to_string()))
-            .execute(&mut *self.db())
+            .execute(&mut *self.0.db())
             .expect("db");
 
         Ok(num)
@@ -684,7 +701,7 @@ impl<T: Identity> protocol::SignedPreKeyStore for IdentityStorage<T> {
         let prekey_record: Option<orm::SignedPrekey> = signed_prekeys
             .filter(
                 id.eq(u32::from(signed_prekey_id) as i32)
-                    .and(identity.eq(T::identity())),
+                    .and(identity.eq(self.1.identity())),
             )
             .first(&mut *self.0.db())
             .optional()
@@ -710,7 +727,7 @@ impl<T: Identity> protocol::SignedPreKeyStore for IdentityStorage<T> {
             .values(orm::SignedPrekey {
                 id: u32::from(signed_prekey_id) as _,
                 record: body.serialize()?,
-                identity: T::identity(),
+                identity: self.1.identity(),
             })
             .execute(&mut *self.0.db())
             .expect("db");
@@ -771,7 +788,7 @@ impl protocol::KyberPreKeyStore for Storage {
 }
 
 #[async_trait::async_trait(?Send)]
-impl SenderKeyStore for Storage {
+impl<T: Identity> SenderKeyStore for IdentityStorage<T> {
     async fn store_sender_key(
         &mut self,
         addr: &ProtocolAddress,
@@ -786,13 +803,14 @@ impl SenderKeyStore for Storage {
             distribution_id: distr_id.to_string(),
             record: record.serialize()?,
             created_at: Utc::now().naive_utc(),
+            identity: self.1.identity(),
         };
 
         {
             use crate::schema::sender_key_records::dsl::*;
             diesel::insert_into(sender_key_records)
                 .values(to_insert)
-                .execute(&mut *self.db())
+                .execute(&mut *self.0.db())
                 .expect("db");
         }
         Ok(())
@@ -811,9 +829,10 @@ impl SenderKeyStore for Storage {
                     address
                         .eq(addr.name())
                         .and(device.eq(u32::from(addr.device_id()) as i32))
-                        .and(distribution_id.eq(distr_id.to_string())),
+                        .and(distribution_id.eq(distr_id.to_string()))
+                        .and(identity.eq(self.1.identity())),
                 )
-                .first(&mut *self.db())
+                .first(&mut *self.0.db())
                 .optional()
                 .expect("db")
         };
@@ -981,10 +1000,21 @@ mod tests {
         let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // Copy the regid
-        let regid_1 = storage.get_local_registration_id().await.unwrap();
+        let regid_1 = storage
+            .aci_storage()
+            .get_local_registration_id()
+            .await
+            .unwrap();
 
         // Get access to the protocol store
-        assert_eq!(regid_1, storage.get_local_registration_id().await.unwrap());
+        assert_eq!(
+            regid_1,
+            storage
+                .aci_storage()
+                .get_local_registration_id()
+                .await
+                .unwrap()
+        );
     }
 
     #[rstest(password, case(Some("some password")), case(None))]
