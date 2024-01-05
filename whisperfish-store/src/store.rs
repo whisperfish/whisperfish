@@ -1964,17 +1964,17 @@ impl Storage {
         self.observe_update(schema::messages::table, message_id);
     }
 
-    pub fn fetch_expired_message_ids(&self) -> Vec<(i32, NaiveDateTime)> {
+    pub fn fetch_expired_message_ids(&self) -> Vec<(i32, DateTime<Utc>)> {
         log::trace!("Called fetch_expired_message_ids()");
         self.fetch_message_ids_by_expiry(true)
     }
 
-    pub fn fetch_expiring_message_ids(&self) -> Vec<(i32, NaiveDateTime)> {
+    pub fn fetch_expiring_message_ids(&self) -> Vec<(i32, DateTime<Utc>)> {
         log::trace!("Called fetch_expiring_message_ids()");
         self.fetch_message_ids_by_expiry(false)
     }
 
-    fn fetch_message_ids_by_expiry(&self, already_expired: bool) -> Vec<(i32, NaiveDateTime)> {
+    fn fetch_message_ids_by_expiry(&self, already_expired: bool) -> Vec<(i32, DateTime<Utc>)> {
         schema::messages::table
             .select((
                 schema::messages::id,
@@ -1988,6 +1988,9 @@ impl Storage {
             .order_by(sql::<Timestamp>("delete_after").asc())
             .load(&mut *self.db())
             .expect("messages by expiry timestamp")
+            .into_iter()
+            .map(|(id, ndt)| (id, DateTime::<Utc>::from_utc(ndt, Utc)))
+            .collect()
     }
 
     pub fn mark_session_read(&self, sid: i32) {
