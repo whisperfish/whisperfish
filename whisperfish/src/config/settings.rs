@@ -69,7 +69,7 @@ impl Default for SettingsBridge {
 
             avatarExists: Default::default(),
 
-            inner: QSettings::from_path(
+            inner: &mut QSettings::from_path(
                 dirs::config_dir()
                     .context("Could not get xdg config directory path")
                     .unwrap()
