@@ -45,7 +45,7 @@ cpp! {{
             int *widthp = &width;
             int *heightp = &height;
 
-            int _r = rust!(WF_rustlegraph_compute_dims [
+            rust!(WF_rustlegraph_compute_dims [
                 id : &QString as "const QString &",
                 widthp : &mut i32 as "int *",
                 heightp : &mut i32 as "int *"
