@@ -1119,9 +1119,9 @@ dependencies = [
  "hex",
  "libsignal-service",
  "libsignal-service-actix",
- "log",
  "mime",
  "mime_classifier",
+ "tracing",
  "uuid",
  "whisperfish",
 ]
@@ -1379,12 +1379,12 @@ dependencies = [
  "chrono",
  "clap 3.2.25",
  "dbus",
- "log",
  "regex",
  "signal-hook",
  "simplelog",
  "single-instance",
  "time",
+ "tracing",
  "whisperfish",
 ]
 
@@ -3926,7 +3926,6 @@ dependencies = [
  "libsignal-service",
  "libsignal-service-actix",
  "libsqlite3-sys",
- "log",
  "mime",
  "mime_classifier",
  "mime_guess",
@@ -3969,9 +3968,9 @@ dependencies = [
  "diesel",
  "diesel_migrations",
  "hex",
- "log",
  "rpassword",
  "scrypt",
+ "tracing",
  "whisperfish",
 ]
 
@@ -3999,7 +3998,6 @@ dependencies = [
  "itertools 0.11.0",
  "libsignal-service",
  "libsqlite3-sys",
- "log",
  "pbkdf2",
  "phonenumber",
  "prost 0.12.3",

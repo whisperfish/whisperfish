@@ -225,10 +225,10 @@ impl EventObserving for SessionImpl {
 
             if event.for_table(schema::attachments::table) && event.is_update() {
                 // AugmentedMessage only cares about the number of attachments.
-                log::trace!("Skipping attachment update");
+                tracing::trace!("Skipping attachment update");
             } else if event.relation_key_for(schema::reactions::table).is_some() {
                 // Reactions update themselves.
-                log::trace!("Skipping reaction update");
+                tracing::trace!("Skipping reaction update");
             } else if event.for_row(schema::sessions::table, id) {
                 self.session = storage.fetch_session_by_id_augmented(id);
                 // XXX how to trigger a Qt signal now?
@@ -265,7 +265,7 @@ impl EventObserving for SessionImpl {
                 }
                 // XXX how to trigger a Qt signal now?
             } else {
-                log::debug!(
+                tracing::debug!(
                     "Falling back to reloading the whole Session for event {:?}",
                     event
                 );
@@ -394,7 +394,7 @@ impl MessageListModel {
                 .fetch_augmented_message(message_id)
                 .expect("inserted message");
             if message.session_id != session_id {
-                log::trace!("Ignoring message insert/update for different session.");
+                tracing::trace!("Ignoring message insert/update for different session.");
                 return;
             }
             let pos = self.messages.binary_search_by_key(
@@ -403,13 +403,13 @@ impl MessageListModel {
             );
             match pos {
                 Ok(existing_index) => {
-                    log::debug!("Handling update event.");
+                    tracing::debug!("Handling update event.");
                     self.messages[existing_index] = message;
                     let idx = self.row_index(existing_index as i32);
                     self.data_changed(idx, idx);
                 }
                 Err(insertion_index) => {
-                    log::debug!("Handling insertion event");
+                    tracing::debug!("Handling insertion event");
                     self.begin_insert_rows(insertion_index as i32, insertion_index as i32);
                     self.messages.insert(insertion_index, message);
                     self.end_insert_rows();
@@ -418,7 +418,7 @@ impl MessageListModel {
             return;
         }
 
-        log::debug!(
+        tracing::debug!(
             "Falling back to reloading the whole MessageListModel for event {:?}",
             event
         );

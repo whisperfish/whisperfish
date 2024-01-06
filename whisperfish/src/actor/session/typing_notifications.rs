@@ -48,7 +48,7 @@ impl Handler<TypingNotification> for SessionActor {
         if typing.action() == typing_message::Action::Started {
             let expire = started + chrono::Duration::from_std(TYPING_EXIPIRY_DELAY).unwrap();
             if expire < Utc::now() {
-                log::debug!(
+                tracing::debug!(
                     "Received a typing notification too late (sent {}, now is {}, expired {}).",
                     started,
                     Utc::now(),
@@ -151,14 +151,14 @@ impl Handler<UpdateTypingNotifications> for SessionActor {
                 .into_actor(self)
                 .map(|result, _act, _ctx| match result {
                     Ok(typings) => {
-                        log::info!("Sending typings {:?} to model", typings);
+                        tracing::info!("Sending typings {:?} to model", typings);
                         // TODO: put this back to some model
                         // act.inner
                         //     .pinned()
                         //     .borrow_mut()
                         //     .handle_update_typing(typings);
                     }
-                    Err(e) => log::error!("Could not process typings: {}", e),
+                    Err(e) => tracing::error!("Could not process typings: {}", e),
                 }),
         )
     }

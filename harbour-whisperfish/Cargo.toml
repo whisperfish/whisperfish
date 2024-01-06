@@ -10,8 +10,9 @@ description = "Private messaging using Signal for SailfishOS."
 whisperfish = { path = "../whisperfish" }
 dbus = "0.9"
 single-instance = "0.3.3"
-log = "0.4"
 simplelog = "0.12"
+# log-always is for compatibility with simplelog
+tracing = { version = "0.1", features=["log-always"] }
 time = "0.3.30"
 anyhow = "1.0"
 clap = { version = "3.2", features = ["derive"] }

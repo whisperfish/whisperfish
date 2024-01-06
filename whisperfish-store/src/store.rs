@@ -15,7 +15,6 @@ use crate::store::orm::shorten;
 use crate::{config::SignalConfig, millis_to_naive_chrono};
 use anyhow::Context;
 use chrono::prelude::*;
-use diesel::debug_query;
 use diesel::prelude::*;
 use diesel::result::*;
 use diesel_migrations::EmbeddedMigrations;
@@ -373,7 +372,7 @@ impl Storage {
     ) -> Result<Storage, anyhow::Error> {
         let path: &Path = std::ops::Deref::deref(db_path);
 
-        log::info!("Creating directory structure");
+        tracing::info!("Creating directory structure");
         Self::scaffold_directories(path)?;
 
         // 1. Generate both salts if needed and create a storage encryption object if necessary
@@ -382,7 +381,7 @@ impl Storage {
             let storage_salt_path = path.join("storage").join("salt");
 
             use rand::RngCore;
-            log::info!("Generating salts");
+            tracing::info!("Generating salts");
             let mut db_salt = [0u8; 8];
             let mut storage_salt = [0u8; 8];
             let mut rng = rand::thread_rng();
@@ -498,11 +497,11 @@ impl Storage {
         db_path: &StorageLocation<T>,
         database_key: Option<&[u8]>,
     ) -> anyhow::Result<SqliteConnection, anyhow::Error> {
-        log::info!("Opening DB");
+        tracing::info!("Opening DB");
         let mut db = db_path.open_db()?;
 
         if let Some(database_key) = database_key {
-            log::info!("Setting DB encryption");
+            tracing::info!("Setting DB encryption");
 
             // db.batch_execute("PRAGMA cipher_log = stderr;")
             //     .context("setting sqlcipher log output to stderr")?;
@@ -626,12 +625,12 @@ impl Storage {
             .expect("session exists");
 
         let target_author_uuid = Uuid::parse_str(reaction.target_author_aci())
-            .map_err(|_| log::error!("ignoring reaction with invalid uuid"))
+            .map_err(|_| tracing::error!("ignoring reaction with invalid uuid"))
             .ok()?;
 
         if let Some(uuid) = sender.uuid {
             if uuid != target_author_uuid {
-                log::warn!(
+                tracing::warn!(
                     "uuid != reaction.target_author_uuid ({} != {}). Continuing, but this is a bug or attack.",
                     uuid,
                     target_author_uuid,
@@ -684,7 +683,7 @@ impl Storage {
             ))
             .execute(&mut *self.db())
             .expect("insert reaction into database");
-        log::trace!("Saved reaction for message {} from {}", msg_id, sender_id);
+        tracing::trace!("Saved reaction for message {} from {}", msg_id, sender_id);
         self.observe_upsert(reactions, PrimaryKey::Unknown)
             .with_relation(schema::messages::table, msg_id);
     }
@@ -697,7 +696,7 @@ impl Storage {
             .filter(message_id.eq(msg_id))
             .execute(&mut *self.db())
             .expect("remove old reaction from database");
-        log::trace!("Removed reaction for message {}", msg_id);
+        tracing::trace!("Removed reaction for message {}", msg_id);
         self.observe_delete(reactions, PrimaryKey::Unknown)
             .with_relation(schema::messages::table, msg_id);
     }
@@ -707,11 +706,11 @@ impl Storage {
         let e164 = self.config.get_tel();
         let uuid = self.config.get_uuid();
         if e164.is_none() {
-            log::warn!("No e164 set, cannot fetch self.");
+            tracing::warn!("No e164 set, cannot fetch self.");
             return None;
         }
         if uuid.is_none() {
-            log::warn!("No uuid set. Continuing with only e164");
+            tracing::warn!("No uuid set. Continuing with only e164");
         }
         Some(self.merge_and_fetch_recipient(e164, uuid, None, TrustLevel::Certain))
     }
@@ -734,12 +733,12 @@ impl Storage {
         let mut db = self.db();
         match db.batch_execute("VACUUM;") {
             Ok(()) => {
-                log::trace!("Database compacted");
+                tracing::trace!("Database compacted");
                 0
             }
             Err(e) => {
-                log::error!("Compacting database failed");
-                log::error!("VACUUM => {}", e);
+                tracing::error!("Compacting database failed");
+                tracing::error!("VACUUM => {}", e);
                 1
             }
         }
@@ -810,7 +809,7 @@ impl Storage {
             .filter(uuid.eq(recipient_uuid.to_string()))
             .execute(&mut *self.db())
             .expect("existing record updated");
-        log::info!(
+        tracing::info!(
             "Marked profile for {}... as outdated.",
             shorten(&recipient_uuid.to_string(), 12),
         );
@@ -888,7 +887,7 @@ impl Storage {
 
         if is_unset || trust_level == TrustLevel::Certain {
             if recipient.profile_key.as_deref() == Some(new_profile_key) {
-                log::trace!("Profile key up-to-date");
+                tracing::trace!("Profile key up-to-date");
                 // Key remained the same, but we got an assertion on the profile key, so we will
                 // retry sending unidentified.
                 if recipient.unidentified_access_mode == UnidentifiedAccessMode::Disabled {
@@ -910,7 +909,7 @@ impl Storage {
                 .filter(id.eq(recipient.id))
                 .execute(&mut *self.db())
                 .expect("existing record updated");
-            log::info!("Updated profile key for {}", recipient.e164_or_uuid());
+            tracing::info!("Updated profile key for {}", recipient.e164_or_uuid());
 
             if affected_rows > 0 {
                 self.observe_update(recipients, recipient.id);
@@ -945,7 +944,7 @@ impl Storage {
             .execute(&mut *self.db())
             .expect("db");
 
-        log::trace!("Profile saved to database");
+        tracing::trace!("Profile saved to database");
 
         self.observe_update(schema::recipients::table, profile.r_id);
     }
@@ -1029,14 +1028,14 @@ impl Storage {
                 Ok((Some(by_uuid.id), None, None, false))
             }
             (Some(by_e164), Some(by_uuid)) => {
-                log::warn!(
+                tracing::warn!(
                     "Conflicting results for {} and {}. Finding a resolution.",
                     by_e164.e164.as_ref().unwrap(),
                     by_uuid.uuid.as_ref().unwrap()
                 );
                 match (by_e164.uuid, trust_level) {
                     (Some(_uuid), TrustLevel::Certain) => {
-                        log::info!("Differing UUIDs, high trust, likely case of reregistration. Stripping the old account, updating new.");
+                        tracing::info!("Differing UUIDs, high trust, likely case of reregistration. Stripping the old account, updating new.");
                         // Strip the old one
                         diesel::update(recipients::table)
                             .set(recipients::e164.eq::<Option<String>>(None))
@@ -1054,11 +1053,11 @@ impl Storage {
                         Ok((Some(by_uuid.id), None, None, true))
                     }
                     (Some(_uuid), TrustLevel::Uncertain) => {
-                        log::info!("Differing UUIDs, low trust, likely case of reregistration. Doing absolutely nothing. Sorry.");
+                        tracing::info!("Differing UUIDs, low trust, likely case of reregistration. Doing absolutely nothing. Sorry.");
                         Ok((Some(by_uuid.id), None, None, false))
                     }
                     (None, TrustLevel::Certain) => {
-                        log::info!(
+                        tracing::info!(
                             "Merging contacts: one with e164, the other only uuid, high trust."
                         );
                         let merged = Self::merge_recipients_inner(db, by_e164.id, by_uuid.id)?;
@@ -1074,7 +1073,7 @@ impl Storage {
                         Ok((Some(merged), None, None, true))
                     }
                     (None, TrustLevel::Uncertain) => {
-                        log::info!(
+                        tracing::info!(
                             "Not merging contacts: one with e164, the other only uuid, low trust."
                         );
                         Ok((Some(by_uuid.id), None, None, false))
@@ -1085,7 +1084,7 @@ impl Storage {
                 if let Some(phonenumber) = phonenumber {
                     match trust_level {
                         TrustLevel::Certain => {
-                            log::info!(
+                            tracing::info!(
                                 "Found phone number {} for contact {}. High trust, so updating.",
                                 phonenumber,
                                 by_uuid.uuid.as_ref().unwrap()
@@ -1097,7 +1096,7 @@ impl Storage {
                             Ok((Some(by_uuid.id), None, None, true))
                         }
                         TrustLevel::Uncertain => {
-                            log::info!("Found phone number {} for contact {}. Low trust, so doing nothing. Sorry again.", phonenumber, by_uuid.uuid.as_ref().unwrap());
+                            tracing::info!("Found phone number {} for contact {}. Low trust, so doing nothing. Sorry again.", phonenumber, by_uuid.uuid.as_ref().unwrap());
                             Ok((Some(by_uuid.id), None, None, false))
                         }
                     }
@@ -1109,7 +1108,7 @@ impl Storage {
                 if let Some(uuid) = uuid {
                     match trust_level {
                         TrustLevel::Certain => {
-                            log::info!(
+                            tracing::info!(
                                 "Found UUID {} for contact {}. High trust, so updating.",
                                 uuid,
                                 by_e164.e164.unwrap()
@@ -1121,7 +1120,7 @@ impl Storage {
                             Ok((Some(by_e164.id), None, None, true))
                         }
                         TrustLevel::Uncertain => {
-                            log::info!(
+                            tracing::info!(
                                 "Found UUID {} for contact {}. Low trust, creating a new contact.",
                                 uuid,
                                 by_e164.e164.unwrap()
@@ -1166,7 +1165,7 @@ impl Storage {
             .transaction::<_, Error, _>(|db| Self::merge_recipients_inner(db, source_id, dest_id))
             .expect("consistent migration");
 
-        log::trace!("Contact merge committed.");
+        tracing::trace!("Contact merge committed.");
 
         self.observe_delete(schema::recipients::table, source_id);
         self.observe_update(schema::recipients::table, dest_id);
@@ -1182,7 +1181,7 @@ impl Storage {
         source_id: i32,
         dest_id: i32,
     ) -> Result<i32, diesel::result::Error> {
-        log::info!(
+        tracing::info!(
             "Merge of contacts {} and {}. Will move all into {}",
             source_id,
             dest_id,
@@ -1200,7 +1199,7 @@ impl Storage {
             .filter(messages::sender_recipient_id.eq(source_id))
             .set(messages::sender_recipient_id.eq(dest_id))
             .execute(db)?;
-        log::trace!("Merging messages: {}", message_count);
+        tracing::trace!("Merging messages: {}", message_count);
 
         // 2. Merge group V1 membership:
         //    - Delete duplicate memberships.
@@ -1224,7 +1223,7 @@ impl Storage {
             .filter(group_v1_members::recipient_id.eq(source_id))
             .set(group_v1_members::recipient_id.eq(dest_id))
             .execute(db)?;
-        log::trace!(
+        tracing::trace!(
             "Merging Group V1 memberships: deleted duplicate {}/{}, moved {}/{}.",
             deleted_memberships_v1,
             target_memberships_v1.len(),
@@ -1256,13 +1255,13 @@ impl Storage {
 
                 assert_eq!(dropped_session_count, 1, "Drop the single source session.");
 
-                log::trace!(
+                tracing::trace!(
                     "Updating source session's messages ({} total). Dropped source session.",
                     updated_message_count
                 );
             }
             (Some(source_session), None) => {
-                log::info!("Strange, no session for the target_id. Updating source.");
+                tracing::info!("Strange, no session for the target_id. Updating source.");
                 let updated_session = diesel::update(sessions::table)
                     .filter(sessions::id.eq(source_session.id))
                     .set(sessions::direct_message_recipient_id.eq(dest_id))
@@ -1270,10 +1269,10 @@ impl Storage {
                 assert_eq!(updated_session, 1, "Update source session");
             }
             (None, Some(_target_session)) => {
-                log::info!("Strange, no session for the source_id. Continuing.");
+                tracing::info!("Strange, no session for the source_id. Continuing.");
             }
             (None, None) => {
-                log::warn!("Strange, neither recipient has a session. Continuing.");
+                tracing::warn!("Strange, neither recipient has a session. Continuing.");
             }
         }
 
@@ -1294,20 +1293,19 @@ impl Storage {
                     .and(reactions::message_id.eq_any(target_reactions)),
             )
             .execute(db)?;
-        log::log!(
-            if deleted_reactions > 0 {
-                log::Level::Warn
-            } else {
-                log::Level::Trace
-            },
-            "Deleted {} reactions. Please file an issue if > 0",
-            deleted_reactions
-        );
+        if deleted_reactions > 0 {
+            tracing::warn!(
+                "Deleted {} reactions; please file an issue!",
+                deleted_reactions
+            );
+        } else {
+            tracing::trace!("Deleted {} reactions", deleted_reactions);
+        };
         let updated_reactions = diesel::update(reactions::table)
             .filter(reactions::author.eq(source_id))
             .set(reactions::author.eq(dest_id))
             .execute(db)?;
-        log::trace!("Updated {} reactions", updated_reactions);
+        tracing::trace!("Updated {} reactions", updated_reactions);
 
         // 5. Update receipts
         //    Same thing: delete the duplicates (although merging would be better),
@@ -1323,25 +1321,24 @@ impl Storage {
                     .and(receipts::message_id.eq_any(target_receipts)),
             )
             .execute(db)?;
-        log::log!(
-            if deleted_receipts > 0 {
-                log::Level::Warn
-            } else {
-                log::Level::Trace
-            },
-            "Deleted {} receipts. Please file an issue if > 0",
-            deleted_receipts
-        );
+        if deleted_receipts > 0 {
+            tracing::warn!(
+                "Deleted {} receipts; please file an issue!",
+                deleted_receipts
+            );
+        } else {
+            tracing::trace!("Deleted {} receipts.", deleted_receipts);
+        }
         let updated_receipts = diesel::update(receipts::table)
             .filter(receipts::recipient_id.eq(source_id))
             .set(receipts::recipient_id.eq(dest_id))
             .execute(db)?;
-        log::trace!("Updated {} receipts", updated_receipts);
+        tracing::trace!("Updated {} receipts", updated_receipts);
 
         let deleted = diesel::delete(recipients::table)
             .filter(recipients::id.eq(source_id))
             .execute(db)?;
-        log::trace!("Deleted {} recipient", deleted);
+        tracing::trace!("Deleted {} recipient", deleted);
         assert_eq!(deleted, 1, "delete only one recipient");
         Ok(dest_id)
     }
@@ -1468,8 +1465,8 @@ impl Storage {
                 .expect("foreignk key");
             Some((session, message))
         } else {
-            log::warn!("Could not find message with timestamp {}", timestamp);
-            log::warn!(
+            tracing::warn!("Could not find message with timestamp {}", timestamp);
+            tracing::warn!(
                 "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
             );
             None
@@ -1497,8 +1494,8 @@ impl Storage {
             .optional()
             .expect("db");
         if message_id.is_none() {
-            log::warn!("Could not find message with timestamp {}", timestamp);
-            log::warn!(
+            tracing::warn!("Could not find message with timestamp {}", timestamp);
+            tracing::warn!(
                 "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
             );
         }
@@ -1527,18 +1524,18 @@ impl Storage {
             }
             Ok(affected_rows) => {
                 // Reason can be a dupe receipt (=0).
-                log::warn!(
+                tracing::warn!(
                     "Read receipt had {} affected rows instead of expected 1.  Ignoring.",
                     affected_rows
                 );
                 None
             }
             Err(DatabaseError(DatabaseErrorKind::UniqueViolation, _)) => {
-                log::error!("receipt already exists, upsert failed");
+                tracing::error!("receipt already exists, upsert failed");
                 None
             }
             Err(e) => {
-                log::error!("Could not insert receipt: {}.", e);
+                tracing::error!("Could not insert receipt: {}.", e);
                 None
             }
         }
@@ -1604,7 +1601,7 @@ impl Storage {
 
     #[tracing::instrument]
     pub fn fetch_session_by_phonenumber(&self, phonenumber: &PhoneNumber) -> Option<orm::Session> {
-        log::trace!("Called fetch_session_by_phonenumber({})", phonenumber);
+        tracing::trace!("Called fetch_session_by_phonenumber({})", phonenumber);
         fetch_session!(self.db(), |query| {
             query.filter(schema::recipients::e164.eq(phonenumber.to_string()))
         })
@@ -1612,7 +1609,7 @@ impl Storage {
 
     #[tracing::instrument]
     pub fn fetch_session_by_recipient_id(&self, rid: i32) -> Option<orm::Session> {
-        log::trace!("Called fetch_session_by_recipient_id({})", rid);
+        tracing::trace!("Called fetch_session_by_recipient_id({})", rid);
         fetch_session!(self.db(), |query| {
             query.filter(schema::recipients::id.eq(rid))
         })
@@ -1738,7 +1735,7 @@ impl Storage {
         &self,
         phonenumber: &PhoneNumber,
     ) -> orm::Session {
-        log::trace!(
+        tracing::trace!(
             "Called fetch_or_insert_session_by_phonenumber({})",
             phonenumber
         );
@@ -1765,7 +1762,7 @@ impl Storage {
     /// Fetches recipient's DM session, or creates the session.
     #[tracing::instrument]
     pub fn fetch_or_insert_session_by_recipient_id(&self, rid: i32) -> orm::Session {
-        log::trace!("Called fetch_or_insert_session_by_recipient_id({})", rid);
+        tracing::trace!("Called fetch_or_insert_session_by_recipient_id({})", rid);
         if let Some(session) = self.fetch_session_by_recipient_id(rid) {
             return session;
         }
@@ -1788,7 +1785,7 @@ impl Storage {
     pub fn fetch_or_insert_session_by_group_v1(&self, group: &GroupV1) -> orm::Session {
         let group_id = hex::encode(&group.id);
 
-        log::trace!(
+        tracing::trace!(
             "Called fetch_or_insert_session_by_group_v1({}[..])",
             &group_id[..8]
         );
@@ -1847,7 +1844,7 @@ impl Storage {
     #[tracing::instrument]
     pub fn fetch_session_by_group_v1_id(&self, group_id_hex: &str) -> Option<orm::Session> {
         if group_id_hex.len() != 32 {
-            log::warn!(
+            tracing::warn!(
                 "Trying to fetch GV1 with ID of {} != 32 chars",
                 group_id_hex.len()
             );
@@ -1861,7 +1858,7 @@ impl Storage {
     #[tracing::instrument]
     pub fn fetch_session_by_group_v2_id(&self, group_id_hex: &str) -> Option<orm::Session> {
         if group_id_hex.len() != 64 {
-            log::warn!(
+            tracing::warn!(
                 "Trying to fetch GV2 with ID of {} != 64 chars",
                 group_id_hex.len()
             );
@@ -1877,7 +1874,7 @@ impl Storage {
         let group_id = group.secret.get_group_identifier();
         let group_id_hex = hex::encode(group_id);
 
-        log::trace!(
+        tracing::trace!(
             "Called fetch_or_insert_session_by_group_v2({})",
             group_id_hex
         );
@@ -1954,7 +1951,7 @@ impl Storage {
         use schema::sessions::dsl::*;
         match migration_v1_session {
             Some((_group, Some(session))) => {
-                log::info!(
+                tracing::info!(
                     "Group V2 migration detected. Updating session to point to the new group."
                 );
 
@@ -2003,7 +2000,7 @@ impl Storage {
 
     #[tracing::instrument]
     pub fn delete_session(&self, id: i32) {
-        log::trace!("Called delete_session({})", id);
+        tracing::trace!("Called delete_session({})", id);
 
         let affected_rows =
             diesel::delete(schema::sessions::table.filter(schema::sessions::id.eq(id)))
@@ -2011,12 +2008,12 @@ impl Storage {
                 .expect("delete session");
         self.observe_delete(schema::sessions::table, id);
 
-        log::trace!("delete_session({}) affected {} rows", id, affected_rows);
+        tracing::trace!("delete_session({}) affected {} rows", id, affected_rows);
     }
 
     #[tracing::instrument]
     pub fn save_draft(&self, sid: i32, draft: String) {
-        log::trace!("Called save_draft({}, \"{}\")", sid, draft);
+        tracing::trace!("Called save_draft({}, \"{}\")", sid, draft);
 
         let draft = if draft.is_empty() { None } else { Some(draft) };
 
@@ -2026,7 +2023,7 @@ impl Storage {
                 .execute(&mut *self.db())
                 .expect("save draft");
 
-        log::trace!("save_draft() affected {} rows", affected_rows);
+        tracing::trace!("save_draft() affected {} rows", affected_rows);
 
         if affected_rows > 0 {
             self.observe_update(schema::sessions::table, sid);
@@ -2035,7 +2032,7 @@ impl Storage {
 
     #[tracing::instrument]
     pub fn mark_session_read(&self, sid: i32) {
-        log::trace!("Called mark_session_read({})", sid);
+        tracing::trace!("Called mark_session_read({})", sid);
 
         use schema::messages::dsl::*;
 
@@ -2061,7 +2058,7 @@ impl Storage {
 
     #[tracing::instrument]
     pub fn mark_session_muted(&self, sid: i32, muted: bool) {
-        log::trace!("Called mark_session_muted({}, {})", sid, muted);
+        tracing::trace!("Called mark_session_muted({}, {})", sid, muted);
 
         use schema::sessions::dsl::*;
 
@@ -2076,7 +2073,7 @@ impl Storage {
 
     #[tracing::instrument]
     pub fn mark_session_archived(&self, sid: i32, archived: bool) {
-        log::trace!("Called mark_session_archived({}, {})", sid, archived);
+        tracing::trace!("Called mark_session_archived({}, {})", sid, archived);
 
         use schema::sessions::dsl::*;
 
@@ -2091,7 +2088,7 @@ impl Storage {
 
     #[tracing::instrument]
     pub fn mark_session_pinned(&self, sid: i32, pinned: bool) {
-        log::trace!("Called mark_session_pinned({}, {})", sid, pinned);
+        tracing::trace!("Called mark_session_pinned({}, {})", sid, pinned);
 
         use schema::sessions::dsl::*;
 
@@ -2106,7 +2103,7 @@ impl Storage {
 
     #[tracing::instrument]
     pub fn mark_recipient_registered(&self, r_uuid: Uuid, registered: bool) -> usize {
-        log::trace!(
+        tracing::trace!(
             "Called mark_recipient_registered({}, {})",
             r_uuid,
             registered
@@ -2121,7 +2118,7 @@ impl Storage {
             .expect("Recipient id by UUID");
 
         if rid.is_empty() {
-            log::trace!("Recipient with UUID {} not found in database", r_uuid);
+            tracing::trace!("Recipient with UUID {} not found in database", r_uuid);
             return 0;
         }
 
@@ -2194,9 +2191,9 @@ impl Storage {
             .expect("store sent attachment pointer");
 
         if count == 1 {
-            log::trace!("Attachment pointer saved to id {}", attachment_id);
+            tracing::trace!("Attachment pointer saved to id {}", attachment_id);
         } else {
-            log::error!(
+            tracing::error!(
                 "Could not save attachment pointer to attachment {}",
                 attachment_id
             );
@@ -2212,7 +2209,7 @@ impl Storage {
         // Meh.
         let session = new_message.session_id;
 
-        log::trace!("Called create_message(..) for session {}", session);
+        tracing::trace!("Called create_message(..) for session {}", session);
 
         let has_source = new_message.source_e164.is_some() || new_message.source_uuid.is_some();
         let sender_id = if has_source {
@@ -2227,7 +2224,7 @@ impl Storage {
             .and_then(|ts| {
                 let msg = self.fetch_message_by_timestamp(millis_to_naive_chrono(ts));
                 if msg.is_none() {
-                    log::warn!("No message to quote for ts={}", ts);
+                    tracing::warn!("No message to quote for ts={}", ts);
                 }
                 msg
             })
@@ -2236,7 +2233,7 @@ impl Storage {
         // The server time needs to be the rounded-down version;
         // chrono does nanoseconds.
         let server_time = millis_to_naive_chrono(new_message.timestamp.timestamp_millis() as u64);
-        log::trace!("Creating message for timestamp {}", server_time);
+        tracing::trace!("Creating message for timestamp {}", server_time);
 
         let affected_rows = {
             use schema::messages::dsl::*;
@@ -2287,7 +2284,7 @@ impl Storage {
         // TODO: Do this only when necessary
         self.mark_session_archived(session, false);
 
-        log::trace!("Inserted message id {}", latest_message.id);
+        tracing::trace!("Inserted message id {}", latest_message.id);
 
         if let Some(path) = &new_message.attachment {
             let affected_rows = {
@@ -2348,18 +2345,14 @@ impl Storage {
 
     #[tracing::instrument]
     pub fn fetch_message_by_timestamp(&self, ts: NaiveDateTime) -> Option<orm::Message> {
-        log::trace!("Called fetch_message_by_timestamp({})", ts);
+        tracing::trace!("Called fetch_message_by_timestamp({})", ts);
         let query = schema::messages::table.filter(schema::messages::server_timestamp.eq(ts));
-
-        let debug = debug_query::<diesel::sqlite::Sqlite, _>(&query);
-        log::trace!("{}", debug.to_string());
-
         query.first(&mut *self.db()).ok()
     }
 
     #[tracing::instrument]
     pub fn fetch_recipient_by_id(&self, id: i32) -> Option<orm::Recipient> {
-        log::trace!("Called fetch_recipient_by_id({})", id);
+        tracing::trace!("Called fetch_recipient_by_id({})", id);
         schema::recipients::table
             .filter(schema::recipients::id.eq(id))
             .first(&mut *self.db())
@@ -2369,7 +2362,7 @@ impl Storage {
     #[tracing::instrument]
     pub fn fetch_message_by_id(&self, id: i32) -> Option<orm::Message> {
         // Even a single message needs to know if it's queued to satisfy the `Message` trait
-        log::trace!("Called fetch_message_by_id({})", id);
+        tracing::trace!("Called fetch_message_by_id({})", id);
         schema::messages::table
             .filter(schema::messages::id.eq(id))
             .first(&mut *self.db())
@@ -2379,7 +2372,7 @@ impl Storage {
     /// Returns a vector of messages for a specific session, ordered by server timestamp.
     #[tracing::instrument]
     pub fn fetch_all_messages(&self, session_id: i32) -> Vec<orm::Message> {
-        log::trace!("Called fetch_all_messages({})", session_id);
+        tracing::trace!("Called fetch_all_messages({})", session_id);
         schema::messages::table
             .filter(schema::messages::session_id.eq(session_id))
             .order_by(schema::messages::columns::server_timestamp.desc())
@@ -2390,7 +2383,7 @@ impl Storage {
     /// Return the amount of messages in the database
     #[tracing::instrument]
     pub fn message_count(&self) -> i32 {
-        log::trace!("Called message_count()");
+        tracing::trace!("Called message_count()");
         let count: i64 = schema::messages::table
             .count()
             .get_result(&mut *self.db())
@@ -2401,7 +2394,7 @@ impl Storage {
     /// Return the amount of sessions in the database
     #[tracing::instrument]
     pub fn session_count(&self) -> i32 {
-        log::trace!("Called session_count()");
+        tracing::trace!("Called session_count()");
         let count: i64 = schema::sessions::table
             .count()
             .get_result(&mut *self.db())
@@ -2412,7 +2405,7 @@ impl Storage {
     /// Return the amount of recipients in the database
     #[tracing::instrument]
     pub fn recipient_count(&self) -> i32 {
-        log::trace!("Called recipient_count()");
+        tracing::trace!("Called recipient_count()");
         let count: i64 = schema::recipients::table
             .filter(schema::recipients::uuid.is_not_null())
             .count()
@@ -2424,7 +2417,7 @@ impl Storage {
     /// Return the amount of unsent messages in the database
     #[tracing::instrument]
     pub fn unsent_count(&self) -> i32 {
-        log::trace!("Called unsent_count()");
+        tracing::trace!("Called unsent_count()");
         let count: i64 = schema::messages::table
             .filter(schema::messages::is_outbound.is(true))
             .filter(schema::messages::sending_has_failed.is(true))
@@ -2497,7 +2490,7 @@ impl Storage {
         // Our strategy is to fetch as much as possible, and to augment with as few additional
         // queries as possible. We chose to not join `sender`, and instead use a loop for that
         // part.
-        log::trace!("Called fetch_all_messages_augmented({})", sid);
+        tracing::trace!("Called fetch_all_messages_augmented({})", sid);
         let messages = self.fetch_all_messages(sid);
 
         let order = (
@@ -2584,7 +2577,7 @@ impl Storage {
     #[tracing::instrument]
     pub fn delete_message(&mut self, message_id: i32) -> usize {
         // TODO: add subspans
-        log::trace!("Called delete_message({})", message_id);
+        tracing::trace!("Called delete_message({})", message_id);
         let n_messages = diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
             .set((
@@ -2595,7 +2588,7 @@ impl Storage {
             .unwrap();
 
         if n_messages == 0 {
-            log::warn!("Tried to remove non-existing message {}", message_id);
+            tracing::warn!("Tried to remove non-existing message {}", message_id);
             return n_messages;
         }
 
@@ -2607,7 +2600,7 @@ impl Storage {
         let mut n_attachments: usize = 0;
 
         if !message.is_outbound {
-            log::trace!("Message is from someone else, deleting attachments...");
+            tracing::trace!("Message is from someone else, deleting attachments...");
             let regex = self.config.attachments_regex();
             self.fetch_attachments_for_message(message.id)
                 .into_iter()
@@ -2623,19 +2616,22 @@ impl Storage {
                             .get_result::<i64>(&mut *self.db())
                             .unwrap();
                         if remaining > 0 {
-                            log::warn!("References to attachment exist, not deleting: {}", path);
+                            tracing::warn!(
+                                "References to attachment exist, not deleting: {}",
+                                path
+                            );
                         } else if regex.is_match(&path) {
                             match std::fs::remove_file(&path) {
                                 Ok(()) => {
-                                    log::trace!("Deleted file {}", path);
+                                    tracing::trace!("Deleted file {}", path);
                                     n_attachments += 1;
                                 }
                                 Err(e) => {
-                                    log::trace!("Could not delete file {}: {:?}", path, e);
+                                    tracing::trace!("Could not delete file {}: {:?}", path, e);
                                 }
                             };
                         } else {
-                            log::warn!("Not deleting attachment: {}", path);
+                            tracing::warn!("Not deleting attachment: {}", path);
                         }
                     }
                 });
@@ -2649,8 +2645,8 @@ impl Storage {
         self.observe_update(schema::messages::table, message.id)
             .with_relation(schema::sessions::table, message.session_id);
 
-        log::trace!("Marked Message {{ id: {} }} deleted", message.id);
-        log::trace!(
+        tracing::trace!("Marked Message {{ id: {} }} deleted", message.id);
+        tracing::trace!(
             "Deleted {} attachment(s) and {} reaction(s)",
             n_attachments,
             n_reactions
@@ -2687,19 +2683,18 @@ impl Storage {
         for message in failed_messages {
             self.observe_update(schema::messages::table, message.id);
         }
-        let level = if count == 0 {
-            log::Level::Trace
+        if count == 0 {
+            tracing::trace!("Set no messages to failed");
         } else {
-            log::Level::Warn
-        };
-        log::log!(level, "Set {} messages to failed", count);
+            tracing::warn!("Set {} messages to failed", count);
+        }
         count
     }
 
     /// Marks a message as failed to send
     #[tracing::instrument]
     pub fn fail_message(&self, mid: i32) {
-        log::trace!("Setting message {} to failed", mid);
+        tracing::trace!("Setting message {} to failed", mid);
         diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(mid))
             .set(schema::messages::sending_has_failed.eq(true))

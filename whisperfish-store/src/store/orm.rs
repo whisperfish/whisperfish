@@ -425,7 +425,7 @@ impl Recipient {
     pub fn profile_key(&self) -> Option<[u8; 32]> {
         if let Some(pk) = self.profile_key.as_ref() {
             if pk.len() != 32 {
-                log::warn!("Profile key is {} bytes", pk.len());
+                tracing::warn!("Profile key is {} bytes", pk.len());
                 None
             } else {
                 let mut key = [0u8; 32];

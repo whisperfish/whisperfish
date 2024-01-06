@@ -51,15 +51,15 @@ impl SetupWorker {
     const MAX_PASSWORD_ENTER_ATTEMPTS: i8 = 3;
 
     pub async fn run(app: Rc<WhisperfishApp>, config: std::sync::Arc<crate::config::SignalConfig>) {
-        log::info!("SetupWorker::run");
+        tracing::info!("SetupWorker::run");
         let this = app.setup_worker.pinned();
 
         // Check registration
         if config.get_identity_dir().is_file() {
-            log::info!("identity_key found, assuming registered");
+            tracing::info!("identity_key found, assuming registered");
             this.borrow_mut().registered = true;
         } else {
-            log::info!("identity_key not found");
+            tracing::info!("identity_key not found");
             this.borrow_mut().registered = false;
         }
         this.borrow().setupChanged();
@@ -74,7 +74,7 @@ impl SetupWorker {
 
         if !this.borrow().registered {
             if let Err(e) = SetupWorker::register(app.clone(), config.clone()).await {
-                log::error!("Error in registration: {}", e);
+                tracing::error!("Error in registration: {}", e);
                 this.borrow().clientFailed();
                 return;
             }
@@ -84,7 +84,7 @@ impl SetupWorker {
             // XXX handle return value here appropriately !!!
             config.write_to_file().expect("cannot write to config file");
         } else if let Err(e) = SetupWorker::setup_storage(app.clone(), config).await {
-            log::error!("Error setting up storage: {}", e);
+            tracing::error!("Error setting up storage: {}", e);
             this.borrow().clientFailed();
             return;
         }
@@ -138,7 +138,7 @@ impl SetupWorker {
             .await
             {
                 Ok(storage) => return Ok(storage),
-                Err(error) => log::error!(
+                Err(error) => tracing::error!(
                     "Attempt {} of opening encrypted storage failed: {:?}",
                     i,
                     error
@@ -146,7 +146,7 @@ impl SetupWorker {
             }
         }
 
-        log::error!("Error setting up storage: too many bad password attempts");
+        tracing::error!("Error setting up storage: too many bad password attempts");
         res
     }
 
@@ -280,14 +280,14 @@ impl SetupWorker {
             match phonenumber::parse(None, number) {
                 Ok(number) => break number,
                 Err(e) => {
-                    log::warn!("Could not parse phone number: {}", e);
+                    tracing::warn!("Could not parse phone number: {}", e);
                     this.borrow().invalidPhoneNumber();
                 }
             }
         };
 
         if let Some(captcha) = &config.override_captcha {
-            log::info!("Using override captcha {}", captcha);
+            tracing::info!("Using override captcha {}", captcha);
         }
         let transport = if this.borrow().useVoice {
             VerificationTransport::Voice
@@ -344,7 +344,7 @@ impl SetupWorker {
             })
             .await??;
 
-        log::info!("Registration result: {:?}", res);
+        tracing::info!("Registration result: {:?}", res);
 
         Ok(RegistrationResult {
             regid,

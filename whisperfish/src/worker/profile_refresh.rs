@@ -70,7 +70,7 @@ impl OutdatedProfileStream {
             let recipient_uuid = recipient.uuid.expect("database precondition");
             let recipient_key = if let Some(key) = recipient.profile_key {
                 if key.len() != 32 {
-                    log::warn!("Invalid profile key in db. Skipping.");
+                    tracing::warn!("Invalid profile key in db. Skipping.");
                     continue;
                 }
                 if let hash_map::Entry::Vacant(e) = self.ignore_map.entry(recipient_uuid) {
@@ -142,7 +142,7 @@ impl Stream for OutdatedProfileStream {
         self.clean_ignore_set();
 
         if let Some(out_of_date_profile) = self.next_out_of_date_profile() {
-            log::trace!("Yielding out-of-date profile {}", out_of_date_profile.0);
+            tracing::trace!("Yielding out-of-date profile {}", out_of_date_profile.0);
             return Poll::Ready(Some(out_of_date_profile));
         }
 
@@ -154,7 +154,7 @@ impl Stream for OutdatedProfileStream {
             // XXX inefficient consumers of a stream will poll this independently of a timer.
             // We could add some artificial timeout of a few minutes to ensure the stream does not
             // die...
-            log::warn!("Profile refresh worker has nothing to wake to.");
+            tracing::warn!("Profile refresh worker has nothing to wake to.");
         }
 
         Poll::Pending

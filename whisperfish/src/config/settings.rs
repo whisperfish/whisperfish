@@ -173,7 +173,7 @@ impl SettingsBridge {
         let np = self.get_string("notification_privacy");
         match np.as_ref() {
             "" => {
-                log::debug!("Fallback notification_privacy setting onto legacy options");
+                tracing::debug!("Fallback notification_privacy setting onto legacy options");
                 let enable = self.get_bool("enable_notify");
                 let show_message = self.get_bool("show_notify_message");
                 match (enable, show_message) {
@@ -184,7 +184,7 @@ impl SettingsBridge {
             }
             "off" | "minimal" | "sender-only" | "complete" => np,
             _ => {
-                log::warn!(
+                tracing::warn!(
                     "Unrecognised notification privacy setting {}, reverting to off",
                     np
                 );
@@ -367,7 +367,7 @@ impl SettingsBridge {
     }
 
     pub fn defaults(&mut self) {
-        log::info!("Setting default settings.");
+        tracing::info!("Setting default settings.");
 
         self.set_bool_if_unset("debug_mode", false);
         self.set_bool_if_unset("enable_notify", true);

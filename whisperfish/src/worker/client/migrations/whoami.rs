@@ -16,7 +16,7 @@ impl Handler<WhoAmI> for ClientActor {
         Box::pin(
             async move {
                 if let (Some(aci), Some(pni)) = (config.get_uuid(), config.get_pni()) {
-                    log::trace!("ACI ({}) and PNI ({}) already set.", aci, pni);
+                    tracing::trace!("ACI ({}) and PNI ({}) already set.", aci, pni);
                     return Ok(None);
                 }
 
@@ -31,11 +31,11 @@ impl Handler<WhoAmI> for ClientActor {
                         Ok(Some(result)) => result,
                         Ok(None) => return,
                         Err(e) => {
-                            log::error!("fetching UUID: {}", e);
+                            tracing::error!("fetching UUID: {}", e);
                             return;
                         }
                     };
-                    log::info!("Retrieved ACI ({}) and PNI ({})", result.uuid, result.pni);
+                    tracing::info!("Retrieved ACI ({}) and PNI ({})", result.uuid, result.pni);
 
                     if let Some(credentials) = act.credentials.as_mut() {
                         credentials.uuid = Some(result.uuid);
@@ -43,7 +43,7 @@ impl Handler<WhoAmI> for ClientActor {
                         config2.set_pni(result.pni);
                         config2.write_to_file().expect("write config");
                     } else {
-                        log::error!("Credentials was none while setting UUID");
+                        tracing::error!("Credentials was none while setting UUID");
                     }
 
                     act.migration_state.notify_whoami();

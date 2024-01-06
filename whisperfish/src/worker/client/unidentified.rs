@@ -109,11 +109,11 @@ impl Handler<RotateUnidentifiedCertificates> for ClientActor {
                 }
                 match certs {
                     Ok(certs) => {
-                        log::debug!("Fetched {} sender certificates", certs.len());
+                        tracing::debug!("Fetched {} sender certificates", certs.len());
                         act.unidentified_certificates.certs = certs;
                     }
                     Err(e) => {
-                        log::error!("Error fetching sender certificates: {}", e);
+                        tracing::error!("Error fetching sender certificates: {}", e);
                     }
                 }
             }),

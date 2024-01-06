@@ -45,11 +45,11 @@ fn main() {
             let mut terminate = false;
             for _ in signals.forever() {
                 if !terminate {
-                    log::info!("[SIGINT] Trying to exit gracefully...");
+                    tracing::info!("[SIGINT] Trying to exit gracefully...");
                     terminate = true;
                     dbus_quit_app().ok();
                 } else {
-                    log::info!("[SIGINT] Exiting forcefully...");
+                    tracing::info!("[SIGINT] Exiting forcefully...");
                     std::process::exit(1);
                 }
             }
@@ -204,19 +204,19 @@ fn main() {
     let instance_lock = SingleInstance::new("whisperfish").unwrap();
     if !instance_lock.is_single() {
         if let Err(e) = dbus_show_app() {
-            log::error!("{}", e);
+            tracing::error!("{}", e);
         }
         return;
     }
 
     if let Err(e) = run_main_app(config) {
-        log::error!("Fatal error: {}", e);
+        tracing::error!("Fatal error: {}", e);
         std::process::exit(1);
     }
 }
 
 fn dbus_show_app() -> Result<(), dbus::Error> {
-    log::info!("Calling app.show() on DBus.");
+    tracing::info!("Calling app.show() on DBus.");
 
     let c = Connection::new_session()?;
     let proxy = c.with_proxy(
@@ -229,7 +229,7 @@ fn dbus_show_app() -> Result<(), dbus::Error> {
 }
 
 fn dbus_quit_app() -> Result<(), dbus::Error> {
-    log::info!("Calling app.quit() on DBus.");
+    tracing::info!("Calling app.quit() on DBus.");
 
     let c = Connection::new_session()?;
     let proxy = c.with_proxy(
@@ -242,7 +242,7 @@ fn dbus_quit_app() -> Result<(), dbus::Error> {
 }
 
 fn run_main_app(config: config::SignalConfig) -> Result<(), anyhow::Error> {
-    log::info!("Start main app (with autostart = {})", config.autostart);
+    tracing::info!("Start main app (with autostart = {})", config.autostart);
 
     // Initialise storage here
     // Right now, we only create the attachment (and storage) directory if necessary
@@ -276,13 +276,13 @@ fn run_main_app(config: config::SignalConfig) -> Result<(), anyhow::Error> {
             config.verbose = settings.get_verbose();
             config.logfile = settings.get_logfile();
             if let Err(e) = config.write_to_file() {
-                log::error!("Could not save config.yml: {}", e)
+                tracing::error!("Could not save config.yml: {}", e)
             };
         }
-        Err(e) => log::error!("Could not open config.yml: {}", e),
+        Err(e) => tracing::error!("Could not open config.yml: {}", e),
     };
 
-    log::info!("Shut down.");
+    tracing::info!("Shut down.");
 
     Ok(())
 }

@@ -1,14 +1,14 @@
-use log::{log, Level};
 use qmetaobject::{log::*, prelude::*, QMessageLogContext, QtMsgType};
+use tracing::Level;
 
 static QLEVEL: &[Level] = &[
-    Level::Debug, // 0 = QDebug
-    Level::Warn,  // 1 = QWarning
-    Level::Error, // 2 = QCritical
-    Level::Error, // 3 = QFatal
-    Level::Info,  // 4 = QInfo
-    Level::Error, // 5 = QSystem
-    Level::Error, // 6 = _
+    Level::DEBUG, // 0 = QDebug
+    Level::WARN,  // 1 = QWarning
+    Level::ERROR, // 2 = QCritical
+    Level::ERROR, // 3 = QFatal
+    Level::INFO,  // 4 = QInfo
+    Level::ERROR, // 5 = QSystem
+    Level::ERROR, // 6 = _
 ];
 
 const FILE_START: &str = "file:///usr/share/harbour-whisperfish/";
@@ -32,7 +32,13 @@ pub extern "C" fn log_qt(msg_type: QtMsgType, msg_context: &QMessageLogContext, 
     }
 
     let level = QLEVEL.get(msg_type as usize).unwrap_or(&QLEVEL[6]);
-    log!(*level, "{}", new_msg);
+    match *level {
+        Level::TRACE => tracing::trace!("{}", new_msg),
+        Level::DEBUG => tracing::debug!("{}", new_msg),
+        Level::INFO => tracing::info!("{}", new_msg),
+        Level::WARN => tracing::warn!("{}", new_msg),
+        Level::ERROR => tracing::error!("{}", new_msg),
+    }
 }
 
 pub fn enable() -> QtMessageHandler {

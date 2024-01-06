@@ -27,7 +27,6 @@ hex = "0.4"
 hmac = "0.12"
 itertools = "0.11"
 libsqlite3-sys = { version = "0.26.0", features = ["sqlcipher"] }
-log = "0.4"
 pbkdf2 = { version = "0.12", default-features = false }
 phonenumber = "0.3.1"
 prost = "0.12"

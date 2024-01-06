@@ -27,7 +27,7 @@ impl Handler<ComputeGroupV2ExpectedIds> for ClientActor {
                     let pending_v1_id =
                         hex::decode(&pending_v1_id_hex).expect("correct hex values in db");
                     if pending_v1_id.len() != 16 {
-                        log::warn!("Illegal group ID in db");
+                        tracing::warn!("Illegal group ID in db");
                         continue;
                     }
 

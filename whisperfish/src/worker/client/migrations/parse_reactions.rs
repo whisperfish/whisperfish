@@ -24,7 +24,7 @@ impl Handler<ParseOldReaction> for ClientActor {
         };
 
         if !reaction_messages.is_empty() {
-            log::info!(
+            tracing::info!(
                 "Found {} R@{{}}:{{}} emoji reactions. Migrating.",
                 reaction_messages.len()
             );
@@ -43,7 +43,7 @@ impl Handler<ParseOldReaction> for ClientActor {
                     let m = regex.captures_iter(reaction_text).next().expect("match because of matching query");
                     let next_ts: u64 = (m[1]).parse().expect("parse as int because of matching regex");
                     if reaction.sender_recipient_id == next.sender_recipient_id && ts == next_ts {
-                        log::trace!("Next reaction is same author and same target, deleting and skipping this one.");
+                        tracing::trace!("Next reaction is same author and same target, deleting and skipping this one.");
 
                         use schema::messages::dsl::*;
                         diesel::delete(messages)
@@ -63,7 +63,7 @@ impl Handler<ParseOldReaction> for ClientActor {
                     .expect("db") {
                     Some(msg) => msg,
                     None=> {
-                        log::warn!("No message found for reaction with ts={}.  In the future, we will drop these.", ts);
+                        tracing::warn!("No message found for reaction with ts={}.  In the future, we will drop these.", ts);
                         continue;
                     }
                 };
@@ -93,7 +93,7 @@ impl Handler<ParseOldReaction> for ClientActor {
                     match res {
                         Ok(_) => (),
                         Err(e @ diesel::result::Error::DatabaseError(diesel::result::DatabaseErrorKind::UniqueViolation, _)) => {
-                            log::info!("Got an already newer reaction for this message. Dropping. Reason: {:?}", e);
+                            tracing::info!("Got an already newer reaction for this message. Dropping. Reason: {:?}", e);
                         }
                         Err(e) => Err(e).context("inserting R-reaction").unwrap(),
                     }

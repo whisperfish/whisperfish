@@ -183,7 +183,7 @@ where
             None => {
                 // In principle, the actor should have gotten stopped when the model got dropped,
                 // because the actor's only strong reference is contained in the ObservingModel.
-                log::debug!("Model got dropped, stopping actor execution.");
+                tracing::debug!("Model got dropped, stopping actor execution.");
                 // XXX What is the difference between stop and terminate?
                 ctx.stop();
                 Vec::new()

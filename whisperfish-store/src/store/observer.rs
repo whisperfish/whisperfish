@@ -238,7 +238,7 @@ impl Interest {
             ) => ti == te && ki == ke,
             #[allow(unreachable_patterns)] // XXX should one of the enums be non-exhaustive instead?
             _ => {
-                log::debug!(
+                tracing::debug!(
                     "Unhandled event-interest pair; assuming interesting. {:?} {:?}",
                     ev,
                     self
@@ -324,14 +324,18 @@ impl Observatory {
                             subscription.interests = interests;
                         }
                         Err(MailboxError::Timeout) => {
-                            log::warn!("Dropping an event for a subscriber because of a timeout.");
+                            tracing::warn!(
+                                "Dropping an event for a subscriber because of a timeout."
+                            );
                         }
                         Err(MailboxError::Closed) => {
-                            log::warn!("Mailbox has closed meanwhile.  Dropping with next event.");
+                            tracing::warn!(
+                                "Mailbox has closed meanwhile.  Dropping with next event."
+                            );
                         }
                     },
                     None => {
-                        log::warn!("Subscriber got dropped while processing.");
+                        tracing::warn!("Subscriber got dropped while processing.");
                     }
                 }
             }

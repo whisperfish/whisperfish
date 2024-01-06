@@ -175,19 +175,19 @@ impl WhisperfishApp {
             async {
                 if let Err(e) = self.session_actor
                     .send(msg.clone()).await {
-                    log::error!("Error handling StorageReady: {}", e);
+                    tracing::error!("Error handling StorageReady: {}", e);
                 }
             },
             async {
                 if let Err(e) = self.message_actor
                     .send(msg.clone()).await {
-                    log::error!("Error handling StorageReady: {}", e);
+                    tracing::error!("Error handling StorageReady: {}", e);
                 }
             },
             async {
                 if let Err(e) = self.client_actor
                     .send(msg.clone()).await {
-                    log::error!("Error handling StorageReady: {}", e);
+                    tracing::error!("Error handling StorageReady: {}", e);
                 }
             }
         };
@@ -255,7 +255,7 @@ pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
 
             let mut app = QmlApp::application("harbour-whisperfish".into());
             let long_version: QString = long_version().into();
-            log::info!("QmlApp::application loaded - version {}", long_version);
+            tracing::info!("QmlApp::application loaded - version {}", long_version);
             let version: QString = env!("CARGO_PKG_VERSION").into();
             app.set_title("Whisperfish".into());
             app.set_application_version(version.clone());
