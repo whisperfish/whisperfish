@@ -1,6 +1,7 @@
 use super::*;
+use libsignal_service::pre_keys::PreKeysStore;
 use libsignal_service::protocol::{
-    self, Context, GenericSignedPreKey, IdentityKeyPair, SignalProtocolError,
+    self, GenericSignedPreKey, IdentityKeyPair, SignalProtocolError,
 };
 use libsignal_service::provisioning::generate_registration_id;
 use libsignal_service::session_store::SessionStoreExt;
@@ -126,10 +127,7 @@ impl Storage {
 impl protocol::ProtocolStore for Storage {}
 
 impl Storage {
-    pub async fn get_local_pni_registration_id(
-        &self,
-        _: Context,
-    ) -> Result<u32, SignalProtocolError> {
+    pub async fn get_local_pni_registration_id(&self) -> Result<u32, SignalProtocolError> {
         let path = self.path.join("storage").join("identity").join("pni_regid");
         if !tokio::fs::try_exists(&path).await.expect("fs error") {
             log::info!("Generating PNI regid");
@@ -168,10 +166,7 @@ impl Storage {
 
 #[async_trait::async_trait(?Send)]
 impl protocol::IdentityKeyStore for Storage {
-    async fn get_identity_key_pair(
-        &self,
-        _: Context,
-    ) -> Result<IdentityKeyPair, SignalProtocolError> {
+    async fn get_identity_key_pair(&self) -> Result<IdentityKeyPair, SignalProtocolError> {
         let identity_key_pair = self.aci_identity_key_pair.read().await;
 
         if let Some(identity_key_pair) = *identity_key_pair {
@@ -207,7 +202,7 @@ impl protocol::IdentityKeyStore for Storage {
         }
     }
 
-    async fn get_local_registration_id(&self, _: Context) -> Result<u32, SignalProtocolError> {
+    async fn get_local_registration_id(&self) -> Result<u32, SignalProtocolError> {
         log::trace!("Reading regid");
         let _lock = self.protocol_store.read().await;
 
@@ -237,7 +232,6 @@ impl protocol::IdentityKeyStore for Storage {
         key: &IdentityKey,
         // XXX
         _direction: Direction,
-        _ctx: Context,
     ) -> Result<bool, SignalProtocolError> {
         if let Some(trusted_key) = self.fetch_identity_key(addr) {
             Ok(trusted_key == *key)
@@ -253,7 +247,6 @@ impl protocol::IdentityKeyStore for Storage {
         &mut self,
         addr: &ProtocolAddress,
         key: &IdentityKey,
-        _: Context,
     ) -> Result<bool, SignalProtocolError> {
         Ok(self.store_identity_key(addr, key))
     }
@@ -261,19 +254,73 @@ impl protocol::IdentityKeyStore for Storage {
     async fn get_identity(
         &self,
         addr: &ProtocolAddress,
-        _: Context,
     ) -> Result<Option<IdentityKey>, SignalProtocolError> {
         Ok(self.fetch_identity_key(addr))
     }
 }
 
+impl PreKeysStore for Storage {
+    fn pre_keys_offset_id(&self) -> Result<u32, SignalProtocolError> {
+        use diesel::dsl::*;
+        use diesel::prelude::*;
+
+        let prekey_max: Option<i32> = {
+            use crate::schema::prekeys::dsl::*;
+
+            prekeys.select(max(id)).first(&mut *self.db()).expect("db")
+        };
+        Ok((prekey_max.unwrap_or(-1) + 1) as u32)
+    }
+
+    fn next_signed_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
+        use diesel::dsl::*;
+        use diesel::prelude::*;
+
+        let signed_prekey_max: Option<i32> = {
+            use crate::schema::signed_prekeys::dsl::*;
+
+            signed_prekeys
+                .select(max(id))
+                .first(&mut *self.db())
+                .expect("db")
+        };
+        Ok((signed_prekey_max.unwrap_or(-1) + 1) as u32)
+    }
+
+    fn next_pq_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
+        use diesel::dsl::*;
+        use diesel::prelude::*;
+
+        let kyber_max: Option<i32> = {
+            use crate::schema::kyber_prekeys::dsl::*;
+
+            kyber_prekeys
+                .select(max(id))
+                .first(&mut *self.db())
+                .expect("db")
+        };
+        Ok((kyber_max.unwrap_or(-1) + 1) as u32)
+    }
+
+    fn set_pre_keys_offset_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
+        assert_eq!(self.pre_keys_offset_id()?, id);
+        Ok(())
+    }
+
+    fn set_next_signed_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
+        assert_eq!(self.next_signed_pre_key_id()?, id);
+        Ok(())
+    }
+
+    fn set_next_pq_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
+        assert_eq!(self.next_pq_pre_key_id()?, id);
+        Ok(())
+    }
+}
+
 #[async_trait::async_trait(?Send)]
 impl protocol::PreKeyStore for Storage {
-    async fn get_pre_key(
-        &self,
-        prekey_id: PreKeyId,
-        _: Context,
-    ) -> Result<PreKeyRecord, SignalProtocolError> {
+    async fn get_pre_key(&self, prekey_id: PreKeyId) -> Result<PreKeyRecord, SignalProtocolError> {
         log::trace!("Loading prekey {}", prekey_id);
         use crate::schema::prekeys::dsl::*;
         use diesel::prelude::*;
@@ -294,7 +341,6 @@ impl protocol::PreKeyStore for Storage {
         &mut self,
         prekey_id: PreKeyId,
         body: &PreKeyRecord,
-        _: Context,
     ) -> Result<(), SignalProtocolError> {
         log::trace!("Storing prekey {}", prekey_id);
         use crate::schema::prekeys::dsl::*;
@@ -311,11 +357,7 @@ impl protocol::PreKeyStore for Storage {
         Ok(())
     }
 
-    async fn remove_pre_key(
-        &mut self,
-        prekey_id: PreKeyId,
-        _: Context,
-    ) -> Result<(), SignalProtocolError> {
+    async fn remove_pre_key(&mut self, prekey_id: PreKeyId) -> Result<(), SignalProtocolError> {
         log::trace!("Removing prekey {}", prekey_id);
         use crate::schema::prekeys::dsl::*;
         use diesel::prelude::*;
@@ -350,7 +392,6 @@ impl protocol::SessionStore for Storage {
     async fn load_session(
         &self,
         addr: &ProtocolAddress,
-        _: Context,
     ) -> Result<Option<SessionRecord>, SignalProtocolError> {
         log::trace!("Loading session for {}", addr);
         use crate::schema::session_records::dsl::*;
@@ -376,13 +417,12 @@ impl protocol::SessionStore for Storage {
         &mut self,
         addr: &ProtocolAddress,
         session: &protocol::SessionRecord,
-        context: Context,
     ) -> Result<(), SignalProtocolError> {
         log::trace!("Storing session for {}", addr);
         use crate::schema::session_records::dsl::*;
         use diesel::prelude::*;
 
-        if self.contains_session(addr, context).await? {
+        if self.contains_session(addr).await? {
             diesel::update(session_records)
                 .filter(
                     address
@@ -413,11 +453,7 @@ impl Storage {
     ///
     /// This does *not* lock the protocol store.  If a transactional check is required, use the
     /// lock from outside.
-    async fn contains_session(
-        &self,
-        addr: &ProtocolAddress,
-        _: Context,
-    ) -> Result<bool, SignalProtocolError> {
+    async fn contains_session(&self, addr: &ProtocolAddress) -> Result<bool, SignalProtocolError> {
         use crate::schema::session_records::dsl::*;
         use diesel::dsl::*;
         use diesel::prelude::*;
@@ -490,6 +526,14 @@ impl Storage {
 
         ret
     }
+
+    pub fn aci_storage(&self) -> Self {
+        self.clone()
+    }
+
+    pub fn pni_storage(&self) -> Self {
+        unimplemented!("PNI storage is not yet implemented");
+    }
 }
 // END identity key
 
@@ -558,7 +602,6 @@ impl protocol::SignedPreKeyStore for Storage {
     async fn get_signed_pre_key(
         &self,
         signed_prekey_id: SignedPreKeyId,
-        _: Context,
     ) -> Result<SignedPreKeyRecord, SignalProtocolError> {
         log::trace!("Loading signed prekey {}", signed_prekey_id);
         use crate::schema::signed_prekeys::dsl::*;
@@ -580,7 +623,6 @@ impl protocol::SignedPreKeyStore for Storage {
         &mut self,
         signed_prekey_id: SignedPreKeyId,
         body: &SignedPreKeyRecord,
-        _: Context,
     ) -> Result<(), SignalProtocolError> {
         log::trace!("Storing prekey {}", signed_prekey_id);
         use crate::schema::signed_prekeys::dsl::*;
@@ -604,7 +646,6 @@ impl protocol::KyberPreKeyStore for Storage {
     async fn mark_kyber_pre_key_used(
         &mut self,
         kyber_prekey_id: KyberPreKeyId,
-        _: Context,
     ) -> Result<(), SignalProtocolError> {
         // TODO: only remove the kyber pre key if it concerns an ephemeral pre key; last-resort
         // keys should be retained!  See libsignal-service/src/account_manager.rs `if use_last_resort_key`
@@ -622,7 +663,6 @@ impl protocol::KyberPreKeyStore for Storage {
     async fn get_kyber_pre_key(
         &self,
         kyber_prekey_id: KyberPreKeyId,
-        _: Context,
     ) -> Result<KyberPreKeyRecord, SignalProtocolError> {
         log::trace!("Loading Kyber prekey {}", kyber_prekey_id);
         use crate::schema::kyber_prekeys::dsl::*;
@@ -644,7 +684,6 @@ impl protocol::KyberPreKeyStore for Storage {
         &mut self,
         kyber_prekey_id: KyberPreKeyId,
         body: &KyberPreKeyRecord,
-        _: Context,
     ) -> Result<(), SignalProtocolError> {
         log::trace!("Storing Kyber prekey {}", kyber_prekey_id);
         use crate::schema::kyber_prekeys::dsl::*;
@@ -670,7 +709,6 @@ impl SenderKeyStore for Storage {
         addr: &ProtocolAddress,
         distr_id: Uuid,
         record: &SenderKeyRecord,
-        _: Context,
     ) -> Result<(), SignalProtocolError> {
         log::trace!("Storing sender key {} {}", addr, distr_id);
 
@@ -695,7 +733,6 @@ impl SenderKeyStore for Storage {
         &mut self,
         addr: &ProtocolAddress,
         distr_id: Uuid,
-        _: Context,
     ) -> Result<Option<SenderKeyRecord>, SignalProtocolError> {
         log::trace!("Loading sender key {} {}", addr, distr_id);
 
@@ -769,13 +806,15 @@ mod tests {
         use rand::distributions::Alphanumeric;
         use rand::{Rng, RngCore};
 
-        env_logger::try_init().ok();
-
         let location = super::temp();
         let rng = rand::thread_rng();
 
         // Signaling password for REST API
-        let password: String = rng.sample_iter(&Alphanumeric).take(24).collect();
+        let password: String = rng
+            .sample_iter(&Alphanumeric)
+            .take(24)
+            .map(char::from)
+            .collect();
 
         // Signaling key that decrypts the incoming Signal messages
         let mut rng = rand::thread_rng();
@@ -808,7 +847,7 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let user_id = uuid::Uuid::new_v4();
-        let device_id = rng.gen_range(2, 20);
+        let device_id = rng.gen_range(2..=20);
 
         let svc = ServiceAddress::from(user_id);
         let prot = ProtocolAddress::new(user_id.to_string(), DeviceId::from(device_id));
@@ -850,24 +889,18 @@ mod tests {
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn own_identity_key_pair(password: Option<&str>) {
-        env_logger::try_init().ok();
-
         // create a new storage
         let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // Copy the identity key pair
-        let id_key1 = storage.get_identity_key_pair(None).await.unwrap();
+        let id_key1 = storage.get_identity_key_pair().await.unwrap();
 
         // Get access to the protocol store
         // XXX IdentityKeyPair does not implement the std::fmt::Debug trait *arg*
-        //assert_eq!(id_key1.unwrap(), store.get_identity_key_pair(None).await.unwrap());
+        //assert_eq!(id_key1.unwrap(), store.get_identity_key_pair().await.unwrap());
         assert_eq!(
             id_key1.serialize(),
-            storage
-                .get_identity_key_pair(None)
-                .await
-                .unwrap()
-                .serialize()
+            storage.get_identity_key_pair().await.unwrap().serialize()
         );
     }
 
@@ -876,26 +909,19 @@ mod tests {
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn own_regid(password: Option<&str>) {
-        env_logger::try_init().ok();
-
         // create a new storage
         let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // Copy the regid
-        let regid_1 = storage.get_local_registration_id(None).await.unwrap();
+        let regid_1 = storage.get_local_registration_id().await.unwrap();
 
         // Get access to the protocol store
-        assert_eq!(
-            regid_1,
-            storage.get_local_registration_id(None).await.unwrap()
-        );
+        assert_eq!(regid_1, storage.get_local_registration_id().await.unwrap());
     }
 
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn save_retrieve_identity_key(password: Option<&str>) {
-        env_logger::try_init().ok();
-
         // Create a new storage
         let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
 
@@ -907,42 +933,34 @@ mod tests {
 
         // In the beginning, the storage should be emtpy and return an error
         // XXX Doesn't implement equality *arg*
-        assert_eq!(storage.get_identity(&addr1, None).await.unwrap(), None);
-        assert_eq!(storage.get_identity(&addr2, None).await.unwrap(), None);
+        assert_eq!(storage.get_identity(&addr1).await.unwrap(), None);
+        assert_eq!(storage.get_identity(&addr2).await.unwrap(), None);
 
         // We store both keys and should get false because there wasn't a key with that address
         // yet
-        assert!(!storage.save_identity(&addr1, &key1, None).await.unwrap());
-        assert!(!storage.save_identity(&addr2, &key2, None).await.unwrap());
+        assert!(!storage.save_identity(&addr1, &key1).await.unwrap());
+        assert!(!storage.save_identity(&addr2, &key2).await.unwrap());
 
         // Now, we should get both keys
-        assert_eq!(
-            storage.get_identity(&addr1, None).await.unwrap(),
-            Some(key1)
-        );
-        assert_eq!(
-            storage.get_identity(&addr2, None).await.unwrap(),
-            Some(key2)
-        );
+        assert_eq!(storage.get_identity(&addr1).await.unwrap(), Some(key1));
+        assert_eq!(storage.get_identity(&addr2).await.unwrap(), Some(key2));
 
         // After removing key2, it shouldn't be there
         storage.delete_identity(&addr2).await.unwrap();
         // XXX Doesn't implement equality *arg*
-        assert_eq!(storage.get_identity(&addr2, None).await.unwrap(), None);
+        assert_eq!(storage.get_identity(&addr2).await.unwrap(), None);
 
         // We can now overwrite key1 with key1 and should get true returned
-        assert!(storage.save_identity(&addr1, &key1, None).await.unwrap());
+        assert!(storage.save_identity(&addr1, &key1).await.unwrap());
 
         // We can now overwrite key1 with key2 and should get false returned
-        assert!(!storage.save_identity(&addr1, &key2, None).await.unwrap());
+        assert!(!storage.save_identity(&addr1, &key2).await.unwrap());
     }
 
     // Direction does not matter yet
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn is_trusted_identity(password: Option<&str>) {
-        env_logger::try_init().ok();
-
         // Create a new storage
         let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
 
@@ -953,20 +971,20 @@ mod tests {
 
         // Test trust on first use
         assert!(storage
-            .is_trusted_identity(&addr1, &key1, Direction::Receiving, None)
+            .is_trusted_identity(&addr1, &key1, Direction::Receiving)
             .await
             .unwrap());
 
         // Test inserted key
-        storage.save_identity(&addr1, &key1, None).await.unwrap();
+        storage.save_identity(&addr1, &key1).await.unwrap();
         assert!(storage
-            .is_trusted_identity(&addr1, &key1, Direction::Receiving, None)
+            .is_trusted_identity(&addr1, &key1, Direction::Receiving)
             .await
             .unwrap());
 
         // Test wrong key
         assert!(!storage
-            .is_trusted_identity(&addr1, &key2, Direction::Receiving, None)
+            .is_trusted_identity(&addr1, &key2, Direction::Receiving)
             .await
             .unwrap());
     }
@@ -974,8 +992,6 @@ mod tests {
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn save_retrieve_prekey(password: Option<&str>) {
-        env_logger::try_init().ok();
-
         // Create a new storage
         let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
 
@@ -989,7 +1005,7 @@ mod tests {
         // XXX Doesn't implement equality *arg*
         assert_eq!(
             storage
-                .get_pre_key(PreKeyId::from(id1), None)
+                .get_pre_key(PreKeyId::from(id1))
                 .await
                 .unwrap_err()
                 .to_string(),
@@ -998,18 +1014,18 @@ mod tests {
 
         // Storing both keys and testing retrieval
         storage
-            .save_pre_key(PreKeyId::from(id1), &key1, None)
+            .save_pre_key(PreKeyId::from(id1), &key1)
             .await
             .unwrap();
         storage
-            .save_pre_key(PreKeyId::from(id2), &key2, None)
+            .save_pre_key(PreKeyId::from(id2), &key2)
             .await
             .unwrap();
 
         // Now, we should get both keys
         assert_eq!(
             storage
-                .get_pre_key(PreKeyId::from(id1), None)
+                .get_pre_key(PreKeyId::from(id1))
                 .await
                 .unwrap()
                 .serialize()
@@ -1018,7 +1034,7 @@ mod tests {
         );
         assert_eq!(
             storage
-                .get_pre_key(PreKeyId::from(id2), None)
+                .get_pre_key(PreKeyId::from(id2))
                 .await
                 .unwrap()
                 .serialize()
@@ -1027,14 +1043,11 @@ mod tests {
         );
 
         // After removing key2, it shouldn't be there
-        storage
-            .remove_pre_key(PreKeyId::from(id2), None)
-            .await
-            .unwrap();
+        storage.remove_pre_key(PreKeyId::from(id2)).await.unwrap();
         // XXX Doesn't implement equality *arg*
         assert_eq!(
             storage
-                .get_pre_key(PreKeyId::from(id2), None)
+                .get_pre_key(PreKeyId::from(id2))
                 .await
                 .unwrap_err()
                 .to_string(),
@@ -1043,7 +1056,7 @@ mod tests {
 
         // Let's check whether we can overwrite a key
         storage
-            .save_pre_key(PreKeyId::from(id1), &key2, None)
+            .save_pre_key(PreKeyId::from(id1), &key2)
             .await
             .unwrap();
     }
@@ -1051,8 +1064,6 @@ mod tests {
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn save_retrieve_signed_prekey(password: Option<&str>) {
-        env_logger::try_init().ok();
-
         // Create a new storage
         let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
 
@@ -1066,7 +1077,7 @@ mod tests {
         // XXX Doesn't implement equality *arg*
         assert_eq!(
             storage
-                .get_signed_pre_key(SignedPreKeyId::from(id1), None)
+                .get_signed_pre_key(SignedPreKeyId::from(id1))
                 .await
                 .unwrap_err()
                 .to_string(),
@@ -1075,18 +1086,18 @@ mod tests {
 
         // Storing both keys and testing retrieval
         storage
-            .save_signed_pre_key(SignedPreKeyId::from(id1), &key1, None)
+            .save_signed_pre_key(SignedPreKeyId::from(id1), &key1)
             .await
             .unwrap();
         storage
-            .save_signed_pre_key(SignedPreKeyId::from(id2), &key2, None)
+            .save_signed_pre_key(SignedPreKeyId::from(id2), &key2)
             .await
             .unwrap();
 
         // Now, we should get both keys
         assert_eq!(
             storage
-                .get_signed_pre_key(SignedPreKeyId::from(id1), None)
+                .get_signed_pre_key(SignedPreKeyId::from(id1))
                 .await
                 .unwrap()
                 .serialize()
@@ -1095,7 +1106,7 @@ mod tests {
         );
         assert_eq!(
             storage
-                .get_signed_pre_key(SignedPreKeyId::from(id2), None)
+                .get_signed_pre_key(SignedPreKeyId::from(id2))
                 .await
                 .unwrap()
                 .serialize()
@@ -1105,7 +1116,7 @@ mod tests {
 
         // Let's check whether we can overwrite a key
         storage
-            .save_signed_pre_key(SignedPreKeyId::from(id1), &key2, None)
+            .save_signed_pre_key(SignedPreKeyId::from(id1), &key2)
             .await
             .unwrap();
     }
@@ -1113,8 +1124,6 @@ mod tests {
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn save_retrieve_session(password: Option<&str>) {
-        env_logger::try_init().ok();
-
         // Create a new storage
         let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
 
@@ -1132,31 +1141,19 @@ mod tests {
         let session4 = SessionRecord::new_fresh();
 
         // In the beginning, the storage should be emtpy and return an error
-        assert!(storage.load_session(&addr1, None).await.unwrap().is_none());
-        assert!(storage.load_session(&addr2, None).await.unwrap().is_none());
+        assert!(storage.load_session(&addr1).await.unwrap().is_none());
+        assert!(storage.load_session(&addr2).await.unwrap().is_none());
 
         // Store all four sessions: three different names, one name with two different device ids.
-        storage
-            .store_session(&addr1, &session1, None)
-            .await
-            .unwrap();
-        storage
-            .store_session(&addr2, &session2, None)
-            .await
-            .unwrap();
-        storage
-            .store_session(&addr3, &session3, None)
-            .await
-            .unwrap();
-        storage
-            .store_session(&addr4, &session4, None)
-            .await
-            .unwrap();
+        storage.store_session(&addr1, &session1).await.unwrap();
+        storage.store_session(&addr2, &session2).await.unwrap();
+        storage.store_session(&addr3, &session3).await.unwrap();
+        storage.store_session(&addr4, &session4).await.unwrap();
 
         // Now, we should get the sessions to the first two addresses
         assert_eq!(
             storage
-                .load_session(&addr1, None)
+                .load_session(&addr1)
                 .await
                 .unwrap()
                 .unwrap()
@@ -1166,7 +1163,7 @@ mod tests {
         );
         assert_eq!(
             storage
-                .load_session(&addr2, None)
+                .load_session(&addr2)
                 .await
                 .unwrap()
                 .unwrap()
@@ -1177,7 +1174,7 @@ mod tests {
 
         // Let's check whether we can overwrite a key
         storage
-            .store_session(&addr1, &session2, None)
+            .store_session(&addr1, &session2)
             .await
             .expect("Overwrite session");
 
@@ -1195,8 +1192,8 @@ mod tests {
 
         // If we call delete all sessions, all sessions of one person/address should be removed
         assert_eq!(storage.delete_all_sessions(&svc3).await.unwrap(), 2);
-        assert!(storage.load_session(&addr3, None).await.unwrap().is_none());
-        assert!(storage.load_session(&addr4, None).await.unwrap().is_none());
+        assert!(storage.load_session(&addr3).await.unwrap().is_none());
+        assert!(storage.load_session(&addr4).await.unwrap().is_none());
 
         // If we delete the first two sessions, they shouldn't be in the store anymore
         SessionStoreExt::delete_session(&storage, &addr1)
@@ -1205,15 +1202,13 @@ mod tests {
         SessionStoreExt::delete_session(&storage, &addr2)
             .await
             .unwrap();
-        assert!(storage.load_session(&addr1, None).await.unwrap().is_none());
-        assert!(storage.load_session(&addr2, None).await.unwrap().is_none());
+        assert!(storage.load_session(&addr1).await.unwrap().is_none());
+        assert!(storage.load_session(&addr2).await.unwrap().is_none());
     }
 
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn get_next_pre_key_ids(password: Option<&str>) {
-        env_logger::try_init().ok();
-
         // Create a new storage
         let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
 
@@ -1227,15 +1222,15 @@ mod tests {
 
         // Now, we add our keys
         storage
-            .save_pre_key(PreKeyId::from(0), &key1, None)
+            .save_pre_key(PreKeyId::from(0), &key1)
             .await
             .unwrap();
         storage
-            .save_pre_key(PreKeyId::from(1), &key2, None)
+            .save_pre_key(PreKeyId::from(1), &key2)
             .await
             .unwrap();
         storage
-            .save_signed_pre_key(SignedPreKeyId::from(0), &key3, None)
+            .save_signed_pre_key(SignedPreKeyId::from(0), &key3)
             .await
             .unwrap();
 

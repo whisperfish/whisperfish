@@ -210,13 +210,13 @@ impl RecipientImpl {
                         .expect("self recipient present in db");
                     let local_svc = local.to_service_address().expect("self-recipient has UUID");
                     let fingerprint = storage
-                        .compute_safety_number(&local_svc, &recipient_svc, None)
+                        .compute_safety_number(&local_svc, &recipient_svc)
                         .await?;
                     let sessions = storage.get_sub_device_sessions(&recipient_svc).await?;
                     let mut versions = Vec::new();
                     for device_id in sessions {
                         let session = storage
-                            .load_session(&recipient_svc.to_protocol_address(device_id), None)
+                            .load_session(&recipient_svc.to_protocol_address(device_id))
                             .await?;
                         let version = session
                             .map(|x| x.session_version())

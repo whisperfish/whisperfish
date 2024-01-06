@@ -13,7 +13,7 @@ where
     DB: backend::Backend,
     i32: deserialize::FromSql<Integer, DB>,
 {
-    fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: <DB>::RawValue<'_>) -> deserialize::Result<Self> {
         match i32::from_sql(bytes)? {
             0 => Ok(UnidentifiedAccessMode::Unknown),
             1 => Ok(UnidentifiedAccessMode::Disabled),

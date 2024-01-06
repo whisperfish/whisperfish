@@ -654,7 +654,7 @@ fn group_sessions_with_messages(original_go_db: SqliteConnection) {
 }
 
 #[rstest]
-// https://gitlab.com/rubdos/whisperfish/-/issues/319
+// https://gitlab.com/whisperfish/whisperfish/-/issues/319
 fn group_message_without_sender_nor_recipient(original_go_db: SqliteConnection) {
     use orm::original::*;
     use schemas::original::*;
@@ -764,7 +764,7 @@ fn timestamp_conversion(original_go_db: SqliteConnection) {
     let mut rng = rand::thread_rng();
 
     for _ in 0..count {
-        let ts: u64 = rng.gen_range(0, 1614425253000);
+        let ts: u64 = rng.gen_range(0..=1614425253000);
         message.timestamp = ts as i64;
         let ts = whisperfish_store::millis_to_naive_chrono(ts);
         timestamps.push(ts);

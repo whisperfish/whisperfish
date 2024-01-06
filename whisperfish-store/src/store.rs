@@ -606,7 +606,7 @@ impl Storage {
             .fetch_session_by_id(message.session_id)
             .expect("session exists");
 
-        let target_author_uuid = Uuid::parse_str(reaction.target_author_uuid())
+        let target_author_uuid = Uuid::parse_str(reaction.target_author_aci())
             .map_err(|_| log::error!("ignoring reaction with invalid uuid"))
             .ok()?;
 
@@ -2625,7 +2625,7 @@ impl Storage {
     /// Returns a binary peer identity
     pub async fn peer_identity(&self, addr: ProtocolAddress) -> Result<Vec<u8>, anyhow::Error> {
         let ident = self
-            .get_identity(&addr, None)
+            .get_identity(&addr)
             .await?
             .context("No such identity")?;
         Ok(ident.serialize().into())

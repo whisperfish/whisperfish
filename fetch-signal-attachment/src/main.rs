@@ -1,26 +1,26 @@
+use clap::Parser;
 use futures::io::AsyncReadExt;
 use libsignal_service::configuration::SignalServers;
 use libsignal_service::prelude::*;
 use libsignal_service_actix::prelude::*;
 use mime_classifier::{ApacheBugFlag, LoadContext, MimeClassifier, NoSniffFlag};
 use std::{path::Path, sync::Arc};
-use structopt::StructOpt;
 use whisperfish::store::{self, Storage};
 
 /// Signal attachment downloader for Whisperfish
-#[derive(StructOpt, Debug)]
-#[structopt(name = "fetch-signal-attachment")]
-struct Opt {
+#[derive(Parser, Debug)]
+#[clap(name = "fetch-signal-attachment", author, version, about, long_about = None)]
+struct Opts {
     /// Whisperfish storage password
     #[structopt(short, long)]
     password: Option<String>,
 
     /// CDN number (normally either 0 or 2)
-    #[structopt(short = "c", long)]
+    #[structopt(short = 'c', long)]
     cdn_number: u32,
 
     /// AttachmentPointer CdnKey or CdnId
-    #[structopt(short = "C", long, allow_hyphen_values(true))]
+    #[structopt(short = 'C', long, allow_hyphen_values(true))]
     cdn_key: String,
 
     /// Key of AttachmentPointer
@@ -30,7 +30,7 @@ struct Opt {
     /// Message will be found by ID.
     ///
     /// Specify either this or `timestamp`
-    #[structopt(short = "M", long)]
+    #[structopt(short = 'M', long)]
     message_id: i32,
 
     /// Extension for file
@@ -38,15 +38,13 @@ struct Opt {
     ext: String,
 
     /// Mime-type for file
-    #[structopt(short = "m", long)]
+    #[structopt(short = 'm', long)]
     mime_type: String,
 }
 
 #[actix_rt::main]
 async fn main() -> Result<(), anyhow::Error> {
-    env_logger::init();
-
-    let mut opt = Opt::from_args();
+    let mut opt: Opts = Parser::parse_from(std::env::args_os());
 
     let config = whisperfish::config::SignalConfig::read_from_file()?;
     let config = Arc::new(config);

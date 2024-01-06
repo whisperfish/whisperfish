@@ -98,7 +98,8 @@ impl CreateConversationImpl {
 
     fn set_uuid(&mut self, ctx: Option<ModelContext<Self>>, uuid: QString) {
         self.uuid = uuid::Uuid::parse_str(&uuid.to_string())
-            // inspect_err https://github.com/rust-lang/rust/pull/91346 Rust 1.59
+            // inspect_err https://github.com/rust-lang/rust/pull/91346 Rust 1.59 (unstable)
+            //             https://github.com/rust-lang/rust/pull/116866 Rust 1.76 (stable)
             .map_err(|e| {
                 log::error!("Parsing uuid: {}", e);
                 e
@@ -112,7 +113,8 @@ impl CreateConversationImpl {
 
     fn set_e164(&mut self, ctx: Option<ModelContext<Self>>, e164: QString) {
         self.e164 = phonenumber::parse(None, e164.to_string())
-            // inspect_err https://github.com/rust-lang/rust/pull/91346 Rust 1.59
+            // inspect_err https://github.com/rust-lang/rust/pull/91346 Rust 1.59 (unstable)
+            //             https://github.com/rust-lang/rust/pull/116866 Rust 1.76 (stable)
             .map_err(|e| {
                 log::error!("Parsing phone number: {}", e);
                 e

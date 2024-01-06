@@ -364,8 +364,6 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
 //     use rand::distributions::Alphanumeric;
 //     use rand::{Rng, RngCore};
 //
-//     env_logger::try_init().ok();
-//
 //     let location = whisperfish_store::temp();
 //     let rng = rand::thread_rng();
 //
@@ -434,13 +432,15 @@ async fn test_create_and_open_storage(
     use rand::distributions::Alphanumeric;
     use rand::{Rng, RngCore};
 
-    env_logger::try_init().ok();
-
     let location = whisperfish_store::temp();
     let rng = rand::thread_rng();
 
     // Signaling password for REST API
-    let password: String = rng.sample_iter(&Alphanumeric).take(24).collect();
+    let password: String = rng
+        .sample_iter(&Alphanumeric)
+        .take(24)
+        .map(char::from)
+        .collect();
 
     // Signaling key that decrypts the incoming Signal messages
     let mut rng = rand::thread_rng();
@@ -474,7 +474,7 @@ async fn test_create_and_open_storage(
             // TODO: assert that tables exist
             assert_eq!(password, $storage.signal_password().await?);
             assert_eq!(signaling_key, $storage.signaling_key().await?);
-            assert_eq!(regid, $storage.get_local_registration_id(None).await?);
+            assert_eq!(regid, $storage.get_local_registration_id().await?);
 
             let (signed, kyber, unsigned) = $storage.next_pre_key_ids().await;
             // Unstarted client will have no pre-keys.
@@ -517,13 +517,15 @@ async fn test_recipient_actions() {
     use rand::distributions::Alphanumeric;
     use rand::{Rng, RngCore};
 
-    env_logger::try_init().ok();
-
     let location = whisperfish_store::temp();
     let rng = rand::thread_rng();
 
     // Signaling password for REST API
-    let password: String = rng.sample_iter(&Alphanumeric).take(24).collect();
+    let password: String = rng
+        .sample_iter(&Alphanumeric)
+        .take(24)
+        .map(char::from)
+        .collect();
 
     // Signaling key that decrypts the incoming Signal messages
     let mut rng = rand::thread_rng();
@@ -620,7 +622,7 @@ async fn test_recipient_actions() {
     let reaction = Reaction {
         emoji: Some("❤".into()),
         remove: Some(false),
-        target_author_uuid: Some(recip.uuid.unwrap().to_string()),
+        target_author_aci: Some(recip.uuid.unwrap().to_string()),
         target_sent_timestamp: Some(msg.server_timestamp.timestamp_millis() as _),
     };
     let data_msg = DataMessage {
@@ -697,7 +699,7 @@ async fn test_recipient_actions() {
 
 // XXX: These tests worked back when Storage had the message_handler implemented.
 // This has since been moved to ClientActor, and testing that requires Qt-enabled tests.
-// https://gitlab.com/rubdos/whisperfish/-/issues/82
+// https://gitlab.com/whisperfish/whisperfish/-/issues/82
 
 // #[rstest]
 // fn message_handler_without_group(storage: InMemoryDb) {

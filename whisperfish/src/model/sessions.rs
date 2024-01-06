@@ -5,6 +5,7 @@ use crate::store::observer::{EventObserving, Interest};
 use crate::store::{orm, schema, Storage};
 use qmetaobject::prelude::*;
 use std::collections::HashMap;
+use whisperfish_store::observer::Event;
 
 /// QML-constructable object that interacts with a list of sessions.
 ///
@@ -50,7 +51,7 @@ impl SessionsImpl {
 impl EventObserving for SessionsImpl {
     type Context = ModelContext<Self>;
 
-    fn observe(&mut self, ctx: Self::Context, event: crate::store::observer::Event) {
+    fn observe(&mut self, ctx: Self::Context, event: Event) {
         let storage = ctx.storage();
         // Find the correct session and update the latest message
         let session_id = event
@@ -62,11 +63,18 @@ impl EventObserving for SessionsImpl {
         let attachment_id = event
             .relation_key_for(schema::attachments::table)
             .and_then(|x| x.as_i32());
-        if session_id.is_some() || message_id.is_some() || attachment_id.is_some() {
+        let recipient_id = event
+            .relation_key_for(schema::recipients::table)
+            .and_then(|x| x.as_i32());
+        if session_id.is_some()
+            || message_id.is_some()
+            || attachment_id.is_some()
+            || recipient_id.is_some()
+        {
             self.session_list
                 .pinned()
                 .borrow_mut()
-                .observe(storage, event);
+                .observe(&storage, event);
             return;
         }
 
@@ -113,7 +121,7 @@ impl SessionListModel {
         self.countChanged();
     }
 
-    fn observe(&mut self, storage: Storage, event: crate::store::observer::Event) {
+    fn observe(&mut self, storage: &Storage, event: Event) {
         let session_id = event
             .relation_key_for(schema::sessions::table)
             .and_then(|x| x.as_i32());
@@ -123,6 +131,38 @@ impl SessionListModel {
         let attachment_id = event
             .relation_key_for(schema::attachments::table)
             .and_then(|x| x.as_i32());
+        let recipient_id = event
+            .relation_key_for(schema::recipients::table)
+            .and_then(|x| x.as_i32());
+
+        if let Some(recipient_id) = recipient_id {
+            if let Some(new_recipient) = storage.fetch_recipient_by_id(recipient_id) {
+                let mut updates = Vec::new();
+                for (idx, session) in self.content.iter_mut().enumerate() {
+                    match &mut session.inner.r#type {
+                        orm::SessionType::DirectMessage(recipient) => {
+                            if recipient.id == recipient_id {
+                                *recipient = new_recipient.clone();
+                                updates.push(idx);
+                            }
+                        }
+                        orm::SessionType::GroupV1(_group) => {
+                            // Groups don't have recipients in this model
+                        }
+                        orm::SessionType::GroupV2(_) => {
+                            // Groups don't have recipients in this model
+                        }
+                    }
+                }
+                if session_id.is_none() && message_id.is_none() && attachment_id.is_none() {
+                    return;
+                }
+                for idx in updates {
+                    let idx = self.row_index(idx as i32);
+                    self.data_changed(idx, idx);
+                }
+            }
+        }
 
         if attachment_id.is_some() && event.is_update() {
             // Don't care, because SessionListModel only takes into account the number of

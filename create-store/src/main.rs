@@ -1,22 +1,22 @@
+use clap::Parser;
 use libsignal_service::protocol::*;
 use std::{path::PathBuf, sync::Arc};
-use structopt::StructOpt;
 use whisperfish::{config::SignalConfig, store};
 
 /// Initializes a storage, meant for creating storage migration tests.
-#[derive(StructOpt, Debug)]
-#[structopt(name = "create-store")]
-struct Opt {
+#[derive(Parser, Debug)]
+#[structopt(name = "create-store", author, version, about, long_about = None)]
+struct Opts {
     /// Whisperfish storage password
-    #[structopt(short, long)]
+    #[clap(short, long)]
     password: Option<String>,
 
     /// Path where the storage will be created
-    #[structopt(parse(from_os_str))]
+    #[clap(parse(from_os_str))]
     path: PathBuf,
 
     /// Whether to fill the storage with dummy data
-    #[structopt(short, long)]
+    #[clap(short, long)]
     fill_dummy: bool,
 }
 
@@ -32,6 +32,7 @@ async fn create_storage(
     let password: String = rng
         .sample_iter(&rand::distributions::Alphanumeric)
         .take(24)
+        .map(char::from)
         .collect();
 
     // Signaling key that decrypts the incoming Signal messages
@@ -81,40 +82,29 @@ async fn add_dummy_data(storage: &mut store::Storage) {
     let key_3 = IdentityKeyPair::generate(&mut rng);
 
     storage
-        .save_identity(&addr_1, key_1.identity_key(), None)
+        .save_identity(&addr_1, key_1.identity_key())
         .await
         .unwrap();
     storage
-        .save_identity(&addr_2, key_2.identity_key(), None)
+        .save_identity(&addr_2, key_2.identity_key())
         .await
         .unwrap();
     storage
-        .save_identity(&addr_3, key_3.identity_key(), None)
+        .save_identity(&addr_3, key_3.identity_key())
         .await
         .unwrap();
 
     let session_1 = SessionRecord::new_fresh();
     let session_2 = SessionRecord::new_fresh();
     let session_3 = SessionRecord::new_fresh();
-    storage
-        .store_session(&addr_1, &session_1, None)
-        .await
-        .unwrap();
-    storage
-        .store_session(&addr_2, &session_2, None)
-        .await
-        .unwrap();
-    storage
-        .store_session(&addr_3, &session_3, None)
-        .await
-        .unwrap();
+    storage.store_session(&addr_1, &session_1).await.unwrap();
+    storage.store_session(&addr_2, &session_2).await.unwrap();
+    storage.store_session(&addr_3, &session_3).await.unwrap();
 }
 
 #[actix_rt::main]
 async fn main() -> Result<(), anyhow::Error> {
-    env_logger::init();
-
-    let opt = Opt::from_args();
+    let opt: Opts = Parser::parse_from(std::env::args_os());
 
     // TODO: probably source more config flags, see harbour-whisperfish main.rs
     let config = match whisperfish::config::SignalConfig::read_from_file() {

@@ -1,3 +1,5 @@
+use image::codecs::png::PngEncoder;
+use image::ImageEncoder;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
 use std::future::Future;
@@ -128,20 +130,23 @@ impl Prompt {
     }
 
     pub fn show_link_qr(&mut self, url: String) {
-        let code = qrcode::QrCode::new(url.as_str()).expect("to generate qrcode for linking URI");
+        let code = qrencode::QrCode::new(url.as_str()).expect("to generate qrcode for linking URI");
         let image_buf = code.render::<image::Luma<u8>>().build();
 
         // Export generate QR code pixmap data into a PNG data:-URI string
         let mut image_uri = String::from("data:image/png;base64,");
         {
-            let mut image_b64enc =
-                base64::write::EncoderStringWriter::from(&mut image_uri, base64::STANDARD);
-            image::png::PngEncoder::new(&mut image_b64enc)
-                .encode(
+            use base64::engine::general_purpose as engine;
+            let mut image_b64enc = base64::write::EncoderStringWriter::from_consumer(
+                &mut image_uri,
+                &engine::STANDARD,
+            );
+            PngEncoder::new(&mut image_b64enc)
+                .write_image(
                     &image_buf,
                     image_buf.width(),
                     image_buf.height(),
-                    <image::Luma<u8> as image::Pixel>::COLOR_TYPE,
+                    image::ColorType::L8,
                 )
                 .expect("to write QR code image to data:-URI");
         }
@@ -208,10 +213,8 @@ impl Prompt {
     #[allow(non_snake_case)]
     #[with_executor]
     fn startCaptcha(&mut self) {
-        // Rust 2021
-        #[allow(clippy::needless_borrow)]
         Command::new("/usr/bin/sailfish-qml")
-            .args(&["harbour-whisperfish"])
+            .args(["harbour-whisperfish"])
             .spawn()
             .expect("/usr/bin/sailfish-qml not found, libsailfishapp-launcher not installed?");
     }
