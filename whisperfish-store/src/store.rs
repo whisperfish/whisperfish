@@ -2700,6 +2700,7 @@ impl Storage {
     }
 
     /// Returns a binary peer identity
+    #[tracing::instrument]
     pub async fn peer_identity(&self, addr: ProtocolAddress) -> Result<Vec<u8>, anyhow::Error> {
         let ident = self
             .get_identity(&addr)
