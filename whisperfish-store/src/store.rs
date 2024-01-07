@@ -497,7 +497,6 @@ impl Storage {
         db_path: &StorageLocation<T>,
         database_key: Option<&[u8]>,
     ) -> anyhow::Result<SqliteConnection, anyhow::Error> {
-        tracing::info!("Opening DB");
         let mut db = db_path.open_db()?;
 
         if let Some(database_key) = database_key {
@@ -801,7 +800,7 @@ impl Storage {
         affected > 0
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(recipient_uuid), fields(recipient_uuid = shorten(&recipient_uuid.to_string(), 12).as_ref()))]
     pub fn mark_profile_outdated(&self, recipient_uuid: Uuid) -> Option<orm::Recipient> {
         use crate::schema::recipients::dsl::*;
         diesel::update(recipients)
@@ -809,10 +808,6 @@ impl Storage {
             .filter(uuid.eq(recipient_uuid.to_string()))
             .execute(&mut *self.db())
             .expect("existing record updated");
-        tracing::info!(
-            "Marked profile for {}... as outdated.",
-            shorten(&recipient_uuid.to_string(), 12),
-        );
         let recipient = self.fetch_recipient_by_uuid(recipient_uuid);
         if let Some(recipient) = &recipient {
             self.observe_update(recipients, recipient.id);
@@ -1601,17 +1596,15 @@ impl Storage {
 
     #[tracing::instrument]
     pub fn fetch_session_by_phonenumber(&self, phonenumber: &PhoneNumber) -> Option<orm::Session> {
-        tracing::trace!("Called fetch_session_by_phonenumber({})", phonenumber);
         fetch_session!(self.db(), |query| {
             query.filter(schema::recipients::e164.eq(phonenumber.to_string()))
         })
     }
 
     #[tracing::instrument]
-    pub fn fetch_session_by_recipient_id(&self, rid: i32) -> Option<orm::Session> {
-        tracing::trace!("Called fetch_session_by_recipient_id({})", rid);
+    pub fn fetch_session_by_recipient_id(&self, recipient_id: i32) -> Option<orm::Session> {
         fetch_session!(self.db(), |query| {
-            query.filter(schema::recipients::id.eq(rid))
+            query.filter(schema::recipients::id.eq(recipient_id))
         })
     }
 
@@ -1735,10 +1728,6 @@ impl Storage {
         &self,
         phonenumber: &PhoneNumber,
     ) -> orm::Session {
-        tracing::trace!(
-            "Called fetch_or_insert_session_by_phonenumber({})",
-            phonenumber
-        );
         if let Some(session) = self.fetch_session_by_phonenumber(phonenumber) {
             return session;
         }
@@ -1761,15 +1750,14 @@ impl Storage {
 
     /// Fetches recipient's DM session, or creates the session.
     #[tracing::instrument]
-    pub fn fetch_or_insert_session_by_recipient_id(&self, rid: i32) -> orm::Session {
-        tracing::trace!("Called fetch_or_insert_session_by_recipient_id({})", rid);
-        if let Some(session) = self.fetch_session_by_recipient_id(rid) {
+    pub fn fetch_or_insert_session_by_recipient_id(&self, recipient_id: i32) -> orm::Session {
+        if let Some(session) = self.fetch_session_by_recipient_id(recipient_id) {
             return session;
         }
 
         use schema::sessions::dsl::*;
         diesel::insert_into(sessions)
-            .values((direct_message_recipient_id.eq(rid),))
+            .values((direct_message_recipient_id.eq(recipient_id),))
             .execute(&mut *self.db())
             .unwrap();
 
@@ -1777,18 +1765,18 @@ impl Storage {
             .fetch_latest_session()
             .expect("a session has been inserted");
         self.observe_insert(sessions, session.id)
-            .with_relation(schema::recipients::table, rid);
+            .with_relation(schema::recipients::table, recipient_id);
         session
     }
 
-    #[tracing::instrument]
     pub fn fetch_or_insert_session_by_group_v1(&self, group: &GroupV1) -> orm::Session {
         let group_id = hex::encode(&group.id);
 
-        tracing::trace!(
-            "Called fetch_or_insert_session_by_group_v1({}[..])",
-            &group_id[..8]
-        );
+        let _span = tracing::info_span!(
+            "fetch_or_insert_session_by_group_v1",
+            group_id = &group_id[..8]
+        )
+        .entered();
 
         if let Some(session) = fetch_session!(self.db(), |query| {
             query.filter(schema::sessions::columns::group_v1_id.eq(&group_id))
@@ -1869,15 +1857,14 @@ impl Storage {
         })
     }
 
-    #[tracing::instrument]
     pub fn fetch_or_insert_session_by_group_v2(&self, group: &GroupV2) -> orm::Session {
         let group_id = group.secret.get_group_identifier();
         let group_id_hex = hex::encode(group_id);
-
-        tracing::trace!(
-            "Called fetch_or_insert_session_by_group_v2({})",
-            group_id_hex
-        );
+        let _span = tracing::info_span!(
+            "fetch_or_insert_session_by_group_v2",
+            group_id = tracing::field::display(&group_id_hex)
+        )
+        .entered();
 
         if let Some(session) = fetch_session!(self.db(), |query| {
             query.filter(schema::sessions::columns::group_v2_id.eq(&group_id_hex))
@@ -1999,26 +1986,26 @@ impl Storage {
     }
 
     #[tracing::instrument]
-    pub fn delete_session(&self, id: i32) {
-        tracing::trace!("Called delete_session({})", id);
-
+    pub fn delete_session(&self, session_id: i32) {
         let affected_rows =
-            diesel::delete(schema::sessions::table.filter(schema::sessions::id.eq(id)))
+            diesel::delete(schema::sessions::table.filter(schema::sessions::id.eq(session_id)))
                 .execute(&mut *self.db())
                 .expect("delete session");
-        self.observe_delete(schema::sessions::table, id);
+        self.observe_delete(schema::sessions::table, session_id);
 
-        tracing::trace!("delete_session({}) affected {} rows", id, affected_rows);
+        tracing::trace!(
+            "delete_session({}) affected {} rows",
+            session_id,
+            affected_rows
+        );
     }
 
     #[tracing::instrument]
-    pub fn save_draft(&self, sid: i32, draft: String) {
-        tracing::trace!("Called save_draft({}, \"{}\")", sid, draft);
-
+    pub fn save_draft(&self, session_id: i32, draft: String) {
         let draft = if draft.is_empty() { None } else { Some(draft) };
 
         let affected_rows =
-            diesel::update(schema::sessions::table.filter(schema::sessions::id.eq(sid)))
+            diesel::update(schema::sessions::table.filter(schema::sessions::id.eq(session_id)))
                 .set(schema::sessions::draft.eq(draft))
                 .execute(&mut *self.db())
                 .expect("save draft");
@@ -2026,105 +2013,101 @@ impl Storage {
         tracing::trace!("save_draft() affected {} rows", affected_rows);
 
         if affected_rows > 0 {
-            self.observe_update(schema::sessions::table, sid);
+            self.observe_update(schema::sessions::table, session_id);
         }
     }
 
     #[tracing::instrument]
-    pub fn mark_session_read(&self, sid: i32) {
-        tracing::trace!("Called mark_session_read({})", sid);
-
-        use schema::messages::dsl::*;
-
-        let ids: Vec<i32> = messages
-            .select(id)
-            .filter(session_id.eq(sid).and(is_read.eq(false)))
+    pub fn mark_session_read(&self, session_id: i32) {
+        let ids: Vec<i32> = schema::messages::table
+            .select(schema::messages::id)
+            .filter(
+                schema::messages::session_id
+                    .eq(session_id)
+                    .and(schema::messages::is_read.eq(false)),
+            )
             .load(&mut *self.db())
             .expect("fetch unread message IDs");
 
-        let affected_rows =
-            diesel::update(messages.filter(session_id.eq(sid).and(is_read.eq(false))))
-                .set((is_read.eq(true),))
-                .execute(&mut *self.db())
-                .expect("mark session read");
+        let affected_rows = diesel::update(
+            schema::messages::table.filter(
+                schema::messages::session_id
+                    .eq(session_id)
+                    .and(schema::messages::is_read.eq(false)),
+            ),
+        )
+        .set((schema::messages::is_read.eq(true),))
+        .execute(&mut *self.db())
+        .expect("mark session read");
 
         assert_eq!(affected_rows, ids.len());
 
         for message_id in ids {
             self.observe_update(schema::messages::table, message_id)
-                .with_relation(schema::sessions::table, sid);
+                .with_relation(schema::sessions::table, session_id);
         }
     }
 
     #[tracing::instrument]
-    pub fn mark_session_muted(&self, sid: i32, muted: bool) {
-        tracing::trace!("Called mark_session_muted({}, {})", sid, muted);
-
+    pub fn mark_session_muted(&self, session_id: i32, muted: bool) {
         use schema::sessions::dsl::*;
 
-        let affected_rows = diesel::update(sessions.filter(id.eq(sid)))
+        let affected_rows = diesel::update(sessions.filter(id.eq(session_id)))
             .set((is_muted.eq(muted),))
             .execute(&mut *self.db())
             .expect("mark session (un)muted");
         if affected_rows > 0 {
-            self.observe_update(schema::sessions::table, sid);
+            self.observe_update(schema::sessions::table, session_id);
         }
     }
 
     #[tracing::instrument]
-    pub fn mark_session_archived(&self, sid: i32, archived: bool) {
-        tracing::trace!("Called mark_session_archived({}, {})", sid, archived);
-
+    pub fn mark_session_archived(&self, session_id: i32, archived: bool) {
         use schema::sessions::dsl::*;
 
-        let affected_rows = diesel::update(sessions.filter(id.eq(sid)))
+        let affected_rows = diesel::update(sessions.filter(id.eq(session_id)))
             .set((is_archived.eq(archived),))
             .execute(&mut *self.db())
             .expect("mark session (un)archived");
         if affected_rows > 0 {
-            self.observe_update(schema::sessions::table, sid);
+            self.observe_update(schema::sessions::table, session_id);
         }
     }
 
     #[tracing::instrument]
-    pub fn mark_session_pinned(&self, sid: i32, pinned: bool) {
-        tracing::trace!("Called mark_session_pinned({}, {})", sid, pinned);
-
+    pub fn mark_session_pinned(&self, session_id: i32, pinned: bool) {
         use schema::sessions::dsl::*;
 
-        let affected_rows = diesel::update(sessions.filter(id.eq(sid)))
+        let affected_rows = diesel::update(sessions.filter(id.eq(session_id)))
             .set((is_pinned.eq(pinned),))
             .execute(&mut *self.db())
             .expect("mark session (un)pinned");
         if affected_rows > 0 {
-            self.observe_update(schema::sessions::table, sid);
+            self.observe_update(schema::sessions::table, session_id);
         }
     }
 
     #[tracing::instrument]
-    pub fn mark_recipient_registered(&self, r_uuid: Uuid, registered: bool) -> usize {
-        tracing::trace!(
-            "Called mark_recipient_registered({}, {})",
-            r_uuid,
-            registered
-        );
-
+    pub fn mark_recipient_registered(&self, recipient_uuid: Uuid, registered: bool) -> usize {
         use schema::recipients::dsl::*;
 
         let rid: Vec<i32> = recipients
             .select(id)
-            .filter(uuid.eq(r_uuid.to_string()))
+            .filter(uuid.eq(recipient_uuid.to_string()))
             .load(&mut *self.db())
             .expect("Recipient id by UUID");
 
         if rid.is_empty() {
-            tracing::trace!("Recipient with UUID {} not found in database", r_uuid);
+            tracing::trace!(
+                "Recipient with UUID {} not found in database",
+                recipient_uuid
+            );
             return 0;
         }
 
         let rid = rid.first().unwrap();
 
-        let affected_rows = diesel::update(recipients.filter(uuid.eq(r_uuid.to_string())))
+        let affected_rows = diesel::update(recipients.filter(uuid.eq(recipient_uuid.to_string())))
             .set(is_registered.eq(registered))
             .execute(&mut *self.db())
             .expect("mark recipient (un)registered");
@@ -2203,13 +2186,11 @@ impl Storage {
     /// Create a new message. This was transparent within SaveMessage in Go.
     ///
     /// Panics is new_message.session_id is None.
-    #[tracing::instrument]
+    #[tracing::instrument(fields(session_id = new_message.session_id))]
     pub fn create_message(&self, new_message: &NewMessage) -> orm::Message {
         // XXX Storing the message with its attachments should happen in a transaction.
         // Meh.
         let session = new_message.session_id;
-
-        tracing::trace!("Called create_message(..) for session {}", session);
 
         let has_source = new_message.source_e164.is_some() || new_message.source_uuid.is_some();
         let sender_id = if has_source {
@@ -2345,14 +2326,12 @@ impl Storage {
 
     #[tracing::instrument]
     pub fn fetch_message_by_timestamp(&self, ts: NaiveDateTime) -> Option<orm::Message> {
-        tracing::trace!("Called fetch_message_by_timestamp({})", ts);
         let query = schema::messages::table.filter(schema::messages::server_timestamp.eq(ts));
         query.first(&mut *self.db()).ok()
     }
 
     #[tracing::instrument]
     pub fn fetch_recipient_by_id(&self, id: i32) -> Option<orm::Recipient> {
-        tracing::trace!("Called fetch_recipient_by_id({})", id);
         schema::recipients::table
             .filter(schema::recipients::id.eq(id))
             .first(&mut *self.db())
@@ -2362,7 +2341,6 @@ impl Storage {
     #[tracing::instrument]
     pub fn fetch_message_by_id(&self, id: i32) -> Option<orm::Message> {
         // Even a single message needs to know if it's queued to satisfy the `Message` trait
-        tracing::trace!("Called fetch_message_by_id({})", id);
         schema::messages::table
             .filter(schema::messages::id.eq(id))
             .first(&mut *self.db())
@@ -2372,7 +2350,6 @@ impl Storage {
     /// Returns a vector of messages for a specific session, ordered by server timestamp.
     #[tracing::instrument]
     pub fn fetch_all_messages(&self, session_id: i32) -> Vec<orm::Message> {
-        tracing::trace!("Called fetch_all_messages({})", session_id);
         schema::messages::table
             .filter(schema::messages::session_id.eq(session_id))
             .order_by(schema::messages::columns::server_timestamp.desc())
@@ -2383,7 +2360,6 @@ impl Storage {
     /// Return the amount of messages in the database
     #[tracing::instrument]
     pub fn message_count(&self) -> i32 {
-        tracing::trace!("Called message_count()");
         let count: i64 = schema::messages::table
             .count()
             .get_result(&mut *self.db())
@@ -2394,7 +2370,6 @@ impl Storage {
     /// Return the amount of sessions in the database
     #[tracing::instrument]
     pub fn session_count(&self) -> i32 {
-        tracing::trace!("Called session_count()");
         let count: i64 = schema::sessions::table
             .count()
             .get_result(&mut *self.db())
@@ -2405,7 +2380,6 @@ impl Storage {
     /// Return the amount of recipients in the database
     #[tracing::instrument]
     pub fn recipient_count(&self) -> i32 {
-        tracing::trace!("Called recipient_count()");
         let count: i64 = schema::recipients::table
             .filter(schema::recipients::uuid.is_not_null())
             .count()
@@ -2417,7 +2391,6 @@ impl Storage {
     /// Return the amount of unsent messages in the database
     #[tracing::instrument]
     pub fn unsent_count(&self) -> i32 {
-        tracing::trace!("Called unsent_count()");
         let count: i64 = schema::messages::table
             .filter(schema::messages::is_outbound.is(true))
             .filter(schema::messages::sending_has_failed.is(true))
@@ -2490,7 +2463,6 @@ impl Storage {
         // Our strategy is to fetch as much as possible, and to augment with as few additional
         // queries as possible. We chose to not join `sender`, and instead use a loop for that
         // part.
-        tracing::trace!("Called fetch_all_messages_augmented({})", sid);
         let messages = self.fetch_all_messages(sid);
 
         let order = (
@@ -2577,7 +2549,6 @@ impl Storage {
     #[tracing::instrument]
     pub fn delete_message(&mut self, message_id: i32) -> usize {
         // TODO: add subspans
-        tracing::trace!("Called delete_message({})", message_id);
         let n_messages = diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
             .set((
@@ -2693,20 +2664,19 @@ impl Storage {
 
     /// Marks a message as failed to send
     #[tracing::instrument]
-    pub fn fail_message(&self, mid: i32) {
-        tracing::trace!("Setting message {} to failed", mid);
+    pub fn fail_message(&self, message_id: i32) {
         diesel::update(schema::messages::table)
-            .filter(schema::messages::id.eq(mid))
+            .filter(schema::messages::id.eq(message_id))
             .set(schema::messages::sending_has_failed.eq(true))
             .execute(&mut *self.db())
             .unwrap();
-        self.observe_update(schema::messages::table, mid);
+        self.observe_update(schema::messages::table, message_id);
     }
 
     #[tracing::instrument]
-    pub fn dequeue_message(&self, mid: i32, sent_time: NaiveDateTime, unidentified: bool) {
+    pub fn dequeue_message(&self, message_id: i32, sent_time: NaiveDateTime, unidentified: bool) {
         diesel::update(schema::messages::table)
-            .filter(schema::messages::id.eq(mid))
+            .filter(schema::messages::id.eq(message_id))
             .set((
                 schema::messages::sent_timestamp.eq(sent_time),
                 schema::messages::sending_has_failed.eq(false),
@@ -2714,7 +2684,7 @@ impl Storage {
             ))
             .execute(&mut *self.db())
             .unwrap();
-        self.observe_update(schema::messages::table, mid);
+        self.observe_update(schema::messages::table, message_id);
     }
 
     /// Returns a binary peer identity
