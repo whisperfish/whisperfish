@@ -169,9 +169,17 @@ fn main() {
         log_level = LevelFilter::Trace;
     }
 
-    if cfg!(feature = "console-subscriber") && config.tokio_console {
+    if config.tracing {
+        use tracing_subscriber::prelude::*;
+        let registry = tracing_subscriber::registry().with(tracing_subscriber::fmt::layer());
+
         #[cfg(feature = "console-subscriber")]
-        console_subscriber::init();
+        let registry = registry.with(console_subscriber::spawn());
+
+        #[cfg(feature = "tracy")]
+        let registry = registry.with(tracing_tracy::TracyLayer::new());
+
+        registry.init();
     } else {
         tracing_subscriber::fmt::fmt()
             .with_env_filter(
