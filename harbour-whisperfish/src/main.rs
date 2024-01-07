@@ -170,16 +170,21 @@ fn main() {
     }
 
     if config.tracing {
-        use tracing_subscriber::prelude::*;
-        let registry = tracing_subscriber::registry().with(tracing_subscriber::fmt::layer());
+        #[cfg(not(feature = "coz"))]
+        {
+            use tracing_subscriber::prelude::*;
+            let registry = tracing_subscriber::registry().with(tracing_subscriber::fmt::layer());
+            #[cfg(feature = "console-subscriber")]
+            let registry = registry.with(console_subscriber::spawn());
 
-        #[cfg(feature = "console-subscriber")]
-        let registry = registry.with(console_subscriber::spawn());
+            #[cfg(feature = "tracy")]
+            let registry = registry.with(tracing_tracy::TracyLayer::new());
 
-        #[cfg(feature = "tracy")]
-        let registry = registry.with(tracing_tracy::TracyLayer::new());
+            registry.init();
+        }
 
-        registry.init();
+        #[cfg(feature = "coz")]
+        tracing::subscriber::set_global_default(tracing_coz::TracingCozBridge::new()).unwrap();
     } else {
         tracing_subscriber::fmt::fmt()
             .with_env_filter(
