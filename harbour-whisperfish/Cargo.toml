@@ -13,6 +13,8 @@ single-instance = "0.3.3"
 simplelog = "0.12"
 # log-always is for compatibility with simplelog
 tracing = { version = "0.1", features=["log-always"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"]}
+console-subscriber = { version = "0.2", optional = true }
 time = "0.3.30"
 anyhow = "1.0"
 clap = { version = "3.2", features = ["derive"] }
@@ -24,3 +26,4 @@ signal-hook = "0.3.15"
 bundled-sqlcipher = ["whisperfish/bundled-sqlcipher"]
 sailfish = ["whisperfish/sailfish"]
 harbour = ["whisperfish/harbour"]
+console-subscriber = ["dep:console-subscriber"]

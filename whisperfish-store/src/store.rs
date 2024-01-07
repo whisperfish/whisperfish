@@ -608,7 +608,7 @@ impl Storage {
     }
 
     /// Process reaction and store in database.
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn process_reaction(
         &mut self,
         sender: &orm::Recipient,
@@ -655,7 +655,7 @@ impl Storage {
         Some((message, session))
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn save_reaction(
         &mut self,
         msg_id: i32,
@@ -687,7 +687,7 @@ impl Storage {
             .with_relation(schema::messages::table, msg_id);
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn remove_reaction(&mut self, msg_id: i32, sender_id: i32) {
         use crate::schema::reactions::dsl::*;
         diesel::delete(reactions)
@@ -700,7 +700,7 @@ impl Storage {
             .with_relation(schema::messages::table, msg_id);
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_self_recipient(&self) -> Option<orm::Recipient> {
         let e164 = self.config.get_tel();
         let uuid = self.config.get_uuid();
@@ -714,7 +714,7 @@ impl Storage {
         Some(self.merge_and_fetch_recipient(e164, uuid, None, TrustLevel::Certain))
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_recipient_by_phonenumber(
         &self,
         phonenumber: &PhoneNumber,
@@ -743,12 +743,12 @@ impl Storage {
         }
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_recipients(&self) -> Vec<orm::Recipient> {
         schema::recipients::table.load(&mut *self.db()).expect("db")
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_recipient(
         &self,
         phonenumber: Option<PhoneNumber>,
@@ -782,7 +782,7 @@ impl Storage {
         by_uuid.or(by_e164)
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn set_recipient_unidentified(
         &self,
         recipient_id: i32,
@@ -800,7 +800,7 @@ impl Storage {
         affected > 0
     }
 
-    #[tracing::instrument(skip(recipient_uuid), fields(recipient_uuid = shorten(&recipient_uuid.to_string(), 12).as_ref()))]
+    #[tracing::instrument(skip(self, recipient_uuid), fields(recipient_uuid = shorten(&recipient_uuid.to_string(), 12).as_ref()))]
     pub fn mark_profile_outdated(&self, recipient_uuid: Uuid) -> Option<orm::Recipient> {
         use crate::schema::recipients::dsl::*;
         diesel::update(recipients)
@@ -815,7 +815,7 @@ impl Storage {
         recipient
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn update_profile_details(
         &self,
         profile_uuid: &Uuid,
@@ -850,7 +850,7 @@ impl Storage {
         }
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn update_expiration_timer(&self, session_id: i32, timer: Option<u32>) {
         // Carry out the update only if the timer changes
         use crate::schema::sessions::dsl::*;
@@ -865,7 +865,7 @@ impl Storage {
         }
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn update_profile_key(
         &self,
         phonenumber: Option<PhoneNumber>,
@@ -920,7 +920,7 @@ impl Storage {
 
     /// Save profile data to db and trigger GUI update.
     /// Assumes the avatar image has been saved/deleted in advance.
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn save_profile(&self, profile: StoreProfile) {
         use crate::store::schema::recipients::dsl::*;
         use diesel::prelude::*;
@@ -947,7 +947,7 @@ impl Storage {
     /// Equivalent of Androids `RecipientDatabase::getAndPossiblyMerge`.
     ///
     /// XXX: This does *not* trigger observations for removed recipients.
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn merge_and_fetch_recipient(
         &self,
         phonenumber: Option<PhoneNumber>,
@@ -1153,7 +1153,7 @@ impl Storage {
     ///
     /// Executes `merge_recipient_inner` inside a transaction, and then returns the result.
     #[allow(unused)]
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     fn merge_recipients(&self, source_id: i32, dest_id: i32) -> orm::Recipient {
         let mut db = self.db();
         let merged_id = db
@@ -1338,7 +1338,7 @@ impl Storage {
         Ok(dest_id)
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_recipient_by_uuid(&self, recipient_uuid: Uuid) -> Option<orm::Recipient> {
         use crate::schema::recipients::dsl::*;
 
@@ -1352,7 +1352,7 @@ impl Storage {
         }
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_or_insert_recipient_by_uuid(&self, new_uuid: Uuid) -> orm::Recipient {
         use crate::schema::recipients::dsl::*;
 
@@ -1375,7 +1375,7 @@ impl Storage {
         }
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_or_insert_recipient_by_phonenumber(
         &self,
         phonenumber: &PhoneNumber,
@@ -1403,32 +1403,32 @@ impl Storage {
         }
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_last_message_by_session_id_augmented(
         &self,
-        sid: i32,
+        session_id: i32,
     ) -> Option<orm::AugmentedMessage> {
-        let msg = self.fetch_last_message_by_session_id(sid)?;
+        let msg = self.fetch_last_message_by_session_id(session_id)?;
         self.fetch_augmented_message(msg.id)
     }
 
-    #[tracing::instrument]
-    pub fn fetch_last_message_by_session_id(&self, sid: i32) -> Option<orm::Message> {
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_last_message_by_session_id(&self, session_id: i32) -> Option<orm::Message> {
         use schema::messages::dsl::*;
         messages
-            .filter(session_id.eq(sid))
+            .filter(session_id.eq(session_id))
             .order_by(server_timestamp.desc())
             .first(&mut *self.db())
             .ok()
     }
 
-    #[tracing::instrument]
-    pub fn fetch_message_receipts(&self, mid: i32) -> Vec<(orm::Receipt, orm::Recipient)> {
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_message_receipts(&self, message_id: i32) -> Vec<(orm::Receipt, orm::Recipient)> {
         use schema::{receipts, recipients};
 
         receipts::table
             .inner_join(recipients::table)
-            .filter(receipts::message_id.eq(mid))
+            .filter(receipts::message_id.eq(message_id))
             .load(&mut *self.db())
             .expect("db")
     }
@@ -1436,7 +1436,7 @@ impl Storage {
     /// Marks the message with a certain timestamp as read by a certain person.
     ///
     /// This is e.g. called from Signal Desktop from a sync message
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn mark_message_read(
         &self,
         timestamp: NaiveDateTime,
@@ -1469,7 +1469,7 @@ impl Storage {
     }
 
     /// Marks the message with a certain timestamp as received by a certain person.
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn mark_message_received(
         &self,
         receiver_uuid: Uuid,
@@ -1540,7 +1540,7 @@ impl Storage {
     ///
     /// This only yields correct results when the last insertion was in fact a session.
     #[allow(unused)]
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     fn fetch_latest_recipient(&self) -> Option<orm::Recipient> {
         use schema::recipients::dsl::*;
         recipients
@@ -1552,7 +1552,7 @@ impl Storage {
     /// Fetches the latest session by last_insert_rowid.
     ///
     /// This only yields correct results when the last insertion was in fact a session.
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     fn fetch_latest_session(&self) -> Option<orm::Session> {
         fetch_session!(self.db(), |query| {
             query.filter(schema::sessions::id.eq(last_insert_rowid()))
@@ -1564,26 +1564,26 @@ impl Storage {
     /// Getting them ordered by timestamp would be nice,
     /// but that requires table aliases or complex subqueries,
     /// which are not really a thing in Diesel atm.
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_sessions(&self) -> Vec<orm::Session> {
         fetch_sessions!(self.db(), |query| { query })
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_group_sessions(&self) -> Vec<orm::Session> {
         fetch_sessions!(self.db(), |query| {
             query.filter(schema::sessions::group_v1_id.is_not_null())
         })
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_session_by_id(&self, sid: i32) -> Option<orm::Session> {
         fetch_session!(self.db(), |query| {
             query.filter(schema::sessions::columns::id.eq(sid))
         })
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_session_by_id_augmented(&self, sid: i32) -> Option<orm::AugmentedSession> {
         let session = self.fetch_session_by_id(sid)?;
         let last_message = self.fetch_last_message_by_session_id_augmented(session.id);
@@ -1594,21 +1594,21 @@ impl Storage {
         })
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_session_by_phonenumber(&self, phonenumber: &PhoneNumber) -> Option<orm::Session> {
         fetch_session!(self.db(), |query| {
             query.filter(schema::recipients::e164.eq(phonenumber.to_string()))
         })
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_session_by_recipient_id(&self, recipient_id: i32) -> Option<orm::Session> {
         fetch_session!(self.db(), |query| {
             query.filter(schema::recipients::id.eq(recipient_id))
         })
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_attachment(&self, attachment_id: i32) -> Option<orm::Attachment> {
         use schema::attachments::dsl::*;
         attachments
@@ -1618,7 +1618,7 @@ impl Storage {
             .unwrap()
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_attachments_for_message(&self, mid: i32) -> Vec<orm::Attachment> {
         use schema::attachments::dsl::*;
         attachments
@@ -1628,7 +1628,7 @@ impl Storage {
             .unwrap()
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_reactions_for_message(&self, mid: i32) -> Vec<(orm::Reaction, orm::Recipient)> {
         use schema::{reactions, recipients};
         reactions::table
@@ -1638,7 +1638,7 @@ impl Storage {
             .expect("db")
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_grouped_reactions_for_message(&self, mid: i32) -> Vec<orm::GroupedReaction> {
         use schema::reactions;
         reactions::table
@@ -1653,7 +1653,7 @@ impl Storage {
             .expect("db")
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_reaction(&self, msg_id: i32, rcpt_id: i32) -> Option<orm::Reaction> {
         use schema::reactions;
         reactions::table
@@ -1667,7 +1667,7 @@ impl Storage {
             .expect("db")
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_group_by_group_v1_id(&self, id: &str) -> Option<orm::GroupV1> {
         schema::group_v1s::table
             .filter(schema::group_v1s::id.eq(id))
@@ -1676,7 +1676,7 @@ impl Storage {
             .unwrap()
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_group_by_group_v2_id(&self, id: &str) -> Option<orm::GroupV2> {
         schema::group_v2s::table
             .filter(schema::group_v2s::id.eq(id))
@@ -1685,7 +1685,7 @@ impl Storage {
             .unwrap()
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_group_members_by_group_v1_id(
         &self,
         id: &str,
@@ -1697,7 +1697,7 @@ impl Storage {
             .unwrap()
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn group_v2_exists(&self, group: &GroupV2) -> bool {
         let group_id = group.secret.get_group_identifier();
         let group_id_hex = hex::encode(group_id);
@@ -1710,7 +1710,7 @@ impl Storage {
         group.is_some()
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_group_members_by_group_v2_id(
         &self,
         id: &str,
@@ -1723,7 +1723,7 @@ impl Storage {
             .unwrap()
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_or_insert_session_by_phonenumber(
         &self,
         phonenumber: &PhoneNumber,
@@ -1749,7 +1749,7 @@ impl Storage {
     }
 
     /// Fetches recipient's DM session, or creates the session.
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_or_insert_session_by_recipient_id(&self, recipient_id: i32) -> orm::Session {
         if let Some(session) = self.fetch_session_by_recipient_id(recipient_id) {
             return session;
@@ -1829,7 +1829,7 @@ impl Storage {
         session
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_session_by_group_v1_id(&self, group_id_hex: &str) -> Option<orm::Session> {
         if group_id_hex.len() != 32 {
             tracing::warn!(
@@ -1843,7 +1843,7 @@ impl Storage {
         })
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_session_by_group_v2_id(&self, group_id_hex: &str) -> Option<orm::Session> {
         if group_id_hex.len() != 64 {
             tracing::warn!(
@@ -1985,7 +1985,7 @@ impl Storage {
         }
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn delete_session(&self, session_id: i32) {
         let affected_rows =
             diesel::delete(schema::sessions::table.filter(schema::sessions::id.eq(session_id)))
@@ -2000,7 +2000,7 @@ impl Storage {
         );
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn save_draft(&self, session_id: i32, draft: String) {
         let draft = if draft.is_empty() { None } else { Some(draft) };
 
@@ -2017,7 +2017,7 @@ impl Storage {
         }
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn mark_session_read(&self, session_id: i32) {
         let ids: Vec<i32> = schema::messages::table
             .select(schema::messages::id)
@@ -2048,7 +2048,7 @@ impl Storage {
         }
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn mark_session_muted(&self, session_id: i32, muted: bool) {
         use schema::sessions::dsl::*;
 
@@ -2061,7 +2061,7 @@ impl Storage {
         }
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn mark_session_archived(&self, session_id: i32, archived: bool) {
         use schema::sessions::dsl::*;
 
@@ -2074,7 +2074,7 @@ impl Storage {
         }
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn mark_session_pinned(&self, session_id: i32, pinned: bool) {
         use schema::sessions::dsl::*;
 
@@ -2087,7 +2087,7 @@ impl Storage {
         }
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn mark_recipient_registered(&self, recipient_uuid: Uuid, registered: bool) -> usize {
         use schema::recipients::dsl::*;
 
@@ -2117,7 +2117,7 @@ impl Storage {
         affected_rows
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn register_attachment(&mut self, mid: i32, ptr: AttachmentPointer) -> orm::Attachment {
         use schema::attachments::dsl::*;
 
@@ -2160,7 +2160,7 @@ impl Storage {
         latest_attachment
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn store_attachment_pointer(
         &self,
         attachment_id: i32,
@@ -2186,7 +2186,7 @@ impl Storage {
     /// Create a new message. This was transparent within SaveMessage in Go.
     ///
     /// Panics is new_message.session_id is None.
-    #[tracing::instrument(fields(session_id = new_message.session_id))]
+    #[tracing::instrument(skip(self), fields(session_id = new_message.session_id))]
     pub fn create_message(&self, new_message: &NewMessage) -> orm::Message {
         // XXX Storing the message with its attachments should happen in a transaction.
         // Meh.
@@ -2308,7 +2308,7 @@ impl Storage {
     /// This was implicit in Go, which probably didn't use threads.
     ///
     /// It needs to be locked from the outside because sqlite sucks.
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     fn fetch_latest_message(&self) -> Option<orm::Message> {
         schema::messages::table
             .filter(schema::messages::id.eq(last_insert_rowid()))
@@ -2316,7 +2316,7 @@ impl Storage {
             .ok()
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     fn fetch_latest_attachment(&self) -> Option<orm::Attachment> {
         schema::attachments::table
             .filter(schema::attachments::id.eq(last_insert_rowid()))
@@ -2324,13 +2324,13 @@ impl Storage {
             .ok()
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_message_by_timestamp(&self, ts: NaiveDateTime) -> Option<orm::Message> {
         let query = schema::messages::table.filter(schema::messages::server_timestamp.eq(ts));
         query.first(&mut *self.db()).ok()
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_recipient_by_id(&self, id: i32) -> Option<orm::Recipient> {
         schema::recipients::table
             .filter(schema::recipients::id.eq(id))
@@ -2338,7 +2338,7 @@ impl Storage {
             .ok()
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_message_by_id(&self, id: i32) -> Option<orm::Message> {
         // Even a single message needs to know if it's queued to satisfy the `Message` trait
         schema::messages::table
@@ -2348,7 +2348,7 @@ impl Storage {
     }
 
     /// Returns a vector of messages for a specific session, ordered by server timestamp.
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_all_messages(&self, session_id: i32) -> Vec<orm::Message> {
         schema::messages::table
             .filter(schema::messages::session_id.eq(session_id))
@@ -2358,7 +2358,7 @@ impl Storage {
     }
 
     /// Return the amount of messages in the database
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn message_count(&self) -> i32 {
         let count: i64 = schema::messages::table
             .count()
@@ -2368,7 +2368,7 @@ impl Storage {
     }
 
     /// Return the amount of sessions in the database
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn session_count(&self) -> i32 {
         let count: i64 = schema::sessions::table
             .count()
@@ -2378,7 +2378,7 @@ impl Storage {
     }
 
     /// Return the amount of recipients in the database
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn recipient_count(&self) -> i32 {
         let count: i64 = schema::recipients::table
             .filter(schema::recipients::uuid.is_not_null())
@@ -2389,7 +2389,7 @@ impl Storage {
     }
 
     /// Return the amount of unsent messages in the database
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn unsent_count(&self) -> i32 {
         let count: i64 = schema::messages::table
             .filter(schema::messages::is_outbound.is(true))
@@ -2400,7 +2400,7 @@ impl Storage {
         count as _
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_augmented_message(&self, message_id: i32) -> Option<orm::AugmentedMessage> {
         let message = self.fetch_message_by_id(message_id)?;
         let receipts = self.fetch_message_receipts(message.id);
@@ -2428,7 +2428,7 @@ impl Storage {
         })
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_all_sessions_augmented(&self) -> Vec<orm::AugmentedSession> {
         let mut sessions: Vec<_> = self
             .fetch_sessions()
@@ -2456,7 +2456,7 @@ impl Storage {
     ///
     /// When the sender is None, it is a sent message, not a received message.
     // XXX maybe this should be `Option<Vec<...>>`.
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fetch_all_messages_augmented(&self, sid: i32) -> Vec<orm::AugmentedMessage> {
         // XXX double/aliased-join would be very useful.
         // Our strategy is to fetch as much as possible, and to augment with as few additional
@@ -2554,7 +2554,7 @@ impl Storage {
     /// Don't actually delete, but mark the message as deleted
     /// and clear the body text, delete its reactions,
     /// and if it was an incoming message, also its attachments from the disk.
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn delete_message(&mut self, message_id: i32) -> usize {
         let n_messages = diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
@@ -2638,7 +2638,7 @@ impl Storage {
     }
 
     /// Marks all messages that are outbound and unsent as failed.
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn mark_pending_messages_failed(&self) -> usize {
         use schema::messages::dsl::*;
         let failed_messages: Vec<orm::Message> = messages
@@ -2675,7 +2675,7 @@ impl Storage {
     }
 
     /// Marks a message as failed to send
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn fail_message(&self, message_id: i32) {
         diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
@@ -2685,7 +2685,7 @@ impl Storage {
         self.observe_update(schema::messages::table, message_id);
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn dequeue_message(&self, message_id: i32, sent_time: NaiveDateTime, unidentified: bool) {
         diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
@@ -2700,7 +2700,7 @@ impl Storage {
     }
 
     /// Returns a binary peer identity
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub async fn peer_identity(&self, addr: ProtocolAddress) -> Result<Vec<u8>, anyhow::Error> {
         let ident = self
             .get_identity(&addr)
@@ -2722,7 +2722,7 @@ impl Storage {
     }
 
     /// Saves a given attachment into a random-generated path. Returns the path.
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub async fn save_attachment(
         &self,
         id: i32,

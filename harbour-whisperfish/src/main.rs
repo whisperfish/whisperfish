@@ -169,29 +169,25 @@ fn main() {
         log_level = LevelFilter::Trace;
     }
 
-    CombinedLogger::init(if config.logfile {
-        vec![
-            TermLogger::new(
-                log_level,
-                config_builder.build(),
-                TerminalMode::Stderr,
-                ColorChoice::Auto,
-            ),
-            WriteLogger::new(
-                log_level,
-                config_builder.build(),
-                std::fs::File::create(log_file).unwrap(),
-            ),
-        ]
+    if cfg!(feature = "console-subscriber") && config.tokio_console {
+        #[cfg(feature = "console-subscriber")]
+        console_subscriber::init();
     } else {
-        vec![TermLogger::new(
+        tracing_subscriber::fmt::fmt()
+            .with_env_filter(
+                "whisperfish=trace,libsignal_service=trace,libsignal_service_actix=trace",
+            )
+            .init();
+    }
+
+    if config.logfile {
+        WriteLogger::init(
             log_level,
             config_builder.build(),
-            TerminalMode::Stderr,
-            ColorChoice::Auto,
-        )]
-    })
-    .unwrap();
+            std::fs::File::create(log_file).unwrap(),
+        )
+        .unwrap();
+    }
 
     qtlog::enable();
 
