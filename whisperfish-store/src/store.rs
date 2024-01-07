@@ -2588,6 +2588,8 @@ impl Storage {
                         .filter(schema::attachments::id.eq(attachment.id))
                         .execute(&mut *self.db())
                         .unwrap();
+                    self.observe_delete(schema::attachments::table, attachment.id)
+                        .with_relation(schema::messages::table, message.id);
                     if let Some(path) = attachment.attachment_path {
                         let remaining = schema::attachments::table
                             .filter(schema::attachments::attachment_path.eq(&path))
