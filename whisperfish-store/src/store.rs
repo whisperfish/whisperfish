@@ -748,7 +748,13 @@ impl Storage {
         schema::recipients::table.load(&mut *self.db()).expect("db")
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(
+        skip(self, phonenumber),
+        fields(
+            phonenumber = phonenumber
+                .as_ref()
+                .map(|p| p.to_string()).as_deref(),
+        ))]
     pub fn fetch_recipient(
         &self,
         phonenumber: Option<PhoneNumber>,
@@ -865,7 +871,13 @@ impl Storage {
         }
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(
+        skip(self, phonenumber),
+        fields(
+            phonenumber = phonenumber
+                .as_ref()
+                .map(|p| p.to_string()).as_deref(),
+        ))]
     pub fn update_profile_key(
         &self,
         phonenumber: Option<PhoneNumber>,
@@ -947,7 +959,13 @@ impl Storage {
     /// Equivalent of Androids `RecipientDatabase::getAndPossiblyMerge`.
     ///
     /// XXX: This does *not* trigger observations for removed recipients.
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(
+        skip(self, phonenumber),
+        fields(
+            phonenumber = phonenumber
+                .as_ref()
+                .map(|p| p.to_string()).as_deref(),
+        ))]
     pub fn merge_and_fetch_recipient(
         &self,
         phonenumber: Option<PhoneNumber>,
@@ -984,7 +1002,13 @@ impl Storage {
 
     // Inner method because the coverage report is then sensible.
     #[allow(clippy::type_complexity)]
-    #[tracing::instrument(skip(db))]
+    #[tracing::instrument(
+        skip(db, phonenumber),
+        fields(
+            phonenumber = phonenumber
+                .as_ref()
+                .map(|p| p.to_string()).as_deref(),
+        ))]
     // XXX this should get implemented with an Either or custom enum instead
     fn merge_and_fetch_recipient_inner(
         db: &mut SqliteConnection,
