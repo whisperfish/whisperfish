@@ -3,7 +3,7 @@ use std::sync::Arc;
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use libsignal_service::proto::AttachmentPointer;
 use whisperfish_store::config::SignalConfig;
-use whisperfish_store::{temp, NewMessage, Storage, StorageLocation};
+use whisperfish_store::{orm, temp, NewMessage, Storage, StorageLocation};
 
 pub type InMemoryDb = (Storage, StorageLocation<tempfile::TempDir>);
 
@@ -63,6 +63,8 @@ fn fetch_augmented_messages(c: &mut Criterion) {
                     is_unidentified: false,
                     quote_timestamp: None,
                     expires_in: None,
+                    server_guid: None,
+                    story_type: orm::StoryType::None,
                 });
                 for _attachment in 0..attachments {
                     storage.register_attachment(msg.id, AttachmentPointer::default());

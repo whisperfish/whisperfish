@@ -1,0 +1,2 @@
+ALTER TABLE messages
+    ADD COLUMN story_type INTEGER DEFAULT 0 NOT NULL;

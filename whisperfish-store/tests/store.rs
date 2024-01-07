@@ -9,7 +9,7 @@ use rstest::rstest;
 use std::future::Future;
 use std::sync::Arc;
 use whisperfish_store::config::SignalConfig;
-use whisperfish_store::orm::UnidentifiedAccessMode;
+use whisperfish_store::orm::{StoryType, UnidentifiedAccessMode};
 use whisperfish_store::{GroupV1, NewMessage, Storage};
 
 #[rstest]
@@ -134,6 +134,8 @@ async fn process_message_exists_session_source(storage: impl Future<Output = InM
             is_unidentified: false,
             quote_timestamp: None,
             expires_in: None,
+            server_guid: None,
+            story_type: StoryType::None,
         };
 
         let msg = storage.create_message(&new_message);
@@ -177,6 +179,8 @@ async fn dev_message_update(storage: impl Future<Output = InMemoryDb>) {
         is_unidentified: false,
         quote_timestamp: None,
         expires_in: None,
+        server_guid: None,
+        story_type: StoryType::None,
     };
 
     storage.create_message(&new_message);
@@ -204,6 +208,8 @@ async fn dev_message_update(storage: impl Future<Output = InMemoryDb>) {
         is_unidentified: false,
         quote_timestamp: None,
         expires_in: None,
+        server_guid: None,
+        story_type: StoryType::None,
     };
 
     storage.create_message(&other_message);
@@ -254,6 +260,8 @@ async fn process_inbound_group_message_without_sender(storage: impl Future<Outpu
         is_unidentified: false,
         quote_timestamp: None,
         expires_in: None,
+        server_guid: None,
+        story_type: StoryType::None,
     };
 
     let message_inserted = storage.create_message(&new_message);
@@ -301,6 +309,8 @@ async fn process_outbound_group_message_without_sender(storage: impl Future<Outp
         is_unidentified: false,
         quote_timestamp: None,
         expires_in: None,
+        server_guid: None,
+        story_type: StoryType::None,
     };
 
     let message_inserted = storage.create_message(&new_message);
@@ -349,6 +359,8 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
         is_unidentified: false,
         quote_timestamp: None,
         expires_in: None,
+        server_guid: None,
+        story_type: StoryType::None,
     };
 
     let message_inserted = storage.create_message(&new_message);
@@ -606,6 +618,8 @@ async fn test_recipient_actions() {
         is_unidentified: false,
         quote_timestamp: None,
         expires_in: None,
+        server_guid: None,
+        story_type: StoryType::None,
     };
 
     let msg = storage.create_message(&msg);

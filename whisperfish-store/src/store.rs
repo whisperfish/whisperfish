@@ -6,7 +6,7 @@ pub mod observer;
 mod protocol_store;
 mod utils;
 
-use self::orm::{AugmentedMessage, UnidentifiedAccessMode};
+use self::orm::{AugmentedMessage, StoryType, UnidentifiedAccessMode};
 use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
 use crate::schema;
@@ -95,6 +95,7 @@ pub struct NewMessage {
     pub session_id: i32,
     pub source_e164: Option<PhoneNumber>,
     pub source_uuid: Option<Uuid>,
+    pub server_guid: Option<Uuid>,
     pub text: String,
     pub timestamp: NaiveDateTime,
     pub sent: bool,
@@ -108,6 +109,7 @@ pub struct NewMessage {
     pub is_unidentified: bool,
     pub quote_timestamp: Option<u64>,
     pub expires_in: Option<std::time::Duration>,
+    pub story_type: StoryType,
 }
 
 pub struct StoreProfile {
@@ -2165,6 +2167,7 @@ impl Storage {
             diesel::insert_into(messages)
                 .values((
                     session_id.eq(session),
+                    server_guid.eq(new_message.server_guid.as_ref().map(Uuid::to_string)),
                     text.eq(&new_message.text),
                     sender_recipient_id.eq(sender_id),
                     received_timestamp.eq(if !new_message.outgoing {
@@ -2184,6 +2187,7 @@ impl Storage {
                     flags.eq(new_message.flags),
                     quote_id.eq(quoted_message_id),
                     expires_in.eq(new_message.expires_in.map(|x| x.as_secs() as i32)),
+                    story_type.eq(new_message.story_type as i32),
                 ))
                 .execute(&mut *self.db())
                 .expect("inserting a message")
