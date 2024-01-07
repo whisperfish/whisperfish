@@ -1438,10 +1438,10 @@ impl Storage {
 
     #[tracing::instrument(skip(self))]
     pub fn fetch_last_message_by_session_id(&self, session_id: i32) -> Option<orm::Message> {
-        use schema::messages::dsl::*;
-        messages
-            .filter(session_id.eq(session_id))
-            .order_by(server_timestamp.desc())
+        use schema::messages;
+        messages::table
+            .filter(messages::session_id.eq(session_id))
+            .order_by(messages::server_timestamp.desc())
             .first(&mut *self.db())
             .ok()
     }
