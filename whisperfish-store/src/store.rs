@@ -2458,7 +2458,6 @@ impl Storage {
     // XXX maybe this should be `Option<Vec<...>>`.
     #[tracing::instrument]
     pub fn fetch_all_messages_augmented(&self, sid: i32) -> Vec<orm::AugmentedMessage> {
-        // TODO: Add subspans
         // XXX double/aliased-join would be very useful.
         // Our strategy is to fetch as much as possible, and to augment with as few additional
         // queries as possible. We chose to not join `sender`, and instead use a loop for that
@@ -2471,75 +2470,84 @@ impl Storage {
         );
 
         // message_id, is_voice_note, attachment count
-        let attachments: Vec<(i32, Option<i16>, i64)> = schema::attachments::table
-            .inner_join(schema::messages::table)
-            .group_by(schema::attachments::message_id)
-            .select((
-                schema::attachments::message_id,
-                // We could also define a boolean or aggregate function...
-                // Googling instructions for that is difficult though, since "diesel aggregate or"
-                // yields you machines that consume fuel.
-                diesel::dsl::max(diesel::dsl::sql::<diesel::sql_types::SmallInt>(
-                    "attachments.is_voice_note",
-                )),
-                diesel::dsl::count_distinct(schema::attachments::id),
-            ))
-            .filter(schema::messages::session_id.eq(sid))
-            .order_by(order)
-            .load(&mut *self.db())
-            .expect("db");
+        let attachments: Vec<(i32, Option<i16>, i64)> =
+            tracing::trace_span!("fetching attachments",).in_scope(|| {
+                schema::attachments::table
+                    .inner_join(schema::messages::table)
+                    .group_by(schema::attachments::message_id)
+                    .select((
+                        schema::attachments::message_id,
+                        // We could also define a boolean or aggregate function...
+                        // Googling instructions for that is difficult though, since "diesel aggregate or"
+                        // yields you machines that consume fuel.
+                        diesel::dsl::max(diesel::dsl::sql::<diesel::sql_types::SmallInt>(
+                            "attachments.is_voice_note",
+                        )),
+                        diesel::dsl::count_distinct(schema::attachments::id),
+                    ))
+                    .filter(schema::messages::session_id.eq(sid))
+                    .order_by(order)
+                    .load(&mut *self.db())
+                    .expect("db")
+            });
 
-        let receipts: Vec<(orm::Receipt, orm::Recipient)> = schema::receipts::table
-            .inner_join(schema::recipients::table)
-            .select((
-                schema::receipts::all_columns,
-                schema::recipients::all_columns,
-            ))
-            .inner_join(schema::messages::table.inner_join(schema::sessions::table))
-            .filter(schema::sessions::id.eq(sid))
-            .order_by(order)
-            .load(&mut *self.db())
-            .expect("db");
-
-        let mut attachments = attachments.into_iter().peekable();
-        let receipts = receipts
-            .into_iter()
-            .group_by(|(receipt, _recipient)| receipt.message_id);
-        let mut receipts = receipts.into_iter().peekable();
+        let receipts: Vec<(orm::Receipt, orm::Recipient)> =
+            tracing::trace_span!("fetching receipts").in_scope(|| {
+                schema::receipts::table
+                    .inner_join(schema::recipients::table)
+                    .select((
+                        schema::receipts::all_columns,
+                        schema::recipients::all_columns,
+                    ))
+                    .inner_join(schema::messages::table.inner_join(schema::sessions::table))
+                    .filter(schema::sessions::id.eq(sid))
+                    .order_by(order)
+                    .load(&mut *self.db())
+                    .expect("db")
+            });
 
         let mut aug_messages = Vec::with_capacity(messages.len());
-        for message in messages {
-            let (attachments, is_voice_note) = if attachments
-                .peek()
-                .map(|(id, _, _)| *id == message.id)
-                .unwrap_or(false)
-            {
-                let (_, voice_note, attachments) = attachments.next().unwrap();
-                (
-                    attachments as usize,
-                    voice_note.map(|x| x > 0).unwrap_or(false),
-                )
-            } else {
-                (0, false)
-            };
-            let receipts = if receipts
-                .peek()
-                .map(|(id, _)| *id == message.id)
-                .unwrap_or(false)
-            {
-                let (_, receipts) = receipts.next().unwrap();
-                receipts.collect_vec()
-            } else {
-                vec![]
-            };
+        tracing::trace_span!("joining messages, attachments, receipts into AugmentedMessage")
+            .in_scope(|| {
+                let mut attachments = attachments.into_iter().peekable();
+                let receipts = receipts
+                    .into_iter()
+                    .group_by(|(receipt, _recipient)| receipt.message_id);
+                let mut receipts = receipts.into_iter().peekable();
 
-            aug_messages.push(orm::AugmentedMessage {
-                inner: message,
-                is_voice_note,
-                attachments,
-                receipts,
+                for message in messages {
+                    let (attachments, is_voice_note) = if attachments
+                        .peek()
+                        .map(|(id, _, _)| *id == message.id)
+                        .unwrap_or(false)
+                    {
+                        let (_, voice_note, attachments) = attachments.next().unwrap();
+                        (
+                            attachments as usize,
+                            voice_note.map(|x| x > 0).unwrap_or(false),
+                        )
+                    } else {
+                        (0, false)
+                    };
+                    let receipts = if receipts
+                        .peek()
+                        .map(|(id, _)| *id == message.id)
+                        .unwrap_or(false)
+                    {
+                        let (_, receipts) = receipts.next().unwrap();
+                        receipts.collect_vec()
+                    } else {
+                        vec![]
+                    };
+
+                    aug_messages.push(orm::AugmentedMessage {
+                        inner: message,
+                        is_voice_note,
+                        attachments,
+                        receipts,
+                    });
+                }
             });
-        }
         aug_messages
     }
 
