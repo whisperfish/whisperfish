@@ -2556,7 +2556,6 @@ impl Storage {
     /// and if it was an incoming message, also its attachments from the disk.
     #[tracing::instrument]
     pub fn delete_message(&mut self, message_id: i32) -> usize {
-        // TODO: add subspans
         let n_messages = diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
             .set((
@@ -2578,6 +2577,7 @@ impl Storage {
 
         let mut n_attachments: usize = 0;
 
+        let _span = tracing::trace_span!("delete attachments", message_id = message.id).entered();
         if !message.is_outbound {
             tracing::trace!("Message is from someone else, deleting attachments...");
             let regex = self.config.attachments_regex();
@@ -2617,7 +2617,9 @@ impl Storage {
                     }
                 });
         }
+        drop(_span);
 
+        let _span = tracing::trace_span!("delete reactions", message_id = message.id).entered();
         let n_reactions = diesel::delete(schema::reactions::table)
             .filter(schema::reactions::message_id.eq(message.id))
             .execute(&mut *self.db())
