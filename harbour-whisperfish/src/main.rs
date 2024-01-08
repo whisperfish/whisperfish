@@ -6,8 +6,6 @@ use single_instance::SingleInstance;
 use std::{os::unix::prelude::OsStrExt, thread, time::Duration};
 use whisperfish::*;
 
-use simplelog::*;
-
 /// Unofficial but advanced Signal client for Sailfish OS
 #[derive(Parser, Debug)]
 #[clap(name = "harbour-whisperfish", author, version, about, long_about = None)]
@@ -135,39 +133,17 @@ fn main() {
 
     let shared_dir = config.get_share_dir();
 
-    let log_file_path = shared_dir.join(format!(
-        "harbour-whisperfish.{}.log",
-        // Keep in sync with regex above
-        chrono::Utc::now().format("%Y%m%d_%H%M%S")
-    ));
-    let log_file = log_file_path.to_str().expect("log file path");
+    let file_appender = tracing_appender::rolling::hourly(&shared_dir, "harbour-whisperfish.log");
+    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
-    // Build simplelog configuration
-    let mut log_level = LevelFilter::Warn;
-    let mut config_builder = ConfigBuilder::new();
-
-    config_builder
-        .set_time_format_custom(format_description!(
-            "[year]-[month]-[day] [hour]:[minute]:[second]"
-        ))
-        .add_filter_allow_str("whisperfish")
-        .add_filter_allow_str("libsignal_service")
-        .add_filter_allow_str("libsignal_service_actix")
-        .set_max_level(LevelFilter::Error) // Always show e.g. [INFO]
-        .set_thread_level(LevelFilter::Off) // Hide thread info
-        .set_location_level(LevelFilter::Off) // Hide filename, row and column
-        .set_level_color(Level::Trace, None) // To make other colors pop up better
-        .set_level_color(Level::Debug, Some(Color::Blue))
-        .set_level_color(Level::Info, Some(Color::Green))
-        .set_level_color(Level::Warn, Some(Color::Yellow))
-        .set_level_color(Level::Error, Some(Color::Red));
-
-    if config.verbose {
+    let log_filter = if config.verbose {
         // Enable QML debug output and full backtrace (for Sailjail).
         std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
         std::env::set_var("RUST_BACKTRACE", "full");
-        log_level = LevelFilter::Trace;
-    }
+        "whisperfish=trace,libsignal_service=trace,libsignal_service_actix=trace"
+    } else {
+        "whisperfish=info,warn"
+    };
 
     if config.tracing {
         #[cfg(not(feature = "coz"))]
@@ -185,21 +161,15 @@ fn main() {
 
         #[cfg(feature = "coz")]
         tracing::subscriber::set_global_default(tracing_coz::TracingCozBridge::new()).unwrap();
+    } else if config.logfile {
+        tracing_subscriber::fmt()
+            .with_env_filter(log_filter)
+            .with_writer(non_blocking)
+            .init();
     } else {
         tracing_subscriber::fmt::fmt()
-            .with_env_filter(
-                "whisperfish=trace,libsignal_service=trace,libsignal_service_actix=trace",
-            )
+            .with_env_filter(log_filter)
             .init();
-    }
-
-    if config.logfile {
-        WriteLogger::init(
-            log_level,
-            config_builder.build(),
-            std::fs::File::create(log_file).unwrap(),
-        )
-        .unwrap();
     }
 
     qtlog::enable();
