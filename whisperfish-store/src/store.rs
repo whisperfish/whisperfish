@@ -2012,7 +2012,7 @@ impl Storage {
             .load(&mut *self.db())
             .expect("messages by expiry timestamp")
             .into_iter()
-            .map(|(id, ndt)| (id, DateTime::<Utc>::from_utc(ndt, Utc)))
+            .map(|(id, ndt)| (id, DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc)))
             .collect()
     }
 
@@ -2026,7 +2026,7 @@ impl Storage {
             .first(&mut *self.db())
             .optional()
             .expect("messages by expiry timestamp")
-            .map(|(id, ndt)| (id, DateTime::<Utc>::from_utc(ndt, Utc)))
+            .map(|(id, ndt)| (id, DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc)))
     }
 
     pub fn delete_expired_messages(&self) -> usize {
