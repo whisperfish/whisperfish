@@ -872,7 +872,7 @@ impl Storage {
     }
 
     #[tracing::instrument(
-        skip(self, phonenumber),
+        skip(self, phonenumber, new_profile_key),
         fields(
             phonenumber = phonenumber
                 .as_ref()
@@ -2746,7 +2746,7 @@ impl Storage {
     }
 
     /// Saves a given attachment into a random-generated path. Returns the path.
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, attachment), fields(attachment_size = attachment.len()))]
     pub async fn save_attachment(
         &self,
         id: i32,
