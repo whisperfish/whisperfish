@@ -33,10 +33,15 @@ impl ExpiredMessagesStream {
                 message_id,
                 time
             );
-            let delta = time - Utc::now();
-            self.next_wake = Some(Box::pin(tokio::time::sleep(
-                delta.to_std().unwrap_or(Duration::from_secs(1)),
-            )));
+            let next_delta = (time - Utc::now())
+                .to_std()
+                .unwrap_or(Duration::from_secs(1));
+            let curr_delta = self
+                .next_wake
+                .as_ref()
+                .map(|w| w.deadline() - tokio::time::Instant::now())
+                .unwrap_or(Duration::from_secs(1));
+            self.next_wake = Some(Box::pin(tokio::time::sleep(next_delta.min(curr_delta))));
         } else {
             self.next_wake = None;
         }
