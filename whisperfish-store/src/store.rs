@@ -2022,6 +2022,7 @@ impl Storage {
                 schema::messages::id,
                 sql::<Timestamp>(DELETE_AFTER).sql("AS delete_after"),
             ))
+            .filter(schema::messages::expiry_started.is_not_null())
             .order_by(sql::<Timestamp>("delete_after").asc())
             .first(&mut *self.db())
             .optional()
