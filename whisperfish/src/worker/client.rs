@@ -1085,7 +1085,12 @@ impl Handler<FetchAttachment> for ClientActor {
                 );
                 let mut key = [0u8; 64];
                 key.copy_from_slice(key_material);
-                decrypt_in_place(key, &mut ciphertext).expect("attachment decryption");
+                let mut ciphertext = tokio::task::spawn_blocking(move || {
+                    decrypt_in_place(key, &mut ciphertext).expect("attachment decryption");
+                    ciphertext
+                })
+                .await
+                .context("decryption threadpoool")?;
 
                 // Signal puts exponentially increasing padding at the end
                 // to prevent some distinguishing attacks, so it has to be truncated.
@@ -1290,9 +1295,8 @@ impl Handler<SendMessage> for ClientActor {
                         .clone() // Clone for the spawn_blocking below
                         .expect("attachment path when uploading");
                     let contents =
-                        tokio::task::spawn_blocking(move || std::fs::read(attachment_path))
+                        tokio::fs::read(attachment_path)
                             .await
-                            .context("threadpool")?
                             .context("reading attachment")?;
                     let attachment_path = attachment.attachment_path.as_deref().unwrap();
                     let spec = AttachmentSpec {
