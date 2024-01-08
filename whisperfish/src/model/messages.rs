@@ -245,7 +245,8 @@ impl EventObserving for SessionImpl {
                     .and_then(|x| x.as_i32())
                     .and_then(|recipient_id| storage.fetch_recipient_by_id(recipient_id))
                 else {
-                    self.fetch(storage, id);
+                    // Only refresh session - messages update themselves.
+                    self.session = storage.fetch_session_by_id_augmented(id);
                     return;
                 };
                 if let Some(session) = &mut self.session {
