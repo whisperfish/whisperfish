@@ -2525,9 +2525,10 @@ impl Storage {
                         .execute(&mut *self.db())
                         .unwrap();
                     if let Some(path) = attachment.attachment_path {
-                        let remaining = diesel::select(diesel::dsl::count_star())
+                        let remaining = schema::attachments::table
                             .filter(schema::attachments::attachment_path.eq(&path))
-                            .execute(&mut *self.db())
+                            .count()
+                            .get_result::<i64>(&mut *self.db())
                             .unwrap();
                         if remaining > 0 {
                             log::warn!("References to attachment exist, not deleting: {}", path);
