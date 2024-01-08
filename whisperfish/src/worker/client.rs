@@ -470,6 +470,7 @@ impl ClientActor {
 
         let expiration_timer_update =
             msg.flags() & DataMessageFlags::ExpirationTimerUpdate as u32 != 0;
+        let mut set_expiry = true;
         let alt_body = if let Some(reaction) = &msg.reaction {
             if let Some((message, session)) = storage.process_reaction(
                 &sender_recipient
@@ -492,12 +493,18 @@ impl ClientActor {
             }
             None
         } else if expiration_timer_update {
-            Some(format!("Expiration timer has been changed ({:?} seconds).  This is only partially implemented in Whisperfish.", msg.expire_timer))
+            set_expiry = false;
+            // XXX Translation and seconds-to-time formatting
+            Some(format!(
+                "Expiration timer has been changed to {:?} seconds.",
+                msg.expire_timer
+            ))
         } else if let Some(GroupContextV2 {
             group_change: Some(ref _group_change),
             ..
         }) = msg.group_v2
         {
+            set_expiry = false;
             Some(format!(
                 "Group changed by {}",
                 source_phonenumber
@@ -604,9 +611,17 @@ impl ClientActor {
             storage.fetch_or_insert_session_by_recipient_id(recipient.id)
         });
 
-        if msg.flags() & DataMessageFlags::ExpirationTimerUpdate as u32 != 0 {
+        if expiration_timer_update {
             storage.update_expiration_timer(session.id, msg.expire_timer);
+            // Don't auto-destroy the update message
+            set_expiry = false;
         }
+
+        let expires_in = if set_expiry {
+            session.expiring_message_timeout
+        } else {
+            None
+        };
 
         let new_message = crate::store::NewMessage {
             source_e164: source_phonenumber,
@@ -628,12 +643,7 @@ impl ClientActor {
             attachment: None,
             is_read: is_sync_sent,
             quote_timestamp: msg.quote.as_ref().and_then(|x| x.id),
-            // Don't auto-destroy the update message
-            expires_in: if !expiration_timer_update {
-                session.expiring_message_timeout
-            } else {
-                None
-            },
+            expires_in,
             story_type: StoryType::None,
             server_guid: metadata.server_guid,
         };
