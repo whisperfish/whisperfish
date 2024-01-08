@@ -4,6 +4,7 @@ use dbus::blocking::Connection;
 use signal_hook::{consts::SIGINT, iterator::Signals};
 use single_instance::SingleInstance;
 use std::{os::unix::prelude::OsStrExt, thread, time::Duration};
+use tracing_subscriber::{fmt::format, layer::SubscriberExt, util::SubscriberInitExt};
 use whisperfish::*;
 
 /// Unofficial but advanced Signal client for Sailfish OS
@@ -134,7 +135,8 @@ fn main() {
     let shared_dir = config.get_share_dir();
 
     let file_appender = tracing_appender::rolling::hourly(&shared_dir, "harbour-whisperfish.log");
-    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+    let (stdio, _guard) = tracing_appender::non_blocking(std::io::stdout());
+    let (file, _guard) = tracing_appender::non_blocking(file_appender);
 
     let log_filter = if config.verbose {
         // Enable QML debug output and full backtrace (for Sailjail).
@@ -162,9 +164,18 @@ fn main() {
         #[cfg(feature = "coz")]
         tracing::subscriber::set_global_default(tracing_coz::TracingCozBridge::new()).unwrap();
     } else if config.logfile {
-        tracing_subscriber::fmt()
-            .with_env_filter(log_filter)
-            .with_writer(non_blocking)
+        let filter = tracing_subscriber::EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new(log_filter));
+
+        tracing_subscriber::registry()
+            .with(filter)
+            .with(
+                tracing_subscriber::fmt::layer()
+                    .with_ansi(false)
+                    .event_format(format().with_ansi(false))
+                    .with_writer(file),
+            )
+            .with(tracing_subscriber::fmt::layer().with_writer(stdio))
             .init();
     } else {
         tracing_subscriber::fmt::fmt()
