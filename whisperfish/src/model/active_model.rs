@@ -169,25 +169,32 @@ where
     type Result = Vec<Interest>;
 
     fn handle(&mut self, event: Event, ctx: &mut Self::Context) -> Self::Result {
-        match self.model.upgrade() {
-            Some(model) => {
-                let model = model.pinned();
-                let mut model = model.borrow_mut();
-                let ctx = ModelContext {
-                    storage: self.storage.clone(),
-                    addr: ctx.address(),
-                };
-                model.observe(ctx, event);
-                model.interests()
+        tracing::trace_span!(
+            "ObservingModelActor",
+            T = std::any::type_name::<T>(),
+            ?event
+        )
+        .in_scope(|| {
+            match self.model.upgrade() {
+                Some(model) => {
+                    let model = model.pinned();
+                    let mut model = model.borrow_mut();
+                    let ctx = ModelContext {
+                        storage: self.storage.clone(),
+                        addr: ctx.address(),
+                    };
+                    model.observe(ctx, event);
+                    model.interests()
+                }
+                None => {
+                    // In principle, the actor should have gotten stopped when the model got dropped,
+                    // because the actor's only strong reference is contained in the ObservingModel.
+                    tracing::debug!("Model got dropped, stopping actor execution.");
+                    // XXX What is the difference between stop and terminate?
+                    ctx.stop();
+                    Vec::new()
+                }
             }
-            None => {
-                // In principle, the actor should have gotten stopped when the model got dropped,
-                // because the actor's only strong reference is contained in the ObservingModel.
-                tracing::debug!("Model got dropped, stopping actor execution.");
-                // XXX What is the difference between stop and terminate?
-                ctx.stop();
-                Vec::new()
-            }
-        }
+        })
     }
 }

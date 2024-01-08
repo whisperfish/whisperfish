@@ -18,6 +18,7 @@ use libsignal_service::proto::sync_message::Sent;
 use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::sender::SendMessageResult;
 use libsignal_service::sender::SentMessage;
+use tracing_futures::Instrument;
 use uuid::Uuid;
 use whisperfish_store::orm::StoryType;
 use whisperfish_store::TrustLevel;
@@ -1002,8 +1003,7 @@ impl Handler<FetchAttachment> for ClientActor {
         ctx: &mut <Self as Actor>::Context,
     ) -> Self::Result {
         let FetchAttachment { attachment_id } = fetch;
-        let span = tracing::info_span!("handle FetchAttachment", attachment_id);
-        let _span = span.enter();
+        let _span = tracing::info_span!("handle FetchAttachment", attachment_id).entered();
 
         let client_addr = ctx.address();
 
@@ -1062,13 +1062,6 @@ impl Handler<FetchAttachment> for ClientActor {
 
         Box::pin(
             async move {
-                let _span = tracing::trace_span!(
-                    "download attachment",
-                    attachment_id,
-                    session_id,
-                    message_id,
-                )
-                .entered();
                 use futures::io::AsyncReadExt;
                 use libsignal_service::attachment_cipher::*;
 
@@ -1147,6 +1140,12 @@ impl Handler<FetchAttachment> for ClientActor {
                     .await?;
                 Ok(())
             }
+            .instrument(tracing::trace_span!(
+                "download attachment",
+                attachment_id,
+                session_id,
+                message_id,
+            ))
             .into_actor(self)
             .map(move |r: Result<(), anyhow::Error>, act, _ctx| {
                 // Synchronise on the actor, to log the error to attachment.log
@@ -1254,7 +1253,6 @@ impl Handler<SendMessage> for ClientActor {
         let addr = ctx.address();
         Box::pin(
             async move {
-                let _span = tracing::debug_span!("sending message", mid).entered();
                 let mut sender = sender.await?;
                 if let orm::SessionType::GroupV1(_group) = &session.r#type {
                     // FIXME
@@ -1441,7 +1439,7 @@ impl Handler<SendMessage> for ClientActor {
                         Err(e)
                     }
                 }
-            }
+            }.instrument(tracing::debug_span!("sending message", mid))
             .into_actor(self)
             .map(move |res, act, _ctx| {
                 match res {
@@ -1473,7 +1471,8 @@ impl Handler<EndSession> for ClientActor {
     type Result = ();
 
     fn handle(&mut self, EndSession(id): EndSession, ctx: &mut Self::Context) -> Self::Result {
-        tracing::trace!("ClientActor::EndSession(recipient_id = {})", id);
+        let _span =
+            tracing::trace_span!("ClientActor::EndSession(recipient_id = {})", id).entered();
 
         let storage = self.storage.as_mut().unwrap();
         let recipient = storage
@@ -1848,39 +1847,38 @@ impl Handler<StorageReady> for ClientActor {
 
         Box::pin(request_password.into_actor(self).map(
             move |(uuid, phonenumber, device_id, password, signaling_key), act, ctx| {
-                tracing::trace_span!("whisperfish startup").in_scope(|| {
-                    // Store credentials
-                    let credentials = ServiceCredentials {
-                        uuid,
-                        phonenumber,
-                        password: Some(password),
-                        signaling_key,
-                        device_id: Some(device_id.into()),
-                    };
-                    act.credentials = Some(credentials);
-                    // end store credentials
+                let _span = tracing::trace_span!("whisperfish startup").entered();
+                // Store credentials
+                let credentials = ServiceCredentials {
+                    uuid,
+                    phonenumber,
+                    password: Some(password),
+                    signaling_key,
+                    device_id: Some(device_id.into()),
+                };
+                act.credentials = Some(credentials);
+                // end store credentials
 
-                    // Signal service context
-                    let storage = act.storage.clone().unwrap();
-                    // XXX What about the whoami migration?
-                    let uuid = uuid.expect("local uuid to initialize service cipher");
-                    let cipher = ServiceCipher::new(
-                        storage,
-                        rand::thread_rng(),
-                        service_cfg.unidentified_sender_trust_root,
-                        uuid,
-                        device_id.into(),
-                    );
-                    // end signal service context
-                    act.cipher = Some(cipher);
-                    act.local_addr = Some(ServiceAddress { uuid });
+                // Signal service context
+                let storage = act.storage.clone().unwrap();
+                // XXX What about the whoami migration?
+                let uuid = uuid.expect("local uuid to initialize service cipher");
+                let cipher = ServiceCipher::new(
+                    storage,
+                    rand::thread_rng(),
+                    service_cfg.unidentified_sender_trust_root,
+                    uuid,
+                    device_id.into(),
+                );
+                // end signal service context
+                act.cipher = Some(cipher);
+                act.local_addr = Some(ServiceAddress { uuid });
 
-                    Self::queue_migrations(ctx);
+                Self::queue_migrations(ctx);
 
-                    ctx.notify(Restart);
+                ctx.notify(Restart);
 
-                    ctx.notify(RefreshPreKeys);
-                })
+                ctx.notify(RefreshPreKeys);
             },
         ))
     }
@@ -1909,6 +1907,7 @@ impl Handler<Restart> for ClientActor {
                 let ws = pipe.ws();
                 Result::<_, ServiceError>::Ok((pipe, ws))
             }
+            .instrument(tracing::trace_span!("set up message receiver"))
             .into_actor(self)
             .map(move |pipe, act, ctx| match pipe {
                 Ok((pipe, ws)) => {
@@ -1943,7 +1942,7 @@ impl Handler<Restart> for ClientActor {
 }
 
 /// Queue a force-refresh of a profile fetch
-#[derive(Message)]
+#[derive(Message, Debug)]
 #[rtype(result = "()")]
 pub enum RefreshProfile {
     BySession(i32),
@@ -1954,6 +1953,7 @@ impl Handler<RefreshProfile> for ClientActor {
     type Result = ();
 
     fn handle(&mut self, profile: RefreshProfile, _ctx: &mut Self::Context) {
+        let _span = tracing::trace_span!("ClientActor::RefreshProfile({:?})", ?profile).entered();
         let storage = self.storage.as_ref().unwrap();
         let recipient = match profile {
             RefreshProfile::BySession(session_id) => {
@@ -2024,7 +2024,6 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
 
         ctx.spawn(
             async move {
-                let _span = tracing::trace_span!("opening envelope").entered();
                 let content = loop {
                     match cipher.open_envelope(msg.clone()).await {
                         Ok(Some(content)) => break content,
@@ -2083,7 +2082,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                 tracing::trace!(sender = ?content.metadata.sender, "opened envelope");
 
                 Some(content)
-            }
+            }.instrument(tracing::trace_span!("opening envelope"))
             .into_actor(self)
             .map(|content, act, ctx| {
                 if let Some(content) = content {
@@ -2423,7 +2422,6 @@ impl Handler<RefreshPreKeys> for ClientActor {
         let storage = self.storage.clone().unwrap();
 
         let proc = async move {
-            let _span = tracing::trace_span!("RefreshPreKeys").entered();
             let (next_signed_pre_key_id, next_kyber_pre_key_id, pre_keys_offset_id) =
                 storage.next_pre_key_ids().await;
 
@@ -2436,7 +2434,8 @@ impl Handler<RefreshPreKeys> for ClientActor {
                 false,
             )
             .await
-        };
+        }
+        .instrument(tracing::trace_span!("RefreshPreKeys"));
         // XXX: store the last refresh time somewhere.
 
         Box::pin(proc.into_actor(self).map(move |result, _act, _ctx| {
@@ -2590,7 +2589,7 @@ impl Handler<ProofResponse> for ClientActor {
     type Result = ResponseActFuture<Self, ()>;
 
     fn handle(&mut self, proof: ProofResponse, ctx: &mut Self::Context) -> Self::Result {
-        let span = tracing::trace_span!("handle ProofResponse").entered();
+        let span = tracing::trace_span!("handle ProofResponse");
 
         let storage = self.storage.clone().unwrap();
         let self_recipient = storage
@@ -2608,10 +2607,10 @@ impl Handler<ProofResponse> for ClientActor {
         let addr = ctx.address();
 
         let proc = async move {
-            let _span = span;
             am.submit_recaptcha_challenge(&proof.token, &proof.response)
                 .await
-        };
+        }
+        .instrument(span);
 
         Box::pin(proc.into_actor(self).map(move |result, _act, _ctx| {
             actix::spawn(async move {
