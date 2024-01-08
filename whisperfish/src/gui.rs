@@ -7,7 +7,7 @@ use qmetaobject::prelude::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::sync::{Arc, Weak};
+use std::sync::Weak;
 
 #[derive(actix::Message, Clone)]
 #[rtype(result = "()")]
@@ -39,7 +39,8 @@ pub struct AppState {
     unsentCount: qt_method!(fn(&self) -> i32),
 
     pub storage: RefCell<Option<Storage>>,
-    pub rustlegraphs: Arc<RefCell<HashMap<String, Weak<rustlegraph::Vizualizer>>>>,
+    // XXX Is this really thread safe?
+    pub rustlegraphs: Rc<RefCell<HashMap<String, Weak<rustlegraph::Vizualizer>>>>,
 }
 
 impl AppState {
@@ -133,7 +134,7 @@ impl AppState {
             mayExit: Default::default(),
 
             storage: RefCell::default(),
-            rustlegraphs: Arc::new(RefCell::new(HashMap::new())),
+            rustlegraphs: Rc::new(RefCell::new(HashMap::new())),
             isEncrypted: Default::default(),
 
             messageCount: Default::default(),

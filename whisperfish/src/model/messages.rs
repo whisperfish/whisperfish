@@ -240,6 +240,31 @@ impl EventObserving for SessionImpl {
                     .borrow_mut()
                     .observe(storage, id, event);
                 // XXX how to trigger a Qt signal now?
+            } else if event.for_table(schema::recipients::table) {
+                let Some(new_recipient) = event
+                    .relation_key_for(schema::recipients::table)
+                    .and_then(|x| x.as_i32())
+                    .and_then(|recipient_id| storage.fetch_recipient_by_id(recipient_id))
+                else {
+                    // Only refresh session - messages update themselves.
+                    self.session = storage.fetch_session_by_id_augmented(id);
+                    return;
+                };
+                if let Some(session) = &mut self.session {
+                    match &mut session.inner.r#type {
+                        orm::SessionType::DirectMessage(recipient) => {
+                            assert!(recipient.id == id);
+                            *recipient = new_recipient
+                        }
+                        orm::SessionType::GroupV1(_) => {
+                            // Groups currently don't list recipients in this model.
+                        }
+                        orm::SessionType::GroupV2(_) => {
+                            // Groups currently don't list recipients in this model.
+                        }
+                    }
+                }
+                // XXX how to trigger a Qt signal now?
             } else {
                 log::debug!(
                     "Falling back to reloading the whole Session for event {:?}",

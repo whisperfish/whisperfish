@@ -71,7 +71,7 @@ impl Handler<MultideviceSyncProfile> for ClientActor {
 
             let contacts = std::iter::once(ContactDetails {
                 number: self_recipient.e164.as_ref().map(PhoneNumber::to_string),
-                uuid: self_recipient.uuid.as_ref().map(Uuid::to_string),
+                aci: self_recipient.uuid.as_ref().map(Uuid::to_string),
                 name: self_recipient.profile_joined_name.clone(),
                 profile_key: self_recipient.profile_key,
                 // XXX other profile stuff
@@ -227,7 +227,7 @@ impl Handler<UploadProfile> for ClientActor {
             let mut am = AccountManager::new(service, Some(profile_key));
             if let Err(e) = am
                 .upload_versioned_profile_without_avatar(
-                    uuid,
+                    uuid.into(),
                     name,
                     self_recipient.about,
                     self_recipient.about_emoji,
@@ -272,8 +272,8 @@ impl Handler<RefreshProfileAttributes> for ClientActor {
         let address = ctx.address();
 
         Box::pin(async move {
-            let registration_id = storage.get_local_registration_id(None).await.unwrap();
-            let pni_registration_id = storage.get_local_pni_registration_id(None).await.unwrap();
+            let registration_id = storage.get_local_registration_id().await.unwrap();
+            let pni_registration_id = storage.get_local_pni_registration_id().await.unwrap();
             let self_recipient = storage.fetch_self_recipient().expect("self set by now");
 
             let profile_key = self_recipient.profile_key();

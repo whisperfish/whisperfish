@@ -1,3 +1,5 @@
+use std::{convert::TryFrom, fmt::Display};
+
 use anyhow::Context;
 use diesel::{
     backend, deserialize, serialize,
@@ -6,20 +8,32 @@ use diesel::{
 use phonenumber::PhoneNumber;
 use uuid::Uuid;
 
-use super::UnidentifiedAccessMode;
+use super::{DistributionListPrivacyMode, StoryType, UnidentifiedAccessMode};
+
+impl<DB> deserialize::FromSql<Integer, DB> for StoryType
+where
+    DB: backend::Backend,
+    i32: deserialize::FromSql<Integer, DB>,
+{
+    fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
+        let i = i32::from_sql(bytes)?;
+        match StoryType::try_from(i) {
+            Ok(x) => Ok(x),
+            Err(_) => Err(format!("Unrecognized StoryType variant {}", i).into()),
+        }
+    }
+}
 
 impl<DB> deserialize::FromSql<Integer, DB> for UnidentifiedAccessMode
 where
     DB: backend::Backend,
     i32: deserialize::FromSql<Integer, DB>,
 {
-    fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
-        match i32::from_sql(bytes)? {
-            0 => Ok(UnidentifiedAccessMode::Unknown),
-            1 => Ok(UnidentifiedAccessMode::Disabled),
-            2 => Ok(UnidentifiedAccessMode::Enabled),
-            3 => Ok(UnidentifiedAccessMode::Unrestricted),
-            x => Err(format!("Unrecognized variant {}", x).into()),
+    fn from_sql(bytes: <DB>::RawValue<'_>) -> deserialize::Result<Self> {
+        let i = i32::from_sql(bytes)?;
+        match UnidentifiedAccessMode::try_from(i) {
+            Ok(x) => Ok(x),
+            Err(_) => Err(format!("Unrecognized UnidentifiedAccessMode variant {}", i).into()),
         }
     }
 }
@@ -49,6 +63,32 @@ fn log_error<T>(res: anyhow::Result<T>) -> anyhow::Result<T> {
     res
 }
 
+impl serialize::ToSql<Integer, diesel::sqlite::Sqlite> for DistributionListPrivacyMode
+where
+    i32: serialize::ToSql<Integer, diesel::sqlite::Sqlite>,
+{
+    fn to_sql<'b>(
+        &'b self,
+        out: &mut serialize::Output<'b, '_, diesel::sqlite::Sqlite>,
+    ) -> serialize::Result {
+        out.set_value(*self as i32);
+        Ok(serialize::IsNull::No)
+    }
+}
+
+impl serialize::ToSql<Integer, diesel::sqlite::Sqlite> for StoryType
+where
+    i32: serialize::ToSql<Integer, diesel::sqlite::Sqlite>,
+{
+    fn to_sql<'b>(
+        &'b self,
+        out: &mut serialize::Output<'b, '_, diesel::sqlite::Sqlite>,
+    ) -> serialize::Result {
+        out.set_value(*self as i32);
+        Ok(serialize::IsNull::No)
+    }
+}
+
 impl serialize::ToSql<Integer, diesel::sqlite::Sqlite> for UnidentifiedAccessMode
 where
     i32: serialize::ToSql<Integer, diesel::sqlite::Sqlite>,
@@ -62,8 +102,17 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct OptionUuidString(Option<Uuid>);
+#[derive(Debug, AsExpression)]
+#[diesel(sql_type = Text)]
 pub struct UuidString(Uuid);
+
+impl Display for UuidString {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 impl<DB> deserialize::Queryable<Nullable<Text>, DB> for OptionUuidString
 where
@@ -83,6 +132,19 @@ where
     }
 }
 
+impl serialize::ToSql<Text, diesel::sqlite::Sqlite> for UuidString
+where
+    String: serialize::ToSql<Text, diesel::sqlite::Sqlite>,
+{
+    fn to_sql<'b>(
+        &'b self,
+        out: &mut serialize::Output<'b, '_, diesel::sqlite::Sqlite>,
+    ) -> serialize::Result {
+        out.set_value(self.to_string());
+        Ok(serialize::IsNull::No)
+    }
+}
+
 impl<DB> deserialize::Queryable<Text, DB> for UuidString
 where
     DB: backend::Backend,
@@ -91,7 +153,8 @@ where
     type Row = String;
 
     fn build(s: String) -> diesel::deserialize::Result<Self> {
-        let uuid = Uuid::parse_str(&s).with_context(|| format!("UuidString: deserializing {}", s));
+        let uuid =
+            Uuid::parse_str(&s).with_context(|| format!("UuidString: deserializing {:?}", s));
         Ok(UuidString(log_error(uuid)?))
     }
 }
@@ -99,6 +162,12 @@ where
 impl From<UuidString> for Uuid {
     fn from(val: UuidString) -> Self {
         val.0
+    }
+}
+
+impl From<uuid::Uuid> for UuidString {
+    fn from(value: uuid::Uuid) -> Self {
+        UuidString(value)
     }
 }
 

@@ -9,7 +9,7 @@ use std::fmt::{Display, Error, Formatter};
 use std::time::Duration;
 
 mod sql_types;
-use sql_types::{OptionPhoneNumberString, OptionUuidString};
+use sql_types::{OptionPhoneNumberString, OptionUuidString, UuidString};
 
 #[derive(Queryable, Insertable, Debug, Clone)]
 pub struct GroupV1 {
@@ -95,7 +95,7 @@ impl Display for GroupV2Member {
     }
 }
 
-#[derive(Queryable, Debug, Clone, PartialEq, Eq)]
+#[derive(Queryable, Identifiable, Debug, Clone, PartialEq, Eq)]
 pub struct Message {
     pub id: i32,
     pub session_id: i32,
@@ -119,6 +119,11 @@ pub struct Message {
     pub sending_has_failed: bool,
 
     pub quote_id: Option<i32>,
+
+    pub story_type: StoryType,
+
+    #[diesel(deserialize_as = OptionUuidString, serialize_as = OptionUuidString)]
+    pub server_guid: Option<Uuid>,
 }
 
 impl Display for Message {
@@ -174,6 +179,8 @@ impl Default for Message {
             is_remote_deleted: Default::default(),
             sending_has_failed: Default::default(),
             quote_id: Default::default(),
+            story_type: StoryType::None,
+            server_guid: Default::default(),
         }
     }
 }
@@ -1131,6 +1138,99 @@ impl AugmentedSession {
             0
         }
     }
+}
+
+#[derive(Clone, Copy, Debug, FromSqlRow, PartialEq, Eq, AsExpression)]
+#[diesel(sql_type = Integer)]
+#[repr(i32)]
+pub enum StoryType {
+    None = 0,
+    StoryWithReplies = 1,
+    StoryWithoutReplies = 2,
+    TextStoryWithReplies = 3,
+    TextStoryWithoutReplies = 4,
+}
+
+impl std::convert::TryFrom<i32> for StoryType {
+    type Error = ();
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::None),
+            1 => Ok(Self::StoryWithReplies),
+            2 => Ok(Self::StoryWithoutReplies),
+            3 => Ok(Self::TextStoryWithReplies),
+            4 => Ok(Self::TextStoryWithoutReplies),
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<StoryType> for i32 {
+    fn from(value: StoryType) -> Self {
+        value as i32
+    }
+}
+
+impl StoryType {
+    pub fn from_params(allows_replies: bool, text_attachment: bool) -> Self {
+        match (allows_replies, text_attachment) {
+            (false, false) => Self::StoryWithoutReplies,
+            (true, false) => Self::StoryWithReplies,
+            (false, true) => Self::TextStoryWithoutReplies,
+            (true, true) => Self::TextStoryWithReplies,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, FromSqlRow, PartialEq, Eq, AsExpression)]
+#[diesel(sql_type = Integer)]
+#[repr(i32)]
+pub enum DistributionListPrivacyMode {
+    OnlyWith = 0,
+    AllExcept = 1,
+    All = 2,
+}
+
+impl std::convert::TryFrom<i32> for DistributionListPrivacyMode {
+    type Error = ();
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::OnlyWith),
+            1 => Ok(Self::AllExcept),
+            2 => Ok(Self::All),
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<DistributionListPrivacyMode> for i32 {
+    fn from(value: DistributionListPrivacyMode) -> Self {
+        value as i32
+    }
+}
+
+#[derive(Queryable, Identifiable, Insertable, Debug, Clone)]
+#[diesel(primary_key(distribution_id))]
+pub struct DistributionList {
+    pub name: String,
+    #[diesel(deserialize_as = UuidString, serialize_as = UuidString)]
+    pub distribution_id: Uuid,
+    pub session_id: Option<i32>,
+    pub allows_replies: bool,
+    pub deletion_timestamp: Option<NaiveDateTime>,
+    pub is_unknown: bool,
+    pub privacy_mode: DistributionListPrivacyMode,
+}
+
+#[derive(Queryable, Identifiable, Insertable, Debug, Clone)]
+#[diesel(primary_key(distribution_id, session_id))]
+pub struct DistributionListMember {
+    #[diesel(deserialize_as = UuidString, serialize_as = UuidString)]
+    pub distribution_id: Uuid,
+    pub session_id: i32,
+    pub privacy_mode: DistributionListPrivacyMode,
 }
 
 pub fn shorten(text: &str, limit: usize) -> std::borrow::Cow<'_, str> {

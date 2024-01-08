@@ -48,9 +48,9 @@ Recommends:   harbour-whisperfish-shareplugin
 # - Contacts/contacts.db phoneNumbers.normalizedNumber: introduced in 3.3
 Requires:   sailfish-version >= 3.3
 
-BuildRequires:  rust >= 1.52.1+git3-1
-BuildRequires:  rust-std-static >= 1.52.1+git3-1
-BuildRequires:  cargo >= 1.52.1+git3-1
+BuildRequires:  rust >= 1.75
+BuildRequires:  rust-std-static >= 1.75
+BuildRequires:  cargo >= 1.75
 BuildRequires:  git
 BuildRequires:  protobuf-compiler
 BuildRequires:  nemo-qml-plugin-notifications-qt5-devel
@@ -59,6 +59,7 @@ BuildRequires:  dbus-devel
 BuildRequires:  gcc-c++
 BuildRequires:  zlib-devel
 BuildRequires:  coreutils
+BuildRequires:  perl-IPC-Cmd
 
 BuildRequires:  meego-rpm-config
 
@@ -91,6 +92,9 @@ BuildRequires:  automake
 
 rustc --version
 cargo --version
+
+export PROTOC=/usr/bin/protoc
+protoc --version
 
 %if %{with sccache}
 %ifnarch %ix86
@@ -196,8 +200,9 @@ then
 TARGET_VERSION=$(grep VERSION_ID /etc/sailfish-release | cut -d "=" -f2)
 fi
 
-# To make comparing easier: 4.4.0.58 >> 4.4
-MAJOR_VERSION=$(echo $TARGET_VERSION | awk -F. '{print $1 FS $2}')
+# Workaround a Scratchbox bug - /tmp/[...]/symbols.o not found
+export TMPDIR=${TMPDIR:-$(realpath "%{_sourcedir}/../.tmp")}
+mkdir -p $TMPDIR
 
 cargo build \
           -j 1 \

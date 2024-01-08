@@ -32,7 +32,7 @@ fn derive_db_key(password: &str, salt_path: &Path) -> Result<[u8; 32], anyhow::E
     let mut salt = [0u8; 8];
     anyhow::ensure!(salt_file.read(&mut salt)? == 8, "salt file not 8 bytes");
 
-    let params = scrypt::Params::new(14, 8, 1)?;
+    let params = scrypt::Params::new(14, 8, 1, 32)?;
     let mut key = [0u8; 32];
     scrypt::scrypt(password.as_bytes(), &salt, &params, &mut key)?;
     log::trace!("Computed the key, salt was {:?}", salt);
@@ -314,8 +314,7 @@ fn main() -> Result<(), anyhow::Error> {
 
     if !result.contains("file is not a database") {
         println!("We now ask you your Whisperfish password.");
-        let password =
-            rpassword::read_password_from_tty(Some("Whisperfish storage password: ")).unwrap();
+        let password = rpassword::prompt_password("Whisperfish storage password: ").unwrap();
 
         let db_salt_path = storage.join("db").join("salt");
         let db_key = derive_db_key(&password, &db_salt_path)?;

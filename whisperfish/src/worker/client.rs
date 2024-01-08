@@ -13,12 +13,14 @@ pub use self::linked_devices::*;
 use self::migrations::MigrationCondVar;
 pub use self::profile_upload::*;
 use self::unidentified::UnidentifiedCertificates;
+use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::Sent;
 use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::sender::SendMessageResult;
 use libsignal_service::sender::SentMessage;
 use uuid::Uuid;
+use whisperfish_store::orm::StoryType;
 use whisperfish_store::TrustLevel;
 use zkgroup::profiles::ProfileKey;
 
@@ -47,10 +49,10 @@ use libsignal_service::content::{
 use libsignal_service::prelude::*;
 use libsignal_service::proto::typing_message::Action;
 use libsignal_service::proto::{receipt_message, ReceiptMessage};
-use libsignal_service::protocol::*;
+use libsignal_service::protocol::{self, *};
 use libsignal_service::push_service::{
-    AccountAttributes, DeviceCapabilities, DeviceId, RegistrationSessionMetadataResponse,
-    ServiceIds, VerificationTransport, VerifyAccountResponse,
+    AccountAttributes, DeviceCapabilities, RegistrationSessionMetadataResponse, ServiceIds,
+    VerificationTransport, VerifyAccountResponse,
 };
 use libsignal_service::sender::AttachmentSpec;
 use libsignal_service::websocket::SignalWebSocket;
@@ -114,7 +116,7 @@ struct DeliverMessage<T> {
     timestamp: u64,
     online: bool,
     for_story: bool,
-    session: orm::Session,
+    session_type: orm::SessionType,
 }
 
 #[derive(actix::Message)]
@@ -172,8 +174,7 @@ pub struct ClientWorker {
     promptResetPeerIdentity: qt_signal!(),
     messageSent: qt_signal!(sid: i32, mid: i32, message: QString),
     messageNotSent: qt_signal!(sid: i32, mid: i32),
-    // FIXME: Rust "r#type" to Qt "type" doesn't work
-    proofRequested: qt_signal!(token: QString, r#type: QString),
+    proofRequested: qt_signal!(token: QString, kind: QString),
     proofCaptchaResult: qt_signal!(success: bool),
 
     send_typing_notification: qt_method!(fn(&self, id: i32, is_start: bool)),
@@ -244,6 +245,7 @@ fn whisperfish_device_capabilities() -> DeviceCapabilities {
         change_number: false,
         gift_badges: false,
         stories: false,
+        pnp: false, // What is PNP?
     }
 }
 
@@ -333,7 +335,9 @@ impl ClientActor {
         let local_addr = self.local_addr.unwrap();
         let device_id = self.config.get_device_id();
         async move {
-            let u_ws = u_service.ws("/v1/websocket/", None, false).await?;
+            let u_ws = u_service
+                .ws("/v1/websocket/", "/v1/keepalive", &[], None)
+                .await?;
             Ok(MessageSender::new(
                 ws,
                 u_ws,
@@ -374,21 +378,23 @@ impl ClientActor {
         message: &DataMessage,
         metadata: &Metadata,
     ) -> Option<()> {
-        let uuid = metadata.sender.uuid;
-        let storage = self.storage.as_mut().expect("storage");
-        let recipient = storage.fetch_recipient(None, Some(uuid))?;
-        let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
-
         let content = ReceiptMessage {
             r#type: Some(receipt_message::Type::Delivery as _),
             timestamp: vec![message.timestamp?],
         };
 
+        let storage = self.storage.as_ref().unwrap();
+
+        let session_type = orm::SessionType::DirectMessage(
+            storage
+                .fetch_recipient_by_uuid(metadata.sender.uuid)
+                .expect("needs-receipt sender recipient"),
+        );
+
         ctx.notify(DeliverMessage {
             content,
             timestamp: Utc::now().timestamp_millis() as u64,
-            // XXX Session ID is artificial here.
-            session,
+            session_type,
             online: false,
             for_story: false,
         });
@@ -553,7 +559,8 @@ impl ClientActor {
 
         let is_unidentified = if let Some(sent) = &sync_sent {
             sent.unidentified_status.iter().any(|x| {
-                Some(x.destination_uuid()) == source_uuid.as_ref().map(Uuid::to_string).as_deref()
+                Some(x.destination_service_id())
+                    == source_uuid.as_ref().map(Uuid::to_string).as_deref()
                     && x.unidentified()
             })
         } else {
@@ -627,6 +634,8 @@ impl ClientActor {
             } else {
                 None
             },
+            story_type: StoryType::None,
+            server_guid: metadata.server_guid,
         };
 
         let message = storage.create_message(&new_message);
@@ -725,7 +734,7 @@ impl ClientActor {
                             ContactDetails {
                                 // XXX: expire timer from dm session
                                 number: recipient.e164.as_ref().map(PhoneNumber::to_string),
-                                uuid: recipient.uuid.as_ref().map(Uuid::to_string),
+                                aci: recipient.uuid.as_ref().map(Uuid::to_string),
                                 name: recipient.profile_joined_name.clone(),
                                 profile_key: recipient.profile_key,
                                 // XXX other profile stuff
@@ -735,26 +744,6 @@ impl ClientActor {
 
                     sender.send_contact_details(&local_addr, None, contacts, false, true).await?;
                 },
-                Type::Groups => {
-                    use libsignal_service::sender::GroupDetails;
-                    let sessions = storage.fetch_group_sessions();
-
-                    let groups = sessions.into_iter().map(|session| {
-                        let group = session.unwrap_group_v1();
-                        let members = storage.fetch_group_members_by_group_v1_id(&group.id);
-                        GroupDetails {
-                            name: Some(group.name.clone()),
-                            members_e164: members.iter().filter_map(|(_member, recipient)| recipient.e164.as_ref().map(PhoneNumber::to_string)).collect(),
-                            // XXX: update proto file and add more.
-                            // members: members.iter().filter_map(|(_member, recipient)| Member {e164: recipient.e164}).collect(),
-                            // avatar, active?, color, ..., many cool things to add here!
-                            // Tagging issue #204
-                            ..Default::default()
-                        }
-                    });
-
-                    sender.send_groups_details(&local_addr, None, groups, false).await?;
-                }
                 Type::Blocked => {
                     anyhow::bail!("Unimplemented {:?}", req.r#type());
                 }
@@ -841,11 +830,13 @@ impl ClientActor {
 
                     if let Some(message) = &sent.message {
                         let uuid = sent
-                            .destination_uuid
+                            .destination_service_id
                             .as_deref()
                             .map(Uuid::parse_str)
                             .transpose()
-                            .map_err(|_| log::warn!("Unparsable UUID {}", sent.destination_uuid()))
+                            .map_err(|_| {
+                                log::warn!("Unparsable UUID {}", sent.destination_service_id())
+                            })
                             .ok()
                             .flatten();
                         let phonenumber = sent
@@ -886,7 +877,7 @@ impl ClientActor {
                     for read in &message.read {
                         // XXX: this should probably not be based on ts alone.
                         let ts = read.timestamp();
-                        let source = read.sender_uuid();
+                        let source = read.sender_aci();
                         // Signal uses timestamps in milliseconds, chrono has nanoseconds
                         let ts = millis_to_naive_chrono(ts);
                         log::trace!(
@@ -968,6 +959,9 @@ impl ClientActor {
             }
             ContentBody::CallMessage(_call) => {
                 log::info!("{:?} is calling.", metadata.sender);
+            }
+            _ => {
+                log::info!("TODO")
             }
         }
     }
@@ -1223,6 +1217,8 @@ impl Handler<QueueMessage> for ClientActor {
             is_unidentified: false,
             quote_timestamp: quote.map(|msg| msg.server_timestamp.timestamp_millis() as u64),
             expires_in: session.expiring_message_timeout,
+            story_type: StoryType::None,
+            server_guid: None,
         });
 
         if let Some(h) = self.message_expiry_notification_handle.as_ref() {
@@ -1280,7 +1276,7 @@ impl Handler<SendMessage> for ClientActor {
 
                         Quote {
                             id: Some(quoted_message.server_timestamp.timestamp_millis() as u64),
-                            author_uuid: quote_sender.as_ref().and_then(|r| r.uuid.as_ref().map(Uuid::to_string)),
+                            author_aci: quote_sender.as_ref().and_then(|r| r.uuid.as_ref().map(Uuid::to_string)),
                             text: quoted_message.text.clone(),
 
                             ..Default::default()
@@ -1350,7 +1346,7 @@ impl Handler<SendMessage> for ClientActor {
                         content,
                         online: false,
                         timestamp,
-                        session,
+                        session_type: session.r#type,
                         for_story: false,
                     })
                     .await?;
@@ -1388,8 +1384,9 @@ impl Handler<SendMessage> for ClientActor {
                                 // Recipient with profile key, but could not send unidentified.
                                 // Mark as disabled.
                                 log::info!(
-                                    "Setting unidentified access mode for {:?} as {:?}",
-                                    recipient,
+                                    "Setting unidentified access mode for {:?} from {:?} to {:?}",
+                                    recipient.uuid.unwrap(),
+                                    recipient.unidentified_access_mode,
                                     target_state
                                 );
                                 storage.set_recipient_unidentified(recipient.id, target_state);
@@ -1415,7 +1412,7 @@ impl Handler<SendMessage> for ClientActor {
                                         if options.contains(&recaptcha) {
                                             addr.send(ProofRequired {
                                                 token: token.to_owned(),
-                                                r#type: recaptcha,
+                                                kind: recaptcha,
                                             })
                                             .await
                                             .expect("deliver captcha required");
@@ -1501,6 +1498,8 @@ impl Handler<EndSession> for ClientActor {
             is_unidentified: false,
             quote_timestamp: None,
             expires_in: None, // Don't expire system messages
+            story_type: StoryType::None,
+            server_guid: None,
         });
         ctx.notify(SendMessage(msg.id));
     }
@@ -1564,7 +1563,7 @@ impl Handler<SendTypingNotification> for ClientActor {
                     content,
                     online: true,
                     timestamp: now,
-                    session,
+                    session_type: session.r#type,
                     for_story: false,
                 })
                 .await?
@@ -1655,7 +1654,7 @@ impl Handler<SendReaction> for ClientActor {
                     reaction: Some(Reaction {
                         emoji: Some(emoji.clone()),
                         remove: Some(remove),
-                        target_author_uuid: sender_recipient.uuid.map(|u| u.to_string()),
+                        target_author_aci: sender_recipient.uuid.map(|u| u.to_string()),
                         target_sent_timestamp: Some(
                             message.server_timestamp.timestamp_millis() as u64
                         ),
@@ -1667,7 +1666,7 @@ impl Handler<SendReaction> for ClientActor {
                     content,
                     online: false,
                     timestamp: now.timestamp_millis() as u64,
-                    session,
+                    session_type: session.r#type,
                     for_story: false,
                 })
                 .await?
@@ -1726,7 +1725,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
             content,
             timestamp,
             online,
-            session,
+            session_type: session,
             for_story,
         } = msg;
         let content = content.into();
@@ -1741,7 +1740,8 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
 
         Box::pin(async move {
             let mut sender = sender.await?;
-            let results = match &session.r#type {
+
+            let results = match &session {
                 orm::SessionType::GroupV1(_group) => {
                     // FIXME
                     log::error!("Cannot send to Group V1 anymore.");
@@ -1910,7 +1910,7 @@ impl Handler<Restart> for ClientActor {
                 migrations_ready.await;
                 let mut receiver = MessageReceiver::new(service.clone());
 
-                let pipe = receiver.create_message_pipe(credentials).await?;
+                let pipe = receiver.create_message_pipe(credentials, false).await?;
                 let ws = pipe.ws();
                 Result::<_, ServiceError>::Ok((pipe, ws))
             }
@@ -1996,10 +1996,14 @@ impl Handler<RefreshProfile> for ClientActor {
     }
 }
 
-impl StreamHandler<Result<Envelope, ServiceError>> for ClientActor {
-    fn handle(&mut self, msg: Result<Envelope, ServiceError>, ctx: &mut Self::Context) {
+impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
+    fn handle(&mut self, msg: Result<Incoming, ServiceError>, ctx: &mut Self::Context) {
         let msg = match msg {
-            Ok(msg) => msg,
+            Ok(Incoming::Envelope(e)) => e,
+            Ok(Incoming::QueueEmpty) => {
+                log::info!("Message queue is empty!");
+                return;
+            }
             Err(e) => {
                 // XXX: we might want to dispatch on this error.
                 log::error!("MessagePipe pushed an error: {:?}", e);
@@ -2057,6 +2061,8 @@ impl StreamHandler<Result<Envelope, ServiceError>> for ClientActor {
                                 is_unidentified: false,
                                 quote_timestamp: None,
                                 expires_in: None, // Don't expire system messages
+                                story_type: StoryType::None,
+                                server_guid: None,
                             };
                             storage.create_message(&msg);
 
@@ -2300,11 +2306,11 @@ pub struct RegisterLinkedResponse {
     pub phone_number: PhoneNumber,
     pub registration_id: u32,
     pub pni_registration_id: u32,
-    pub device_id: DeviceId,
+    pub device_id: protocol::DeviceId,
     pub service_ids: ServiceIds,
-    pub aci_identity_key_pair: libsignal_protocol::IdentityKeyPair,
-    pub pni_identity_key_pair: libsignal_protocol::IdentityKeyPair,
-    pub profile_key: Vec<u8>,
+    pub aci_identity_key_pair: protocol::IdentityKeyPair,
+    pub pni_identity_key_pair: protocol::IdentityKeyPair,
+    pub profile_key: [u8; 32],
 }
 
 impl Handler<RegisterLinked> for ClientActor {
@@ -2315,19 +2321,23 @@ impl Handler<RegisterLinked> for ClientActor {
 
         let push_service = self.unauthenticated_service();
 
-        let mut provision_manager: LinkingManager<AwcPushService> =
-            LinkingManager::new(push_service, reg.password.clone());
-
         let (tx, mut rx) = futures::channel::mpsc::channel(1);
 
-        let mut tx_uri = Some(reg.tx_uri);
-        let signaling_key = reg.signaling_key;
+        let _signaling_key = reg.signaling_key;
+
+        let mut aci_store = self.storage.as_mut().unwrap().aci_storage();
+        let mut pni_store = self.storage.as_mut().unwrap().pni_storage();
 
         let registration_procedure = async move {
+            let mut tx_uri = Some(reg.tx_uri);
             let (fut1, fut2) = future::join(
-                provision_manager.provision_secondary_device(
+                link_device(
+                    &mut aci_store,
+                    &mut pni_store,
                     &mut rand::thread_rng(),
-                    signaling_key,
+                    push_service,
+                    &reg.password,
+                    &reg.device_name,
                     tx,
                 ),
                 async move {
@@ -2344,28 +2354,28 @@ impl Handler<RegisterLinked> for ClientActor {
                                     .send(url.to_string())
                                     .expect("to forward provisioning URL to caller");
                             }
-                            SecondaryDeviceProvisioning::NewDeviceRegistration {
-                                phone_number,
-                                device_id,
-                                registration_id,
-                                pni_registration_id,
-                                profile_key,
-                                service_ids,
-                                aci_private_key,
-                                aci_public_key,
-                                pni_private_key,
-                                pni_public_key,
-                            } => {
-                                let aci_identity_key_pair =
-                                    libsignal_protocol::IdentityKeyPair::new(
-                                        libsignal_protocol::IdentityKey::new(aci_public_key),
-                                        aci_private_key,
-                                    );
-                                let pni_identity_key_pair =
-                                    libsignal_protocol::IdentityKeyPair::new(
-                                        libsignal_protocol::IdentityKey::new(pni_public_key),
-                                        pni_private_key,
-                                    );
+                            SecondaryDeviceProvisioning::NewDeviceRegistration(
+                                NewDeviceRegistration {
+                                    phone_number,
+                                    device_id,
+                                    registration_id,
+                                    pni_registration_id,
+                                    profile_key: ProfileKey { bytes: profile_key },
+                                    service_ids,
+                                    aci_private_key,
+                                    aci_public_key,
+                                    pni_private_key,
+                                    pni_public_key,
+                                },
+                            ) => {
+                                let aci_identity_key_pair = protocol::IdentityKeyPair::new(
+                                    protocol::IdentityKey::new(aci_public_key),
+                                    aci_private_key,
+                                );
+                                let pni_identity_key_pair = protocol::IdentityKeyPair::new(
+                                    protocol::IdentityKey::new(pni_public_key),
+                                    pni_private_key,
+                                );
 
                                 res = Result::<RegisterLinkedResponse, anyhow::Error>::Ok(
                                     RegisterLinkedResponse {
@@ -2515,7 +2525,7 @@ impl ClientWorker {
         actix::spawn(async move {
             if let Err(e) = actor
                 .send(ProofResponse {
-                    _type: "recaptcha".into(),
+                    kind: "recaptcha".into(),
                     token,
                     response,
                 })
@@ -2555,7 +2565,7 @@ impl Handler<CompactDb> for ClientActor {
 #[rtype(result = "()")]
 pub struct ProofRequired {
     token: String,
-    r#type: String,
+    kind: String,
 }
 
 impl Handler<ProofRequired> for ClientActor {
@@ -2565,14 +2575,15 @@ impl Handler<ProofRequired> for ClientActor {
         self.inner
             .pinned()
             .borrow()
-            .proofRequested(proof.token.into(), proof.r#type.into());
+            .proofRequested(proof.token.into(), proof.kind.into());
     }
 }
 
+#[allow(unused)]
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct ProofResponse {
-    _type: String,
+    kind: String,
     token: String,
     response: String,
 }
@@ -2675,7 +2686,7 @@ impl Handler<DeleteMessageForAll> for ClientActor {
             for_story: false,
             timestamp: now,
             online: false,
-            session,
+            session_type: session.r#type,
         };
 
         // XXX: We can't get a result back, I think we should?

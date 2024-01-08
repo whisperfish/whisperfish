@@ -111,7 +111,7 @@ fn qdatetime_from_naive_option(timestamp: Option<NaiveDateTime>) -> qmetaobject:
 
 fn qdatetime_from_naive(timestamp: NaiveDateTime) -> QDateTime {
     // Naive in model is Utc, naive displayed should be Local
-    qdatetime_from_chrono(DateTime::<Utc>::from_utc(timestamp, Utc))
+    qdatetime_from_chrono(timestamp.and_utc())
 }
 
 fn qstring_from_optional_to_string(opt: Option<impl ToString>) -> QVariant {

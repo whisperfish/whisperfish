@@ -6,7 +6,7 @@ pub mod observer;
 mod protocol_store;
 mod utils;
 
-use self::orm::{AugmentedMessage, UnidentifiedAccessMode};
+use self::orm::{AugmentedMessage, StoryType, UnidentifiedAccessMode};
 use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
 use crate::schema;
@@ -98,6 +98,7 @@ pub struct NewMessage {
     pub session_id: i32,
     pub source_e164: Option<PhoneNumber>,
     pub source_uuid: Option<Uuid>,
+    pub server_guid: Option<Uuid>,
     pub text: String,
     pub timestamp: NaiveDateTime,
     pub sent: bool,
@@ -111,6 +112,7 @@ pub struct NewMessage {
     pub is_unidentified: bool,
     pub quote_timestamp: Option<u64>,
     pub expires_in: Option<std::time::Duration>,
+    pub story_type: StoryType,
 }
 
 pub struct StoreProfile {
@@ -609,7 +611,7 @@ impl Storage {
             .fetch_session_by_id(message.session_id)
             .expect("session exists");
 
-        let target_author_uuid = Uuid::parse_str(reaction.target_author_uuid())
+        let target_author_uuid = Uuid::parse_str(reaction.target_author_aci())
             .map_err(|_| log::error!("ignoring reaction with invalid uuid"))
             .ok()?;
 
@@ -1823,6 +1825,27 @@ impl Storage {
             return session;
         }
 
+        // The GroupV2 may still exist, even though the session does not.
+        let group_v2: Option<crate::orm::GroupV2> = schema::group_v2s::table
+            .filter(schema::group_v2s::id.eq(group_id_hex.clone()))
+            .first(&mut *self.db())
+            .optional()
+            .unwrap();
+        if let Some(group) = group_v2 {
+            diesel::insert_into(sessions)
+                .values(group_v2_id.eq(&group.id))
+                .execute(&mut *self.db())
+                .unwrap();
+
+            let session = self
+                .fetch_latest_session()
+                .expect("a session has been inserted");
+            self.observe_insert(sessions, session.id)
+                .with_relation(schema::group_v2s::table, group.id);
+            return session;
+        }
+
+        // At this point neither the GroupV2 nor the session exists.
         let master_key =
             bincode::serialize(&group.secret.get_master_key()).expect("serialized master key");
         let new_group = orm::GroupV2 {
@@ -2232,6 +2255,7 @@ impl Storage {
             diesel::insert_into(messages)
                 .values((
                     session_id.eq(session),
+                    server_guid.eq(new_message.server_guid.as_ref().map(Uuid::to_string)),
                     text.eq(&new_message.text),
                     sender_recipient_id.eq(sender_id),
                     received_timestamp.eq(if !new_message.outgoing {
@@ -2251,6 +2275,7 @@ impl Storage {
                     flags.eq(new_message.flags),
                     quote_id.eq(quoted_message_id),
                     expires_in.eq(new_message.expires_in.map(|x| x.as_secs() as i32)),
+                    story_type.eq(new_message.story_type as i32),
                 ))
                 .execute(&mut *self.db())
                 .expect("inserting a message")
@@ -2588,9 +2613,10 @@ impl Storage {
                         .execute(&mut *self.db())
                         .unwrap();
                     if let Some(path) = attachment.attachment_path {
-                        let remaining = diesel::select(diesel::dsl::count_star())
+                        let remaining = schema::attachments::table
                             .filter(schema::attachments::attachment_path.eq(&path))
-                            .execute(&mut *self.db())
+                            .count()
+                            .get_result::<i64>(&mut *self.db())
                             .unwrap();
                         if remaining > 0 {
                             log::warn!("References to attachment exist, not deleting: {}", path);
@@ -2692,7 +2718,7 @@ impl Storage {
     /// Returns a binary peer identity
     pub async fn peer_identity(&self, addr: ProtocolAddress) -> Result<Vec<u8>, anyhow::Error> {
         let ident = self
-            .get_identity(&addr, None)
+            .get_identity(&addr)
             .await?
             .context("No such identity")?;
         Ok(ident.serialize().into())

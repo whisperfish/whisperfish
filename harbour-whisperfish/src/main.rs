@@ -1,16 +1,16 @@
 use anyhow::Context;
+use clap::Parser;
 use dbus::blocking::Connection;
 use signal_hook::{consts::SIGINT, iterator::Signals};
 use single_instance::SingleInstance;
 use std::{os::unix::prelude::OsStrExt, thread, time::Duration};
-use structopt::StructOpt;
 use whisperfish::*;
 
 use simplelog::*;
 
 /// Unofficial but advanced Signal client for Sailfish OS
-#[derive(StructOpt, Debug)]
-#[structopt(name = "harbour-whisperfish")]
+#[derive(Parser, Debug)]
+#[clap(name = "harbour-whisperfish", author, version, about, long_about = None)]
 struct Opts {
     /// Captcha override
     ///
@@ -19,22 +19,22 @@ struct Opts {
     /// it is possible to inject a signalcaptcha URL.
     ///
     /// This is as a work around for <https://gitlab.com/whisperfish/whisperfish/-/issues/378>
-    #[structopt(short, long)]
+    #[clap(short = 'c', long)]
     captcha: Option<String>,
 
     /// Verbosity.
     ///
     /// Equivalent with setting
     /// `QT_LOGGING_TO_CONSOLE=1 RUST_LOG=libsignal_service=trace,libsignal_service_actix=trace,whisperfish=trace`.
-    #[structopt(short, long)]
+    #[clap(short = 'v', long)]
     verbose: bool,
 
     /// Whether whisperfish was launched from autostart. Also accepts '-prestart'
-    #[structopt(short, long)]
+    #[clap(long)]
     prestart: bool,
 
     /// Send a signal to shutdown Whisperfish
-    #[structopt(long)]
+    #[clap(long)]
     quit: bool,
 }
 
@@ -57,8 +57,8 @@ fn main() {
     }
 
     // Sailjail only accepts -prestart on the command line as optional argument,
-    // structopt however only supports --prestart.
-    // See: https://github.com/clap-rs/clap/issues/1210
+    // clap however only supports --prestart.
+    // See: https://github.com/clap-rs/clap/issues/2468
     // and https://github.com/sailfishos/sailjail/commit/8a239de9451685a82a2ee17fef0c1d33a089c28c
     // XXX: Get rid of this when the situation changes
     let args = std::env::args_os().map(|arg| {
@@ -70,7 +70,7 @@ fn main() {
     });
 
     // Then, handle command line arguments and overwrite settings from config file if necessary
-    let opt = Opts::from_iter(args);
+    let opt: Opts = Parser::parse_from(args);
 
     if opt.quit {
         if let Err(e) = dbus_quit_app() {
@@ -147,7 +147,9 @@ fn main() {
     let mut config_builder = ConfigBuilder::new();
 
     config_builder
-        .set_time_format_str("%Y-%m-%d %H:%M:%S%.3f")
+        .set_time_format_custom(format_description!(
+            "[year]-[month]-[day] [hour]:[minute]:[second]"
+        ))
         .add_filter_allow_str("whisperfish")
         .add_filter_allow_str("libsignal_service")
         .add_filter_allow_str("libsignal_service_actix")

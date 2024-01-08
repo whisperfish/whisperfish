@@ -1,14 +1,10 @@
-use std::{
-    cell::RefCell,
-    collections::HashMap,
-    sync::{Arc, Weak},
-};
+use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Weak};
 
 use crate::platform::QQmlEngine;
 use cpp::cpp;
 use qttypes::QString;
 
-type VizualizerMap = Arc<RefCell<HashMap<String, Weak<rustlegraph::Vizualizer>>>>;
+type VizualizerMap = Rc<RefCell<HashMap<String, Weak<rustlegraph::Vizualizer>>>>;
 
 pub fn install(app: &mut QQmlEngine, vizualizers: VizualizerMap) {
     let vizualizers: *mut VizualizerMap = Box::leak(Box::new(vizualizers));
@@ -49,7 +45,7 @@ cpp! {{
             int *widthp = &width;
             int *heightp = &height;
 
-            int _r = rust!(WF_rustlegraph_compute_dims [
+            rust!(WF_rustlegraph_compute_dims [
                 id : &QString as "const QString &",
                 widthp : &mut i32 as "int *",
                 heightp : &mut i32 as "int *"
