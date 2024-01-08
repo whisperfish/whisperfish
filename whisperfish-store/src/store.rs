@@ -2604,37 +2604,7 @@ impl Storage {
 
         if !message.is_outbound {
             log::trace!("Message is from someone else, deleting attachments...");
-            let regex = self.config.attachments_regex();
-            self.fetch_attachments_for_message(message.id)
-                .into_iter()
-                .for_each(|attachment| {
-                    diesel::delete(schema::attachments::table)
-                        .filter(schema::attachments::id.eq(attachment.id))
-                        .execute(&mut *self.db())
-                        .unwrap();
-                    if let Some(path) = attachment.attachment_path {
-                        let remaining = schema::attachments::table
-                            .filter(schema::attachments::attachment_path.eq(&path))
-                            .count()
-                            .get_result::<i64>(&mut *self.db())
-                            .unwrap();
-                        if remaining > 0 {
-                            log::warn!("References to attachment exist, not deleting: {}", path);
-                        } else if regex.is_match(&path) {
-                            match std::fs::remove_file(&path) {
-                                Ok(()) => {
-                                    log::trace!("Deleted file {}", path);
-                                    n_attachments += 1;
-                                }
-                                Err(e) => {
-                                    log::trace!("Could not delete file {}: {:?}", path, e);
-                                }
-                            };
-                        } else {
-                            log::warn!("Not deleting attachment: {}", path);
-                        }
-                    }
-                });
+            n_attachments = self.delete_attachments_for_message(message.id);
         }
 
         let n_reactions = diesel::delete(schema::reactions::table)
@@ -2652,6 +2622,43 @@ impl Storage {
             n_reactions
         );
         n_messages
+    }
+
+    /// Delete all attachments of the message, is no other message references them.
+    fn delete_attachments_for_message(&mut self, message_id: i32) -> usize {
+        let mut n_attachments = 0;
+        let allowed = self.config.attachments_regex();
+        self.fetch_attachments_for_message(message_id)
+            .into_iter()
+            .for_each(|attachment| {
+                diesel::delete(schema::attachments::table)
+                    .filter(schema::attachments::id.eq(attachment.id))
+                    .execute(&mut *self.db())
+                    .unwrap();
+                if let Some(path) = attachment.attachment_path {
+                    let remaining = schema::attachments::table
+                        .filter(schema::attachments::attachment_path.eq(&path))
+                        .count()
+                        .get_result::<i64>(&mut *self.db())
+                        .unwrap();
+                    if remaining > 0 {
+                        log::warn!("References to attachment exist, not deleting: {}", path);
+                    } else if allowed.is_match(&path) {
+                        match std::fs::remove_file(&path) {
+                            Ok(()) => {
+                                log::trace!("Deleted file {}", path);
+                                n_attachments += 1;
+                            }
+                            Err(e) => {
+                                log::trace!("Could not delete file {}: {:?}", path, e);
+                            }
+                        };
+                    } else {
+                        log::warn!("Not deleting attachment: {}", path);
+                    }
+                }
+            });
+        n_attachments
     }
 
     /// Marks all messages that are outbound and unsent as failed.
