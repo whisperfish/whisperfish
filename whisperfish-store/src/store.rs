@@ -2029,8 +2029,12 @@ impl Storage {
             .map(|(id, ndt)| (id, DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc)))
     }
 
-    pub fn delete_expired_messages(&self) -> usize {
+    pub fn delete_expired_messages(&mut self) -> usize {
         let deleted = self.fetch_expired_message_ids();
+
+        for message_id in deleted.iter().map(|(id, _)| *id) {
+            self.delete_attachments_for_message(message_id);
+        }
 
         let deletions: usize = diesel::delete(schema::messages::table)
             .filter(sql::<Timestamp>(DELETE_AFTER).le(sql::<Timestamp>("DATETIME('now')")))
