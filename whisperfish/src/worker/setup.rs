@@ -50,8 +50,8 @@ pub struct SetupWorker {
 impl SetupWorker {
     const MAX_PASSWORD_ENTER_ATTEMPTS: i8 = 3;
 
+    #[tracing::instrument(skip(app, config))]
     pub async fn run(app: Rc<WhisperfishApp>, config: std::sync::Arc<crate::config::SignalConfig>) {
-        tracing::info!("SetupWorker::run");
         let this = app.setup_worker.pinned();
 
         // Check registration

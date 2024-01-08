@@ -448,7 +448,7 @@ impl Storage {
         })
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(config, password))]
     pub async fn open<T: AsRef<Path> + Debug>(
         config: Arc<SignalConfig>,
         db_path: &StorageLocation<T>,

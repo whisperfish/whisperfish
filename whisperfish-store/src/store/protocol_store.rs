@@ -82,6 +82,7 @@ impl ProtocolStore {
 
 impl Storage {
     /// Returns a tuple of the next free signed pre-key ID, the next Kyber pre-key ID, and the next free pre-key ID
+    #[tracing::instrument(skip(self))]
     pub async fn next_pre_key_ids(&self) -> (u32, u32, u32) {
         use diesel::dsl::*;
         use diesel::prelude::*;
