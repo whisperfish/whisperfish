@@ -240,12 +240,13 @@ impl EventObserving for SessionImpl {
                     .observe(storage, id, event);
                 // XXX how to trigger a Qt signal now?
             } else if event.for_table(schema::recipients::table) {
-                let Some(new_recipient) = storage.fetch_recipient_by_id(id) else {
-                    if let Some(sess) = storage.fetch_session_by_recipient_id(id) {
-                        self.session = storage.fetch_session_by_id_augmented(sess.id);
-                    } else {
-                        self.session = None;
-                    }
+                let Some(new_recipient) = event
+                    .relation_key_for(schema::recipients::table)
+                    .and_then(|x| x.as_i32())
+                    .and_then(|recipient_id| storage.fetch_recipient_by_id(recipient_id))
+                else {
+                    // Only refresh session - messages update themselves.
+                    self.session = storage.fetch_session_by_id_augmented(id);
                     return;
                 };
                 if let Some(session) = &mut self.session {
