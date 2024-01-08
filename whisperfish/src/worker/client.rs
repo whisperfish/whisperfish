@@ -1295,9 +1295,8 @@ impl Handler<SendMessage> for ClientActor {
                         .clone() // Clone for the spawn_blocking below
                         .expect("attachment path when uploading");
                     let contents =
-                        tokio::task::spawn_blocking(move || std::fs::read(attachment_path))
+                        tokio::fs::read(attachment_path)
                             .await
-                            .context("threadpool")?
                             .context("reading attachment")?;
                     let attachment_path = attachment.attachment_path.as_deref().unwrap();
                     let spec = AttachmentSpec {
