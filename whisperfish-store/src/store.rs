@@ -2733,6 +2733,7 @@ impl Storage {
                     .execute(&mut *self.db())
                     .unwrap();
                 if let Some(path) = attachment.attachment_path {
+                    let _span = tracing::debug_span!("considering attachment file deletion", id = attachment.id, path = %path).entered();
                     let remaining = schema::attachments::table
                         .filter(schema::attachments::attachment_path.eq(&path))
                         .count()
@@ -2743,11 +2744,11 @@ impl Storage {
                     } else if allowed.is_match(&path) {
                         match std::fs::remove_file(&path) {
                             Ok(()) => {
-                                tracing::trace!(attachment.id, %path, "deleted file");
+                                tracing::trace!("deleted file");
                                 n_attachments += 1;
                             }
                             Err(e) => {
-                                tracing::trace!(attachment.id, %path, "could not delete file: {:?}", e);
+                                tracing::trace!("could not delete file: {:?}", e);
                             }
                         };
                     } else {
