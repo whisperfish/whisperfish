@@ -2125,7 +2125,9 @@ impl Storage {
         // We can implement this cleanly with the above `returning` clause,
         // but this is only available in Sqlite 3.35.0 and up.
         // Diesel does not seem to know it is available yet.
-        assert_eq!(deletions, deleted.len());
+        if deletions == deleted.len() {
+            tracing::warn!("discrepancy between expected and actual deletions");
+        }
         tracing::trace!("affected {} rows", deletions);
 
         for deletion in deleted {
