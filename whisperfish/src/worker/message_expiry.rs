@@ -26,10 +26,11 @@ impl ExpiredMessagesStream {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     fn update_next_wake(&mut self) {
         if let Some((message_id, time)) = self.storage.fetch_next_expiring_message_id() {
             tracing::info!(
-                "Message {} expires at {}; scheduling wake-up.",
+                "message {} expires at {}; scheduling wake-up.",
                 message_id,
                 time
             );
@@ -46,8 +47,11 @@ impl ExpiredMessagesStream {
 impl Stream for ExpiredMessagesStream {
     type Item = ExpiredMessages;
 
+    #[tracing::instrument(skip(self, cx))]
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         if self.wake_channel.poll_recv(cx).is_ready() {
+            let _span =
+                tracing::trace_span!("wake-up", has_next_wake = self.next_wake.is_some()).entered();
             self.update_next_wake();
         }
 
@@ -63,7 +67,14 @@ impl Stream for ExpiredMessagesStream {
         }
 
         if self.next_wake.is_none() {
+            let _span = tracing::trace_span!("no next wake, computing").entered();
             self.update_next_wake();
+
+            // Wake up again, if we indeed set a next wake.
+            if self.next_wake.is_some() {
+                let _span = tracing::trace_span!("scheduling next wake").entered();
+                cx.waker().wake_by_ref();
+            }
         }
 
         Poll::Pending
