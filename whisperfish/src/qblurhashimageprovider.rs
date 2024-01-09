@@ -56,7 +56,7 @@ cpp! {{
                 let id = match percent_encoding::percent_decode_str(&id).decode_utf8() {
                     Ok(id) => id,
                     Err(e) => {
-                        log::warn!("Could not percent-decode {} ({}). Continuing with raw string.", id, e);
+                        tracing::warn!("Could not percent-decode {} ({}). Continuing with raw string.", id, e);
                         std::borrow::Cow::Borrowed(&id as &str)
                     }
                 };
@@ -64,7 +64,7 @@ cpp! {{
                 let slice = unsafe { std::slice::from_raw_parts_mut(buf, size_in_bytes) };
 
                 if let Err(e) = blurhash::decode_into(slice, id.as_ref(), width, height, 1.0) {
-                    log::warn!("Could not decode blurhash: {}", e);
+                    tracing::warn!("Could not decode blurhash: {}", e);
                     return -2;
                 }
                 0

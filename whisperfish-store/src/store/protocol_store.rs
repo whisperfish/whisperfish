@@ -82,6 +82,7 @@ impl ProtocolStore {
 
 impl Storage {
     /// Returns a tuple of the next free signed pre-key ID, the next Kyber pre-key ID, and the next free pre-key ID
+    #[tracing::instrument(skip(self))]
     pub async fn next_pre_key_ids(&self) -> (u32, u32, u32) {
         use diesel::dsl::*;
         use diesel::prelude::*;
@@ -130,7 +131,7 @@ impl Storage {
     pub async fn get_local_pni_registration_id(&self) -> Result<u32, SignalProtocolError> {
         let path = self.path.join("storage").join("identity").join("pni_regid");
         if !tokio::fs::try_exists(&path).await.expect("fs error") {
-            log::info!("Generating PNI regid");
+            tracing::info!("Generating PNI regid");
             let regid = generate_registration_id(&mut rand::thread_rng());
 
             // Encrypt regid if necessary and write to file
@@ -141,7 +142,7 @@ impl Storage {
                 })?;
         }
 
-        log::trace!("Reading PNI regid");
+        tracing::trace!("Reading PNI regid");
         let _lock = self.protocol_store.read().await;
 
         let regid = self.read_file(path).await.map_err(|e| {
@@ -178,7 +179,7 @@ impl protocol::IdentityKeyStore for Storage {
 
             let _lock = self.protocol_store.read().await;
 
-            log::trace!("Reading own identity key pair");
+            tracing::trace!("Reading own identity key pair");
             let path = self
                 .path
                 .join("storage")
@@ -203,7 +204,7 @@ impl protocol::IdentityKeyStore for Storage {
     }
 
     async fn get_local_registration_id(&self) -> Result<u32, SignalProtocolError> {
-        log::trace!("Reading regid");
+        tracing::trace!("Reading regid");
         let _lock = self.protocol_store.read().await;
 
         let path = self.path.join("storage").join("identity").join("regid");
@@ -321,7 +322,7 @@ impl PreKeysStore for Storage {
 #[async_trait::async_trait(?Send)]
 impl protocol::PreKeyStore for Storage {
     async fn get_pre_key(&self, prekey_id: PreKeyId) -> Result<PreKeyRecord, SignalProtocolError> {
-        log::trace!("Loading prekey {}", prekey_id);
+        tracing::trace!("Loading prekey {}", prekey_id);
         use crate::schema::prekeys::dsl::*;
         use diesel::prelude::*;
 
@@ -342,7 +343,7 @@ impl protocol::PreKeyStore for Storage {
         prekey_id: PreKeyId,
         body: &PreKeyRecord,
     ) -> Result<(), SignalProtocolError> {
-        log::trace!("Storing prekey {}", prekey_id);
+        tracing::trace!("Storing prekey {}", prekey_id);
         use crate::schema::prekeys::dsl::*;
         use diesel::prelude::*;
 
@@ -358,7 +359,7 @@ impl protocol::PreKeyStore for Storage {
     }
 
     async fn remove_pre_key(&mut self, prekey_id: PreKeyId) -> Result<(), SignalProtocolError> {
-        log::trace!("Removing prekey {}", prekey_id);
+        tracing::trace!("Removing prekey {}", prekey_id);
         use crate::schema::prekeys::dsl::*;
         use diesel::prelude::*;
 
@@ -374,7 +375,7 @@ impl Storage {
     // XXX Rewrite in terms of get_pre_key
     #[allow(dead_code)]
     async fn contains_pre_key(&self, prekey_id: u32) -> bool {
-        log::trace!("Checking for prekey {}", prekey_id);
+        tracing::trace!("Checking for prekey {}", prekey_id);
         use crate::schema::prekeys::dsl::*;
         use diesel::prelude::*;
 
@@ -393,7 +394,7 @@ impl protocol::SessionStore for Storage {
         &self,
         addr: &ProtocolAddress,
     ) -> Result<Option<SessionRecord>, SignalProtocolError> {
-        log::trace!("Loading session for {}", addr);
+        tracing::trace!("Loading session for {}", addr);
         use crate::schema::session_records::dsl::*;
         use diesel::prelude::*;
 
@@ -418,7 +419,7 @@ impl protocol::SessionStore for Storage {
         addr: &ProtocolAddress,
         session: &protocol::SessionRecord,
     ) -> Result<(), SignalProtocolError> {
-        log::trace!("Storing session for {}", addr);
+        tracing::trace!("Storing session for {}", addr);
         use crate::schema::session_records::dsl::*;
         use diesel::prelude::*;
 
@@ -543,7 +544,7 @@ impl SessionStoreExt for Storage {
         &self,
         addr: &ServiceAddress,
     ) -> Result<Vec<u32>, SignalProtocolError> {
-        log::trace!("Looking for sub_device sessions for {:?}", addr);
+        tracing::trace!("Looking for sub_device sessions for {:?}", addr);
         use crate::schema::session_records::dsl::*;
 
         let records: Vec<i32> = session_records
@@ -571,7 +572,7 @@ impl SessionStoreExt for Storage {
             .expect("db");
 
         if num != 1 {
-            log::debug!(
+            tracing::debug!(
                 "Could not delete session {}, assuming non-existing.",
                 addr.to_string(),
             );
@@ -585,7 +586,7 @@ impl SessionStoreExt for Storage {
         &self,
         addr: &ServiceAddress,
     ) -> Result<usize, SignalProtocolError> {
-        log::warn!("Deleting all sessions for {:?}", addr);
+        tracing::warn!("Deleting all sessions for {:?}", addr);
         use crate::schema::session_records::dsl::*;
 
         let num = diesel::delete(session_records)
@@ -603,7 +604,7 @@ impl protocol::SignedPreKeyStore for Storage {
         &self,
         signed_prekey_id: SignedPreKeyId,
     ) -> Result<SignedPreKeyRecord, SignalProtocolError> {
-        log::trace!("Loading signed prekey {}", signed_prekey_id);
+        tracing::trace!("Loading signed prekey {}", signed_prekey_id);
         use crate::schema::signed_prekeys::dsl::*;
         use diesel::prelude::*;
 
@@ -624,7 +625,7 @@ impl protocol::SignedPreKeyStore for Storage {
         signed_prekey_id: SignedPreKeyId,
         body: &SignedPreKeyRecord,
     ) -> Result<(), SignalProtocolError> {
-        log::trace!("Storing prekey {}", signed_prekey_id);
+        tracing::trace!("Storing prekey {}", signed_prekey_id);
         use crate::schema::signed_prekeys::dsl::*;
         use diesel::prelude::*;
 
@@ -649,7 +650,7 @@ impl protocol::KyberPreKeyStore for Storage {
     ) -> Result<(), SignalProtocolError> {
         // TODO: only remove the kyber pre key if it concerns an ephemeral pre key; last-resort
         // keys should be retained!  See libsignal-service/src/account_manager.rs `if use_last_resort_key`
-        log::trace!("Removing Kyber prekey {}", kyber_prekey_id);
+        tracing::trace!("Removing Kyber prekey {}", kyber_prekey_id);
         use crate::schema::kyber_prekeys::dsl::*;
         use diesel::prelude::*;
 
@@ -664,7 +665,7 @@ impl protocol::KyberPreKeyStore for Storage {
         &self,
         kyber_prekey_id: KyberPreKeyId,
     ) -> Result<KyberPreKeyRecord, SignalProtocolError> {
-        log::trace!("Loading Kyber prekey {}", kyber_prekey_id);
+        tracing::trace!("Loading Kyber prekey {}", kyber_prekey_id);
         use crate::schema::kyber_prekeys::dsl::*;
         use diesel::prelude::*;
 
@@ -685,7 +686,7 @@ impl protocol::KyberPreKeyStore for Storage {
         kyber_prekey_id: KyberPreKeyId,
         body: &KyberPreKeyRecord,
     ) -> Result<(), SignalProtocolError> {
-        log::trace!("Storing Kyber prekey {}", kyber_prekey_id);
+        tracing::trace!("Storing Kyber prekey {}", kyber_prekey_id);
         use crate::schema::kyber_prekeys::dsl::*;
         use diesel::prelude::*;
 
@@ -710,7 +711,7 @@ impl SenderKeyStore for Storage {
         distr_id: Uuid,
         record: &SenderKeyRecord,
     ) -> Result<(), SignalProtocolError> {
-        log::trace!("Storing sender key {} {}", addr, distr_id);
+        tracing::trace!("Storing sender key {} {}", addr, distr_id);
 
         let to_insert = orm::SenderKeyRecord {
             address: addr.name().to_owned(),
@@ -734,7 +735,7 @@ impl SenderKeyStore for Storage {
         addr: &ProtocolAddress,
         distr_id: Uuid,
     ) -> Result<Option<SenderKeyRecord>, SignalProtocolError> {
-        log::trace!("Loading sender key {} {}", addr, distr_id);
+        tracing::trace!("Loading sender key {} {}", addr, distr_id);
 
         let found: Option<orm::SenderKeyRecord> = {
             use crate::schema::sender_key_records::dsl::*;
@@ -763,7 +764,7 @@ impl Storage {
         &self,
         signed_prekey_id: u32,
     ) -> Result<(), SignalProtocolError> {
-        log::trace!("Removing signed prekey {}", signed_prekey_id);
+        tracing::trace!("Removing signed prekey {}", signed_prekey_id);
         use crate::schema::signed_prekeys::dsl::*;
         use diesel::prelude::*;
 
@@ -777,7 +778,7 @@ impl Storage {
     // XXX rewrite in terms of get_signed_pre_key
     #[allow(dead_code)]
     async fn contains_signed_pre_key(&self, signed_prekey_id: u32) -> bool {
-        log::trace!("Checking for signed prekey {}", signed_prekey_id);
+        tracing::trace!("Checking for signed prekey {}", signed_prekey_id);
         use crate::schema::signed_prekeys::dsl::*;
         use diesel::prelude::*;
 

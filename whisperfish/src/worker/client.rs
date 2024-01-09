@@ -19,6 +19,7 @@ use libsignal_service::proto::sync_message::Sent;
 use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::sender::SendMessageResult;
 use libsignal_service::sender::SentMessage;
+use tracing_futures::Instrument;
 use uuid::Uuid;
 use whisperfish_store::orm::StoryType;
 use whisperfish_store::TrustLevel;
@@ -364,7 +365,7 @@ impl ClientActor {
 
             let len_before = self.transient_timestamps.len();
             self.transient_timestamps.retain(|t| *t > limit);
-            log::trace!(
+            tracing::trace!(
                 "Removed {}/{} cached transient timestamps",
                 len_before - self.transient_timestamps.len(),
                 self.transient_timestamps.len()
@@ -441,11 +442,14 @@ impl ClientActor {
             {
                 actix::spawn(async move {
                     if let Err(e) = storage.delete_all_sessions(&svc).await {
-                        log::error!("End session requested, but could not end session: {:?}", e);
+                        tracing::error!(
+                            "End session requested, but could not end session: {:?}",
+                            e
+                        );
                     }
                 });
             } else {
-                log::error!("Requested session reset but no service address associated");
+                tracing::error!("Requested session reset but no service address associated");
             }
         }
 
@@ -465,7 +469,7 @@ impl ClientActor {
         }
 
         if msg.flags() & DataMessageFlags::ProfileKeyUpdate as u32 != 0 {
-            log::info!("Message was ProfileKeyUpdate; not inserting.");
+            tracing::info!("Message was ProfileKeyUpdate; not inserting.");
         }
 
         let expiration_timer_update =
@@ -480,14 +484,14 @@ impl ClientActor {
                 msg,
                 reaction,
             ) {
-                log::info!("Reaction saved for message {}/{}", session.id, message.id);
+                tracing::info!("Reaction saved for message {}/{}", session.id, message.id);
                 self.inner
                     .pinned()
                     .borrow_mut()
                     .messageReactionReceived(session.id, message.id);
             } else {
-                log::error!("Could not find a message for this reaction. Dropping.");
-                log::warn!(
+                tracing::error!("Could not find a message for this reaction. Dropping.");
+                tracing::warn!(
                     "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
                 );
             }
@@ -515,10 +519,10 @@ impl ClientActor {
                     .unwrap_or("nobody")
             ))
         } else if !msg.attachments.is_empty() {
-            log::trace!("Received an attachment without body, replacing with empty text.");
+            tracing::trace!("Received an attachment without body, replacing with empty text.");
             Some("".into())
         } else if msg.sticker.is_some() {
-            log::warn!("Received a sticker, but inserting empty message.");
+            tracing::warn!("Received a sticker, but inserting empty message.");
             Some("This is a sticker, but stickers are currently unsupported.".into())
         } else if msg.payment.is_some()
             || msg.group_call_update.is_some()
@@ -544,12 +548,12 @@ impl ClientActor {
                 // Missing sender_recipient_id => we are the sender
                 let sender_id = db_message.sender_recipient_id.unwrap_or(own_id);
                 if sender_id != sender_recipient.as_ref().unwrap().id {
-                    log::warn!("Received a delete message from a different user, ignoring it.");
+                    tracing::warn!("Received a delete message from a different user, ignoring it.");
                 } else {
                     storage.delete_message(db_message.id);
                 }
             } else {
-                log::warn!(
+                tracing::warn!(
                     "Message {} not found for deletion!",
                     target_sent_timestamp.timestamp_millis()
                 );
@@ -560,7 +564,7 @@ impl ClientActor {
         let text = if let Some(body) = body {
             body
         } else {
-            log::debug!("Message without (alt) body, not inserting");
+            tracing::debug!("Message without (alt) body, not inserting");
             return None;
         };
 
@@ -587,10 +591,10 @@ impl ClientActor {
 
             // XXX handle group.group_change like a real client
             if let Some(_change) = group.group_change.as_ref() {
-                log::warn!("We're not handling raw group changes yet. Let's trigger a group refresh for now.");
+                tracing::warn!("We're not handling raw group changes yet. Let's trigger a group refresh for now.");
                 ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
             } else if !storage.group_v2_exists(&store_v2) {
-                log::info!(
+                tracing::info!(
                     "We don't know this group. We'll request it's structure from the server."
                 );
                 ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
@@ -655,7 +659,7 @@ impl ClientActor {
         }
 
         if settings.get_bool("attachment_log") && !msg.attachments.is_empty() {
-            log::trace!("Logging message to the attachment log");
+            tracing::trace!("Logging message to the attachment log");
             // XXX Sync code, but it's not the only sync code in here...
             let mut log = self.attachment_log();
 
@@ -716,7 +720,7 @@ impl ClientActor {
 
     fn handle_sync_request(&mut self, meta: Metadata, req: SyncRequest) {
         use sync_message::request::Type;
-        log::trace!("Processing sync request {:?}", req.r#type());
+        tracing::trace!("Processing sync request {:?}", req.r#type());
 
         let local_addr = self.local_addr.unwrap();
         let storage = self.storage.clone().unwrap();
@@ -726,7 +730,7 @@ impl ClientActor {
             let mut sender = sender.await?;
             match req.r#type() {
                 Type::Unknown => {
-                    log::warn!("Unknown sync request from {:?}:{}. Please upgrade Whisperfish or file an issue.", meta.sender, meta.sender_device);
+                    tracing::warn!("Unknown sync request from {:?}:{}. Please upgrade Whisperfish or file an issue.", meta.sender, meta.sender_device);
                     return Ok(());
                 }
                 Type::Contacts => {
@@ -769,7 +773,7 @@ impl ClientActor {
             };
 
             Ok::<_, anyhow::Error>(())
-        }.map(|v| if let Err(e) = v {log::error!("{:?} in handle_sync_request()", e)}));
+        }.map(|v| if let Err(e) = v {tracing::error!("{:?} in handle_sync_request()", e)}));
     }
 
     fn process_receipt(&mut self, msg: &Envelope) {
@@ -779,17 +783,17 @@ impl ClientActor {
         // such as a TypingMessage or a sent/updated/removed Reaction,
         // stop processing, since there's no such message in database.
         if self.transient_timestamps.contains(&millis) {
-            log::info!("Transient receipt: {}", millis);
+            tracing::info!("Transient receipt: {}", millis);
             return;
         }
 
-        log::info!("Received receipt: {}", millis);
+        tracing::info!("Received receipt: {}", millis);
 
         let storage = self.storage.as_mut().expect("storage initialized");
         let source = msg.source_address();
 
         let timestamp = millis_to_naive_chrono(millis);
-        log::trace!(
+        tracing::trace!(
             "Marking message from {:?} at {} ({}) as received.",
             source,
             timestamp,
@@ -812,7 +816,7 @@ impl ClientActor {
 
         match body {
             ContentBody::NullMessage(_message) => {
-                log::trace!("Ignoring NullMessage");
+                tracing::trace!("Ignoring NullMessage");
             }
             ContentBody::DataMessage(message) => {
                 let uuid = metadata.sender.uuid;
@@ -828,14 +832,14 @@ impl ClientActor {
                     //       if the contact should not yet have our profile key, this is ok, and we
                     //       should offer the user a message request.
                     //       Cfr. MessageContentProcessor, grep for handleNeedsDeliveryReceipt.
-                    log::warn!("Received an unsealed message from {:?}. Assert that they have our profile key.", metadata.sender);
+                    tracing::warn!("Received an unsealed message from {:?}. Assert that they have our profile key.", metadata.sender);
                 }
             }
             ContentBody::SynchronizeMessage(message) => {
                 let mut handled = false;
                 if let Some(sent) = message.sent {
                     handled = true;
-                    log::trace!("Sync sent message");
+                    tracing::trace!("Sync sent message");
                     // These are messages sent through a paired device.
 
                     if let Some(message) = &sent.message {
@@ -845,7 +849,7 @@ impl ClientActor {
                             .map(Uuid::parse_str)
                             .transpose()
                             .map_err(|_| {
-                                log::warn!("Unparsable UUID {}", sent.destination_service_id())
+                                tracing::warn!("Unparsable UUID {}", sent.destination_service_id())
                             })
                             .ok()
                             .flatten();
@@ -855,7 +859,7 @@ impl ClientActor {
                             .map(|s| phonenumber::parse(None, s))
                             .transpose()
                             .map_err(|_| {
-                                log::warn!("Unparsable phonenumber {}", sent.destination_e164())
+                                tracing::warn!("Unparsable phonenumber {}", sent.destination_e164())
                             })
                             .ok()
                             .flatten();
@@ -870,7 +874,7 @@ impl ClientActor {
                             &metadata,
                         );
                     } else {
-                        log::warn!(
+                        tracing::warn!(
                             "Dropping sync-sent without message; probably Stories related: {:?}",
                             sent
                         );
@@ -878,19 +882,19 @@ impl ClientActor {
                 }
                 if let Some(request) = message.request {
                     handled = true;
-                    log::trace!("Sync request message");
+                    tracing::trace!("Sync request message");
                     self.handle_sync_request(metadata, request);
                 }
                 if !message.read.is_empty() {
                     handled = true;
-                    log::trace!("Sync read message");
+                    tracing::trace!("Sync read message");
                     for read in &message.read {
                         // XXX: this should probably not be based on ts alone.
                         let ts = read.timestamp();
                         let source = read.sender_aci();
                         // Signal uses timestamps in milliseconds, chrono has nanoseconds
                         let ts = millis_to_naive_chrono(ts);
-                        log::trace!(
+                        tracing::trace!(
                             "Marking message from {} at {} ({}) as read.",
                             source,
                             ts,
@@ -902,7 +906,7 @@ impl ClientActor {
                                 .borrow_mut()
                                 .messageReceipt(sess.id, msg.id)
                         } else {
-                            log::warn!("Could not mark as received!");
+                            tracing::warn!("Could not mark as received!");
                         }
                     }
                 }
@@ -910,29 +914,31 @@ impl ClientActor {
                     handled = true;
                     match fetch.r#type() {
                         sync_message::fetch_latest::Type::Unknown => {
-                            log::warn!("Sync FetchLatest with unknown type")
+                            tracing::warn!("Sync FetchLatest with unknown type")
                         }
                         sync_message::fetch_latest::Type::LocalProfile => {
-                            log::trace!("Scheduling local profile refresh");
+                            tracing::trace!("Scheduling local profile refresh");
                             ctx.notify(RefreshOwnProfile { force: true });
                         }
                         sync_message::fetch_latest::Type::StorageManifest => {
                             // XXX
-                            log::warn!("Unimplemented: synchronize fetch request StorageManifest")
+                            tracing::warn!(
+                                "Unimplemented: synchronize fetch request StorageManifest"
+                            )
                         }
                         sync_message::fetch_latest::Type::SubscriptionStatus => {
-                            log::warn!(
+                            tracing::warn!(
                                 "Unimplemented: synchronize fetch request SubscriptionStatus"
                             )
                         }
                     }
                 }
                 if !handled {
-                    log::warn!("Sync message without known sync type");
+                    tracing::warn!("Sync message without known sync type");
                 }
             }
             ContentBody::TypingMessage(typing) => {
-                log::info!("{:?} is typing.", metadata.sender);
+                tracing::info!("{:?} is typing.", metadata.sender);
                 let res = self
                     .inner
                     .pinned()
@@ -945,11 +951,11 @@ impl ClientActor {
                         sender: metadata.sender,
                     });
                 if let Err(e) = res {
-                    log::error!("Could not send typing notification to SessionActor: {}", e);
+                    tracing::error!("Could not send typing notification to SessionActor: {}", e);
                 }
             }
             ContentBody::ReceiptMessage(receipt) => {
-                log::info!("{:?} received a message.", metadata.sender);
+                tracing::info!("{:?} received a message.", metadata.sender);
                 // XXX dispatch on receipt.type
                 for &ts in &receipt.timestamp {
                     // Signal uses timestamps in milliseconds, chrono has nanoseconds
@@ -963,15 +969,15 @@ impl ClientActor {
                             .borrow_mut()
                             .messageReceipt(sess.id, msg.id)
                     } else {
-                        log::warn!("Could not mark {} as received!", ts);
+                        tracing::warn!("Could not mark {} as received!", ts);
                     }
                 }
             }
             ContentBody::CallMessage(_call) => {
-                log::info!("{:?} is calling.", metadata.sender);
+                tracing::info!("{:?} is calling.", metadata.sender);
             }
             _ => {
-                log::info!("TODO")
+                tracing::info!("TODO")
             }
         }
     }
@@ -1022,6 +1028,7 @@ impl Handler<FetchAttachment> for ClientActor {
         ctx: &mut <Self as Actor>::Context,
     ) -> Self::Result {
         let FetchAttachment { attachment_id } = fetch;
+        let _span = tracing::info_span!("handle FetchAttachment", attachment_id).entered();
 
         let client_addr = ctx.address();
 
@@ -1068,7 +1075,7 @@ impl Handler<FetchAttachment> for ClientActor {
                 .and_then(|x| x.first())
                 .copied() // &&str -> &str
                 .unwrap_or_else(|| {
-                    log::warn!("Could not find mime type; defaulting to .bin");
+                    tracing::warn!("Could not find mime type; defaulting to .bin");
                     "bin"
                 }),
         };
@@ -1077,6 +1084,7 @@ impl Handler<FetchAttachment> for ClientActor {
         let attachment_id = attachment.id;
         let session_id = session.id;
         let message_id = message.id;
+
         Box::pin(
             async move {
                 use futures::io::AsyncReadExt;
@@ -1087,12 +1095,11 @@ impl Handler<FetchAttachment> for ClientActor {
                     match r {
                         Ok(stream) => break stream,
                         Err(ServiceError::Timeout { .. }) => {
-                            log::warn!("get_attachment timed out, retrying")
+                            tracing::warn!("get_attachment timed out, retrying")
                         }
                         Err(e) => return Err(e.into()),
                     }
                 };
-                log::info!("Downloading attachment");
 
                 // We need the whole file for the crypto to check out 😢
                 let actual_len = ptr.size.unwrap();
@@ -1110,23 +1117,28 @@ impl Handler<FetchAttachment> for ClientActor {
                 );
                 let mut key = [0u8; 64];
                 key.copy_from_slice(key_material);
-                decrypt_in_place(key, &mut ciphertext).expect("attachment decryption");
+                let mut ciphertext = tokio::task::spawn_blocking(move || {
+                    decrypt_in_place(key, &mut ciphertext).expect("attachment decryption");
+                    ciphertext
+                })
+                .await
+                .context("decryption threadpoool")?;
 
                 // Signal puts exponentially increasing padding at the end
                 // to prevent some distinguishing attacks, so it has to be truncated.
                 if stream_len > actual_len {
-                    log::info!(
+                    tracing::info!(
                         "The attachment contains {} bytes of padding",
                         (stream_len - actual_len)
                     );
-                    log::info!("Truncating from {} to {} bytes", stream_len, actual_len);
+                    tracing::info!("Truncating from {} to {} bytes", stream_len, actual_len);
                     ciphertext.truncate(actual_len as usize);
                 }
 
                 // Signal Desktop sometimes sends a JPEG image with .png extension,
                 // so double check the received .png image, and rename it if necessary.
                 if ext == "png" {
-                    log::trace!("Checking for JPEG with .png extension...");
+                    tracing::trace!("Checking for JPEG with .png extension...");
                     let classifier = MimeClassifier::new();
                     let computed_type = classifier.classify(
                         LoadContext::Image,
@@ -1136,7 +1148,7 @@ impl Handler<FetchAttachment> for ClientActor {
                         &ciphertext as &[u8],
                     );
                     if computed_type == mime::IMAGE_JPEG {
-                        log::info!("Received JPEG file with .png suffix, renaming to .jpg");
+                        tracing::info!("Received JPEG file with .png suffix, renaming to .jpg");
                         ext = "jpg";
                     }
                 }
@@ -1153,6 +1165,12 @@ impl Handler<FetchAttachment> for ClientActor {
                     .await?;
                 Ok(())
             }
+            .instrument(tracing::trace_span!(
+                "download attachment",
+                attachment_id,
+                session_id,
+                message_id,
+            ))
             .into_actor(self)
             .map(move |r: Result<(), anyhow::Error>, act, _ctx| {
                 // Synchronise on the actor, to log the error to attachment.log
@@ -1161,10 +1179,10 @@ impl Handler<FetchAttachment> for ClientActor {
                         "Error fetching attachment for message with ID `{}` {:?}: {:?}",
                         message.id, ptr2, e
                     );
-                    log::error!("{} in handle()", e);
+                    tracing::error!("{} in handle()", e);
                     let mut log = act.attachment_log();
                     if let Err(e) = writeln!(log, "{}", e) {
-                        log::error!("Could not write error to error log: {}", e);
+                        tracing::error!("Could not write error to error log: {}", e);
                     }
                 }
             }),
@@ -1176,7 +1194,7 @@ impl Handler<QueueMessage> for ClientActor {
     type Result = ();
 
     fn handle(&mut self, msg: QueueMessage, ctx: &mut Self::Context) -> Self::Result {
-        log::trace!("MessageActor::handle({})", msg);
+        let _span = tracing::trace_span!("QueueMessage", %msg).entered();
         let storage = self.storage.as_mut().unwrap();
 
         let has_attachment = !msg.attachment.is_empty();
@@ -1244,7 +1262,7 @@ impl Handler<SendMessage> for ClientActor {
 
     // Equiv of worker/send.go
     fn handle(&mut self, SendMessage(mid): SendMessage, ctx: &mut Self::Context) -> Self::Result {
-        log::info!("ClientActor::SendMessage({:?})", mid);
+        let _span = tracing::info_span!("ClientActor::SendMessage", message_id = mid).entered();
         let sender = self.message_sender();
         let storage = self.storage.as_mut().unwrap();
         let msg = storage.fetch_augmented_message(mid).unwrap();
@@ -1252,13 +1270,13 @@ impl Handler<SendMessage> for ClientActor {
         let session_id = session.id;
 
         if msg.sent_timestamp.is_some() {
-            log::warn!("Message already sent, refusing to retransmit.");
+            tracing::warn!("Message already sent, refusing to retransmit.");
             return Box::pin(async {}.into_actor(self).map(|_, _, _| ()));
         }
 
         let self_recipient = storage.fetch_self_recipient();
-        log::trace!("Sending for session: {}", session);
-        log::trace!("Sending message: {}", msg.inner);
+        tracing::trace!("Sending for session: {}", session);
+        tracing::trace!("Sending message: {}", msg.inner);
 
         let storage = storage.clone();
         let addr = ctx.address();
@@ -1267,7 +1285,7 @@ impl Handler<SendMessage> for ClientActor {
                 let mut sender = sender.await?;
                 if let orm::SessionType::GroupV1(_group) = &session.r#type {
                     // FIXME
-                    log::error!("Cannot send to Group V1 anymore.");
+                    tracing::error!("Cannot send to Group V1 anymore.");
                 }
                 let group_v2 = session.group_context_v2();
 
@@ -1278,7 +1296,7 @@ impl Handler<SendMessage> for ClientActor {
                     .and_then(|quote_id| storage.fetch_augmented_message(quote_id))
                     .map(|quoted_message| {
                         if !quoted_message.attachments > 0 {
-                            log::warn!("Quoting attachments is incomplete.  Here be dragons.");
+                            tracing::warn!("Quoting attachments is incomplete.  Here be dragons.");
                         }
                         let quote_sender = quoted_message
                             .sender_recipient_id
@@ -1319,9 +1337,8 @@ impl Handler<SendMessage> for ClientActor {
                         .clone() // Clone for the spawn_blocking below
                         .expect("attachment path when uploading");
                     let contents =
-                        tokio::task::spawn_blocking(move || std::fs::read(attachment_path))
+                        tokio::fs::read(attachment_path)
                             .await
-                            .context("threadpool")?
                             .context("reading attachment")?;
                     let attachment_path = attachment.attachment_path.as_deref().unwrap();
                     let spec = AttachmentSpec {
@@ -1393,7 +1410,7 @@ impl Handler<SendMessage> for ClientActor {
                             {
                                 // Recipient with profile key, but could not send unidentified.
                                 // Mark as disabled.
-                                log::info!(
+                                tracing::info!(
                                     "Setting unidentified access mode for {:?} from {:?} to {:?}",
                                     recipient.uuid.unwrap(),
                                     recipient.unidentified_access_mode,
@@ -1413,7 +1430,7 @@ impl Handler<SendMessage> for ClientActor {
                             storage.fail_message(mid);
                             let result_count = results.len();
                             for error in results.into_iter().filter_map(Result::err) {
-                                log::error!("Could not deliver message: {}", error);
+                                tracing::error!("Could not deliver message: {}", error);
                                 match error {
                                     MessageSenderError::ProofRequired { token, options } => {
                                         // Note: 'recaptcha' can refer to reCAPTCHA or hCaptcha
@@ -1427,22 +1444,22 @@ impl Handler<SendMessage> for ClientActor {
                                             .await
                                             .expect("deliver captcha required");
                                         } else {
-                                            log::warn!("Rate limit proof requested, but type 'recaptcha' wasn't available!");
+                                            tracing::warn!("Rate limit proof requested, but type 'recaptcha' wasn't available!");
                                         }
                                     },
                                     MessageSenderError::NotFound { uuid } => {
-                                        log::warn!("Recipient not found, removing device sessions {}", uuid);
+                                        tracing::warn!("Recipient not found, removing device sessions {}", uuid);
                                         let mut num = storage.delete_all_sessions(&ServiceAddress { uuid }).await?;
-                                        log::trace!("Removed {} device session(s)", num);
+                                        tracing::trace!("Removed {} device session(s)", num);
                                         num = storage.mark_recipient_registered(uuid, false);
-                                        log::trace!("Marked {} recipient(s) as unregistered", num);
+                                        tracing::trace!("Marked {} recipient(s) as unregistered", num);
                                     },
                                     _ => {
-                                        log::error!("The above error goes unhandled.");
+                                        tracing::error!("The above error goes unhandled.");
                                     }
                                 };
                             }
-                            log::error!("Successfully delivered message to {} out of {} recipients", successes, result_count);
+                            tracing::error!("Successfully delivered message to {} out of {} recipients", successes, result_count);
                             anyhow::bail!("Could not deliver message.")
                         }
                     }
@@ -1451,7 +1468,7 @@ impl Handler<SendMessage> for ClientActor {
                         Err(e)
                     }
                 }
-            }
+            }.instrument(tracing::debug_span!("sending message", mid))
             .into_actor(self)
             .map(move |res, act, _ctx| {
                 match res {
@@ -1463,7 +1480,7 @@ impl Handler<SendMessage> for ClientActor {
                         );
                     }
                     Err(e) => {
-                        log::error!("Sending message: {}", e);
+                        tracing::error!("Sending message: {}", e);
                         act.inner.pinned().borrow().messageNotSent(session_id, mid);
                         if let Some(MessageSenderError::NotFound { .. }) = e.downcast_ref() {
                             // Handles session-is-not-a-group ok
@@ -1483,7 +1500,8 @@ impl Handler<EndSession> for ClientActor {
     type Result = ();
 
     fn handle(&mut self, EndSession(id): EndSession, ctx: &mut Self::Context) -> Self::Result {
-        log::trace!("ClientActor::EndSession(recipient_id = {})", id);
+        let _span =
+            tracing::trace_span!("ClientActor::EndSession(recipient_id = {})", id).entered();
 
         let storage = self.storage.as_mut().unwrap();
         let recipient = storage
@@ -1526,7 +1544,7 @@ impl Handler<SendTypingNotification> for ClientActor {
         }: SendTypingNotification,
         ctx: &mut Self::Context,
     ) -> Self::Result {
-        log::info!(
+        tracing::info!(
             "ClientActor::SendTypingNotification({}, {})",
             session_id,
             is_start
@@ -1537,7 +1555,7 @@ impl Handler<SendTypingNotification> for ClientActor {
         let session = storage.fetch_session_by_id(session_id).unwrap();
         assert_eq!(session_id, session.id);
 
-        log::trace!("Sending typing notification for session: {}", session);
+        tracing::trace!("Sending typing notification for session: {}", session);
 
         // Since we don't want to stress database needlessly,
         // cache the sent TypingMessage timestamps and try to
@@ -1583,10 +1601,13 @@ impl Handler<SendTypingNotification> for ClientActor {
             .map(move |res, _act, _ctx| {
                 match res {
                     Ok(sid) => {
-                        log::trace!("Successfully sent typing notification for session {}", sid);
+                        tracing::trace!(
+                            "Successfully sent typing notification for session {}",
+                            sid
+                        );
                     }
                     Err(e) => {
-                        log::error!("Delivering typing notification: {}", e);
+                        tracing::error!("Delivering typing notification: {}", e);
                     }
                 };
             }),
@@ -1607,7 +1628,7 @@ impl Handler<SendReaction> for ClientActor {
         }: SendReaction,
         ctx: &mut Self::Context,
     ) -> Self::Result {
-        log::info!(
+        tracing::info!(
             "ClientActor::SendReaction({}, {}, {}, {:?})",
             message_id,
             sender_id,
@@ -1632,7 +1653,7 @@ impl Handler<SendReaction> for ClientActor {
                     (self_recipient.id, r.emoji)
                 } else {
                     // XXX: Don't continue - we should remove the same emoji
-                    log::error!("Message {} doesn't have our own reaction!", message_id);
+                    tracing::error!("Message {} doesn't have our own reaction!", message_id);
                     (self_recipient.id, emoji)
                 }
             } else {
@@ -1693,10 +1714,10 @@ impl Handler<SendReaction> for ClientActor {
                             emoji,
                             timestamp: timestamp.naive_utc(),
                         });
-                        log::trace!("Reaction sent to message {}", message_id);
+                        tracing::trace!("Reaction sent to message {}", message_id);
                     }
                     Err(e) => {
-                        log::error!("Could not sent Reaction: {}", e);
+                        tracing::error!("Could not sent Reaction: {}", e);
                     }
                 };
             }),
@@ -1740,7 +1761,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
         } = msg;
         let content = content.into();
 
-        log::trace!("Transmitting {:?} with timestamp {}", content, timestamp);
+        tracing::trace!("Transmitting {:?} with timestamp {}", content, timestamp);
 
         let storage = self.storage.clone().unwrap();
         let sender = self.message_sender();
@@ -1754,7 +1775,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
             let results = match &session {
                 orm::SessionType::GroupV1(_group) => {
                     // FIXME
-                    log::error!("Cannot send to Group V1 anymore.");
+                    tracing::error!("Cannot send to Group V1 anymore.");
                     Vec::new()
                 }
                 orm::SessionType::GroupV2(group) => {
@@ -1772,7 +1793,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                                     certs.access_for(CertType::Complete, recipient, for_story);
                                 Some((member, access))
                             } else {
-                                log::warn!(
+                                tracing::warn!(
                                     "No known UUID for {}; will not deliver this message.",
                                     recipient.e164_or_uuid()
                                 );
@@ -1821,7 +1842,7 @@ impl Handler<AttachmentDownloaded> for ClientActor {
         }: AttachmentDownloaded,
         _ctx: &mut Self::Context,
     ) {
-        log::info!("Attachment downloaded for message {}", mid);
+        tracing::info!("Attachment downloaded for message {}", mid);
         self.inner.pinned().borrow().attachmentDownloaded(sid, mid);
     }
 }
@@ -1842,9 +1863,9 @@ impl Handler<StorageReady> for ClientActor {
 
         let storage_for_password = storageready.storage;
         let request_password = async move {
-            log::info!("Phone number: {:?}", phonenumber);
-            log::info!("UUID: {:?}", uuid);
-            log::info!("DeviceId: {}", device_id);
+            tracing::info!("Phone number: {:?}", phonenumber);
+            tracing::info!("UUID: {:?}", uuid);
+            tracing::info!("DeviceId: {}", device_id);
 
             let password = storage_for_password.signal_password().await.unwrap();
             let signaling_key = Some(storage_for_password.signaling_key().await.unwrap());
@@ -1855,6 +1876,7 @@ impl Handler<StorageReady> for ClientActor {
 
         Box::pin(request_password.into_actor(self).map(
             move |(uuid, phonenumber, device_id, password, signaling_key), act, ctx| {
+                let _span = tracing::trace_span!("whisperfish startup").entered();
                 // Store credentials
                 let credentials = ServiceCredentials {
                     uuid,
@@ -1924,6 +1946,7 @@ impl Handler<Restart> for ClientActor {
                 let ws = pipe.ws();
                 Result::<_, ServiceError>::Ok((pipe, ws))
             }
+            .instrument(tracing::trace_span!("set up message receiver"))
             .into_actor(self)
             .map(move |pipe, act, ctx| match pipe {
                 Ok((pipe, ws)) => {
@@ -1944,8 +1967,8 @@ impl Handler<Restart> for ClientActor {
                     );
                 }
                 Err(e) => {
-                    log::error!("Error starting stream: {}", e);
-                    log::info!("Retrying in 10");
+                    tracing::error!("Error starting stream: {}", e);
+                    tracing::info!("Retrying in 10");
                     let addr = ctx.address();
                     actix::spawn(async move {
                         actix::clock::sleep(Duration::from_secs(10)).await;
@@ -1958,7 +1981,7 @@ impl Handler<Restart> for ClientActor {
 }
 
 /// Queue a force-refresh of a profile fetch
-#[derive(Message)]
+#[derive(Message, Debug)]
 #[rtype(result = "()")]
 pub enum RefreshProfile {
     BySession(i32),
@@ -1969,17 +1992,18 @@ impl Handler<RefreshProfile> for ClientActor {
     type Result = ();
 
     fn handle(&mut self, profile: RefreshProfile, _ctx: &mut Self::Context) {
+        let _span = tracing::trace_span!("ClientActor::RefreshProfile({:?})", ?profile).entered();
         let storage = self.storage.as_ref().unwrap();
         let recipient = match profile {
             RefreshProfile::BySession(session_id) => {
                 match storage.fetch_session_by_id(session_id).map(|x| x.r#type) {
                     Some(orm::SessionType::DirectMessage(recipient)) => recipient,
                     None => {
-                        log::error!("No session with id {}", session_id);
+                        tracing::error!("No session with id {}", session_id);
                         return;
                     }
                     _ => {
-                        log::error!("Can only refresh profiles for DirectMessage sessions.");
+                        tracing::error!("Can only refresh profiles for DirectMessage sessions.");
                         return;
                     }
                 }
@@ -1987,7 +2011,7 @@ impl Handler<RefreshProfile> for ClientActor {
             RefreshProfile::ByRecipientId(id) => match storage.fetch_recipient_by_id(id) {
                 Some(r) => r,
                 None => {
-                    log::error!("No recipient with id {}", id);
+                    tracing::error!("No recipient with id {}", id);
                     return;
                 }
             },
@@ -1995,7 +2019,7 @@ impl Handler<RefreshProfile> for ClientActor {
         if let Some(uuid) = recipient.uuid {
             storage.mark_profile_outdated(uuid);
         } else {
-            log::error!(
+            tracing::error!(
                 "Recipient without uuid; not refreshing profile: {:?}",
                 recipient
             );
@@ -2011,12 +2035,12 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
         let msg = match msg {
             Ok(Incoming::Envelope(e)) => e,
             Ok(Incoming::QueueEmpty) => {
-                log::info!("Message queue is empty!");
+                tracing::info!("Message queue is empty!");
                 return;
             }
             Err(e) => {
                 // XXX: we might want to dispatch on this error.
-                log::error!("MessagePipe pushed an error: {:?}", e);
+                tracing::error!("MessagePipe pushed an error: {:?}", e);
                 return;
             }
         };
@@ -2032,7 +2056,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             || msg.is_unidentified_sender()
             || msg.is_receipt())
         {
-            log::warn!("Unknown envelope type {:?}", msg.r#type());
+            tracing::warn!("Unknown envelope type {:?}", msg.r#type());
         }
 
         let storage = self.storage.clone().expect("initialized storage");
@@ -2043,7 +2067,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                     match cipher.open_envelope(msg.clone()).await {
                         Ok(Some(content)) => break content,
                         Ok(None) => {
-                            log::warn!("Empty envelope");
+                            tracing::warn!("Empty envelope");
                             return None;
                         }
                         Err(ServiceError::SignalProtocolError(
@@ -2051,7 +2075,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                         )) => {
                             // This branch is the only one that loops, and it *should not* loop more than once.
                             let source_uuid = Uuid::parse_str(addr.name()).expect("only uuid-based identities accessible in the database");
-                            log::warn!("Untrusted identity for {}; replacing identity and inserting a warning.", addr);
+                            tracing::warn!("Untrusted identity for {}; replacing identity and inserting a warning.", addr);
                             let recipient = storage.fetch_or_insert_recipient_by_uuid(source_uuid);
                             let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
                             let msg = crate::store::NewMessage {
@@ -2077,27 +2101,27 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             storage.create_message(&msg);
 
                             if !recipient.is_registered {
-                                log::warn!("Recipient was marked as unregistered, marking as registered.");
+                                tracing::warn!("Recipient was marked as unregistered, marking as registered.");
                                 storage.mark_recipient_registered(source_uuid, true);
                             }
 
                             let removed = storage.delete_identity_key(&addr);
                             if ! removed {
-                                log::error!("Could not remove identity key for {}.  Please file a bug.", addr);
+                                tracing::error!("Could not remove identity key for {}.  Please file a bug.", addr);
                                 return None;
                             }
                         }
                         Err(e) => {
-                            log::error!("Error opening envelope: {:?}", e);
+                            tracing::error!("Error opening envelope: {:?}", e);
                             return None;
                         }
                     }
                 };
 
-                log::trace!("Opened envelope: {:?}", content);
+                tracing::trace!(sender = ?content.metadata.sender, "opened envelope");
 
                 Some(content)
-            }
+            }.instrument(tracing::trace_span!("opening envelope"))
             .into_actor(self)
             .map(|content, act, ctx| {
                 if let Some(content) = content {
@@ -2109,7 +2133,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
 
     /// Called when the WebSocket somehow has disconnected.
     fn finished(&mut self, ctx: &mut Self::Context) {
-        log::debug!("Attempting reconnect");
+        tracing::debug!("Attempting reconnect");
 
         self.inner.pinned().borrow_mut().connected = false;
         self.inner.pinned().borrow().connectedChanged();
@@ -2239,8 +2263,8 @@ impl Handler<ConfirmRegistration> for ClientActor {
 
         let registration_id = generate_registration_id(&mut rand::thread_rng());
         let pni_registration_id = generate_registration_id(&mut rand::thread_rng());
-        log::trace!("registration_id: {}", registration_id);
-        log::trace!("pni_registration_id: {}", pni_registration_id);
+        tracing::trace!("registration_id: {}", registration_id);
+        tracing::trace!("pni_registration_id: {}", pni_registration_id);
 
         let mut push_service = self.authenticated_service_with_credentials(ServiceCredentials {
             uuid: None,
@@ -2357,7 +2381,10 @@ impl Handler<RegisterLinked> for ClientActor {
                     while let Some(provisioning_step) = rx.next().await {
                         match provisioning_step {
                             SecondaryDeviceProvisioning::Url(url) => {
-                                log::info!("generating qrcode from provisioning link: {}", &url);
+                                tracing::info!(
+                                    %url,
+                                    "generating qrcode from provisioning link",
+                                );
                                 tx_uri
                                     .take()
                                     .expect("that only one URI is emitted by provisioning code")
@@ -2428,8 +2455,6 @@ impl Handler<RefreshPreKeys> for ClientActor {
     type Result = ResponseActFuture<Self, ()>;
 
     fn handle(&mut self, _: RefreshPreKeys, _ctx: &mut Self::Context) -> Self::Result {
-        log::trace!("handle(RefreshPreKeys)");
-
         let service = self.authenticated_service();
         // XXX add profile key when #192 implemneted
         let mut am = AccountManager::new(service, None);
@@ -2448,14 +2473,15 @@ impl Handler<RefreshPreKeys> for ClientActor {
                 false,
             )
             .await
-        };
+        }
+        .instrument(tracing::trace_span!("RefreshPreKeys"));
         // XXX: store the last refresh time somewhere.
 
         Box::pin(proc.into_actor(self).map(move |result, _act, _ctx| {
             if let Err(e) = result {
-                log::error!("Refresh pre keys failed: {}", e);
+                tracing::error!("refresh pre keys failed: {}", e);
             } else {
-                log::trace!("Successfully refreshed prekeys");
+                tracing::trace!("successfully refreshed prekeys");
             }
         }))
     }
@@ -2468,7 +2494,7 @@ impl ClientWorker {
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {
             if let Err(e) = actor.send(CompactDb(0)).await {
-                log::error!("{:?} in compact_db()", e);
+                tracing::error!("{:?} in compact_db()", e);
             }
         });
     }
@@ -2478,10 +2504,10 @@ impl ClientWorker {
         let result = remove_file(&file_name);
         match result {
             Ok(()) => {
-                log::trace!("Deleted file {}", file_name);
+                tracing::trace!("Deleted file {}", file_name);
             }
             Err(e) => {
-                log::trace!("Could not delete file {}: {:?}", file_name, e);
+                tracing::trace!("Could not delete file {}: {:?}", file_name, e);
             }
         };
     }
@@ -2494,7 +2520,7 @@ impl ClientWorker {
                 .send(RefreshProfile::ByRecipientId(recipient_id))
                 .await
             {
-                log::error!("{:?}", e);
+                tracing::error!("{:?}", e);
             }
         });
     }
@@ -2518,7 +2544,7 @@ impl ClientWorker {
                 })
                 .await
             {
-                log::error!("{:?}", e);
+                tracing::error!("{:?}", e);
             }
         });
     }
@@ -2541,7 +2567,7 @@ impl ClientWorker {
                 })
                 .await
             {
-                log::error!("{:?}", e);
+                tracing::error!("{:?}", e);
             }
         });
     }
@@ -2565,7 +2591,7 @@ impl Handler<CompactDb> for ClientActor {
     type Result = usize;
 
     fn handle(&mut self, _: CompactDb, _ctx: &mut Self::Context) -> Self::Result {
-        log::trace!("handle(CompactDb)");
+        tracing::trace!("handle(CompactDb)");
         let store = self.storage.clone().unwrap();
         store.compact_db()
     }
@@ -2602,7 +2628,7 @@ impl Handler<ProofResponse> for ClientActor {
     type Result = ResponseActFuture<Self, ()>;
 
     fn handle(&mut self, proof: ProofResponse, ctx: &mut Self::Context) -> Self::Result {
-        log::trace!("handle(ProofResponse)");
+        let span = tracing::trace_span!("handle ProofResponse");
 
         let storage = self.storage.clone().unwrap();
         let self_recipient = storage
@@ -2622,15 +2648,16 @@ impl Handler<ProofResponse> for ClientActor {
         let proc = async move {
             am.submit_recaptcha_challenge(&proof.token, &proof.response)
                 .await
-        };
+        }
+        .instrument(span);
 
         Box::pin(proc.into_actor(self).map(move |result, _act, _ctx| {
             actix::spawn(async move {
                 if let Err(e) = result {
-                    log::error!("Error sending signalcaptcha proof: {}", e);
+                    tracing::error!("Error sending signalcaptcha proof: {}", e);
                     addr.send(ProofAccepted { result: false }).await
                 } else {
-                    log::trace!("Successfully sent signalcaptcha proof");
+                    tracing::trace!("Successfully sent signalcaptcha proof");
                     addr.send(ProofAccepted { result: true }).await
                 }
             });
@@ -2725,7 +2752,7 @@ impl Handler<ExportAttachment> for ClientActor {
 
         let attachment = storage.fetch_attachment(attachment_id);
         if attachment.is_none() {
-            log::error!(
+            tracing::error!(
                 "Attachment id {} doesn't exist, can't export it!",
                 attachment_id
             );
@@ -2733,7 +2760,7 @@ impl Handler<ExportAttachment> for ClientActor {
         }
         let attachment = attachment.unwrap();
         if attachment.attachment_path.is_none() {
-            log::error!(
+            tracing::error!(
                 "Attachment id {} has no path stored, can't export it!",
                 attachment_id
             );
@@ -2744,7 +2771,7 @@ impl Handler<ExportAttachment> for ClientActor {
 
         let source = PathBuf::from_str(&attachment.attachment_path.unwrap()).unwrap();
         if !source.exists() {
-            log::error!(
+            tracing::error!(
                 "Attachment {} doesn't exist anymore, not exporting!",
                 source.to_str().unwrap()
             );
@@ -2766,7 +2793,7 @@ impl Handler<ExportAttachment> for ClientActor {
         .join("Whisperfish");
 
         if !std::path::Path::exists(&target_dir) && std::fs::create_dir(&target_dir).is_err() {
-            log::error!(
+            tracing::error!(
                 "Couldn't create directory {}, can't export attachment!",
                 target_dir.to_str().unwrap()
             );
@@ -2780,7 +2807,7 @@ impl Handler<ExportAttachment> for ClientActor {
             .len();
         if (free_space - file_size) < (100 * 1024 * 1024) {
             // 100 MiB
-            log::error!("Not enough free space after copying, not exporting the attachment!");
+            tracing::error!("Not enough free space after copying, not exporting the attachment!");
             return;
         };
 
@@ -2815,8 +2842,8 @@ impl Handler<ExportAttachment> for ClientActor {
         // 6) Copy the file
 
         match std::fs::copy(source, target) {
-            Err(e) => log::trace!("Copying attachment failed: {}", e),
-            Ok(size) => log::trace!(
+            Err(e) => tracing::trace!("Copying attachment failed: {}", e),
+            Ok(size) => tracing::trace!(
                 "Attachent {} exported to {} ({} bytes)",
                 attachment_id,
                 target,

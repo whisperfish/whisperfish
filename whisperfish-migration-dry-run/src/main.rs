@@ -35,7 +35,7 @@ fn derive_db_key(password: &str, salt_path: &Path) -> Result<[u8; 32], anyhow::E
     let params = scrypt::Params::new(14, 8, 1, 32)?;
     let mut key = [0u8; 32];
     scrypt::scrypt(password.as_bytes(), &salt, &params, &mut key)?;
-    log::trace!("Computed the key, salt was {:?}", salt);
+    tracing::trace!("Computed the key, salt was {:?}", salt);
     Ok(key)
 }
 

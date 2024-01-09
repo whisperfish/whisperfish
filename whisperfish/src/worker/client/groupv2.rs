@@ -19,7 +19,7 @@ pub struct RequestGroupV2Info(pub GroupV2, pub [u8; zkgroup::GROUP_MASTER_KEY_LE
 impl ClientWorker {
     #[with_executor]
     pub fn refresh_group_v2(&self, session_id: usize) {
-        log::trace!("Request to refresh group v2 by session id = {}", session_id);
+        tracing::trace!("Request to refresh group v2 by session id = {}", session_id);
 
         let client = self.actor.clone().unwrap();
         actix::spawn(async move {
@@ -132,14 +132,14 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         let (recipient, _was_changed) = storage.update_profile_key(recipient.e164, recipient.uuid, None, &profile_key.get_bytes(), TrustLevel::Uncertain);
                         match recipient.profile_key {
                             Some(key) if key == profile_key.get_bytes() => {
-                                log::trace!("Profile key matches server-stored profile key");
+                                tracing::trace!("Profile key matches server-stored profile key");
                             }
                             Some(_key) => {
                                 // XXX trigger a profile key update message
-                                log::warn!("Profile key does not match server-stored profile key.");
+                                tracing::warn!("Profile key does not match server-stored profile key.");
                             }
                             None => {
-                                log::error!("Profile key None but tried to set.  This will probably crash a bit later.");
+                                tracing::error!("Profile key None but tried to set.  This will probably crash a bit later.");
                             },
                         }
                     }
@@ -163,7 +163,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                                 .and(group_v2_members::group_v2_id.eq(&group_id_hex)),
                         )
                         .load(db)?;
-                    log::trace!("Have {} stale members", stale_members.len());
+                    tracing::trace!("Have {} stale members", stale_members.len());
                     let dropped = diesel::delete(group_v2_members::table)
                         .filter(
                             group_v2_members::group_v2_id
@@ -189,7 +189,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         // XXX there's a bit of duplicate work going on here.
                         let recipient =
                             storage.fetch_or_insert_recipient_by_uuid(member.uuid);
-                        log::trace!(
+                        tracing::trace!(
                             "Asserting {} as a member of the group",
                             recipient.e164_or_uuid()
                         );
@@ -204,11 +204,11 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                             .first(&mut *storage.db())
                             .optional()?;
                         if let Some(membership) = membership {
-                            log::trace!(
+                            tracing::trace!(
                                 "  Member {} already in db. Updating membership.",
                                 recipient.e164_or_uuid()
                             );
-                            log::info!("Existing membership {:?}; updating", membership);
+                            tracing::info!("Existing membership {:?}; updating", membership);
                             diesel::update(group_v2_members::table)
                                 .set((group_v2_members::role.eq(member.role as i32),))
                                 .filter(
@@ -221,7 +221,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                                 .with_relation(group_v2s::table, group_id_hex.clone())
                                 .with_relation(recipients::table, recipient.id);
                         } else {
-                            log::info!("  Member is new, inserting.");
+                            tracing::info!("  Member is new, inserting.");
                             diesel::insert_into(group_v2_members::table)
                                 .values((
                                     group_v2_members::group_v2_id.eq(&group_id_hex.clone()),
@@ -247,7 +247,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                 let _group = match result {
                     Ok(g) => g,
                     Err(e) => {
-                        log::error!("Could not update group: {}", e);
+                        tracing::error!("Could not update group: {}", e);
                         return;
                     }
                 };
@@ -285,7 +285,7 @@ impl Handler<RequestGroupV2InfoBySessionId> for ClientActor {
                 ctx.notify(RequestGroupV2Info(store_v2, key_stack));
             }
             _ => {
-                log::warn!("No group_v2 with session id {}", sid);
+                tracing::warn!("No group_v2 with session id {}", sid);
             }
         }
     }
@@ -304,13 +304,13 @@ impl Handler<RefreshGroupAvatar> for ClientActor {
         RefreshGroupAvatar(group_id): RefreshGroupAvatar,
         ctx: &mut Self::Context,
     ) {
-        log::trace!("Received RefreshGroupAvatar({}), fetching.", group_id);
+        tracing::trace!("Received RefreshGroupAvatar({}), fetching.", group_id);
         let storage = self.storage.clone().unwrap();
         let group = {
             match storage.fetch_session_by_group_v2_id(&group_id) {
                 Some(r) => r.unwrap_group_v2().clone(),
                 None => {
-                    log::error!("No group with id {}", group_id);
+                    tracing::error!("No group with id {}", group_id);
                     return;
                 }
             }
@@ -318,7 +318,7 @@ impl Handler<RefreshGroupAvatar> for ClientActor {
         let (avatar, master_key) = match group.avatar {
             Some(avatar) => (avatar, group.master_key),
             None => {
-                log::error!("Group without avatar; not refreshing avatar: {:?}", group);
+                tracing::error!("Group without avatar; not refreshing avatar: {:?}", group);
                 return;
             }
         };
@@ -348,10 +348,10 @@ impl Handler<RefreshGroupAvatar> for ClientActor {
                         ctx.notify(GroupAvatarFetched(group_id, avatar))
                     }
                     Ok((group_id, None)) => {
-                        log::info!("No avatar for group {}", group_id);
+                        tracing::info!("No avatar for group {}", group_id);
                     }
                     Err(e) => {
-                        log::error!("During avatar fetch: {}", e);
+                        tracing::error!("During avatar fetch: {}", e);
                     }
                 };
             }),
@@ -400,7 +400,7 @@ impl Handler<GroupAvatarFetched> for ClientActor {
                         // listeners.
                     }
                     Err(e) => {
-                        log::warn!("Error with fetched avatar: {}", e);
+                        tracing::warn!("Error with fetched avatar: {}", e);
                     }
                 }
             }),

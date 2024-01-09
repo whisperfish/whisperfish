@@ -119,7 +119,7 @@ impl Handler<StorageReady> for SessionActor {
 
     fn handle(&mut self, storageready: StorageReady, _ctx: &mut Self::Context) -> Self::Result {
         self.storage = Some(storageready.storage);
-        log::trace!("SessionActor has a registered storage");
+        tracing::trace!("SessionActor has a registered storage");
     }
 }
 
@@ -231,7 +231,7 @@ impl Handler<RemoveIdentities> for SessionActor {
         let recipient = if let Some(r) = storage.fetch_recipient_by_id(recipient_id) {
             r
         } else {
-            log::warn!(
+            tracing::warn!(
                 "Requested removal of identities for recipient {}, but recipient not found.",
                 recipient_id
             );
@@ -240,7 +240,7 @@ impl Handler<RemoveIdentities> for SessionActor {
 
         let identities = match (recipient.e164, recipient.uuid) {
             (None, None) => {
-                log::debug!("No identities to remove");
+                tracing::debug!("No identities to remove");
                 return;
             }
             (None, Some(uuid)) => vec![uuid.to_string()],
@@ -250,17 +250,17 @@ impl Handler<RemoveIdentities> for SessionActor {
 
         let mut successes = 0;
         for identity in identities {
-            log::debug!("Removing identity {}", identity);
+            tracing::debug!("Removing identity {}", identity);
             let addr = ProtocolAddress::new(identity.clone(), DeviceId::from(1));
             if !storage.delete_identity_key(&addr) {
-                log::trace!("Could not remove identity {}.", identity);
+                tracing::trace!("Could not remove identity {}.", identity);
             } else {
                 successes += 1;
             }
         }
 
         if successes == 0 {
-            log::warn!("Could not successfully remove any identity keys.  Please file a bug.");
+            tracing::warn!("Could not successfully remove any identity keys.  Please file a bug.");
         }
     }
 }

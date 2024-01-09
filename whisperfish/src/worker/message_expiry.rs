@@ -28,7 +28,7 @@ impl ExpiredMessagesStream {
 
     fn update_next_wake(&mut self) {
         if let Some((message_id, time)) = self.storage.fetch_next_expiring_message_id() {
-            log::info!(
+            tracing::info!(
                 "Message {} expires at {}; scheduling wake-up.",
                 message_id,
                 time

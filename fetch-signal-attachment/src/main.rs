@@ -80,7 +80,7 @@ async fn main() -> Result<(), anyhow::Error> {
         .format()
         .mode(phonenumber::Mode::E164)
         .to_string();
-    log::info!("E164: {}", e164);
+    tracing::info!("E164: {}", e164);
     let signaling_key = Some(storage.signaling_key().await.unwrap());
     let credentials = ServiceCredentials {
         uuid,
@@ -101,7 +101,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let mut stream = service
         .get_attachment_by_id(&opt.cdn_key, opt.cdn_number)
         .await?;
-    log::info!("Downloading attachment");
+    tracing::info!("Downloading attachment");
 
     // We need the whole file for the crypto to check out 😢
     let mut ciphertext = Vec::new();
@@ -110,7 +110,7 @@ async fn main() -> Result<(), anyhow::Error> {
         .await
         .expect("streamed attachment");
 
-    log::info!("Downloaded {} bytes", len);
+    tracing::info!("Downloaded {} bytes", len);
 
     let mut key = [0u8; 64];
     key.copy_from_slice(&key_material);
@@ -121,7 +121,7 @@ async fn main() -> Result<(), anyhow::Error> {
     // so double check the received .png image, and rename it if necessary.
     opt.ext = opt.ext.to_lowercase();
     if opt.ext == "png" {
-        log::trace!("Checking for JPEG with .png extension...");
+        tracing::trace!("Checking for JPEG with .png extension...");
         let classifier = MimeClassifier::new();
         let computed_type = classifier.classify(
             LoadContext::Image,
@@ -131,7 +131,7 @@ async fn main() -> Result<(), anyhow::Error> {
             &ciphertext as &[u8],
         );
         if computed_type == mime::IMAGE_JPEG {
-            log::info!("Received JPEG file with .png suffix, fixing suffix");
+            tracing::info!("Received JPEG file with .png suffix, fixing suffix");
             opt.ext = String::from("jpg");
         }
     }
@@ -150,7 +150,7 @@ async fn main() -> Result<(), anyhow::Error> {
         .await
         .unwrap();
 
-    log::info!("Attachment stored at {:?}", attachment_path);
-    log::info!("Attachment registered with message {}", msg);
+    tracing::info!("Attachment stored at {:?}", attachment_path);
+    tracing::info!("Attachment registered with message {}", msg);
     Ok(())
 }

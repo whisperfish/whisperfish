@@ -46,7 +46,7 @@ where
 fn log_error_return_none<T>(res: anyhow::Result<Option<T>>) -> Option<T> {
     match res {
         Err(e) => {
-            log::error!(
+            tracing::error!(
                 "Error deserializing: {}. Please file an issue if this error persists.",
                 e
             );
@@ -58,7 +58,7 @@ fn log_error_return_none<T>(res: anyhow::Result<Option<T>>) -> Option<T> {
 
 fn log_error<T>(res: anyhow::Result<T>) -> anyhow::Result<T> {
     if let Err(e) = &res {
-        log::error!("Error deserializing; this will crash: {}", e);
+        tracing::error!("Error deserializing; this will crash: {}", e);
     }
     res
 }

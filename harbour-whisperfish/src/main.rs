@@ -4,9 +4,8 @@ use dbus::blocking::Connection;
 use signal_hook::{consts::SIGINT, iterator::Signals};
 use single_instance::SingleInstance;
 use std::{os::unix::prelude::OsStrExt, thread, time::Duration};
+use tracing_subscriber::{fmt::format, layer::SubscriberExt, util::SubscriberInitExt};
 use whisperfish::*;
-
-use simplelog::*;
 
 /// Unofficial but advanced Signal client for Sailfish OS
 #[derive(Parser, Debug)]
@@ -45,11 +44,11 @@ fn main() {
             let mut terminate = false;
             for _ in signals.forever() {
                 if !terminate {
-                    log::info!("[SIGINT] Trying to exit gracefully...");
+                    tracing::info!("[SIGINT] Trying to exit gracefully...");
                     terminate = true;
                     dbus_quit_app().ok();
                 } else {
-                    log::info!("[SIGINT] Exiting forcefully...");
+                    tracing::info!("[SIGINT] Exiting forcefully...");
                     std::process::exit(1);
                 }
             }
@@ -135,63 +134,54 @@ fn main() {
 
     let shared_dir = config.get_share_dir();
 
-    let log_file_path = shared_dir.join(format!(
-        "harbour-whisperfish.{}.log",
-        // Keep in sync with regex above
-        chrono::Utc::now().format("%Y%m%d_%H%M%S")
-    ));
-    let log_file = log_file_path.to_str().expect("log file path");
+    let file_appender = tracing_appender::rolling::hourly(&shared_dir, "harbour-whisperfish.log");
+    let (stdio, _guard) = tracing_appender::non_blocking(std::io::stdout());
+    let (file, _guard) = tracing_appender::non_blocking(file_appender);
 
-    // Build simplelog configuration
-    let mut log_level = LevelFilter::Warn;
-    let mut config_builder = ConfigBuilder::new();
-
-    config_builder
-        .set_time_format_custom(format_description!(
-            "[year]-[month]-[day] [hour]:[minute]:[second]"
-        ))
-        .add_filter_allow_str("whisperfish")
-        .add_filter_allow_str("libsignal_service")
-        .add_filter_allow_str("libsignal_service_actix")
-        .set_max_level(LevelFilter::Error) // Always show e.g. [INFO]
-        .set_thread_level(LevelFilter::Off) // Hide thread info
-        .set_location_level(LevelFilter::Off) // Hide filename, row and column
-        .set_level_color(Level::Trace, None) // To make other colors pop up better
-        .set_level_color(Level::Debug, Some(Color::Blue))
-        .set_level_color(Level::Info, Some(Color::Green))
-        .set_level_color(Level::Warn, Some(Color::Yellow))
-        .set_level_color(Level::Error, Some(Color::Red));
-
-    if config.verbose {
+    let log_filter = if config.verbose {
         // Enable QML debug output and full backtrace (for Sailjail).
         std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
         std::env::set_var("RUST_BACKTRACE", "full");
-        log_level = LevelFilter::Trace;
-    }
-
-    CombinedLogger::init(if config.logfile {
-        vec![
-            TermLogger::new(
-                log_level,
-                config_builder.build(),
-                TerminalMode::Stderr,
-                ColorChoice::Auto,
-            ),
-            WriteLogger::new(
-                log_level,
-                config_builder.build(),
-                std::fs::File::create(log_file).unwrap(),
-            ),
-        ]
+        "whisperfish=trace,libsignal_service=trace,libsignal_service_actix=trace"
     } else {
-        vec![TermLogger::new(
-            log_level,
-            config_builder.build(),
-            TerminalMode::Stderr,
-            ColorChoice::Auto,
-        )]
-    })
-    .unwrap();
+        "whisperfish=info,warn"
+    };
+
+    if config.tracing {
+        #[cfg(not(feature = "coz"))]
+        {
+            use tracing_subscriber::prelude::*;
+            let registry = tracing_subscriber::registry().with(tracing_subscriber::fmt::layer());
+            #[cfg(feature = "console-subscriber")]
+            let registry = registry.with(console_subscriber::spawn());
+
+            #[cfg(feature = "tracy")]
+            let registry = registry.with(tracing_tracy::TracyLayer::new());
+
+            registry.init();
+        }
+
+        #[cfg(feature = "coz")]
+        tracing::subscriber::set_global_default(tracing_coz::TracingCozBridge::new()).unwrap();
+    } else if config.logfile {
+        let filter = tracing_subscriber::EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new(log_filter));
+
+        tracing_subscriber::registry()
+            .with(filter)
+            .with(
+                tracing_subscriber::fmt::layer()
+                    .with_ansi(false)
+                    .event_format(format().with_ansi(false))
+                    .with_writer(file),
+            )
+            .with(tracing_subscriber::fmt::layer().with_writer(stdio))
+            .init();
+    } else {
+        tracing_subscriber::fmt::fmt()
+            .with_env_filter(log_filter)
+            .init();
+    }
 
     qtlog::enable();
 
@@ -204,19 +194,19 @@ fn main() {
     let instance_lock = SingleInstance::new("whisperfish").unwrap();
     if !instance_lock.is_single() {
         if let Err(e) = dbus_show_app() {
-            log::error!("{}", e);
+            tracing::error!("{}", e);
         }
         return;
     }
 
     if let Err(e) = run_main_app(config) {
-        log::error!("Fatal error: {}", e);
+        tracing::error!("Fatal error: {}", e);
         std::process::exit(1);
     }
 }
 
 fn dbus_show_app() -> Result<(), dbus::Error> {
-    log::info!("Calling app.show() on DBus.");
+    tracing::info!("Calling app.show() on DBus.");
 
     let c = Connection::new_session()?;
     let proxy = c.with_proxy(
@@ -229,7 +219,7 @@ fn dbus_show_app() -> Result<(), dbus::Error> {
 }
 
 fn dbus_quit_app() -> Result<(), dbus::Error> {
-    log::info!("Calling app.quit() on DBus.");
+    tracing::info!("Calling app.quit() on DBus.");
 
     let c = Connection::new_session()?;
     let proxy = c.with_proxy(
@@ -242,7 +232,7 @@ fn dbus_quit_app() -> Result<(), dbus::Error> {
 }
 
 fn run_main_app(config: config::SignalConfig) -> Result<(), anyhow::Error> {
-    log::info!("Start main app (with autostart = {})", config.autostart);
+    tracing::info!("Start main app (with autostart = {})", config.autostart);
 
     // Initialise storage here
     // Right now, we only create the attachment (and storage) directory if necessary
@@ -276,13 +266,13 @@ fn run_main_app(config: config::SignalConfig) -> Result<(), anyhow::Error> {
             config.verbose = settings.get_verbose();
             config.logfile = settings.get_logfile();
             if let Err(e) = config.write_to_file() {
-                log::error!("Could not save config.yml: {}", e)
+                tracing::error!("Could not save config.yml: {}", e)
             };
         }
-        Err(e) => log::error!("Could not open config.yml: {}", e),
+        Err(e) => tracing::error!("Could not open config.yml: {}", e),
     };
 
-    log::info!("Shut down.");
+    tracing::info!("Shut down.");
 
     Ok(())
 }

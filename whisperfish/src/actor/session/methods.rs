@@ -35,7 +35,7 @@ impl SessionMethods {
                 .send(DeleteSession { id })
                 .map(Result::unwrap),
         );
-        log::trace!("Dispatched DeleteSession({})", id);
+        tracing::trace!("Dispatched DeleteSession({})", id);
     }
 
     #[with_executor]
@@ -58,7 +58,7 @@ impl SessionMethods {
                 .send(MarkSessionMuted { sid: id, muted })
                 .map(Result::unwrap),
         );
-        log::trace!("Dispatched MarkSessionMuted({}, {})", id, muted);
+        tracing::trace!("Dispatched MarkSessionMuted({}, {})", id, muted);
     }
 
     #[with_executor]
@@ -70,7 +70,7 @@ impl SessionMethods {
                 .send(MarkSessionArchived { sid: id, archived })
                 .map(Result::unwrap),
         );
-        log::trace!("Dispatched MarkSessionArchived({}, {})", id, archived);
+        tracing::trace!("Dispatched MarkSessionArchived({}, {})", id, archived);
     }
 
     #[with_executor]
@@ -82,7 +82,7 @@ impl SessionMethods {
                 .send(MarkSessionPinned { sid: id, pinned })
                 .map(Result::unwrap),
         );
-        log::trace!("Dispatched MarkSessionPinned({}, {})", id, pinned);
+        tracing::trace!("Dispatched MarkSessionPinned({}, {})", id, pinned);
     }
 
     #[with_executor]
@@ -94,7 +94,7 @@ impl SessionMethods {
                 .send(RemoveIdentities { recipient_id })
                 .map(Result::unwrap),
         );
-        log::trace!("Dispatched RemoveIdentities({})", recipient_id);
+        tracing::trace!("Dispatched RemoveIdentities({})", recipient_id);
     }
 
     #[with_executor]
@@ -106,7 +106,7 @@ impl SessionMethods {
                 .send(SaveDraft { sid, draft })
                 .map(Result::unwrap),
         );
-        log::trace!("Dispatched SafeDraft for {}", sid);
+        tracing::trace!("Dispatched SafeDraft for {}", sid);
     }
 
     #[with_executor]
@@ -118,6 +118,6 @@ impl SessionMethods {
                 .send(StartMessageExpiry { message_id })
                 .map(Result::unwrap),
         );
-        log::trace!("Dispatched StartMessageExpiry for {}", message_id);
+        tracing::trace!(message_id, "dispatched StartMessageExpiry");
     }
 }

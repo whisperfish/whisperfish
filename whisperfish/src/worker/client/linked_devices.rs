@@ -25,7 +25,7 @@ impl ClientWorker {
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {
             if let Err(e) = actor.send(LinkDevice { tsurl }).await {
-                log::error!("{:?}", e);
+                tracing::error!("{:?}", e);
             }
         });
     }
@@ -35,7 +35,7 @@ impl ClientWorker {
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {
             if let Err(e) = actor.send(UnlinkDevice { id }).await {
-                log::error!("{:?}", e);
+                tracing::error!("{:?}", e);
             }
         });
     }
@@ -45,7 +45,7 @@ impl ClientWorker {
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {
             if let Err(e) = actor.send(ReloadLinkedDevices).await {
-                log::error!("{:?}", e);
+                tracing::error!("{:?}", e);
             }
         });
     }
@@ -55,7 +55,7 @@ impl Handler<ReloadLinkedDevices> for ClientActor {
     type Result = ResponseActFuture<Self, ()>;
 
     fn handle(&mut self, _: ReloadLinkedDevices, _ctx: &mut Self::Context) -> Self::Result {
-        log::trace!("handle(ReloadLinkedDevices)");
+        tracing::trace!("handle(ReloadLinkedDevices)");
 
         let mut service = self.authenticated_service();
 
@@ -66,10 +66,10 @@ impl Handler<ReloadLinkedDevices> for ClientActor {
                     match result {
                         Err(e) => {
                             // XXX show error
-                            log::error!("Refresh linked devices failed: {}", e);
+                            tracing::error!("Refresh linked devices failed: {}", e);
                         }
                         Ok(devices) => {
-                            log::trace!("Successfully refreshed linked devices: {:?}", devices);
+                            tracing::trace!("Successfully refreshed linked devices: {:?}", devices);
                             // A bunch bindings because of scope
                             let client_worker = act.inner.pinned();
                             let client_worker = client_worker.borrow_mut();
@@ -92,7 +92,7 @@ impl Handler<LinkDevice> for ClientActor {
         LinkDevice { tsurl }: LinkDevice,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        log::trace!("handle(LinkDevice)");
+        tracing::trace!("handle(LinkDevice)");
 
         let service = self.authenticated_service();
         let credentials = self.credentials.clone().unwrap();
@@ -118,10 +118,10 @@ impl Handler<LinkDevice> for ClientActor {
                 match result {
                     Err(e) => {
                         // XXX show error
-                        log::error!("Linking device failed: {}", e);
+                        tracing::error!("Linking device failed: {}", e);
                     }
                     Ok(()) => {
-                        log::trace!("Linked device succesfully");
+                        tracing::trace!("Linked device succesfully");
                         // A bunch bindings because of scope
                         ctx.notify(ReloadLinkedDevices);
                     }
@@ -139,7 +139,7 @@ impl Handler<UnlinkDevice> for ClientActor {
         UnlinkDevice { id }: UnlinkDevice,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        log::trace!("handle(UnlinkDevice)");
+        tracing::trace!("handle(UnlinkDevice)");
 
         let mut service = self.authenticated_service();
 
@@ -151,10 +151,10 @@ impl Handler<UnlinkDevice> for ClientActor {
                     match result {
                         Err(e) => {
                             // XXX show error in UI
-                            log::error!("Delete linked device failed: {}", e);
+                            tracing::error!("Delete linked device failed: {}", e);
                         }
                         Ok(()) => {
-                            log::trace!("Successfully unlinked device");
+                            tracing::trace!("Successfully unlinked device");
                             ctx.notify(ReloadLinkedDevices);
                         }
                     }

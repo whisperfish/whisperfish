@@ -6,7 +6,7 @@ pub async fn write_file_async(
 ) -> Result<(), anyhow::Error> {
     use tokio::io::AsyncWriteExt;
 
-    log::trace!("Writing file (async) {}", path.as_ref().display());
+    tracing::trace!("Writing file (async) {}", path.as_ref().display());
     let mut file = tokio::fs::File::create(&path).await?;
     file.write_all(content).await?;
     file.sync_all().await?;
@@ -17,11 +17,11 @@ pub async fn write_file_async(
 pub async fn read_file_async(path: impl AsRef<std::path::Path>) -> Result<Vec<u8>, anyhow::Error> {
     use tokio::io::AsyncReadExt;
 
-    log::trace!("Opening file (async) {}", path.as_ref().display());
+    tracing::trace!("Opening file (async) {}", path.as_ref().display());
     let mut file = tokio::fs::File::open(&path).await?;
     let mut content = vec![];
     file.read_to_end(&mut content).await?;
-    log::trace!(
+    tracing::trace!(
         "Read file {} with {} bytes",
         path.as_ref().display(),
         content.len()
@@ -68,7 +68,7 @@ pub async fn read_salt_file(path: impl AsRef<std::path::Path>) -> Result<[u8; 8]
 
 pub fn clear_old_logs(path: &std::path::PathBuf, keep_count: usize, filename_regex: &str) -> bool {
     if keep_count < 2 {
-        log::error!("Can't rotate logs with count {}", keep_count);
+        tracing::error!("Can't rotate logs with count {}", keep_count);
         return false;
     }
 
@@ -91,9 +91,9 @@ pub fn clear_old_logs(path: &std::path::PathBuf, keep_count: usize, filename_reg
 
                 for file in file_list[keep_count..].iter() {
                     match std::fs::remove_file(path.join(file)) {
-                        Ok(()) => log::trace!("Deleted old log file: {}", file),
+                        Ok(()) => tracing::trace!("Deleted old log file: {}", file),
                         Err(e) => {
-                            log::error!("Could not delete old log file {}: {:?}", file, e);
+                            tracing::error!("Could not delete old log file {}: {:?}", file, e);
                             return false;
                         }
                     }
@@ -101,7 +101,7 @@ pub fn clear_old_logs(path: &std::path::PathBuf, keep_count: usize, filename_reg
             }
         }
         Err(e) => {
-            log::error!("Could not read log file folder contents: {:?}", e);
+            tracing::error!("Could not read log file folder contents: {:?}", e);
             return false;
         }
     };

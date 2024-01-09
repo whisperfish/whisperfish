@@ -98,7 +98,7 @@ impl Handler<SessionAnalyzed> for ObservingModelActor<RecipientImpl> {
                 let mut model = model.borrow_mut();
                 if let Some(recipient) = &mut model.recipient {
                     if recipient.id != recipient_id {
-                        log::trace!("Different recipient_id requested, dropping fingerprint");
+                        tracing::trace!("Different recipient_id requested, dropping fingerprint");
                     } else {
                         recipient.fingerprint = Some(fingerprint);
                         recipient.versions = versions;
@@ -109,7 +109,7 @@ impl Handler<SessionAnalyzed> for ObservingModelActor<RecipientImpl> {
             None => {
                 // In principle, the actor should have gotten stopped when the model got dropped,
                 // because the actor's only strong reference is contained in the ObservingModel.
-                log::debug!("Model got dropped, stopping actor execution.");
+                tracing::debug!("Model got dropped, stopping actor execution.");
                 // XXX What is the difference between stop and terminate?
                 ctx.stop();
             }
@@ -148,7 +148,7 @@ impl RecipientImpl {
         if let Ok(uuid) = Uuid::parse_str(&uuid) {
             self.recipient_uuid = Some(uuid);
         } else {
-            log::warn!("QML requested unparsable UUID");
+            tracing::warn!("QML requested unparsable UUID");
             self.recipient_uuid = None;
         }
         if let Some(ctx) = ctx {
@@ -234,7 +234,7 @@ impl RecipientImpl {
 
                     Result::<_, anyhow::Error>::Ok(())
                 }
-                .map_ok_or_else(|e| log::error!("Computing fingeprint: {}", e), |_| ());
+                .map_ok_or_else(|e| tracing::error!("Computing fingeprint: {}", e), |_| ());
                 actix::spawn(compute_fingerprint);
             }
         }

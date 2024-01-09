@@ -42,7 +42,7 @@ fn format_with_country_helper(number: &str, mode: Mode, country_code: &str) -> O
     };
 
     if !phonenumber::is_valid(&number) {
-        log::warn!(
+        tracing::warn!(
             "Phone number is invalid according to the `phonenumber` library. Proceed with caution"
         );
         // return None;
