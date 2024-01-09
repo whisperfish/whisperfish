@@ -26,7 +26,7 @@ fs_extra = "1.2.0"
 hex = "0.4"
 hmac = "0.12"
 itertools = "0.11"
-libsqlite3-sys = { version = "0.26.0", features = ["sqlcipher"] }
+libsqlite3-sys = { version = "0.27", features = ["sqlcipher"] }
 pbkdf2 = { version = "0.12", default-features = false }
 phonenumber = "0.3.1"
 prost = "0.12"
