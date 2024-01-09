@@ -20,6 +20,11 @@ impl Handler<StartMessageExpiry> for ClientActor {
             .as_ref()
             .unwrap()
             .start_message_expiry(message_id);
+        self.message_expiry_notification_handle
+            .as_ref()
+            .unwrap()
+            .send(())
+            .unwrap();
     }
 }
 
