@@ -608,7 +608,7 @@ impl Storage {
     }
 
     /// Process reaction and store in database.
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, sender, data_message), fields(sender = %sender))]
     pub fn process_reaction(
         &mut self,
         sender: &orm::Recipient,
@@ -714,7 +714,7 @@ impl Storage {
         Some(self.merge_and_fetch_recipient(e164, uuid, None, TrustLevel::Certain))
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, phonenumber), fields(phonenumber = %phonenumber))]
     pub fn fetch_recipient_by_phonenumber(
         &self,
         phonenumber: &PhoneNumber,
@@ -1399,7 +1399,7 @@ impl Storage {
         }
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, phonenumber), fields(phonenumber = %phonenumber))]
     pub fn fetch_or_insert_recipient_by_phonenumber(
         &self,
         phonenumber: &PhoneNumber,
@@ -1618,7 +1618,7 @@ impl Storage {
         })
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, phonenumber), fields(phonenumber = %phonenumber))]
     pub fn fetch_session_by_phonenumber(&self, phonenumber: &PhoneNumber) -> Option<orm::Session> {
         fetch_session!(self.db(), |query| {
             query.filter(schema::recipients::e164.eq(phonenumber.to_string()))
@@ -1747,7 +1747,7 @@ impl Storage {
             .unwrap()
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, phonenumber), fields(phonenumber = %phonenumber))]
     pub fn fetch_or_insert_session_by_phonenumber(
         &self,
         phonenumber: &PhoneNumber,
