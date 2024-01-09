@@ -197,6 +197,7 @@ pub struct ClientWorker {
     refresh_group_v2: qt_method!(fn(&self, session_id: usize)),
 
     delete_file: qt_method!(fn(&self, file_name: String)),
+    startMessageExpiry: qt_method!(fn(&self, message_id: i32)),
 
     refresh_profile: qt_method!(fn(&self, recipient_id: i32)),
     upload_profile: qt_method!(
