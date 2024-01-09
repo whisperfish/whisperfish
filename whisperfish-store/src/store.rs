@@ -2108,33 +2108,25 @@ impl Storage {
 
     #[tracing::instrument(skip(self))]
     pub fn delete_expired_messages(&mut self) -> usize {
-        let deleted = self.fetch_expired_message_ids();
-
-        for message_id in deleted.iter().map(|(id, _)| *id) {
-            self.delete_attachments_for_message(message_id);
-        }
-
-        let deletions: usize = diesel::delete(schema::messages::table)
+        let deletions: Vec<i32> = diesel::delete(schema::messages::table)
             .filter(sql::<Timestamp>(DELETE_AFTER).le(sql::<Timestamp>("DATETIME('now')")))
-            // .returning(schema::messages::id)
-            // .load(&mut *self.db())
-            .execute(&mut *self.db())
+            .returning(schema::messages::id)
+            .load(&mut *self.db())
             .expect("delete expired messages");
 
-        // XXX This observes race conditions
-        // We can implement this cleanly with the above `returning` clause,
-        // but this is only available in Sqlite 3.35.0 and up.
-        // Diesel does not seem to know it is available yet.
-        if deletions == deleted.len() {
-            tracing::warn!("discrepancy between expected and actual deletions");
-        }
-        tracing::trace!("affected {} rows", deletions);
+        tracing::trace_span!("deleting expired attachments").in_scope(|| {
+            for message_id in &deletions {
+                self.delete_attachments_for_message(*message_id);
+            }
+        });
 
-        for deletion in deleted {
-            self.observe_delete(schema::messages::table, PrimaryKey::RowId(deletion.0));
+        tracing::trace!("affected {} rows", deletions.len());
+
+        for deletion in &deletions {
+            self.observe_delete(schema::messages::table, *deletion);
         }
 
-        deletions
+        deletions.len()
     }
 
     #[tracing::instrument(skip(self))]
