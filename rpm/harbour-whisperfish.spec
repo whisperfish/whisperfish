@@ -1,4 +1,7 @@
 %bcond_with harbour
+%bcond_with console_subscriber
+%bcond_with tracy
+%bcond_with coz
 %bcond_with lto
 %bcond_with sccache
 %bcond_with tools
@@ -169,7 +172,21 @@ FEATURES=sailfish
 FEATURES="sailfish,harbour"
 %endif
 
+%if %{with console_subscriber}
+export RUSTFLAGS="%{?rustflags} --cfg tokio_unstable"
+FEATURES="$FEATURES,console-subscriber"
+%else
 export RUSTFLAGS="%{?rustflags}"
+%endif
+
+%if %{with tracy}
+FEATURES="$FEATURES,tracy"
+%endif
+
+%if %{with coz}
+FEATURES="$FEATURES,coz"
+%endif
+
 # We could use the %(version) and %(release), but SFDK will include a datetime stamp,
 # ordering Cargo to recompile literally every second when the workspace is dirty.
 # git describe is a lot stabler, because it only uses the commit number and potentially a -dirty flag

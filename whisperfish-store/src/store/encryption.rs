@@ -42,14 +42,14 @@ impl StorageEncryption {
                 &mut key_storage,
             )
             .expect("derive pbkdf2 storage key");
-            log::trace!("Computed the storage key, salt was {:?}", salt_storage);
+            tracing::trace!("Computed the storage key, salt was {:?}", salt_storage);
 
             // Derive database key
             let params = scrypt::Params::new(14, 8, 1, 32).unwrap();
             let mut key_database = [0u8; 32];
             scrypt::scrypt(password, &salt_database, &params, &mut key_database)
                 .context("Cannot compute database key")?;
-            log::trace!("Computed the database key, salt was {:?}", salt_database);
+            tracing::trace!("Computed the database key, salt was {:?}", salt_database);
 
             // Create self and return
             Ok(Self {

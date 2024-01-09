@@ -9,17 +9,17 @@ use whisperfish_store::StoreProfile;
 
 impl StreamHandler<OutdatedProfile> for ClientActor {
     fn handle(&mut self, OutdatedProfile(uuid, key): OutdatedProfile, ctx: &mut Self::Context) {
-        log::trace!("Received OutdatedProfile({}, [..]), fetching.", uuid);
+        tracing::trace!("Received OutdatedProfile({}, [..]), fetching.", uuid);
         let mut service = if let Some(ws) = self.ws.clone() {
             ProfileService::from_socket(ws)
         } else {
-            log::debug!("Ignoring outdated profiles until reconnected.");
+            tracing::debug!("Ignoring outdated profiles until reconnected.");
             return;
         };
 
         // If our own Profile is outdated, schedule a profile refresh
         if self.config.get_uuid() == Some(uuid) {
-            log::trace!("Scheduling a refresh for our own profile");
+            tracing::trace!("Scheduling a refresh for our own profile");
             ctx.notify(RefreshOwnProfile { force: false });
             return;
         }
@@ -41,7 +41,7 @@ impl StreamHandler<OutdatedProfile> for ClientActor {
                         if let ServiceError::NotFoundError = e {
                             ctx.notify(ProfileFetched(recipient_uuid, None))
                         } else {
-                            log::error!("Error refreshing outdated profile: {}", e);
+                            tracing::error!("Error refreshing outdated profile: {}", e);
                         }
                     }
                 };
@@ -65,7 +65,7 @@ impl Handler<ProfileFetched> for ClientActor {
         match self.handle_profile_fetched(ctx, uuid, profile) {
             Ok(()) => {}
             Err(e) => {
-                log::warn!("Error with fetched profile: {}", e);
+                tracing::warn!("Error with fetched profile: {}", e);
             }
         }
     }
@@ -78,7 +78,7 @@ impl ClientActor {
         recipient_uuid: Uuid,
         profile: Option<SignalServiceProfile>,
     ) -> anyhow::Result<()> {
-        log::info!("Fetched profile: {:?}", profile);
+        tracing::info!("Fetched profile: {:?}", profile);
         let storage = self.storage.clone().unwrap();
         let recipient = storage
             .fetch_recipient_by_uuid(recipient_uuid)
@@ -100,7 +100,7 @@ impl ClientActor {
 
             let profile_decrypted = profile.decrypt(cipher)?;
 
-            log::info!("Decrypted profile {:?}", profile_decrypted);
+            tracing::info!("Decrypted profile {:?}", profile_decrypted);
 
             let profile_data = StoreProfile {
                 given_name: profile_decrypted
@@ -129,7 +129,7 @@ impl ClientActor {
             ctx.notify(ProfileCreated(profile_data));
         } else {
             // XXX: We came here through 404 error, can that mean unregistered user?
-            log::trace!(
+            tracing::trace!(
                 "Recipient {} doesn't have a profile on the server",
                 recipient.uuid()
             );
@@ -189,14 +189,14 @@ impl Handler<ProfileCreated> for ClientActor {
 
                         let mut f = tokio::fs::File::create(avatar_path).await?;
                         f.write_all(&avatar_bytes).await?;
-                        log::info!("Profile avatar saved!");
+                        tracing::info!("Profile avatar saved!");
                     }
                     None => match avatar_path.exists() {
                         true => {
                             std::fs::remove_file(avatar_path)?;
-                            log::trace!("Profile avatar removed!");
+                            tracing::trace!("Profile avatar removed!");
                         }
-                        false => log::trace!("Profile has no avatar to remove."),
+                        false => tracing::trace!("Profile has no avatar to remove."),
                     },
                 };
 
@@ -207,8 +207,8 @@ impl Handler<ProfileCreated> for ClientActor {
             .into_actor(self)
             .map(|res: anyhow::Result<_>, _act, _ctx| {
                 match res {
-                    Ok(uuid) => log::info!("Profile for {} saved!", uuid),
-                    Err(e) => log::error!("Error fetching profile avatar: {}", e),
+                    Ok(uuid) => tracing::info!("Profile for {} saved!", uuid),
+                    Err(e) => tracing::error!("Error fetching profile avatar: {}", e),
                 };
             }),
         );

@@ -151,24 +151,24 @@ impl AttachmentListModel {
         let attachment = if let Some(attachment) = self.attachments.get(idx as usize) {
             attachment
         } else {
-            log::error!("[attachment] Message not found at index {}", idx);
+            tracing::error!("[attachment] Message not found at index {}", idx);
             return;
         };
         let attachment = if let Some(path) = &attachment.attachment_path {
             path
         } else {
-            log::error!("[attachment] Opening attachment without path (idx {})", idx);
+            tracing::error!("[attachment] Opening attachment without path (idx {})", idx);
             return;
         };
 
         match Command::new("xdg-open").arg(attachment).status() {
             Ok(status) => {
                 if !status.success() {
-                    log::error!("[attachment] fail");
+                    tracing::error!("[attachment] fail");
                 }
             }
             Err(e) => {
-                log::error!("[attachment] Error {}", e);
+                tracing::error!("[attachment] Error {}", e);
             }
         }
     }

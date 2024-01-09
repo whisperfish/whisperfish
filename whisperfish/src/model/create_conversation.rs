@@ -68,7 +68,7 @@ impl CreateConversationImpl {
         } else if let Some(e164) = &self.e164 {
             storage.fetch_recipient_by_phonenumber(e164)
         } else {
-            log::trace!("Neither e164 nor uuid set; not fetching.");
+            tracing::trace!("Neither e164 nor uuid set; not fetching.");
             return;
         };
 
@@ -82,7 +82,7 @@ impl CreateConversationImpl {
             storage.fetch_or_insert_session_by_recipient_id(recipient.id)
         } else {
             // XXX This most probably requires interaction.
-            log::warn!("Not creating new recipients through this method.");
+            tracing::warn!("Not creating new recipients through this method.");
             return;
         };
         self.session_id = Some(session.id);
@@ -101,7 +101,7 @@ impl CreateConversationImpl {
             // inspect_err https://github.com/rust-lang/rust/pull/91346 Rust 1.59 (unstable)
             //             https://github.com/rust-lang/rust/pull/116866 Rust 1.76 (stable)
             .map_err(|e| {
-                log::error!("Parsing uuid: {}", e);
+                tracing::error!("Parsing uuid: {}", e);
                 e
             })
             .ok();
@@ -116,7 +116,7 @@ impl CreateConversationImpl {
             // inspect_err https://github.com/rust-lang/rust/pull/91346 Rust 1.59 (unstable)
             //             https://github.com/rust-lang/rust/pull/116866 Rust 1.76 (stable)
             .map_err(|e| {
-                log::error!("Parsing phone number: {}", e);
+                tracing::error!("Parsing phone number: {}", e);
                 e
             })
             .ok();

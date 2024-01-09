@@ -78,7 +78,7 @@ impl EventObserving for SessionsImpl {
             return;
         }
 
-        log::trace!(
+        tracing::trace!(
             "Falling back to reloading the whole Sessions model for event {:?}",
             event
         );
@@ -254,7 +254,7 @@ impl SessionListModel {
 
                     self.countChanged();
                 } else {
-                    log::warn!("Could not find session in model for deletion event");
+                    tracing::warn!("Could not find session in model for deletion event");
                 }
             }
         } else if let Some(message_id) = message_id {
@@ -285,7 +285,9 @@ impl SessionListModel {
                 self.data_changed(low, high);
             }
         } else {
-            log::warn!("Unimplemented: Sessions model observe without message_id or session_id");
+            tracing::warn!(
+                "Unimplemented: Sessions model observe without message_id or session_id"
+            );
         }
     }
 

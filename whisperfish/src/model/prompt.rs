@@ -44,7 +44,7 @@ impl Prompt {
     fn phoneNumber(&mut self, phone_number: QString) {
         for listener in self.phone_number_listeners.drain(..) {
             if listener.send(phone_number.clone()).is_err() {
-                log::warn!("Request for phone number fulfilled, but nobody listens.");
+                tracing::warn!("Request for phone number fulfilled, but nobody listens.");
             }
         }
     }
@@ -54,7 +54,7 @@ impl Prompt {
     fn verificationCode(&mut self, code: QString) {
         for listener in self.code_listeners.drain(..) {
             if listener.send(code.clone()).is_err() {
-                log::warn!("Request for verification code fulfilled, but nobody listens.");
+                tracing::warn!("Request for verification code fulfilled, but nobody listens.");
             }
         }
     }
@@ -64,7 +64,7 @@ impl Prompt {
     fn password(&mut self, password: QString) {
         for listener in self.password_listeners.drain(..) {
             if listener.send(password.clone()).is_err() {
-                log::warn!("Request for password fulfilled, but nobody listens.");
+                tracing::warn!("Request for password fulfilled, but nobody listens.");
             }
         }
     }
@@ -74,7 +74,7 @@ impl Prompt {
     fn captcha(&mut self, captcha: QString) {
         for listener in self.captcha_listeners.drain(..) {
             if listener.send(captcha.clone()).is_err() {
-                log::warn!("Request for captcha fulfilled, but nobody listens.");
+                tracing::warn!("Request for captcha fulfilled, but nobody listens.");
             }
         }
     }
@@ -88,7 +88,7 @@ impl Prompt {
     fn registerAsPrimary(&mut self, isPrimary: bool) {
         for listener in self.registration_type_listeners.drain(..) {
             if listener.send(isPrimary).is_err() {
-                log::warn!("Request for registration type fulfilled, but nobody listens.");
+                tracing::warn!("Request for registration type fulfilled, but nobody listens.");
             }
         }
     }
@@ -104,7 +104,7 @@ impl Prompt {
             match receiver.await {
                 Ok(pwd) => Some(pwd),
                 Err(_e) => {
-                    log::error!("Password prompt was canceled");
+                    tracing::error!("Password prompt was canceled");
                     None
                 }
             }
@@ -122,7 +122,7 @@ impl Prompt {
             match receiver.await {
                 Ok(pwd) => Some(pwd),
                 Err(_e) => {
-                    log::error!("Registration type prompt was canceled");
+                    tracing::error!("Registration type prompt was canceled");
                     None
                 }
             }
@@ -167,7 +167,7 @@ impl Prompt {
             match receiver.await {
                 Ok(pwd) => Some(pwd),
                 Err(_e) => {
-                    log::error!("Phone number prompt was canceled");
+                    tracing::error!("Phone number prompt was canceled");
                     None
                 }
             }
@@ -185,7 +185,7 @@ impl Prompt {
             match receiver.await {
                 Ok(pwd) => Some(pwd),
                 Err(_e) => {
-                    log::error!("Code prompt was canceled");
+                    tracing::error!("Code prompt was canceled");
                     None
                 }
             }
@@ -203,7 +203,7 @@ impl Prompt {
             match receiver.await {
                 Ok(pwd) => Some(pwd),
                 Err(_e) => {
-                    log::error!("Captcha prompt was canceled");
+                    tracing::error!("Captcha prompt was canceled");
                     None
                 }
             }

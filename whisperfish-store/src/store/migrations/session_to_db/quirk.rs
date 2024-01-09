@@ -65,7 +65,7 @@ fn unquirk_session_structure(sess: &mut SessionStructure) -> Result<(), SignalPr
 
 fn unquirk_identity(id: &mut Vec<u8>) -> Result<(), SignalProtocolError> {
     if id.len() == 33 {
-        log::warn!(
+        tracing::warn!(
             "Not unquirking input key of 33 bytes! Its tarts with {}.",
             id[0]
         );
@@ -74,7 +74,7 @@ fn unquirk_identity(id: &mut Vec<u8>) -> Result<(), SignalProtocolError> {
         id.insert(0, DJB_TYPE);
         Ok(())
     } else {
-        log::error!("Invalid input key of length {}, cannot unquirk", id.len());
+        tracing::error!("Invalid input key of length {}, cannot unquirk", id.len());
         Err(SignalProtocolError::InvalidArgument(
             "Invalid identity key length".into(),
         ))

@@ -101,7 +101,7 @@ impl RustleGraph {
                 drop(cleanup);
                 app.rustlegraphs.borrow_mut().retain(|k, v| {
                     if v.strong_count() == 0 {
-                        log::trace!("Removing RustleGraph {} from cache", k);
+                        tracing::trace!("Removing RustleGraph {} from cache", k);
                     }
                     v.strong_count() > 0
                 });
@@ -111,13 +111,17 @@ impl RustleGraph {
             if let Some(storage) = app.storage.borrow().clone() {
                 if let Some(att) = storage.fetch_attachment(self.attachmentId) {
                     if !att.is_voice_note {
-                        log::warn!("Attachment is not a voice note.");
+                        tracing::warn!("Attachment is not a voice note.");
                         self.image_updated();
                         self.duration_updated();
                         return;
                     }
                     if let Some(path) = att.attachment_path {
-                        log::debug!("Generating a RustleGraph of {}x{}", self.width, self.height);
+                        tracing::debug!(
+                            "Generating a RustleGraph of {}x{}",
+                            self.width,
+                            self.height
+                        );
                         let viz = Vizualizer::from_file(
                             self.vizualizer_params(),
                             Some(&att.content_type),
@@ -126,7 +130,7 @@ impl RustleGraph {
                         match viz {
                             Ok(viz) => self.vizualizer = Some(Arc::new(viz)),
                             Err(e) => {
-                                log::error!("Vizualization failed: {}", e);
+                                tracing::error!("Vizualization failed: {}", e);
                             }
                         }
                     }
@@ -138,7 +142,7 @@ impl RustleGraph {
                 let id = self.image_id();
                 let _old = app.rustlegraphs.borrow_mut().insert(id, Arc::downgrade(v));
                 if _old.is_some() {
-                    log::info!("Replaced an old Rustlegraph; probably doing double work here");
+                    tracing::info!("Replaced an old Rustlegraph; probably doing double work here");
                 }
             }
             self.image_updated();

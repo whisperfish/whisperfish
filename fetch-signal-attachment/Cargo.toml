@@ -13,7 +13,7 @@ libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs
 libsignal-service-actix = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main" }
 clap = { version = "3.2", features = ["derive"] }
 mime_classifier = "0.0.1"
-log = "0.4"
+tracing = "0.1"
 anyhow = "1.0"
 actix-rt = "2.8.0"
 hex = "0.4"

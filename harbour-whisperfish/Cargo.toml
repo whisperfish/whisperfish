@@ -10,8 +10,9 @@ description = "Private messaging using Signal for SailfishOS."
 whisperfish = { path = "../whisperfish" }
 dbus = "0.9"
 single-instance = "0.3.3"
-log = "0.4"
-simplelog = "0.12"
+tracing = { version = "0.1", features=["log"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"]}
+tracing-appender = "0.2"
 time = "0.3.30"
 anyhow = "1.0"
 clap = { version = "3.2", features = ["derive"] }
@@ -19,7 +20,15 @@ chrono = "0.4"
 regex = "1.7"
 signal-hook = "0.3.15"
 
+# Profiling and debugging
+console-subscriber = { version = "0.2", optional = true }
+tracing-tracy = { version = "0.10", optional = true }
+tracing-coz = { version = "0.1.1", optional = true }
+
 [features]
 bundled-sqlcipher = ["whisperfish/bundled-sqlcipher"]
 sailfish = ["whisperfish/sailfish"]
 harbour = ["whisperfish/harbour"]
+console-subscriber = ["dep:console-subscriber"]
+tracy = ["dep:tracing-tracy"]
+coz = ["dep:tracing-coz"]

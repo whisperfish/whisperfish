@@ -106,7 +106,7 @@ impl MessageMethods {
                 .map(Result::unwrap),
         );
 
-        log::trace!("Dispatched DeleteMessage({})", id);
+        tracing::trace!("Dispatched DeleteMessage({})", id);
     }
 
     /// Remove a message from everyone and from the database.
@@ -120,7 +120,7 @@ impl MessageMethods {
                 .map(Result::unwrap),
         );
 
-        log::trace!("Dispatched DeleteMessageRemotely({})", id);
+        tracing::trace!("Dispatched DeleteMessageRemotely({})", id);
     }
 
     #[with_executor]
@@ -133,6 +133,6 @@ impl MessageMethods {
                 .map(Result::unwrap),
         );
 
-        log::trace!("Dispatched ExportAttachment({})", attachment_id);
+        tracing::trace!("Dispatched ExportAttachment({})", attachment_id);
     }
 }

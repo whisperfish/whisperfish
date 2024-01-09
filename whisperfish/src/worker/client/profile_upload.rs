@@ -82,7 +82,7 @@ impl Handler<MultideviceSyncProfile> for ClientActor {
                 .send_contact_details(&local_addr, None, contacts, false, false)
                 .await
             {
-                log::warn!("Could not sync profile key: {}", e);
+                tracing::warn!("Could not sync profile key: {}", e);
             }
         })
     }
@@ -124,7 +124,7 @@ impl Handler<RefreshOwnProfile> for ClientActor {
                 if let Some(lpf) = &self_recipient.last_profile_fetch {
                     if Utc.from_utc_datetime(lpf) > Utc::now() - chrono::Duration::days(1) && !force
                     {
-                        log::info!("Our own profile is up-to-date, not fetching.");
+                        tracing::info!("Our own profile is up-to-date, not fetching.");
                         return;
                     }
                 }
@@ -150,14 +150,14 @@ impl Handler<RefreshOwnProfile> for ClientActor {
                             // No profile of ours online, let's upload one.
                             true
                         } else {
-                            log::error!("Error fetching own profile: {}", e);
+                            tracing::error!("Error fetching own profile: {}", e);
                             false
                         }
                     }
                 };
 
                 if outdated {
-                    log::info!("Considering our profile as outdated, uploading new one.");
+                    tracing::info!("Considering our profile as outdated, uploading new one.");
                     client.send(UploadProfile).await.unwrap();
                 }
             }
@@ -216,7 +216,7 @@ impl Handler<UploadProfile> for ClientActor {
                     ProfileKey::create(key)
                 })
                 .unwrap_or_else(|| {
-                    log::info!("Generating profile key");
+                    tracing::info!("Generating profile key");
                     ProfileKey::generate(rand::thread_rng().gen())
                 });
             let name = ProfileName {
@@ -235,7 +235,7 @@ impl Handler<UploadProfile> for ClientActor {
                 )
                 .await
             {
-                log::error!("Error uploading profile: {}. Retrying in 60 seconds.", e);
+                tracing::error!("Error uploading profile: {}. Retrying in 60 seconds.", e);
                 actix::spawn(async move {
                     actix::clock::sleep(std::time::Duration::from_secs(60)).await;
                     client
@@ -265,7 +265,7 @@ impl Handler<UploadProfile> for ClientActor {
 impl Handler<RefreshProfileAttributes> for ClientActor {
     type Result = ResponseFuture<()>;
     fn handle(&mut self, _: RefreshProfileAttributes, ctx: &mut Self::Context) -> Self::Result {
-        log::info!("Sending profile attributes");
+        tracing::info!("Sending profile attributes");
 
         let storage = self.storage.clone().unwrap();
         let service = self.authenticated_service();
@@ -299,7 +299,7 @@ impl Handler<RefreshProfileAttributes> for ClientActor {
                 pni_registration_id,
             };
             if let Err(e) = am.set_account_attributes(account_attributes).await {
-                log::error!("Error refreshing profile attributes: {}", e);
+                tracing::error!("Error refreshing profile attributes: {}", e);
                 actix::spawn(async move {
                     actix::clock::sleep(std::time::Duration::from_secs(60)).await;
                     address
@@ -308,7 +308,7 @@ impl Handler<RefreshProfileAttributes> for ClientActor {
                         .expect("client still running");
                 });
             } else {
-                log::info!("Profile attributes refreshed");
+                tracing::info!("Profile attributes refreshed");
             }
         })
     }
