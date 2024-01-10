@@ -71,14 +71,31 @@ impl Handler<ProfileFetched> for ClientActor {
     }
 }
 
+fn debug_signal_service_profile(p: &SignalServiceProfile) -> String {
+    format!(
+        "SignalServiceProfile {{ identity_key: {:?}, name: {:?}, about: {:?}, about_emoji: {:?}, avatar: {:?}, unidentified_access: {:?}, unrestricted_unidentified_access: {:?}, capabilities: {:?} }}",
+        p.identity_key.as_ref().map(|_| "..."),
+        p.name.as_ref().map(|_| "..."),
+        p.about.as_ref().map(|_| "..."),
+        p.about_emoji.as_ref().map(|_| "..."),
+        p.avatar.as_ref().map(|_| "..."),
+        p.unidentified_access.as_ref().map(|_| "..."),
+        p.unrestricted_unidentified_access,
+        &p.capabilities,
+    )
+}
+
 impl ClientActor {
+    #[tracing::instrument(
+        skip(self, ctx, profile),
+        fields(profile = profile.as_ref().map(debug_signal_service_profile))
+    )]
     fn handle_profile_fetched(
         &mut self,
         ctx: &mut <Self as Actor>::Context,
         recipient_uuid: Uuid,
         profile: Option<SignalServiceProfile>,
     ) -> anyhow::Result<()> {
-        tracing::info!("Fetched profile: {:?}", profile);
         let storage = self.storage.clone().unwrap();
         let recipient = storage
             .fetch_recipient_by_uuid(recipient_uuid)
