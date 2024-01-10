@@ -24,6 +24,7 @@ impl Handler<WhoAmI> for ClientActor {
 
                 Ok::<_, anyhow::Error>(Some(response))
             }
+            .instrument(tracing::debug_span!("whoami"))
             .into_actor(self)
             .map(
                 move |result: Result<Option<WhoAmIResponse>, _>, act, _ctx| {

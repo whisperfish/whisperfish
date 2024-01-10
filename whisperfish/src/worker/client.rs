@@ -1834,15 +1834,17 @@ impl Handler<StorageReady> for ClientActor {
 
         let storage_for_password = storageready.storage;
         let request_password = async move {
-            tracing::info!("Phone number: {:?}", phonenumber);
-            tracing::info!("UUID: {:?}", uuid);
-            tracing::info!("DeviceId: {}", device_id);
+            tracing::info!("phonenumber: {phonenumber}, ACI: {uuid:?}, DeviceId: {device_id}");
 
             let password = storage_for_password.signal_password().await.unwrap();
             let signaling_key = Some(storage_for_password.signaling_key().await.unwrap());
 
             (uuid, phonenumber, device_id, password, signaling_key)
-        };
+        }
+        .instrument(tracing::span!(
+            tracing::Level::INFO,
+            "reading password and signaling key"
+        ));
         let service_cfg = self.service_cfg();
 
         Box::pin(request_password.into_actor(self).map(

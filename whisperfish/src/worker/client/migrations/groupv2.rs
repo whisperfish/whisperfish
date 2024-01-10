@@ -49,6 +49,7 @@ impl Handler<ComputeGroupV2ExpectedIds> for ClientActor {
                     assert_eq!(affected, 1, "update groupv1 expected upgrade id");
                 }
             }
+            .instrument(tracing::debug_span!("compute groupv2 expected IDs"))
             .into_actor(self)
             .map(|(), act, _| act.migration_state.notify_groupv2_expected_ids()),
         )
