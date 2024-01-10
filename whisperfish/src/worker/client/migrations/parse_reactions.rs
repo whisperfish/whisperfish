@@ -11,7 +11,7 @@ pub struct ParseOldReaction;
 impl Handler<ParseOldReaction> for ClientActor {
     type Result = ();
     fn handle(&mut self, _: ParseOldReaction, _ctx: &mut Self::Context) -> Self::Result {
-        let _span = tracing::info_trace!("Parsing old reactions").entered();
+        let _span = tracing::info_span!("parsing old reactions").entered();
         let storage = self.storage.clone().unwrap();
         let myself = storage.fetch_self_recipient().expect("myself in db");
 
