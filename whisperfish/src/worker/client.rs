@@ -1914,7 +1914,10 @@ impl Handler<Restart> for ClientActor {
             .map(move |pipe, act, ctx| match pipe {
                 Ok((pipe, ws)) => {
                     ctx.notify(unidentified::RotateUnidentifiedCertificates);
-                    ctx.add_stream(pipe.stream());
+                    ctx.add_stream(
+                        pipe.stream()
+                            .instrument(tracing::info_span!("message receiver")),
+                    );
 
                     ctx.set_mailbox_capacity(1);
                     act.inner.pinned().borrow_mut().connected = true;
@@ -1926,7 +1929,10 @@ impl Handler<Restart> for ClientActor {
                         ctx.cancel_future(handle);
                     }
                     act.outdated_profile_stream_handle = Some(
-                        ctx.add_stream(OutdatedProfileStream::new(act.storage.clone().unwrap())),
+                        ctx.add_stream(
+                            OutdatedProfileStream::new(act.storage.clone().unwrap())
+                                .instrument(tracing::info_span!("outdated profile stream")),
+                        ),
                     );
                 }
                 Err(e) => {
