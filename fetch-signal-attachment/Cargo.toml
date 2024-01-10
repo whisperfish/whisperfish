@@ -10,7 +10,7 @@ description = "An utility for whisperfish to fetch Signal attachments"
 whisperfish = { path = "../whisperfish" }
 futures = "0.3"
 libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main" }
-libsignal-service-actix = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main" }
+libsignal-service-hyper = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main" }
 clap = { version = "3.2", features = ["derive"] }
 mime_classifier = "0.0.1"
 tracing = "0.1"

@@ -190,7 +190,7 @@ license-files = [
 ]
 
 [[licenses.clarify]]
-name = "libsignal-service-actix"
+name = "libsignal-service-hyper"
 expression = "AGPL-3.0"
 license-files = []
 

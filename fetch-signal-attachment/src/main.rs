@@ -2,7 +2,7 @@ use clap::Parser;
 use futures::io::AsyncReadExt;
 use libsignal_service::configuration::SignalServers;
 use libsignal_service::prelude::*;
-use libsignal_service_actix::prelude::*;
+use libsignal_service_hyper::prelude::*;
 use mime_classifier::{ApacheBugFlag, LoadContext, MimeClassifier, NoSniffFlag};
 use std::{path::Path, sync::Arc};
 use whisperfish::store::{self, Storage};
@@ -91,7 +91,7 @@ async fn main() -> Result<(), anyhow::Error> {
     };
 
     // Connect to OWS
-    let mut service = AwcPushService::new(
+    let mut service = HyperPushService::new(
         SignalServers::Production,
         Some(credentials.clone()),
         whisperfish::user_agent(),
