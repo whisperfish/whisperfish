@@ -144,6 +144,9 @@ diesel::table! {
         story_type -> Integer,
         server_guid -> Nullable<Text>,
         message_ranges -> Nullable<Binary>,
+        latest_revision_id -> Nullable<Integer>,
+        original_message_id -> Nullable<Integer>,
+        revision_number -> Integer,
     }
 }
 
