@@ -126,6 +126,10 @@ pub struct Message {
     pub server_guid: Option<Uuid>,
 
     pub message_ranges: Option<Vec<u8>>,
+
+    pub latest_revision_id: Option<i32>,
+    pub original_message_id: Option<i32>,
+    pub revision: i32,
 }
 
 impl Display for Message {
@@ -184,6 +188,10 @@ impl Default for Message {
             story_type: StoryType::None,
             server_guid: Default::default(),
             message_ranges: None,
+
+            original_message_id: None,
+            latest_revision_id: None,
+            revision: 0,
         }
     }
 }
