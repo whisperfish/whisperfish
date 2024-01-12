@@ -103,7 +103,7 @@ impl Handler<RefreshOwnProfile> for ClientActor {
         let mut service = self.authenticated_service();
         let client = ctx.address();
         let config = self.config.clone();
-        let uuid = config.get_uuid().expect("valid uuid at this point");
+        let uuid = config.get_aci().expect("valid uuid at this point");
 
         Box::pin(
             async move {
@@ -178,7 +178,7 @@ impl Handler<UpdateProfile> for ClientActor {
         let storage = self.storage.clone().unwrap();
         let client = ctx.address();
         let config = self.config.clone();
-        let uuid = config.get_uuid().expect("valid uuid at this point");
+        let uuid = config.get_aci().expect("valid uuid at this point");
 
         // XXX: Validate emoji character somehow
         Box::pin(
@@ -209,7 +209,7 @@ impl Handler<UploadProfile> for ClientActor {
         let service = self.authenticated_service();
         let client = ctx.address();
         let config = self.config.clone();
-        let uuid = config.get_uuid().expect("valid uuid at this point");
+        let uuid = config.get_aci().expect("valid uuid at this point");
 
         Box::pin(
             async move {

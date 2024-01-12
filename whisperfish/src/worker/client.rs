@@ -278,7 +278,7 @@ impl ClientActor {
 
     fn service_ids(&self) -> Option<ServiceIds> {
         Some(ServiceIds {
-            aci: self.config.get_uuid()?,
+            aci: self.config.get_aci()?,
             pni: self.config.get_pni()?,
         })
     }
@@ -1844,19 +1844,23 @@ impl Handler<StorageReady> for ClientActor {
             .config
             .get_tel()
             .expect("phonenumber present after any registration");
-        let uuid = self.config.get_uuid();
+        let aci = self.config.get_aci();
+        // XXX What if WhoAmI has not yet run?
+        let pni = self.config.get_pni();
         let device_id = self.config.get_device_id();
 
         storageready.storage.mark_pending_messages_failed();
 
         let storage_for_password = storageready.storage;
         let request_password = async move {
-            tracing::info!("phonenumber: {phonenumber}, ACI: {uuid:?}, DeviceId: {device_id}");
+            tracing::info!(
+                "phonenumber: {phonenumber}, ACI: {aci:?}, PNI: {pni:?}, DeviceId: {device_id}"
+            );
 
             let password = storage_for_password.signal_password().await.unwrap();
             let signaling_key = Some(storage_for_password.signaling_key().await.unwrap());
 
-            (uuid, phonenumber, device_id, password, signaling_key)
+            (aci, pni, phonenumber, device_id, password, signaling_key)
         }
         .instrument(tracing::span!(
             tracing::Level::INFO,
@@ -1864,11 +1868,12 @@ impl Handler<StorageReady> for ClientActor {
         ));
 
         Box::pin(request_password.into_actor(self).map(
-            move |(uuid, phonenumber, device_id, password, signaling_key), act, ctx| {
+            move |(aci, pni, phonenumber, device_id, password, signaling_key), act, ctx| {
                 let _span = tracing::trace_span!("whisperfish startup").entered();
                 // Store credentials
                 let credentials = ServiceCredentials {
-                    uuid,
+                    aci,
+                    pni,
                     phonenumber,
                     password: Some(password),
                     signaling_key,
@@ -1880,7 +1885,7 @@ impl Handler<StorageReady> for ClientActor {
                 // Signal service context
                 let storage = act.storage.clone().unwrap();
                 // XXX What about the whoami migration?
-                let uuid = uuid.expect("local uuid to initialize service cipher");
+                let uuid = aci.expect("local uuid to initialize service cipher");
                 // end signal service context
                 act.local_addr = Some(ServiceAddress { uuid });
 
@@ -2160,7 +2165,8 @@ impl Handler<Register> for ClientActor {
         } = reg;
 
         let mut push_service = self.authenticated_service_with_credentials(ServiceCredentials {
-            uuid: None,
+            aci: None,
+            pni: None,
             phonenumber: phonenumber.clone(),
             password: Some(password.clone()),
             signaling_key: None,
@@ -2258,7 +2264,8 @@ impl Handler<ConfirmRegistration> for ClientActor {
         tracing::trace!("pni_registration_id: {}", pni_registration_id);
 
         let mut push_service = self.authenticated_service_with_credentials(ServiceCredentials {
-            uuid: None,
+            aci: None,
+            pni: None,
             phonenumber,
             password: Some(password),
             signaling_key: None,

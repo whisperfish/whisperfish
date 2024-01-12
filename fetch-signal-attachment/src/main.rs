@@ -74,7 +74,8 @@ async fn main() -> Result<(), anyhow::Error> {
     // Connection details for OWS servers
     // XXX: https://gitlab.com/whisperfish/whisperfish/-/issues/80
     let phonenumber = config.get_tel().expect("phone number present");
-    let uuid = config.get_uuid();
+    let aci = config.get_aci();
+    let pni = config.get_pni();
     let device_id = config.get_device_id();
     let e164 = phonenumber
         .format()
@@ -83,7 +84,8 @@ async fn main() -> Result<(), anyhow::Error> {
     tracing::info!("E164: {}", e164);
     let signaling_key = Some(storage.signaling_key().await.unwrap());
     let credentials = ServiceCredentials {
-        uuid,
+        aci,
+        pni,
         phonenumber,
         password: None,
         signaling_key,
