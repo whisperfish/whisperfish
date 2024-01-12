@@ -57,46 +57,43 @@ impl Handler<ParseOldReaction> for ClientActor {
                 let ts = millis_to_naive_chrono(ts);
                 let emoji_text = &m[2];
 
-                let target_message: orm::Message = match schema::messages::table
+                match schema::messages::table
                     .filter(schema::messages::server_timestamp.eq(ts))
-                    .first(db)
+                    .first::<orm::Message>(db)
                     .optional()
                     .expect("db") {
-                    Some(msg) => msg,
-                    None=> {
-                        tracing::warn!("No message found for reaction with ts={}.  In the future, we will drop these.", ts);
-                        continue;
-                    }
-                };
+                    Some(target_message) => {
+                        let author_id = reaction.sender_recipient_id.unwrap_or(myself.id);
+                        let reaction_sent_timestamp = reaction.sent_timestamp.unwrap_or(reaction.server_timestamp);
 
-                let author_id = reaction.sender_recipient_id.unwrap_or(myself.id);
-                let reaction_sent_timestamp = reaction.sent_timestamp.unwrap_or(reaction.server_timestamp);
-
-                {
-                    use schema::reactions::dsl::*;
-                    // First delete the reactions that may already exist for this author and
-                    // message. There should not be any, but better safe than sorry.
-                    diesel::delete(reactions)
-                        .filter(author.eq(author_id))
-                        .filter(message_id.eq(target_message.id))
-                        .filter(sent_time.nullable().le(reaction_sent_timestamp))
-                        .execute(db)
-                        .context("deleting R-reaction").or(Err(diesel::result::Error::RollbackTransaction))?;
-                    let res = diesel::insert_into(reactions)
-                        .values((
-                            message_id.eq(target_message.id),
-                            author.eq(author_id),
-                            emoji.eq(emoji_text),
-                            sent_time.eq(reaction_sent_timestamp),
-                            received_time.eq(reaction.received_timestamp.unwrap_or_else(|| Utc::now().naive_utc()))
-                        ))
-                        .execute(db);
-                    match res {
-                        Ok(_) => (),
-                        Err(e @ diesel::result::Error::DatabaseError(diesel::result::DatabaseErrorKind::UniqueViolation, _)) => {
-                            tracing::info!("Got an already newer reaction for this message. Dropping. Reason: {:?}", e);
+                        use schema::reactions::dsl::*;
+                        // First delete the reactions that may already exist for this author and
+                        // message. There should not be any, but better safe than sorry.
+                        diesel::delete(reactions)
+                            .filter(author.eq(author_id))
+                            .filter(message_id.eq(target_message.id))
+                            .filter(sent_time.nullable().le(reaction_sent_timestamp))
+                            .execute(db)
+                            .context("deleting R-reaction").or(Err(diesel::result::Error::RollbackTransaction))?;
+                        let res = diesel::insert_into(reactions)
+                            .values((
+                                message_id.eq(target_message.id),
+                                author.eq(author_id),
+                                emoji.eq(emoji_text),
+                                sent_time.eq(reaction_sent_timestamp),
+                                received_time.eq(reaction.received_timestamp.unwrap_or_else(|| Utc::now().naive_utc()))
+                            ))
+                            .execute(db);
+                        match res {
+                            Ok(_) => (),
+                            Err(e @ diesel::result::Error::DatabaseError(diesel::result::DatabaseErrorKind::UniqueViolation, _)) => {
+                                tracing::info!("Got an already newer reaction for this message. Dropping. Reason: {:?}", e);
+                            }
+                            Err(e) => Err(e).context("inserting R-reaction").unwrap(),
                         }
-                        Err(e) => Err(e).context("inserting R-reaction").unwrap(),
+                    }
+                    None => {
+                        tracing::warn!("No message found for reaction with ts={ts}.  Dropping as-is, bye bye.");
                     }
                 }
 
