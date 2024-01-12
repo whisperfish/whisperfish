@@ -35,8 +35,30 @@ AttachmentItemBase {
         running: audioMessage.playbackState == Audio.PlayingState
         repeat: true
         interval: 20 // ms, 50fps
+        onTriggered: rustlegraph.timestamp = audioMessage.position / 1000.
+    }
+
+    Timer {
+        running: audioMessage.playbackState == Audio.PlayingState
+        repeat: true
+        interval: 100 // ms, 10fps
+        property int seconds: 0
+        property int minutes: 0
+        property int hours: 0
+        property var newText: ""
         onTriggered: {
-            rustlegraph.timestamp = audioMessage.position / 1000.
+            seconds = Math.round((audioMessage.duration - audioMessage.position) / 1000)
+            minutes = Math.floor(seconds / 60) % 60
+            hours = Math.floor(seconds / 3600) % 60
+            seconds = seconds % 60
+
+            newText = (hours > 0 ? (hours + ":") : "")
+                + (minutes > 9 ? "" : "0") + minutes + ":"
+                + (seconds > 9 ? "" : "0") + seconds
+
+            if(newText != playbackLabel.text) {
+                playbackLabel.text = newText
+            }
         }
     }
 
@@ -62,12 +84,6 @@ AttachmentItemBase {
     Audio {
         id: audioMessage
         source: attach.data
-        property string durationTenths: ""
-        onDurationChanged: durationTenths = (
-            duration > 0
-            ? " (" +  Math.round(duration / 1000) + "s)"
-            : durationTenths
-        )
         // Qt 5.9+
         // notifyInterval: 20 // ms
     }
@@ -84,8 +100,8 @@ AttachmentItemBase {
                 width: item.height
                 height: item.height
                 icon.source: audioMessage.playbackState === Audio.PlayingState
-                        ? "image://theme/icon-m-pause"
-                        : "image://theme/icon-m-play"
+                        ? "image://theme/icon-m-simple-pause"
+                        : "image://theme/icon-m-simple-play"
                 onClicked: audioMessage.playbackState === Audio.PlayingState
                            ? audioMessage.pause()
                            : audioMessage.play()
@@ -116,6 +132,15 @@ AttachmentItemBase {
                     icon.width: width
                     icon.height: width
                     highlighted: parent.highlighted
+                }
+
+                Label {
+                    id: playbackLabel
+                    anchors {
+                        horizontalCenter: parent.horizontalCenter
+                        bottom: parent.bottom
+                    }
+                    font.pixelSize: Theme.fontSizeTiny
                 }
             }
         }
