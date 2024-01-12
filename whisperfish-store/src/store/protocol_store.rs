@@ -561,25 +561,6 @@ impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
     }
 }
 
-#[async_trait::async_trait(?Send)]
-impl protocol::PreKeyStore for Storage {
-    async fn get_pre_key(&self, prekey_id: PreKeyId) -> Result<PreKeyRecord, SignalProtocolError> {
-        self.aci_storage().get_pre_key(prekey_id).await
-    }
-
-    async fn save_pre_key(
-        &mut self,
-        prekey_id: PreKeyId,
-        body: &PreKeyRecord,
-    ) -> Result<(), SignalProtocolError> {
-        self.aci_storage().save_pre_key(prekey_id, body).await
-    }
-
-    async fn remove_pre_key(&mut self, prekey_id: PreKeyId) -> Result<(), SignalProtocolError> {
-        self.aci_storage().remove_pre_key(prekey_id).await
-    }
-}
-
 impl<T: Identity> IdentityStorage<T> {
     /// Check whether session exists.
     ///
