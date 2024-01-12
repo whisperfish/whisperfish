@@ -1883,7 +1883,6 @@ impl Handler<StorageReady> for ClientActor {
                 // end store credentials
 
                 // Signal service context
-                let storage = act.storage.clone().unwrap();
                 // XXX What about the whoami migration?
                 let uuid = aci.expect("local uuid to initialize service cipher");
                 // end signal service context
