@@ -736,35 +736,6 @@ impl<T: Identity> protocol::SignedPreKeyStore for IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl protocol::KyberPreKeyStore for Storage {
-    async fn mark_kyber_pre_key_used(
-        &mut self,
-        kyber_prekey_id: KyberPreKeyId,
-    ) -> Result<(), SignalProtocolError> {
-        self.aci_storage()
-            .mark_kyber_pre_key_used(kyber_prekey_id)
-            .await
-    }
-
-    async fn get_kyber_pre_key(
-        &self,
-        kyber_prekey_id: KyberPreKeyId,
-    ) -> Result<KyberPreKeyRecord, SignalProtocolError> {
-        self.aci_storage().get_kyber_pre_key(kyber_prekey_id).await
-    }
-
-    async fn save_kyber_pre_key(
-        &mut self,
-        kyber_prekey_id: KyberPreKeyId,
-        body: &KyberPreKeyRecord,
-    ) -> Result<(), SignalProtocolError> {
-        self.aci_storage()
-            .save_kyber_pre_key(kyber_prekey_id, body)
-            .await
-    }
-}
-
-#[async_trait::async_trait(?Send)]
 impl<T: Identity> SenderKeyStore for IdentityStorage<T> {
     async fn store_sender_key(
         &mut self,
