@@ -3,7 +3,6 @@ use libsignal_service::pre_keys::PreKeysStore;
 use libsignal_service::protocol::{
     self, GenericSignedPreKey, IdentityKeyPair, SignalProtocolError,
 };
-use libsignal_service::provisioning::generate_registration_id;
 use libsignal_service::push_service::ServiceIdType;
 use libsignal_service::session_store::SessionStoreExt;
 use std::path::Path;
