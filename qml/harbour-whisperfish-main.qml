@@ -47,6 +47,7 @@ ApplicationWindow
             appIcon: "harbour-whisperfish"
             appName: "Whisperfish"
             category: "harbour-whisperfish-message"
+            Component.onDestruction: close()
         }
     }
 
@@ -358,6 +359,7 @@ ApplicationWindow
         if(sid in notificationMap) {
             for(var i in notificationMap[sid]) {
                 notificationMap[sid][i].close()
+                delete notificationMap[sid][i]
             }
             delete notificationMap[sid]
         }
