@@ -166,20 +166,12 @@ impl Identity for AciOrPni {
     }
 }
 
-// impl std::ops::Deref for AciOrPniStorage {
-//     type Target = Storage;
-//
-//     fn deref(&self) -> &Self::Target {
-//         &self.0
-//     }
-// }
-
 #[async_trait::async_trait(?Send)]
 impl protocol::ProtocolStore for IdentityStorage<AciOrPni> {}
 #[async_trait::async_trait(?Send)]
 impl protocol::ProtocolStore for IdentityStorage<Aci> {}
-// #[async_trait::async_trait(?Send)]
-// impl protocol::ProtocolStore for IdentityStorage<Pni> {}
+#[async_trait::async_trait(?Send)]
+impl protocol::ProtocolStore for IdentityStorage<Pni> {}
 
 #[async_trait::async_trait(?Send)]
 impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
@@ -278,7 +270,7 @@ impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
 
         if previous.is_some() {
             diesel::update(identity_records)
-                .filter(address.eq(addr.name()))
+                .filter(address.eq(addr.name()).and(identity.eq(self.1.identity())))
                 .set(record.eq(key.serialize().to_vec()))
                 .execute(&mut *self.0.db())
                 .expect("db");
@@ -327,7 +319,8 @@ impl<T: Identity> protocol::SessionStore for IdentityStorage<T> {
             .filter(
                 address
                     .eq(addr.name())
-                    .and(device_id.eq(u32::from(addr.device_id()) as i32)),
+                    .and(device_id.eq(u32::from(addr.device_id()) as i32))
+                    .and(identity.eq(self.1.identity())),
             )
             .first(&mut *self.0.db())
             .optional()
@@ -353,7 +346,8 @@ impl<T: Identity> protocol::SessionStore for IdentityStorage<T> {
                 .filter(
                     address
                         .eq(addr.name())
-                        .and(device_id.eq(u32::from(addr.device_id()) as i32)),
+                        .and(device_id.eq(u32::from(addr.device_id()) as i32))
+                        .and(identity.eq(self.1.identity())),
                 )
                 .set(record.eq(session.serialize()?))
                 .execute(&mut *self.0.db())
@@ -364,6 +358,7 @@ impl<T: Identity> protocol::SessionStore for IdentityStorage<T> {
                     address.eq(addr.name()),
                     device_id.eq(u32::from(addr.device_id()) as i32),
                     record.eq(session.serialize()?),
+                    identity.eq(self.1.identity()),
                 ))
                 .execute(&mut *self.0.db())
                 .expect("updated session");
@@ -641,7 +636,8 @@ impl<T: Identity> SessionStoreExt for IdentityStorage<T> {
             .filter(
                 address
                     .eq(addr.uuid.to_string())
-                    .and(device_id.ne(libsignal_service::push_service::DEFAULT_DEVICE_ID as i32)),
+                    .and(device_id.ne(libsignal_service::push_service::DEFAULT_DEVICE_ID as i32))
+                    .and(identity.eq(self.1.identity())),
             )
             .load(&mut *self.0.db())
             .expect("db");
@@ -655,7 +651,8 @@ impl<T: Identity> SessionStoreExt for IdentityStorage<T> {
             .filter(
                 address
                     .eq(addr.name())
-                    .and(device_id.eq(u32::from(addr.device_id()) as i32)),
+                    .and(device_id.eq(u32::from(addr.device_id()) as i32))
+                    .and(identity.eq(self.1.identity())),
             )
             .execute(&mut *self.0.db())
             .expect("db");
@@ -679,7 +676,11 @@ impl<T: Identity> SessionStoreExt for IdentityStorage<T> {
         use crate::schema::session_records::dsl::*;
 
         let num = diesel::delete(session_records)
-            .filter(address.eq(addr.uuid.to_string()))
+            .filter(
+                address
+                    .eq(addr.uuid.to_string())
+                    .and(identity.eq(self.1.identity())),
+            )
             .execute(&mut *self.0.db())
             .expect("db");
 
