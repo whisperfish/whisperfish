@@ -792,39 +792,6 @@ impl<T: Identity> SenderKeyStore for IdentityStorage<T> {
     }
 }
 
-impl Storage {
-    #[allow(dead_code)]
-    async fn remove_signed_pre_key(
-        &self,
-        signed_prekey_id: u32,
-    ) -> Result<(), SignalProtocolError> {
-        tracing::trace!("Removing signed prekey {}", signed_prekey_id);
-        use crate::schema::signed_prekeys::dsl::*;
-        use diesel::prelude::*;
-
-        diesel::delete(signed_prekeys)
-            .filter(id.eq(signed_prekey_id as i32))
-            .execute(&mut *self.db())
-            .expect("db");
-        Ok(())
-    }
-
-    // XXX rewrite in terms of get_signed_pre_key
-    #[allow(dead_code)]
-    async fn contains_signed_pre_key(&self, signed_prekey_id: u32) -> bool {
-        tracing::trace!("Checking for signed prekey {}", signed_prekey_id);
-        use crate::schema::signed_prekeys::dsl::*;
-        use diesel::prelude::*;
-
-        let signed_prekey_record: Option<orm::SignedPrekey> = signed_prekeys
-            .filter(id.eq(signed_prekey_id as i32))
-            .first(&mut *self.db())
-            .optional()
-            .expect("db");
-        signed_prekey_record.is_some()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
