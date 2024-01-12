@@ -736,28 +736,6 @@ impl<T: Identity> protocol::SignedPreKeyStore for IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl protocol::SignedPreKeyStore for Storage {
-    async fn get_signed_pre_key(
-        &self,
-        signed_prekey_id: SignedPreKeyId,
-    ) -> Result<SignedPreKeyRecord, SignalProtocolError> {
-        self.aci_storage()
-            .get_signed_pre_key(signed_prekey_id)
-            .await
-    }
-
-    async fn save_signed_pre_key(
-        &mut self,
-        signed_prekey_id: SignedPreKeyId,
-        body: &SignedPreKeyRecord,
-    ) -> Result<(), SignalProtocolError> {
-        self.aci_storage()
-            .save_signed_pre_key(signed_prekey_id, body)
-            .await
-    }
-}
-
-#[async_trait::async_trait(?Send)]
 impl protocol::KyberPreKeyStore for Storage {
     async fn mark_kyber_pre_key_used(
         &mut self,
