@@ -1,5 +1,6 @@
 pub mod orm;
 
+pub mod body_ranges;
 mod encryption;
 pub mod migrations;
 pub mod observer;
@@ -111,6 +112,7 @@ pub struct NewMessage {
     pub quote_timestamp: Option<u64>,
     pub expires_in: Option<std::time::Duration>,
     pub story_type: StoryType,
+    pub body_ranges: Option<Vec<u8>>,
 }
 
 #[derive(Clone, Debug)]
