@@ -4457,7 +4457,6 @@ dependencies = [
  "scrypt",
  "serde",
  "serde_yaml",
- "symphonia",
  "tempfile",
  "thiserror",
  "time",
