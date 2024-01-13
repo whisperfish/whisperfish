@@ -4453,7 +4453,6 @@ dependencies = [
  "rstest",
  "rstest_reuse",
  "rustlegraph",
- "rustls",
  "sailors",
  "scrypt",
  "serde",
