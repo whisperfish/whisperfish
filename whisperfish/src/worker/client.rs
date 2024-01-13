@@ -2653,6 +2653,22 @@ impl Handler<ProofAccepted> for ClientActor {
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
+pub struct DeleteMessage(pub i32);
+
+impl Handler<DeleteMessage> for ClientActor {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        DeleteMessage(id): DeleteMessage,
+        _ctx: &mut Self::Context,
+    ) -> Self::Result {
+        self.storage.as_mut().unwrap().delete_message(id);
+    }
+}
+
+#[derive(actix::Message)]
+#[rtype(result = "()")]
 pub struct DeleteMessageForAll(pub i32);
 
 impl Handler<DeleteMessageForAll> for ClientActor {
