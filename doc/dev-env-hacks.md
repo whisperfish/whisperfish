@@ -13,7 +13,7 @@ you should edit `Cargo.toml` where applicable:
 
     [patch."https://github.com/Michael-F-Bryan/libsignal-service-rs"]
     libsignal-service = { path = "/PATH/TO/GIT/CLONE/libsignal-service-rs/libsignal-service" }
-    libsignal-service-actix = { path = "PATH/TO/GIT/CLONE/libsignal-service-rs/libsignal-service-actix" }
+    libsignal-service-hyper = { path = "PATH/TO/GIT/CLONE/libsignal-service-rs/libsignal-service-hyper" }
 
     [patch."https://github.com/Michael-F-Bryan/libsignal-protocol-rs"]
     libsignal-protocol = { path = "/PATH/TO/GIT/CLONE/libsignal-protocol-rs/libsignal-protocol" }

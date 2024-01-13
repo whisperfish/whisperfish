@@ -56,7 +56,7 @@ use libsignal_service::push_service::{
 use libsignal_service::sender::AttachmentSpec;
 use libsignal_service::websocket::SignalWebSocket;
 use libsignal_service::AccountManager;
-use libsignal_service_actix::prelude::*;
+use libsignal_service_hyper::prelude::*;
 use mime_classifier::{ApacheBugFlag, LoadContext, MimeClassifier, NoSniffFlag};
 use phonenumber::PhoneNumber;
 use qmeta_async::with_executor;
@@ -296,22 +296,22 @@ impl ClientActor {
         crate::user_agent()
     }
 
-    fn unauthenticated_service(&self) -> AwcPushService {
+    fn unauthenticated_service(&self) -> HyperPushService {
         let service_cfg = self.service_cfg();
-        AwcPushService::new(service_cfg, None, self.user_agent())
+        HyperPushService::new(service_cfg, None, self.user_agent())
     }
 
     fn authenticated_service_with_credentials(
         &self,
         credentials: ServiceCredentials,
-    ) -> AwcPushService {
+    ) -> HyperPushService {
         let service_cfg = self.service_cfg();
 
-        AwcPushService::new(service_cfg, Some(credentials), self.user_agent())
+        HyperPushService::new(service_cfg, Some(credentials), self.user_agent())
     }
 
     /// Panics if no authentication credentials are set.
-    fn authenticated_service(&self) -> AwcPushService {
+    fn authenticated_service(&self) -> HyperPushService {
         self.authenticated_service_with_credentials(self.credentials.clone().unwrap())
     }
 
@@ -319,7 +319,7 @@ impl ClientActor {
         &self,
     ) -> impl Future<
         Output = Result<
-            MessageSender<AwcPushService, crate::store::Storage, rand::rngs::ThreadRng>,
+            MessageSender<HyperPushService, crate::store::Storage, rand::rngs::ThreadRng>,
             ServiceError,
         >,
     > {
