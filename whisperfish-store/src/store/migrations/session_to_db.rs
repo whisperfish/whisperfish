@@ -52,6 +52,7 @@ fn name_to_protocol_addr(name: &str, id: u32) -> Option<ProtocolAddress> {
 }
 
 impl SessionStorageMigration {
+    #[tracing::instrument(name = "session_to_db", skip(self))]
     pub async fn execute(&self) {
         let session_dir = self.0.path().join("storage").join("sessions");
         if session_dir.exists() {
@@ -122,6 +123,7 @@ impl SessionStorageMigration {
         }))
     }
 
+    #[tracing::instrument(skip(self))]
     async fn migrate_prekeys(&self) {
         let prekey_dir = self.path().join("storage").join("prekeys");
         let prekeys = self.read_dir_and_filter(prekey_dir).filter_map(|name| {
@@ -196,6 +198,7 @@ impl SessionStorageMigration {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     async fn migrate_signed_prekeys(&self) {
         let prekey_dir = self.path().join("storage").join("signed_prekeys");
         let prekeys = self.read_dir_and_filter(prekey_dir).filter_map(|name| {
@@ -274,6 +277,7 @@ impl SessionStorageMigration {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     async fn migrate_sessions(&self) {
         let session_dir = self.path().join("storage").join("sessions");
 
@@ -366,6 +370,7 @@ impl SessionStorageMigration {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     async fn migrate_identities(&self) {
         let identity_dir = self.0.path().join("storage").join("identity");
 

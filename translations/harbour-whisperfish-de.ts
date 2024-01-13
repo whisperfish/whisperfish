@@ -14,7 +14,7 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="36"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sprachnachricht</translation>
     </message>
     <message id="whisperfish-session-delete-all">
         <location filename="../qml/delegates/SessionDelegate.qml" line="75"/>
@@ -43,7 +43,7 @@
     </message>
     <message id="whisperfish-session-note-to-self">
         <location filename="../qml/delegates/SessionDelegate.qml" line="224"/>
-        <location filename="../qml/harbour-whisperfish-main.qml" line="119"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="120"/>
         <location filename="../qml/pages/ShareDestinationV1.qml" line="100"/>
         <location filename="../qml/pages/ShareDestinationV2.qml" line="99"/>
         <source>Note to self</source>
@@ -101,32 +101,32 @@
         <translation>Unterhaltung löschen</translation>
     </message>
     <message id="whisperfish-notification-default-message">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="175"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="176"/>
         <source>New Message</source>
         <extracomment>Default label for new message notification</extracomment>
         <translation>Neue Nachricht</translation>
     </message>
     <message id="whisperfish-fatal-error-setup-client">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="262"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="263"/>
         <source>Failed to setup Signal client</source>
         <extracomment>Failed to setup signal client error message</extracomment>
         <translation>Einrichtung des Signalclients fehlgeschlagen</translation>
     </message>
     <message id="whisperfish-fatal-error-invalid-datastore">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="267"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="268"/>
         <source>Failed to setup data storage</source>
         <oldsource>Failed to setup datastore</oldsource>
         <extracomment>Failed to setup datastore error message</extracomment>
         <translation>Einrichtung des Datenspeichers fehlgeschlagen</translation>
     </message>
     <message id="permission-la-data">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="401"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="403"/>
         <source>Whisperfish data storage</source>
         <extracomment>Permission for Whisperfish data storage</extracomment>
         <translation>Whisperfish-Datenspeicherung</translation>
     </message>
     <message id="permission-la-data_description">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="405"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="407"/>
         <source>Store configuration and messages</source>
         <extracomment>Permission description for Whisperfish data storage</extracomment>
         <translation>Konfiguration und Nachrichten speichern</translation>
@@ -252,25 +252,25 @@
         <location filename="../qml/pages/About.qml" line="200"/>
         <source>Dutch (Belgium) translators</source>
         <extracomment>Dutch (Belgium) (nl_BE) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Niederländische (Belgien) Übersetzer</translation>
     </message>
     <message id="whisperfish-translators-lt">
         <location filename="../qml/pages/About.qml" line="220"/>
         <source>Lithuanian translators</source>
         <extracomment>Lithuanian (lt) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Litauische Übersetzer</translation>
     </message>
     <message id="whisperfish-translators-nl">
         <location filename="../qml/pages/About.qml" line="236"/>
         <source>Dutch translators</source>
         <extracomment>Dutch (nl) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Niederländische Übersetzer</translation>
     </message>
     <message id="whisperfish-translators-it">
         <location filename="../qml/pages/About.qml" line="256"/>
         <source>Italian translators</source>
         <extracomment>Italian (it) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Italienische Übersetzer</translation>
     </message>
     <message id="whisperfish-translators-de">
         <location filename="../qml/pages/About.qml" line="273"/>
@@ -1837,7 +1837,7 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-sender-name-label-outgoing">
         <location filename="../qml/components/QuotedMessagePreview.qml" line="106"/>
         <location filename="../qml/components/SenderNameLabel.qml" line="75"/>
-        <location filename="../qml/harbour-whisperfish-main.qml" line="123"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="124"/>
         <source>You</source>
         <extracomment>Name shown when replying to own messages</extracomment>
         <translation>Du</translation>
@@ -1849,14 +1849,14 @@ Settings page share contacts</extracomment>
         <translation>Unbekannter Absender</translation>
     </message>
     <message id="whisperfish-quoted-message-preview-voice-note">
-        <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="50"/>
+        <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="72"/>
         <source>Voice Message</source>
         <oldsource>Voice note</oldsource>
         <extracomment>Page header subtitle for a voice note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sprachnachricht</translation>
     </message>
     <message id="whisperfish-quoted-message-preview-attachment">
-        <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="52"/>
+        <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="74"/>
         <location filename="../qml/components/attachment/AttachmentItemFile.qml" line="22"/>
         <location filename="../qml/components/QuotedMessagePreview.qml" line="130"/>
         <source>Attachment</source>

@@ -559,6 +559,7 @@ impl Storage {
     }
 
     /// Asynchronously loads the signal HTTP password from storage and decrypts it.
+    #[tracing::instrument(skip(self))]
     pub async fn signal_password(&self) -> Result<String, anyhow::Error> {
         let contents = self
             .read_file(
@@ -573,6 +574,7 @@ impl Storage {
     }
 
     /// Asynchronously loads the base64 encoded signaling key.
+    #[tracing::instrument(skip(self))]
     pub async fn signaling_key(&self) -> Result<[u8; 52], anyhow::Error> {
         let v = self
             .read_file(
