@@ -124,6 +124,8 @@ pub struct Message {
 
     #[diesel(deserialize_as = OptionUuidString, serialize_as = OptionUuidString)]
     pub server_guid: Option<Uuid>,
+
+    pub message_ranges: Option<Vec<u8>>,
 }
 
 impl Display for Message {
@@ -181,6 +183,7 @@ impl Default for Message {
             quote_id: Default::default(),
             story_type: StoryType::None,
             server_guid: Default::default(),
+            message_ranges: None,
         }
     }
 }
