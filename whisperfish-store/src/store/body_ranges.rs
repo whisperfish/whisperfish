@@ -77,3 +77,23 @@ pub fn to_vec(message_ranges: Option<&Vec<u8>>) -> Vec<WireBodyRange> {
         })
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn roundtrip_recoding() {
+        let input_ranges = vec![WireBodyRange {
+            start: Some(0),
+            length: Some(1),
+            associated_value: Some(wire_body_range::AssociatedValue::MentionAci(
+                "9d4428ab-0000-0000-0000-000000000000".to_string(),
+            )),
+        }];
+
+        let db_ranges = super::serialize(&input_ranges).expect("serialize");
+        let output_ranges = super::to_vec(Some(&db_ranges));
+        assert_eq!(input_ranges, output_ranges);
+    }
+}
