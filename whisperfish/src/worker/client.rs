@@ -173,6 +173,7 @@ pub struct ClientWorker {
     promptResetPeerIdentity: qt_signal!(),
     messageSent: qt_signal!(sid: i32, mid: i32, message: QString),
     messageNotSent: qt_signal!(sid: i32, mid: i32),
+    messageDeleted: qt_signal!(sid: i32, mid: i32),
     proofRequested: qt_signal!(token: QString, kind: QString),
     proofCaptchaResult: qt_signal!(success: bool),
 
@@ -538,6 +539,10 @@ impl ClientActor {
                     tracing::warn!("Received a delete message from a different user, ignoring it.");
                 } else {
                     storage.delete_message(db_message.id);
+                    self.inner
+                        .pinned()
+                        .borrow_mut()
+                        .messageDeleted(db_message.session_id, db_message.id);
                 }
             } else {
                 tracing::warn!(
