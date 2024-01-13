@@ -2271,6 +2271,7 @@ impl Storage {
                     quote_id.eq(quoted_message_id),
                     expires_in.eq(new_message.expires_in.map(|x| x.as_secs() as i32)),
                     story_type.eq(new_message.story_type as i32),
+                    message_ranges.eq(&new_message.body_ranges),
                 ))
                 .execute(&mut *self.db())
                 .expect("inserting a message")
