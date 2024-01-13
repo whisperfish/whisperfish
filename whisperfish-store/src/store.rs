@@ -5,7 +5,7 @@ mod encryption;
 pub mod migrations;
 pub mod observer;
 mod protocol_store;
-mod protos;
+pub mod protos;
 mod utils;
 
 use self::orm::{AugmentedMessage, StoryType, UnidentifiedAccessMode};

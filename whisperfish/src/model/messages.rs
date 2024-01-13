@@ -350,7 +350,13 @@ define_model_roles! {
 
         Unidentified(use_unidentified):                       "unidentifiedSender",
         QuotedMessageId(quote_id via qvariant_from_option):   "quotedMessageId",
+
+        BodyRanges(fn body_ranges(&self) via body_ranges_qvariantmap): "bodyRanges",
     }
+}
+
+fn body_ranges_qvariantmap(body_ranges: Vec<whisperfish_store::body_ranges::BodyRange>) -> u32 {
+    0
 }
 
 #[derive(QObject, Default)]

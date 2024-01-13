@@ -894,6 +894,14 @@ impl AugmentedMessage {
     pub fn attachments(&self) -> u32 {
         self.attachments as _
     }
+
+    pub fn body_ranges(&self) -> Vec<crate::store::protos::body_range_list::BodyRange> {
+        if let Some(r) = &self.message_ranges {
+            crate::store::body_ranges::deserialize(r)
+        } else {
+            vec![]
+        }
+    }
 }
 
 pub struct AugmentedSession {

@@ -1,6 +1,13 @@
 use crate::store::protos as database_protos;
+pub use database_protos::body_range_list::{body_range::AssociatedValue, BodyRange};
 use libsignal_service::proto::{body_range as wire_body_range, BodyRange as WireBodyRange};
 use prost::Message;
+
+pub fn deserialize(message_ranges: &[u8]) -> Vec<database_protos::body_range_list::BodyRange> {
+    let message_ranges = database_protos::BodyRangeList::decode(message_ranges as &[u8])
+        .expect("valid protobuf in database");
+    message_ranges.ranges
+}
 
 #[tracing::instrument(level = "debug", name = "body_ranges::serialize")]
 pub fn serialize(value: &[WireBodyRange]) -> Option<Vec<u8>> {
@@ -40,10 +47,7 @@ pub fn to_vec(message_ranges: Option<&Vec<u8>>) -> Vec<WireBodyRange> {
         return vec![];
     };
 
-    let message_ranges = database_protos::BodyRangeList::decode(message_ranges as &[u8])
-        .expect("valid protobuf in database");
-    message_ranges
-        .ranges
+    deserialize(message_ranges)
         .iter()
         .flat_map(|range| {
             let associated_value = match range
