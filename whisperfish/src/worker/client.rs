@@ -404,6 +404,7 @@ impl ClientActor {
     /// This was `MessageHandler` in Go.
     ///
     /// TODO: consider putting this as an actor `Handle<>` implementation instead.
+    #[tracing::instrument(level = "debug", skip(self, ctx, msg, sync_sent, metadata))]
     pub fn handle_message(
         &mut self,
         ctx: &mut <Self as Actor>::Context,
@@ -785,6 +786,7 @@ impl ClientActor {
         }
     }
 
+    #[tracing::instrument(level = "debug", skip(self, ctx, metadata))]
     fn process_envelope(
         &mut self,
         Content { body, metadata }: Content,
