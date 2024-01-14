@@ -930,6 +930,21 @@ impl AugmentedMessage {
         crate::store::body_ranges::to_styled(
             self.inner.text.as_deref().unwrap_or_default(),
             self.body_ranges(),
+            |uuid_s| {
+                match uuid::Uuid::parse_str(uuid_s) {
+                    Ok(uuid) => {
+                        // lookup
+                        self.mentions
+                            .get(&uuid)
+                            .map(|r| r.name())
+                            .unwrap_or(std::borrow::Cow::Borrowed(uuid_s))
+                    }
+                    Err(_e) => {
+                        tracing::warn!("Requesting mention for invalid UUID {}", uuid_s);
+                        std::borrow::Cow::Borrowed(uuid_s)
+                    }
+                }
+            },
         )
     }
 }

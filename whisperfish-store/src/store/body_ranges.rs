@@ -114,7 +114,11 @@ fn escape(s: &str) -> std::borrow::Cow<'_, str> {
 }
 
 /// Returns a styled message, with ranges for bold, italic, links, quotes, etc.
-pub fn to_styled(message: &str, ranges: &[BodyRange]) -> String {
+pub fn to_styled<'a, S: AsRef<str> + 'a>(
+    message: &'a str,
+    ranges: &'a [BodyRange],
+    mention_lookup: impl Fn(&'a str) -> S,
+) -> String {
     #[derive(Debug)]
     struct Segment<'a> {
         contents: &'a str,
@@ -284,7 +288,7 @@ pub fn to_styled(message: &str, ranges: &[BodyRange]) -> String {
                 result.push_str("<a href=\"mention://");
                 result.push_str(mention);
                 result.push_str("\">@");
-                result.push_str(mention);
+                result.push_str(mention_lookup(mention).as_ref());
                 result.push_str("</a>");
             } else if let Some(link) = segment.link {
                 result.push_str("<a href=\"");
