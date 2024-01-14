@@ -1459,6 +1459,8 @@ mod tests {
                 },
                 get_recipient(),
             )],
+            body_ranges: vec![],
+            mentions: Default::default(),
         }
     }
 

@@ -334,13 +334,17 @@ mod tests {
         assert_eq!(input_ranges, output_ranges);
     }
 
+    fn no_mentions(u: &str) -> &str {
+        panic!("requested mention {u}");
+    }
+
     #[rstest]
     #[case("bXXXbbb", "b<b>XXX</b>bbb")]
     #[case("bXXX", "b<b>XXX</b>")]
     fn styled_simple(#[case] text: &str, #[case] expected: &str) {
         let ranges = super::deserialize(&[10, 6, 8, 1, 16, 3, 32, 0]);
         println!("{ranges:?}");
-        let styled = to_styled(text, &ranges);
+        let styled = to_styled(text, &ranges, no_mentions);
         assert_eq!(styled, *expected);
     }
 
@@ -352,16 +356,19 @@ mod tests {
             48, 48, 45, 48, 48, 48, 48, 45, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
         ]);
         println!("{ranges:?}");
-        let styled = to_styled(text, &ranges);
+        let styled = to_styled(text, &ranges, |_u| {
+            assert_eq!(_u, "9d4428ab-0000-0000-0000-000000000000");
+            "foo"
+        });
 
-        assert_eq!(styled, "<a href=\"mention://9d4428ab-0000-0000-0000-000000000000\">9d4428ab-0000-0000-0000-000000000000</a>Sorry for the random mention.");
+        assert_eq!(styled, "<a href=\"mention://9d4428ab-0000-0000-0000-000000000000\">@foo</a>Sorry for the random mention.");
     }
 
     #[test]
     fn link() {
         let text = " https://example.com/. Foobar";
         let ranges = [];
-        let styled = to_styled(text, &ranges);
+        let styled = to_styled(text, &ranges, no_mentions);
 
         assert_eq!(
             styled,
@@ -374,7 +381,7 @@ mod tests {
         let text = "iiiiiiiiBBBBbbbb";
         let ranges = super::deserialize(&[10, 4, 16, 12, 32, 2, 10, 6, 8, 8, 16, 8, 32, 1]);
         println!("{ranges:?}");
-        let styled = to_styled(text, &ranges);
+        let styled = to_styled(text, &ranges, no_mentions);
 
         let possibilities = [
             "<spoiler>iiiiiiii</spoiler><spoiler><i>BBBB</i></spoiler><i>bbbb</i>",
@@ -393,7 +400,7 @@ mod tests {
             10, 6, 8, 2, 16, 1, 32, 1, 10, 6, 8, 1, 16, 2, 32, 3, 10, 4, 16, 4, 32, 0,
         ]);
         println!("{ranges:?}");
-        let styled = to_styled(text, &ranges);
+        let styled = to_styled(text, &ranges, no_mentions);
 
         let possibilities = [
             "<b>B<s>S<i>I</i></s>B</b>",
