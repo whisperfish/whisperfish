@@ -2616,6 +2616,8 @@ impl Handler<RefreshPreKeys> for ClientActor {
         let mut am = AccountManager::new(service, None);
         let storage = self.storage.clone().unwrap();
 
+        let pni_distribution = self.migration_state.pni_distributed();
+
         let proc = async move {
             am.update_pre_key_bundle(
                 &mut storage.aci_storage(),
@@ -2625,13 +2627,15 @@ impl Handler<RefreshPreKeys> for ClientActor {
             )
             .await?;
 
-            // am.update_pre_key_bundle(
-            //     &mut storage.pni_storage(),
-            //     ServiceIdType::PhoneNumberIdentity,
-            //     &mut rand::thread_rng(),
-            //     false,
-            // )
-            // .await?;
+            let _pni_distribution = pni_distribution.await;
+
+            am.update_pre_key_bundle(
+                &mut storage.pni_storage(),
+                ServiceIdType::PhoneNumberIdentity,
+                &mut rand::thread_rng(),
+                false,
+            )
+            .await?;
             Result::<(), ServiceError>::Ok(())
         }
         .instrument(tracing::trace_span!("RefreshPreKeys"));

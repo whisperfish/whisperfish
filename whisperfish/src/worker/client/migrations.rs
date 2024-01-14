@@ -2,6 +2,8 @@
 mod groupv2;
 /// Migration to remove R@ reactions and dump them in the correct table.
 mod parse_reactions;
+/// MIgration to initialize PNI
+mod pni;
 /// Migration to ensure our own UUID is known.
 ///
 /// Installs before Whisperfish 0.6 do not have their own UUID present in settings.
@@ -9,6 +11,7 @@ mod whoami;
 
 use self::groupv2::*;
 use self::parse_reactions::*;
+use self::pni::*;
 use self::whoami::*;
 use super::*;
 use crate::store::migrations::session_to_db::SessionStorageMigration;
@@ -38,6 +41,7 @@ pub(super) struct MigrationState {
     pub gv2_expected_ids: bool,
     pub self_profile_ready: bool,
     pub reactions_ready: bool,
+    pub pni_distributed: bool,
 }
 
 impl MigrationState {
@@ -49,6 +53,7 @@ impl MigrationState {
             gv2_expected_ids: false,
             self_profile_ready: false,
             reactions_ready: false,
+            pni_distributed: false,
         }
     }
 
@@ -59,6 +64,7 @@ impl MigrationState {
             && self.gv2_expected_ids
             && self.self_profile_ready
             && self.reactions_ready
+            && self.pni_distributed
     }
 }
 
@@ -101,12 +107,14 @@ impl MigrationCondVar {
     method_for_condition!(ready : state -> state.is_ready());
     method_for_condition!(self_uuid_is_known : state -> state.whoami);
     method_for_condition!(protocol_store_in_db);
+    method_for_condition!(pni_distributed : state -> state.pni_distributed);
 
     notify_method_for_var!(notify_whoami -> whoami);
     notify_method_for_var!(notify_protocol_store_in_db -> protocol_store_in_db);
     notify_method_for_var!(notify_groupv2_expected_ids -> gv2_expected_ids);
     notify_method_for_var!(notify_self_profile_ready -> self_profile_ready);
     notify_method_for_var!(notify_reactions_ready -> reactions_ready);
+    notify_method_for_var!(notify_pni_distributed -> pni_distributed);
 }
 
 impl ClientActor {
@@ -116,6 +124,7 @@ impl ClientActor {
         ctx.notify(ComputeGroupV2ExpectedIds);
         ctx.notify(RefreshOwnProfile { force: false });
         ctx.notify(ParseOldReaction);
+        // ctx.notify(InitializePni);
     }
 }
 
