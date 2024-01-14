@@ -840,6 +840,7 @@ pub struct AugmentedMessage {
     pub is_voice_note: bool,
     pub receipts: Vec<(Receipt, Recipient)>,
     pub body_ranges: Vec<crate::store::protos::body_range_list::BodyRange>,
+    pub mentions: std::collections::HashMap<uuid::Uuid, Recipient>,
 }
 
 impl Display for AugmentedMessage {

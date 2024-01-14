@@ -9,6 +9,7 @@ mod protos;
 mod utils;
 
 use self::orm::{AugmentedMessage, StoryType, UnidentifiedAccessMode};
+use crate::body_ranges::AssociatedValue;
 use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
 use crate::schema;
@@ -2450,16 +2451,21 @@ impl Storage {
             false
         };
 
+        let body_ranges = if let Some(r) = &message.message_ranges {
+            crate::store::body_ranges::deserialize(r)
+        } else {
+            vec![]
+        };
+
+        let mentions = self.fetch_mentions(&body_ranges);
+
         Some(AugmentedMessage {
-            body_ranges: if let Some(r) = &message.message_ranges {
-                crate::store::body_ranges::deserialize(r)
-            } else {
-                vec![]
-            },
             inner: message,
             is_voice_note,
             receipts,
             attachments: attachments as usize,
+            mentions,
+            body_ranges,
         })
     }
 
@@ -2575,20 +2581,48 @@ impl Storage {
                         vec![]
                     };
 
+                    let body_ranges = if let Some(r) = &message.message_ranges {
+                        crate::store::body_ranges::deserialize(r)
+                    } else {
+                        vec![]
+                    };
+
+                    let mentions = self.fetch_mentions(&body_ranges);
+
                     aug_messages.push(orm::AugmentedMessage {
-                        body_ranges: if let Some(r) = &message.message_ranges {
-                            crate::store::body_ranges::deserialize(r)
-                        } else {
-                            vec![]
-                        },
                         inner: message,
                         is_voice_note,
                         attachments,
                         receipts,
+                        body_ranges,
+                        mentions,
                     });
                 }
             });
         aug_messages
+    }
+
+    fn fetch_mentions(
+        &self,
+        body_ranges: &[crate::store::body_ranges::BodyRange],
+    ) -> std::collections::HashMap<uuid::Uuid, orm::Recipient> {
+        body_ranges
+            .iter()
+            .filter_map(|range| range.associated_value.as_ref())
+            .filter_map(|av| match av {
+                // XXX this silently fails on unparsable UUIDs
+                AssociatedValue::MentionUuid(uuid) => match uuid::Uuid::parse_str(uuid) {
+                    Ok(uuid) => Some(uuid),
+                    Err(_e) => {
+                        tracing::warn!("could not parse UUID {uuid}");
+                        None
+                    }
+                },
+                _ => None,
+            })
+            .filter_map(|uuid| self.fetch_recipient_by_uuid(uuid))
+            .map(|r| (r.uuid.expect("queried by uuid"), r))
+            .collect()
     }
 
     /// Don't actually delete, but mark the message as deleted
