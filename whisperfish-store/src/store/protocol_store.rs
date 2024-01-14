@@ -188,13 +188,13 @@ impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
 
             let _lock = self.0.protocol_store.read().await;
 
-            tracing::trace!("Reading own identity key pair");
             let path = self
                 .0
                 .path
                 .join("storage")
                 .join("identity")
                 .join(self.1.identity_key_filename());
+            tracing::trace!("reading own identity key pair at {}", path.display());
             let key_pair = {
                 use std::convert::TryFrom;
                 let mut buf = self.0.read_file(path).await.map_err(|e| {
