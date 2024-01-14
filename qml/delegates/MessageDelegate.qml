@@ -38,7 +38,7 @@ ListItem {
 
     property string fullMessageText: ""
 
-    readonly property string _message: fullMessageText !== "" ? fullMessageText : (hasData && modelData.message ? modelData.message.trim() : '')
+    readonly property string _message: fullMessageText !== "" ? fullMessageText : (hasData && modelData.styledMessage ? modelData.styledMessage.trim() : '')
     // TODO implement shared locations (show a map etc.; is probably not an attachment)
 
     Loader {
@@ -251,6 +251,8 @@ ListItem {
                             //% "this message is empty"
                             (isEmpty ? qsTrId("whisperfish-message-empty-note") :
                             (isExpanded ? _message : _message.substr(0, shortenThreshold) + (showExpand ? ' ...' : '')))
+                bypassLinking: true
+                needsRichText: model.hasStrikeThrough
                 font.italic: model.remoteDeleted
                 wrapMode: Text.Wrap
                 anchors { left: parent.left; right: parent.right }

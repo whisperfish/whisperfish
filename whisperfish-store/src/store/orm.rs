@@ -839,6 +839,7 @@ pub struct AugmentedMessage {
     pub attachments: usize,
     pub is_voice_note: bool,
     pub receipts: Vec<(Receipt, Recipient)>,
+    pub body_ranges: Vec<crate::store::protos::body_range_list::BodyRange>,
 }
 
 impl Display for AugmentedMessage {
@@ -895,12 +896,40 @@ impl AugmentedMessage {
         self.attachments as _
     }
 
-    pub fn body_ranges(&self) -> Vec<crate::store::protos::body_range_list::BodyRange> {
-        if let Some(r) = &self.message_ranges {
-            crate::store::body_ranges::deserialize(r)
-        } else {
-            vec![]
-        }
+    pub fn body_ranges(&self) -> &[crate::store::protos::body_range_list::BodyRange] {
+        &self.body_ranges
+    }
+
+    pub fn has_strike_through(&self) -> bool {
+        self.body_ranges.iter().any(|r| {
+            r.associated_value
+                == Some(
+                    crate::store::protos::body_range_list::body_range::AssociatedValue::Style(
+                        crate::store::protos::body_range_list::body_range::Style::Strikethrough
+                            as i32,
+                    ),
+                )
+        })
+    }
+
+    pub fn has_mentions(&self) -> bool {
+        self.body_ranges.iter().any(|r| {
+            matches!(
+                r.associated_value,
+                Some(
+                    crate::store::protos::body_range_list::body_range::AssociatedValue::MentionUuid(
+                        _
+                    )
+                )
+            )
+        })
+    }
+
+    pub fn styled_message(&self) -> String {
+        crate::store::body_ranges::to_styled(
+            self.inner.text.as_deref().unwrap_or_default(),
+            &self.body_ranges(),
+        )
     }
 }
 

@@ -2451,6 +2451,11 @@ impl Storage {
         };
 
         Some(AugmentedMessage {
+            body_ranges: if let Some(r) = &message.message_ranges {
+                crate::store::body_ranges::deserialize(r)
+            } else {
+                vec![]
+            },
             inner: message,
             is_voice_note,
             receipts,
@@ -2571,6 +2576,11 @@ impl Storage {
                     };
 
                     aug_messages.push(orm::AugmentedMessage {
+                        body_ranges: if let Some(r) = &message.message_ranges {
+                            crate::store::body_ranges::deserialize(r)
+                        } else {
+                            vec![]
+                        },
                         inner: message,
                         is_voice_note,
                         attachments,

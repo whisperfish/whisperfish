@@ -331,6 +331,7 @@ define_model_roles! {
         Id(id):                                               "id",
         SessionId(session_id):                                "sessionId",
         Message(text via qstring_from_option):                "message",
+        StyledMessage(fn styled_message(&self) via QString::from): "styledMessage",
         Timestamp(server_timestamp via qdatetime_from_naive): "timestamp",
 
         SenderRecipientId(sender_recipient_id via qvariant_from_option): "senderRecipientId",
@@ -353,11 +354,13 @@ define_model_roles! {
         QuotedMessageId(quote_id via qvariant_from_option):   "quotedMessageId",
 
         BodyRanges(fn body_ranges(&self) via body_ranges_qvariantlist): "bodyRanges",
+
+        HasStrikeThrough(fn has_strike_through(&self)):       "hasStrikeThrough",
     }
 }
 
 fn body_ranges_qvariantlist(
-    body_ranges: Vec<whisperfish_store::body_ranges::BodyRange>,
+    body_ranges: &[whisperfish_store::body_ranges::BodyRange],
 ) -> QVariantList {
     body_ranges
         .into_iter()
@@ -368,12 +371,14 @@ fn body_ranges_qvariantlist(
             qrange.insert("start".into(), range.start.into());
             qrange.insert("length".into(), range.length.into());
             let mut associated_value = QVariantMap::default();
-            match range.associated_value {
+            match &range.associated_value {
                 None => {}
                 Some(AssociatedValue::MentionUuid(mention_aci)) => {
                     associated_value.insert("type".into(), QString::from("mention").to_qvariant());
-                    associated_value
-                        .insert("mention".into(), QString::from(mention_aci).to_qvariant());
+                    associated_value.insert(
+                        "mention".into(),
+                        QString::from(mention_aci as &str).to_qvariant(),
+                    );
                 }
                 Some(AssociatedValue::Style(style)) => {
                     associated_value.insert("type".into(), QString::from("style").to_qvariant());
