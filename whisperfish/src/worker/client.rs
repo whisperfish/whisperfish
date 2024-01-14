@@ -2466,13 +2466,13 @@ impl Handler<RefreshPreKeys> for ClientActor {
             )
             .await?;
 
-            am.update_pre_key_bundle(
-                &mut storage.pni_storage(),
-                ServiceIdType::PhoneNumberIdentity,
-                &mut rand::thread_rng(),
-                false,
-            )
-            .await?;
+            // am.update_pre_key_bundle(
+            //     &mut storage.pni_storage(),
+            //     ServiceIdType::PhoneNumberIdentity,
+            //     &mut rand::thread_rng(),
+            //     false,
+            // )
+            // .await?;
             Result::<(), ServiceError>::Ok(())
         }
         .instrument(tracing::trace_span!("RefreshPreKeys"));
