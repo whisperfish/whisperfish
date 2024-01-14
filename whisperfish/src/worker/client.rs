@@ -1255,8 +1255,7 @@ impl Handler<SendMessage> for ClientActor {
 
         let storage = storage.clone();
         let addr = ctx.address();
-        let config = self.config.as_ref();
-        let self_uuid = *config.get_uuid().as_ref().unwrap();
+        let self_uuid = self.local_addr.unwrap().uuid;
         Box::pin(
             async move {
                 let mut sender = sender.await?;
