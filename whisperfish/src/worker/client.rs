@@ -17,7 +17,6 @@ use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::Sent;
 use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::sender::SendMessageResult;
-use libsignal_service::sender::SentMessage;
 use tracing_futures::Instrument;
 use uuid::Uuid;
 use whisperfish_store::orm::StoryType;
@@ -1256,6 +1255,8 @@ impl Handler<SendMessage> for ClientActor {
 
         let storage = storage.clone();
         let addr = ctx.address();
+        let config = self.config.as_ref();
+        let self_uuid = *config.get_uuid().as_ref().unwrap();
         Box::pin(
             async move {
                 let mut sender = sender.await?;
@@ -1357,7 +1358,8 @@ impl Handler<SendMessage> for ClientActor {
                 match res {
                     Ok(results) => {
                         let unidentified = results.iter().all(|res| match res {
-                            Ok(SentMessage { unidentified, .. }) => *unidentified,
+                            // XXX: We should be able to send unidentified messages to our own devices too.
+                            Ok(message) => message.unidentified || (message.recipient.uuid == self_uuid),
                             _ => false,
                         });
 
