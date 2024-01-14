@@ -24,7 +24,7 @@ opt-level = 0
 [profile.dev.package.libsignal-service]
 opt-level = 0
 
-[profile.dev.package.libsignal-service-actix]
+[profile.dev.package.libsignal-service-hyper]
 opt-level = 0
 
 [profile.dev.package.qmetaobject]
