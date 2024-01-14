@@ -252,6 +252,10 @@ ApplicationWindow
             if (fatalOccurred) return
             pageStack.push(Qt.resolvedUrl("pages/PeerIdentityChanged.qml"), { source: source })
         }
+        onMessageDeleted: {
+            if (fatalOccurred) return
+            closeMessageNotification(sid, mid)
+        }
     }
 
     Connections {

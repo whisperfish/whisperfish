@@ -173,6 +173,7 @@ pub struct ClientWorker {
     promptResetPeerIdentity: qt_signal!(),
     messageSent: qt_signal!(sid: i32, mid: i32, message: QString),
     messageNotSent: qt_signal!(sid: i32, mid: i32),
+    messageDeleted: qt_signal!(sid: i32, mid: i32),
     proofRequested: qt_signal!(token: QString, kind: QString),
     proofCaptchaResult: qt_signal!(success: bool),
 
@@ -538,6 +539,10 @@ impl ClientActor {
                     tracing::warn!("Received a delete message from a different user, ignoring it.");
                 } else {
                     storage.delete_message(db_message.id);
+                    self.inner
+                        .pinned()
+                        .borrow_mut()
+                        .messageDeleted(db_message.session_id, db_message.id);
                 }
             } else {
                 tracing::warn!(
@@ -2648,6 +2653,22 @@ impl Handler<ProofAccepted> for ClientActor {
             .pinned()
             .borrow_mut()
             .proofCaptchaResult(accepted.result);
+    }
+}
+
+#[derive(actix::Message)]
+#[rtype(result = "()")]
+pub struct DeleteMessage(pub i32);
+
+impl Handler<DeleteMessage> for ClientActor {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        DeleteMessage(id): DeleteMessage,
+        _ctx: &mut Self::Context,
+    ) -> Self::Result {
+        self.storage.as_mut().unwrap().delete_message(id);
     }
 }
 
