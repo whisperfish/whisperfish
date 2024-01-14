@@ -929,7 +929,7 @@ impl AugmentedMessage {
     pub fn styled_message(&self) -> String {
         crate::store::body_ranges::to_styled(
             self.inner.text.as_deref().unwrap_or_default(),
-            &self.body_ranges(),
+            self.body_ranges(),
         )
     }
 }
