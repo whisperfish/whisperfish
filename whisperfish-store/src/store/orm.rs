@@ -332,7 +332,8 @@ impl Display for SessionRecord {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(
             f,
-            "SessionRecord {{ address: \"{}\", device_id: {} }}",
+            "SessionRecord {{ identity: {}, address: \"{}\", device_id: {} }}",
+            self.identity,
             shorten(&self.address, 9),
             &self.device_id
         )
@@ -351,8 +352,9 @@ impl Display for IdentityRecord {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(
             f,
-            "IdentityRecord {{ address: \"{}\" }}",
-            shorten(&self.address, 9)
+            "IdentityRecord {{ identity: {}, address: \"{}\" }}",
+            self.identity,
+            shorten(&self.address, 9),
         )
     }
 }
@@ -361,6 +363,15 @@ impl Display for IdentityRecord {
 pub enum Identity {
     Aci,
     Pni,
+}
+
+impl Display for Identity {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match self {
+            Identity::Aci => write!(f, "Aci"),
+            Identity::Pni => write!(f, "Pni"),
+        }
+    }
 }
 
 #[derive(Queryable, Identifiable, Insertable, Debug, Clone)]
@@ -372,7 +383,11 @@ pub struct SignedPrekey {
 
 impl Display for SignedPrekey {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "SignedPrekey {{ id: {} }}", &self.id)
+        write!(
+            f,
+            "SignedPrekey {{ identity: {}, id: {} }}",
+            self.identity, &self.id
+        )
     }
 }
 
@@ -385,7 +400,11 @@ pub struct Prekey {
 
 impl Display for Prekey {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "Prekey {{ id: {} }}", &self.id)
+        write!(
+            f,
+            "Prekey {{ identity: {}, id: {} }}",
+            self.identity, &self.id
+        )
     }
 }
 
@@ -398,7 +417,11 @@ pub struct KyberPrekey {
 
 impl Display for KyberPrekey {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "KyberPrekey {{ id: {} }}", &self.id)
+        write!(
+            f,
+            "KyberPrekey {{ identity: {}, id: {} }}",
+            self.identity, &self.id
+        )
     }
 }
 
@@ -417,7 +440,8 @@ impl Display for SenderKeyRecord {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(
             f,
-            "SenderKeyRecord {{ address: \"{}\", device: {}, created_at: \"{}\" }}",
+            "SenderKeyRecord {{ identity: {}, address: \"{}\", device: {}, created_at: \"{}\" }}",
+            self.identity,
             shorten(&self.address, 9),
             &self.device,
             &self.created_at
@@ -1508,10 +1532,11 @@ mod tests {
             address: "something".into(),
             device_id: 2,
             record: vec![65],
+            identity: Identity::Aci,
         };
         assert_eq!(
             format!("{}", s),
-            "SessionRecord { address: \"something\", device_id: 2 }"
+            "SessionRecord { identity: Aci, address: \"something\", device_id: 2 }"
         )
     }
 
@@ -1520,10 +1545,11 @@ mod tests {
         let s = IdentityRecord {
             address: "something".into(),
             record: vec![65],
+            identity: Identity::Aci,
         };
         assert_eq!(
             format!("{}", s),
-            "IdentityRecord { address: \"something\" }"
+            "IdentityRecord { identity: Aci, address: \"something\" }"
         )
     }
 
@@ -1532,8 +1558,9 @@ mod tests {
         let s = SignedPrekey {
             id: 2,
             record: vec![65],
+            identity: Identity::Aci,
         };
-        assert_eq!(format!("{}", s), "SignedPrekey { id: 2 }")
+        assert_eq!(format!("{}", s), "SignedPrekey { identity: Aci, id: 2 }")
     }
 
     #[test]
@@ -1541,8 +1568,9 @@ mod tests {
         let s = Prekey {
             id: 2,
             record: vec![65],
+            identity: Identity::Aci,
         };
-        assert_eq!(format!("{}", s), "Prekey { id: 2 }")
+        assert_eq!(format!("{}", s), "Prekey { identity: Aci, id: 2 }")
     }
 
     #[test]
@@ -1555,8 +1583,9 @@ mod tests {
             device: 13,
             distribution_id: "huh".into(),
             created_at: datetime,
+            identity: Identity::Aci,
         };
-        assert_eq!(format!("{}", s), "SenderKeyRecord { address: \"whateva\", device: 13, created_at: \"2023-04-01 07:01:32\" }")
+        assert_eq!(format!("{}", s), "SenderKeyRecord { identity: Aci, address: \"whateva\", device: 13, created_at: \"2023-04-01 07:01:32\" }")
     }
 
     #[test]

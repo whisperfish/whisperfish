@@ -889,14 +889,19 @@ mod tests {
         let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // Copy the identity key pair
-        let id_key1 = storage.get_identity_key_pair().await.unwrap();
+        let id_key1 = storage.aci_storage().get_identity_key_pair().await.unwrap();
 
         // Get access to the protocol store
         // XXX IdentityKeyPair does not implement the std::fmt::Debug trait *arg*
         //assert_eq!(id_key1.unwrap(), store.get_identity_key_pair().await.unwrap());
         assert_eq!(
             id_key1.serialize(),
-            storage.get_identity_key_pair().await.unwrap().serialize()
+            storage
+                .aci_storage()
+                .get_identity_key_pair()
+                .await
+                .unwrap()
+                .serialize()
         );
     }
 
@@ -930,13 +935,15 @@ mod tests {
     #[tokio::test]
     async fn save_retrieve_identity_key(password: Option<&str>) {
         // Create a new storage
-        let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // We need two identity keys and two addresses
         let (_svc1, addr1) = create_random_protocol_address();
         let (_svc2, addr2) = create_random_protocol_address();
         let key1 = create_random_identity_key();
         let key2 = create_random_identity_key();
+
+        let mut storage = storage.aci_storage();
 
         // In the beginning, the storage should be emtpy and return an error
         // XXX Doesn't implement equality *arg*
@@ -953,7 +960,7 @@ mod tests {
         assert_eq!(storage.get_identity(&addr2).await.unwrap(), Some(key2));
 
         // After removing key2, it shouldn't be there
-        storage.delete_identity(&addr2).await.unwrap();
+        storage.0.delete_identity(&addr2).await.unwrap();
         // XXX Doesn't implement equality *arg*
         assert_eq!(storage.get_identity(&addr2).await.unwrap(), None);
 
@@ -969,12 +976,14 @@ mod tests {
     #[tokio::test]
     async fn is_trusted_identity(password: Option<&str>) {
         // Create a new storage
-        let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // We need two identity keys and two addresses
         let (_, addr1) = create_random_protocol_address();
         let key1 = create_random_identity_key();
         let key2 = create_random_identity_key();
+
+        let mut storage = storage.aci_storage();
 
         // Test trust on first use
         assert!(storage
@@ -1000,13 +1009,15 @@ mod tests {
     #[tokio::test]
     async fn save_retrieve_prekey(password: Option<&str>) {
         // Create a new storage
-        let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // We need two identity keys and two addresses
         let id1 = 0u32;
         let id2 = 1u32;
         let key1 = create_random_prekey();
         let key2 = create_random_prekey();
+
+        let mut storage = storage.aci_storage();
 
         // In the beginning, the storage should be emtpy and return an error
         // XXX Doesn't implement equality *arg*
@@ -1072,13 +1083,15 @@ mod tests {
     #[tokio::test]
     async fn save_retrieve_signed_prekey(password: Option<&str>) {
         // Create a new storage
-        let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // We need two identity keys and two addresses
         let id1 = 0u32;
         let id2 = 1u32;
         let key1 = create_random_signed_prekey();
         let key2 = create_random_signed_prekey();
+
+        let mut storage = storage.aci_storage();
 
         // In the beginning, the storage should be emtpy and return an error
         // XXX Doesn't implement equality *arg*
@@ -1132,7 +1145,7 @@ mod tests {
     #[tokio::test]
     async fn save_retrieve_session(password: Option<&str>) {
         // Create a new storage
-        let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // Collection of some addresses and sessions
         let (_svc1, addr1) = create_random_protocol_address();
@@ -1146,6 +1159,8 @@ mod tests {
         let session2 = SessionRecord::new_fresh();
         let session3 = SessionRecord::new_fresh();
         let session4 = SessionRecord::new_fresh();
+
+        let mut storage = storage.aci_storage();
 
         // In the beginning, the storage should be emtpy and return an error
         assert!(storage.load_session(&addr1).await.unwrap().is_none());
@@ -1216,16 +1231,21 @@ mod tests {
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn get_next_pre_key_ids(password: Option<&str>) {
+        use libsignal_service::pre_keys::PreKeysStore;
         // Create a new storage
-        let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // Create two pre keys and one signed pre key
         let key1 = create_random_prekey();
         let key2 = create_random_prekey();
         let key3 = create_random_signed_prekey();
 
+        let mut storage = storage.aci_storage();
+
         // In the beginning zero should be returned
-        assert_eq!(storage.next_pre_key_ids().await, (0, 0, 0));
+        assert_eq!(storage.next_pre_key_id().await.unwrap(), 0);
+        assert_eq!(storage.next_pq_pre_key_id().await.unwrap(), 0);
+        assert_eq!(storage.next_signed_pre_key_id().await.unwrap(), 0);
 
         // Now, we add our keys
         storage
@@ -1242,6 +1262,8 @@ mod tests {
             .unwrap();
 
         // Adapt to keys in the storage
-        assert_eq!(storage.next_pre_key_ids().await, (1, 0, 2));
+        assert_eq!(storage.next_pre_key_id().await.unwrap(), 2);
+        assert_eq!(storage.next_pq_pre_key_id().await.unwrap(), 0);
+        assert_eq!(storage.next_signed_pre_key_id().await.unwrap(), 1);
     }
 }
