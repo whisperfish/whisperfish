@@ -65,6 +65,7 @@ fn fetch_augmented_messages(c: &mut Criterion) {
                     expires_in: None,
                     server_guid: None,
                     story_type: orm::StoryType::None,
+                    body_ranges: None,
                 });
                 for _attachment in 0..attachments {
                     storage.register_attachment(msg.id, AttachmentPointer::default());

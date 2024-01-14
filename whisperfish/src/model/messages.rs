@@ -363,7 +363,7 @@ fn body_ranges_qvariantlist(
     body_ranges: &[whisperfish_store::body_ranges::BodyRange],
 ) -> QVariantList {
     body_ranges
-        .into_iter()
+        .iter()
         .map(|range| {
             use whisperfish_store::body_ranges::AssociatedValue;
 
