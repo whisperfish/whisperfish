@@ -138,6 +138,9 @@ pub fn to_styled(message: &str, ranges: &[BodyRange]) -> String {
                 tracing::warn!("splitting a mention");
             }
 
+            // Map to character boundary
+            let idx = self.contents.char_indices().nth(idx).unwrap().0;
+
             [
                 Segment {
                     contents: &self.contents[..idx],
@@ -280,7 +283,7 @@ pub fn to_styled(message: &str, ranges: &[BodyRange]) -> String {
             if let Some(mention) = segment.mention {
                 result.push_str("<a href=\"mention://");
                 result.push_str(mention);
-                result.push_str("\">");
+                result.push_str("\">@");
                 result.push_str(mention);
                 result.push_str("</a>");
             } else if let Some(link) = segment.link {
