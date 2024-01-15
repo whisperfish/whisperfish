@@ -447,6 +447,7 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
 async fn test_create_and_open_storage(
     storage_password: Option<String>,
 ) -> Result<(), anyhow::Error> {
+    use libsignal_service::pre_keys::PreKeysStore;
     use rand::distributions::Alphanumeric;
     use rand::{Rng, RngCore};
 
@@ -492,9 +493,18 @@ async fn test_create_and_open_storage(
             // TODO: assert that tables exist
             assert_eq!(password, $storage.signal_password().await?);
             assert_eq!(signaling_key, $storage.signaling_key().await?);
-            assert_eq!(regid, $storage.get_local_registration_id().await?);
+            assert_eq!(
+                regid,
+                $storage.aci_storage().get_local_registration_id().await?
+            );
+            assert_eq!(
+                pni_regid,
+                $storage.pni_storage().get_local_registration_id().await?
+            );
 
-            let (signed, kyber, unsigned) = $storage.next_pre_key_ids().await;
+            let unsigned = $storage.aci_storage().next_pre_key_id().await?;
+            let kyber = $storage.aci_storage().next_pq_pre_key_id().await?;
+            let signed = $storage.aci_storage().next_signed_pre_key_id().await?;
             // Unstarted client will have no pre-keys.
             assert_eq!(0, signed);
             assert_eq!(0, kyber);

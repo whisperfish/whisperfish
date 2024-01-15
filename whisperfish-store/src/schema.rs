@@ -100,16 +100,24 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use crate::store::orm::IdentityMapping;
+
     identity_records (address) {
         address -> Text,
         record -> Binary,
+        identity -> IdentityMapping,
     }
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use crate::store::orm::IdentityMapping;
+
     kyber_prekeys (id) {
         id -> Integer,
         record -> Binary,
+        identity -> IdentityMapping,
     }
 }
 
@@ -140,9 +148,13 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use crate::store::orm::IdentityMapping;
+
     prekeys (id) {
         id -> Integer,
         record -> Binary,
+        identity -> IdentityMapping,
     }
 }
 
@@ -198,20 +210,28 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use crate::store::orm::IdentityMapping;
+
     sender_key_records (address, device, distribution_id) {
         address -> Text,
         device -> Integer,
         distribution_id -> Text,
         record -> Binary,
         created_at -> Timestamp,
+        identity -> IdentityMapping,
     }
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use crate::store::orm::IdentityMapping;
+
     session_records (address, device_id) {
         address -> Text,
         device_id -> Integer,
         record -> Binary,
+        identity -> IdentityMapping,
     }
 }
 
@@ -231,9 +251,13 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use crate::store::orm::IdentityMapping;
+
     signed_prekeys (id) {
         id -> Integer,
         record -> Binary,
+        identity -> IdentityMapping,
     }
 }
 

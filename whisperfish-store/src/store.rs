@@ -28,6 +28,7 @@ use libsignal_service::proto::{attachment_pointer, data_message::Reaction, DataM
 use libsignal_service::protocol::{self, *};
 use libsignal_service::zkgroup::api::groups::GroupSecretParams;
 use phonenumber::PhoneNumber;
+pub use protocol_store::AciOrPniStorage;
 use protocol_store::ProtocolStore;
 use std::fmt::Debug;
 use std::fs::File;
@@ -709,7 +710,7 @@ impl Storage {
     #[tracing::instrument(skip(self))]
     pub fn fetch_self_recipient(&self) -> Option<orm::Recipient> {
         let e164 = self.config.get_tel();
-        let uuid = self.config.get_uuid();
+        let uuid = self.config.get_aci();
         if e164.is_none() {
             tracing::warn!("No e164 set, cannot fetch self.");
             return None;
@@ -2777,6 +2778,7 @@ impl Storage {
     #[tracing::instrument(skip(self))]
     pub async fn peer_identity(&self, addr: ProtocolAddress) -> Result<Vec<u8>, anyhow::Error> {
         let ident = self
+            .aci_storage() // XXX: What about PNI?
             .get_identity(&addr)
             .await?
             .context("No such identity")?;

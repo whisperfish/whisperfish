@@ -328,13 +328,15 @@ pub struct SessionRecord {
     pub address: String,
     pub device_id: i32,
     pub record: Vec<u8>,
+    pub identity: Identity,
 }
 
 impl Display for SessionRecord {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(
             f,
-            "SessionRecord {{ address: \"{}\", device_id: {} }}",
+            "SessionRecord {{ identity: {}, address: \"{}\", device_id: {} }}",
+            self.identity,
             shorten(&self.address, 9),
             &self.device_id
         )
@@ -346,15 +348,32 @@ impl Display for SessionRecord {
 pub struct IdentityRecord {
     pub address: String,
     pub record: Vec<u8>,
+    pub identity: Identity,
 }
 
 impl Display for IdentityRecord {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(
             f,
-            "IdentityRecord {{ address: \"{}\" }}",
-            shorten(&self.address, 9)
+            "IdentityRecord {{ identity: {}, address: \"{}\" }}",
+            self.identity,
+            shorten(&self.address, 9),
         )
+    }
+}
+
+#[derive(diesel_derive_enum::DbEnum, Debug, Clone)]
+pub enum Identity {
+    Aci,
+    Pni,
+}
+
+impl Display for Identity {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match self {
+            Identity::Aci => write!(f, "Aci"),
+            Identity::Pni => write!(f, "Pni"),
+        }
     }
 }
 
@@ -362,11 +381,16 @@ impl Display for IdentityRecord {
 pub struct SignedPrekey {
     pub id: i32,
     pub record: Vec<u8>,
+    pub identity: Identity,
 }
 
 impl Display for SignedPrekey {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "SignedPrekey {{ id: {} }}", &self.id)
+        write!(
+            f,
+            "SignedPrekey {{ identity: {}, id: {} }}",
+            self.identity, &self.id
+        )
     }
 }
 
@@ -374,11 +398,16 @@ impl Display for SignedPrekey {
 pub struct Prekey {
     pub id: i32,
     pub record: Vec<u8>,
+    pub identity: Identity,
 }
 
 impl Display for Prekey {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "Prekey {{ id: {} }}", &self.id)
+        write!(
+            f,
+            "Prekey {{ identity: {}, id: {} }}",
+            self.identity, &self.id
+        )
     }
 }
 
@@ -386,11 +415,16 @@ impl Display for Prekey {
 pub struct KyberPrekey {
     pub id: i32,
     pub record: Vec<u8>,
+    pub identity: Identity,
 }
 
 impl Display for KyberPrekey {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "KyberPrekey {{ id: {} }}", &self.id)
+        write!(
+            f,
+            "KyberPrekey {{ identity: {}, id: {} }}",
+            self.identity, &self.id
+        )
     }
 }
 
@@ -402,13 +436,15 @@ pub struct SenderKeyRecord {
     pub distribution_id: String,
     pub record: Vec<u8>,
     pub created_at: NaiveDateTime,
+    pub identity: Identity,
 }
 
 impl Display for SenderKeyRecord {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(
             f,
-            "SenderKeyRecord {{ address: \"{}\", device: {}, created_at: \"{}\" }}",
+            "SenderKeyRecord {{ identity: {}, address: \"{}\", device: {}, created_at: \"{}\" }}",
+            self.identity,
             shorten(&self.address, 9),
             &self.device,
             &self.created_at
@@ -441,6 +477,7 @@ impl Recipient {
     }
 
     pub fn to_service_address(&self) -> Option<libsignal_service::ServiceAddress> {
+        // XXX what about PNI?
         self.uuid
             .map(|uuid| libsignal_service::ServiceAddress { uuid })
     }
@@ -1553,10 +1590,11 @@ mod tests {
             address: "something".into(),
             device_id: 2,
             record: vec![65],
+            identity: Identity::Aci,
         };
         assert_eq!(
             format!("{}", s),
-            "SessionRecord { address: \"something\", device_id: 2 }"
+            "SessionRecord { identity: Aci, address: \"something\", device_id: 2 }"
         )
     }
 
@@ -1565,10 +1603,11 @@ mod tests {
         let s = IdentityRecord {
             address: "something".into(),
             record: vec![65],
+            identity: Identity::Aci,
         };
         assert_eq!(
             format!("{}", s),
-            "IdentityRecord { address: \"something\" }"
+            "IdentityRecord { identity: Aci, address: \"something\" }"
         )
     }
 
@@ -1577,8 +1616,9 @@ mod tests {
         let s = SignedPrekey {
             id: 2,
             record: vec![65],
+            identity: Identity::Aci,
         };
-        assert_eq!(format!("{}", s), "SignedPrekey { id: 2 }")
+        assert_eq!(format!("{}", s), "SignedPrekey { identity: Aci, id: 2 }")
     }
 
     #[test]
@@ -1586,8 +1626,9 @@ mod tests {
         let s = Prekey {
             id: 2,
             record: vec![65],
+            identity: Identity::Aci,
         };
-        assert_eq!(format!("{}", s), "Prekey { id: 2 }")
+        assert_eq!(format!("{}", s), "Prekey { identity: Aci, id: 2 }")
     }
 
     #[test]
@@ -1600,8 +1641,9 @@ mod tests {
             device: 13,
             distribution_id: "huh".into(),
             created_at: datetime,
+            identity: Identity::Aci,
         };
-        assert_eq!(format!("{}", s), "SenderKeyRecord { address: \"whateva\", device: 13, created_at: \"2023-04-01 07:01:32\" }")
+        assert_eq!(format!("{}", s), "SenderKeyRecord { identity: Aci, address: \"whateva\", device: 13, created_at: \"2023-04-01 07:01:32\" }")
     }
 
     #[test]

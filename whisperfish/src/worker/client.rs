@@ -16,6 +16,7 @@ use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::Sent;
 use libsignal_service::push_service::RegistrationMethod;
+use libsignal_service::push_service::ServiceIdType;
 use libsignal_service::sender::SendMessageResult;
 use tracing_futures::Instrument;
 use uuid::Uuid;
@@ -213,15 +214,6 @@ pub struct ClientActor {
     local_addr: Option<ServiceAddress>,
     storage: Option<Storage>,
     ws: Option<SignalWebSocket>,
-    // XXX The cipher should be behind a Mutex.
-    // By considering the session that needs to be accessed,
-    // we could lock only a single session to enforce serialized access.
-    // That's a lot of code though, and it should probably happen *inside* the ServiceCipher
-    // instead.
-    // Having ServiceCipher implement `Clone` is imo. a problem, now that everything is `async`.
-    // Putting in behind a Mutex is a lot of work now though,
-    // especially considering this should be *internal* to ServiceCipher.
-    cipher: Option<ServiceCipher<crate::store::Storage, rand::rngs::ThreadRng>>,
     config: std::sync::Arc<crate::config::SignalConfig>,
 
     transient_timestamps: HashSet<u64>,
@@ -271,7 +263,6 @@ impl ClientActor {
             credentials: None,
             local_addr: None,
             storage: None,
-            cipher: None,
             ws: None,
             config,
 
@@ -287,7 +278,7 @@ impl ClientActor {
 
     fn service_ids(&self) -> Option<ServiceIds> {
         Some(ServiceIds {
-            aci: self.config.get_uuid()?,
+            aci: self.config.get_aci()?,
             pni: self.config.get_pni()?,
         })
     }
@@ -319,7 +310,7 @@ impl ClientActor {
         &self,
     ) -> impl Future<
         Output = Result<
-            MessageSender<HyperPushService, crate::store::Storage, rand::rngs::ThreadRng>,
+            MessageSender<HyperPushService, crate::store::AciOrPniStorage, rand::rngs::ThreadRng>,
             ServiceError,
         >,
     > {
@@ -328,7 +319,7 @@ impl ClientActor {
         let mut u_service = self.unauthenticated_service();
 
         let ws = self.ws.clone().unwrap();
-        let cipher = self.cipher.clone().unwrap();
+        let cipher = self.cipher(ServiceIdType::AccountIdentity);
         let local_addr = self.local_addr.unwrap();
         let device_id = self.config.get_device_id();
         async move {
@@ -341,7 +332,8 @@ impl ClientActor {
                 service,
                 cipher,
                 rand::thread_rng(),
-                storage,
+                storage.aci_or_pni(ServiceIdType::AccountIdentity), // In what cases do we use the
+                // PNI identity here?
                 local_addr,
                 device_id,
             ))
@@ -438,7 +430,8 @@ impl ClientActor {
                 .and_then(|r| r.to_service_address())
             {
                 actix::spawn(async move {
-                    if let Err(e) = storage.delete_all_sessions(&svc).await {
+                    // XXX What about PNI sessions?
+                    if let Err(e) = storage.aci_storage().delete_all_sessions(&svc).await {
                         tracing::error!(
                             "End session requested, but could not end session: {:?}",
                             e
@@ -876,6 +869,7 @@ impl ClientActor {
                         // XXX: this should probably not be based on ts alone.
                         let ts = read.timestamp();
                         let source = read.sender_aci();
+                        // XXX: Also handle PNI
                         // Signal uses timestamps in milliseconds, chrono has nanoseconds
                         let ts = millis_to_naive_chrono(ts);
                         tracing::trace!(
@@ -975,6 +969,21 @@ impl ClientActor {
                 self.start_time.format("%Y-%m-%d_%H-%M")
             )))
             .expect("open attachment log")
+    }
+
+    fn cipher(
+        &self,
+        service_identity: ServiceIdType,
+    ) -> ServiceCipher<whisperfish_store::AciOrPniStorage, rand::prelude::ThreadRng> {
+        let service_cfg = self.service_cfg();
+        let device_id = self.config.get_device_id();
+        ServiceCipher::new(
+            self.storage.as_ref().unwrap().aci_or_pni(service_identity),
+            rand::thread_rng(),
+            service_cfg.unidentified_sender_trust_root,
+            self.local_addr.unwrap().uuid,
+            device_id.into(),
+        )
     }
 }
 
@@ -1433,7 +1442,8 @@ impl Handler<SendMessage> for ClientActor {
                                     },
                                     MessageSenderError::NotFound { uuid } => {
                                         tracing::warn!("Recipient not found, removing device sessions {}", uuid);
-                                        let mut num = storage.delete_all_sessions(&ServiceAddress { uuid }).await?;
+                                        // XXX what about PNI?
+                                        let mut num = storage.aci_storage().delete_all_sessions(&ServiceAddress { uuid }).await?;
                                         tracing::trace!("Removed {} device session(s)", num);
                                         num = storage.mark_recipient_registered(uuid, false);
                                         tracing::trace!("Marked {} recipient(s) as unregistered", num);
@@ -1841,32 +1851,36 @@ impl Handler<StorageReady> for ClientActor {
             .config
             .get_tel()
             .expect("phonenumber present after any registration");
-        let uuid = self.config.get_uuid();
+        let aci = self.config.get_aci();
+        // XXX What if WhoAmI has not yet run?
+        let pni = self.config.get_pni();
         let device_id = self.config.get_device_id();
 
         storageready.storage.mark_pending_messages_failed();
 
         let storage_for_password = storageready.storage;
         let request_password = async move {
-            tracing::info!("phonenumber: {phonenumber}, ACI: {uuid:?}, DeviceId: {device_id}");
+            tracing::info!(
+                "phonenumber: {phonenumber}, ACI: {aci:?}, PNI: {pni:?}, DeviceId: {device_id}"
+            );
 
             let password = storage_for_password.signal_password().await.unwrap();
             let signaling_key = Some(storage_for_password.signaling_key().await.unwrap());
 
-            (uuid, phonenumber, device_id, password, signaling_key)
+            (aci, pni, phonenumber, device_id, password, signaling_key)
         }
         .instrument(tracing::span!(
             tracing::Level::INFO,
             "reading password and signaling key"
         ));
-        let service_cfg = self.service_cfg();
 
         Box::pin(request_password.into_actor(self).map(
-            move |(uuid, phonenumber, device_id, password, signaling_key), act, ctx| {
+            move |(aci, pni, phonenumber, device_id, password, signaling_key), act, ctx| {
                 let _span = tracing::trace_span!("whisperfish startup").entered();
                 // Store credentials
                 let credentials = ServiceCredentials {
-                    uuid,
+                    aci,
+                    pni,
                     phonenumber,
                     password: Some(password),
                     signaling_key,
@@ -1876,18 +1890,9 @@ impl Handler<StorageReady> for ClientActor {
                 // end store credentials
 
                 // Signal service context
-                let storage = act.storage.clone().unwrap();
                 // XXX What about the whoami migration?
-                let uuid = uuid.expect("local uuid to initialize service cipher");
-                let cipher = ServiceCipher::new(
-                    storage,
-                    rand::thread_rng(),
-                    service_cfg.unidentified_sender_trust_root,
-                    uuid,
-                    device_id.into(),
-                );
+                let uuid = aci.expect("local uuid to initialize service cipher");
                 // end signal service context
-                act.cipher = Some(cipher);
                 act.local_addr = Some(ServiceAddress { uuid });
 
                 Self::queue_migrations(ctx);
@@ -2028,7 +2033,21 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             }
         };
 
-        let mut cipher = self.cipher.clone().expect("cipher initialized");
+        if msg.destination_service_id.is_none() {
+            tracing::warn!("Message has no destination service id; ignoring");
+            return;
+        }
+        let destination = ServiceAddress {
+            uuid: Uuid::parse_str(msg.destination_service_id.as_deref().unwrap())
+                .expect("parse uuid"),
+        };
+        let mut cipher = self.cipher(
+            if destination == self.local_addr.expect("local addr known") {
+                ServiceIdType::AccountIdentity
+            } else {
+                ServiceIdType::PhoneNumberIdentity
+            },
+        );
 
         if msg.is_receipt() {
             self.process_receipt(&msg);
@@ -2153,7 +2172,8 @@ impl Handler<Register> for ClientActor {
         } = reg;
 
         let mut push_service = self.authenticated_service_with_credentials(ServiceCredentials {
-            uuid: None,
+            aci: None,
+            pni: None,
             phonenumber: phonenumber.clone(),
             password: Some(password.clone()),
             signaling_key: None,
@@ -2251,7 +2271,8 @@ impl Handler<ConfirmRegistration> for ClientActor {
         tracing::trace!("pni_registration_id: {}", pni_registration_id);
 
         let mut push_service = self.authenticated_service_with_credentials(ServiceCredentials {
-            uuid: None,
+            aci: None,
+            pni: None,
             phonenumber,
             password: Some(password),
             signaling_key: None,
@@ -2445,18 +2466,22 @@ impl Handler<RefreshPreKeys> for ClientActor {
         let storage = self.storage.clone().unwrap();
 
         let proc = async move {
-            let (next_signed_pre_key_id, next_kyber_pre_key_id, pre_keys_offset_id) =
-                storage.next_pre_key_ids().await;
-
             am.update_pre_key_bundle(
-                &mut storage.clone(),
+                &mut storage.aci_storage(),
+                ServiceIdType::AccountIdentity,
                 &mut rand::thread_rng(),
-                next_signed_pre_key_id,
-                next_kyber_pre_key_id,
-                pre_keys_offset_id,
                 false,
             )
-            .await
+            .await?;
+
+            // am.update_pre_key_bundle(
+            //     &mut storage.pni_storage(),
+            //     ServiceIdType::PhoneNumberIdentity,
+            //     &mut rand::thread_rng(),
+            //     false,
+            // )
+            // .await?;
+            Result::<(), ServiceError>::Ok(())
         }
         .instrument(tracing::trace_span!("RefreshPreKeys"));
         // XXX: store the last refresh time somewhere.

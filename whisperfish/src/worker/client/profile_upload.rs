@@ -103,7 +103,7 @@ impl Handler<RefreshOwnProfile> for ClientActor {
         let mut service = self.authenticated_service();
         let client = ctx.address();
         let config = self.config.clone();
-        let uuid = config.get_uuid().expect("valid uuid at this point");
+        let uuid = config.get_aci().expect("valid uuid at this point");
 
         Box::pin(
             async move {
@@ -178,7 +178,7 @@ impl Handler<UpdateProfile> for ClientActor {
         let storage = self.storage.clone().unwrap();
         let client = ctx.address();
         let config = self.config.clone();
-        let uuid = config.get_uuid().expect("valid uuid at this point");
+        let uuid = config.get_aci().expect("valid uuid at this point");
 
         // XXX: Validate emoji character somehow
         Box::pin(
@@ -209,7 +209,7 @@ impl Handler<UploadProfile> for ClientActor {
         let service = self.authenticated_service();
         let client = ctx.address();
         let config = self.config.clone();
-        let uuid = config.get_uuid().expect("valid uuid at this point");
+        let uuid = config.get_aci().expect("valid uuid at this point");
 
         Box::pin(
             async move {
@@ -281,8 +281,16 @@ impl Handler<RefreshProfileAttributes> for ClientActor {
 
         Box::pin(
             async move {
-                let registration_id = storage.get_local_registration_id().await.unwrap();
-                let pni_registration_id = storage.get_local_pni_registration_id().await.unwrap();
+                let registration_id = storage
+                    .aci_storage()
+                    .get_local_registration_id()
+                    .await
+                    .unwrap();
+                let pni_registration_id = storage
+                    .pni_storage()
+                    .get_local_registration_id()
+                    .await
+                    .unwrap();
                 let self_recipient = storage.fetch_self_recipient().expect("self set by now");
 
                 let profile_key = self_recipient.profile_key();

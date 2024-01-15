@@ -109,7 +109,7 @@ impl Handler<LinkDevice> for ClientActor {
                 let url = tsurl.parse()?;
                 Ok::<_, anyhow::Error>(
                     account_manager
-                        .link_device(url, &store, credentials)
+                        .link_device(url, &store.aci_storage(), &store.pni_storage(), credentials)
                         .await?,
                 )
             }

@@ -82,14 +82,17 @@ async fn add_dummy_data(storage: &mut store::Storage) {
     let key_3 = IdentityKeyPair::generate(&mut rng);
 
     storage
+        .aci_storage()
         .save_identity(&addr_1, key_1.identity_key())
         .await
         .unwrap();
     storage
+        .aci_storage()
         .save_identity(&addr_2, key_2.identity_key())
         .await
         .unwrap();
     storage
+        .aci_storage()
         .save_identity(&addr_3, key_3.identity_key())
         .await
         .unwrap();
@@ -97,9 +100,21 @@ async fn add_dummy_data(storage: &mut store::Storage) {
     let session_1 = SessionRecord::new_fresh();
     let session_2 = SessionRecord::new_fresh();
     let session_3 = SessionRecord::new_fresh();
-    storage.store_session(&addr_1, &session_1).await.unwrap();
-    storage.store_session(&addr_2, &session_2).await.unwrap();
-    storage.store_session(&addr_3, &session_3).await.unwrap();
+    storage
+        .aci_storage()
+        .store_session(&addr_1, &session_1)
+        .await
+        .unwrap();
+    storage
+        .aci_storage()
+        .store_session(&addr_2, &session_2)
+        .await
+        .unwrap();
+    storage
+        .aci_storage()
+        .store_session(&addr_3, &session_3)
+        .await
+        .unwrap();
 }
 
 #[actix_rt::main]

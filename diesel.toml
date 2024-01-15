@@ -4,3 +4,4 @@
 [print_schema]
 file = "whisperfish-store/src/schema.rs"
 patch_file = "whisperfish-store/src/schema.patch"
+custom_type_derives = ["diesel::query_builder::QueryId"]

@@ -201,6 +201,8 @@ impl RecipientImpl {
         self.recipient = recipient;
 
         // If a recipient was found, attempt to compute the fingeprint
+        // XXX: we're only computing fingerprints for ACI recipients, figure out what to do for
+        // PNI identities.
         if let Some(r) = &self.recipient {
             let id = r.id;
             if let Some(recipient_svc) = r.to_service_address() {
@@ -210,12 +212,17 @@ impl RecipientImpl {
                         .expect("self recipient present in db");
                     let local_svc = local.to_service_address().expect("self-recipient has UUID");
                     let fingerprint = storage
+                        .aci_storage()
                         .compute_safety_number(&local_svc, &recipient_svc)
                         .await?;
-                    let sessions = storage.get_sub_device_sessions(&recipient_svc).await?;
+                    let sessions = storage
+                        .aci_storage()
+                        .get_sub_device_sessions(&recipient_svc)
+                        .await?;
                     let mut versions = Vec::new();
                     for device_id in sessions {
                         let session = storage
+                            .aci_storage()
                             .load_session(&recipient_svc.to_protocol_address(device_id))
                             .await?;
                         let version = session
