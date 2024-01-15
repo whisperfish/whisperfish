@@ -49,7 +49,7 @@ stages:
   variables:
     QT_SELECT: 5
     <<: *variables
-  image: rustlang/rust:nightly
+  image: rustlang/rust:nightly-bookworm
   allow_failure: true
   cache:
     <<: *rust-cache
