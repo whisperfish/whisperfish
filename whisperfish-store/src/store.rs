@@ -1,12 +1,15 @@
 pub mod orm;
 
+pub mod body_ranges;
 mod encryption;
 pub mod migrations;
 pub mod observer;
 mod protocol_store;
+mod protos;
 mod utils;
 
 use self::orm::{AugmentedMessage, StoryType, UnidentifiedAccessMode};
+use crate::body_ranges::AssociatedValue;
 use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
 use crate::schema;
@@ -110,6 +113,7 @@ pub struct NewMessage {
     pub quote_timestamp: Option<u64>,
     pub expires_in: Option<std::time::Duration>,
     pub story_type: StoryType,
+    pub body_ranges: Option<Vec<u8>>,
 }
 
 #[derive(Clone, Debug)]
@@ -2268,6 +2272,7 @@ impl Storage {
                     quote_id.eq(quoted_message_id),
                     expires_in.eq(new_message.expires_in.map(|x| x.as_secs() as i32)),
                     story_type.eq(new_message.story_type as i32),
+                    message_ranges.eq(&new_message.body_ranges),
                 ))
                 .execute(&mut *self.db())
                 .expect("inserting a message")
@@ -2446,11 +2451,21 @@ impl Storage {
             false
         };
 
+        let body_ranges = if let Some(r) = &message.message_ranges {
+            crate::store::body_ranges::deserialize(r)
+        } else {
+            vec![]
+        };
+
+        let mentions = self.fetch_mentions(&body_ranges);
+
         Some(AugmentedMessage {
             inner: message,
             is_voice_note,
             receipts,
             attachments: attachments as usize,
+            mentions,
+            body_ranges,
         })
     }
 
@@ -2566,15 +2581,48 @@ impl Storage {
                         vec![]
                     };
 
+                    let body_ranges = if let Some(r) = &message.message_ranges {
+                        crate::store::body_ranges::deserialize(r)
+                    } else {
+                        vec![]
+                    };
+
+                    let mentions = self.fetch_mentions(&body_ranges);
+
                     aug_messages.push(orm::AugmentedMessage {
                         inner: message,
                         is_voice_note,
                         attachments,
                         receipts,
+                        body_ranges,
+                        mentions,
                     });
                 }
             });
         aug_messages
+    }
+
+    fn fetch_mentions(
+        &self,
+        body_ranges: &[crate::store::body_ranges::BodyRange],
+    ) -> std::collections::HashMap<uuid::Uuid, orm::Recipient> {
+        body_ranges
+            .iter()
+            .filter_map(|range| range.associated_value.as_ref())
+            .filter_map(|av| match av {
+                // XXX this silently fails on unparsable UUIDs
+                AssociatedValue::MentionUuid(uuid) => match uuid::Uuid::parse_str(uuid) {
+                    Ok(uuid) => Some(uuid),
+                    Err(_e) => {
+                        tracing::warn!("could not parse UUID {uuid}");
+                        None
+                    }
+                },
+                _ => None,
+            })
+            .filter_map(|uuid| self.fetch_recipient_by_uuid(uuid))
+            .map(|r| (r.uuid.expect("queried by uuid"), r))
+            .collect()
     }
 
     /// Don't actually delete, but mark the message as deleted

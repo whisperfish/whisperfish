@@ -41,6 +41,7 @@ sha-1 = "0.10"
 tempfile = { version = "3.4.0", default-features = false }
 tokio = { version = "1.26.0", features = ["fs", "macros"] }
 uuid = { version = "1.5", features=["v4"] }
+linkify = "0.10"
 
 tracing = "0.1"
 

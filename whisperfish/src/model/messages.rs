@@ -3,8 +3,9 @@
 use crate::model::*;
 use crate::store::observer::{EventObserving, Interest};
 use crate::store::{orm, schema, Storage};
-use qmetaobject::prelude::*;
 use qmetaobject::QObjectBox;
+use qmetaobject::{prelude::*, QMetaType};
+use qttypes::{QVariantList, QVariantMap};
 use std::collections::HashMap;
 
 /// QML-constructable object that interacts with a single session.
@@ -330,6 +331,7 @@ define_model_roles! {
         Id(id):                                               "id",
         SessionId(session_id):                                "sessionId",
         Message(text via qstring_from_option):                "message",
+        StyledMessage(fn styled_message(&self) via QString::from): "styledMessage",
         Timestamp(server_timestamp via qdatetime_from_naive): "timestamp",
 
         SenderRecipientId(sender_recipient_id via qvariant_from_option): "senderRecipientId",
@@ -350,7 +352,49 @@ define_model_roles! {
 
         Unidentified(use_unidentified):                       "unidentifiedSender",
         QuotedMessageId(quote_id via qvariant_from_option):   "quotedMessageId",
+
+        BodyRanges(fn body_ranges(&self) via body_ranges_qvariantlist): "bodyRanges",
+
+        HasStrikeThrough(fn has_strike_through(&self)):       "hasStrikeThrough",
     }
+}
+
+fn body_ranges_qvariantlist(
+    body_ranges: &[whisperfish_store::body_ranges::BodyRange],
+) -> QVariantList {
+    body_ranges
+        .iter()
+        .map(|range| {
+            use whisperfish_store::body_ranges::AssociatedValue;
+
+            let mut qrange = QVariantMap::default();
+            qrange.insert("start".into(), range.start.into());
+            qrange.insert("length".into(), range.length.into());
+            let mut associated_value = QVariantMap::default();
+            match &range.associated_value {
+                None => {}
+                Some(AssociatedValue::MentionUuid(mention_aci)) => {
+                    associated_value.insert("type".into(), QString::from("mention").to_qvariant());
+                    associated_value.insert(
+                        "mention".into(),
+                        QString::from(mention_aci as &str).to_qvariant(),
+                    );
+                }
+                Some(AssociatedValue::Style(style)) => {
+                    associated_value.insert("type".into(), QString::from("style").to_qvariant());
+                    associated_value.insert("style".into(), style.to_qvariant());
+                }
+                _ => {
+                    tracing::warn!(
+                        "unimplemented associated value: {:?}",
+                        range.associated_value
+                    );
+                }
+            }
+            qrange.insert("associatedValue".into(), associated_value.to_qvariant());
+            qrange.to_qvariant()
+        })
+        .collect()
 }
 
 #[derive(QObject, Default)]

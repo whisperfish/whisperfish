@@ -404,6 +404,7 @@ impl ClientActor {
     /// This was `MessageHandler` in Go.
     ///
     /// TODO: consider putting this as an actor `Handle<>` implementation instead.
+    #[tracing::instrument(level = "debug", skip(self, ctx, msg, sync_sent, metadata))]
     pub fn handle_message(
         &mut self,
         ctx: &mut <Self as Actor>::Context,
@@ -596,6 +597,8 @@ impl ClientActor {
             None
         };
 
+        let body_ranges = crate::store::body_ranges::serialize(&msg.body_ranges);
+
         let session = group.unwrap_or_else(|| {
             let recipient = storage.merge_and_fetch_recipient(
                 source_phonenumber.clone(),
@@ -633,6 +636,7 @@ impl ClientActor {
             expires_in: session.expiring_message_timeout,
             story_type: StoryType::None,
             server_guid: metadata.server_guid,
+            body_ranges,
         };
 
         let message = storage.create_message(&new_message);
@@ -786,6 +790,7 @@ impl ClientActor {
         }
     }
 
+    #[tracing::instrument(level = "debug", skip(self, ctx, metadata))]
     fn process_envelope(
         &mut self,
         Content { body, metadata }: Content,
@@ -1226,6 +1231,7 @@ impl Handler<QueueMessage> for ClientActor {
             expires_in: session.expiring_message_timeout,
             story_type: StoryType::None,
             server_guid: None,
+            body_ranges: None,
         });
 
         ctx.notify(SendMessage(msg.id));
@@ -1302,6 +1308,7 @@ impl Handler<SendMessage> for ClientActor {
                     profile_key: self_recipient.and_then(|r| r.profile_key),
                     quote,
                     expire_timer: msg.expires_in.map(|x| x as u32),
+                    body_ranges: crate::store::body_ranges::to_vec(msg.message_ranges.as_ref()),
                     ..Default::default()
                 };
 
@@ -1505,6 +1512,7 @@ impl Handler<EndSession> for ClientActor {
             expires_in: session.expiring_message_timeout,
             story_type: StoryType::None,
             server_guid: None,
+            body_ranges: None,
         });
         ctx.notify(SendMessage(msg.id));
     }
@@ -2072,6 +2080,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                                 expires_in: session.expiring_message_timeout,
                                 story_type: StoryType::None,
                                 server_guid: None,
+                                body_ranges: None,
                             };
                             storage.create_message(&msg);
 

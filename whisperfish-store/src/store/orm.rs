@@ -124,6 +124,8 @@ pub struct Message {
 
     #[diesel(deserialize_as = OptionUuidString, serialize_as = OptionUuidString)]
     pub server_guid: Option<Uuid>,
+
+    pub message_ranges: Option<Vec<u8>>,
 }
 
 impl Display for Message {
@@ -181,6 +183,7 @@ impl Default for Message {
             quote_id: Default::default(),
             story_type: StoryType::None,
             server_guid: Default::default(),
+            message_ranges: None,
         }
     }
 }
@@ -836,6 +839,8 @@ pub struct AugmentedMessage {
     pub attachments: usize,
     pub is_voice_note: bool,
     pub receipts: Vec<(Receipt, Recipient)>,
+    pub body_ranges: Vec<crate::store::protos::body_range_list::BodyRange>,
+    pub mentions: std::collections::HashMap<uuid::Uuid, Recipient>,
 }
 
 impl Display for AugmentedMessage {
@@ -890,6 +895,57 @@ impl AugmentedMessage {
 
     pub fn attachments(&self) -> u32 {
         self.attachments as _
+    }
+
+    pub fn body_ranges(&self) -> &[crate::store::protos::body_range_list::BodyRange] {
+        &self.body_ranges
+    }
+
+    pub fn has_strike_through(&self) -> bool {
+        self.body_ranges.iter().any(|r| {
+            r.associated_value
+                == Some(
+                    crate::store::protos::body_range_list::body_range::AssociatedValue::Style(
+                        crate::store::protos::body_range_list::body_range::Style::Strikethrough
+                            as i32,
+                    ),
+                )
+        })
+    }
+
+    pub fn has_mentions(&self) -> bool {
+        self.body_ranges.iter().any(|r| {
+            matches!(
+                r.associated_value,
+                Some(
+                    crate::store::protos::body_range_list::body_range::AssociatedValue::MentionUuid(
+                        _
+                    )
+                )
+            )
+        })
+    }
+
+    pub fn styled_message(&self) -> String {
+        crate::store::body_ranges::to_styled(
+            self.inner.text.as_deref().unwrap_or_default(),
+            self.body_ranges(),
+            |uuid_s| {
+                match uuid::Uuid::parse_str(uuid_s) {
+                    Ok(uuid) => {
+                        // lookup
+                        self.mentions
+                            .get(&uuid)
+                            .map(|r| r.name())
+                            .unwrap_or(std::borrow::Cow::Borrowed(uuid_s))
+                    }
+                    Err(_e) => {
+                        tracing::warn!("Requesting mention for invalid UUID {}", uuid_s);
+                        std::borrow::Cow::Borrowed(uuid_s)
+                    }
+                }
+            },
+        )
     }
 }
 
@@ -1403,6 +1459,8 @@ mod tests {
                 },
                 get_recipient(),
             )],
+            body_ranges: vec![],
+            mentions: Default::default(),
         }
     }
 

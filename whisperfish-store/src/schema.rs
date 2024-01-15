@@ -135,6 +135,7 @@ diesel::table! {
         quote_id -> Nullable<Integer>,
         story_type -> Integer,
         server_guid -> Nullable<Text>,
+        message_ranges -> Nullable<Binary>,
     }
 }
 
