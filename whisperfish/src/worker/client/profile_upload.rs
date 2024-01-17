@@ -325,6 +325,12 @@ impl Handler<RefreshProfileAttributes> for ClientActor {
                             .expect("client still running");
                     });
                 } else {
+                    if self_recipient.unidentified_access_mode != UnidentifiedAccessMode::Enabled {
+                        storage.set_recipient_unidentified(
+                            self_recipient.id,
+                            UnidentifiedAccessMode::Enabled,
+                        );
+                    }
                     tracing::info!("profile attributes refreshed");
                 }
             }
