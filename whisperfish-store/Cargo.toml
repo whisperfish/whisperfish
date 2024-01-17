@@ -35,18 +35,20 @@ rand = "0.8"
 regex = "1.7"
 scrypt = { version = "0.11.0", default-features = false, features = ["std"] }
 secrecy = "0.8"
-serde = {version = "1.0", features = ["derive"]}
+serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 sha2 = "0.10"
 sha-1 = "0.10"
 tempfile = { version = "3.4.0", default-features = false }
 tokio = { version = "1.26.0", features = ["fs", "macros"] }
-uuid = { version = "1.5", features=["v4"] }
+uuid = { version = "1.5", features = ["v4"] }
 linkify = "0.10"
 
 tracing = "0.1"
 
-libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features = ["unsend-futures"] }
+libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features = [
+    "unsend-futures",
+] }
 
 [build-dependencies]
 anyhow = "1.0"
