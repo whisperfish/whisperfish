@@ -320,7 +320,8 @@ define_model_roles! {
         GroupName(fn group_name(&self) via qstring_from_option):           "groupName",
         GroupDescription(fn group_description(&self) via qstring_from_option):
                                                                            "groupDescription",
-        Message(fn last_message_text(&self) via qstring_from_option): "message",
+        Message(fn last_message_text(&self) via qstring_from_option):      "message",
+        StyledMessage(fn last_message_text_styled(&self) via qstring_from_option): "styledMessage",
         Section(fn section(&self) via QString::from):                      "section",
         Timestamp(fn timestamp(&self) via qdatetime_from_naive_option):    "timestamp",
         RemoteDeleted(fn is_remote_deleted(&self)):                        "remoteDeleted",
@@ -336,6 +337,8 @@ define_model_roles! {
         IsVoiceNote(fn is_voice_note(&self)):                              "isVoiceNote",
         HasAvatar(fn has_avatar(&self)):                                   "hasAvatar",
         Draft(fn draft(&self) via QString::from):                          "draft",
+        HasStrikeThrough(fn has_strike_through(&self)):                    "hasStrikeThrough",
+        HasSpoilers(fn has_spoilers(&self)):                               "hasSpoilers",
     }
 }
 

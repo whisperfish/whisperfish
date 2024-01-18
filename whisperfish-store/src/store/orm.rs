@@ -1160,6 +1160,28 @@ impl AugmentedSession {
         self.draft.clone().unwrap_or_default()
     }
 
+    pub fn has_strike_through(&self) -> bool {
+        if let Some(m) = &self.last_message {
+            m.has_strike_through()
+        } else {
+            false
+        }
+    }
+
+    pub fn has_spoilers(&self) -> bool {
+        if let Some(m) = &self.last_message {
+            m.has_spoilers()
+        } else {
+            false
+        }
+    }
+
+    pub fn last_message_text_styled(&self) -> Option<String> {
+        self.last_message
+            .as_ref()
+            .and_then(|m| Some(m.styled_message()))
+    }
+
     pub fn last_message_text(&self) -> Option<&str> {
         self.last_message.as_ref().and_then(|m| m.text.as_deref())
     }
