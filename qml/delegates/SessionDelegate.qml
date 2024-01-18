@@ -236,7 +236,8 @@ ListItem {
                 top: upperLabel.bottom; bottom: parent.bottom
             }
             wrapMode: Text.Wrap
-            maximumLineCount: 2
+            clip: true
+
             enableElide: Text.ElideRight
             color: highlighted ? Theme.secondaryHighlightColor :
                                  Theme.secondaryColor
@@ -252,6 +253,14 @@ ListItem {
             hasSpoilers: delegate.hasSpoilers // Set to 'false' when text is clicked
             highlighted: _labelsHighlighted
             verticalAlignment: Text.AlignTop
+        }
+
+        OpacityRampEffect {
+            offset: 0.8
+            slope: 5
+            sourceItem: lowerLabel
+            enabled: lowerLabel.contentHeight > lowerLabel.height
+            direction: OpacityRamp.TopToBottom
         }
 
         Row {
