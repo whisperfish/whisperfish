@@ -397,6 +397,7 @@ impl ClientActor {
     ///
     /// TODO: consider putting this as an actor `Handle<>` implementation instead.
     #[tracing::instrument(level = "debug", skip(self, ctx, msg, sync_sent, metadata))]
+    #[allow(clippy::too_many_arguments)]
     pub fn handle_message(
         &mut self,
         ctx: &mut <Self as Actor>::Context,
@@ -563,6 +564,11 @@ impl ClientActor {
         } else {
             metadata.unidentified_sender
         };
+
+        let original_message = edit.and_then(|ts| storage.fetch_message_by_timestamp(ts));
+        if edit.is_some() && original_message.is_none() {
+            tracing::warn!("Received an edit for a message that does not exist. Inserting as is and praying.  This is most probably a bug regarding out-of-order delivery.");
+        }
 
         let group = if let Some(group) = msg.group_v2.as_ref() {
             let mut key_stack = [0u8; zkgroup::GROUP_MASTER_KEY_LEN];
