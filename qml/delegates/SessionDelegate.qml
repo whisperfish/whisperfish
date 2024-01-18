@@ -242,11 +242,11 @@ ListItem {
                                  Theme.secondaryColor
             font.pixelSize: Theme.fontSizeExtraSmall
             font.italic: model.remoteDeleted
-            plainText: hasDraft ?
+            plainText: (needsRichText ? cssStyle : '') + (hasDraft ?
                       //: Message preview for a saved, unsent message
                       //% "Draft: %1"
                       qsTrId("whisperfish-message-preview-draft").arg(draft) :
-                      message
+                      message)
             bypassLinking: true
             needsRichText: delegate.hasStrikeThrough || delegate.hasSpoilers
             hasSpoilers: delegate.hasSpoilers // Set to 'false' when text is clicked

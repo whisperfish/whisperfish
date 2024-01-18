@@ -49,7 +49,9 @@ Label {
     property bool bypassLinking: false
     property bool needsRichText: false
     property bool hasSpoilers: false
-    // XXX if needsRichText, add a style that sets the color for links to the text
+
+    // Prefix the rich text with this style to use correct link color
+    property string cssStyle: "<style> a { color: " + linkColor + " } </style>"
 
     readonly property string maybeLinkedText: bypassLinking ? plainText : linkedTextProxy.text
 
