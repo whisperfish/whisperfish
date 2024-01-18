@@ -104,7 +104,8 @@ ListItem {
         // Only ConversationPage.qml has `sessionId` property.
         if(pageStack.currentPage.sessionId == model.id) {
             var count = model.typing.length
-            console.log("onTypingChanged for", model.id, ":", count, "typing");
+            // XXX: Fix typing notifications (!502)
+            // console.log("onTypingChanged for", model.id, ":", count, "typing");
             var typing;
             if (!model.isTyping || count === 0) {
                 typing = ""
@@ -143,10 +144,11 @@ ListItem {
         }
     }
 
-    Connections {
-        target: model
-        onTypingChanged: sendTypingToHeader()
-    }
+    // XXX: Fix typing notifications (!502)
+    // Connections {
+    //     target: model
+    //     onTypingChanged: sendTypingToHeader()
+    // }
 
     Component.onCompleted: sendTypingToHeader()
 
