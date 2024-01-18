@@ -5,44 +5,44 @@
     <name></name>
     <message id="whisperfish-session-has-attachment">
         <location filename="../qml/cover/CoverPage.qml" line="125"/>
-        <location filename="../qml/delegates/SessionDelegate.qml" line="41"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="43"/>
         <source>Attachment</source>
         <extracomment>Session contains an attachment label</extracomment>
         <translation>Bijlage</translation>
     </message>
     <message id="whisperfish-session-is-voice-note">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="36"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="38"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
         <translation>Spraakbericht</translation>
     </message>
     <message id="whisperfish-session-delete-all">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="75"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="77"/>
         <source>All messages deleted</source>
         <oldsource>Deleting all messages</oldsource>
         <extracomment>Delete all messages from session (past tense)</extracomment>
         <translation>Alle berichten zijn verwijderd</translation>
     </message>
     <message id="whisperfish-typing-1">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="129"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="131"/>
         <source>%1 is typing</source>
         <extracomment>Text shown when one person is typing</extracomment>
         <translation>%1 is aan ’t typen</translation>
     </message>
     <message id="whisperfish-typing-2">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="133"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="135"/>
         <source>%1 and %2 are typing</source>
         <extracomment>Text shown when two persons are typing</extracomment>
         <translation>%1 en %2 zijn aan ’t typen</translation>
     </message>
     <message id="whisperfish-typing-3-plus">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="137"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="139"/>
         <source>%1 and %n others are typing</source>
         <extracomment>Text shown when three or more persons are typing</extracomment>
         <translation>%1 en nog %n andere zijn aan ’t typen</translation>
     </message>
     <message id="whisperfish-session-note-to-self">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="224"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="226"/>
         <location filename="../qml/harbour-whisperfish-main.qml" line="120"/>
         <location filename="../qml/pages/ShareDestinationV1.qml" line="100"/>
         <location filename="../qml/pages/ShareDestinationV2.qml" line="99"/>
@@ -51,51 +51,51 @@
         <translation>Nota aan mijn eigen</translation>
     </message>
     <message id="whisperfish-message-preview-draft">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="245"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="248"/>
         <source>Draft: %1</source>
         <extracomment>Message preview for a saved, unsent message</extracomment>
         <translation>Concept: %1</translation>
     </message>
     <message id="whisperfish-session-mark-unpinned">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="366"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="371"/>
         <source>Unpin</source>
         <extracomment>&apos;Unpin&apos; conversation from the top of the view</extracomment>
         <translation>Losmaken</translation>
     </message>
     <message id="whisperfish-session-mark-pinned">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="369"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="374"/>
         <source>Pin to top</source>
         <extracomment>&apos;Pin&apos; conversation to the top of the view</extracomment>
         <translation>Vanboven vastpinnen</translation>
     </message>
     <message id="whisperfish-session-mark-unmuted">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="378"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="383"/>
         <source>Unmute conversation</source>
         <oldsource>Mark as unmuted</oldsource>
         <extracomment>Mark conversation as unmuted</extracomment>
         <translation>Dempen opheffen</translation>
     </message>
     <message id="whisperfish-session-mark-muted">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="381"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="386"/>
         <source>Mute conversation</source>
         <oldsource>Mark as muted</oldsource>
         <extracomment>Mark conversation as muted</extracomment>
         <translation>Dempen</translation>
     </message>
     <message id="whisperfish-session-mark-unarchived">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="389"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="394"/>
         <source>Restore to inbox</source>
         <extracomment>Show archived messages again in the main page</extracomment>
         <translation>Terugzetten naar postvak IN</translation>
     </message>
     <message id="whisperfish-session-mark-archived">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="392"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="397"/>
         <source>Archive conversation</source>
         <extracomment>Move the conversation to archived conversations</extracomment>
         <translation>Gesprek archiveren</translation>
     </message>
     <message id="whisperfish-session-delete">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="399"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="404"/>
         <source>Delete conversation</source>
         <extracomment>Delete all messages from session menu</extracomment>
         <translation>Gesprek verwijderen</translation>
@@ -1869,7 +1869,7 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-message-deleted-note">
         <location filename="../qml/delegates/MessageDelegate.qml" line="249"/>
-        <location filename="../qml/delegates/SessionDelegate.qml" line="49"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="51"/>
         <source>this message was deleted</source>
         <extracomment>Placeholder note for a deleted message</extracomment>
         <translation>’t bericht da hier stond is verwijderd</translation>
