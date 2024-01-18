@@ -406,6 +406,7 @@ impl ClientActor {
         msg: &DataMessage,
         sync_sent: Option<Sent>,
         metadata: &Metadata,
+        edit: Option<NaiveDateTime>,
     ) -> Option<i32> {
         let timestamp = metadata.timestamp;
         let settings = crate::config::SettingsBridge::default();
@@ -783,6 +784,18 @@ impl ClientActor {
         }
     }
 
+    #[tracing::instrument(level = "debug", skip(self))]
+    fn handle_message_not_sealed(&mut self, recipient: ServiceAddress) {
+        // TODO: if the contact should have our profile key already, send it again.
+        //       if the contact should not yet have our profile key, this is ok, and we
+        //       should offer the user a message request.
+        //       Cfr. MessageContentProcessor, grep for handleNeedsDeliveryReceipt.
+        tracing::warn!(
+            "Received an unsealed message from {:?}. Assert that they have our profile key.",
+            recipient
+        );
+    }
+
     #[tracing::instrument(level = "debug", skip(self, ctx, metadata))]
     fn process_envelope(
         &mut self,
@@ -798,18 +811,45 @@ impl ClientActor {
             ContentBody::DataMessage(message) => {
                 let uuid = metadata.sender.uuid;
                 let message_id =
-                    self.handle_message(ctx, None, Some(uuid), &message, None, &metadata);
+                    self.handle_message(ctx, None, Some(uuid), &message, None, &metadata, None);
                 if metadata.needs_receipt {
                     if let Some(_message_id) = message_id {
                         self.handle_needs_delivery_receipt(ctx, &message, &metadata);
                     }
                 }
+
+                // XXX Maybe move this if test (and the one for edit) into handle_message?
                 if !metadata.unidentified_sender && message_id.is_some() {
-                    // TODO: if the contact should have our profile key already, send it again.
-                    //       if the contact should not yet have our profile key, this is ok, and we
-                    //       should offer the user a message request.
-                    //       Cfr. MessageContentProcessor, grep for handleNeedsDeliveryReceipt.
-                    tracing::warn!("Received an unsealed message from {:?}. Assert that they have our profile key.", metadata.sender);
+                    self.handle_message_not_sealed(metadata.sender);
+                }
+            }
+            ContentBody::EditMessage(edit) => {
+                let message = edit
+                    .data_message
+                    .as_ref()
+                    .expect("edit message contains data");
+                let uuid = metadata.sender.uuid;
+                let message_id = self.handle_message(
+                    ctx,
+                    None,
+                    Some(uuid),
+                    message,
+                    None,
+                    &metadata,
+                    Some(millis_to_naive_chrono(
+                        edit.target_sent_timestamp
+                            .expect("edit message contains timestamp"),
+                    )),
+                );
+
+                if metadata.needs_receipt {
+                    if let Some(_message_id) = message_id {
+                        self.handle_needs_delivery_receipt(ctx, message, &metadata);
+                    }
+                }
+
+                if !metadata.unidentified_sender && message_id.is_some() {
+                    self.handle_message_not_sealed(metadata.sender);
                 }
             }
             ContentBody::SynchronizeMessage(message) => {
@@ -818,28 +858,28 @@ impl ClientActor {
                     handled = true;
                     tracing::trace!("Sync sent message");
                     // These are messages sent through a paired device.
+                    let uuid = sent
+                        .destination_service_id
+                        .as_deref()
+                        .map(Uuid::parse_str)
+                        .transpose()
+                        .map_err(|_| {
+                            tracing::warn!("Unparsable UUID {}", sent.destination_service_id())
+                        })
+                        .ok()
+                        .flatten();
+                    let phonenumber = sent
+                        .destination_e164
+                        .as_deref()
+                        .map(|s| phonenumber::parse(None, s))
+                        .transpose()
+                        .map_err(|_| {
+                            tracing::warn!("Unparsable phonenumber {}", sent.destination_e164())
+                        })
+                        .ok()
+                        .flatten();
 
                     if let Some(message) = &sent.message {
-                        let uuid = sent
-                            .destination_service_id
-                            .as_deref()
-                            .map(Uuid::parse_str)
-                            .transpose()
-                            .map_err(|_| {
-                                tracing::warn!("Unparsable UUID {}", sent.destination_service_id())
-                            })
-                            .ok()
-                            .flatten();
-                        let phonenumber = sent
-                            .destination_e164
-                            .as_deref()
-                            .map(|s| phonenumber::parse(None, s))
-                            .transpose()
-                            .map_err(|_| {
-                                tracing::warn!("Unparsable phonenumber {}", sent.destination_e164())
-                            })
-                            .ok()
-                            .flatten();
                         self.handle_message(
                             ctx,
                             // Empty string mainly when groups,
@@ -849,6 +889,22 @@ impl ClientActor {
                             message,
                             Some(sent.clone()),
                             &metadata,
+                            None,
+                        );
+                    } else if let Some(edit) = &sent.edit_message {
+                        let message = edit.data_message.as_ref().expect("edit message");
+                        let edit = edit.target_sent_timestamp.expect("edit timestamp");
+
+                        self.handle_message(
+                            ctx,
+                            // Empty string mainly when groups,
+                            // but maybe needs a check. TODO
+                            phonenumber,
+                            uuid,
+                            message,
+                            Some(sent.clone()),
+                            &metadata,
+                            Some(millis_to_naive_chrono(edit)),
                         );
                     } else {
                         tracing::warn!(
