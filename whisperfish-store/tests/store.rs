@@ -137,6 +137,8 @@ async fn process_message_exists_session_source(storage: impl Future<Output = InM
             server_guid: None,
             story_type: StoryType::None,
             body_ranges: None,
+
+            edit: None,
         };
 
         let msg = storage.create_message(&new_message);
@@ -183,6 +185,8 @@ async fn dev_message_update(storage: impl Future<Output = InMemoryDb>) {
         server_guid: None,
         story_type: StoryType::None,
         body_ranges: None,
+
+        edit: None,
     };
 
     storage.create_message(&new_message);
@@ -213,6 +217,8 @@ async fn dev_message_update(storage: impl Future<Output = InMemoryDb>) {
         server_guid: None,
         story_type: StoryType::None,
         body_ranges: None,
+
+        edit: None,
     };
 
     storage.create_message(&other_message);
@@ -266,6 +272,8 @@ async fn process_inbound_group_message_without_sender(storage: impl Future<Outpu
         server_guid: None,
         story_type: StoryType::None,
         body_ranges: None,
+
+        edit: None,
     };
 
     let message_inserted = storage.create_message(&new_message);
@@ -316,6 +324,8 @@ async fn process_outbound_group_message_without_sender(storage: impl Future<Outp
         server_guid: None,
         story_type: StoryType::None,
         body_ranges: None,
+
+        edit: None,
     };
 
     let message_inserted = storage.create_message(&new_message);
@@ -367,6 +377,8 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
         server_guid: None,
         story_type: StoryType::None,
         body_ranges: None,
+
+        edit: None,
     };
 
     let message_inserted = storage.create_message(&new_message);
@@ -637,6 +649,8 @@ async fn test_recipient_actions() {
         server_guid: None,
         story_type: StoryType::None,
         body_ranges: None,
+
+        edit: None,
     };
 
     let msg = storage.create_message(&msg);

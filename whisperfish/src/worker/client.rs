@@ -637,6 +637,8 @@ impl ClientActor {
             story_type: StoryType::None,
             server_guid: metadata.server_guid,
             body_ranges,
+
+            edit: original_message,
         };
 
         let message = storage.create_message(&new_message);
@@ -1303,6 +1305,8 @@ impl Handler<QueueMessage> for ClientActor {
             story_type: StoryType::None,
             server_guid: None,
             body_ranges: None,
+
+            edit: None,
         });
 
         ctx.notify(SendMessage(msg.id));
@@ -1585,6 +1589,8 @@ impl Handler<EndSession> for ClientActor {
             story_type: StoryType::None,
             server_guid: None,
             body_ranges: None,
+
+            edit: None,
         });
         ctx.notify(SendMessage(msg.id));
     }
@@ -2162,6 +2168,8 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                                 story_type: StoryType::None,
                                 server_guid: None,
                                 body_ranges: None,
+
+                                edit: None,
                             };
                             storage.create_message(&msg);
 

@@ -132,6 +132,12 @@ pub struct Message {
     pub revision: i32,
 }
 
+impl Message {
+    pub fn original_message_id(&self) -> i32 {
+        self.original_message_id.unwrap_or(self.id)
+    }
+}
+
 impl Display for Message {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match (&self.text, &self.quote_id) {

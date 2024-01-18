@@ -115,6 +115,8 @@ pub struct NewMessage {
     pub expires_in: Option<std::time::Duration>,
     pub story_type: StoryType,
     pub body_ranges: Option<Vec<u8>>,
+
+    pub edit: Option<orm::Message>,
 }
 
 #[derive(Clone, Debug)]
@@ -2247,6 +2249,25 @@ impl Storage {
         let server_time = millis_to_naive_chrono(new_message.timestamp.timestamp_millis() as u64);
         tracing::trace!("Creating message for timestamp {}", server_time);
 
+        let edit_id = new_message.edit.as_ref().map(|x| x.id);
+
+        let computed_revision = if let Some(edit) = &new_message.edit {
+            // Compute revision number
+            use schema::messages::dsl::*;
+            messages
+                .select(diesel::dsl::max(revision_number))
+                .filter(
+                    id.eq(edit.original_message_id())
+                        .or(original_message_id.eq(edit.original_message_id())),
+                )
+                .first::<Option<i32>>(&mut *self.db())
+                .expect("revision number")
+                .map(|x: i32| x + 1)
+                .unwrap_or(0)
+        } else {
+            0
+        };
+
         let affected_rows = {
             use schema::messages::dsl::*;
             diesel::insert_into(messages)
@@ -2274,6 +2295,8 @@ impl Storage {
                     expires_in.eq(new_message.expires_in.map(|x| x.as_secs() as i32)),
                     story_type.eq(new_message.story_type as i32),
                     message_ranges.eq(&new_message.body_ranges),
+                    original_message_id.eq(edit_id),
+                    revision_number.eq(computed_revision),
                 ))
                 .execute(&mut *self.db())
                 .expect("inserting a message")
@@ -2292,6 +2315,31 @@ impl Storage {
         );
         self.observe_insert(schema::messages::table, latest_message.id)
             .with_relation(schema::sessions::table, session);
+
+        // Then we process the edit
+        if let Some(edit) = &new_message.edit {
+            tracing::trace!("Message was an edit, updating old messages");
+            let affected_rows = {
+                use schema::messages::dsl::*;
+                diesel::update(messages)
+                    .filter(
+                        id.eq(edit.original_message_id())
+                            .or(original_message_id.eq(edit.original_message_id())),
+                    )
+                    .set((
+                        // Set the original message id to the series of the edits
+                        original_message_id.eq(edit.original_message_id()),
+                        // Set the latest revision id to the new inserted message
+                        latest_revision_id.eq(latest_message.id),
+                    ))
+                    .execute(&mut *self.db())
+                    .expect("update edited messages")
+            };
+            assert!(
+                affected_rows >= 1,
+                "Did not update any message. Dazed and confused."
+            );
+        }
 
         // Mark the session as non-archived
         // TODO: Do this only when necessary
