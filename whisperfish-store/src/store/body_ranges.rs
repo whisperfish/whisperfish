@@ -106,11 +106,12 @@ pub fn to_vec(message_ranges: Option<&Vec<u8>>) -> Vec<WireBodyRange> {
 }
 
 fn escape(s: &str) -> std::borrow::Cow<'_, str> {
-    if s.contains('<') || s.contains('>') || s.contains('&') {
+    if s.contains('<') || s.contains('>') || s.contains('&') || s.contains('\n') {
         std::borrow::Cow::Owned(
             s.replace('&', "&amp;")
                 .replace('<', "&lt;")
-                .replace('>', "&gt;"),
+                .replace('>', "&gt;")
+                .replace('\n', "<br>"),
         )
     } else {
         std::borrow::Cow::Borrowed(s)
