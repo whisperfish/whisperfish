@@ -48,6 +48,7 @@ Label {
     property alias proxy: linkedTextProxy
     property bool bypassLinking: false
     property bool needsRichText: false
+    property bool hasSpoilers: false
     // XXX if needsRichText, add a style that sets the color for links to the text
 
     readonly property string maybeLinkedText: bypassLinking ? plainText : linkedTextProxy.text

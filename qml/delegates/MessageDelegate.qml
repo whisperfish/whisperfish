@@ -252,7 +252,8 @@ ListItem {
                             (isEmpty ? qsTrId("whisperfish-message-empty-note") :
                             (isExpanded ? _message : _message.substr(0, shortenThreshold) + (showExpand ? ' ...' : '')))
                 bypassLinking: true
-                needsRichText: model.hasStrikeThrough
+                needsRichText: model.hasStrikeThrough || model.hasSpoilers
+                hasSpoilers: model.hasSpoilers
                 font.italic: model.remoteDeleted
                 wrapMode: Text.Wrap
                 anchors { left: parent.left; right: parent.right }
