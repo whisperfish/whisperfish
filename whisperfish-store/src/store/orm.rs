@@ -950,6 +950,17 @@ impl AugmentedMessage {
         })
     }
 
+    pub fn has_spoilers(&self) -> bool {
+        self.body_ranges.iter().any(|r| {
+            r.associated_value
+                == Some(
+                    crate::store::protos::body_range_list::body_range::AssociatedValue::Style(
+                        crate::store::protos::body_range_list::body_range::Style::Spoiler as i32,
+                    ),
+                )
+        })
+    }
+
     pub fn has_mentions(&self) -> bool {
         self.body_ranges.iter().any(|r| {
             matches!(
@@ -961,6 +972,14 @@ impl AugmentedMessage {
                 )
             )
         })
+    }
+
+    pub fn revealed_tag(&self) -> String {
+        String::from(crate::body_ranges::SPOILER_TAG_CLICKED)
+    }
+
+    pub fn spoiler_tag(&self) -> String {
+        String::from(crate::body_ranges::SPOILER_TAG_UNCLICKED)
     }
 
     pub fn styled_message(&self) -> String {

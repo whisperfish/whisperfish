@@ -6,6 +6,10 @@ use libsignal_service::proto::{
 };
 use prost::Message;
 
+pub const SPOILER_TAG_UNCLICKED: &str =
+    "<span style='background-color: \"white\"; color: \"white\";'>";
+pub const SPOILER_TAG_CLICKED: &str = "<span>";
+
 pub fn deserialize(message_ranges: &[u8]) -> Vec<database_protos::body_range_list::BodyRange> {
     let message_ranges = database_protos::BodyRangeList::decode(message_ranges as &[u8])
         .expect("valid protobuf in database");
@@ -270,7 +274,6 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             let tags = [
                 (segment.bold, "b"),
                 (segment.italic, "i"),
-                (segment.spoiler, "spoiler"),
                 (segment.strikethrough, "s"),
                 (segment.monospace, "tt"),
             ];
@@ -296,6 +299,10 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
                 result.push_str("\">");
                 result.push_str(&contents);
                 result.push_str("</a>");
+            } else if segment.spoiler {
+                result.push_str(SPOILER_TAG_UNCLICKED);
+                result.push_str(&contents);
+                result.push_str("</span>");
             } else {
                 result.push_str(&contents);
             }
@@ -384,10 +391,10 @@ mod tests {
         let styled = to_styled(text, &ranges, no_mentions);
 
         let possibilities = [
-            "<spoiler>iiiiiiii</spoiler><spoiler><i>BBBB</i></spoiler><i>bbbb</i>",
-            "<spoiler>iiiiiiii</spoiler><i><spoiler>BBBB</spoiler></i><i>bbbb</i>",
-            "<spoiler>iiiiiiii<i>BBBB</i></spoiler><i>bbbb</i>",
-            "<spoiler>iiiiiiii</spoiler><i><spoiler>BBBB</spoiler>bbbb</i>",
+            "<span style='background-color: \"white\"; color: \"white\";'>iiiiiiii</span><span style='background-color: \"white\"; color: \"white\";'><i>BBBB</i></span><i>bbbb</i>",
+            "<span style='background-color: \"white\"; color: \"white\";'>iiiiiiii</span><i><span style='background-color: \"white\"; color: \"white\";'>BBBB</span></i><i>bbbb</i>",
+            "<span style='background-color: \"white\"; color: \"white\";'>iiiiiiii<i>BBBB</i></span><i>bbbb</i>",
+            "<span style='background-color: \"white\"; color: \"white\";'>iiiiiiii</span><i><span style='background-color: \"white\"; color: \"white\";'>BBBB</span>bbbb</i>",
         ];
 
         assert!(possibilities.contains(&(&styled as &str)), "{}", styled);

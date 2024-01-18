@@ -356,6 +356,9 @@ define_model_roles! {
         BodyRanges(fn body_ranges(&self) via body_ranges_qvariantlist): "bodyRanges",
 
         HasStrikeThrough(fn has_strike_through(&self)):       "hasStrikeThrough",
+        HasSpoilers(fn has_spoilers(&self)):                  "hasSpoilers",
+        SpoilerTag(fn spoiler_tag(&self) via QString::from):  "spoilerTag",
+        RevealedTag(fn revealed_tag(&self) via QString::from): "revealedTag",
     }
 }
 
