@@ -23,6 +23,8 @@ ListItem {
     property bool isPreviewRead: model.readCount > 0 // TODO investigate: not updated for new message (#151, #55?)
     property bool isPreviewViewed: model.viewCount > 0 // TODO investigate: not updated for new message (#151, #55?)
     property bool isPreviewSent: model.sent // TODO cf. isPreviewReceived (#151)
+    property bool hasSpoilers: model.hasSpoilers
+    property bool hasStrikeThrough: model.hasStrikeThrough
     property bool hasAttachment: model.hasAttachment
     property string name: model.isGroup ? model.groupName : getRecipientName(model.recipientE164, model.recipientName, true)
     property string emoji: model.recipientEmoji
@@ -48,7 +50,7 @@ ListItem {
             //% "this message was deleted"
             ? qsTrId("whisperfish-message-deleted-note")
             : (model.message !== undefined
-                ? model.message
+                ? (hasSpoilers || hasStrikeThrough ? model.styledMessage : model.message)
                 : ''
             )
         )
@@ -239,14 +241,17 @@ ListItem {
             color: highlighted ? Theme.secondaryHighlightColor :
                                  Theme.secondaryColor
             font.pixelSize: Theme.fontSizeExtraSmall
+            font.italic: model.remoteDeleted
             plainText: hasDraft ?
                       //: Message preview for a saved, unsent message
                       //% "Draft: %1"
                       qsTrId("whisperfish-message-preview-draft").arg(draft) :
                       message
+            bypassLinking: true
+            needsRichText: delegate.hasStrikeThrough || delegate.hasSpoilers
+            hasSpoilers: delegate.hasSpoilers // Set to 'false' when text is clicked
             highlighted: _labelsHighlighted
             verticalAlignment: Text.AlignTop
-            font.italic: model.remoteDeleted
         }
 
         Row {
