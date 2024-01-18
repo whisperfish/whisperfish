@@ -10,14 +10,14 @@ description = "Private messaging using Signal for SailfishOS -- library."
 [dependencies]
 actix = "0.13"
 rand = "0.8"
-uuid = { version = "1.5", features=["v4"] }
+uuid = { version = "1.5", features = ["v4"] }
 mime = "0.3.17"
 mime_guess = "2.0"
 mime_classifier = "0.0.1"
 chrono = "0.4"
-tokio = { version = "1.26.0", features=["tracing"] }
+tokio = { version = "1.26.0", features = ["tracing"] }
 tracing = "0.1"
-tracing-futures = { version = "0.2", features = ["futures-03"]}
+tracing-futures = { version = "0.2", features = ["futures-03"] }
 tracing-subscriber = "0.3"
 futures = "0.3"
 fs2 = "0.4.3"
@@ -25,8 +25,12 @@ fs2 = "0.4.3"
 blurhash = { git = "https://github.com/whisperfish/blurhash-rs.git", branch = "main" }
 percent-encoding = "2.2"
 
-libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features=["unsend-futures"] }
-libsignal-service-hyper = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features=["unsend-futures"] }
+libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features = [
+    "unsend-futures",
+] }
+libsignal-service-hyper = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features = [
+    "unsend-futures",
+] }
 
 libsignal-protocol = { git = "https://github.com/signalapp/libsignal", tag = "v0.32.0" }
 zkgroup = { git = "https://github.com/signalapp/libsignal", tag = "v0.32.0" }
@@ -42,7 +46,7 @@ qttypes = "0.2.9"
 qmetaobject = { version = "0.2.9" }
 qmeta-async = { git = "https://gitlab.com/rubdos/qmeta-async.git" }
 time = "0.3.30"
-scrypt = { version = "0.11.0", default-features = false, features=["std"] }
+scrypt = { version = "0.11.0", default-features = false, features = ["std"] }
 
 getrandom = "0.2"
 
@@ -54,13 +58,13 @@ hex = "0.4"
 phonenumber = "0.3.1"
 itertools = "0.11"
 qrencode = "0.14"
-image = { version = "0.24", default-features = false, features=["png"] }
+image = { version = "0.24", default-features = false, features = ["png"] }
 
 diesel = { version = "2.0", features = ["sqlite", "chrono"] }
 diesel_migrations = "2.0"
 libsqlite3-sys = { version = "0.27", features = ["sqlcipher"] }
 
-serde = {version = "1.0", features = ["derive"]}
+serde = { version = "1.0", features = ["derive"] }
 
 serde_yaml = "0.9"
 
@@ -88,8 +92,19 @@ rstest = "0.18"
 rstest_reuse = "0.6.0"
 
 [features]
-bundled-sqlcipher = ["libsqlite3-sys/bundled-sqlcipher", "whisperfish-store/bundled-sqlcipher"]
-sailfish = ["bundled-sqlcipher", "bundled-openssl", "sailors", "whisperfish-store/sailfish"]
+bundled-sqlcipher = [
+    "libsqlite3-sys/bundled-sqlcipher",
+    "whisperfish-store/bundled-sqlcipher",
+]
+sailfish = [
+    "bundled-sqlcipher",
+    "bundled-openssl",
+    "sailors",
+    "whisperfish-store/sailfish",
+]
 harbour = ["sailfish"]
 
-bundled-openssl = ["libsqlite3-sys/bundled-sqlcipher-vendored-openssl", "whisperfish-store/bundled-openssl"]
+bundled-openssl = [
+    "libsqlite3-sys/bundled-sqlcipher-vendored-openssl",
+    "whisperfish-store/bundled-openssl",
+]

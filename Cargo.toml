@@ -6,7 +6,7 @@ members = [
     "harbour-whisperfish",
     "whisperfish",
     "whisperfish-store",
-    "whisperfish-migration-dry-run"
+    "whisperfish-migration-dry-run",
 ]
 
 [patch.crates-io]
