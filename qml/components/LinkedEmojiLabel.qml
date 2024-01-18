@@ -128,4 +128,14 @@ Label {
                             root.maximumLineCount)
                       : 0
     }
+
+    // XXX Label does not support inline JavaScript, so we have to use a MouseArea
+    MouseArea {
+        anchors.fill: parent
+        enabled: root.hasSpoilers
+        onClicked: {
+            messageLabel.plainText = root.plainText.replace(modelData.spoilerTag, modelData.revealedTag)
+            root.hasSpoilers = false
+        }
+    }
 }

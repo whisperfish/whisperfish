@@ -253,7 +253,7 @@ ListItem {
                             (isExpanded ? _message : _message.substr(0, shortenThreshold) + (showExpand ? ' ...' : '')))
                 bypassLinking: true
                 needsRichText: model.hasStrikeThrough || model.hasSpoilers
-                hasSpoilers: model.hasSpoilers
+                hasSpoilers: model.hasSpoilers // Set to 'false' when text is clicked
                 font.italic: model.remoteDeleted
                 wrapMode: Text.Wrap
                 anchors { left: parent.left; right: parent.right }

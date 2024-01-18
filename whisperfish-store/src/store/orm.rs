@@ -974,6 +974,14 @@ impl AugmentedMessage {
         })
     }
 
+    pub fn revealed_tag(&self) -> String {
+        String::from(crate::body_ranges::SPOILER_TAG_CLICKED)
+    }
+
+    pub fn spoiler_tag(&self) -> String {
+        String::from(crate::body_ranges::SPOILER_TAG_UNCLICKED)
+    }
+
     pub fn styled_message(&self) -> String {
         crate::store::body_ranges::to_styled(
             self.inner.text.as_deref().unwrap_or_default(),
