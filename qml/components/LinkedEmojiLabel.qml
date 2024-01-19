@@ -132,11 +132,12 @@ Label {
     }
 
     // XXX Label does not support inline JavaScript, so we have to use a MouseArea
+    // Note: Only usable inside a ListView (modelData must be available)
     MouseArea {
         anchors.fill: parent
-        enabled: root.hasSpoilers
+        enabled: root.hasSpoilers && modelData !== undefined
         onClicked: {
-            messageLabel.plainText = root.plainText.replace(modelData.spoilerTag, modelData.revealedTag)
+            root.plainText = root.plainText.replace(modelData.spoilerTag, modelData.revealedTag)
             root.hasSpoilers = false
         }
     }
