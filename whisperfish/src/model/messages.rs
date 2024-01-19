@@ -359,6 +359,9 @@ define_model_roles! {
         HasSpoilers(fn has_spoilers(&self)):                  "hasSpoilers",
         SpoilerTag(fn spoiler_tag(&self) via QString::from):  "spoilerTag",
         RevealedTag(fn revealed_tag(&self) via QString::from): "revealedTag",
+
+        IsLatestRevision(fn is_latest_revision(&self)):       "isLatestRevision",
+        IsEdited(fn is_edited(&self)):                        "isEdited",
     }
 }
 
