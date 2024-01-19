@@ -452,22 +452,26 @@ impl MessageListModel {
                 |message| std::cmp::Reverse((message.server_timestamp, message.id)),
             );
             match pos {
+                Ok(existing_index) if !message.is_latest_revision() => {
+                    // Update, but message is not the latest revision. Remove it.
+                    tracing::debug!("Handling message edit. Removing edited message from view.");
+                    self.begin_remove_rows(existing_index as i32, existing_index as i32);
+                    self.messages.remove(existing_index);
+                    self.end_remove_rows();
+                }
                 Ok(existing_index) => {
-                    if message.original_message_id() != message.id {
-                        tracing::debug!(
-                            "Handling message edit. Removing edited message from view."
-                        );
-                        self.begin_remove_rows(existing_index as i32, existing_index as i32);
-                        self.messages.remove(existing_index);
-                        self.end_remove_rows();
-                    } else {
-                        tracing::debug!("Handling update event.");
-                        self.messages[existing_index] = message;
-                        let idx = self.row_index(existing_index as i32);
-                        self.data_changed(idx, idx);
-                    }
+                    // Update, and message is the latest revision. Update it.
+                    tracing::debug!("Handling update event.");
+                    self.messages[existing_index] = message;
+                    let idx = self.row_index(existing_index as i32);
+                    self.data_changed(idx, idx);
+                }
+                Err(_insertion_index) if !message.is_latest_revision() => {
+                    // Don't insert old revisions.
+                    tracing::debug!("Handling message edit for an old edit, no-op.");
                 }
                 Err(insertion_index) => {
+                    // Insert the message, because it's the latest revision.
                     tracing::debug!("Handling insertion event");
                     self.begin_insert_rows(insertion_index as i32, insertion_index as i32);
                     self.messages.insert(insertion_index, message);

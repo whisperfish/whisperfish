@@ -2319,7 +2319,7 @@ impl Storage {
         // Then we process the edit
         if let Some(edit) = &new_message.edit {
             tracing::trace!("Message was an edit, updating old messages");
-            let affected_rows = {
+            let ids: Vec<i32> = {
                 use schema::messages::dsl::*;
                 diesel::update(messages)
                     .filter(
@@ -2332,13 +2332,19 @@ impl Storage {
                         // Set the latest revision id to the new inserted message
                         latest_revision_id.eq(latest_message.id),
                     ))
-                    .execute(&mut *self.db())
+                    .returning(id)
+                    .load(&mut *self.db())
                     .expect("update edited messages")
             };
+            let affected_rows = ids.len();
             assert!(
                 affected_rows >= 1,
                 "Did not update any message. Dazed and confused."
             );
+            for id in ids {
+                self.observe_update(schema::messages::table, id)
+                    .with_relation(schema::sessions::table, session);
+            }
         }
 
         // Mark the session as non-archived
