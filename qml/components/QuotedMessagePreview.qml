@@ -17,6 +17,9 @@ BackgroundItem {
     property alias horizontalAlignment: textLabel.horizontalAlignment
     property alias backgroundItem: bgRect
 
+    property bool _hasSpoilers: quotedMessage.messageId > -1 ? quotedMessage.hasSpoilers : false
+    property bool _hasStrikeThrough: quotedMessage.messageId > -1 ? quotedMessage.hasStrikeThrough : false
+
     readonly property bool shown: (quotedMessage.valid && visible)
     readonly property bool hasAttachments: quotedMessage.thumbsAttachmentsCount > 0
 
@@ -117,28 +120,48 @@ BackgroundItem {
             enableBackground: false
         }
 
-        LinkedEmojiLabel {
-            id: textLabel
+        // Extra Item required for Column containing LinkedEmojiLabel <- OpacityRampEffect
+        Item {
             anchors { left: parent.left; right: parent.right }
-            verticalAlignment: Text.AlignTop
-            horizontalAlignment: Text.AlignLeft
-            plainText: (quotedMessage.valid && quotedMessage.message.trim() !== '') ?
-                           quotedMessage.message :
-                           ((quotedMessage.valid && quotedMessage.attachments.length > 0) ?
+            height: textLabel.height
+            LinkedEmojiLabel {
+                id: textLabel
+                enabled: false
+                anchors { left: parent.left; right: parent.right }
+                height: Math.min(implicitHeight, Theme.itemSizeMedium)
+                verticalAlignment: Text.AlignTop
+                horizontalAlignment: Text.AlignLeft
+                plainText: (quotedMessage.valid && quotedMessage.message.trim() !== '')
+                            ? ((needsRichText ? cssStyle : '') + quotedMessage.styledMessage)
+                            : (
+                                (quotedMessage.valid && quotedMessage.attachments.length > 0)
                                 //: Placeholder text if quoted message preview contains no text, only attachments
                                 //% "Attachment"
-                                qsTrId("whisperfish-quoted-message-preview-attachment") :
-                                '')
-            maximumLineCount: 2
-            // height: maximumLineCount*font.pixelSize
-            // enableElide: Text.ElideRight -- no elide to enable dynamic height
-            font.pixelSize: Theme.fontSizeExtraSmall
-            emojiSizeMult: 1.2
-            color: root.highlighted ? Theme.secondaryHighlightColor :
-                                      Theme.secondaryColor
-            linkColor: color
-            defaultLinkActions: false
-            onLinkActivated: root.clicked(null)
+                                ? qsTrId("whisperfish-quoted-message-preview-attachment")
+                                : ''
+                            )
+
+                clip: true
+                bypassLinking: true
+                needsRichText: _hasSpoilers || _hasStrikeThrough
+                hasSpoilers: _hasSpoilers
+
+                font.pixelSize: Theme.fontSizeExtraSmall
+                emojiSizeMult: 1.2
+                color: root.highlighted ? Theme.secondaryHighlightColor :
+                                        Theme.secondaryColor
+                linkColor: color
+                defaultLinkActions: false
+                onLinkActivated: root.clicked(null)
+            }
+
+            OpacityRampEffect {
+                offset: 0.8
+                slope: 5
+                sourceItem: textLabel
+                enabled: textLabel.contentHeight > textLabel.height
+                direction: OpacityRamp.TopToBottom
+            }
         }
     }
 
