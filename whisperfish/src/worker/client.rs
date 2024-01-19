@@ -638,7 +638,7 @@ impl ClientActor {
             server_guid: metadata.server_guid,
             body_ranges,
 
-            edit: original_message,
+            edit: original_message.as_ref(),
         };
 
         let message = storage.create_message(&new_message);

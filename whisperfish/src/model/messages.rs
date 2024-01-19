@@ -410,7 +410,7 @@ impl MessageListModel {
     fn load_all(&mut self, storage: Storage, id: i32) {
         self.begin_reset_model();
         self.messages = storage
-            .fetch_all_messages_augmented(id)
+            .fetch_all_messages_augmented(id, true)
             .into_iter()
             .map(Into::into)
             .collect();

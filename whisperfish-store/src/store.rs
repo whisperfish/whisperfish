@@ -95,7 +95,7 @@ pub struct Message {
 
 /// ID-free Message model for insertions
 #[derive(Clone, Debug)]
-pub struct NewMessage {
+pub struct NewMessage<'a> {
     pub session_id: i32,
     pub source_e164: Option<PhoneNumber>,
     pub source_uuid: Option<Uuid>,
@@ -116,7 +116,7 @@ pub struct NewMessage {
     pub story_type: StoryType,
     pub body_ranges: Option<Vec<u8>>,
 
-    pub edit: Option<orm::Message>,
+    pub edit: Option<&'a orm::Message>,
 }
 
 #[derive(Clone, Debug)]
@@ -2429,7 +2429,7 @@ impl Storage {
 
     /// Returns a vector of messages for a specific session, ordered by server timestamp.
     #[tracing::instrument(skip(self))]
-    pub fn fetch_all_messages(&self, session_id: i32) -> Vec<orm::Message> {
+    pub fn fetch_all_messages(&self, session_id: i32, only_most_recent: bool) -> Vec<orm::Message> {
         schema::messages::table
             .filter(schema::messages::session_id.eq(session_id))
             .order_by(schema::messages::columns::server_timestamp.desc())
@@ -2547,12 +2547,16 @@ impl Storage {
     /// When the sender is None, it is a sent message, not a received message.
     // XXX maybe this should be `Option<Vec<...>>`.
     #[tracing::instrument(skip(self))]
-    pub fn fetch_all_messages_augmented(&self, sid: i32) -> Vec<orm::AugmentedMessage> {
+    pub fn fetch_all_messages_augmented(
+        &self,
+        sid: i32,
+        only_most_recent: bool,
+    ) -> Vec<orm::AugmentedMessage> {
         // XXX double/aliased-join would be very useful.
         // Our strategy is to fetch as much as possible, and to augment with as few additional
         // queries as possible. We chose to not join `sender`, and instead use a loop for that
         // part.
-        let messages = self.fetch_all_messages(sid);
+        let messages = self.fetch_all_messages(sid, only_most_recent);
 
         let order = (
             schema::messages::columns::server_timestamp.desc(),
