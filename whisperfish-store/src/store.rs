@@ -2430,11 +2430,23 @@ impl Storage {
     /// Returns a vector of messages for a specific session, ordered by server timestamp.
     #[tracing::instrument(skip(self))]
     pub fn fetch_all_messages(&self, session_id: i32, only_most_recent: bool) -> Vec<orm::Message> {
-        schema::messages::table
-            .filter(schema::messages::session_id.eq(session_id))
-            .order_by(schema::messages::columns::server_timestamp.desc())
-            .load(&mut *self.db())
-            .expect("database")
+        if only_most_recent {
+            schema::messages::table
+                .filter(schema::messages::session_id.eq(session_id).and(
+                    schema::messages::latest_revision_id.is_null().or(
+                        schema::messages::latest_revision_id.eq(schema::messages::id.nullable()),
+                    ),
+                ))
+                .order_by(schema::messages::columns::server_timestamp.desc())
+                .load(&mut *self.db())
+                .expect("database")
+        } else {
+            schema::messages::table
+                .filter(schema::messages::session_id.eq(session_id))
+                .order_by(schema::messages::columns::server_timestamp.desc())
+                .load(&mut *self.db())
+                .expect("database")
+        }
     }
 
     /// Return the amount of messages in the database
