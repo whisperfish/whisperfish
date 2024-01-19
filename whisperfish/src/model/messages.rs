@@ -450,10 +450,19 @@ impl MessageListModel {
             );
             match pos {
                 Ok(existing_index) => {
-                    tracing::debug!("Handling update event.");
-                    self.messages[existing_index] = message;
-                    let idx = self.row_index(existing_index as i32);
-                    self.data_changed(idx, idx);
+                    if message.original_message_id() != message.id {
+                        tracing::debug!(
+                            "Handling message edit. Removing edited message from view."
+                        );
+                        self.begin_remove_rows(existing_index as i32, existing_index as i32);
+                        self.messages.remove(existing_index);
+                        self.end_remove_rows();
+                    } else {
+                        tracing::debug!("Handling update event.");
+                        self.messages[existing_index] = message;
+                        let idx = self.row_index(existing_index as i32);
+                        self.data_changed(idx, idx);
+                    }
                 }
                 Err(insertion_index) => {
                     tracing::debug!("Handling insertion event");
