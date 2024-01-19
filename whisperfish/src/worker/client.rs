@@ -566,8 +566,15 @@ impl ClientActor {
         };
 
         let original_message = edit.and_then(|ts| storage.fetch_message_by_timestamp(ts));
-        if edit.is_some() && original_message.is_none() {
-            tracing::warn!("Received an edit for a message that does not exist. Inserting as is and praying.  This is most probably a bug regarding out-of-order delivery.");
+        // Some sanity checks
+        if edit.is_some() {
+            if let Some(original_message) = original_message.as_ref() {
+                if original_message.sender_recipient_id != sender_recipient.as_ref().map(|x| x.id) {
+                    tracing::warn!("Received an edit for a message that was not sent by the same sender. Continuing, but this is weird.");
+                }
+            } else {
+                tracing::warn!("Received an edit for a message that does not exist. Inserting as is and praying.  This is most probably a bug regarding out-of-order delivery.");
+            }
         }
 
         let group = if let Some(group) = msg.group_v2.as_ref() {
