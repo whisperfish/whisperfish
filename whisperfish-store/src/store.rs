@@ -1506,23 +1506,17 @@ impl Storage {
 
     /// Handle marking message as read and potentially starting the expiry timer.
     #[tracing::instrument(skip(self))]
-    pub fn mark_message_read_in_ui(
-        &self,
-        message_id: i32,
-    ) -> Option<(orm::Session, orm::Message)> {
+    pub fn mark_message_read_in_ui(&self, message_id: i32) -> Option<(orm::Session, orm::Message)> {
         use schema::messages::dsl::*;
-        diesel::update(messages)
+        let mut message: Vec<orm::Message> = diesel::update(messages)
             .filter(id.eq(message_id))
             .set(is_read.eq(true))
-            .execute(&mut *self.db())
+            .returning(schema::messages::all_columns)
+            .load(&mut *self.db())
             .unwrap();
+        assert!(message.len() <= 1, "message id is unique");
+        let message = message.pop();
 
-        let message: Option<orm::Message> = messages
-            .filter(id.eq(message_id))
-            .first(&mut *self.db())
-            .ok();
-
-        // XXX This should trigger expiry timer
         diesel::update(
             schema::messages::table.filter(
                 schema::messages::id
