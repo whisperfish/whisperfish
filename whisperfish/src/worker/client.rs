@@ -397,6 +397,7 @@ impl ClientActor {
     ///
     /// TODO: consider putting this as an actor `Handle<>` implementation instead.
     #[tracing::instrument(level = "debug", skip(self, ctx, msg, sync_sent, metadata))]
+    #[allow(clippy::too_many_arguments)]
     pub fn handle_message(
         &mut self,
         ctx: &mut <Self as Actor>::Context,
@@ -406,6 +407,7 @@ impl ClientActor {
         msg: &DataMessage,
         sync_sent: Option<Sent>,
         metadata: &Metadata,
+        edit: Option<NaiveDateTime>,
     ) -> Option<i32> {
         let timestamp = metadata.timestamp;
         let settings = crate::config::SettingsBridge::default();
@@ -563,6 +565,18 @@ impl ClientActor {
             metadata.unidentified_sender
         };
 
+        let original_message = edit.and_then(|ts| storage.fetch_message_by_timestamp(ts));
+        // Some sanity checks
+        if edit.is_some() {
+            if let Some(original_message) = original_message.as_ref() {
+                if original_message.sender_recipient_id != sender_recipient.as_ref().map(|x| x.id) {
+                    tracing::warn!("Received an edit for a message that was not sent by the same sender. Continuing, but this is weird.");
+                }
+            } else {
+                tracing::warn!("Received an edit for a message that does not exist. Inserting as is and praying.  This is most probably a bug regarding out-of-order delivery.");
+            }
+        }
+
         let group = if let Some(group) = msg.group_v2.as_ref() {
             let mut key_stack = [0u8; zkgroup::GROUP_MASTER_KEY_LEN];
             key_stack.clone_from_slice(group.master_key.as_ref().expect("group message with key"));
@@ -630,6 +644,8 @@ impl ClientActor {
             story_type: StoryType::None,
             server_guid: metadata.server_guid,
             body_ranges,
+
+            edit: original_message.as_ref(),
         };
 
         let message = storage.create_message(&new_message);
@@ -783,6 +799,18 @@ impl ClientActor {
         }
     }
 
+    #[tracing::instrument(level = "debug", skip(self))]
+    fn handle_message_not_sealed(&mut self, recipient: ServiceAddress) {
+        // TODO: if the contact should have our profile key already, send it again.
+        //       if the contact should not yet have our profile key, this is ok, and we
+        //       should offer the user a message request.
+        //       Cfr. MessageContentProcessor, grep for handleNeedsDeliveryReceipt.
+        tracing::warn!(
+            "Received an unsealed message from {:?}. Assert that they have our profile key.",
+            recipient
+        );
+    }
+
     #[tracing::instrument(level = "debug", skip(self, ctx, metadata))]
     fn process_envelope(
         &mut self,
@@ -798,18 +826,45 @@ impl ClientActor {
             ContentBody::DataMessage(message) => {
                 let uuid = metadata.sender.uuid;
                 let message_id =
-                    self.handle_message(ctx, None, Some(uuid), &message, None, &metadata);
+                    self.handle_message(ctx, None, Some(uuid), &message, None, &metadata, None);
                 if metadata.needs_receipt {
                     if let Some(_message_id) = message_id {
                         self.handle_needs_delivery_receipt(ctx, &message, &metadata);
                     }
                 }
+
+                // XXX Maybe move this if test (and the one for edit) into handle_message?
                 if !metadata.unidentified_sender && message_id.is_some() {
-                    // TODO: if the contact should have our profile key already, send it again.
-                    //       if the contact should not yet have our profile key, this is ok, and we
-                    //       should offer the user a message request.
-                    //       Cfr. MessageContentProcessor, grep for handleNeedsDeliveryReceipt.
-                    tracing::warn!("Received an unsealed message from {:?}. Assert that they have our profile key.", metadata.sender);
+                    self.handle_message_not_sealed(metadata.sender);
+                }
+            }
+            ContentBody::EditMessage(edit) => {
+                let message = edit
+                    .data_message
+                    .as_ref()
+                    .expect("edit message contains data");
+                let uuid = metadata.sender.uuid;
+                let message_id = self.handle_message(
+                    ctx,
+                    None,
+                    Some(uuid),
+                    message,
+                    None,
+                    &metadata,
+                    Some(millis_to_naive_chrono(
+                        edit.target_sent_timestamp
+                            .expect("edit message contains timestamp"),
+                    )),
+                );
+
+                if metadata.needs_receipt {
+                    if let Some(_message_id) = message_id {
+                        self.handle_needs_delivery_receipt(ctx, message, &metadata);
+                    }
+                }
+
+                if !metadata.unidentified_sender && message_id.is_some() {
+                    self.handle_message_not_sealed(metadata.sender);
                 }
             }
             ContentBody::SynchronizeMessage(message) => {
@@ -818,28 +873,28 @@ impl ClientActor {
                     handled = true;
                     tracing::trace!("Sync sent message");
                     // These are messages sent through a paired device.
+                    let uuid = sent
+                        .destination_service_id
+                        .as_deref()
+                        .map(Uuid::parse_str)
+                        .transpose()
+                        .map_err(|_| {
+                            tracing::warn!("Unparsable UUID {}", sent.destination_service_id())
+                        })
+                        .ok()
+                        .flatten();
+                    let phonenumber = sent
+                        .destination_e164
+                        .as_deref()
+                        .map(|s| phonenumber::parse(None, s))
+                        .transpose()
+                        .map_err(|_| {
+                            tracing::warn!("Unparsable phonenumber {}", sent.destination_e164())
+                        })
+                        .ok()
+                        .flatten();
 
                     if let Some(message) = &sent.message {
-                        let uuid = sent
-                            .destination_service_id
-                            .as_deref()
-                            .map(Uuid::parse_str)
-                            .transpose()
-                            .map_err(|_| {
-                                tracing::warn!("Unparsable UUID {}", sent.destination_service_id())
-                            })
-                            .ok()
-                            .flatten();
-                        let phonenumber = sent
-                            .destination_e164
-                            .as_deref()
-                            .map(|s| phonenumber::parse(None, s))
-                            .transpose()
-                            .map_err(|_| {
-                                tracing::warn!("Unparsable phonenumber {}", sent.destination_e164())
-                            })
-                            .ok()
-                            .flatten();
                         self.handle_message(
                             ctx,
                             // Empty string mainly when groups,
@@ -849,6 +904,22 @@ impl ClientActor {
                             message,
                             Some(sent.clone()),
                             &metadata,
+                            None,
+                        );
+                    } else if let Some(edit) = &sent.edit_message {
+                        let message = edit.data_message.as_ref().expect("edit message");
+                        let edit = edit.target_sent_timestamp.expect("edit timestamp");
+
+                        self.handle_message(
+                            ctx,
+                            // Empty string mainly when groups,
+                            // but maybe needs a check. TODO
+                            phonenumber,
+                            uuid,
+                            message,
+                            Some(sent.clone()),
+                            &metadata,
+                            Some(millis_to_naive_chrono(edit)),
                         );
                     } else {
                         tracing::warn!(
@@ -1241,6 +1312,8 @@ impl Handler<QueueMessage> for ClientActor {
             story_type: StoryType::None,
             server_guid: None,
             body_ranges: None,
+
+            edit: None,
         });
 
         ctx.notify(SendMessage(msg.id));
@@ -1523,6 +1596,8 @@ impl Handler<EndSession> for ClientActor {
             story_type: StoryType::None,
             server_guid: None,
             body_ranges: None,
+
+            edit: None,
         });
         ctx.notify(SendMessage(msg.id));
     }
@@ -2100,6 +2175,8 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                                 story_type: StoryType::None,
                                 server_guid: None,
                                 body_ranges: None,
+
+                                edit: None,
                             };
                             storage.create_message(&msg);
 

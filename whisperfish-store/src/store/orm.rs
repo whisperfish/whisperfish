@@ -126,6 +126,32 @@ pub struct Message {
     pub server_guid: Option<Uuid>,
 
     pub message_ranges: Option<Vec<u8>>,
+
+    pub latest_revision_id: Option<i32>,
+    pub original_message_id: Option<i32>,
+    pub revision: i32,
+}
+
+impl Message {
+    pub fn original_message_id(&self) -> i32 {
+        self.original_message_id.unwrap_or(self.id)
+    }
+
+    pub fn latest_revision_id(&self) -> i32 {
+        self.latest_revision_id.unwrap_or(self.id)
+    }
+
+    pub fn is_latest_revision(&self) -> bool {
+        self.id == self.latest_revision_id()
+    }
+
+    pub fn is_original_message(&self) -> bool {
+        self.id == self.original_message_id()
+    }
+
+    pub fn is_edited(&self) -> bool {
+        !self.is_latest_revision() && !self.is_original_message()
+    }
 }
 
 impl Display for Message {
@@ -184,6 +210,10 @@ impl Default for Message {
             story_type: StoryType::None,
             server_guid: Default::default(),
             message_ranges: None,
+
+            original_message_id: None,
+            latest_revision_id: None,
+            revision: 0,
         }
     }
 }
