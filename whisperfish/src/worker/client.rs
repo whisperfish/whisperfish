@@ -203,6 +203,8 @@ pub struct ClientWorker {
     upload_profile: qt_method!(
         fn(&self, given_name: String, family_name: String, about: String, emoji: String)
     ),
+
+    mark_message_read: qt_method!(fn(&self, message_id: i32)),
 }
 
 /// ClientActor keeps track of the connection state.
@@ -2551,6 +2553,22 @@ impl ClientWorker {
     }
 
     #[with_executor]
+    pub fn mark_message_read(
+        &self,
+        message_id: i32,
+    ) {
+        let actor = self.actor.clone().unwrap();
+        actix::spawn(async move {
+            if let Err(e) = actor
+                .send(MarkMessageRead { message_id })
+                .await
+            {
+                tracing::error!("{:?}", e);
+            }
+        });
+    }
+
+    #[with_executor]
     pub fn submit_proof_captcha(&self, token: String, response: String) {
         let actor = self.actor.clone().unwrap();
         let schema = "signalcaptcha://";
@@ -2595,6 +2613,26 @@ impl Handler<CompactDb> for ClientActor {
         tracing::trace!("handle(CompactDb)");
         let store = self.storage.clone().unwrap();
         store.compact_db()
+    }
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct MarkMessageRead {
+    pub message_id: i32,
+}
+
+impl Handler<MarkMessageRead> for ClientActor {
+    type Result = ResponseFuture<()>;
+
+    fn handle(&mut self, msg: MarkMessageRead, _ctx: &mut Self::Context) -> Self::Result {
+        let storage = self.storage.clone().unwrap();
+        Box::pin(
+            async move {
+            storage.mark_message_read_in_ui(msg.message_id);
+            }
+            .instrument(tracing::debug_span!("mark message read")),
+        )
     }
 }
 

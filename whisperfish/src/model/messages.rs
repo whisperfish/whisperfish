@@ -336,7 +336,8 @@ define_model_roles! {
         SenderRecipientId(sender_recipient_id via qvariant_from_option): "senderRecipientId",
 
         Delivered(fn delivered(&self)):                       "delivered",
-        Read(fn read(&self)):                                 "read",
+        Read(fn read(&self)):                                 "read", // How many recipient have received the message
+        IsRead(is_read):                                      "isRead", // Is the message unread or read by self
         Viewed(fn viewed(&self)):                             "viewed",
 
         Sent(fn sent(&self)):                                 "sent",

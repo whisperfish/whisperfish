@@ -247,6 +247,8 @@ SilicaListView {
         id: wrapper
         property string newerSection: ListView.previousSection
         property string olderSection: ListView.nextSection
+        property int messageId: -1
+        property bool messageRead: true
         property bool atSectionBoundary: {
             // Section strings are ISO formatted timestamps.
             // E.g. '2021-02-07T22:00:01'
@@ -322,6 +324,10 @@ SilicaListView {
                     if (isSelecting && !selectionBlocked) {
                         itemSelectionToggled(model)
                     }
+                }
+                onModelDataChanged: {
+                    wrapper.messageId = modelData.id !== undefined ? modelData.id : -1
+                    wrapper.messageRead = modelData.isRead !== undefined ? modelData.isRead : true
                 }
             }
         }

@@ -40,8 +40,8 @@ Page {
     onStatusChanged: {
         if (status == PageStatus.Active) {
             // XXX this should be a call into the client/application state/...
-            SessionModel.markRead(sessionId)
-            mainWindow.clearNotifications(sessionId)
+            //SessionModel.markRead(sessionId)
+            //mainWindow.clearNotifications(sessionId)
 
             var nextPage = pageStack.nextPage()
             var nextPageName = nextPage ? nextPage.objectName : ''
@@ -60,8 +60,9 @@ Page {
         onStateChanged: {
             if ((Qt.application.state === Qt.ApplicationActive) && (status === PageStatus.Active)) {
                 // XXX this should be a call into the client/application state/...
-                SessionModel.markRead(sessionId)
-                mainWindow.clearNotifications(sessionId)
+                //SessionModel.markRead(sessionId)
+                //mainWindow.clearNotifications(sessionId)
+                unreadMessageChecker.running = true
             }
         }
     }
@@ -163,6 +164,53 @@ Page {
         }
         onShouldShowDeleteAll: {
             _showDeleteAll = showDeleteAll
+        }
+
+        onMovementStarted: {
+            unreadMessageChecker.stillMoving = true
+            unreadMessageChecker.running = true
+        }
+
+        onMovementEnded: {
+            unreadMessageChecker.stillMoving = false
+            unreadMessageChecker.running = true
+        }
+
+        Component.onCompleted: unreadMessageChecker.running = true
+
+        Timer {
+            id: unreadMessageChecker
+            property int counter: 1
+            property bool stillMoving: false
+            running: false
+            interval: 200
+            repeat: true
+            onTriggered: {
+                if (!stillMoving) {
+                    counter--
+                    if (counter == 0) {
+                        running = false
+                        counter = 1
+                    }
+                }
+                var unreadMessages = {}
+                var leftX = Theme.itemSizeMedium
+                var rightX = messages.width - Theme.itemSizeMedium
+                for (var Y = 0; Y < height; Y += Theme.itemSizeMedium) {
+                    var item = messages.itemAt(leftX, messages.contentY + Y)
+                    if (item == null) {
+                        item = messages.itemAt(rightX, messages.contentY + Y)
+                    }
+                    if (item && !item.messageRead && unreadMessages[item.messageId] === undefined) {
+                        unreadMessages[item.messageId] = true
+                    }
+                }
+                // XXX mark_messages_read()..?
+                for (var messageId in unreadMessages) {
+                    console.log("Mark message", messageId, "as read")
+                    ClientWorker.mark_message_read(messageId)
+                }
+            }
         }
     }
 

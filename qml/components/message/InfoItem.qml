@@ -66,12 +66,6 @@ Row {
                 expirationIcon.requestPaint()
             }
         }
-
-        Component.onCompleted: {
-            if (modelData.expiresIn > 0 && modelData.expiryStarted == null)  {
-                ClientWorker.startMessageExpiry(modelData.id)
-            }
-        }
     }
 
     HighlightImage {

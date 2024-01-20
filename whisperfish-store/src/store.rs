@@ -1495,6 +1495,51 @@ impl Storage {
         }
     }
 
+    /// Handle marking message as read and potentially starting the expiry timer.
+    #[tracing::instrument(skip(self))]
+    pub fn mark_message_read_in_ui(
+        &self,
+        message_id: i32,
+    ) -> Option<(orm::Session, orm::Message)> {
+        use schema::messages::dsl::*;
+        diesel::update(messages)
+            .filter(id.eq(message_id))
+            .set(is_read.eq(true))
+            .execute(&mut *self.db())
+            .unwrap();
+
+        let message: Option<orm::Message> = messages
+            .filter(id.eq(message_id))
+            .first(&mut *self.db())
+            .ok();
+
+        // XXX This should trigger expiry timer
+        diesel::update(
+            schema::messages::table.filter(
+                schema::messages::id
+                    .eq(message_id)
+                    .and(schema::messages::expires_in.is_not_null())
+                    .and(schema::messages::expires_in.gt(0))
+                    .and(schema::messages::expiry_started.is_null()),
+            ),
+        )
+        .set(schema::messages::expiry_started.eq(Some(chrono::Utc::now().naive_utc())))
+        .execute(&mut *self.db())
+        .expect("set message expiry");
+
+        if let Some(message) = message {
+            self.observe_update(messages, message.id)
+                .with_relation(schema::sessions::table, message.session_id);
+            let session = self
+                .fetch_session_by_id(message.session_id)
+                .expect("foreignk key");
+            Some((session, message))
+        } else {
+            tracing::warn!("Could not find message with id {}", message_id);
+            None
+        }
+    }
+
     /// Marks the message with a certain timestamp as received by a certain person.
     #[tracing::instrument(skip(self))]
     pub fn mark_message_received(
