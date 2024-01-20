@@ -193,7 +193,7 @@ Page {
                         counter = 1
                     }
                 }
-                var unreadMessages = {}
+                var unreadOrExpiring = {}
                 var leftX = Theme.itemSizeMedium
                 var rightX = messages.width - Theme.itemSizeMedium
                 for (var Y = 0; Y < height; Y += Theme.itemSizeMedium) {
@@ -201,12 +201,15 @@ Page {
                     if (item == null) {
                         item = messages.itemAt(rightX, messages.contentY + Y)
                     }
-                    if (item && !item.messageRead && unreadMessages[item.messageId] === undefined) {
-                        unreadMessages[item.messageId] = true
+                    if (item
+                        && unreadOrExpiring[item.messageId] === undefined
+                        && (!item.messageRead || item.messageExpiresIn > 0 && item.messageExpiring === false)
+                    ) {
+                        unreadOrExpiring[item.messageId] = true
                     }
                 }
                 // XXX mark_messages_read()..?
-                for (var messageId in unreadMessages) {
+                for (var messageId in unreadOrExpiring) {
                     console.log("Mark message", messageId, "as read")
                     ClientWorker.mark_message_read(messageId)
                 }
