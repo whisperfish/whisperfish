@@ -2678,16 +2678,10 @@ impl ClientWorker {
     }
 
     #[with_executor]
-    pub fn mark_message_read(
-        &self,
-        message_id: i32,
-    ) {
+    pub fn mark_message_read(&self, message_id: i32) {
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {
-            if let Err(e) = actor
-                .send(MarkMessageRead { message_id })
-                .await
-            {
+            if let Err(e) = actor.send(MarkMessageRead { message_id }).await {
                 tracing::error!("{:?}", e);
             }
         });
@@ -2752,9 +2746,11 @@ impl Handler<MarkMessageRead> for ClientActor {
 
     fn handle(&mut self, msg: MarkMessageRead, _ctx: &mut Self::Context) -> Self::Result {
         let storage = self.storage.clone().unwrap();
+        let handle = self.message_expiry_notification_handle.clone().unwrap();
         Box::pin(
             async move {
-            storage.mark_message_read_in_ui(msg.message_id);
+                storage.mark_message_read_in_ui(msg.message_id);
+                handle.send(()).expect("send message expiry notification");
             }
             .instrument(tracing::debug_span!("mark message read")),
         )
