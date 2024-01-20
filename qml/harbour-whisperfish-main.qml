@@ -47,6 +47,7 @@ ApplicationWindow
             appIcon: "harbour-whisperfish"
             appName: "Whisperfish"
             category: "harbour-whisperfish-message"
+            Component.onDestruction: close()
         }
     }
 
@@ -251,6 +252,10 @@ ApplicationWindow
             if (fatalOccurred) return
             pageStack.push(Qt.resolvedUrl("pages/PeerIdentityChanged.qml"), { source: source })
         }
+        onMessageDeleted: {
+            if (fatalOccurred) return
+            closeMessageNotification(sid, mid)
+        }
     }
 
     Connections {
@@ -358,6 +363,7 @@ ApplicationWindow
         if(sid in notificationMap) {
             for(var i in notificationMap[sid]) {
                 notificationMap[sid][i].close()
+                delete notificationMap[sid][i]
             }
             delete notificationMap[sid]
         }

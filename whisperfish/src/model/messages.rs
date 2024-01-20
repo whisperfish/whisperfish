@@ -3,8 +3,9 @@
 use crate::model::*;
 use crate::store::observer::{EventObserving, Interest};
 use crate::store::{orm, schema, Storage};
-use qmetaobject::prelude::*;
 use qmetaobject::QObjectBox;
+use qmetaobject::{prelude::*, QMetaType};
+use qttypes::{QVariantList, QVariantMap};
 use std::collections::HashMap;
 
 /// QML-constructable object that interacts with a single session.
@@ -331,6 +332,7 @@ define_model_roles! {
         Id(id):                                               "id",
         SessionId(session_id):                                "sessionId",
         Message(text via qstring_from_option):                "message",
+        StyledMessage(fn styled_message(&self) via QString::from): "styledMessage",
         Timestamp(server_timestamp via qdatetime_from_naive): "timestamp",
 
         SenderRecipientId(sender_recipient_id via qvariant_from_option): "senderRecipientId",
@@ -355,7 +357,55 @@ define_model_roles! {
 
         ExpiresIn(expires_in via int_from_i32_option):        "expiresIn",
         ExpiryStarted(expiry_started via qdatetime_from_naive_option): "expiryStarted",
+
+        BodyRanges(fn body_ranges(&self) via body_ranges_qvariantlist): "bodyRanges",
+
+        HasStrikeThrough(fn has_strike_through(&self)):       "hasStrikeThrough",
+        HasSpoilers(fn has_spoilers(&self)):                  "hasSpoilers",
+        SpoilerTag(fn spoiler_tag(&self) via QString::from):  "spoilerTag",
+        RevealedTag(fn revealed_tag(&self) via QString::from): "revealedTag",
+
+        IsLatestRevision(fn is_latest_revision(&self)):       "isLatestRevision",
+        IsEdited(fn is_edited(&self)):                        "isEdited",
     }
+}
+
+fn body_ranges_qvariantlist(
+    body_ranges: &[whisperfish_store::body_ranges::BodyRange],
+) -> QVariantList {
+    body_ranges
+        .iter()
+        .map(|range| {
+            use whisperfish_store::body_ranges::AssociatedValue;
+
+            let mut qrange = QVariantMap::default();
+            qrange.insert("start".into(), range.start.into());
+            qrange.insert("length".into(), range.length.into());
+            let mut associated_value = QVariantMap::default();
+            match &range.associated_value {
+                None => {}
+                Some(AssociatedValue::MentionUuid(mention_aci)) => {
+                    associated_value.insert("type".into(), QString::from("mention").to_qvariant());
+                    associated_value.insert(
+                        "mention".into(),
+                        QString::from(mention_aci as &str).to_qvariant(),
+                    );
+                }
+                Some(AssociatedValue::Style(style)) => {
+                    associated_value.insert("type".into(), QString::from("style").to_qvariant());
+                    associated_value.insert("style".into(), style.to_qvariant());
+                }
+                _ => {
+                    tracing::warn!(
+                        "unimplemented associated value: {:?}",
+                        range.associated_value
+                    );
+                }
+            }
+            qrange.insert("associatedValue".into(), associated_value.to_qvariant());
+            qrange.to_qvariant()
+        })
+        .collect()
 }
 
 #[derive(QObject, Default)]
@@ -368,7 +418,7 @@ impl MessageListModel {
     fn load_all(&mut self, storage: Storage, id: i32) {
         self.begin_reset_model();
         self.messages = storage
-            .fetch_all_messages_augmented(id)
+            .fetch_all_messages_augmented(id, true)
             .into_iter()
             .map(Into::into)
             .collect();
@@ -407,13 +457,26 @@ impl MessageListModel {
                 |message| std::cmp::Reverse((message.server_timestamp, message.id)),
             );
             match pos {
+                Ok(existing_index) if !message.is_latest_revision() => {
+                    // Update, but message is not the latest revision. Remove it.
+                    tracing::debug!("Handling message edit. Removing edited message from view.");
+                    self.begin_remove_rows(existing_index as i32, existing_index as i32);
+                    self.messages.remove(existing_index);
+                    self.end_remove_rows();
+                }
                 Ok(existing_index) => {
+                    // Update, and message is the latest revision. Update it.
                     tracing::debug!("Handling update event.");
                     self.messages[existing_index] = message;
                     let idx = self.row_index(existing_index as i32);
                     self.data_changed(idx, idx);
                 }
+                Err(_insertion_index) if !message.is_latest_revision() => {
+                    // Don't insert old revisions.
+                    tracing::debug!("Handling message edit for an old edit, no-op.");
+                }
                 Err(insertion_index) => {
+                    // Insert the message, because it's the latest revision.
                     tracing::debug!("Handling insertion event");
                     self.begin_insert_rows(insertion_index as i32, insertion_index as i32);
                     self.messages.insert(insertion_index, message);

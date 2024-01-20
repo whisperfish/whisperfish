@@ -2,6 +2,7 @@ use std::path::Path;
 
 fn protobuf() -> anyhow::Result<()> {
     let protobuf = Path::new("protobuf").to_owned();
+    println!("cargo:rerun-if-changed={}", protobuf.to_str().unwrap());
 
     let input: Vec<_> = protobuf
         .read_dir()

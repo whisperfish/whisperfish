@@ -3,7 +3,7 @@ use libsignal_service::pre_keys::PreKeysStore;
 use libsignal_service::protocol::{
     self, GenericSignedPreKey, IdentityKeyPair, SignalProtocolError,
 };
-use libsignal_service::provisioning::generate_registration_id;
+use libsignal_service::push_service::ServiceIdType;
 use libsignal_service::session_store::SessionStoreExt;
 use std::path::Path;
 
@@ -81,113 +81,123 @@ impl ProtocolStore {
 }
 
 impl Storage {
-    /// Returns a tuple of the next free signed pre-key ID, the next Kyber pre-key ID, and the next free pre-key ID
-    #[tracing::instrument(skip(self))]
-    pub async fn next_pre_key_ids(&self) -> (u32, u32, u32) {
-        use diesel::dsl::*;
-        use diesel::prelude::*;
-
-        let prekey_max: Option<i32> = {
-            use crate::schema::prekeys::dsl::*;
-
-            prekeys.select(max(id)).first(&mut *self.db()).expect("db")
-        };
-
-        let kyber_max: Option<i32> = {
-            use crate::schema::kyber_prekeys::dsl::*;
-
-            kyber_prekeys
-                .select(max(id))
-                .first(&mut *self.db())
-                .expect("db")
-        };
-
-        let signed_prekey_max: Option<i32> = {
-            use crate::schema::signed_prekeys::dsl::*;
-
-            signed_prekeys
-                .select(max(id))
-                .first(&mut *self.db())
-                .expect("db")
-        };
-
-        (
-            (signed_prekey_max.unwrap_or(-1) + 1) as u32,
-            (kyber_max.unwrap_or(-1) + 1) as u32,
-            (prekey_max.unwrap_or(-1) + 1) as u32,
-        )
-    }
-
     pub async fn delete_identity(&self, addr: &ProtocolAddress) -> Result<(), SignalProtocolError> {
         self.delete_identity_key(addr);
         Ok(())
     }
 }
 
-#[async_trait::async_trait(?Send)]
-impl protocol::ProtocolStore for Storage {}
-
 impl Storage {
-    pub async fn get_local_pni_registration_id(&self) -> Result<u32, SignalProtocolError> {
-        let path = self.path.join("storage").join("identity").join("pni_regid");
-        if !tokio::fs::try_exists(&path).await.expect("fs error") {
-            tracing::info!("Generating PNI regid");
-            let regid = generate_registration_id(&mut rand::thread_rng());
+    pub fn pni_storage(&self) -> PniStorage {
+        PniStorage::new(self.clone())
+    }
 
-            // Encrypt regid if necessary and write to file
-            self.write_file(&path, format!("{}", regid).into_bytes())
-                .await
-                .map_err(|e| {
-                    SignalProtocolError::InvalidArgument(format!("Cannot write PNI regid {}", e))
-                })?;
+    pub fn aci_storage(&self) -> AciStorage {
+        AciStorage::new(self.clone())
+    }
+
+    pub fn aci_or_pni(&self, service_id: ServiceIdType) -> AciOrPniStorage {
+        IdentityStorage(self.clone(), AciOrPni(service_id))
+    }
+}
+
+#[derive(Clone)]
+pub struct IdentityStorage<T>(Storage, T);
+impl<T: Default> IdentityStorage<T> {
+    pub fn new(storage: Storage) -> Self {
+        Self(storage, Default::default())
+    }
+}
+#[derive(Default, Clone)]
+pub struct Aci;
+pub type AciStorage = IdentityStorage<Aci>;
+#[derive(Default, Clone)]
+pub struct Pni;
+pub type PniStorage = IdentityStorage<Pni>;
+// Dynamic dispatch between Aci and Pni
+#[derive(Clone)]
+pub struct AciOrPni(ServiceIdType);
+pub type AciOrPniStorage = IdentityStorage<AciOrPni>;
+pub trait Identity {
+    fn identity(&self) -> orm::Identity;
+    fn identity_key_filename(&self) -> &'static str;
+    fn regid_filename(&self) -> &'static str;
+}
+impl Identity for Aci {
+    fn identity(&self) -> orm::Identity {
+        orm::Identity::Aci
+    }
+    fn identity_key_filename(&self) -> &'static str {
+        "identity_key"
+    }
+    fn regid_filename(&self) -> &'static str {
+        "regid"
+    }
+}
+impl Identity for Pni {
+    fn identity(&self) -> orm::Identity {
+        orm::Identity::Pni
+    }
+    fn identity_key_filename(&self) -> &'static str {
+        "pni_identity_key"
+    }
+    fn regid_filename(&self) -> &'static str {
+        "pni_regid"
+    }
+}
+impl Identity for AciOrPni {
+    fn identity(&self) -> orm::Identity {
+        match self.0 {
+            ServiceIdType::AccountIdentity => orm::Identity::Aci,
+            ServiceIdType::PhoneNumberIdentity => orm::Identity::Pni,
         }
-
-        tracing::trace!("Reading PNI regid");
-        let _lock = self.protocol_store.read().await;
-
-        let regid = self.read_file(path).await.map_err(|e| {
-            SignalProtocolError::InvalidArgument(format!("Cannot read PNI regid {}", e))
-        })?;
-        let regid = String::from_utf8(regid).map_err(|e| {
-            SignalProtocolError::InvalidArgument(format!(
-                "Convert PNI regid from bytes to string {}",
-                e
-            ))
-        })?;
-        let regid = regid.parse().map_err(|e| {
-            SignalProtocolError::InvalidArgument(format!(
-                "Convert PNI regid from string to number {}",
-                e
-            ))
-        })?;
-
-        Ok(regid)
+    }
+    fn identity_key_filename(&self) -> &'static str {
+        match self.0 {
+            ServiceIdType::AccountIdentity => "identity_key",
+            ServiceIdType::PhoneNumberIdentity => "pni_identity_key",
+        }
+    }
+    fn regid_filename(&self) -> &'static str {
+        match self.0 {
+            ServiceIdType::AccountIdentity => "regid",
+            ServiceIdType::PhoneNumberIdentity => "pni_regid",
+        }
     }
 }
 
 #[async_trait::async_trait(?Send)]
-impl protocol::IdentityKeyStore for Storage {
+impl protocol::ProtocolStore for IdentityStorage<AciOrPni> {}
+#[async_trait::async_trait(?Send)]
+impl protocol::ProtocolStore for IdentityStorage<Aci> {}
+#[async_trait::async_trait(?Send)]
+impl protocol::ProtocolStore for IdentityStorage<Pni> {}
+
+#[async_trait::async_trait(?Send)]
+impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
+    #[tracing::instrument(level = "trace", skip(self))]
     async fn get_identity_key_pair(&self) -> Result<IdentityKeyPair, SignalProtocolError> {
-        let identity_key_pair = self.aci_identity_key_pair.read().await;
+        let identity_key_pair = self.0.aci_identity_key_pair.read().await;
 
         if let Some(identity_key_pair) = *identity_key_pair {
             Ok(identity_key_pair)
         } else {
             drop(identity_key_pair);
 
-            let mut identity_key_pair = self.aci_identity_key_pair.write().await;
+            let mut identity_key_pair = self.0.aci_identity_key_pair.write().await;
 
-            let _lock = self.protocol_store.read().await;
+            let _lock = self.0.protocol_store.read().await;
 
-            tracing::trace!("Reading own identity key pair");
             let path = self
+                .0
                 .path
                 .join("storage")
                 .join("identity")
-                .join("identity_key");
+                .join(self.1.identity_key_filename());
+            tracing::trace!("reading own identity key pair at {}", path.display());
             let key_pair = {
                 use std::convert::TryFrom;
-                let mut buf = self.read_file(path).await.map_err(|e| {
+                let mut buf = self.0.read_file(path).await.map_err(|e| {
                     SignalProtocolError::InvalidArgument(format!(
                         "Cannot read own identity key {}",
                         e
@@ -203,12 +213,17 @@ impl protocol::IdentityKeyStore for Storage {
         }
     }
 
+    #[tracing::instrument(level = "trace", skip(self))]
     async fn get_local_registration_id(&self) -> Result<u32, SignalProtocolError> {
-        tracing::trace!("Reading regid");
-        let _lock = self.protocol_store.read().await;
+        let _lock = self.0.protocol_store.read().await;
 
-        let path = self.path.join("storage").join("identity").join("regid");
-        let regid = self.read_file(path).await.map_err(|e| {
+        let path = self
+            .0
+            .path
+            .join("storage")
+            .join("identity")
+            .join(self.1.regid_filename());
+        let regid = self.0.read_file(path).await.map_err(|e| {
             SignalProtocolError::InvalidArgument(format!("Cannot read regid {}", e))
         })?;
         let regid = String::from_utf8(regid).map_err(|e| {
@@ -227,6 +242,7 @@ impl protocol::IdentityKeyStore for Storage {
         Ok(regid)
     }
 
+    #[tracing::instrument(level = "trace", skip(self, addr), fields(addr = %addr))]
     async fn is_trusted_identity(
         &self,
         addr: &ProtocolAddress,
@@ -234,7 +250,7 @@ impl protocol::IdentityKeyStore for Storage {
         // XXX
         _direction: Direction,
     ) -> Result<bool, SignalProtocolError> {
-        if let Some(trusted_key) = self.fetch_identity_key(addr) {
+        if let Some(trusted_key) = self.get_identity(addr).await? {
             Ok(trusted_key == *key)
         } else {
             // Trust on first use
@@ -244,167 +260,73 @@ impl protocol::IdentityKeyStore for Storage {
 
     /// Should return true when the older key, if present, is different from the new one.
     /// False otherwise.
+    #[tracing::instrument(level = "trace", skip(self, addr), fields(addr = %addr))]
     async fn save_identity(
         &mut self,
         addr: &ProtocolAddress,
         key: &IdentityKey,
     ) -> Result<bool, SignalProtocolError> {
-        Ok(self.store_identity_key(addr, key))
+        use crate::schema::identity_records::dsl::*;
+        let previous = self.get_identity(addr).await?;
+
+        let ret = previous.as_ref() == Some(key);
+
+        if previous.is_some() {
+            diesel::update(identity_records)
+                .filter(address.eq(addr.name()).and(identity.eq(self.1.identity())))
+                .set(record.eq(key.serialize().to_vec()))
+                .execute(&mut *self.0.db())
+                .expect("db");
+        } else {
+            diesel::insert_into(identity_records)
+                .values((
+                    address.eq(addr.name()),
+                    record.eq(key.serialize().to_vec()),
+                    identity.eq(self.1.identity()),
+                ))
+                .execute(&mut *self.0.db())
+                .expect("db");
+        }
+
+        Ok(ret)
     }
 
+    #[tracing::instrument(level = "trace", skip(self))]
     async fn get_identity(
         &self,
         addr: &ProtocolAddress,
     ) -> Result<Option<IdentityKey>, SignalProtocolError> {
-        Ok(self.fetch_identity_key(addr))
-    }
-}
-
-impl PreKeysStore for Storage {
-    fn pre_keys_offset_id(&self) -> Result<u32, SignalProtocolError> {
-        use diesel::dsl::*;
-        use diesel::prelude::*;
-
-        let prekey_max: Option<i32> = {
-            use crate::schema::prekeys::dsl::*;
-
-            prekeys.select(max(id)).first(&mut *self.db()).expect("db")
-        };
-        Ok((prekey_max.unwrap_or(-1) + 1) as u32)
-    }
-
-    fn next_signed_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
-        use diesel::dsl::*;
-        use diesel::prelude::*;
-
-        let signed_prekey_max: Option<i32> = {
-            use crate::schema::signed_prekeys::dsl::*;
-
-            signed_prekeys
-                .select(max(id))
-                .first(&mut *self.db())
-                .expect("db")
-        };
-        Ok((signed_prekey_max.unwrap_or(-1) + 1) as u32)
-    }
-
-    fn next_pq_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
-        use diesel::dsl::*;
-        use diesel::prelude::*;
-
-        let kyber_max: Option<i32> = {
-            use crate::schema::kyber_prekeys::dsl::*;
-
-            kyber_prekeys
-                .select(max(id))
-                .first(&mut *self.db())
-                .expect("db")
-        };
-        Ok((kyber_max.unwrap_or(-1) + 1) as u32)
-    }
-
-    fn set_pre_keys_offset_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
-        assert_eq!(self.pre_keys_offset_id()?, id);
-        Ok(())
-    }
-
-    fn set_next_signed_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
-        assert_eq!(self.next_signed_pre_key_id()?, id);
-        Ok(())
-    }
-
-    fn set_next_pq_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
-        assert_eq!(self.next_pq_pre_key_id()?, id);
-        Ok(())
+        use crate::schema::identity_records::dsl::*;
+        let addr = addr.name();
+        Ok(identity_records
+            .filter(address.eq(addr).and(identity.eq(self.1.identity())))
+            .first(&mut *self.0.db())
+            .optional()
+            .expect("db")
+            .map(|found: orm::IdentityRecord| {
+                IdentityKey::decode(&found.record).expect("only valid identity keys in db")
+            }))
     }
 }
 
 #[async_trait::async_trait(?Send)]
-impl protocol::PreKeyStore for Storage {
-    async fn get_pre_key(&self, prekey_id: PreKeyId) -> Result<PreKeyRecord, SignalProtocolError> {
-        tracing::trace!("Loading prekey {}", prekey_id);
-        use crate::schema::prekeys::dsl::*;
-        use diesel::prelude::*;
-
-        let prekey_record: Option<crate::store::orm::Prekey> = prekeys
-            .filter(id.eq(u32::from(prekey_id) as i32))
-            .first(&mut *self.db())
-            .optional()
-            .expect("db");
-        if let Some(pkr) = prekey_record {
-            Ok(PreKeyRecord::deserialize(&pkr.record)?)
-        } else {
-            Err(SignalProtocolError::InvalidPreKeyId)
-        }
-    }
-
-    async fn save_pre_key(
-        &mut self,
-        prekey_id: PreKeyId,
-        body: &PreKeyRecord,
-    ) -> Result<(), SignalProtocolError> {
-        tracing::trace!("Storing prekey {}", prekey_id);
-        use crate::schema::prekeys::dsl::*;
-        use diesel::prelude::*;
-
-        diesel::insert_into(prekeys)
-            .values(crate::store::orm::Prekey {
-                id: u32::from(prekey_id) as _,
-                record: body.serialize()?,
-            })
-            .execute(&mut *self.db())
-            .expect("db");
-
-        Ok(())
-    }
-
-    async fn remove_pre_key(&mut self, prekey_id: PreKeyId) -> Result<(), SignalProtocolError> {
-        tracing::trace!("Removing prekey {}", prekey_id);
-        use crate::schema::prekeys::dsl::*;
-        use diesel::prelude::*;
-
-        diesel::delete(prekeys)
-            .filter(id.eq(u32::from(prekey_id) as i32))
-            .execute(&mut *self.db())
-            .expect("db");
-        Ok(())
-    }
-}
-
-impl Storage {
-    // XXX Rewrite in terms of get_pre_key
-    #[allow(dead_code)]
-    async fn contains_pre_key(&self, prekey_id: u32) -> bool {
-        tracing::trace!("Checking for prekey {}", prekey_id);
-        use crate::schema::prekeys::dsl::*;
-        use diesel::prelude::*;
-
-        let prekey_record: Option<crate::store::orm::Prekey> = prekeys
-            .filter(id.eq(prekey_id as i32))
-            .first(&mut *self.db())
-            .optional()
-            .expect("db");
-        prekey_record.is_some()
-    }
-}
-
-#[async_trait::async_trait(?Send)]
-impl protocol::SessionStore for Storage {
+impl<T: Identity> protocol::SessionStore for IdentityStorage<T> {
+    #[tracing::instrument(level = "trace", skip(self))]
     async fn load_session(
         &self,
         addr: &ProtocolAddress,
     ) -> Result<Option<SessionRecord>, SignalProtocolError> {
-        tracing::trace!("Loading session for {}", addr);
         use crate::schema::session_records::dsl::*;
         use diesel::prelude::*;
 
-        let session_record: Option<crate::store::orm::SessionRecord> = session_records
+        let session_record: Option<orm::SessionRecord> = session_records
             .filter(
                 address
                     .eq(addr.name())
-                    .and(device_id.eq(u32::from(addr.device_id()) as i32)),
+                    .and(device_id.eq(u32::from(addr.device_id()) as i32))
+                    .and(identity.eq(self.1.identity())),
             )
-            .first(&mut *self.db())
+            .first(&mut *self.0.db())
             .optional()
             .expect("db");
         if let Some(session_record) = session_record {
@@ -414,12 +336,12 @@ impl protocol::SessionStore for Storage {
         }
     }
 
+    #[tracing::instrument(level = "trace", skip(self, session), fields(addr = %addr))]
     async fn store_session(
         &mut self,
         addr: &ProtocolAddress,
         session: &protocol::SessionRecord,
     ) -> Result<(), SignalProtocolError> {
-        tracing::trace!("Storing session for {}", addr);
         use crate::schema::session_records::dsl::*;
         use diesel::prelude::*;
 
@@ -428,10 +350,11 @@ impl protocol::SessionStore for Storage {
                 .filter(
                     address
                         .eq(addr.name())
-                        .and(device_id.eq(u32::from(addr.device_id()) as i32)),
+                        .and(device_id.eq(u32::from(addr.device_id()) as i32))
+                        .and(identity.eq(self.1.identity())),
                 )
                 .set(record.eq(session.serialize()?))
-                .execute(&mut *self.db())
+                .execute(&mut *self.0.db())
                 .expect("updated session");
         } else {
             diesel::insert_into(session_records)
@@ -439,8 +362,9 @@ impl protocol::SessionStore for Storage {
                     address.eq(addr.name()),
                     device_id.eq(u32::from(addr.device_id()) as i32),
                     record.eq(session.serialize()?),
+                    identity.eq(self.1.identity()),
                 ))
-                .execute(&mut *self.db())
+                .execute(&mut *self.0.db())
                 .expect("updated session");
         }
 
@@ -448,12 +372,211 @@ impl protocol::SessionStore for Storage {
     }
 }
 
-impl Storage {
-    #[allow(dead_code)]
+#[async_trait::async_trait(?Send)]
+impl<T: Identity> PreKeysStore for IdentityStorage<T> {
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn next_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
+        use diesel::dsl::*;
+        use diesel::prelude::*;
+
+        let prekey_max: Option<i32> = {
+            use crate::schema::prekeys::dsl::*;
+
+            prekeys
+                .select(max(id))
+                .filter(identity.eq(self.1.identity()))
+                .first(&mut *self.0.db())
+                .expect("db")
+        };
+        Ok((prekey_max.unwrap_or(-1) + 1) as u32)
+    }
+
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn next_signed_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
+        use diesel::dsl::*;
+        use diesel::prelude::*;
+
+        let signed_prekey_max: Option<i32> = {
+            use crate::schema::signed_prekeys::dsl::*;
+
+            signed_prekeys
+                .select(max(id))
+                .filter(identity.eq(self.1.identity()))
+                .first(&mut *self.0.db())
+                .expect("db")
+        };
+        Ok((signed_prekey_max.unwrap_or(-1) + 1) as u32)
+    }
+
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn next_pq_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
+        use diesel::dsl::*;
+        use diesel::prelude::*;
+
+        let kyber_max: Option<i32> = {
+            use crate::schema::kyber_prekeys::dsl::*;
+
+            kyber_prekeys
+                .select(max(id))
+                .filter(identity.eq(self.1.identity()))
+                .first(&mut *self.0.db())
+                .expect("db")
+        };
+        Ok((kyber_max.unwrap_or(-1) + 1) as u32)
+    }
+
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn set_next_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
+        assert_eq!(self.next_pre_key_id().await?, id);
+        Ok(())
+    }
+
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn set_next_signed_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
+        assert_eq!(self.next_signed_pre_key_id().await?, id);
+        Ok(())
+    }
+
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn set_next_pq_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
+        assert_eq!(self.next_pq_pre_key_id().await?, id);
+        Ok(())
+    }
+}
+
+#[async_trait::async_trait(?Send)]
+impl<T: Identity> protocol::PreKeyStore for IdentityStorage<T> {
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn get_pre_key(&self, prekey_id: PreKeyId) -> Result<PreKeyRecord, SignalProtocolError> {
+        use crate::schema::prekeys::dsl::*;
+        use diesel::prelude::*;
+
+        let prekey_record: Option<orm::Prekey> = prekeys
+            .filter(
+                id.eq(u32::from(prekey_id) as i32)
+                    .and(identity.eq(self.1.identity())),
+            )
+            .first(&mut *self.0.db())
+            .optional()
+            .expect("db");
+        if let Some(pkr) = prekey_record {
+            Ok(PreKeyRecord::deserialize(&pkr.record)?)
+        } else {
+            Err(SignalProtocolError::InvalidPreKeyId)
+        }
+    }
+
+    #[tracing::instrument(level = "trace", skip(self, body))]
+    async fn save_pre_key(
+        &mut self,
+        prekey_id: PreKeyId,
+        body: &PreKeyRecord,
+    ) -> Result<(), SignalProtocolError> {
+        use crate::schema::prekeys::dsl::*;
+        use diesel::prelude::*;
+
+        diesel::insert_into(prekeys)
+            .values(orm::Prekey {
+                id: u32::from(prekey_id) as _,
+                record: body.serialize()?,
+                identity: self.1.identity(),
+            })
+            .execute(&mut *self.0.db())
+            .expect("db");
+
+        Ok(())
+    }
+
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn remove_pre_key(&mut self, prekey_id: PreKeyId) -> Result<(), SignalProtocolError> {
+        use crate::schema::prekeys::dsl::*;
+        use diesel::prelude::*;
+
+        diesel::delete(prekeys)
+            .filter(
+                id.eq(u32::from(prekey_id) as i32)
+                    .and(identity.eq(self.1.identity())),
+            )
+            .execute(&mut *self.0.db())
+            .expect("db");
+        Ok(())
+    }
+}
+
+#[async_trait::async_trait(?Send)]
+impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn mark_kyber_pre_key_used(
+        &mut self,
+        kyber_prekey_id: KyberPreKeyId,
+    ) -> Result<(), SignalProtocolError> {
+        // TODO: only remove the kyber pre key if it concerns an ephemeral pre key; last-resort
+        // keys should be retained!  See libsignal-service/src/account_manager.rs `if use_last_resort_key`
+        use crate::schema::kyber_prekeys::dsl::*;
+        use diesel::prelude::*;
+
+        diesel::delete(kyber_prekeys)
+            .filter(
+                id.eq((u32::from(kyber_prekey_id)) as i32)
+                    .and(identity.eq(self.1.identity())),
+            )
+            .execute(&mut *self.0.db())
+            .expect("db");
+        Ok(())
+    }
+
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn get_kyber_pre_key(
+        &self,
+        kyber_prekey_id: KyberPreKeyId,
+    ) -> Result<KyberPreKeyRecord, SignalProtocolError> {
+        use crate::schema::kyber_prekeys::dsl::*;
+        use diesel::prelude::*;
+
+        let prekey_record: Option<orm::KyberPrekey> = kyber_prekeys
+            .filter(
+                id.eq(u32::from(kyber_prekey_id) as i32)
+                    .and(identity.eq(self.1.identity())),
+            )
+            .first(&mut *self.0.db())
+            .optional()
+            .expect("db");
+        if let Some(pkr) = prekey_record {
+            Ok(KyberPreKeyRecord::deserialize(&pkr.record)?)
+        } else {
+            Err(SignalProtocolError::InvalidSignedPreKeyId)
+        }
+    }
+
+    #[tracing::instrument(level = "trace", skip(self, body))]
+    async fn save_kyber_pre_key(
+        &mut self,
+        kyber_prekey_id: KyberPreKeyId,
+        body: &KyberPreKeyRecord,
+    ) -> Result<(), SignalProtocolError> {
+        use crate::schema::kyber_prekeys::dsl::*;
+        use diesel::prelude::*;
+
+        // Insert or replace?
+        diesel::insert_into(kyber_prekeys)
+            .values(orm::KyberPrekey {
+                id: u32::from(kyber_prekey_id) as _,
+                record: body.serialize()?,
+                identity: self.1.identity(),
+            })
+            .execute(&mut *self.0.db())
+            .expect("db");
+
+        Ok(())
+    }
+}
+
+impl<T: Identity> IdentityStorage<T> {
     /// Check whether session exists.
     ///
     /// This does *not* lock the protocol store.  If a transactional check is required, use the
     /// lock from outside.
+    #[tracing::instrument(level = "trace", skip(self))]
     async fn contains_session(&self, addr: &ProtocolAddress) -> Result<bool, SignalProtocolError> {
         use crate::schema::session_records::dsl::*;
         use diesel::dsl::*;
@@ -464,9 +587,10 @@ impl Storage {
             .filter(
                 address
                     .eq(addr.name())
-                    .and(device_id.eq(u32::from(addr.device_id()) as i32)),
+                    .and(device_id.eq(u32::from(addr.device_id()) as i32))
+                    .and(identity.eq(self.1.identity())),
             )
-            .first(&mut *self.db())
+            .first(&mut *self.0.db())
             .expect("db");
         Ok(count != 0)
     }
@@ -474,24 +598,10 @@ impl Storage {
 
 // BEGIN identity key block
 impl Storage {
-    /// Fetches the identity matching `addr` from the database
+    /// Removes the identity matching `addr` from the database, independent of PNI or ACI.
     ///
     /// Does not lock the protocol storage.
-    fn fetch_identity_key(&self, addr: &ProtocolAddress) -> Option<IdentityKey> {
-        use crate::schema::identity_records::dsl::*;
-        let addr = addr.name();
-        let found: orm::IdentityRecord = identity_records
-            .filter(address.eq(addr))
-            .first(&mut *self.db())
-            .optional()
-            .expect("db")?;
-
-        Some(IdentityKey::decode(&found.record).expect("only valid identity keys in db"))
-    }
-
-    /// Removes the identity matching `addr` from the database
-    ///
-    /// Does not lock the protocol storage.
+    #[tracing::instrument(level = "warn", skip(self))]
     pub fn delete_identity_key(&self, addr: &ProtocolAddress) -> bool {
         use crate::schema::identity_records::dsl::*;
         let addr = addr.name();
@@ -502,49 +612,16 @@ impl Storage {
 
         amount == 1
     }
-
-    /// (Over)writes the identity key for a given address.
-    ///
-    /// Returns whether the identity key has been altered.
-    fn store_identity_key(&self, addr: &ProtocolAddress, key: &IdentityKey) -> bool {
-        use crate::schema::identity_records::dsl::*;
-        let previous = self.fetch_identity_key(addr);
-
-        let ret = previous.as_ref() == Some(key);
-
-        if previous.is_some() {
-            diesel::update(identity_records)
-                .filter(address.eq(addr.name()))
-                .set(record.eq(key.serialize().to_vec()))
-                .execute(&mut *self.db())
-                .expect("db");
-        } else {
-            diesel::insert_into(identity_records)
-                .values((address.eq(addr.name()), record.eq(key.serialize().to_vec())))
-                .execute(&mut *self.db())
-                .expect("db");
-        }
-
-        ret
-    }
-
-    pub fn aci_storage(&self) -> Self {
-        self.clone()
-    }
-
-    pub fn pni_storage(&self) -> Self {
-        unimplemented!("PNI storage is not yet implemented");
-    }
 }
 // END identity key
 
 #[async_trait::async_trait(?Send)]
-impl SessionStoreExt for Storage {
+impl<T: Identity> SessionStoreExt for IdentityStorage<T> {
+    #[tracing::instrument(level = "trace", skip(self))]
     async fn get_sub_device_sessions(
         &self,
         addr: &ServiceAddress,
     ) -> Result<Vec<u32>, SignalProtocolError> {
-        tracing::trace!("Looking for sub_device sessions for {:?}", addr);
         use crate::schema::session_records::dsl::*;
 
         let records: Vec<i32> = session_records
@@ -552,13 +629,15 @@ impl SessionStoreExt for Storage {
             .filter(
                 address
                     .eq(addr.uuid.to_string())
-                    .and(device_id.ne(libsignal_service::push_service::DEFAULT_DEVICE_ID as i32)),
+                    .and(device_id.ne(libsignal_service::push_service::DEFAULT_DEVICE_ID as i32))
+                    .and(identity.eq(self.1.identity())),
             )
-            .load(&mut *self.db())
+            .load(&mut *self.0.db())
             .expect("db");
         Ok(records.into_iter().map(|x| x as u32).collect())
     }
 
+    #[tracing::instrument(level = "trace", skip(self))]
     async fn delete_session(&self, addr: &ProtocolAddress) -> Result<(), SignalProtocolError> {
         use crate::schema::session_records::dsl::*;
 
@@ -566,9 +645,10 @@ impl SessionStoreExt for Storage {
             .filter(
                 address
                     .eq(addr.name())
-                    .and(device_id.eq(u32::from(addr.device_id()) as i32)),
+                    .and(device_id.eq(u32::from(addr.device_id()) as i32))
+                    .and(identity.eq(self.1.identity())),
             )
-            .execute(&mut *self.db())
+            .execute(&mut *self.0.db())
             .expect("db");
 
         if num != 1 {
@@ -582,16 +662,20 @@ impl SessionStoreExt for Storage {
         }
     }
 
+    #[tracing::instrument(level = "trace", skip(self))]
     async fn delete_all_sessions(
         &self,
         addr: &ServiceAddress,
     ) -> Result<usize, SignalProtocolError> {
-        tracing::warn!("Deleting all sessions for {:?}", addr);
         use crate::schema::session_records::dsl::*;
 
         let num = diesel::delete(session_records)
-            .filter(address.eq(addr.uuid.to_string()))
-            .execute(&mut *self.db())
+            .filter(
+                address
+                    .eq(addr.uuid.to_string())
+                    .and(identity.eq(self.1.identity())),
+            )
+            .execute(&mut *self.0.db())
             .expect("db");
 
         Ok(num)
@@ -599,18 +683,21 @@ impl SessionStoreExt for Storage {
 }
 
 #[async_trait::async_trait(?Send)]
-impl protocol::SignedPreKeyStore for Storage {
+impl<T: Identity> protocol::SignedPreKeyStore for IdentityStorage<T> {
+    #[tracing::instrument(level = "trace", skip(self))]
     async fn get_signed_pre_key(
         &self,
         signed_prekey_id: SignedPreKeyId,
     ) -> Result<SignedPreKeyRecord, SignalProtocolError> {
-        tracing::trace!("Loading signed prekey {}", signed_prekey_id);
         use crate::schema::signed_prekeys::dsl::*;
         use diesel::prelude::*;
 
-        let prekey_record: Option<crate::store::orm::SignedPrekey> = signed_prekeys
-            .filter(id.eq(u32::from(signed_prekey_id) as i32))
-            .first(&mut *self.db())
+        let prekey_record: Option<orm::SignedPrekey> = signed_prekeys
+            .filter(
+                id.eq(u32::from(signed_prekey_id) as i32)
+                    .and(identity.eq(self.1.identity())),
+            )
+            .first(&mut *self.0.db())
             .optional()
             .expect("db");
         if let Some(pkr) = prekey_record {
@@ -620,22 +707,23 @@ impl protocol::SignedPreKeyStore for Storage {
         }
     }
 
+    #[tracing::instrument(level = "trace", skip(self, body))]
     async fn save_signed_pre_key(
         &mut self,
         signed_prekey_id: SignedPreKeyId,
         body: &SignedPreKeyRecord,
     ) -> Result<(), SignalProtocolError> {
-        tracing::trace!("Storing prekey {}", signed_prekey_id);
         use crate::schema::signed_prekeys::dsl::*;
         use diesel::prelude::*;
 
         // Insert or replace?
         diesel::insert_into(signed_prekeys)
-            .values(crate::store::orm::SignedPrekey {
+            .values(orm::SignedPrekey {
                 id: u32::from(signed_prekey_id) as _,
                 record: body.serialize()?,
+                identity: self.1.identity(),
             })
-            .execute(&mut *self.db())
+            .execute(&mut *self.0.db())
             .expect("db");
 
         Ok(())
@@ -643,100 +731,39 @@ impl protocol::SignedPreKeyStore for Storage {
 }
 
 #[async_trait::async_trait(?Send)]
-impl protocol::KyberPreKeyStore for Storage {
-    async fn mark_kyber_pre_key_used(
-        &mut self,
-        kyber_prekey_id: KyberPreKeyId,
-    ) -> Result<(), SignalProtocolError> {
-        // TODO: only remove the kyber pre key if it concerns an ephemeral pre key; last-resort
-        // keys should be retained!  See libsignal-service/src/account_manager.rs `if use_last_resort_key`
-        tracing::trace!("Removing Kyber prekey {}", kyber_prekey_id);
-        use crate::schema::kyber_prekeys::dsl::*;
-        use diesel::prelude::*;
-
-        diesel::delete(kyber_prekeys)
-            .filter(id.eq((u32::from(kyber_prekey_id)) as i32))
-            .execute(&mut *self.db())
-            .expect("db");
-        Ok(())
-    }
-
-    async fn get_kyber_pre_key(
-        &self,
-        kyber_prekey_id: KyberPreKeyId,
-    ) -> Result<KyberPreKeyRecord, SignalProtocolError> {
-        tracing::trace!("Loading Kyber prekey {}", kyber_prekey_id);
-        use crate::schema::kyber_prekeys::dsl::*;
-        use diesel::prelude::*;
-
-        let prekey_record: Option<crate::store::orm::KyberPrekey> = kyber_prekeys
-            .filter(id.eq(u32::from(kyber_prekey_id) as i32))
-            .first(&mut *self.db())
-            .optional()
-            .expect("db");
-        if let Some(pkr) = prekey_record {
-            Ok(KyberPreKeyRecord::deserialize(&pkr.record)?)
-        } else {
-            Err(SignalProtocolError::InvalidSignedPreKeyId)
-        }
-    }
-
-    async fn save_kyber_pre_key(
-        &mut self,
-        kyber_prekey_id: KyberPreKeyId,
-        body: &KyberPreKeyRecord,
-    ) -> Result<(), SignalProtocolError> {
-        tracing::trace!("Storing Kyber prekey {}", kyber_prekey_id);
-        use crate::schema::kyber_prekeys::dsl::*;
-        use diesel::prelude::*;
-
-        // Insert or replace?
-        diesel::insert_into(kyber_prekeys)
-            .values(crate::store::orm::KyberPrekey {
-                id: u32::from(kyber_prekey_id) as _,
-                record: body.serialize()?,
-            })
-            .execute(&mut *self.db())
-            .expect("db");
-
-        Ok(())
-    }
-}
-
-#[async_trait::async_trait(?Send)]
-impl SenderKeyStore for Storage {
+impl<T: Identity> SenderKeyStore for IdentityStorage<T> {
+    #[tracing::instrument(level = "trace", skip(self, record))]
     async fn store_sender_key(
         &mut self,
         addr: &ProtocolAddress,
         distr_id: Uuid,
         record: &SenderKeyRecord,
     ) -> Result<(), SignalProtocolError> {
-        tracing::trace!("Storing sender key {} {}", addr, distr_id);
-
         let to_insert = orm::SenderKeyRecord {
             address: addr.name().to_owned(),
             device: u32::from(addr.device_id()) as i32,
             distribution_id: distr_id.to_string(),
             record: record.serialize()?,
             created_at: Utc::now().naive_utc(),
+            identity: self.1.identity(),
         };
 
         {
             use crate::schema::sender_key_records::dsl::*;
             diesel::insert_into(sender_key_records)
                 .values(to_insert)
-                .execute(&mut *self.db())
+                .execute(&mut *self.0.db())
                 .expect("db");
         }
         Ok(())
     }
+
+    #[tracing::instrument(level = "trace", skip(self))]
     async fn load_sender_key(
         &mut self,
         addr: &ProtocolAddress,
         distr_id: Uuid,
     ) -> Result<Option<SenderKeyRecord>, SignalProtocolError> {
-        tracing::trace!("Loading sender key {} {}", addr, distr_id);
-
         let found: Option<orm::SenderKeyRecord> = {
             use crate::schema::sender_key_records::dsl::*;
             sender_key_records
@@ -744,9 +771,10 @@ impl SenderKeyStore for Storage {
                     address
                         .eq(addr.name())
                         .and(device.eq(u32::from(addr.device_id()) as i32))
-                        .and(distribution_id.eq(distr_id.to_string())),
+                        .and(distribution_id.eq(distr_id.to_string()))
+                        .and(identity.eq(self.1.identity())),
                 )
-                .first(&mut *self.db())
+                .first(&mut *self.0.db())
                 .optional()
                 .expect("db")
         };
@@ -755,39 +783,6 @@ impl SenderKeyStore for Storage {
             Some(x) => Ok(Some(SenderKeyRecord::deserialize(&x.record)?)),
             None => Ok(None),
         }
-    }
-}
-
-impl Storage {
-    #[allow(dead_code)]
-    async fn remove_signed_pre_key(
-        &self,
-        signed_prekey_id: u32,
-    ) -> Result<(), SignalProtocolError> {
-        tracing::trace!("Removing signed prekey {}", signed_prekey_id);
-        use crate::schema::signed_prekeys::dsl::*;
-        use diesel::prelude::*;
-
-        diesel::delete(signed_prekeys)
-            .filter(id.eq(signed_prekey_id as i32))
-            .execute(&mut *self.db())
-            .expect("db");
-        Ok(())
-    }
-
-    // XXX rewrite in terms of get_signed_pre_key
-    #[allow(dead_code)]
-    async fn contains_signed_pre_key(&self, signed_prekey_id: u32) -> bool {
-        tracing::trace!("Checking for signed prekey {}", signed_prekey_id);
-        use crate::schema::signed_prekeys::dsl::*;
-        use diesel::prelude::*;
-
-        let signed_prekey_record: Option<crate::store::orm::SignedPrekey> = signed_prekeys
-            .filter(id.eq(signed_prekey_id as i32))
-            .first(&mut *self.db())
-            .optional()
-            .expect("db");
-        signed_prekey_record.is_some()
     }
 }
 
@@ -894,14 +889,19 @@ mod tests {
         let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // Copy the identity key pair
-        let id_key1 = storage.get_identity_key_pair().await.unwrap();
+        let id_key1 = storage.aci_storage().get_identity_key_pair().await.unwrap();
 
         // Get access to the protocol store
         // XXX IdentityKeyPair does not implement the std::fmt::Debug trait *arg*
         //assert_eq!(id_key1.unwrap(), store.get_identity_key_pair().await.unwrap());
         assert_eq!(
             id_key1.serialize(),
-            storage.get_identity_key_pair().await.unwrap().serialize()
+            storage
+                .aci_storage()
+                .get_identity_key_pair()
+                .await
+                .unwrap()
+                .serialize()
         );
     }
 
@@ -914,23 +914,36 @@ mod tests {
         let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // Copy the regid
-        let regid_1 = storage.get_local_registration_id().await.unwrap();
+        let regid_1 = storage
+            .aci_storage()
+            .get_local_registration_id()
+            .await
+            .unwrap();
 
         // Get access to the protocol store
-        assert_eq!(regid_1, storage.get_local_registration_id().await.unwrap());
+        assert_eq!(
+            regid_1,
+            storage
+                .aci_storage()
+                .get_local_registration_id()
+                .await
+                .unwrap()
+        );
     }
 
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn save_retrieve_identity_key(password: Option<&str>) {
         // Create a new storage
-        let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // We need two identity keys and two addresses
         let (_svc1, addr1) = create_random_protocol_address();
         let (_svc2, addr2) = create_random_protocol_address();
         let key1 = create_random_identity_key();
         let key2 = create_random_identity_key();
+
+        let mut storage = storage.aci_storage();
 
         // In the beginning, the storage should be emtpy and return an error
         // XXX Doesn't implement equality *arg*
@@ -947,7 +960,7 @@ mod tests {
         assert_eq!(storage.get_identity(&addr2).await.unwrap(), Some(key2));
 
         // After removing key2, it shouldn't be there
-        storage.delete_identity(&addr2).await.unwrap();
+        storage.0.delete_identity(&addr2).await.unwrap();
         // XXX Doesn't implement equality *arg*
         assert_eq!(storage.get_identity(&addr2).await.unwrap(), None);
 
@@ -963,12 +976,14 @@ mod tests {
     #[tokio::test]
     async fn is_trusted_identity(password: Option<&str>) {
         // Create a new storage
-        let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // We need two identity keys and two addresses
         let (_, addr1) = create_random_protocol_address();
         let key1 = create_random_identity_key();
         let key2 = create_random_identity_key();
+
+        let mut storage = storage.aci_storage();
 
         // Test trust on first use
         assert!(storage
@@ -994,13 +1009,15 @@ mod tests {
     #[tokio::test]
     async fn save_retrieve_prekey(password: Option<&str>) {
         // Create a new storage
-        let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // We need two identity keys and two addresses
         let id1 = 0u32;
         let id2 = 1u32;
         let key1 = create_random_prekey();
         let key2 = create_random_prekey();
+
+        let mut storage = storage.aci_storage();
 
         // In the beginning, the storage should be emtpy and return an error
         // XXX Doesn't implement equality *arg*
@@ -1066,13 +1083,15 @@ mod tests {
     #[tokio::test]
     async fn save_retrieve_signed_prekey(password: Option<&str>) {
         // Create a new storage
-        let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // We need two identity keys and two addresses
         let id1 = 0u32;
         let id2 = 1u32;
         let key1 = create_random_signed_prekey();
         let key2 = create_random_signed_prekey();
+
+        let mut storage = storage.aci_storage();
 
         // In the beginning, the storage should be emtpy and return an error
         // XXX Doesn't implement equality *arg*
@@ -1126,7 +1145,7 @@ mod tests {
     #[tokio::test]
     async fn save_retrieve_session(password: Option<&str>) {
         // Create a new storage
-        let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // Collection of some addresses and sessions
         let (_svc1, addr1) = create_random_protocol_address();
@@ -1140,6 +1159,8 @@ mod tests {
         let session2 = SessionRecord::new_fresh();
         let session3 = SessionRecord::new_fresh();
         let session4 = SessionRecord::new_fresh();
+
+        let mut storage = storage.aci_storage();
 
         // In the beginning, the storage should be emtpy and return an error
         assert!(storage.load_session(&addr1).await.unwrap().is_none());
@@ -1210,16 +1231,21 @@ mod tests {
     #[rstest(password, case(Some("some password")), case(None))]
     #[tokio::test]
     async fn get_next_pre_key_ids(password: Option<&str>) {
+        use libsignal_service::pre_keys::PreKeysStore;
         // Create a new storage
-        let (mut storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
 
         // Create two pre keys and one signed pre key
         let key1 = create_random_prekey();
         let key2 = create_random_prekey();
         let key3 = create_random_signed_prekey();
 
+        let mut storage = storage.aci_storage();
+
         // In the beginning zero should be returned
-        assert_eq!(storage.next_pre_key_ids().await, (0, 0, 0));
+        assert_eq!(storage.next_pre_key_id().await.unwrap(), 0);
+        assert_eq!(storage.next_pq_pre_key_id().await.unwrap(), 0);
+        assert_eq!(storage.next_signed_pre_key_id().await.unwrap(), 0);
 
         // Now, we add our keys
         storage
@@ -1236,6 +1262,8 @@ mod tests {
             .unwrap();
 
         // Adapt to keys in the storage
-        assert_eq!(storage.next_pre_key_ids().await, (1, 0, 2));
+        assert_eq!(storage.next_pre_key_id().await.unwrap(), 2);
+        assert_eq!(storage.next_pq_pre_key_id().await.unwrap(), 0);
+        assert_eq!(storage.next_signed_pre_key_id().await.unwrap(), 1);
     }
 }

@@ -102,7 +102,7 @@ async fn fetch_two_distinct_session(storage: impl Future<Output = InMemoryDb>) {
 async fn fetch_messages_without_session(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
-    let messages = storage.fetch_all_messages(1);
+    let messages = storage.fetch_all_messages(1, true);
     assert_eq!(messages.len(), 0);
 }
 
@@ -136,6 +136,9 @@ async fn process_message_exists_session_source(storage: impl Future<Output = InM
             expires_in: None,
             server_guid: None,
             story_type: StoryType::None,
+            body_ranges: None,
+
+            edit: None,
         };
 
         let msg = storage.create_message(&new_message);
@@ -147,6 +150,119 @@ async fn process_message_exists_session_source(storage: impl Future<Output = InM
 
         assert_eq!(msg.server_timestamp, timestamp);
     }
+}
+
+#[rstest]
+#[actix_rt::test]
+async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
+    let (storage, _temp_dir) = storage.await;
+
+    let pn1 = phonenumber::parse(None, "+358501234567").unwrap();
+    let sess1 = storage.fetch_or_insert_session_by_phonenumber(&pn1);
+
+    let timestamp = Utc.timestamp_opt(1, 0).unwrap().naive_utc();
+
+    let new_message = NewMessage {
+        session_id: sess1.id,
+        source_e164: Some(pn1.clone()),
+        source_uuid: None,
+        text: String::from("nyt joni ne velat! Woops this is a typo!"),
+        timestamp,
+        sent: false,
+        received: true,
+        is_read: true,
+        flags: 0,
+        attachment: None,
+        mime_type: None,
+        has_attachment: false,
+        outgoing: false,
+        is_unidentified: false,
+        quote_timestamp: None,
+        expires_in: None,
+        server_guid: None,
+        story_type: StoryType::None,
+        body_ranges: None,
+
+        edit: None,
+    };
+
+    let msg = storage.create_message(&new_message);
+
+    // Test no extra session was created
+    let sessions = storage.fetch_sessions();
+    assert_eq!(sessions.len(), 1);
+    assert_eq!(sessions[0].id, sess1.id);
+
+    assert_eq!(msg.server_timestamp, timestamp);
+    assert_eq!(msg.original_message_id, None);
+
+    let timestamp = Utc.timestamp_opt(2, 0).unwrap().naive_utc();
+    let newer_message = NewMessage {
+        session_id: sess1.id,
+        source_e164: Some(pn1.clone()),
+        source_uuid: None,
+        text: String::from("nyt joni ne velat!"),
+        timestamp,
+        sent: false,
+        received: true,
+        is_read: true,
+        flags: 0,
+        attachment: None,
+        mime_type: None,
+        has_attachment: false,
+        outgoing: false,
+        is_unidentified: false,
+        quote_timestamp: None,
+        expires_in: None,
+        server_guid: None,
+        story_type: StoryType::None,
+        body_ranges: None,
+
+        edit: Some(&msg),
+    };
+
+    let newer_msg = storage.create_message(&newer_message);
+    assert_eq!(newer_msg.original_message_id, Some(msg.id));
+
+    let timestamp = Utc.timestamp_opt(3, 0).unwrap().naive_utc();
+    let newerer_message = NewMessage {
+        session_id: sess1.id,
+        source_e164: Some(pn1.clone()),
+        source_uuid: None,
+        text: String::from("nyt joni ne velat!"),
+        timestamp,
+        sent: false,
+        received: true,
+        is_read: true,
+        flags: 0,
+        attachment: None,
+        mime_type: None,
+        has_attachment: false,
+        outgoing: false,
+        is_unidentified: false,
+        quote_timestamp: None,
+        expires_in: None,
+        server_guid: None,
+        story_type: StoryType::None,
+        body_ranges: None,
+
+        edit: Some(&msg),
+    };
+
+    let newerer_msg = storage.create_message(&newerer_message);
+    assert_eq!(newerer_msg.original_message_id, Some(msg.id));
+
+    let fetch_all = storage.fetch_all_messages(sess1.id, true);
+    assert_eq!(fetch_all.len(), 1);
+    assert_eq!(
+        fetch_all[0].id, newerer_msg.id,
+        "fetch_all_messages should only return the most recent edit"
+    );
+
+    let fetch_all_history = storage.fetch_all_messages(sess1.id, false);
+    assert_eq!(fetch_all_history.len(), 3);
+
+    //
 }
 
 /// This tests code that may potentially be removed after release
@@ -181,12 +297,15 @@ async fn dev_message_update(storage: impl Future<Output = InMemoryDb>) {
         expires_in: None,
         server_guid: None,
         story_type: StoryType::None,
+        body_ranges: None,
+
+        edit: None,
     };
 
     storage.create_message(&new_message);
 
     // Though this is tested in other cases, double-check a message exists
-    let db_messages = storage.fetch_all_messages(session.id);
+    let db_messages = storage.fetch_all_messages(session.id, true);
     assert_eq!(db_messages.len(), 1);
 
     // However, there should have been an attachment
@@ -210,12 +329,15 @@ async fn dev_message_update(storage: impl Future<Output = InMemoryDb>) {
         expires_in: None,
         server_guid: None,
         story_type: StoryType::None,
+        body_ranges: None,
+
+        edit: None,
     };
 
     storage.create_message(&other_message);
 
     // And all the messages should still be only one message
-    let db_messages = storage.fetch_all_messages(session.id);
+    let db_messages = storage.fetch_all_messages(session.id, true);
     assert_eq!(db_messages.len(), 1);
 }
 
@@ -262,6 +384,9 @@ async fn process_inbound_group_message_without_sender(storage: impl Future<Outpu
         expires_in: None,
         server_guid: None,
         story_type: StoryType::None,
+        body_ranges: None,
+
+        edit: None,
     };
 
     let message_inserted = storage.create_message(&new_message);
@@ -311,6 +436,9 @@ async fn process_outbound_group_message_without_sender(storage: impl Future<Outp
         expires_in: None,
         server_guid: None,
         story_type: StoryType::None,
+        body_ranges: None,
+
+        edit: None,
     };
 
     let message_inserted = storage.create_message(&new_message);
@@ -361,6 +489,9 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
         expires_in: None,
         server_guid: None,
         story_type: StoryType::None,
+        body_ranges: None,
+
+        edit: None,
     };
 
     let message_inserted = storage.create_message(&new_message);
@@ -441,6 +572,7 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
 async fn test_create_and_open_storage(
     storage_password: Option<String>,
 ) -> Result<(), anyhow::Error> {
+    use libsignal_service::pre_keys::PreKeysStore;
     use rand::distributions::Alphanumeric;
     use rand::{Rng, RngCore};
 
@@ -486,9 +618,18 @@ async fn test_create_and_open_storage(
             // TODO: assert that tables exist
             assert_eq!(password, $storage.signal_password().await?);
             assert_eq!(signaling_key, $storage.signaling_key().await?);
-            assert_eq!(regid, $storage.get_local_registration_id().await?);
+            assert_eq!(
+                regid,
+                $storage.aci_storage().get_local_registration_id().await?
+            );
+            assert_eq!(
+                pni_regid,
+                $storage.pni_storage().get_local_registration_id().await?
+            );
 
-            let (signed, kyber, unsigned) = $storage.next_pre_key_ids().await;
+            let unsigned = $storage.aci_storage().next_pre_key_id().await?;
+            let kyber = $storage.aci_storage().next_pq_pre_key_id().await?;
+            let signed = $storage.aci_storage().next_signed_pre_key_id().await?;
             // Unstarted client will have no pre-keys.
             assert_eq!(0, signed);
             assert_eq!(0, kyber);
@@ -620,6 +761,9 @@ async fn test_recipient_actions() {
         expires_in: None,
         server_guid: None,
         story_type: StoryType::None,
+        body_ranges: None,
+
+        edit: None,
     };
 
     let msg = storage.create_message(&msg);
@@ -690,7 +834,10 @@ async fn test_recipient_actions() {
     assert!(storage.fetch_attachment(42).is_none());
     assert!(storage.fetch_attachments_for_message(msg.id).is_empty());
 
-    assert_eq!(storage.fetch_all_messages_augmented(session.id).len(), 1);
+    assert_eq!(
+        storage.fetch_all_messages_augmented(session.id, true).len(),
+        1
+    );
 
     assert_eq!(storage.fetch_all_sessions_augmented().len(), 1);
 
@@ -705,7 +852,10 @@ async fn test_recipient_actions() {
     drop(msg);
 
     // The one deleted message is "only" marked as deleted
-    assert_eq!(storage.fetch_all_messages_augmented(session.id).len(), 1);
+    assert_eq!(
+        storage.fetch_all_messages_augmented(session.id, true).len(),
+        1
+    );
 
     storage.delete_session(session.id);
     assert_eq!(storage.fetch_all_sessions_augmented().len(), 0);

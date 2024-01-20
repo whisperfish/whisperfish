@@ -31,10 +31,6 @@ pub struct FetchAllMessages(pub i32);
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
-pub struct DeleteMessage(pub i32);
-
-#[derive(actix::Message)]
-#[rtype(result = "()")]
 pub struct SendReaction {
     pub message_id: i32,
     pub sender_id: i32,
@@ -83,18 +79,6 @@ impl Handler<StorageReady> for MessageActor {
     fn handle(&mut self, storageready: StorageReady, _ctx: &mut Self::Context) -> Self::Result {
         self.storage = Some(storageready.storage);
         tracing::trace!("MessageActor has a registered storage");
-    }
-}
-
-impl Handler<DeleteMessage> for MessageActor {
-    type Result = ();
-
-    fn handle(
-        &mut self,
-        DeleteMessage(id): DeleteMessage,
-        _ctx: &mut Self::Context,
-    ) -> Self::Result {
-        self.storage.as_mut().unwrap().delete_message(id);
     }
 }
 

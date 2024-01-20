@@ -13,5 +13,5 @@ clap = { version = "3.2", features = ["derive"] }
 libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main" }
 actix-rt = "2.8.0"
 anyhow = "1.0"
-uuid = { version = "1.5", features=["v4"] }
+uuid = { version = "1.5", features = ["v4"] }
 libsignal-protocol = { git = "https://github.com/signalapp/libsignal", tag = "v0.32.0", optional = true }

@@ -1,12 +1,15 @@
 pub mod orm;
 
+pub mod body_ranges;
 mod encryption;
 pub mod migrations;
 pub mod observer;
 mod protocol_store;
+mod protos;
 mod utils;
 
 use self::orm::{AugmentedMessage, StoryType, UnidentifiedAccessMode};
+use crate::body_ranges::AssociatedValue;
 use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
 use crate::schema;
@@ -27,6 +30,7 @@ use libsignal_service::proto::{attachment_pointer, data_message::Reaction, DataM
 use libsignal_service::protocol::{self, *};
 use libsignal_service::zkgroup::api::groups::GroupSecretParams;
 use phonenumber::PhoneNumber;
+pub use protocol_store::AciOrPniStorage;
 use protocol_store::ProtocolStore;
 use std::fmt::Debug;
 use std::fs::File;
@@ -94,7 +98,7 @@ pub struct Message {
 
 /// ID-free Message model for insertions
 #[derive(Clone, Debug)]
-pub struct NewMessage {
+pub struct NewMessage<'a> {
     pub session_id: i32,
     pub source_e164: Option<PhoneNumber>,
     pub source_uuid: Option<Uuid>,
@@ -113,6 +117,9 @@ pub struct NewMessage {
     pub quote_timestamp: Option<u64>,
     pub expires_in: Option<std::time::Duration>,
     pub story_type: StoryType,
+    pub body_ranges: Option<Vec<u8>>,
+
+    pub edit: Option<&'a orm::Message>,
 }
 
 #[derive(Clone, Debug)]
@@ -562,6 +569,7 @@ impl Storage {
     }
 
     /// Asynchronously loads the signal HTTP password from storage and decrypts it.
+    #[tracing::instrument(skip(self))]
     pub async fn signal_password(&self) -> Result<String, anyhow::Error> {
         let contents = self
             .read_file(
@@ -576,6 +584,7 @@ impl Storage {
     }
 
     /// Asynchronously loads the base64 encoded signaling key.
+    #[tracing::instrument(skip(self))]
     pub async fn signaling_key(&self) -> Result<[u8; 52], anyhow::Error> {
         let v = self
             .read_file(
@@ -611,7 +620,7 @@ impl Storage {
     }
 
     /// Process reaction and store in database.
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, sender, data_message), fields(sender = %sender))]
     pub fn process_reaction(
         &mut self,
         sender: &orm::Recipient,
@@ -706,7 +715,7 @@ impl Storage {
     #[tracing::instrument(skip(self))]
     pub fn fetch_self_recipient(&self) -> Option<orm::Recipient> {
         let e164 = self.config.get_tel();
-        let uuid = self.config.get_uuid();
+        let uuid = self.config.get_aci();
         if e164.is_none() {
             tracing::warn!("No e164 set, cannot fetch self.");
             return None;
@@ -717,7 +726,7 @@ impl Storage {
         Some(self.merge_and_fetch_recipient(e164, uuid, None, TrustLevel::Certain))
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, phonenumber), fields(phonenumber = %phonenumber))]
     pub fn fetch_recipient_by_phonenumber(
         &self,
         phonenumber: &PhoneNumber,
@@ -1402,7 +1411,7 @@ impl Storage {
         }
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, phonenumber), fields(phonenumber = %phonenumber))]
     pub fn fetch_or_insert_recipient_by_phonenumber(
         &self,
         phonenumber: &PhoneNumber,
@@ -1666,7 +1675,7 @@ impl Storage {
         })
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, phonenumber), fields(phonenumber = %phonenumber))]
     pub fn fetch_session_by_phonenumber(&self, phonenumber: &PhoneNumber) -> Option<orm::Session> {
         fetch_session!(self.db(), |query| {
             query.filter(schema::recipients::e164.eq(phonenumber.to_string()))
@@ -1795,7 +1804,7 @@ impl Storage {
             .unwrap()
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, phonenumber), fields(phonenumber = %phonenumber))]
     pub fn fetch_or_insert_session_by_phonenumber(
         &self,
         phonenumber: &PhoneNumber,
@@ -2373,6 +2382,25 @@ impl Storage {
         let server_time = millis_to_naive_chrono(new_message.timestamp.timestamp_millis() as u64);
         tracing::trace!("Creating message for timestamp {}", server_time);
 
+        let edit_id = new_message.edit.as_ref().map(|x| x.id);
+
+        let computed_revision = if let Some(edit) = &new_message.edit {
+            // Compute revision number
+            use schema::messages::dsl::*;
+            messages
+                .select(diesel::dsl::max(revision_number))
+                .filter(
+                    id.eq(edit.original_message_id())
+                        .or(original_message_id.eq(edit.original_message_id())),
+                )
+                .first::<Option<i32>>(&mut *self.db())
+                .expect("revision number")
+                .map(|x: i32| x + 1)
+                .unwrap_or(0)
+        } else {
+            0
+        };
+
         let affected_rows = {
             use schema::messages::dsl::*;
             diesel::insert_into(messages)
@@ -2399,6 +2427,9 @@ impl Storage {
                     quote_id.eq(quoted_message_id),
                     expires_in.eq(new_message.expires_in.map(|x| x.as_secs() as i32)),
                     story_type.eq(new_message.story_type as i32),
+                    message_ranges.eq(&new_message.body_ranges),
+                    original_message_id.eq(edit_id),
+                    revision_number.eq(computed_revision),
                 ))
                 .execute(&mut *self.db())
                 .expect("inserting a message")
@@ -2417,6 +2448,37 @@ impl Storage {
         );
         self.observe_insert(schema::messages::table, latest_message.id)
             .with_relation(schema::sessions::table, session);
+
+        // Then we process the edit
+        if let Some(edit) = &new_message.edit {
+            tracing::trace!("Message was an edit, updating old messages");
+            let ids: Vec<i32> = {
+                use schema::messages::dsl::*;
+                diesel::update(messages)
+                    .filter(
+                        id.eq(edit.original_message_id())
+                            .or(original_message_id.eq(edit.original_message_id())),
+                    )
+                    .set((
+                        // Set the original message id to the series of the edits
+                        original_message_id.eq(edit.original_message_id()),
+                        // Set the latest revision id to the new inserted message
+                        latest_revision_id.eq(latest_message.id),
+                    ))
+                    .returning(id)
+                    .load(&mut *self.db())
+                    .expect("update edited messages")
+            };
+            let affected_rows = ids.len();
+            assert!(
+                affected_rows >= 1,
+                "Did not update any message. Dazed and confused."
+            );
+            for id in ids {
+                self.observe_update(schema::messages::table, id)
+                    .with_relation(schema::sessions::table, session);
+            }
+        }
 
         // Mark the session as non-archived
         // TODO: Do this only when necessary
@@ -2506,12 +2568,24 @@ impl Storage {
 
     /// Returns a vector of messages for a specific session, ordered by server timestamp.
     #[tracing::instrument(skip(self))]
-    pub fn fetch_all_messages(&self, session_id: i32) -> Vec<orm::Message> {
-        schema::messages::table
-            .filter(schema::messages::session_id.eq(session_id))
-            .order_by(schema::messages::columns::server_timestamp.desc())
-            .load(&mut *self.db())
-            .expect("database")
+    pub fn fetch_all_messages(&self, session_id: i32, only_most_recent: bool) -> Vec<orm::Message> {
+        if only_most_recent {
+            schema::messages::table
+                .filter(schema::messages::session_id.eq(session_id).and(
+                    schema::messages::latest_revision_id.is_null().or(
+                        schema::messages::latest_revision_id.eq(schema::messages::id.nullable()),
+                    ),
+                ))
+                .order_by(schema::messages::columns::server_timestamp.desc())
+                .load(&mut *self.db())
+                .expect("database")
+        } else {
+            schema::messages::table
+                .filter(schema::messages::session_id.eq(session_id))
+                .order_by(schema::messages::columns::server_timestamp.desc())
+                .load(&mut *self.db())
+                .expect("database")
+        }
     }
 
     /// Return the amount of messages in the database
@@ -2577,11 +2651,21 @@ impl Storage {
             false
         };
 
+        let body_ranges = if let Some(r) = &message.message_ranges {
+            crate::store::body_ranges::deserialize(r)
+        } else {
+            vec![]
+        };
+
+        let mentions = self.fetch_mentions(&body_ranges);
+
         Some(AugmentedMessage {
             inner: message,
             is_voice_note,
             receipts,
             attachments: attachments as usize,
+            mentions,
+            body_ranges,
         })
     }
 
@@ -2614,12 +2698,16 @@ impl Storage {
     /// When the sender is None, it is a sent message, not a received message.
     // XXX maybe this should be `Option<Vec<...>>`.
     #[tracing::instrument(skip(self))]
-    pub fn fetch_all_messages_augmented(&self, sid: i32) -> Vec<orm::AugmentedMessage> {
+    pub fn fetch_all_messages_augmented(
+        &self,
+        sid: i32,
+        only_most_recent: bool,
+    ) -> Vec<orm::AugmentedMessage> {
         // XXX double/aliased-join would be very useful.
         // Our strategy is to fetch as much as possible, and to augment with as few additional
         // queries as possible. We chose to not join `sender`, and instead use a loop for that
         // part.
-        let messages = self.fetch_all_messages(sid);
+        let messages = self.fetch_all_messages(sid, only_most_recent);
 
         let order = (
             schema::messages::columns::server_timestamp.desc(),
@@ -2697,15 +2785,48 @@ impl Storage {
                         vec![]
                     };
 
+                    let body_ranges = if let Some(r) = &message.message_ranges {
+                        crate::store::body_ranges::deserialize(r)
+                    } else {
+                        vec![]
+                    };
+
+                    let mentions = self.fetch_mentions(&body_ranges);
+
                     aug_messages.push(orm::AugmentedMessage {
                         inner: message,
                         is_voice_note,
                         attachments,
                         receipts,
+                        body_ranges,
+                        mentions,
                     });
                 }
             });
         aug_messages
+    }
+
+    fn fetch_mentions(
+        &self,
+        body_ranges: &[crate::store::body_ranges::BodyRange],
+    ) -> std::collections::HashMap<uuid::Uuid, orm::Recipient> {
+        body_ranges
+            .iter()
+            .filter_map(|range| range.associated_value.as_ref())
+            .filter_map(|av| match av {
+                // XXX this silently fails on unparsable UUIDs
+                AssociatedValue::MentionUuid(uuid) => match uuid::Uuid::parse_str(uuid) {
+                    Ok(uuid) => Some(uuid),
+                    Err(_e) => {
+                        tracing::warn!("could not parse UUID {uuid}");
+                        None
+                    }
+                },
+                _ => None,
+            })
+            .filter_map(|uuid| self.fetch_recipient_by_uuid(uuid))
+            .map(|r| (r.uuid.expect("queried by uuid"), r))
+            .collect()
     }
 
     /// Don't actually delete, but mark the message as deleted
@@ -2868,6 +2989,7 @@ impl Storage {
     #[tracing::instrument(skip(self))]
     pub async fn peer_identity(&self, addr: ProtocolAddress) -> Result<Vec<u8>, anyhow::Error> {
         let ident = self
+            .aci_storage() // XXX: What about PNI?
             .get_identity(&addr)
             .await?
             .context("No such identity")?;

@@ -17,8 +17,8 @@ use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::Sent;
 use libsignal_service::push_service::RegistrationMethod;
+use libsignal_service::push_service::ServiceIdType;
 use libsignal_service::sender::SendMessageResult;
-use libsignal_service::sender::SentMessage;
 use tracing_futures::Instrument;
 use uuid::Uuid;
 use whisperfish_store::orm::StoryType;
@@ -58,7 +58,7 @@ use libsignal_service::push_service::{
 use libsignal_service::sender::AttachmentSpec;
 use libsignal_service::websocket::SignalWebSocket;
 use libsignal_service::AccountManager;
-use libsignal_service_actix::prelude::*;
+use libsignal_service_hyper::prelude::*;
 use mime_classifier::{ApacheBugFlag, LoadContext, MimeClassifier, NoSniffFlag};
 use phonenumber::PhoneNumber;
 use qmeta_async::with_executor;
@@ -175,6 +175,7 @@ pub struct ClientWorker {
     promptResetPeerIdentity: qt_signal!(),
     messageSent: qt_signal!(sid: i32, mid: i32, message: QString),
     messageNotSent: qt_signal!(sid: i32, mid: i32),
+    messageDeleted: qt_signal!(sid: i32, mid: i32),
     proofRequested: qt_signal!(token: QString, kind: QString),
     proofCaptchaResult: qt_signal!(success: bool),
 
@@ -218,15 +219,6 @@ pub struct ClientActor {
     local_addr: Option<ServiceAddress>,
     storage: Option<Storage>,
     ws: Option<SignalWebSocket>,
-    // XXX The cipher should be behind a Mutex.
-    // By considering the session that needs to be accessed,
-    // we could lock only a single session to enforce serialized access.
-    // That's a lot of code though, and it should probably happen *inside* the ServiceCipher
-    // instead.
-    // Having ServiceCipher implement `Clone` is imo. a problem, now that everything is `async`.
-    // Putting in behind a Mutex is a lot of work now though,
-    // especially considering this should be *internal* to ServiceCipher.
-    cipher: Option<ServiceCipher<crate::store::Storage, rand::rngs::ThreadRng>>,
     config: std::sync::Arc<crate::config::SignalConfig>,
 
     transient_timestamps: HashSet<u64>,
@@ -277,7 +269,6 @@ impl ClientActor {
             credentials: None,
             local_addr: None,
             storage: None,
-            cipher: None,
             ws: None,
             config,
 
@@ -294,7 +285,7 @@ impl ClientActor {
 
     fn service_ids(&self) -> Option<ServiceIds> {
         Some(ServiceIds {
-            aci: self.config.get_uuid()?,
+            aci: self.config.get_aci()?,
             pni: self.config.get_pni()?,
         })
     }
@@ -303,22 +294,22 @@ impl ClientActor {
         crate::user_agent()
     }
 
-    fn unauthenticated_service(&self) -> AwcPushService {
+    fn unauthenticated_service(&self) -> HyperPushService {
         let service_cfg = self.service_cfg();
-        AwcPushService::new(service_cfg, None, self.user_agent())
+        HyperPushService::new(service_cfg, None, self.user_agent())
     }
 
     fn authenticated_service_with_credentials(
         &self,
         credentials: ServiceCredentials,
-    ) -> AwcPushService {
+    ) -> HyperPushService {
         let service_cfg = self.service_cfg();
 
-        AwcPushService::new(service_cfg, Some(credentials), self.user_agent())
+        HyperPushService::new(service_cfg, Some(credentials), self.user_agent())
     }
 
     /// Panics if no authentication credentials are set.
-    fn authenticated_service(&self) -> AwcPushService {
+    fn authenticated_service(&self) -> HyperPushService {
         self.authenticated_service_with_credentials(self.credentials.clone().unwrap())
     }
 
@@ -326,7 +317,7 @@ impl ClientActor {
         &self,
     ) -> impl Future<
         Output = Result<
-            MessageSender<AwcPushService, crate::store::Storage, rand::rngs::ThreadRng>,
+            MessageSender<HyperPushService, crate::store::AciOrPniStorage, rand::rngs::ThreadRng>,
             ServiceError,
         >,
     > {
@@ -335,7 +326,7 @@ impl ClientActor {
         let mut u_service = self.unauthenticated_service();
 
         let ws = self.ws.clone().unwrap();
-        let cipher = self.cipher.clone().unwrap();
+        let cipher = self.cipher(ServiceIdType::AccountIdentity);
         let local_addr = self.local_addr.unwrap();
         let device_id = self.config.get_device_id();
         async move {
@@ -348,7 +339,8 @@ impl ClientActor {
                 service,
                 cipher,
                 rand::thread_rng(),
-                storage,
+                storage.aci_or_pni(ServiceIdType::AccountIdentity), // In what cases do we use the
+                // PNI identity here?
                 local_addr,
                 device_id,
             ))
@@ -411,6 +403,8 @@ impl ClientActor {
     /// This was `MessageHandler` in Go.
     ///
     /// TODO: consider putting this as an actor `Handle<>` implementation instead.
+    #[tracing::instrument(level = "debug", skip(self, ctx, msg, sync_sent, metadata))]
+    #[allow(clippy::too_many_arguments)]
     pub fn handle_message(
         &mut self,
         ctx: &mut <Self as Actor>::Context,
@@ -420,6 +414,7 @@ impl ClientActor {
         msg: &DataMessage,
         sync_sent: Option<Sent>,
         metadata: &Metadata,
+        edit: Option<NaiveDateTime>,
     ) -> Option<i32> {
         let timestamp = metadata.timestamp;
         let settings = crate::config::SettingsBridge::default();
@@ -444,7 +439,8 @@ impl ClientActor {
                 .and_then(|r| r.to_service_address())
             {
                 actix::spawn(async move {
-                    if let Err(e) = storage.delete_all_sessions(&svc).await {
+                    // XXX What about PNI sessions?
+                    if let Err(e) = storage.aci_storage().delete_all_sessions(&svc).await {
                         tracing::error!(
                             "End session requested, but could not end session: {:?}",
                             e
@@ -554,6 +550,10 @@ impl ClientActor {
                     tracing::warn!("Received a delete message from a different user, ignoring it.");
                 } else {
                     storage.delete_message(db_message.id);
+                    self.inner
+                        .pinned()
+                        .borrow_mut()
+                        .messageDeleted(db_message.session_id, db_message.id);
                 }
             } else {
                 tracing::warn!(
@@ -581,6 +581,18 @@ impl ClientActor {
             metadata.unidentified_sender
         };
 
+        let original_message = edit.and_then(|ts| storage.fetch_message_by_timestamp(ts));
+        // Some sanity checks
+        if edit.is_some() {
+            if let Some(original_message) = original_message.as_ref() {
+                if original_message.sender_recipient_id != sender_recipient.as_ref().map(|x| x.id) {
+                    tracing::warn!("Received an edit for a message that was not sent by the same sender. Continuing, but this is weird.");
+                }
+            } else {
+                tracing::warn!("Received an edit for a message that does not exist. Inserting as is and praying.  This is most probably a bug regarding out-of-order delivery.");
+            }
+        }
+
         let group = if let Some(group) = msg.group_v2.as_ref() {
             let mut key_stack = [0u8; zkgroup::GROUP_MASTER_KEY_LEN];
             key_stack.clone_from_slice(group.master_key.as_ref().expect("group message with key"));
@@ -607,6 +619,8 @@ impl ClientActor {
         } else {
             None
         };
+
+        let body_ranges = crate::store::body_ranges::serialize(&msg.body_ranges);
 
         let session = group.unwrap_or_else(|| {
             let recipient = storage.merge_and_fetch_recipient(
@@ -653,6 +667,9 @@ impl ClientActor {
             expires_in,
             story_type: StoryType::None,
             server_guid: metadata.server_guid,
+            body_ranges,
+
+            edit: original_message.as_ref(),
         };
 
         let message = storage.create_message(&new_message);
@@ -810,6 +827,19 @@ impl ClientActor {
         }
     }
 
+    #[tracing::instrument(level = "debug", skip(self))]
+    fn handle_message_not_sealed(&mut self, recipient: ServiceAddress) {
+        // TODO: if the contact should have our profile key already, send it again.
+        //       if the contact should not yet have our profile key, this is ok, and we
+        //       should offer the user a message request.
+        //       Cfr. MessageContentProcessor, grep for handleNeedsDeliveryReceipt.
+        tracing::warn!(
+            "Received an unsealed message from {:?}. Assert that they have our profile key.",
+            recipient
+        );
+    }
+
+    #[tracing::instrument(level = "debug", skip(self, ctx, metadata))]
     fn process_envelope(
         &mut self,
         Content { body, metadata }: Content,
@@ -824,18 +854,45 @@ impl ClientActor {
             ContentBody::DataMessage(message) => {
                 let uuid = metadata.sender.uuid;
                 let message_id =
-                    self.handle_message(ctx, None, Some(uuid), &message, None, &metadata);
+                    self.handle_message(ctx, None, Some(uuid), &message, None, &metadata, None);
                 if metadata.needs_receipt {
                     if let Some(_message_id) = message_id {
                         self.handle_needs_delivery_receipt(ctx, &message, &metadata);
                     }
                 }
+
+                // XXX Maybe move this if test (and the one for edit) into handle_message?
                 if !metadata.unidentified_sender && message_id.is_some() {
-                    // TODO: if the contact should have our profile key already, send it again.
-                    //       if the contact should not yet have our profile key, this is ok, and we
-                    //       should offer the user a message request.
-                    //       Cfr. MessageContentProcessor, grep for handleNeedsDeliveryReceipt.
-                    tracing::warn!("Received an unsealed message from {:?}. Assert that they have our profile key.", metadata.sender);
+                    self.handle_message_not_sealed(metadata.sender);
+                }
+            }
+            ContentBody::EditMessage(edit) => {
+                let message = edit
+                    .data_message
+                    .as_ref()
+                    .expect("edit message contains data");
+                let uuid = metadata.sender.uuid;
+                let message_id = self.handle_message(
+                    ctx,
+                    None,
+                    Some(uuid),
+                    message,
+                    None,
+                    &metadata,
+                    Some(millis_to_naive_chrono(
+                        edit.target_sent_timestamp
+                            .expect("edit message contains timestamp"),
+                    )),
+                );
+
+                if metadata.needs_receipt {
+                    if let Some(_message_id) = message_id {
+                        self.handle_needs_delivery_receipt(ctx, message, &metadata);
+                    }
+                }
+
+                if !metadata.unidentified_sender && message_id.is_some() {
+                    self.handle_message_not_sealed(metadata.sender);
                 }
             }
             ContentBody::SynchronizeMessage(message) => {
@@ -844,28 +901,28 @@ impl ClientActor {
                     handled = true;
                     tracing::trace!("Sync sent message");
                     // These are messages sent through a paired device.
+                    let uuid = sent
+                        .destination_service_id
+                        .as_deref()
+                        .map(Uuid::parse_str)
+                        .transpose()
+                        .map_err(|_| {
+                            tracing::warn!("Unparsable UUID {}", sent.destination_service_id())
+                        })
+                        .ok()
+                        .flatten();
+                    let phonenumber = sent
+                        .destination_e164
+                        .as_deref()
+                        .map(|s| phonenumber::parse(None, s))
+                        .transpose()
+                        .map_err(|_| {
+                            tracing::warn!("Unparsable phonenumber {}", sent.destination_e164())
+                        })
+                        .ok()
+                        .flatten();
 
                     if let Some(message) = &sent.message {
-                        let uuid = sent
-                            .destination_service_id
-                            .as_deref()
-                            .map(Uuid::parse_str)
-                            .transpose()
-                            .map_err(|_| {
-                                tracing::warn!("Unparsable UUID {}", sent.destination_service_id())
-                            })
-                            .ok()
-                            .flatten();
-                        let phonenumber = sent
-                            .destination_e164
-                            .as_deref()
-                            .map(|s| phonenumber::parse(None, s))
-                            .transpose()
-                            .map_err(|_| {
-                                tracing::warn!("Unparsable phonenumber {}", sent.destination_e164())
-                            })
-                            .ok()
-                            .flatten();
                         self.handle_message(
                             ctx,
                             // Empty string mainly when groups,
@@ -875,6 +932,22 @@ impl ClientActor {
                             message,
                             Some(sent.clone()),
                             &metadata,
+                            None,
+                        );
+                    } else if let Some(edit) = &sent.edit_message {
+                        let message = edit.data_message.as_ref().expect("edit message");
+                        let edit = edit.target_sent_timestamp.expect("edit timestamp");
+
+                        self.handle_message(
+                            ctx,
+                            // Empty string mainly when groups,
+                            // but maybe needs a check. TODO
+                            phonenumber,
+                            uuid,
+                            message,
+                            Some(sent.clone()),
+                            &metadata,
+                            Some(millis_to_naive_chrono(edit)),
                         );
                     } else {
                         tracing::warn!(
@@ -895,6 +968,7 @@ impl ClientActor {
                         // XXX: this should probably not be based on ts alone.
                         let ts = read.timestamp();
                         let source = read.sender_aci();
+                        // XXX: Also handle PNI
                         // Signal uses timestamps in milliseconds, chrono has nanoseconds
                         let ts = millis_to_naive_chrono(ts);
                         tracing::trace!(
@@ -994,6 +1068,21 @@ impl ClientActor {
                 self.start_time.format("%Y-%m-%d_%H-%M")
             )))
             .expect("open attachment log")
+    }
+
+    fn cipher(
+        &self,
+        service_identity: ServiceIdType,
+    ) -> ServiceCipher<whisperfish_store::AciOrPniStorage, rand::prelude::ThreadRng> {
+        let service_cfg = self.service_cfg();
+        let device_id = self.config.get_device_id();
+        ServiceCipher::new(
+            self.storage.as_ref().unwrap().aci_or_pni(service_identity),
+            rand::thread_rng(),
+            service_cfg.unidentified_sender_trust_root,
+            self.local_addr.unwrap().uuid,
+            device_id.into(),
+        )
     }
 }
 
@@ -1250,6 +1339,9 @@ impl Handler<QueueMessage> for ClientActor {
             expires_in: session.expiring_message_timeout,
             story_type: StoryType::None,
             server_guid: None,
+            body_ranges: None,
+
+            edit: None,
         });
 
         if let Some(h) = self.message_expiry_notification_handle.as_ref() {
@@ -1283,6 +1375,7 @@ impl Handler<SendMessage> for ClientActor {
 
         let storage = storage.clone();
         let addr = ctx.address();
+        let self_uuid = self.local_addr.unwrap().uuid;
         Box::pin(
             async move {
                 let mut sender = sender.await?;
@@ -1329,6 +1422,7 @@ impl Handler<SendMessage> for ClientActor {
                     profile_key: self_recipient.and_then(|r| r.profile_key),
                     quote,
                     expire_timer: msg.expires_in.map(|x| x as u32),
+                    body_ranges: crate::store::body_ranges::to_vec(msg.message_ranges.as_ref()),
                     ..Default::default()
                 };
 
@@ -1384,7 +1478,8 @@ impl Handler<SendMessage> for ClientActor {
                 match res {
                     Ok(results) => {
                         let unidentified = results.iter().all(|res| match res {
-                            Ok(SentMessage { unidentified, .. }) => *unidentified,
+                            // XXX: We should be able to send unidentified messages to our own devices too.
+                            Ok(message) => message.unidentified || (message.recipient.uuid == self_uuid),
                             _ => false,
                         });
 
@@ -1452,7 +1547,8 @@ impl Handler<SendMessage> for ClientActor {
                                     },
                                     MessageSenderError::NotFound { uuid } => {
                                         tracing::warn!("Recipient not found, removing device sessions {}", uuid);
-                                        let mut num = storage.delete_all_sessions(&ServiceAddress { uuid }).await?;
+                                        // XXX what about PNI?
+                                        let mut num = storage.aci_storage().delete_all_sessions(&ServiceAddress { uuid }).await?;
                                         tracing::trace!("Removed {} device session(s)", num);
                                         num = storage.mark_recipient_registered(uuid, false);
                                         tracing::trace!("Marked {} recipient(s) as unregistered", num);
@@ -1531,6 +1627,9 @@ impl Handler<EndSession> for ClientActor {
             expires_in: None, // Don't expire system messages
             story_type: StoryType::None,
             server_guid: None,
+            body_ranges: None,
+
+            edit: None,
         });
         ctx.notify(SendMessage(msg.id));
     }
@@ -1859,30 +1958,36 @@ impl Handler<StorageReady> for ClientActor {
             .config
             .get_tel()
             .expect("phonenumber present after any registration");
-        let uuid = self.config.get_uuid();
+        let aci = self.config.get_aci();
+        // XXX What if WhoAmI has not yet run?
+        let pni = self.config.get_pni();
         let device_id = self.config.get_device_id();
 
         storageready.storage.mark_pending_messages_failed();
 
         let storage_for_password = storageready.storage;
         let request_password = async move {
-            tracing::info!("Phone number: {:?}", phonenumber);
-            tracing::info!("UUID: {:?}", uuid);
-            tracing::info!("DeviceId: {}", device_id);
+            tracing::info!(
+                "phonenumber: {phonenumber}, ACI: {aci:?}, PNI: {pni:?}, DeviceId: {device_id}"
+            );
 
             let password = storage_for_password.signal_password().await.unwrap();
             let signaling_key = Some(storage_for_password.signaling_key().await.unwrap());
 
-            (uuid, phonenumber, device_id, password, signaling_key)
-        };
-        let service_cfg = self.service_cfg();
+            (aci, pni, phonenumber, device_id, password, signaling_key)
+        }
+        .instrument(tracing::span!(
+            tracing::Level::INFO,
+            "reading password and signaling key"
+        ));
 
         Box::pin(request_password.into_actor(self).map(
-            move |(uuid, phonenumber, device_id, password, signaling_key), act, ctx| {
+            move |(aci, pni, phonenumber, device_id, password, signaling_key), act, ctx| {
                 let _span = tracing::trace_span!("whisperfish startup").entered();
                 // Store credentials
                 let credentials = ServiceCredentials {
-                    uuid,
+                    aci,
+                    pni,
                     phonenumber,
                     password: Some(password),
                     signaling_key,
@@ -1892,18 +1997,9 @@ impl Handler<StorageReady> for ClientActor {
                 // end store credentials
 
                 // Signal service context
-                let storage = act.storage.clone().unwrap();
                 // XXX What about the whoami migration?
-                let uuid = uuid.expect("local uuid to initialize service cipher");
-                let cipher = ServiceCipher::new(
-                    storage,
-                    rand::thread_rng(),
-                    service_cfg.unidentified_sender_trust_root,
-                    uuid,
-                    device_id.into(),
-                );
+                let uuid = aci.expect("local uuid to initialize service cipher");
                 // end signal service context
-                act.cipher = Some(cipher);
                 act.local_addr = Some(ServiceAddress { uuid });
 
                 Self::queue_migrations(ctx);
@@ -1954,7 +2050,10 @@ impl Handler<Restart> for ClientActor {
             .map(move |pipe, act, ctx| match pipe {
                 Ok((pipe, ws)) => {
                     ctx.notify(unidentified::RotateUnidentifiedCertificates);
-                    ctx.add_stream(pipe.stream());
+                    ctx.add_stream(
+                        pipe.stream()
+                            .instrument(tracing::info_span!("message receiver")),
+                    );
 
                     ctx.set_mailbox_capacity(1);
                     act.inner.pinned().borrow_mut().connected = true;
@@ -1966,7 +2065,10 @@ impl Handler<Restart> for ClientActor {
                         ctx.cancel_future(handle);
                     }
                     act.outdated_profile_stream_handle = Some(
-                        ctx.add_stream(OutdatedProfileStream::new(act.storage.clone().unwrap())),
+                        ctx.add_stream(
+                            OutdatedProfileStream::new(act.storage.clone().unwrap())
+                                .instrument(tracing::info_span!("outdated profile stream")),
+                        ),
                     );
                 }
                 Err(e) => {
@@ -2048,7 +2150,21 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             }
         };
 
-        let mut cipher = self.cipher.clone().expect("cipher initialized");
+        if msg.destination_service_id.is_none() {
+            tracing::warn!("Message has no destination service id; ignoring");
+            return;
+        }
+        let destination = ServiceAddress {
+            uuid: Uuid::parse_str(msg.destination_service_id.as_deref().unwrap())
+                .expect("parse uuid"),
+        };
+        let mut cipher = self.cipher(
+            if destination == self.local_addr.expect("local addr known") {
+                ServiceIdType::AccountIdentity
+            } else {
+                ServiceIdType::PhoneNumberIdentity
+            },
+        );
 
         if msg.is_receipt() {
             self.process_receipt(&msg);
@@ -2100,6 +2216,9 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                                 expires_in: None, // Don't expire system messages
                                 story_type: StoryType::None,
                                 server_guid: None,
+                                body_ranges: None,
+
+                                edit: None,
                             };
                             storage.create_message(&msg);
 
@@ -2172,7 +2291,8 @@ impl Handler<Register> for ClientActor {
         } = reg;
 
         let mut push_service = self.authenticated_service_with_credentials(ServiceCredentials {
-            uuid: None,
+            aci: None,
+            pni: None,
             phonenumber: phonenumber.clone(),
             password: Some(password.clone()),
             signaling_key: None,
@@ -2270,7 +2390,8 @@ impl Handler<ConfirmRegistration> for ClientActor {
         tracing::trace!("pni_registration_id: {}", pni_registration_id);
 
         let mut push_service = self.authenticated_service_with_credentials(ServiceCredentials {
-            uuid: None,
+            aci: None,
+            pni: None,
             phonenumber,
             password: Some(password),
             signaling_key: None,
@@ -2464,18 +2585,22 @@ impl Handler<RefreshPreKeys> for ClientActor {
         let storage = self.storage.clone().unwrap();
 
         let proc = async move {
-            let (next_signed_pre_key_id, next_kyber_pre_key_id, pre_keys_offset_id) =
-                storage.next_pre_key_ids().await;
-
             am.update_pre_key_bundle(
-                &mut storage.clone(),
+                &mut storage.aci_storage(),
+                ServiceIdType::AccountIdentity,
                 &mut rand::thread_rng(),
-                next_signed_pre_key_id,
-                next_kyber_pre_key_id,
-                pre_keys_offset_id,
                 false,
             )
-            .await
+            .await?;
+
+            // am.update_pre_key_bundle(
+            //     &mut storage.pni_storage(),
+            //     ServiceIdType::PhoneNumberIdentity,
+            //     &mut rand::thread_rng(),
+            //     false,
+            // )
+            // .await?;
+            Result::<(), ServiceError>::Ok(())
         }
         .instrument(tracing::trace_span!("RefreshPreKeys"));
         // XXX: store the last refresh time somewhere.
@@ -2718,6 +2843,22 @@ impl Handler<ProofAccepted> for ClientActor {
             .pinned()
             .borrow_mut()
             .proofCaptchaResult(accepted.result);
+    }
+}
+
+#[derive(actix::Message)]
+#[rtype(result = "()")]
+pub struct DeleteMessage(pub i32);
+
+impl Handler<DeleteMessage> for ClientActor {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        DeleteMessage(id): DeleteMessage,
+        _ctx: &mut Self::Context,
+    ) -> Self::Result {
+        self.storage.as_mut().unwrap().delete_message(id);
     }
 }
 

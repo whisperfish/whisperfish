@@ -5,45 +5,45 @@
     <name></name>
     <message id="whisperfish-session-has-attachment">
         <location filename="../qml/cover/CoverPage.qml" line="125"/>
-        <location filename="../qml/delegates/SessionDelegate.qml" line="41"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="43"/>
         <source>Attachment</source>
         <extracomment>Session contains an attachment label</extracomment>
         <translation>Bijlage</translation>
     </message>
     <message id="whisperfish-session-is-voice-note">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="36"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="38"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Spraakbericht</translation>
     </message>
     <message id="whisperfish-session-delete-all">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="75"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="77"/>
         <source>All messages deleted</source>
         <oldsource>Deleting all messages</oldsource>
         <extracomment>Delete all messages from session (past tense)</extracomment>
         <translation>Alle berichten zijn verwijderd</translation>
     </message>
     <message id="whisperfish-typing-1">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="129"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="131"/>
         <source>%1 is typing</source>
         <extracomment>Text shown when one person is typing</extracomment>
         <translation>%1 is aan ’t typen</translation>
     </message>
     <message id="whisperfish-typing-2">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="133"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="135"/>
         <source>%1 and %2 are typing</source>
         <extracomment>Text shown when two persons are typing</extracomment>
         <translation>%1 en %2 zijn aan ’t typen</translation>
     </message>
     <message id="whisperfish-typing-3-plus">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="137"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="139"/>
         <source>%1 and %n others are typing</source>
         <extracomment>Text shown when three or more persons are typing</extracomment>
         <translation>%1 en nog %n andere zijn aan ’t typen</translation>
     </message>
     <message id="whisperfish-session-note-to-self">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="224"/>
-        <location filename="../qml/harbour-whisperfish-main.qml" line="119"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="226"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="120"/>
         <location filename="../qml/pages/ShareDestinationV1.qml" line="100"/>
         <location filename="../qml/pages/ShareDestinationV2.qml" line="99"/>
         <source>Note to self</source>
@@ -51,82 +51,82 @@
         <translation>Nota aan mijn eigen</translation>
     </message>
     <message id="whisperfish-message-preview-draft">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="245"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="248"/>
         <source>Draft: %1</source>
         <extracomment>Message preview for a saved, unsent message</extracomment>
         <translation>Concept: %1</translation>
     </message>
     <message id="whisperfish-session-mark-unpinned">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="366"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="371"/>
         <source>Unpin</source>
         <extracomment>&apos;Unpin&apos; conversation from the top of the view</extracomment>
         <translation>Losmaken</translation>
     </message>
     <message id="whisperfish-session-mark-pinned">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="369"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="374"/>
         <source>Pin to top</source>
         <extracomment>&apos;Pin&apos; conversation to the top of the view</extracomment>
         <translation>Vanboven vastpinnen</translation>
     </message>
     <message id="whisperfish-session-mark-unmuted">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="378"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="383"/>
         <source>Unmute conversation</source>
         <oldsource>Mark as unmuted</oldsource>
         <extracomment>Mark conversation as unmuted</extracomment>
         <translation>Dempen opheffen</translation>
     </message>
     <message id="whisperfish-session-mark-muted">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="381"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="386"/>
         <source>Mute conversation</source>
         <oldsource>Mark as muted</oldsource>
         <extracomment>Mark conversation as muted</extracomment>
         <translation>Dempen</translation>
     </message>
     <message id="whisperfish-session-mark-unarchived">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="389"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="394"/>
         <source>Restore to inbox</source>
         <extracomment>Show archived messages again in the main page</extracomment>
         <translation>Terugzetten naar postvak IN</translation>
     </message>
     <message id="whisperfish-session-mark-archived">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="392"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="397"/>
         <source>Archive conversation</source>
         <extracomment>Move the conversation to archived conversations</extracomment>
         <translation>Gesprek archiveren</translation>
     </message>
     <message id="whisperfish-session-delete">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="399"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="404"/>
         <source>Delete conversation</source>
         <extracomment>Delete all messages from session menu</extracomment>
         <translation>Gesprek verwijderen</translation>
     </message>
     <message id="whisperfish-notification-default-message">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="175"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="176"/>
         <source>New Message</source>
         <extracomment>Default label for new message notification</extracomment>
         <translation>Nief bericht</translation>
     </message>
     <message id="whisperfish-fatal-error-setup-client">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="262"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="267"/>
         <source>Failed to setup Signal client</source>
         <extracomment>Failed to setup signal client error message</extracomment>
         <translation>’t Instellen van de Signal-cliënt is mislukt</translation>
     </message>
     <message id="whisperfish-fatal-error-invalid-datastore">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="267"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="272"/>
         <source>Failed to setup data storage</source>
         <oldsource>Failed to setup datastore</oldsource>
         <extracomment>Failed to setup datastore error message</extracomment>
         <translation>’t Instellen van de gegevensopslag is mislukt</translation>
     </message>
     <message id="permission-la-data">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="401"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="407"/>
         <source>Whisperfish data storage</source>
         <extracomment>Permission for Whisperfish data storage</extracomment>
         <translation>Whisperfish-gegevensopslag</translation>
     </message>
     <message id="permission-la-data_description">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="405"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="411"/>
         <source>Store configuration and messages</source>
         <extracomment>Permission description for Whisperfish data storage</extracomment>
         <translation>Opslag van configuratie en berichten</translation>
@@ -159,7 +159,7 @@
         <location filename="../qml/pages/MainPage.qml" line="265"/>
         <source>Start a new conversation through a linked device, or let someone message you</source>
         <extracomment>No messages found, hint on what to do</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Begint e nief gesprek via e gekoppeld toestel, of laat iemand anders u een bericht sturen</translation>
     </message>
     <message id="whisperfish-no-archived-messages-hint-text">
         <location filename="../qml/pages/MainPage.qml" line="275"/>
@@ -1386,13 +1386,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="272"/>
         <source>Show phone number</source>
         <extracomment>Settings page, show recipient phone number in conversation view</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Telefonnumero tônen</translation>
     </message>
     <message id="whisperfish-settings-show-phone-number-description">
         <location filename="../qml/pages/Settings.qml" line="275"/>
         <source>Show the phone number of the recipient in the conversation page header.</source>
         <extracomment>Settings page, show recipient phone number in conversation view description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Toônt den telefonnumero van den ontvanger in den balk vanboven.</translation>
     </message>
     <message id="whisperfish-settings-enable-autostart-description">
         <location filename="../qml/pages/Settings.qml" line="323"/>
@@ -1730,7 +1730,7 @@ Settings page share contacts</extracomment>
         <source>Signal should have called you with a 6-digit verification code. Please wait a moment, or restart the process if you have not received a call.</source>
         <oldsource>Signal should have called you with a a 6-digit verification code. Please wait a moment, or restart the process if you have not received a call.</oldsource>
         <extracomment>verify registration instructions: voice</extracomment>
-        <translation type="unfinished">Signal zou u moeten gebeld hebben me een 6-cijferige verificatiecode. Wacht efkes, of herbegint as ge geên belleken hed ontvangen.</translation>
+        <translation>Signal zou u moeten gebeld hebben me een 6-cijferige verificatiecode. Wacht efkes, of herbegint as ge geên belleken hed ontvangen.</translation>
     </message>
     <message id="whisperfish-verify-instructions-sms">
         <location filename="../qml/pages/VerifyRegistrationPage.qml" line="27"/>
@@ -1835,7 +1835,7 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-sender-name-label-outgoing">
         <location filename="../qml/components/QuotedMessagePreview.qml" line="106"/>
         <location filename="../qml/components/SenderNameLabel.qml" line="75"/>
-        <location filename="../qml/harbour-whisperfish-main.qml" line="123"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="124"/>
         <source>You</source>
         <extracomment>Name shown when replying to own messages</extracomment>
         <translation>Gij</translation>
@@ -1847,14 +1847,14 @@ Settings page share contacts</extracomment>
         <translation>Ongekenden afzender</translation>
     </message>
     <message id="whisperfish-quoted-message-preview-voice-note">
-        <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="50"/>
+        <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="72"/>
         <source>Voice Message</source>
         <oldsource>Voice note</oldsource>
         <extracomment>Page header subtitle for a voice note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Spraakbericht</translation>
     </message>
     <message id="whisperfish-quoted-message-preview-attachment">
-        <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="52"/>
+        <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="74"/>
         <location filename="../qml/components/attachment/AttachmentItemFile.qml" line="22"/>
         <location filename="../qml/components/QuotedMessagePreview.qml" line="130"/>
         <source>Attachment</source>
@@ -1869,7 +1869,7 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-message-deleted-note">
         <location filename="../qml/delegates/MessageDelegate.qml" line="249"/>
-        <location filename="../qml/delegates/SessionDelegate.qml" line="49"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="51"/>
         <source>this message was deleted</source>
         <extracomment>Placeholder note for a deleted message</extracomment>
         <translation>’t bericht da hier stond is verwijderd</translation>
@@ -2036,9 +2036,9 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="86"/>
         <source>%n message(s)</source>
         <extracomment>The number of messages in a conversation, displayed in page header</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Eên bericht</numerusform>
+            <numerusform>%n berichten</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-actions-info-label" numerus="yes">

@@ -69,7 +69,7 @@ impl SetupWorker {
 
         // XXX: nice formatting?
         this.borrow_mut().phonenumber = config.get_tel();
-        this.borrow_mut().uuid = config.get_uuid();
+        this.borrow_mut().uuid = config.get_aci();
         this.borrow_mut().deviceId = config.get_device_id().into();
 
         if !this.borrow().registered {
@@ -227,7 +227,7 @@ impl SetupWorker {
         this.deviceId = reg.device_id.into();
 
         config.set_tel(reg.phonenumber.clone());
-        config.set_uuid(reg.service_ids.aci);
+        config.set_aci(reg.service_ids.aci);
         config.set_device_id(reg.device_id.into());
 
         // Install storage

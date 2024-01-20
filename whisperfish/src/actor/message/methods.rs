@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use crate::worker::{DeleteMessageForAll, ExportAttachment, QueueMessage};
+use crate::worker::{DeleteMessage, DeleteMessageForAll, ExportAttachment, QueueMessage};
 
 use super::*;
 use futures::prelude::*;
@@ -99,7 +99,7 @@ impl MessageMethods {
     #[with_executor]
     pub fn remove(&self, id: i32) {
         actix::spawn(
-            self.actor
+            self.client_actor
                 .as_ref()
                 .unwrap()
                 .send(DeleteMessage(id))

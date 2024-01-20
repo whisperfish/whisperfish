@@ -91,6 +91,7 @@ fn create_random_identity_key() -> libsignal_service::protocol::IdentityKey {
 async fn read_own_identity_key(storage_password: Option<String>) {
     let location = current_storage::temp();
     let storage = create_old_storage(storage_password.as_deref(), &location).await;
+    let storage = storage.aci_storage();
 
     // Get own identity key
     let own_identity_key_1 = storage.get_identity_key_pair().await.unwrap();
@@ -102,6 +103,7 @@ async fn read_own_identity_key(storage_password: Option<String>) {
     let location: whisperfish_store::StorageLocation<std::path::PathBuf> =
         location.deref().to_path_buf().into();
     let storage = open_storage(storage_password, &location).await;
+    let storage = storage.aci_storage();
 
     // Get own identity key
     let own_identity_key_2 = storage.get_identity_key_pair().await.unwrap();
@@ -122,6 +124,7 @@ async fn read_own_identity_key(storage_password: Option<String>) {
 async fn read_regid(storage_password: Option<String>) {
     let location = current_storage::temp();
     let storage = create_old_storage(storage_password.as_deref(), &location).await;
+    let storage = storage.aci_storage();
 
     // Get own identity key
     let regid_1 = storage.get_local_registration_id().await.unwrap();
@@ -133,6 +136,7 @@ async fn read_regid(storage_password: Option<String>) {
     let location: whisperfish_store::StorageLocation<std::path::PathBuf> =
         location.deref().to_path_buf().into();
     let storage = open_storage(storage_password, &location).await;
+    let storage = storage.aci_storage();
 
     // Get own identity key
     let regid_2 = storage.get_local_registration_id().await.unwrap();
@@ -205,7 +209,9 @@ async fn read_signaling_key(storage_password: Option<String>) {
 #[actix_rt::test]
 async fn read_other_identity_key(storage_password: Option<String>) {
     let location = current_storage::temp();
-    let mut storage = create_old_storage(storage_password.as_deref(), &location).await;
+    let storage = create_old_storage(storage_password.as_deref(), &location).await;
+
+    let mut storage = storage.aci_storage();
 
     // Create new identity key
     let addr = create_random_protocol_address();
@@ -221,6 +227,7 @@ async fn read_other_identity_key(storage_password: Option<String>) {
     let location: whisperfish_store::StorageLocation<std::path::PathBuf> =
         location.deref().to_path_buf().into();
     let storage = open_storage(storage_password, &location).await;
+    let storage = storage.aci_storage();
 
     // Get saved identity key
     let key_2 = storage.get_identity(&addr).await.unwrap().unwrap();
@@ -300,6 +307,8 @@ async fn test_2022_06_migration(
         user_id.to_string(),
         DeviceId::from(device_id),
     );
+
+    let storage = storage.aci_storage();
 
     let identity_key_1 = storage.get_identity(&addr_1).await.unwrap();
     let identity_key_2 = storage.get_identity(&addr_2).await.unwrap();

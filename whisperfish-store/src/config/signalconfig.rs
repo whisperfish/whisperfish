@@ -220,7 +220,7 @@ impl SignalConfig {
         self.tel.lock().unwrap().clone()
     }
 
-    pub fn get_uuid(&self) -> Option<Uuid> {
+    pub fn get_aci(&self) -> Option<Uuid> {
         *self.uuid.lock().unwrap()
     }
 
@@ -236,7 +236,7 @@ impl SignalConfig {
         *self.tel.lock().unwrap() = Some(tel);
     }
 
-    pub fn set_uuid(&self, uuid: Uuid) {
+    pub fn set_aci(&self, uuid: Uuid) {
         *self.uuid.lock().unwrap() = Some(uuid);
     }
 

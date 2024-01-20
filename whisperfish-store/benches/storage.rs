@@ -65,6 +65,8 @@ fn fetch_augmented_messages(c: &mut Criterion) {
                     expires_in: None,
                     server_guid: None,
                     story_type: orm::StoryType::None,
+                    body_ranges: None,
+                    edit: None,
                 });
                 for _attachment in 0..attachments {
                     storage.register_attachment(msg.id, AttachmentPointer::default());
@@ -81,7 +83,7 @@ fn fetch_augmented_messages(c: &mut Criterion) {
                 &elements,
                 move |b, _| {
                     // Now benchmark the retrieve function
-                    b.iter(|| black_box(storage.fetch_all_messages_augmented(session.id)))
+                    b.iter(|| black_box(storage.fetch_all_messages_augmented(session.id, true)))
                 },
             );
             // }

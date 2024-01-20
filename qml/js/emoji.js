@@ -62,7 +62,7 @@ var Style = { // could be initialized on startup with user-configured values
     'openmoji': {
       name: 'OpenMoji',
       key: 'openmoji',
-      versions: ['14.0.0', '13.1.0', '13.0.0'],
+      versions: ['15.0.0', '14.0.0', '13.1.0', '13.0.0'],
       ext: 'svg',
       type: 'v',
       url: 'https://github.com/hfg-gmuend/openmoji/releases/',
@@ -89,7 +89,7 @@ var Style = { // could be initialized on startup with user-configured values
     'google': {
       name: 'Google Noto',
       key: 'google',
-      versions: ['15.0', 'android-12l'],
+      versions: ['15.1', '15.0', 'android-12l'],
       ext: 'png',
       type: 'r',
       url: 'https://emojipedia.org/google',
@@ -98,7 +98,7 @@ var Style = { // could be initialized on startup with user-configured values
     'whatsapp': {
       name: 'WhatsApp',
       key: 'whatsapp',
-      versions: ['2.22.8.79', '2.20.206.24'],
+      versions: ['2.23.2.72', '2.22.8.79', '2.21.23.23', '2.21.16.20', '2.21.11.17', '2.20.206.24'],
       ext: 'png',
       type: 'r',
       url: 'https://emojipedia.org/whatsapp',
@@ -107,7 +107,7 @@ var Style = { // could be initialized on startup with user-configured values
     'apple': {
       name: 'Apple',
       key: 'apple',
-      versions: ['ios-16.4', 'ios-15.4', 'ios-14.2'],
+      versions: ['ios-16.4', 'ios-15.4', 'ios-14.6', 'ios-14.5', 'ios-14.2'],
       ext: 'png',
       type: 'r',
       url: 'https://emojipedia.org/apple',

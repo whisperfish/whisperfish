@@ -15,7 +15,7 @@ impl Handler<WhoAmI> for ClientActor {
 
         Box::pin(
             async move {
-                if let (Some(aci), Some(pni)) = (config.get_uuid(), config.get_pni()) {
+                if let (Some(aci), Some(pni)) = (config.get_aci(), config.get_pni()) {
                     tracing::trace!("ACI ({}) and PNI ({}) already set.", aci, pni);
                     return Ok(None);
                 }
@@ -24,6 +24,7 @@ impl Handler<WhoAmI> for ClientActor {
 
                 Ok::<_, anyhow::Error>(Some(response))
             }
+            .instrument(tracing::debug_span!("whoami"))
             .into_actor(self)
             .map(
                 move |result: Result<Option<WhoAmIResponse>, _>, act, _ctx| {
@@ -38,8 +39,8 @@ impl Handler<WhoAmI> for ClientActor {
                     tracing::info!("Retrieved ACI ({}) and PNI ({})", result.uuid, result.pni);
 
                     if let Some(credentials) = act.credentials.as_mut() {
-                        credentials.uuid = Some(result.uuid);
-                        config2.set_uuid(result.uuid);
+                        credentials.aci = Some(result.uuid);
+                        config2.set_aci(result.uuid);
                         config2.set_pni(result.pni);
                         config2.write_to_file().expect("write config");
                     } else {

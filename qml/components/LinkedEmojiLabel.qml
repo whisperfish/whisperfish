@@ -46,6 +46,12 @@ Label {
     property bool defaultLinkActions: true
     property alias shortenUrl: linkedTextProxy.shortenUrl
     property alias proxy: linkedTextProxy
+    property bool bypassLinking: false
+    property bool needsRichText: false
+    property bool hasSpoilers: false
+    // XXX if needsRichText, add a style that sets the color for links to the text
+
+    readonly property string maybeLinkedText: bypassLinking ? plainText : linkedTextProxy.text
 
     readonly property int emojiCount: _parsedCountData !== null ? _parsedCountData.emojiCount : 0
     readonly property int plainCharactersCount: _parsedCountData !== null ?
@@ -59,11 +65,11 @@ Label {
     readonly property real _effectiveEmojiSize: _elideEnabled ?
                                                     1.0*font.pixelSize :
                                                     emojiSizeMult*font.pixelSize
-    property var _parsedEmojiData: enableEmojis ? Emojify.parse(linkedTextProxy.text,
+    property var _parsedEmojiData: enableEmojis ? Emojify.parse(maybeLinkedText,
                                                               _effectiveEmojiSize) : null
     property string _effectiveText: (enableEmojis && _parsedEmojiData !== null) ?
                                         _parsedEmojiData.text :
-                                        linkedTextProxy.text
+                                        maybeLinkedText
 
     // We parse the data a second time without being dependent on the
     // _effectiveEmojiSize property. This allows the emoji count to be used to
@@ -78,7 +84,7 @@ Label {
     readonly property int elide: 0 // to enable, use enableElide instead
 
     text: _effectiveText
-    textFormat: Text.StyledText
+    textFormat: needsRichText ? Text.RichText : Text.StyledText
     wrapMode: _elideEnabled ? Text.WrapAnywhere : Text.Wrap
     font.pixelSize: Theme.fontSizeMedium
     onLinkActivated: defaultLinkActions ? linkedTextProxy.linkActivated(link) : {}
@@ -121,5 +127,15 @@ Label {
                             Math.floor(root.height/lineHeightMetrics.calcLineHeight),
                             root.maximumLineCount)
                       : 0
+    }
+
+    // XXX Label does not support inline JavaScript, so we have to use a MouseArea
+    MouseArea {
+        anchors.fill: parent
+        enabled: root.hasSpoilers
+        onClicked: {
+            messageLabel.plainText = root.plainText.replace(modelData.spoilerTag, modelData.revealedTag)
+            root.hasSpoilers = false
+        }
     }
 }

@@ -52,39 +52,42 @@ impl Handler<MultideviceSyncProfile> for ClientActor {
         let sender = self.message_sender();
         let addr = ctx.address();
 
-        Box::pin(async move {
-            let mut sender = match sender.await {
-                Ok(s) => s,
-                Err(_e) => {
-                    actix::clock::sleep(Duration::from_secs(60)).await;
-                    addr.send(MultideviceSyncProfile)
-                        .await
-                        .expect("actor alive");
-                    return;
+        Box::pin(
+            async move {
+                let mut sender = match sender.await {
+                    Ok(s) => s,
+                    Err(_e) => {
+                        actix::clock::sleep(Duration::from_secs(60)).await;
+                        addr.send(MultideviceSyncProfile)
+                            .await
+                            .expect("actor alive");
+                        return;
+                    }
+                };
+                let self_recipient = storage
+                    .fetch_self_recipient()
+                    .expect("self recipient should be set by now");
+
+                use libsignal_service::sender::ContactDetails;
+
+                let contacts = std::iter::once(ContactDetails {
+                    number: self_recipient.e164.as_ref().map(PhoneNumber::to_string),
+                    aci: self_recipient.uuid.as_ref().map(Uuid::to_string),
+                    name: self_recipient.profile_joined_name.clone(),
+                    profile_key: self_recipient.profile_key,
+                    // XXX other profile stuff
+                    ..Default::default()
+                });
+
+                if let Err(e) = sender
+                    .send_contact_details(&local_addr, None, contacts, false, false)
+                    .await
+                {
+                    tracing::warn!("{}", e);
                 }
-            };
-            let self_recipient = storage
-                .fetch_self_recipient()
-                .expect("self recipient should be set by now");
-
-            use libsignal_service::sender::ContactDetails;
-
-            let contacts = std::iter::once(ContactDetails {
-                number: self_recipient.e164.as_ref().map(PhoneNumber::to_string),
-                aci: self_recipient.uuid.as_ref().map(Uuid::to_string),
-                name: self_recipient.profile_joined_name.clone(),
-                profile_key: self_recipient.profile_key,
-                // XXX other profile stuff
-                ..Default::default()
-            });
-
-            if let Err(e) = sender
-                .send_contact_details(&local_addr, None, contacts, false, false)
-                .await
-            {
-                tracing::warn!("Could not sync profile key: {}", e);
             }
-        })
+            .instrument(tracing::debug_span!("multidevice sync profile")),
+        )
     }
 }
 
@@ -100,7 +103,7 @@ impl Handler<RefreshOwnProfile> for ClientActor {
         let mut service = self.authenticated_service();
         let client = ctx.address();
         let config = self.config.clone();
-        let uuid = config.get_uuid().expect("valid uuid at this point");
+        let uuid = config.get_aci().expect("valid uuid at this point");
 
         Box::pin(
             async move {
@@ -161,6 +164,7 @@ impl Handler<RefreshOwnProfile> for ClientActor {
                     client.send(UploadProfile).await.unwrap();
                 }
             }
+            .instrument(tracing::debug_span!("refresh own profile"))
             .into_actor(self)
             .map(|_, act, _| act.migration_state.notify_self_profile_ready()),
         )
@@ -174,23 +178,26 @@ impl Handler<UpdateProfile> for ClientActor {
         let storage = self.storage.clone().unwrap();
         let client = ctx.address();
         let config = self.config.clone();
-        let uuid = config.get_uuid().expect("valid uuid at this point");
+        let uuid = config.get_aci().expect("valid uuid at this point");
 
         // XXX: Validate emoji character somehow
-        Box::pin(async move {
-            storage.update_profile_details(
-                &uuid,
-                &Some(new_profile.given_name),
-                &Some(new_profile.family_name),
-                &Some(new_profile.about),
-                &Some(new_profile.emoji),
-            );
+        Box::pin(
+            async move {
+                storage.update_profile_details(
+                    &uuid,
+                    &Some(new_profile.given_name),
+                    &Some(new_profile.family_name),
+                    &Some(new_profile.about),
+                    &Some(new_profile.emoji),
+                );
 
-            client.send(UploadProfile).await.unwrap();
-            client.send(RefreshProfileAttributes).await.unwrap();
-            client.send(MultideviceSyncProfile).await.unwrap();
-            // XXX: Send a profile re-download message to contacts
-        })
+                client.send(UploadProfile).await.unwrap();
+                client.send(RefreshProfileAttributes).await.unwrap();
+                client.send(MultideviceSyncProfile).await.unwrap();
+                // XXX: Send a profile re-download message to contacts
+            }
+            .instrument(tracing::debug_span!("update profile")),
+        )
     }
 }
 
@@ -202,114 +209,132 @@ impl Handler<UploadProfile> for ClientActor {
         let service = self.authenticated_service();
         let client = ctx.address();
         let config = self.config.clone();
-        let uuid = config.get_uuid().expect("valid uuid at this point");
+        let uuid = config.get_aci().expect("valid uuid at this point");
 
-        Box::pin(async move {
-            let self_recipient = storage
-                .fetch_self_recipient()
-                .expect("self recipient should be set by now");
-            let profile_key = self_recipient
-                .profile_key
-                .map(|bytes| {
-                    let mut key = [0u8; 32];
-                    key.copy_from_slice(&bytes);
-                    ProfileKey::create(key)
-                })
-                .unwrap_or_else(|| {
-                    tracing::info!("Generating profile key");
-                    ProfileKey::generate(rand::thread_rng().gen())
-                });
-            let name = ProfileName {
-                given_name: self_recipient.profile_given_name.as_deref().unwrap_or(""),
-                family_name: self_recipient.profile_family_name.as_deref(),
-            };
+        Box::pin(
+            async move {
+                let self_recipient = storage
+                    .fetch_self_recipient()
+                    .expect("self recipient should be set by now");
+                let profile_key = self_recipient
+                    .profile_key
+                    .map(|bytes| {
+                        let mut key = [0u8; 32];
+                        key.copy_from_slice(&bytes);
+                        ProfileKey::create(key)
+                    })
+                    .unwrap_or_else(|| {
+                        let _span = tracing::info_span!("generating profile key").entered();
+                        ProfileKey::generate(rand::thread_rng().gen())
+                    });
+                let name = ProfileName {
+                    given_name: self_recipient.profile_given_name.as_deref().unwrap_or(""),
+                    family_name: self_recipient.profile_family_name.as_deref(),
+                };
 
-            let mut am = AccountManager::new(service, Some(profile_key));
-            if let Err(e) = am
-                .upload_versioned_profile_without_avatar(
-                    uuid.into(),
-                    name,
-                    self_recipient.about,
-                    self_recipient.about_emoji,
-                    true,
-                )
-                .await
-            {
-                tracing::error!("Error uploading profile: {}. Retrying in 60 seconds.", e);
-                actix::spawn(async move {
-                    actix::clock::sleep(std::time::Duration::from_secs(60)).await;
-                    client
-                        .send(UploadProfile)
-                        .await
-                        .expect("client still running");
-                });
+                let mut am = AccountManager::new(service, Some(profile_key));
+                if let Err(e) = am
+                    .upload_versioned_profile_without_avatar(
+                        uuid.into(),
+                        name,
+                        self_recipient.about,
+                        self_recipient.about_emoji,
+                        true,
+                    )
+                    .await
+                {
+                    tracing::error!("{}. Retrying in 60 seconds.", e);
+                    actix::spawn(async move {
+                        actix::clock::sleep(std::time::Duration::from_secs(60)).await;
+                        client
+                            .send(UploadProfile)
+                            .await
+                            .expect("client still running");
+                    });
 
-                return;
+                    return;
+                }
+
+                // Now also set the database
+                storage.update_profile_key(
+                    None,
+                    Some(uuid),
+                    None,
+                    &profile_key.get_bytes(),
+                    TrustLevel::Certain,
+                );
+
+                client.send(RefreshProfileAttributes).await.unwrap();
+                client.send(MultideviceSyncProfile).await.unwrap();
             }
-
-            // Now also set the database
-            storage.update_profile_key(
-                None,
-                Some(uuid),
-                None,
-                &profile_key.get_bytes(),
-                TrustLevel::Certain,
-            );
-
-            client.send(RefreshProfileAttributes).await.unwrap();
-            client.send(MultideviceSyncProfile).await.unwrap();
-        })
+            .instrument(tracing::debug_span!("upload profile")),
+        )
     }
 }
 
 impl Handler<RefreshProfileAttributes> for ClientActor {
     type Result = ResponseFuture<()>;
     fn handle(&mut self, _: RefreshProfileAttributes, ctx: &mut Self::Context) -> Self::Result {
-        tracing::info!("Sending profile attributes");
-
         let storage = self.storage.clone().unwrap();
         let service = self.authenticated_service();
         let address = ctx.address();
 
-        Box::pin(async move {
-            let registration_id = storage.get_local_registration_id().await.unwrap();
-            let pni_registration_id = storage.get_local_pni_registration_id().await.unwrap();
-            let self_recipient = storage.fetch_self_recipient().expect("self set by now");
+        Box::pin(
+            async move {
+                let registration_id = storage
+                    .aci_storage()
+                    .get_local_registration_id()
+                    .await
+                    .unwrap();
+                let pni_registration_id = storage
+                    .pni_storage()
+                    .get_local_registration_id()
+                    .await
+                    .unwrap();
+                let self_recipient = storage.fetch_self_recipient().expect("self set by now");
 
-            let profile_key = self_recipient.profile_key();
-            let mut am = AccountManager::new(service, profile_key.map(ProfileKey::create));
-            let unidentified_access_key = profile_key
-                .map(ProfileKey::create)
-                .as_ref()
-                .map(ProfileKey::derive_access_key);
+                let profile_key = self_recipient.profile_key();
+                let mut am = AccountManager::new(service, profile_key.map(ProfileKey::create));
+                let unidentified_access_key = profile_key
+                    .map(ProfileKey::create)
+                    .as_ref()
+                    .map(ProfileKey::derive_access_key);
 
-            let account_attributes = AccountAttributes {
-                signaling_key: None,
-                registration_id,
-                voice: false,
-                video: false,
-                fetches_messages: true,
-                pin: None,
-                registration_lock: None,
-                unidentified_access_key: unidentified_access_key.map(Vec::from),
-                unrestricted_unidentified_access: false,
-                discoverable_by_phone_number: true,
-                capabilities: whisperfish_device_capabilities(),
-                name: Some("Whisperfish".into()),
-                pni_registration_id,
-            };
-            if let Err(e) = am.set_account_attributes(account_attributes).await {
-                tracing::error!("Error refreshing profile attributes: {}", e);
-                actix::spawn(async move {
-                    actix::clock::sleep(std::time::Duration::from_secs(60)).await;
-                    address
-                        .send(UploadProfile)
-                        .await
-                        .expect("client still running");
-                });
-            } else {
-                tracing::info!("Profile attributes refreshed");
+                let account_attributes = AccountAttributes {
+                    signaling_key: None,
+                    registration_id,
+                    voice: false,
+                    video: false,
+                    fetches_messages: true,
+                    pin: None,
+                    registration_lock: None,
+                    unidentified_access_key: unidentified_access_key.map(Vec::from),
+                    unrestricted_unidentified_access: false,
+                    discoverable_by_phone_number: true,
+                    capabilities: whisperfish_device_capabilities(),
+                    name: Some("Whisperfish".into()),
+                    pni_registration_id,
+                };
+                if let Err(e) = am.set_account_attributes(account_attributes).await {
+                    tracing::error!("{}", e);
+                    actix::spawn(async move {
+                        actix::clock::sleep(std::time::Duration::from_secs(60)).await;
+                        address
+                            .send(UploadProfile)
+                            .await
+                            .expect("client still running");
+                    });
+                } else {
+                    if self_recipient.unidentified_access_mode != UnidentifiedAccessMode::Enabled {
+                        storage.set_recipient_unidentified(
+                            self_recipient.id,
+                            UnidentifiedAccessMode::Enabled,
+                        );
+                    }
+                    tracing::info!("profile attributes refreshed");
+                }
             }
-        })
+            .instrument(tracing::debug_span!("refresh profile attributes")),
+        )
     }
 }

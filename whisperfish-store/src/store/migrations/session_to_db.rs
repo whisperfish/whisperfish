@@ -1,6 +1,6 @@
 mod quirk;
 
-use crate::store::orm::{Prekey, SessionRecord, SignedPrekey};
+use crate::store::orm::{self, Prekey, SessionRecord, SignedPrekey};
 use crate::store::Storage;
 use libsignal_service::protocol::{self, IdentityKey, PreKeyId, ProtocolAddress, SignedPreKeyId};
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
@@ -52,6 +52,7 @@ fn name_to_protocol_addr(name: &str, id: u32) -> Option<ProtocolAddress> {
 }
 
 impl SessionStorageMigration {
+    #[tracing::instrument(name = "session_to_db", skip(self))]
     pub async fn execute(&self) {
         let session_dir = self.0.path().join("storage").join("sessions");
         if session_dir.exists() {
@@ -122,6 +123,7 @@ impl SessionStorageMigration {
         }))
     }
 
+    #[tracing::instrument(skip(self))]
     async fn migrate_prekeys(&self) {
         let prekey_dir = self.path().join("storage").join("prekeys");
         let prekeys = self.read_dir_and_filter(prekey_dir).filter_map(|name| {
@@ -163,6 +165,7 @@ impl SessionStorageMigration {
                 let prekey_record = Prekey {
                     id: u32::from(prekey) as _,
                     record: buf,
+                    identity: orm::Identity::Aci,
                 };
                 let res = diesel::insert_into(prekeys)
                     .values(prekey_record)
@@ -196,6 +199,7 @@ impl SessionStorageMigration {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     async fn migrate_signed_prekeys(&self) {
         let prekey_dir = self.path().join("storage").join("signed_prekeys");
         let prekeys = self.read_dir_and_filter(prekey_dir).filter_map(|name| {
@@ -241,6 +245,7 @@ impl SessionStorageMigration {
                 let signed_prekey_record = SignedPrekey {
                     id: u32::from(prekey) as _,
                     record: buf,
+                    identity: orm::Identity::Aci,
                 };
                 let res = diesel::insert_into(signed_prekeys)
                     .values(signed_prekey_record)
@@ -274,6 +279,7 @@ impl SessionStorageMigration {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     async fn migrate_sessions(&self) {
         let session_dir = self.path().join("storage").join("sessions");
 
@@ -336,6 +342,7 @@ impl SessionStorageMigration {
                     address: addr.name().to_string(),
                     device_id: u32::from(addr.device_id()) as i32,
                     record: buf,
+                    identity: orm::Identity::Aci,
                 };
                 let res = diesel::insert_into(session_records)
                     .values(session_record)
@@ -366,6 +373,7 @@ impl SessionStorageMigration {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     async fn migrate_identities(&self) {
         let identity_dir = self.0.path().join("storage").join("identity");
 

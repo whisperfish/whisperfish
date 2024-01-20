@@ -142,7 +142,7 @@ fn main() {
         // Enable QML debug output and full backtrace (for Sailjail).
         std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
         std::env::set_var("RUST_BACKTRACE", "full");
-        "whisperfish=trace,libsignal_service=trace,libsignal_service_actix=trace"
+        "whisperfish=trace,libsignal_service=trace,libsignal_service_hyper=trace"
     } else {
         "whisperfish=info,warn"
     };

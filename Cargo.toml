@@ -6,12 +6,16 @@ members = [
     "harbour-whisperfish",
     "whisperfish",
     "whisperfish-store",
-    "whisperfish-migration-dry-run"
+    "whisperfish-migration-dry-run",
 ]
 
 [patch.crates-io]
 # Required for libsignal's lizard2 patches to c25519
 curve25519-dalek = { git = 'https://github.com/signalapp/curve25519-dalek', tag = 'signal-curve25519-4.0.0' }
+
+# [patch."https://github.com/whisperfish/libsignal-service-rs"]
+# libsignal-service = { path = "../libsignal-service-rs/libsignal-service" }
+# libsignal-service-hyper = { path = "../libsignal-service-rs/libsignal-service-hyper" }
 
 # Smart dev mode: Compile most stuff in release mode, except for the things
 # that are actually maintained by our community
@@ -24,7 +28,7 @@ opt-level = 0
 [profile.dev.package.libsignal-service]
 opt-level = 0
 
-[profile.dev.package.libsignal-service-actix]
+[profile.dev.package.libsignal-service-hyper]
 opt-level = 0
 
 [profile.dev.package.qmetaobject]

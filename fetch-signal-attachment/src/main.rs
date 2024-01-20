@@ -2,7 +2,7 @@ use clap::Parser;
 use futures::io::AsyncReadExt;
 use libsignal_service::configuration::SignalServers;
 use libsignal_service::prelude::*;
-use libsignal_service_actix::prelude::*;
+use libsignal_service_hyper::prelude::*;
 use mime_classifier::{ApacheBugFlag, LoadContext, MimeClassifier, NoSniffFlag};
 use std::{path::Path, sync::Arc};
 use whisperfish::store::{self, Storage};
@@ -74,7 +74,8 @@ async fn main() -> Result<(), anyhow::Error> {
     // Connection details for OWS servers
     // XXX: https://gitlab.com/whisperfish/whisperfish/-/issues/80
     let phonenumber = config.get_tel().expect("phone number present");
-    let uuid = config.get_uuid();
+    let aci = config.get_aci();
+    let pni = config.get_pni();
     let device_id = config.get_device_id();
     let e164 = phonenumber
         .format()
@@ -83,7 +84,8 @@ async fn main() -> Result<(), anyhow::Error> {
     tracing::info!("E164: {}", e164);
     let signaling_key = Some(storage.signaling_key().await.unwrap());
     let credentials = ServiceCredentials {
-        uuid,
+        aci,
+        pni,
         phonenumber,
         password: None,
         signaling_key,
@@ -91,7 +93,7 @@ async fn main() -> Result<(), anyhow::Error> {
     };
 
     // Connect to OWS
-    let mut service = AwcPushService::new(
+    let mut service = HyperPushService::new(
         SignalServers::Production,
         Some(credentials.clone()),
         whisperfish::user_agent(),
