@@ -24,25 +24,25 @@
         <translation>Kaikki viestit poistettu</translation>
     </message>
     <message id="whisperfish-typing-1">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="131"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="132"/>
         <source>%1 is typing</source>
         <extracomment>Text shown when one person is typing</extracomment>
         <translation>%1 kirjoittaa</translation>
     </message>
     <message id="whisperfish-typing-2">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="135"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="136"/>
         <source>%1 and %2 are typing</source>
         <extracomment>Text shown when two persons are typing</extracomment>
         <translation>%1 ja %2 kirjoittavat</translation>
     </message>
     <message id="whisperfish-typing-3-plus">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="139"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="140"/>
         <source>%1 and %n others are typing</source>
         <extracomment>Text shown when three or more persons are typing</extracomment>
         <translation>%1 ja %n muuta kirjoittavat</translation>
     </message>
     <message id="whisperfish-session-note-to-self">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="226"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="228"/>
         <location filename="../qml/harbour-whisperfish-main.qml" line="120"/>
         <location filename="../qml/pages/ShareDestinationV1.qml" line="100"/>
         <location filename="../qml/pages/ShareDestinationV2.qml" line="99"/>
@@ -51,51 +51,51 @@
         <translation>Omat viestit</translation>
     </message>
     <message id="whisperfish-message-preview-draft">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="248"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="251"/>
         <source>Draft: %1</source>
         <extracomment>Message preview for a saved, unsent message</extracomment>
         <translation>Luonnos: %1</translation>
     </message>
     <message id="whisperfish-session-mark-unpinned">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="371"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="382"/>
         <source>Unpin</source>
         <extracomment>&apos;Unpin&apos; conversation from the top of the view</extracomment>
         <translation>Vapauta kiinnitys</translation>
     </message>
     <message id="whisperfish-session-mark-pinned">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="374"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="385"/>
         <source>Pin to top</source>
         <extracomment>&apos;Pin&apos; conversation to the top of the view</extracomment>
         <translation>Kiinnitä</translation>
     </message>
     <message id="whisperfish-session-mark-unmuted">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="383"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="394"/>
         <source>Unmute conversation</source>
         <oldsource>Mark as unmuted</oldsource>
         <extracomment>Mark conversation as unmuted</extracomment>
         <translation>Poista mykistys</translation>
     </message>
     <message id="whisperfish-session-mark-muted">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="386"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="397"/>
         <source>Mute conversation</source>
         <oldsource>Mark as muted</oldsource>
         <extracomment>Mark conversation as muted</extracomment>
         <translation>Mykistä</translation>
     </message>
     <message id="whisperfish-session-mark-unarchived">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="394"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="405"/>
         <source>Restore to inbox</source>
         <extracomment>Show archived messages again in the main page</extracomment>
         <translation>Palauta arkistosta</translation>
     </message>
     <message id="whisperfish-session-mark-archived">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="397"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="408"/>
         <source>Archive conversation</source>
         <extracomment>Move the conversation to archived conversations</extracomment>
         <translation>Arkistoi keskustelu</translation>
     </message>
     <message id="whisperfish-session-delete">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="404"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="415"/>
         <source>Delete conversation</source>
         <extracomment>Delete all messages from session menu</extracomment>
         <translation>Poista keskustelu</translation>
@@ -1951,7 +1951,7 @@ Settings page share contacts</extracomment>
         <translation>näytä enemmän</translation>
     </message>
     <message id="whisperfish-sender-name-label-outgoing">
-        <location filename="../qml/components/QuotedMessagePreview.qml" line="106"/>
+        <location filename="../qml/components/QuotedMessagePreview.qml" line="109"/>
         <location filename="../qml/components/SenderNameLabel.qml" line="75"/>
         <location filename="../qml/harbour-whisperfish-main.qml" line="124"/>
         <source>You</source>
@@ -1959,7 +1959,7 @@ Settings page share contacts</extracomment>
         <translation>Sinä</translation>
     </message>
     <message id="whisperfish-quoted-message-unknown-sender">
-        <location filename="../qml/components/QuotedMessagePreview.qml" line="111"/>
+        <location filename="../qml/components/QuotedMessagePreview.qml" line="114"/>
         <source>Unknown sender</source>
         <extracomment>Text shown on quotes when the sender of a quote is unknown</extracomment>
         <translation>Tuntematon lähettäjä</translation>
@@ -1974,7 +1974,7 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-quoted-message-preview-attachment">
         <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="74"/>
         <location filename="../qml/components/attachment/AttachmentItemFile.qml" line="22"/>
-        <location filename="../qml/components/QuotedMessagePreview.qml" line="130"/>
+        <location filename="../qml/components/QuotedMessagePreview.qml" line="140"/>
         <source>Attachment</source>
         <extracomment>Placeholder text if quoted message preview contains no text, only attachments</extracomment>
         <translation>Liite</translation>
