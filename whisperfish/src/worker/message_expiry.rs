@@ -27,7 +27,7 @@ impl ExpiredMessagesStream {
     }
 
     #[tracing::instrument(skip(self))]
-    fn update_next_wake(&mut self) {
+    fn update_next_wake(&mut self, cx: &mut Context<'_>) {
         if let Some((message_id, time)) = self.storage.fetch_next_expiring_message_id() {
             tracing::info!(
                 "message {} expires at {}; scheduling wake-up.",
@@ -38,6 +38,8 @@ impl ExpiredMessagesStream {
             self.next_wake = Some(Box::pin(tokio::time::sleep(
                 delta.to_std().unwrap_or(Duration::from_secs(1)),
             )));
+
+            cx.waker().wake_by_ref();
         } else {
             self.next_wake = None;
         }
@@ -49,12 +51,6 @@ impl Stream for ExpiredMessagesStream {
 
     #[tracing::instrument(skip(self, cx))]
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        if self.wake_channel.poll_recv(cx).is_ready() {
-            let _span =
-                tracing::trace_span!("wake-up", has_next_wake = self.next_wake.is_some()).entered();
-            self.update_next_wake();
-        }
-
         if let Some(next_wake) = &mut self.next_wake {
             if Pin::new(next_wake).poll(cx).is_ready() {
                 self.next_wake = None;
@@ -66,15 +62,16 @@ impl Stream for ExpiredMessagesStream {
             }
         }
 
-        if self.next_wake.is_none() {
-            let _span = tracing::trace_span!("no next wake, computing").entered();
-            self.update_next_wake();
+        let woken = self.wake_channel.poll_recv(cx).is_ready();
 
-            // Wake up again, if we indeed set a next wake.
-            if self.next_wake.is_some() {
-                let _span = tracing::trace_span!("scheduling next wake").entered();
-                cx.waker().wake_by_ref();
-            }
+        if woken || self.next_wake.is_none() {
+            let _span = if woken {
+                tracing::trace_span!("woken by channel").entered()
+            } else {
+                tracing::trace_span!("no next wake, computing").entered()
+            };
+
+            self.update_next_wake(cx);
         }
 
         Poll::Pending
