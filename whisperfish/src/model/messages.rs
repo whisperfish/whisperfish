@@ -30,6 +30,7 @@ crate::observing_model! {
     } WITH OPTIONAL PROPERTIES FROM message WITH ROLE MessageRoles {
         sessionId SessionId,
         message Message,
+        styledMessage StyledMessage,
         timestamp Timestamp,
 
         senderRecipientId SenderRecipientId,
@@ -46,6 +47,8 @@ crate::observing_model! {
 
         unidentifiedSender Unidentified,
         quotedMessageId QuotedMessageId,
+        hasSpoilers HasSpoilers,
+        hasStrikeThrough HasStrikeThrough,
     }
 }
 
@@ -347,18 +350,18 @@ define_model_roles! {
         Failed(sending_has_failed):                           "failed",
         RemoteDeleted(is_remote_deleted):                     "remoteDeleted",
 
-        Attachments(fn attachments(&self)):                   "attachments",
-        IsVoiceNote(is_voice_note):                           "isVoiceNote",
-
         Unidentified(use_unidentified):                       "unidentifiedSender",
         QuotedMessageId(quote_id via qvariant_from_option):   "quotedMessageId",
+        HasSpoilers(fn has_spoilers(&self)):                  "hasSpoilers",
+        HasStrikeThrough(fn has_strike_through(&self)):       "hasStrikeThrough",
 
         BodyRanges(fn body_ranges(&self) via body_ranges_qvariantlist): "bodyRanges",
 
-        HasStrikeThrough(fn has_strike_through(&self)):       "hasStrikeThrough",
-        HasSpoilers(fn has_spoilers(&self)):                  "hasSpoilers",
         SpoilerTag(fn spoiler_tag(&self) via QString::from):  "spoilerTag",
         RevealedTag(fn revealed_tag(&self) via QString::from): "revealedTag",
+
+        Attachments(fn attachments(&self)):                   "attachments",
+        IsVoiceNote(is_voice_note):                           "isVoiceNote",
 
         IsLatestRevision(fn is_latest_revision(&self)):       "isLatestRevision",
         IsEdited(fn is_edited(&self)):                        "isEdited",

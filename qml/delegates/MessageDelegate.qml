@@ -250,7 +250,7 @@ ListItem {
                             //: Placeholder note if an empty message is encountered.
                             //% "this message is empty"
                             (isEmpty ? qsTrId("whisperfish-message-empty-note") :
-                            (isExpanded ? _message : _message.substr(0, shortenThreshold) + (showExpand ? ' ...' : '')))
+                            ((needsRichText ? cssStyle : '') + (isExpanded ? _message : _message.substr(0, shortenThreshold) + (showExpand ? ' ...' : ''))))
                 bypassLinking: true
                 needsRichText: model.hasStrikeThrough || model.hasSpoilers
                 hasSpoilers: model.hasSpoilers // Set to 'false' when text is clicked

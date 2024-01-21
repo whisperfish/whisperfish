@@ -49,7 +49,9 @@ Label {
     property bool bypassLinking: false
     property bool needsRichText: false
     property bool hasSpoilers: false
-    // XXX if needsRichText, add a style that sets the color for links to the text
+
+    // Prefix the rich text with this style to use correct link color
+    property string cssStyle: "<style> a { color: " + linkColor + " } </style>"
 
     readonly property string maybeLinkedText: bypassLinking ? plainText : linkedTextProxy.text
 
@@ -130,11 +132,12 @@ Label {
     }
 
     // XXX Label does not support inline JavaScript, so we have to use a MouseArea
+    // Note: Only usable inside a ListView (modelData must be available)
     MouseArea {
         anchors.fill: parent
-        enabled: root.hasSpoilers
+        enabled: root.hasSpoilers && modelData !== undefined
         onClicked: {
-            messageLabel.plainText = root.plainText.replace(modelData.spoilerTag, modelData.revealedTag)
+            root.plainText = root.plainText.replace(modelData.spoilerTag, modelData.revealedTag)
             root.hasSpoilers = false
         }
     }

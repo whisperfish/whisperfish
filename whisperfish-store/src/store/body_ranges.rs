@@ -38,7 +38,7 @@ pub fn serialize(value: &[WireBodyRange]) -> Option<Vec<u8>> {
                         }
                         wire_body_range::AssociatedValue::Style(style) => {
                             use database_protos::body_range_list::body_range::Style;
-                            let style = match WireStyle::from_i32(*style).unwrap() {
+                            let style = match WireStyle::try_from(*style).unwrap() {
                                 WireStyle::Bold => Some(Style::Bold),
                                 WireStyle::Italic => Some(Style::Italic),
                                 WireStyle::Spoiler => Some(Style::Spoiler),
@@ -106,11 +106,12 @@ pub fn to_vec(message_ranges: Option<&Vec<u8>>) -> Vec<WireBodyRange> {
 }
 
 fn escape(s: &str) -> std::borrow::Cow<'_, str> {
-    if s.contains('<') || s.contains('>') || s.contains('&') {
+    if s.contains('<') || s.contains('>') || s.contains('&') || s.contains('\n') {
         std::borrow::Cow::Owned(
             s.replace('&', "&amp;")
                 .replace('<', "&lt;")
-                .replace('>', "&gt;"),
+                .replace('>', "&gt;")
+                .replace('\n', "<br>"),
         )
     } else {
         std::borrow::Cow::Borrowed(s)

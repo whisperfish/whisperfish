@@ -104,7 +104,8 @@ ListItem {
         // Only ConversationPage.qml has `sessionId` property.
         if(pageStack.currentPage.sessionId == model.id) {
             var count = model.typing.length
-            console.log("onTypingChanged for", model.id, ":", count, "typing");
+            // XXX: Fix typing notifications (!502)
+            // console.log("onTypingChanged for", model.id, ":", count, "typing");
             var typing;
             if (!model.isTyping || count === 0) {
                 typing = ""
@@ -143,10 +144,11 @@ ListItem {
         }
     }
 
-    Connections {
-        target: model
-        onTypingChanged: sendTypingToHeader()
-    }
+    // XXX: Fix typing notifications (!502)
+    // Connections {
+    //     target: model
+    //     onTypingChanged: sendTypingToHeader()
+    // }
 
     Component.onCompleted: sendTypingToHeader()
 
@@ -236,22 +238,31 @@ ListItem {
                 top: upperLabel.bottom; bottom: parent.bottom
             }
             wrapMode: Text.Wrap
-            maximumLineCount: 2
+            clip: true
+
             enableElide: Text.ElideRight
             color: highlighted ? Theme.secondaryHighlightColor :
                                  Theme.secondaryColor
             font.pixelSize: Theme.fontSizeExtraSmall
             font.italic: model.remoteDeleted
-            plainText: hasDraft ?
+            plainText: (needsRichText ? cssStyle : '') + (hasDraft ?
                       //: Message preview for a saved, unsent message
                       //% "Draft: %1"
                       qsTrId("whisperfish-message-preview-draft").arg(draft) :
-                      message
+                      message)
             bypassLinking: true
             needsRichText: delegate.hasStrikeThrough || delegate.hasSpoilers
             hasSpoilers: delegate.hasSpoilers // Set to 'false' when text is clicked
             highlighted: _labelsHighlighted
             verticalAlignment: Text.AlignTop
+        }
+
+        OpacityRampEffect {
+            offset: 0.8
+            slope: 5
+            sourceItem: lowerLabel
+            enabled: lowerLabel.contentHeight > lowerLabel.height
+            direction: OpacityRamp.TopToBottom
         }
 
         Row {
