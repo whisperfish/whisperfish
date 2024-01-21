@@ -1,0 +1,6 @@
+ALTER TABLE messages
+    ADD COLUMN latest_revision_id INTEGER DEFAULT NULL REFERENCES messages (id) ON DELETE CASCADE;
+ALTER TABLE messages
+    ADD COLUMN original_message_id INTEGER DEFAULT NULL REFERENCES messages (id) ON DELETE CASCADE;
+ALTER TABLE messages
+    ADD COLUMN revision_number INTEGER NOT NULL DEFAULT 0;

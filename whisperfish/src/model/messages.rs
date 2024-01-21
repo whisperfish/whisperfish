@@ -362,6 +362,9 @@ define_model_roles! {
 
         Attachments(fn attachments(&self)):                   "attachments",
         IsVoiceNote(is_voice_note):                           "isVoiceNote",
+
+        IsLatestRevision(fn is_latest_revision(&self)):       "isLatestRevision",
+        IsEdited(fn is_edited(&self)):                        "isEdited",
     }
 }
 
@@ -413,7 +416,7 @@ impl MessageListModel {
     fn load_all(&mut self, storage: Storage, id: i32) {
         self.begin_reset_model();
         self.messages = storage
-            .fetch_all_messages_augmented(id)
+            .fetch_all_messages_augmented(id, true)
             .into_iter()
             .map(Into::into)
             .collect();
@@ -452,13 +455,26 @@ impl MessageListModel {
                 |message| std::cmp::Reverse((message.server_timestamp, message.id)),
             );
             match pos {
+                Ok(existing_index) if !message.is_latest_revision() => {
+                    // Update, but message is not the latest revision. Remove it.
+                    tracing::debug!("Handling message edit. Removing edited message from view.");
+                    self.begin_remove_rows(existing_index as i32, existing_index as i32);
+                    self.messages.remove(existing_index);
+                    self.end_remove_rows();
+                }
                 Ok(existing_index) => {
+                    // Update, and message is the latest revision. Update it.
                     tracing::debug!("Handling update event.");
                     self.messages[existing_index] = message;
                     let idx = self.row_index(existing_index as i32);
                     self.data_changed(idx, idx);
                 }
+                Err(_insertion_index) if !message.is_latest_revision() => {
+                    // Don't insert old revisions.
+                    tracing::debug!("Handling message edit for an old edit, no-op.");
+                }
                 Err(insertion_index) => {
+                    // Insert the message, because it's the latest revision.
                     tracing::debug!("Handling insertion event");
                     self.begin_insert_rows(insertion_index as i32, insertion_index as i32);
                     self.messages.insert(insertion_index, message);

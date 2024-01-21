@@ -95,7 +95,7 @@ pub struct Message {
 
 /// ID-free Message model for insertions
 #[derive(Clone, Debug)]
-pub struct NewMessage {
+pub struct NewMessage<'a> {
     pub session_id: i32,
     pub source_e164: Option<PhoneNumber>,
     pub source_uuid: Option<Uuid>,
@@ -115,6 +115,8 @@ pub struct NewMessage {
     pub expires_in: Option<std::time::Duration>,
     pub story_type: StoryType,
     pub body_ranges: Option<Vec<u8>>,
+
+    pub edit: Option<&'a orm::Message>,
 }
 
 #[derive(Clone, Debug)]
@@ -2247,6 +2249,25 @@ impl Storage {
         let server_time = millis_to_naive_chrono(new_message.timestamp.timestamp_millis() as u64);
         tracing::trace!("Creating message for timestamp {}", server_time);
 
+        let edit_id = new_message.edit.as_ref().map(|x| x.id);
+
+        let computed_revision = if let Some(edit) = &new_message.edit {
+            // Compute revision number
+            use schema::messages::dsl::*;
+            messages
+                .select(diesel::dsl::max(revision_number))
+                .filter(
+                    id.eq(edit.original_message_id())
+                        .or(original_message_id.eq(edit.original_message_id())),
+                )
+                .first::<Option<i32>>(&mut *self.db())
+                .expect("revision number")
+                .map(|x: i32| x + 1)
+                .unwrap_or(0)
+        } else {
+            0
+        };
+
         let affected_rows = {
             use schema::messages::dsl::*;
             diesel::insert_into(messages)
@@ -2274,6 +2295,8 @@ impl Storage {
                     expires_in.eq(new_message.expires_in.map(|x| x.as_secs() as i32)),
                     story_type.eq(new_message.story_type as i32),
                     message_ranges.eq(&new_message.body_ranges),
+                    original_message_id.eq(edit_id),
+                    revision_number.eq(computed_revision),
                 ))
                 .execute(&mut *self.db())
                 .expect("inserting a message")
@@ -2292,6 +2315,37 @@ impl Storage {
         );
         self.observe_insert(schema::messages::table, latest_message.id)
             .with_relation(schema::sessions::table, session);
+
+        // Then we process the edit
+        if let Some(edit) = &new_message.edit {
+            tracing::trace!("Message was an edit, updating old messages");
+            let ids: Vec<i32> = {
+                use schema::messages::dsl::*;
+                diesel::update(messages)
+                    .filter(
+                        id.eq(edit.original_message_id())
+                            .or(original_message_id.eq(edit.original_message_id())),
+                    )
+                    .set((
+                        // Set the original message id to the series of the edits
+                        original_message_id.eq(edit.original_message_id()),
+                        // Set the latest revision id to the new inserted message
+                        latest_revision_id.eq(latest_message.id),
+                    ))
+                    .returning(id)
+                    .load(&mut *self.db())
+                    .expect("update edited messages")
+            };
+            let affected_rows = ids.len();
+            assert!(
+                affected_rows >= 1,
+                "Did not update any message. Dazed and confused."
+            );
+            for id in ids {
+                self.observe_update(schema::messages::table, id)
+                    .with_relation(schema::sessions::table, session);
+            }
+        }
 
         // Mark the session as non-archived
         // TODO: Do this only when necessary
@@ -2381,12 +2435,24 @@ impl Storage {
 
     /// Returns a vector of messages for a specific session, ordered by server timestamp.
     #[tracing::instrument(skip(self))]
-    pub fn fetch_all_messages(&self, session_id: i32) -> Vec<orm::Message> {
-        schema::messages::table
-            .filter(schema::messages::session_id.eq(session_id))
-            .order_by(schema::messages::columns::server_timestamp.desc())
-            .load(&mut *self.db())
-            .expect("database")
+    pub fn fetch_all_messages(&self, session_id: i32, only_most_recent: bool) -> Vec<orm::Message> {
+        if only_most_recent {
+            schema::messages::table
+                .filter(schema::messages::session_id.eq(session_id).and(
+                    schema::messages::latest_revision_id.is_null().or(
+                        schema::messages::latest_revision_id.eq(schema::messages::id.nullable()),
+                    ),
+                ))
+                .order_by(schema::messages::columns::server_timestamp.desc())
+                .load(&mut *self.db())
+                .expect("database")
+        } else {
+            schema::messages::table
+                .filter(schema::messages::session_id.eq(session_id))
+                .order_by(schema::messages::columns::server_timestamp.desc())
+                .load(&mut *self.db())
+                .expect("database")
+        }
     }
 
     /// Return the amount of messages in the database
@@ -2499,12 +2565,16 @@ impl Storage {
     /// When the sender is None, it is a sent message, not a received message.
     // XXX maybe this should be `Option<Vec<...>>`.
     #[tracing::instrument(skip(self))]
-    pub fn fetch_all_messages_augmented(&self, sid: i32) -> Vec<orm::AugmentedMessage> {
+    pub fn fetch_all_messages_augmented(
+        &self,
+        sid: i32,
+        only_most_recent: bool,
+    ) -> Vec<orm::AugmentedMessage> {
         // XXX double/aliased-join would be very useful.
         // Our strategy is to fetch as much as possible, and to augment with as few additional
         // queries as possible. We chose to not join `sender`, and instead use a loop for that
         // part.
-        let messages = self.fetch_all_messages(sid);
+        let messages = self.fetch_all_messages(sid, only_most_recent);
 
         let order = (
             schema::messages::columns::server_timestamp.desc(),
