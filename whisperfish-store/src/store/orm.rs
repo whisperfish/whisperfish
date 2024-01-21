@@ -1207,9 +1207,7 @@ impl AugmentedSession {
     }
 
     pub fn last_message_text_styled(&self) -> Option<String> {
-        self.last_message
-            .as_ref()
-            .and_then(|m| Some(m.styled_message()))
+        self.last_message.as_ref().map(|m| m.styled_message())
     }
 
     pub fn last_message_text(&self) -> Option<&str> {
