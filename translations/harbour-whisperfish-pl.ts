@@ -14,7 +14,7 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="38"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Wiadomość głosowa</translation>
     </message>
     <message id="whisperfish-session-delete-all">
         <location filename="../qml/delegates/SessionDelegate.qml" line="77"/>
@@ -159,13 +159,13 @@
         <location filename="../qml/pages/MainPage.qml" line="265"/>
         <source>Start a new conversation through a linked device, or let someone message you</source>
         <extracomment>No messages found, hint on what to do</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Rozpocznij konwersację powiązanym urządzeniem lub pozwól komuś napisać</translation>
     </message>
     <message id="whisperfish-no-archived-messages-hint-text">
         <location filename="../qml/pages/MainPage.qml" line="275"/>
         <source>No archived conversations</source>
         <extracomment>Showing archived conversations, but the list is empty</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Brak zarchiwizowanych konwersacji</translation>
     </message>
     <message id="whisperfish-session-section-pinned">
         <location filename="../qml/pages/MainPage.qml" line="293"/>
@@ -240,7 +240,7 @@
         <location filename="../qml/pages/About.qml" line="177"/>
         <source>Translators</source>
         <extracomment>Translators heading in About page</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Tłumacze</translation>
     </message>
     <message id="whisperfish-translators-nb_NO">
         <location filename="../qml/pages/About.qml" line="184"/>
@@ -306,7 +306,7 @@
         <location filename="../qml/pages/About.qml" line="372"/>
         <source>Polish translators</source>
         <extracomment>Polish (pl) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Polscy tłumacze</translation>
     </message>
     <message id="whisperfish-translators-zh_CN">
         <location filename="../qml/pages/About.qml" line="391"/>
@@ -390,13 +390,13 @@
         <location filename="../qml/pages/About.qml" line="99"/>
         <source>Source Code</source>
         <extracomment>Source Code</extracomment>
-        <translation>Kod Źródłowy</translation>
+        <translation>Kod źródłowy</translation>
     </message>
     <message id="whisperfish-bug-report">
         <location filename="../qml/pages/About.qml" line="109"/>
         <source>Report a Bug</source>
         <extracomment>Report a Bug</extracomment>
-        <translation>Zgłoś Błąd</translation>
+        <translation>Zgłoś błąd</translation>
     </message>
     <message id="whisperfish-about-wiki-link">
         <location filename="../qml/pages/About.qml" line="119"/>
@@ -427,7 +427,7 @@
         <location filename="../qml/pages/AddDevice.qml" line="82"/>
         <source>Scan the QR code displayed by the Signal application that you wish to link</source>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zeskanuj kod QR wyświetlony w aplikacji Signal, którą chcesz powiązać</translation>
     </message>
     <message id="whisperfish-device-url">
         <location filename="../qml/pages/OldAddDevice.qml" line="43"/>
