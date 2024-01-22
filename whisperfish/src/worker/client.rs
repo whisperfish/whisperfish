@@ -1329,19 +1329,10 @@ impl Handler<QueueMessage> for ClientActor {
             } else {
                 None
             },
-            flags: 0,
-            outgoing: true,
-            received: false,
-            sent: false,
             is_read: true,
-            is_unidentified: false,
             quote_timestamp: quote.map(|msg| msg.server_timestamp.timestamp_millis() as u64),
             expires_in: session.expiring_message_timeout,
-            story_type: StoryType::None,
-            server_guid: None,
-            body_ranges: None,
-
-            edit: None,
+            ..Default::default()
         });
 
         if let Some(h) = self.message_expiry_notification_handle.as_ref() {
@@ -1614,22 +1605,9 @@ impl Handler<EndSession> for ClientActor {
             source_uuid: recipient.uuid,
             text: "[Whisperfish] Reset secure session".into(),
             timestamp: chrono::Utc::now().naive_utc(),
-            has_attachment: false,
-            mime_type: None,
-            attachment: None,
             flags: DataMessageFlags::EndSession.into(),
-            outgoing: true,
-            received: false,
-            sent: false,
             is_read: true,
-            is_unidentified: false,
-            quote_timestamp: None,
-            expires_in: None, // Don't expire system messages
-            story_type: StoryType::None,
-            server_guid: None,
-            body_ranges: None,
-
-            edit: None,
+            ..Default::default()
         });
         ctx.notify(SendMessage(msg.id));
     }
@@ -2199,26 +2177,11 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
                             let msg = crate::store::NewMessage {
                                 session_id: session.id,
-                                source_e164: None,
                                 source_uuid: Some(source_uuid),
                                 text: "[Whisperfish] The identity key for this contact has changed. Please verify your safety number.".into(), // XXX Translate
-                                timestamp: chrono::Utc::now().naive_utc(),
-                                sent: false,
                                 received: true,
-                                is_read: false,
-                                flags: 0,
-                                attachment: None,
-                                mime_type: None,
-                                has_attachment: false,
                                 outgoing: false,
-                                is_unidentified: false,
-                                quote_timestamp: None,
-                                expires_in: None, // Don't expire system messages
-                                story_type: StoryType::None,
-                                server_guid: None,
-                                body_ranges: None,
-
-                                edit: None,
+                                ..Default::default()
                             };
                             storage.create_message(&msg);
 

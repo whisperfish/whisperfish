@@ -122,6 +122,33 @@ pub struct NewMessage<'a> {
     pub edit: Option<&'a orm::Message>,
 }
 
+impl Default for NewMessage<'_> {
+    fn default() -> Self {
+        Self {
+            session_id: 0,
+            source_e164: None,
+            source_uuid: None,
+            server_guid: None,
+            text: "".to_string(),
+            timestamp: chrono::Utc::now().naive_utc(),
+            sent: false,
+            received: false,
+            is_read: false,
+            flags: 0,
+            attachment: None,
+            mime_type: None,
+            has_attachment: false,
+            outgoing: true,
+            is_unidentified: false,
+            quote_timestamp: None,
+            expires_in: None,
+            story_type: StoryType::None,
+            body_ranges: None,
+            edit: None,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct StoreProfile {
     pub given_name: Option<String>,
