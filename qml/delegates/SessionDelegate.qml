@@ -205,9 +205,9 @@ ListItem {
                     pageStack.push(Qt.resolvedUrl("../pages/GroupProfilePage.qml"), { session: model, group: group })
                 } else {
                     if (model.recipientUuid === SetupWorker.uuid) {
-                        pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"))
+                        pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"), { session: model } )
                     } else {
-                        pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { recipientUuid: model.recipientUuid })
+                        pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { session: model, recipientUuid: model.recipientUuid })
                     }
                 }
             }

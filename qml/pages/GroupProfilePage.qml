@@ -13,8 +13,8 @@ Page {
     // a background image. A group admin should be able to change it, too.
     /* property string groupWallpaper: '' */
 
-    property var session: null;
-    property var group: null;
+    property var session: null
+    property var group: null
 
     property bool groupV2: session.isGroupV2 // works until groupV3
     property string groupId: session.groupId
@@ -134,8 +134,15 @@ Page {
 
             ExpiringMessagesComboBox {
                 id: expiringMessages
+                // XXX: User must be admin
+                enabled: false
                 width: parent.width
                 duration: session.expiringMessageTimeout
+                onNewDurationChanged: {
+                    if (duration !== newDuration) {
+                        console.log("XXX Handle new duration:", newDuration)
+                    }
+                }
             }
 
             Item { width: parent.width; height: Theme.paddingLarge }

@@ -8,6 +8,7 @@ Page {
     id: profilePage
     objectName: "profilePage"
 
+    property var session: null
     property string profilePicture: ""
 
     property bool editingProfile: false
@@ -258,6 +259,18 @@ Page {
                 //% "Write something about yourself"
                 label: qsTrId("whisperfish-profile-about")
                 text: recipient.about
+            }
+
+            ExpiringMessagesComboBox {
+                id: expiringMessages
+                visible: session != null
+                width: parent.width
+                duration: session.expiringMessageTimeout
+                onNewDurationChanged: {
+                    if (duration !== newDuration) {
+                        console.log("XXX Handle new duration:", newDuration)
+                    }
+                }
             }
 
             ComboBox {

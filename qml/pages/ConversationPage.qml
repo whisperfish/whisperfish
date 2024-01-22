@@ -47,10 +47,10 @@ Page {
                 pageStack.pushAttached(Qt.resolvedUrl("GroupProfilePage.qml"), { session: session, group: group })
             }
             else if(!session.isGroup && session.recipientUuid !== SetupWorker.uuid) {
-                pageStack.pushAttached(Qt.resolvedUrl("RecipientProfilePage.qml"), { recipientUuid: session.recipientUuid })
+                pageStack.pushAttached(Qt.resolvedUrl("RecipientProfilePage.qml"), { session: session,recipientUuid: session.recipientUuid })
             }
             else {
-                pageStack.pushAttached(Qt.resolvedUrl("ProfilePage.qml"))
+                pageStack.pushAttached(Qt.resolvedUrl("ProfilePage.qml"), { session: session })
             }
         }
     }

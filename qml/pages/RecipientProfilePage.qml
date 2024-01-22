@@ -10,6 +10,7 @@ Page {
 
     property string profilePicture: ""
     property alias recipientUuid: recipient.recipientUuid
+    property var session: null
 
     Recipient {
         id: recipient
@@ -147,6 +148,18 @@ Page {
                 // Translation in ProfilePage.qml
                 label: qsTrId("whisperfish-profile-about")
                 text: recipient.about
+            }
+
+            ExpiringMessagesComboBox {
+                id: expiringMessages
+                visible: session != null
+                width: parent.width
+                duration: session.expiringMessageTimeout
+                onNewDurationChanged: {
+                    if (duration !== newDuration) {
+                        console.log("XXX Handle new duration:", newDuration)
+                    }
+                }
             }
 
             ComboBox {
