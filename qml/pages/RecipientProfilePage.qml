@@ -66,6 +66,13 @@ Page {
                 onClicked: phoneNumberLinker.linkActivated('tel:' + recipient.e164)
                 LinkedText { id: phoneNumberLinker; visible: false }
             }
+            MenuItem {
+                // XXX Turn the profile page into a Dialog -> accept instead?
+                text: "Save expiration time"
+                onClicked: {
+                    MessageModel.createExpiryUpdate(session.sessionId, expiringMessages.newDuration)
+                }
+            }
         }
 
         Column {

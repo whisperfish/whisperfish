@@ -910,6 +910,19 @@ impl Storage {
         }
     }
 
+    pub fn clear_message_expiry(&self, message_id: i32) {
+        use crate::schema::messages::dsl::*;
+        let affected_rows = diesel::update(messages)
+            .set((expires_in.eq(None::<i32>),))
+            .filter(id.eq(message_id))
+            .execute(&mut *self.db())
+            .expect("existing record updated");
+
+        if affected_rows > 0 {
+            self.observe_update(messages, message_id);
+        }
+    }
+
     #[tracing::instrument(
         skip(self, phonenumber, new_profile_key),
         fields(

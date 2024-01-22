@@ -100,6 +100,27 @@ impl Display for QueueMessage {
     }
 }
 
+#[derive(actix::Message, Debug)]
+#[rtype(result = "()")]
+pub struct QueueExpiryUpdate {
+    pub session_id: i32,
+    pub expires_in: Option<Duration>,
+}
+
+impl Display for QueueExpiryUpdate {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(
+            f,
+            "QueueExpiryMessage {{ session_id: {}, expires_in: \"{}\" }}",
+            &self.session_id,
+            match &self.expires_in {
+                Some(d) => format!("Some({}s)", d.as_secs()),
+                _ => "None".into(),
+            },
+        )
+    }
+}
+
 #[derive(Message)]
 #[rtype(result = "()")]
 /// Enqueue a message on socket by message id.
@@ -1343,6 +1364,44 @@ impl Handler<QueueMessage> for ClientActor {
     }
 }
 
+impl Handler<QueueExpiryUpdate> for ClientActor {
+    type Result = ();
+
+    fn handle(&mut self, msg: QueueExpiryUpdate, ctx: &mut Self::Context) -> Self::Result {
+        let _span = tracing::trace_span!("QueueMessage", %msg).entered();
+        tracing::trace!(
+            "Sending expiry of {:?} seconds to session {}",
+            msg.expires_in,
+            msg.session_id
+        );
+        let storage = self.storage.as_mut().unwrap();
+
+        let self_recipient = storage
+            .fetch_self_recipient()
+            .expect("self recipient set when sending");
+        let session = storage
+            .fetch_session_by_id(msg.session_id)
+            .expect("existing session when sending");
+
+        let msg = storage.create_message(&crate::store::NewMessage {
+            session_id: session.id,
+            source_e164: self_recipient.e164,
+            source_uuid: self_recipient.uuid,
+            text: format!(
+                "[Whisperfish] Message expiry set to {:?} seconds",
+                msg.expires_in.map(|x| x.as_secs())
+            ),
+            expires_in: msg.expires_in, // None'd in SendMessage handler
+            flags: DataMessageFlags::ExpirationTimerUpdate as i32,
+            ..Default::default()
+        });
+
+        storage.update_expiration_timer(session.id, msg.expires_in.map(|x| x as u32));
+
+        ctx.notify(SendMessage(msg.id));
+    }
+}
+
 impl Handler<SendMessage> for ClientActor {
     type Result = ResponseActFuture<Self, ()>;
 
@@ -1399,7 +1458,11 @@ impl Handler<SendMessage> for ClientActor {
                     });
 
                 let mut content = DataMessage {
-                    body: msg.text.clone(),
+                    // Don't send body in "contol messages"
+                    body: match msg.flags {
+                        0 => msg.text.clone(),
+                        _ => None,
+                    },
                     flags: if msg.flags != 0 {
                         Some(msg.flags as _)
                     } else {
@@ -1454,6 +1517,11 @@ impl Handler<SendMessage> for ClientActor {
                     };
                     storage.store_attachment_pointer(attachment.id, &ptr);
                     content.attachments.push(ptr);
+                }
+
+                // Don't let ExpirationTimerUpdate messages expire
+                if msg.flags == DataMessageFlags::ExpirationTimerUpdate as i32 && msg.expires_in.is_some() {
+                    storage.clear_message_expiry(msg.id);
                 }
 
                 let res = addr
