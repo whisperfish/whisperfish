@@ -272,7 +272,11 @@ Page {
                         text: qsTrId("whisperfish-group-member-menu-verify-fingerprint")
                         visible: !isVerified
                         onClicked: {
-                            pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"), { recipientUuid: model.uuid })
+                            if (model.uuid === SetupWorker.uuid) {
+                                pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"))
+                            } else {
+                                pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { recipientUuid: model.uuid })
+                            }
                         }
                     }
                     MenuItem {

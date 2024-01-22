@@ -204,7 +204,11 @@ ListItem {
                 if (isGroup) {
                     pageStack.push(Qt.resolvedUrl("../pages/GroupProfilePage.qml"), { session: model, group: group })
                 } else {
-                    pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"), { recipientUuid: model.recipientUuid })
+                    if (model.recipientUuid === SetupWorker.uuid) {
+                        pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"))
+                    } else {
+                        pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { recipientUuid: model.recipientUuid })
+                    }
                 }
             }
         }

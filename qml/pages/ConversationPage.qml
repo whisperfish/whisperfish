@@ -43,14 +43,14 @@ Page {
             //SessionModel.markRead(sessionId)
             //mainWindow.clearNotifications(sessionId)
 
-            var nextPage = pageStack.nextPage()
-            var nextPageName = nextPage ? nextPage.objectName : ''
-
-            if (session.isGroup && nextPageName !== 'groupProfilePage') {
+            if (session.isGroup) {
                 pageStack.pushAttached(Qt.resolvedUrl("GroupProfilePage.qml"), { session: session, group: group })
             }
-            if(!session.isGroup && nextPageName !== 'profilePage'){
-                pageStack.pushAttached(Qt.resolvedUrl("ProfilePage.qml"), { recipientUuid: session.recipientUuid })
+            else if(!session.isGroup && session.recipientUuid !== SetupWorker.uuid) {
+                pageStack.pushAttached(Qt.resolvedUrl("RecipientProfilePage.qml"), { recipientUuid: session.recipientUuid })
+            }
+            else {
+                pageStack.pushAttached(Qt.resolvedUrl("ProfilePage.qml"))
             }
         }
     }
