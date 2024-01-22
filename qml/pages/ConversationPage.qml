@@ -220,6 +220,7 @@ Page {
                 for (var messageId in unreadOrExpiring) {
                     console.log("Mark message", messageId, "as read")
                     ClientWorker.mark_message_read(messageId)
+                    closeMessageNotification(sessionId, messageId)
                 }
             }
         }
