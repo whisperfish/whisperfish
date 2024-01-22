@@ -231,7 +231,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-translators">
-        <location filename="../qml/pages/About.qml" line="111"/>
+        <location filename="../qml/pages/About.qml" line="177"/>
         <source>Translators</source>
         <extracomment>Translators heading in About page</extracomment>
         <translation type="unfinished"></translation>
@@ -375,37 +375,37 @@
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-liberapay">
-        <location filename="../qml/pages/About.qml" line="118"/>
+        <location filename="../qml/pages/About.qml" line="89"/>
         <source>Support on Liberapay</source>
         <extracomment>Support on Liberapay</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-source-code">
-        <location filename="../qml/pages/About.qml" line="128"/>
+        <location filename="../qml/pages/About.qml" line="99"/>
         <source>Source Code</source>
         <extracomment>Source Code</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-bug-report">
-        <location filename="../qml/pages/About.qml" line="138"/>
+        <location filename="../qml/pages/About.qml" line="109"/>
         <source>Report a Bug</source>
         <extracomment>Report a Bug</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-copyright">
-        <location filename="../qml/pages/About.qml" line="88"/>
+        <location filename="../qml/pages/About.qml" line="128"/>
         <source>Copyright</source>
         <extracomment>Copyright</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-about-wiki-link">
-        <location filename="../qml/pages/About.qml" line="148"/>
+        <location filename="../qml/pages/About.qml" line="119"/>
         <source>Visit the Wiki</source>
         <extracomment>Visit the Wiki button, tapping links to the Whisperfish Wiki</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-extra-copyright">
-        <location filename="../qml/pages/About.qml" line="157"/>
+        <location filename="../qml/pages/About.qml" line="151"/>
         <source>Additional Copyright</source>
         <extracomment>Additional Copyright</extracomment>
         <translation type="unfinished"></translation>
