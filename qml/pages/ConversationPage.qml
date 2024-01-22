@@ -203,9 +203,17 @@ Page {
                     }
                     if (item
                         && unreadOrExpiring[item.messageId] === undefined
-                        && (!item.messageRead || item.messageExpiresIn > 0 && item.messageExpiring === false)
                     ) {
-                        unreadOrExpiring[item.messageId] = true
+                        // Set these in the "wrapper cache" so they won't
+                        // show up again in the next iteration.
+                        if (!item.messageRead) {
+                            unreadOrExpiring[item.messageId] = true
+                            item.messageRead = true
+                        }
+                        if (item.messageExpiresIn > 0 && item.messageExpiring === false) {
+                            unreadOrExpiring[item.messageId] = true
+                            item.messageExpiring = true
+                        }
                     }
                 }
                 // XXX mark_messages_read()..?
