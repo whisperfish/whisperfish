@@ -14,7 +14,6 @@ Column {
             case "h": newDuration = timeComboBox.amount * 3600;   break;
             case "d": newDuration = timeComboBox.amount * 86400;  break;
             case "w": newDuration = timeComboBox.amount * 604800; break;
-            default: console.log("Unknown time unit:", unitComboBox.unit)
         }
     }
 
@@ -43,25 +42,14 @@ Column {
         }
     }
 
-    function setUnitIndex() {
-
-        if      (newDuration >= 604800) { unitComboBox.currentIndex = 4 } // weeks
-        else if (newDuration >=  86400) { unitComboBox.currentIndex = 3 } // days
-        else if (newDuration >=   3600) { unitComboBox.currentIndex = 2 } // hours
-        else if (newDuration >=     60) { unitComboBox.currentIndex = 1 } // minutes
-        else                            { unitComboBox.currentIndex = 0 } // seconds
-        unitComboBox.unit = ["s","m","h","d","w"][unitComboBox.currentIndex]
-    }
-
-
     function setTimeIndex() {
+        timeComboBox.model = getModelCount(unitComboBox.unit)
         switch (unitComboBox.unit) {
-            case "w": timeComboBox.currentIndex = Math.min( 4, Math.round(newDuration / 604800)) - 1; break;
-            case "d": timeComboBox.currentIndex = Math.min( 6, Math.round(newDuration /  86400)) - 1; break;
-            case "h": timeComboBox.currentIndex = Math.min(23, Math.round(newDuration /   3600)) - 1; break;
-            case "m": timeComboBox.currentIndex = Math.min(59, Math.round(newDuration /     60)) - 1; break;
-            case "s": timeComboBox.currentIndex = Math.min(59, Math.round(newDuration         )) - 1; break;
-            default: console.log("Unknown time unit:", unitComboBox.unit)
+            case "w": timeComboBox.currentIndex = Math.min( 4, timeComboBox.amount) - 1; newDuration = timeComboBox.amount * 604800; break;
+            case "d": timeComboBox.currentIndex = Math.min( 6, timeComboBox.amount) - 1; newDuration = timeComboBox.amount * 86400;  break;
+            case "h": timeComboBox.currentIndex = Math.min(23, timeComboBox.amount) - 1; newDuration = timeComboBox.amount * 3600;   break;
+            case "m": timeComboBox.currentIndex = Math.min(59, timeComboBox.amount) - 1; newDuration = timeComboBox.amount * 60;     break;
+            default:  timeComboBox.currentIndex = Math.min(59, timeComboBox.amount) - 1; newDuration = timeComboBox.amount;          break;
         }
     }
 
@@ -74,12 +62,13 @@ Column {
         //% "Set or disable message destruction after a certain time after reading. Only affects messages sent after changing this option."
         description: qsTrId("whisperfish-disappearing-messages-description")
         Component.onCompleted: {
-            currentIndex = getExpiryIndex(duration)
+            expiryComboBox.currentIndex = getExpiryIndex(duration)
             if (currentIndex == 8 && duration > 0) {
                 newDuration = duration
             }
             handleClick()
         }
+        property int previousIndex: 0
         property var durations: [-1, 30, 300, 3600, 28800, 86400, 604800, 2419200, 0]
         property var texts: [
             //: Disappearing messages: off
@@ -121,23 +110,35 @@ Column {
                 model: 9
                 MenuItem {
                     text: expiryComboBox.texts[index]
-                    property int value: expiryComboBox.durations[index]
-                    onClicked: expiryComboBox.handleClick()
+                    onClicked: {
+                        expiryComboBox.previousIndex = expiryComboBox.currentIndex
+                        expiryComboBox.currentIndex = index
+                        expiryComboBox.handleClick()
+                    }
                 }
             }
         }
 
         function handleClick() {
-            if (currentIndex == 0) {
+            if (expiryComboBox.currentIndex == 0) {
                 // Off = -1
-                newDuration = -1
+                root.newDuration = -1
+            } else if (expiryComboBox.currentIndex > 0 && expiryComboBox.currentIndex < 8) {
+                // Handle the possible -1 value
+                root.newDuration = Math.max(1, expiryComboBox.durations[expiryComboBox.currentIndex])
+            } else if (expiryComboBox.currentIndex === 8 && expiryComboBox.previousIndex < 8) {
+                switch (expiryComboBox.previousIndex) {
+                    case 7: unitComboBox.currentIndex = 4; unitComboBox.unit = "w"; timeComboBox.model = getModelCount(unitComboBox.unit); timeComboBox.currentIndex =  4 - 1; break;
+                    case 6: unitComboBox.currentIndex = 4; unitComboBox.unit = "w"; timeComboBox.model = getModelCount(unitComboBox.unit); timeComboBox.currentIndex =  1 - 1; break;
+                    case 5: unitComboBox.currentIndex = 3; unitComboBox.unit = "d"; timeComboBox.model = getModelCount(unitComboBox.unit); timeComboBox.currentIndex =  1 - 1; break;
+                    case 4: unitComboBox.currentIndex = 2; unitComboBox.unit = "h"; timeComboBox.model = getModelCount(unitComboBox.unit); timeComboBox.currentIndex =  8 - 1; break;
+                    case 3: unitComboBox.currentIndex = 2; unitComboBox.unit = "h"; timeComboBox.model = getModelCount(unitComboBox.unit); timeComboBox.currentIndex =  1 - 1; break;
+                    case 2: unitComboBox.currentIndex = 1; unitComboBox.unit = "m"; timeComboBox.model = getModelCount(unitComboBox.unit); timeComboBox.currentIndex =  5 - 1; break;
+                    case 1: unitComboBox.currentIndex = 0; unitComboBox.unit = "s"; timeComboBox.model = getModelCount(unitComboBox.unit); timeComboBox.currentIndex = 30 - 1; break;
+                    case 0: unitComboBox.currentIndex = 0; unitComboBox.unit = "s"; timeComboBox.model = getModelCount(unitComboBox.unit); timeComboBox.currentIndex = 30 - 1; break;
+                }
+                updateNewDuration()
             }
-            else if (currentIndex > 0 && currentIndex < 8) {
-                // Ensure valid index calculation later
-                newDuration = Math.max(1, currentItem.value)
-            }
-            setUnitIndex()
-            setTimeIndex()
         }
     }
 
@@ -149,12 +150,16 @@ Column {
         //% "Amount"
         label: qsTrId("whisperfish-disappearing-messages-amount")
         property int amount: currentIndex + 1
+        property var model: getModelCount(unitComboBox.unit)
         menu: ContextMenu {
             Repeater {
-                model: getModelCount(unitComboBox.unit)
+                model: timeComboBox.model
                 MenuItem {
                     text: index + 1
-                    onClicked: updateNewDuration()
+                    onClicked: {
+                        timeComboBox.currentIndex = index
+                        updateNewDuration()
+                    }
                 }
             }
         }
@@ -191,6 +196,7 @@ Column {
                 MenuItem {
                     text: unitComboBox.unitTexts[index]
                     onClicked: {
+                        unitComboBox.currentIndex = index
                         unitComboBox.unit = modelData
                         setTimeIndex()
                         updateNewDuration()
