@@ -67,11 +67,10 @@ Page {
                 LinkedText { id: phoneNumberLinker; visible: false }
             }
             MenuItem {
-                // XXX Turn the profile page into a Dialog -> accept instead?
-                text: "Save expiration time"
-                onClicked: {
-                    MessageModel.createExpiryUpdate(session.sessionId, expiringMessages.newDuration)
-                }
+                // Translation in ProfilePage.qml
+                text: qsTrId("whisperfish-save-message-expiry")
+                visible: session != null && expiringMessages.newDuration !== session.expiringMessageTimeout
+                onClicked: MessageModel.createExpiryUpdate(session.sessionId, expiringMessages.newDuration)
             }
         }
 
@@ -162,11 +161,6 @@ Page {
                 visible: session != null
                 width: parent.width
                 duration: session.expiringMessageTimeout
-                onNewDurationChanged: {
-                    if (duration !== newDuration) {
-                        console.log("XXX Handle new duration:", newDuration)
-                    }
-                }
             }
 
             ComboBox {

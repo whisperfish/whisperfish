@@ -131,6 +131,13 @@ Page {
                 enabled: (!editingProfile || profileGivenNameEdit.acceptableInput && profileEmojiEdit.acceptableInput)
                 onClicked: toggleEditing()
             }
+            MenuItem {
+                //: Save the new value of expiring messages timeout
+                //% "Set message expiry"
+                text: qsTrId("whisperfish-save-message-expiry")
+                visible: session != null && expiringMessages.newDuration !== session.expiringMessageTimeout
+                onClicked: MessageModel.createExpiryUpdate(session.sessionId, expiringMessages.newDuration)
+            }
         }
 
         Column {
@@ -266,11 +273,6 @@ Page {
                 visible: session != null
                 width: parent.width
                 duration: session.expiringMessageTimeout
-                onNewDurationChanged: {
-                    if (duration !== newDuration) {
-                        console.log("XXX Handle new duration:", newDuration)
-                    }
-                }
             }
 
             ComboBox {

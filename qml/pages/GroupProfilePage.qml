@@ -23,11 +23,69 @@ Page {
 
     readonly property string myUuid: SetupWorker.uuid
     readonly property string myPhone: SetupWorker.phoneNumber
+    property bool youAreAdmin: false
+    // This variable is needed because MenuItem doesn't see inside SilicaListView.header container
+    property int newDuration: -1
 
     RemorsePopup { id: remorse }
 
     SilicaListView {
         id: flick
+
+        PullDownMenu {
+            MenuItem {
+                //: Refresh group menu item
+                //% "Refresh group"
+                text: qsTrId("whisperfish-group-refresh")
+                onClicked: {
+                    console.log("Refreshing group for session", session.sessionId)
+                    ClientWorker.refresh_group_v2(session.sessionId)
+                }
+            }
+            MenuItem {
+                //: Leave group menu item
+                //% "Leave this group"
+                text: qsTrId("whisperfish-group-leave-menu")
+                onClicked: {
+                    // TODO Leaving a group should *never* delete its messages.
+                    //      Two different destructive actions should require two different
+                    //      inputs and two confirmations.
+                    //      Is it enough to remove the 'remove' line?
+                    //: Leave group remorse message (past tense)
+                    //% "Left group and deleted all messages"
+                    remorse.execute(qsTrId("whisperfish-group-leave-remorse"),
+                                    function() {
+                                        console.log("Leaving group")
+                                        MessageModel.leaveGroup()
+                                        SessionModel.remove(session.sessionId)
+                                        mainWindow.showMainPage()
+                                    })
+                }
+            }
+            MenuItem {
+                // TODO implement in backend
+                //: Create invite link menu item
+                //% "Create invitation link"
+                text: qsTrId("whisperfish-group-invite-link-menu")
+                visible: false // TODO
+                onClicked: remorse.execute("Changing group members is not yet implemented.", function() {})
+            }
+            MenuItem {
+                // TODO implement in backend
+                //: Add group member menu item
+                //% "Add Member"
+                text: qsTrId("whisperfish-group-add-member-menu")
+                visible: false // TODO
+                onClicked: remorse.execute("Changing group members is not yet implemented.", function() {})
+            }
+            MenuItem {
+                // Translation in ProfilePage.qml
+                text: qsTrId("whisperfish-save-message-expiry")
+                visible: youAreAdmin && session != null && groupProfile.newDuration !== session.expiringMessageTimeout
+                onClicked: MessageModel.createExpiryUpdate(session.sessionId, groupProfile.newDuration)
+            }
+        }
+
         anchors.fill: parent
         model: group.members
         header: Column {
@@ -134,67 +192,16 @@ Page {
 
             ExpiringMessagesComboBox {
                 id: expiringMessages
-                // XXX: User must be admin
-                enabled: false
+                enabled: youAreAdmin
                 width: parent.width
                 duration: session.expiringMessageTimeout
-                onNewDurationChanged: {
-                    if (duration !== newDuration) {
-                        console.log("XXX Handle new duration:", newDuration)
-                    }
-                }
+                onNewDurationChanged: groupProfile.newDuration = newDuration
             }
 
             Item { width: parent.width; height: Theme.paddingLarge }
         }
 
         VerticalScrollDecorator { flickable: flick }
-
-        PullDownMenu {
-            MenuItem {
-                //: Refresh group menu item
-                //% "Refresh group"
-                text: qsTrId("whisperfish-group-refresh")
-                onClicked: {
-                    console.log("Refreshing group for session", session.sessionId)
-                    ClientWorker.refresh_group_v2(session.sessionId)
-                }
-            }
-            MenuItem {
-                //: Leave group menu item
-                //% "Leave this group"
-                text: qsTrId("whisperfish-group-leave-menu")
-                onClicked: {
-                    // TODO Leaving a group should *never* delete its messages.
-                    //      Two different destructive actions should require two different
-                    //      inputs and two confirmations.
-                    //      Is it enough to remove the 'remove' line?
-                    //: Leave group remorse message (past tense)
-                    //% "Left group and deleted all messages"
-                    remorse.execute(qsTrId("whisperfish-group-leave-remorse"),
-                                    function() {
-                                        console.log("Leaving group")
-                                        MessageModel.leaveGroup()
-                                        SessionModel.remove(session.sessionId)
-                                        mainWindow.showMainPage()
-                                    })
-                }
-            }
-            MenuItem {
-                // TODO implement in backend
-                //: Create invite link menu item
-                //% "Create invitation link"
-                text: qsTrId("whisperfish-group-invite-link-menu")
-                onClicked: remorse.execute("Changing group members is not yet implemented.", function() {})
-            }
-            MenuItem {
-                // TODO implement in backend
-                //: Add group member menu item
-                //% "Add Member"
-                text: qsTrId("whisperfish-group-add-member-menu")
-                onClicked: remorse.execute("Changing group members is not yet implemented.", function() {})
-            }
-        }
 
         section {
             property: 'role'
@@ -217,7 +224,7 @@ Page {
             contentHeight: Theme.itemSizeMedium
             enabled: !isSelf
 
-            property bool selfIsAdmin: false // TODO implement in backend
+            property bool youAreAdmin: false // TODO implement in backend
             property bool isVerified: false // TODO implement in backend;  model.isVerified
             property bool isSelf: model.uuid === myUuid
             property string profilePicture: getRecipientAvatar(model.e164, model.uuid)
@@ -235,6 +242,12 @@ Page {
                 id: recipient
                 recipientUuid: model.uuid
                 app: AppState
+            }
+
+            Component.onCompleted: {
+                if (isSelf && role === 2) {
+                    groupProfile.youAreAdmin = true
+                }
             }
 
             menu: Component {
@@ -290,7 +303,7 @@ Page {
                         //: Menu item to remove a member from a group (requires admin privileges)
                         //% "Remove from this group"
                         text: qsTrId("whisperfish-group-member-menu-remove-from-group")
-                        visible: selfIsAdmin
+                        visible: youAreAdmin
                         onClicked: remorse.execute("Changing group members is not yet implemented.", function() {})
                     }
                     MenuItem {
