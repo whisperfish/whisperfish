@@ -38,7 +38,7 @@ pub fn serialize(value: &[WireBodyRange]) -> Option<Vec<u8>> {
                         }
                         wire_body_range::AssociatedValue::Style(style) => {
                             use database_protos::body_range_list::body_range::Style;
-                            let style = match WireStyle::from_i32(*style).unwrap() {
+                            let style = match WireStyle::try_from(*style).unwrap() {
                                 WireStyle::Bold => Some(Style::Bold),
                                 WireStyle::Italic => Some(Style::Italic),
                                 WireStyle::Spoiler => Some(Style::Spoiler),

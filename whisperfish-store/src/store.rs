@@ -1587,7 +1587,7 @@ impl Storage {
                 "same session id for expiry and unread update"
             );
         }
-        if let Some(m_session_id) = session_id_unread.or_else(|| session_id_expiring) {
+        if let Some(m_session_id) = session_id_unread.or(session_id_expiring) {
             self.observe_update(messages, message_id)
                 .with_relation(schema::sessions::table, PrimaryKey::RowId(m_session_id));
         } else {
