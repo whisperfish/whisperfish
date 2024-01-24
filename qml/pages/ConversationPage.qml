@@ -40,8 +40,8 @@ Page {
     onStatusChanged: {
         if (status == PageStatus.Active) {
             // XXX this should be a call into the client/application state/...
+            // TODO: Re-think what marking session as read means
             //SessionModel.markRead(sessionId)
-            //mainWindow.clearNotifications(sessionId)
 
             if (session.isGroup) {
                 pageStack.pushAttached(Qt.resolvedUrl("GroupProfilePage.qml"), { session: session, group: group })
@@ -60,8 +60,8 @@ Page {
         onStateChanged: {
             if ((Qt.application.state === Qt.ApplicationActive) && (status === PageStatus.Active)) {
                 // XXX this should be a call into the client/application state/...
+                // TODO: Re-think what marking session as read means
                 //SessionModel.markRead(sessionId)
-                //mainWindow.clearNotifications(sessionId)
                 unreadMessageChecker.running = true
             }
         }

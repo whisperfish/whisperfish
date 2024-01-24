@@ -327,6 +327,7 @@ SilicaListView {
                         itemSelectionToggled(model)
                     }
                 }
+                // XXX Investigate using these as aliases through Loader
                 onModelDataChanged: {
                     wrapper.messageId = modelData.id != null ? modelData.id : -1
                     wrapper.messageRead = modelData.isRead != null ? modelData.isRead : true
