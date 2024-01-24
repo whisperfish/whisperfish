@@ -29,7 +29,7 @@ impl Handler<StartMessageExpiry> for ClientActor {
 }
 
 impl StreamHandler<ExpiredMessages> for ClientActor {
-    fn handle(&mut self, _messages: ExpiredMessages, _ctx: &mut Self::Context) {
+    fn handle(&mut self, _: ExpiredMessages, _ctx: &mut Self::Context) {
         self.storage.as_mut().unwrap().delete_expired_messages();
     }
 }

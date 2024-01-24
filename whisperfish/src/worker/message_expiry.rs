@@ -13,9 +13,7 @@ pub struct ExpiredMessagesStream {
     wake_channel: tokio::sync::mpsc::UnboundedReceiver<()>,
 }
 
-pub struct ExpiredMessages {
-    pub messages: Vec<(i32, DateTime<Utc>)>,
-}
+pub struct ExpiredMessages;
 
 impl ExpiredMessagesStream {
     pub fn new(storage: Storage, wake_channel: tokio::sync::mpsc::UnboundedReceiver<()>) -> Self {
@@ -54,10 +52,8 @@ impl Stream for ExpiredMessagesStream {
         if let Some(next_wake) = &mut self.next_wake {
             if Pin::new(next_wake).poll(cx).is_ready() {
                 self.next_wake = None;
-                // This does not take the first expired message, but that shouldn't really matter.
-                let messages = self.storage.fetch_expired_message_ids();
-                if !messages.is_empty() {
-                    return Poll::Ready(Some(ExpiredMessages { messages }));
+                if !self.storage.fetch_expired_message_ids().is_empty() {
+                    return Poll::Ready(Some(ExpiredMessages));
                 }
             }
         }
