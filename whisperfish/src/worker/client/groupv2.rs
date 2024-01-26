@@ -39,6 +39,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
         RequestGroupV2Info(request, master_key): RequestGroupV2Info,
         ctx: &mut Self::Context,
     ) -> Self::Result {
+        let _span = tracing::info_span!("handle RequestGroupV2Info").entered();
         let storage = self.storage.clone().unwrap();
         let service_ids = self.service_ids().expect("whoami");
 
@@ -242,6 +243,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
 
                 Ok::<_, anyhow::Error>(group)
             }
+            .instrument(tracing::info_span!("fetch group"))
             .into_actor(self)
             .map(|result, _act, _ctx| {
                 let _group = match result {
@@ -304,7 +306,8 @@ impl Handler<RefreshGroupAvatar> for ClientActor {
         RefreshGroupAvatar(group_id): RefreshGroupAvatar,
         ctx: &mut Self::Context,
     ) {
-        tracing::trace!("Received RefreshGroupAvatar({}), fetching.", group_id);
+        let _span =
+            tracing::trace_span!("Received RefreshGroupAvatar({}), fetching.", group_id).entered();
         let storage = self.storage.clone().unwrap();
         let group = {
             match storage.fetch_session_by_group_v2_id(&group_id) {
@@ -341,6 +344,7 @@ impl Handler<RefreshGroupAvatar> for ClientActor {
                 let avatar = gm.retrieve_avatar(&avatar, secret).await?;
                 Ok((group_id, avatar))
             }
+            .instrument(tracing::info_span!("fetch avatar"))
             .into_actor(self)
             .map(|res: anyhow::Result<_>, _act, ctx| {
                 match res {
@@ -372,6 +376,7 @@ impl Handler<GroupAvatarFetched> for ClientActor {
         _ctx: &mut Self::Context,
     ) -> Self::Result {
         let storage = self.storage.clone().unwrap();
+        let _span = tracing::info_span!("handle GroupAvatarFetched", group_id).entered();
         Box::pin(
             async move {
                 let settings = crate::config::SettingsBridge::default();
@@ -391,6 +396,7 @@ impl Handler<GroupAvatarFetched> for ClientActor {
 
                 Ok(())
             }
+            .instrument(tracing::info_span!("save avatar"))
             .into_actor(self)
             .map(move |res: anyhow::Result<_>, _act, _ctx| {
                 match res {
