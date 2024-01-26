@@ -1641,7 +1641,6 @@ impl Storage {
             .set(schema::receipts::delivered.eq(delivered_at))
             .execute(&mut *self.db());
 
-        use diesel::result::Error::DatabaseError;
         match upsert {
             Ok(n) => {
                 if n != 1 {
@@ -1654,10 +1653,6 @@ impl Storage {
                     .with_relation(schema::messages::table, pointer.message_id)
                     .with_relation(schema::recipients::table, recipient.id);
                 Some(pointer)
-            }
-            Err(DatabaseError(DatabaseErrorKind::UniqueViolation, _)) => {
-                tracing::error!("receipt already exists, upsert failed");
-                None
             }
             Err(e) => {
                 tracing::error!("Could not insert receipt: {}.", e);
