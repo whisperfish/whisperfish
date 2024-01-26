@@ -708,7 +708,12 @@ impl ClientActor {
                 session.is_group(),
             );
         }
-        Some(message.id)
+        if msg.body.is_some() {
+            // Only return message_id if we inserted a real message.
+            Some(message.id)
+        } else {
+            None
+        }
     }
 
     fn handle_sync_request(&mut self, meta: Metadata, req: SyncRequest) {
@@ -829,6 +834,8 @@ impl ClientActor {
                 let message_id =
                     self.handle_message(ctx, None, Some(uuid), &message, None, &metadata, None);
                 if metadata.needs_receipt {
+                    // XXX Is this guard correct? If the recipient requests a delivery receipt,
+                    //     we may have to send it even if we don't have a message_id.
                     if let Some(_message_id) = message_id {
                         self.handle_needs_delivery_receipt(ctx, &message, &metadata);
                     }
