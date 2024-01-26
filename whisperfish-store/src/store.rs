@@ -96,6 +96,12 @@ pub struct Message {
     pub queued: bool,
 }
 
+#[derive(Debug)]
+pub struct MessagePointer {
+    pub message_id: i32,
+    pub session_id: i32,
+}
+
 /// ID-free Message model for insertions
 #[derive(Clone, Debug)]
 pub struct NewMessage<'a> {
@@ -1513,35 +1519,32 @@ impl Storage {
     ///
     /// This is e.g. called from Signal Desktop from a sync message
     #[tracing::instrument(skip(self))]
-    pub fn mark_message_read(
-        &self,
-        timestamp: NaiveDateTime,
-    ) -> Option<(orm::Session, orm::Message)> {
+    pub fn mark_message_read(&self, timestamp: NaiveDateTime) -> Option<MessagePointer> {
         use schema::messages::dsl::*;
-        diesel::update(messages)
+        let mut row: Vec<(i32, i32)> = diesel::update(messages)
             .filter(server_timestamp.eq(timestamp))
             .set(is_read.eq(true))
-            .execute(&mut *self.db())
+            .returning((schema::messages::id, schema::messages::session_id))
+            .load(&mut *self.db())
             .unwrap();
 
-        let message: Option<orm::Message> = messages
-            .filter(server_timestamp.eq(timestamp))
-            .first(&mut *self.db())
-            .ok();
-        if let Some(message) = message {
-            self.observe_update(messages, message.id)
-                .with_relation(schema::sessions::table, message.session_id);
-            let session = self
-                .fetch_session_by_id(message.session_id)
-                .expect("foreignk key");
-            Some((session, message))
-        } else {
+        if row.is_empty() {
             tracing::warn!("Could not find message with timestamp {}", timestamp);
             tracing::warn!(
                 "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
             );
-            None
+            return None;
         }
+
+        let pointer = row.pop()?;
+        let pointer = MessagePointer {
+            message_id: pointer.0,
+            session_id: pointer.1,
+        };
+
+        self.observe_update(messages, pointer.message_id)
+            .with_relation(schema::sessions::table, pointer.session_id);
+        Some(pointer)
     }
 
     /// Handle marking message as read and potentially starting the expiry timer.
@@ -1602,30 +1605,34 @@ impl Storage {
         receiver_uuid: Uuid,
         timestamp: NaiveDateTime,
         delivered_at: Option<chrono::DateTime<Utc>>,
-    ) -> Option<(orm::Session, orm::Message)> {
+    ) -> Option<MessagePointer> {
         // XXX: probably, the trigger for this method call knows a better time stamp.
         let delivered_at = delivered_at.unwrap_or_else(chrono::Utc::now).naive_utc();
 
         // Find the recipient
         let recipient =
             self.merge_and_fetch_recipient(None, Some(receiver_uuid), None, TrustLevel::Certain);
-        let message_id = schema::messages::table
-            .select(schema::messages::id)
+        let row: Option<(i32, i32)> = schema::messages::table
+            .select((schema::messages::id, schema::messages::session_id))
             .filter(schema::messages::server_timestamp.eq(timestamp))
             .first(&mut *self.db())
             .optional()
             .expect("db");
-        if message_id.is_none() {
+        if row.is_none() {
             tracing::warn!("Could not find message with timestamp {}", timestamp);
             tracing::warn!(
                 "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
             );
         }
-        let message_id = message_id?;
+        let pointer = row?;
+        let pointer = MessagePointer {
+            message_id: pointer.0,
+            session_id: pointer.1,
+        };
 
         let upsert = diesel::insert_into(schema::receipts::table)
             .values((
-                schema::receipts::message_id.eq(message_id),
+                schema::receipts::message_id.eq(pointer.message_id),
                 schema::receipts::recipient_id.eq(recipient.id),
                 schema::receipts::delivered.eq(delivered_at),
             ))
@@ -1636,21 +1643,17 @@ impl Storage {
 
         use diesel::result::Error::DatabaseError;
         match upsert {
-            Ok(1) => {
+            Ok(n) => {
+                if n != 1 {
+                    tracing::warn!(
+                        "Read receipt had {} affected rows instead of expected 1. Updating anyway.",
+                        n
+                    );
+                }
                 self.observe_upsert(schema::receipts::table, PrimaryKey::Unknown)
-                    .with_relation(schema::messages::table, message_id)
+                    .with_relation(schema::messages::table, pointer.message_id)
                     .with_relation(schema::recipients::table, recipient.id);
-                let message = self.fetch_message_by_id(message_id)?;
-                let session = self.fetch_session_by_id(message.session_id)?;
-                Some((session, message))
-            }
-            Ok(affected_rows) => {
-                // Reason can be a dupe receipt (=0).
-                tracing::warn!(
-                    "Read receipt had {} affected rows instead of expected 1.  Ignoring.",
-                    affected_rows
-                );
-                None
+                Some(pointer)
             }
             Err(DatabaseError(DatabaseErrorKind::UniqueViolation, _)) => {
                 tracing::error!("receipt already exists, upsert failed");

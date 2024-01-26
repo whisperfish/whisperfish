@@ -840,11 +840,11 @@ impl ClientActor {
             timestamp,
             millis
         );
-        if let Some((sess, msg)) = storage.mark_message_received(source.uuid, timestamp, None) {
+        if let Some(updated) = storage.mark_message_received(source.uuid, timestamp, None) {
             self.inner
                 .pinned()
                 .borrow_mut()
-                .messageReceipt(sess.id, msg.id)
+                .messageReceipt(updated.session_id, updated.message_id)
         }
     }
 
@@ -998,11 +998,11 @@ impl ClientActor {
                             ts,
                             read.timestamp()
                         );
-                        if let Some((sess, msg)) = storage.mark_message_read(ts) {
+                        if let Some(updated) = storage.mark_message_read(ts) {
                             self.inner
                                 .pinned()
                                 .borrow_mut()
-                                .messageReceipt(sess.id, msg.id)
+                                .messageReceipt(updated.session_id, updated.message_id)
                         } else {
                             tracing::warn!("Could not mark as received!");
                         }
@@ -1057,7 +1057,7 @@ impl ClientActor {
                 // XXX dispatch on receipt.type
                 for &ts in &receipt.timestamp {
                     // Signal uses timestamps in milliseconds, chrono has nanoseconds
-                    if let Some((sess, msg)) = storage.mark_message_received(
+                    if let Some(updated) = storage.mark_message_received(
                         metadata.sender.uuid,
                         millis_to_naive_chrono(ts),
                         None,
@@ -1065,7 +1065,7 @@ impl ClientActor {
                         self.inner
                             .pinned()
                             .borrow_mut()
-                            .messageReceipt(sess.id, msg.id)
+                            .messageReceipt(updated.session_id, updated.message_id)
                     } else {
                         tracing::warn!("Could not mark {} as received!", ts);
                     }
