@@ -8,6 +8,7 @@ description = "An utility for whisperfish to do database migrations"
 
 [dependencies]
 whisperfish = { path = "../whisperfish" }
+whisperfish-store = { path = "../whisperfish-store" }
 diesel = { version = "2.0", features = ["sqlite", "chrono"] }
 diesel_migrations = "2.0"
 anyhow = "1.0"

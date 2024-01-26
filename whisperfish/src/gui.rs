@@ -12,7 +12,7 @@ use std::sync::Weak;
 #[derive(actix::Message, Clone)]
 #[rtype(result = "()")]
 pub struct StorageReady {
-    pub storage: crate::store::Storage,
+    pub storage: Storage,
 }
 
 #[derive(QObject, Default)]

@@ -4308,14 +4308,13 @@ dependencies = [
  "scrypt",
  "tracing",
  "whisperfish",
+ "whisperfish-store",
 ]
 
 [[package]]
 name = "whisperfish-store"
 version = "0.6.0-dev"
 dependencies = [
- "actix",
- "actix-rt",
  "aes",
  "anyhow",
  "async-trait",

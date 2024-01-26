@@ -2,10 +2,28 @@ use std::sync::Arc;
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use libsignal_service::proto::AttachmentPointer;
+use uuid::Uuid;
 use whisperfish_store::config::SignalConfig;
+use whisperfish_store::observer::{Event, Interest, Observatory};
 use whisperfish_store::{orm, temp, NewMessage, Storage, StorageLocation};
 
-pub type InMemoryDb = (Storage, StorageLocation<tempfile::TempDir>);
+#[derive(Default, Clone)]
+pub struct DummyObservatory;
+
+impl Observatory for DummyObservatory {
+    type Subscriber = ();
+
+    fn register(&self, _id: Uuid, _interests: Vec<Interest>, _subscriber: Self::Subscriber) {}
+
+    fn update_interests(&self, _handle: Uuid, _interests: Vec<Interest>) {}
+
+    fn distribute_event(&self, _event: Event) {}
+}
+
+pub type InMemoryDb = (
+    Storage<DummyObservatory>,
+    StorageLocation<tempfile::TempDir>,
+);
 
 pub fn storage() -> InMemoryDb {
     let rt = tokio::runtime::Builder::new_current_thread()

@@ -152,8 +152,8 @@ impl ClientActor {
             );
             let mut db = storage.db();
 
-            use crate::store::schema::recipients::dsl::*;
             use diesel::prelude::*;
+            use whisperfish_store::schema::recipients::dsl::*;
 
             diesel::update(recipients)
                 .set((last_profile_fetch.eq(Utc::now().naive_utc()),))

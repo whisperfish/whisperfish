@@ -80,58 +80,66 @@ impl ProtocolStore {
     }
 }
 
-impl Storage {
+impl<O> Storage<O>
+where
+    O: Observatory + Clone,
+{
     pub async fn delete_identity(&self, addr: &ProtocolAddress) -> Result<(), SignalProtocolError> {
         self.delete_identity_key(addr);
         Ok(())
     }
 }
 
-impl Storage {
-    pub fn pni_storage(&self) -> PniStorage {
+impl<O> Storage<O>
+where
+    O: Observatory + Clone,
+{
+    pub fn pni_storage(&self) -> PniStorage<O> {
         PniStorage::new(self.clone())
     }
 
-    pub fn aci_storage(&self) -> AciStorage {
+    pub fn aci_storage(&self) -> AciStorage<O> {
         AciStorage::new(self.clone())
     }
 
-    pub fn aci_or_pni(&self, service_id: ServiceIdType) -> AciOrPniStorage {
+    pub fn aci_or_pni(&self, service_id: ServiceIdType) -> AciOrPniStorage<O> {
         IdentityStorage(self.clone(), AciOrPni(service_id))
     }
 }
 
 #[derive(Clone)]
-pub struct IdentityStorage<T>(Storage, T);
-impl<T: Default> IdentityStorage<T> {
-    pub fn new(storage: Storage) -> Self {
+pub struct IdentityStorage<T, O>(Storage<O>, T)
+where
+    O: Observatory + Clone;
+impl<T: Default, O: Observatory + Clone> IdentityStorage<T, O> {
+    pub fn new(storage: Storage<O>) -> Self {
         Self(storage, Default::default())
     }
 }
 #[derive(Default, Clone)]
 pub struct Aci;
-pub type AciStorage = IdentityStorage<Aci>;
+pub type AciStorage<O> = IdentityStorage<Aci, O>;
 #[derive(Default, Clone)]
 pub struct Pni;
-pub type PniStorage = IdentityStorage<Pni>;
+pub type PniStorage<O> = IdentityStorage<Pni, O>;
 // Dynamic dispatch between Aci and Pni
 #[derive(Clone)]
 pub struct AciOrPni(ServiceIdType);
-pub type AciOrPniStorage = IdentityStorage<AciOrPni>;
-pub trait Identity {
+pub type AciOrPniStorage<O> = IdentityStorage<AciOrPni, O>;
+pub trait Identity<O: Observatory + Clone> {
     fn identity(&self) -> orm::Identity;
     fn identity_key_filename(&self) -> &'static str;
     fn regid_filename(&self) -> &'static str;
     fn identity_key_pair_cached(
         &self,
-        storage: &Storage,
+        storage: &Storage<O>,
     ) -> impl std::future::Future<Output = impl std::ops::Deref<Target = Option<IdentityKeyPair>>>;
     fn identity_key_pair_cached_mut(
         &self,
-        storage: &Storage,
+        storage: &Storage<O>,
     ) -> impl std::future::Future<Output = impl std::ops::DerefMut<Target = Option<IdentityKeyPair>>>;
 }
-impl Identity for Aci {
+impl<O: Observatory + Clone> Identity<O> for Aci {
     fn identity(&self) -> orm::Identity {
         orm::Identity::Aci
     }
@@ -143,18 +151,18 @@ impl Identity for Aci {
     }
     async fn identity_key_pair_cached(
         &self,
-        storage: &Storage,
+        storage: &Storage<O>,
     ) -> impl std::ops::Deref<Target = Option<IdentityKeyPair>> {
         storage.aci_identity_key_pair.read().await
     }
     async fn identity_key_pair_cached_mut(
         &self,
-        storage: &Storage,
+        storage: &Storage<O>,
     ) -> impl std::ops::DerefMut<Target = Option<IdentityKeyPair>> {
         storage.aci_identity_key_pair.write().await
     }
 }
-impl Identity for Pni {
+impl<O: Observatory + Clone> Identity<O> for Pni {
     fn identity(&self) -> orm::Identity {
         orm::Identity::Pni
     }
@@ -166,18 +174,18 @@ impl Identity for Pni {
     }
     async fn identity_key_pair_cached(
         &self,
-        storage: &Storage,
+        storage: &Storage<O>,
     ) -> impl std::ops::Deref<Target = Option<IdentityKeyPair>> {
         storage.pni_identity_key_pair.read().await
     }
     async fn identity_key_pair_cached_mut(
         &self,
-        storage: &Storage,
+        storage: &Storage<O>,
     ) -> impl std::ops::DerefMut<Target = Option<IdentityKeyPair>> {
         storage.pni_identity_key_pair.write().await
     }
 }
-impl Identity for AciOrPni {
+impl<O: Observatory + Clone> Identity<O> for AciOrPni {
     fn identity(&self) -> orm::Identity {
         match self.0 {
             ServiceIdType::AccountIdentity => orm::Identity::Aci,
@@ -198,7 +206,7 @@ impl Identity for AciOrPni {
     }
     async fn identity_key_pair_cached(
         &self,
-        storage: &Storage,
+        storage: &Storage<O>,
     ) -> impl std::ops::Deref<Target = Option<IdentityKeyPair>> {
         match self.0 {
             ServiceIdType::AccountIdentity => &storage.aci_identity_key_pair,
@@ -209,7 +217,7 @@ impl Identity for AciOrPni {
     }
     async fn identity_key_pair_cached_mut(
         &self,
-        storage: &Storage,
+        storage: &Storage<O>,
     ) -> impl std::ops::DerefMut<Target = Option<IdentityKeyPair>> {
         match self.0 {
             ServiceIdType::AccountIdentity => &storage.aci_identity_key_pair,
@@ -221,13 +229,13 @@ impl Identity for AciOrPni {
 }
 
 #[async_trait::async_trait(?Send)]
-impl protocol::ProtocolStore for IdentityStorage<AciOrPni> {}
+impl<O: Observatory + Clone> protocol::ProtocolStore for IdentityStorage<AciOrPni, O> {}
 #[async_trait::async_trait(?Send)]
-impl protocol::ProtocolStore for IdentityStorage<Aci> {}
+impl<O: Observatory + Clone> protocol::ProtocolStore for IdentityStorage<Aci, O> {}
 #[async_trait::async_trait(?Send)]
-impl protocol::ProtocolStore for IdentityStorage<Pni> {}
+impl<O: Observatory + Clone> protocol::ProtocolStore for IdentityStorage<Pni, O> {}
 
-impl<T: Identity> IdentityStorage<T> {
+impl<T: Identity<O>, O: Observatory + Clone> IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self, regid))]
     // Mutability of self is artificial
     pub async fn write_local_registration_id(
@@ -298,7 +306,7 @@ impl<T: Identity> IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observatory + Clone> protocol::IdentityKeyStore for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn get_identity_key_pair(&self) -> Result<IdentityKeyPair, SignalProtocolError> {
         let _lock = self.0.protocol_store.read().await;
@@ -428,7 +436,7 @@ impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> protocol::SessionStore for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observatory + Clone> protocol::SessionStore for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn load_session(
         &self,
@@ -491,7 +499,7 @@ impl<T: Identity> protocol::SessionStore for IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> ServiceKyberPreKeyStore for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observatory + Clone> ServiceKyberPreKeyStore for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self, body))]
     async fn store_last_resort_kyber_pre_key(
         &mut self,
@@ -564,7 +572,7 @@ impl<T: Identity> ServiceKyberPreKeyStore for IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> PreKeysStore for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observatory + Clone> PreKeysStore for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn next_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
         use diesel::dsl::*;
@@ -635,7 +643,7 @@ impl<T: Identity> PreKeysStore for IdentityStorage<T> {
     }
 }
 
-impl<T: Identity> IdentityStorage<T> {
+impl<T: Identity<O>, O: Observatory + Clone> IdentityStorage<T, O> {
     /// Whether to force a pre key refresh.
     ///
     /// Check whether we have:
@@ -679,7 +687,7 @@ impl<T: Identity> IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> protocol::PreKeyStore for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observatory + Clone> protocol::PreKeyStore for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn get_pre_key(&self, prekey_id: PreKeyId) -> Result<PreKeyRecord, SignalProtocolError> {
         use crate::schema::prekeys::dsl::*;
@@ -738,7 +746,7 @@ impl<T: Identity> protocol::PreKeyStore for IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observatory + Clone> protocol::KyberPreKeyStore for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn mark_kyber_pre_key_used(
         &mut self,
@@ -806,7 +814,7 @@ impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
     }
 }
 
-impl<T: Identity> IdentityStorage<T> {
+impl<T: Identity<O>, O: Observatory + Clone> IdentityStorage<T, O> {
     /// Check whether session exists.
     ///
     /// This does *not* lock the protocol store.  If a transactional check is required, use the
@@ -832,7 +840,10 @@ impl<T: Identity> IdentityStorage<T> {
 }
 
 // BEGIN identity key block
-impl Storage {
+impl<O> Storage<O>
+where
+    O: Observatory + Clone,
+{
     /// Removes the identity matching `addr` from the database, independent of PNI or ACI.
     ///
     /// Does not lock the protocol storage.
@@ -851,7 +862,7 @@ impl Storage {
 // END identity key
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> SessionStoreExt for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observatory + Clone> SessionStoreExt for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn get_sub_device_sessions(
         &self,
@@ -918,7 +929,7 @@ impl<T: Identity> SessionStoreExt for IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> protocol::SignedPreKeyStore for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observatory + Clone> protocol::SignedPreKeyStore for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn get_signed_pre_key(
         &self,
@@ -980,7 +991,7 @@ impl<T: Identity> protocol::SignedPreKeyStore for IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> SenderKeyStore for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observatory + Clone> SenderKeyStore for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self, record))]
     async fn store_sender_key(
         &mut self,
@@ -1037,6 +1048,9 @@ impl<T: Identity> SenderKeyStore for IdentityStorage<T> {
 
 #[cfg(test)]
 mod tests {
+    use self::observer::{Event, Interest};
+
+    use super::*;
     use std::sync::Arc;
 
     use libsignal_service::session_store::SessionStoreExt;
@@ -1045,9 +1059,27 @@ mod tests {
 
     use crate::config::SignalConfig;
 
+    #[derive(Default, Clone)]
+    struct DummyObservatory;
+    impl Observatory for DummyObservatory {
+        type Subscriber = ();
+
+        fn register(&self, _id: Uuid, _interests: Vec<Interest>, _subscriber: Self::Subscriber) {}
+
+        fn update_interests(&self, _id: Uuid, _interests: Vec<Interest>) {}
+
+        fn distribute_event(&self, _event: Event) {}
+    }
+
     async fn create_example_storage(
         storage_password: Option<&str>,
-    ) -> Result<(super::Storage, super::StorageLocation<tempfile::TempDir>), anyhow::Error> {
+    ) -> Result<
+        (
+            Storage<DummyObservatory>,
+            StorageLocation<tempfile::TempDir>,
+        ),
+        anyhow::Error,
+    > {
         use rand::distributions::Alphanumeric;
         use rand::Rng;
 
@@ -1065,7 +1097,7 @@ mod tests {
         let regid = 12345;
         let pni_regid = 12345;
 
-        let storage = super::Storage::new(
+        let storage = Storage::new(
             Arc::new(SignalConfig::default()),
             &location,
             storage_password,

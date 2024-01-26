@@ -1,8 +1,9 @@
 use super::*;
-use crate::store::{orm, schema};
 use anyhow::Context;
 use chrono::Utc;
 use diesel::prelude::*;
+use whisperfish_store::schema;
+use whisperfish_store::store::orm;
 
 #[derive(Message)]
 #[rtype(result = "()")]

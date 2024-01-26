@@ -2,11 +2,13 @@
 
 use crate::model::*;
 use crate::store::observer::{EventObserving, Interest};
-use crate::store::{orm, schema, Storage};
+use crate::store::Storage;
 use qmetaobject::QObjectBox;
 use qmetaobject::{prelude::*, QMetaType};
 use qttypes::{QVariantList, QVariantMap};
 use std::collections::HashMap;
+use whisperfish_store::schema;
+use whisperfish_store::store::orm;
 
 /// QML-constructable object that interacts with a single session.
 #[derive(Default, QObject)]

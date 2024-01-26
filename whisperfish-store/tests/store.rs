@@ -10,10 +10,10 @@ use std::future::Future;
 use std::sync::Arc;
 use whisperfish_store::config::SignalConfig;
 use whisperfish_store::orm::{StoryType, UnidentifiedAccessMode};
-use whisperfish_store::{GroupV1, NewMessage, Storage};
+use whisperfish_store::{GroupV1, NewMessage};
 
 #[rstest]
-#[actix_rt::test]
+#[tokio::test]
 async fn fetch_session_none(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
@@ -22,7 +22,7 @@ async fn fetch_session_none(storage: impl Future<Output = InMemoryDb>) {
 }
 
 #[rstest]
-#[actix_rt::test]
+#[tokio::test]
 async fn insert_and_fetch_dm(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
@@ -39,7 +39,7 @@ async fn insert_and_fetch_dm(storage: impl Future<Output = InMemoryDb>) {
 }
 
 #[rstest]
-#[actix_rt::test]
+#[tokio::test]
 async fn insert_and_fetch_group_session(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
@@ -73,7 +73,7 @@ async fn insert_and_fetch_group_session(storage: impl Future<Output = InMemoryDb
 }
 
 #[rstest]
-#[actix_rt::test]
+#[tokio::test]
 async fn fetch_two_distinct_session(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
@@ -98,7 +98,7 @@ async fn fetch_two_distinct_session(storage: impl Future<Output = InMemoryDb>) {
 }
 
 #[rstest]
-#[actix_rt::test]
+#[tokio::test]
 async fn fetch_messages_without_session(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
@@ -107,7 +107,7 @@ async fn fetch_messages_without_session(storage: impl Future<Output = InMemoryDb
 }
 
 #[rstest]
-#[actix_rt::test]
+#[tokio::test]
 async fn process_message_exists_session_source(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
@@ -151,7 +151,7 @@ async fn process_message_exists_session_source(storage: impl Future<Output = InM
 }
 
 #[rstest]
-#[actix_rt::test]
+#[tokio::test]
 async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
@@ -261,7 +261,7 @@ async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
 /// but it's important as long as we receive messages without ACK
 #[rstest]
 #[ignore]
-#[actix_rt::test]
+#[tokio::test]
 async fn dev_message_update(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
@@ -330,7 +330,7 @@ async fn dev_message_update(storage: impl Future<Output = InMemoryDb>) {
 }
 
 #[rstest]
-#[actix_rt::test]
+#[tokio::test]
 #[should_panic]
 async fn process_inbound_group_message_without_sender(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
@@ -381,7 +381,7 @@ async fn process_inbound_group_message_without_sender(storage: impl Future<Outpu
 }
 
 #[rstest]
-#[actix_rt::test]
+#[tokio::test]
 async fn process_outbound_group_message_without_sender(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
@@ -431,7 +431,7 @@ async fn process_outbound_group_message_without_sender(storage: impl Future<Outp
 }
 
 #[rstest]
-#[actix_rt::test]
+#[tokio::test]
 async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
@@ -484,7 +484,7 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
 // XXX: The method under test was previously without any database relation, and could be tested
 // without context.
 // #[rstest(ext, case("mp4"), case("jpg"), case("jpg"), case("png"), case("txt"))]
-// #[actix_rt::test]
+// #[tokio::test]
 // async fn test_save_attachment(ext: &str) {
 //     use rand::distributions::Alphanumeric;
 //     use rand::{Rng, RngCore};
@@ -505,7 +505,7 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
 //     let regid = 12345;
 //     let pni_regid = 12345;
 //
-//     let storage = Storage::new(
+//     let storage = SimpleStorage::new(
 //         Arc::new(SignalConfig::default()),
 //         &location,
 //         None,
@@ -550,7 +550,7 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
     case(Some(String::from("some password"))),
     case(None)
 )]
-#[actix_rt::test]
+#[tokio::test]
 async fn test_create_and_open_storage(
     storage_password: Option<String>,
 ) -> Result<(), anyhow::Error> {
@@ -572,7 +572,7 @@ async fn test_create_and_open_storage(
     let regid = 12345;
     let pni_regid = 12345;
 
-    let storage = Storage::new(
+    let storage = SimpleStorage::new(
         Arc::new(SignalConfig::default()),
         &location,
         storage_password.as_deref(),
@@ -619,14 +619,14 @@ async fn test_create_and_open_storage(
 
     if storage_password.is_some() {
         assert!(
-            Storage::open(Arc::new(SignalConfig::default()), &location, None)
+            SimpleStorage::open(Arc::new(SignalConfig::default()), &location, None)
                 .await
                 .is_err(),
             "Storage was not encrypted"
         );
     }
 
-    let storage = Storage::open(
+    let storage = SimpleStorage::open(
         Arc::new(SignalConfig::default()),
         &location,
         storage_password,
@@ -640,7 +640,7 @@ async fn test_create_and_open_storage(
     Ok(())
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn test_recipient_actions() {
     use rand::distributions::Alphanumeric;
     use rand::Rng;
@@ -659,7 +659,7 @@ async fn test_recipient_actions() {
     let regid = 12345;
     let pni_regid = 12346;
 
-    let storage = Storage::new(
+    let storage = SimpleStorage::new(
         Arc::new(SignalConfig::default()),
         &location,
         None,

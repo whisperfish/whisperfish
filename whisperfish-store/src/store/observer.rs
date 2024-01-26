@@ -1,10 +1,8 @@
 //! Storage observer subsystem
 
-use crate::schema;
-
 mod orm_interests;
 
-use actix::prelude::*;
+use crate::schema;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -84,8 +82,7 @@ pub struct Relation {
     key: PrimaryKey,
 }
 
-#[derive(Clone, Message, Debug)]
-#[rtype(result = "Vec<Interest>")]
+#[derive(Clone, Debug)]
 pub struct Event {
     r#type: EventType,
     table: Table,
@@ -281,66 +278,12 @@ impl Table {
     }
 }
 
-pub struct Subscription {
-    id: Uuid,
-    interests: Vec<Interest>,
-    subscriber: actix::WeakRecipient<Event>,
-}
+pub trait Observatory {
+    type Subscriber;
 
-/// The Observatory watches the database for changes, and dispatches it to interested [Observer]s.
-#[derive(Default)]
-pub struct Observatory {
-    subscriptions: Vec<Subscription>,
-}
-
-impl Observatory {
-    pub fn register(
-        &mut self,
-        id: Uuid,
-        interests: Vec<Interest>,
-        subscriber: actix::WeakRecipient<Event>,
-    ) {
-        self.subscriptions.push(Subscription {
-            id,
-            interests,
-            subscriber,
-        });
-    }
-
-    pub async fn distribute_event(&mut self, event: Event) {
-        // Remove stale subscriptions
-        self.subscriptions
-            .retain(|x| x.subscriber.upgrade().is_some());
-
-        for subscription in &mut self.subscriptions {
-            if subscription
-                .interests
-                .iter()
-                .any(|x| x.is_interesting(&event))
-            {
-                match subscription.subscriber.upgrade() {
-                    Some(subscriber) => match subscriber.send(event.clone()).await {
-                        Ok(interests) => {
-                            subscription.interests = interests;
-                        }
-                        Err(MailboxError::Timeout) => {
-                            tracing::warn!(
-                                "Dropping an event for a subscriber because of a timeout."
-                            );
-                        }
-                        Err(MailboxError::Closed) => {
-                            tracing::warn!(
-                                "Mailbox has closed meanwhile.  Dropping with next event."
-                            );
-                        }
-                    },
-                    None => {
-                        tracing::warn!("Subscriber got dropped while processing.");
-                    }
-                }
-            }
-        }
-    }
+    fn register(&self, id: Uuid, interests: Vec<Interest>, subscriber: Self::Subscriber);
+    fn update_interests(&self, id: Uuid, interests: Vec<Interest>);
+    fn distribute_event(&self, event: Event);
 }
 
 pub trait EventObserving {
@@ -352,19 +295,29 @@ pub trait EventObserving {
     fn interests(&self) -> Vec<Interest>;
 }
 
-pub struct ObservationBuilder<'a, T> {
-    storage: &'a super::Storage,
+pub struct ObservationBuilder<'a, T, O>
+where
+    O: Observatory + Clone,
+{
+    storage: &'a super::Storage<O>,
     event: Event,
     _table: T,
 }
 
-impl<T> Drop for ObservationBuilder<'_, T> {
+impl<T, O> Drop for ObservationBuilder<'_, T, O>
+where
+    O: Observatory + Clone,
+{
     fn drop(&mut self) {
         self.storage.distribute_event(self.event.clone());
     }
 }
 
-impl<'a, T: diesel::Table + 'static> ObservationBuilder<'a, T> {
+impl<'a, T, O> ObservationBuilder<'a, T, O>
+where
+    T: diesel::Table + 'static,
+    O: Observatory + Clone,
+{
     pub fn with_relation<U: diesel::Table + 'static>(
         mut self,
         _table: U,
@@ -386,48 +339,30 @@ pub struct ObserverHandle {
     id: Uuid,
 }
 
-impl super::Storage {
+impl<O: Observatory + Clone> super::Storage<O> {
     pub fn register_observer(
         &mut self,
         interests: Vec<Interest>,
-        subscriber: actix::WeakRecipient<Event>,
+        subscriber: O::Subscriber,
     ) -> ObserverHandle {
-        let observatory = self.observatory.clone();
         let id = Uuid::new_v4();
-        actix::spawn(async move {
-            let mut observatory = observatory.write().await;
-            observatory.register(id, interests, subscriber);
-        });
+        self.observatory.register(id, interests, subscriber);
         ObserverHandle { id }
     }
 
     pub fn update_interests(&mut self, handle: ObserverHandle, interests: Vec<Interest>) {
-        let observatory = self.observatory.clone();
-        actix::spawn(async move {
-            let mut observatory = observatory.write().await;
-            if let Some(sub) = observatory
-                .subscriptions
-                .iter_mut()
-                .find(|sub| sub.id == handle.id)
-            {
-                sub.interests = interests;
-            }
-        });
+        self.observatory.update_interests(handle.id, interests);
     }
 
     pub(super) fn distribute_event(&self, event: Event) {
-        let observatory = self.observatory.clone();
-        actix::spawn(async move {
-            let mut observatory = observatory.write().await;
-            observatory.distribute_event(event).await;
-        });
+        self.observatory.distribute_event(event);
     }
 
     pub fn observe_insert<T: diesel::Table + 'static>(
         &self,
         diesel_table: T,
         key: impl Into<PrimaryKey>,
-    ) -> ObservationBuilder<'_, T> {
+    ) -> ObservationBuilder<'_, T, O> {
         let table = Table::from_diesel::<T>();
 
         ObservationBuilder {
@@ -446,7 +381,7 @@ impl super::Storage {
         &self,
         diesel_table: T,
         key: impl Into<PrimaryKey>,
-    ) -> ObservationBuilder<'_, T> {
+    ) -> ObservationBuilder<'_, T, O> {
         let table = Table::from_diesel::<T>();
 
         ObservationBuilder {
@@ -465,7 +400,7 @@ impl super::Storage {
         &self,
         diesel_table: T,
         key: impl Into<PrimaryKey>,
-    ) -> ObservationBuilder<'_, T> {
+    ) -> ObservationBuilder<'_, T, O> {
         let table = Table::from_diesel::<T>();
 
         ObservationBuilder {
@@ -484,7 +419,7 @@ impl super::Storage {
         &self,
         diesel_table: T,
         key: impl Into<PrimaryKey>,
-    ) -> ObservationBuilder<'_, T> {
+    ) -> ObservationBuilder<'_, T, O> {
         let table = Table::from_diesel::<T>();
 
         ObservationBuilder {

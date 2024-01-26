@@ -22,6 +22,9 @@ use libsignal_service::push_service::ServiceIdType;
 use libsignal_service::sender::SendMessageResult;
 use tracing_futures::Instrument;
 use uuid::Uuid;
+use whisperfish_store::millis_to_naive_chrono;
+use whisperfish_store::orm;
+use whisperfish_store::orm::shorten;
 use whisperfish_store::orm::MessageType;
 use whisperfish_store::orm::StoryType;
 use whisperfish_store::TrustLevel;
@@ -35,8 +38,8 @@ use crate::gui::StorageReady;
 use crate::model::DeviceModel;
 use crate::platform::QmlApp;
 use crate::store::orm::UnidentifiedAccessMode;
-use crate::store::{millis_to_naive_chrono, orm, Storage};
-use crate::worker::client::orm::shorten;
+use crate::store::AciOrPniStorage;
+use crate::store::Storage;
 use crate::worker::client::unidentified::CertType;
 use actix::prelude::*;
 use anyhow::Context;
@@ -352,7 +355,7 @@ impl ClientActor {
         &self,
     ) -> impl Future<
         Output = Result<
-            MessageSender<HyperPushService, crate::store::AciOrPniStorage, rand::rngs::ThreadRng>,
+            MessageSender<HyperPushService, AciOrPniStorage, rand::rngs::ThreadRng>,
             ServiceError,
         >,
     > {
@@ -814,7 +817,7 @@ impl ClientActor {
                     // In fact, we should query for registered contacts instead of sessions here.
                     // https://gitlab.com/whisperfish/whisperfish/-/issues/133
                     let recipients: Vec<orm::Recipient> = {
-                        use crate::store::schema::recipients::dsl::*;
+                        use whisperfish_store::schema::recipients::dsl::*;
                         use diesel::prelude::*;
                         let mut db = storage.db();
                         recipients.load(&mut *db)?
@@ -1135,7 +1138,7 @@ impl ClientActor {
     fn cipher(
         &self,
         service_identity: ServiceIdType,
-    ) -> ServiceCipher<whisperfish_store::AciOrPniStorage, rand::prelude::ThreadRng> {
+    ) -> ServiceCipher<AciOrPniStorage, rand::prelude::ThreadRng> {
         let service_cfg = self.service_cfg();
         let device_id = self.config.get_device_id();
         ServiceCipher::new(

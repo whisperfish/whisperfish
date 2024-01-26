@@ -8,7 +8,7 @@ extern crate diesel_migrations;
 
 pub mod config;
 pub mod schema;
-mod store;
+pub mod store;
 
 pub use self::store::*;
 

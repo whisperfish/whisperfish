@@ -39,7 +39,7 @@ impl Handler<TypingNotification> for SessionActor {
     ) -> Self::Result {
         let started = if let Some(timestamp) = typing.timestamp {
             DateTime::from_naive_utc_and_offset(
-                crate::store::millis_to_naive_chrono(timestamp),
+                whisperfish_store::millis_to_naive_chrono(timestamp),
                 Utc,
             )
         } else {
