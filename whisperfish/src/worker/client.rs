@@ -361,6 +361,7 @@ impl ClientActor {
         }
     }
 
+    #[tracing::instrument(level = "debug", skip(self, ctx, message, metadata))]
     pub fn handle_needs_delivery_receipt(
         &mut self,
         ctx: &mut <Self as Actor>::Context,
