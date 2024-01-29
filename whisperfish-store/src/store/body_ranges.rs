@@ -147,8 +147,28 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
                 tracing::warn!("splitting a mention");
             }
 
-            let lhs: Vec<u16> = self.contents.encode_utf16().take(char_idx).collect();
-            let idx = String::from_utf16(&lhs).unwrap().len();
+            // Map UTF16 index to character boundary, by counting UTF16 code units.
+            let fold = self.contents.char_indices().fold_while(
+                (0, 0),
+                |(_utf8_pos, utf16_pos), (pos, c)| {
+                    use itertools::FoldWhile::{Continue, Done};
+
+                    let next = (pos, utf16_pos + c.len_utf16());
+                    if utf16_pos >= char_idx {
+                        Done(next)
+                    } else {
+                        Continue(next)
+                    }
+                },
+            );
+            assert!(fold.is_done());
+            let (idx, _utf16_pos) = fold.into_inner();
+            assert!(_utf16_pos >= char_idx);
+
+            if cfg!(debug_assertions) {
+                let lhs: Vec<u16> = self.contents.encode_utf16().take(char_idx).collect();
+                assert_eq!(idx, String::from_utf16(&lhs).unwrap().len());
+            }
 
             [
                 Segment {
