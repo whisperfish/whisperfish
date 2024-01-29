@@ -208,7 +208,11 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             AssociatedValue::Style(2) => segment.spoiler = true,
             AssociatedValue::Style(3) => segment.strikethrough = true,
             AssociatedValue::Style(4) => segment.monospace = true,
-            AssociatedValue::MentionUuid(s) => segment.mention = Some(s),
+            AssociatedValue::MentionUuid(s) => {
+                assert_eq!(segment.contents.chars().count(), 1);
+                assert_eq!(segment.contents, "\u{fffc}");
+                segment.mention = Some(s);
+            }
             _ => {}
         }
     }
@@ -358,7 +362,7 @@ mod tests {
 
     #[test]
     fn mention() {
-        let text = " Sorry for the random mention.";
+        let text = "\u{fffc}Sorry for the random mention.";
         let ranges = super::deserialize(&[
             10, 40, 16, 1, 26, 36, 57, 100, 52, 52, 50, 56, 97, 98, 45, 48, 48, 48, 48, 45, 48, 48,
             48, 48, 45, 48, 48, 48, 48, 45, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
