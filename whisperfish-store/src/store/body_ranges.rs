@@ -421,4 +421,41 @@ mod tests {
 
         assert!(possibilities.contains(&(&styled as &str)), "{}", styled);
     }
+
+    #[test]
+    // This is a regression test for a crash that happened when mentioning a user
+    // https://gitlab.com/whisperfish/whisperfish/-/issues/629
+    fn mention_crash() {
+        use database_protos::body_range_list::body_range::Style;
+        let text =
+            "I ￼ am 😉  testing complex @-mentions ￼  (sorry for the crashing Whisperfishes)";
+        let ranges = [
+            BodyRange {
+                start: 2,
+                length: 1,
+                associated_value: Some(AssociatedValue::MentionUuid(
+                    "9bad15b5-xxxx-xxxx-xxxx-xxxxxxxxxxxx".to_string(),
+                )),
+            },
+            BodyRange {
+                start: 21,
+                length: 2,
+                associated_value: Some(AssociatedValue::Style(Style::Bold.into())),
+            },
+            BodyRange {
+                start: 38,
+                length: 1,
+                associated_value: Some(AssociatedValue::MentionUuid(
+                    "9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx".to_string(),
+                )),
+            },
+        ];
+        let styled = to_styled(text, &ranges, |_u| match _u {
+            "9bad15b5-xxxx-xxxx-xxxx-xxxxxxxxxxxx" => "rubdos",
+            "9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx" => "direc85",
+            _ => panic!("unexpected mention {_u}"),
+        });
+
+        assert_eq!("I <a href=\"mention://9bad15b5-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@rubdos</a> am \u{1f609}  testing co<b>mp</b>lex @-mentions <a href=\"mention://9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@direc85</a>  (sorry for the crashing Whisperfishes)", styled);
+    }
 }
