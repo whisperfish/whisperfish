@@ -139,16 +139,16 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
 
     impl<'a> Segment<'a> {
         fn end(&self) -> usize {
-            self.start + self.contents.len()
+            self.start + self.contents.encode_utf16().count()
         }
 
-        fn split_at(&self, idx: usize) -> [Self; 2] {
+        fn split_at(&self, char_idx: usize) -> [Self; 2] {
             if self.mention.is_some() {
                 tracing::warn!("splitting a mention");
             }
 
-            // Map to character boundary
-            let idx = self.contents.char_indices().nth(idx).unwrap().0;
+            let lhs: Vec<u16> = self.contents.encode_utf16().take(char_idx).collect();
+            let idx = String::from_utf16(&lhs).unwrap().len();
 
             [
                 Segment {
@@ -164,7 +164,7 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
                 },
                 Segment {
                     contents: &self.contents[idx..],
-                    start: self.start + idx,
+                    start: self.start + char_idx,
                     bold: self.bold,
                     italic: self.italic,
                     spoiler: self.spoiler,
@@ -182,7 +182,7 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
     let mut segments: Vec<_> = spans
         .map(|span| Segment {
             contents: span.as_str(),
-            start: span.start(),
+            start: span.start(), // XXX map this to character index!
             bold: false,
             italic: false,
             spoiler: false,
@@ -209,7 +209,7 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             AssociatedValue::Style(3) => segment.strikethrough = true,
             AssociatedValue::Style(4) => segment.monospace = true,
             AssociatedValue::MentionUuid(s) => {
-                assert_eq!(segment.contents.chars().count(), 1);
+                assert_eq!(segment.contents.encode_utf16().count(), 1);
                 assert_eq!(segment.contents, "\u{fffc}");
                 segment.mention = Some(s);
             }
@@ -221,7 +221,7 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
     for range in ranges {
         // XXX Just skip the range if necessary, that's healthier than panicking.
         let end = (range.start + range.length) as usize;
-        assert!(end <= message.len());
+        assert!(end <= message.encode_utf16().count());
         let left = segments
             .binary_search_by(|segment| {
                 if segment.end() < range.start as usize {
@@ -262,7 +262,7 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             });
 
         let right_split_at = end - segments[right].start;
-        if right_split_at != segments[right].contents.len() {
+        if right_split_at != segments[right].contents.encode_utf16().count() {
             segments.splice(right..=right, segments[right].split_at(right_split_at));
         }
 
