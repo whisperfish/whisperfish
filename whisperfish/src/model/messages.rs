@@ -334,7 +334,7 @@ define_model_roles! {
         Id(id):                                               "id",
         SessionId(session_id):                                "sessionId",
         Message(text via qstring_from_option):                "message",
-        StyledMessage(fn styled_message(&self) via QString::from): "styledMessage",
+        StyledMessage(fn styled_message(&self) via std::borrow::Cow::into_owned via QString::from): "styledMessage",
         Timestamp(server_timestamp via qdatetime_from_naive): "timestamp",
 
         SenderRecipientId(sender_recipient_id via qvariant_from_option): "senderRecipientId",
