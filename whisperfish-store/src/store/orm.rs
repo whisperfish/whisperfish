@@ -1012,7 +1012,10 @@ impl AugmentedMessage {
         String::from(crate::body_ranges::SPOILER_TAG_UNCLICKED)
     }
 
-    pub fn styled_message(&self) -> String {
+    pub fn styled_message(&self) -> Cow<'_, str> {
+        if self.body_ranges.is_empty() {
+            return self.inner.text.as_deref().unwrap_or_default().into();
+        }
         crate::store::body_ranges::to_styled(
             self.inner.text.as_deref().unwrap_or_default(),
             self.body_ranges(),
@@ -1032,6 +1035,7 @@ impl AugmentedMessage {
                 }
             },
         )
+        .into()
     }
 }
 
@@ -1206,7 +1210,7 @@ impl AugmentedSession {
         }
     }
 
-    pub fn last_message_text_styled(&self) -> Option<String> {
+    pub fn last_message_text_styled(&self) -> Option<Cow<'_, str>> {
         self.last_message.as_ref().map(|m| m.styled_message())
     }
 

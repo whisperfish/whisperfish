@@ -87,6 +87,10 @@ fn qdate_from_chrono<T: TimeZone>(dt: DateTime<T>) -> QDate {
     QDate::from_y_m_d(dt.year(), dt.month() as i32, dt.day() as i32)
 }
 
+fn qstring_from_cow(cow: std::borrow::Cow<'_, str>) -> QString {
+    QString::from(cow.as_ref())
+}
+
 fn qdatetime_from_chrono<T: TimeZone>(dt: DateTime<T>) -> QDateTime {
     let dt = dt.with_timezone(&Local).naive_local();
     let date = QDate::from_y_m_d(dt.year(), dt.month() as i32, dt.day() as i32);

@@ -139,16 +139,36 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
 
     impl<'a> Segment<'a> {
         fn end(&self) -> usize {
-            self.start + self.contents.len()
+            self.start + self.contents.encode_utf16().count()
         }
 
-        fn split_at(&self, idx: usize) -> [Self; 2] {
+        fn split_at(&self, char_idx: usize) -> [Self; 2] {
             if self.mention.is_some() {
                 tracing::warn!("splitting a mention");
             }
 
-            // Map to character boundary
-            let idx = self.contents.char_indices().nth(idx).unwrap().0;
+            // Map UTF16 index to character boundary, by counting UTF16 code units.
+            let fold = self.contents.char_indices().fold_while(
+                (0, 0),
+                |(_utf8_pos, utf16_pos), (pos, c)| {
+                    use itertools::FoldWhile::{Continue, Done};
+
+                    let next = (pos, utf16_pos + c.len_utf16());
+                    if utf16_pos >= char_idx {
+                        Done(next)
+                    } else {
+                        Continue(next)
+                    }
+                },
+            );
+            assert!(fold.is_done());
+            let (idx, _utf16_pos) = fold.into_inner();
+            assert!(_utf16_pos >= char_idx);
+
+            if cfg!(debug_assertions) {
+                let lhs: Vec<u16> = self.contents.encode_utf16().take(char_idx).collect();
+                assert_eq!(idx, String::from_utf16(&lhs).unwrap().len());
+            }
 
             [
                 Segment {
@@ -164,7 +184,7 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
                 },
                 Segment {
                     contents: &self.contents[idx..],
-                    start: self.start + idx,
+                    start: self.start + char_idx,
                     bold: self.bold,
                     italic: self.italic,
                     spoiler: self.spoiler,
@@ -180,23 +200,28 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
     let finder = linkify::LinkFinder::new();
     let spans = finder.spans(message);
     let mut segments: Vec<_> = spans
-        .map(|span| Segment {
-            contents: span.as_str(),
-            start: span.start(),
-            bold: false,
-            italic: false,
-            spoiler: false,
-            strikethrough: false,
-            monospace: false,
-            mention: None,
-            link: span.kind().map(|kind| match kind {
-                linkify::LinkKind::Url => span.as_str(),
-                linkify::LinkKind::Email => span.as_str(),
-                _ => {
-                    tracing::warn!("Unknown LinkKind: {:?}", kind);
-                    span.as_str()
-                }
-            }),
+        .map(|span| {
+            // XXX map this to character index!
+            let start = span.start();
+            let start_utf16 = message[..start].encode_utf16().count();
+            Segment {
+                contents: span.as_str(),
+                start: start_utf16,
+                bold: false,
+                italic: false,
+                spoiler: false,
+                strikethrough: false,
+                monospace: false,
+                mention: None,
+                link: span.kind().map(|kind| match kind {
+                    linkify::LinkKind::Url => span.as_str(),
+                    linkify::LinkKind::Email => span.as_str(),
+                    _ => {
+                        tracing::warn!("Unknown LinkKind: {:?}", kind);
+                        span.as_str()
+                    }
+                }),
+            }
         })
         .collect();
 
@@ -208,7 +233,11 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             AssociatedValue::Style(2) => segment.spoiler = true,
             AssociatedValue::Style(3) => segment.strikethrough = true,
             AssociatedValue::Style(4) => segment.monospace = true,
-            AssociatedValue::MentionUuid(s) => segment.mention = Some(s),
+            AssociatedValue::MentionUuid(s) => {
+                assert_eq!(segment.contents.encode_utf16().count(), 1);
+                assert_eq!(segment.contents, "\u{fffc}");
+                segment.mention = Some(s);
+            }
             _ => {}
         }
     }
@@ -217,7 +246,7 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
     for range in ranges {
         // XXX Just skip the range if necessary, that's healthier than panicking.
         let end = (range.start + range.length) as usize;
-        assert!(end <= message.len());
+        assert!(end <= message.encode_utf16().count());
         let left = segments
             .binary_search_by(|segment| {
                 if segment.end() < range.start as usize {
@@ -258,7 +287,7 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             });
 
         let right_split_at = end - segments[right].start;
-        if right_split_at != segments[right].contents.len() {
+        if right_split_at != segments[right].contents.encode_utf16().count() {
             segments.splice(right..=right, segments[right].split_at(right_split_at));
         }
 
@@ -358,7 +387,7 @@ mod tests {
 
     #[test]
     fn mention() {
-        let text = " Sorry for the random mention.";
+        let text = "\u{fffc}Sorry for the random mention.";
         let ranges = super::deserialize(&[
             10, 40, 16, 1, 26, 36, 57, 100, 52, 52, 50, 56, 97, 98, 45, 48, 48, 48, 48, 45, 48, 48,
             48, 48, 45, 48, 48, 48, 48, 45, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
@@ -416,5 +445,71 @@ mod tests {
         ];
 
         assert!(possibilities.contains(&(&styled as &str)), "{}", styled);
+    }
+
+    #[test]
+    // This is a regression test for a crash that happened when mentioning a user
+    // https://gitlab.com/whisperfish/whisperfish/-/issues/629
+    fn mention_crash() {
+        use database_protos::body_range_list::body_range::Style;
+        let text =
+            "I ￼ am 😉  testing complex @-mentions ￼  (sorry for the crashing Whisperfishes)";
+        let ranges = [
+            BodyRange {
+                start: 2,
+                length: 1,
+                associated_value: Some(AssociatedValue::MentionUuid(
+                    "9bad15b5-xxxx-xxxx-xxxx-xxxxxxxxxxxx".to_string(),
+                )),
+            },
+            BodyRange {
+                start: 21,
+                length: 2,
+                associated_value: Some(AssociatedValue::Style(Style::Bold.into())),
+            },
+            BodyRange {
+                start: 38,
+                length: 1,
+                associated_value: Some(AssociatedValue::MentionUuid(
+                    "9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx".to_string(),
+                )),
+            },
+        ];
+        let styled = to_styled(text, &ranges, |_u| match _u {
+            "9bad15b5-xxxx-xxxx-xxxx-xxxxxxxxxxxx" => "rubdos",
+            "9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx" => "direc85",
+            _ => panic!("unexpected mention {_u}"),
+        });
+
+        assert_eq!("I <a href=\"mention://9bad15b5-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@rubdos</a> am \u{1f609}  testing co<b>mp</b>lex @-mentions <a href=\"mention://9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@direc85</a>  (sorry for the crashing Whisperfishes)", styled);
+    }
+
+    #[test]
+    fn mention_url_twice_crash() {
+        let text = "Mention ￼ URL https://gitlab.com/ Another ￼ Link! https://github.com/";
+        let ranges = [
+            BodyRange {
+                start: 8,
+                length: 1,
+                associated_value: Some(AssociatedValue::MentionUuid(
+                    "89fca563-xxxx-xxxx-xxxx-xxxxxxxxxxxx".to_string(),
+                )),
+            },
+            BodyRange {
+                start: 42,
+                length: 1,
+                associated_value: Some(AssociatedValue::MentionUuid(
+                    "9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx".to_string(),
+                )),
+            },
+        ];
+        println!("{ranges:?}");
+        let styled = to_styled(text, &ranges, |_u| match _u {
+            "89fca563-xxxx-xxxx-xxxx-xxxxxxxxxxxx" => "foobar",
+            "9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx" => "direc85",
+            _ => panic!("unexpected mention {_u}"),
+        });
+
+        assert_eq!("Mention <a href=\"mention://89fca563-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@foobar</a> URL <a href=\"https://gitlab.com/\">https://gitlab.com/</a> Another <a href=\"mention://9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@direc85</a> Link! <a href=\"https://github.com/\">https://github.com/</a>", styled);
     }
 }
