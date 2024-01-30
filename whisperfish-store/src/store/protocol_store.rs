@@ -373,6 +373,79 @@ impl<T: Identity> protocol::SessionStore for IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
+impl<T: Identity> ServiceKyberPreKeyStore for IdentityStorage<T> {
+    #[tracing::instrument(level = "trace", skip(self, body))]
+    async fn store_last_resort_kyber_pre_key(
+        &mut self,
+        kyber_prekey_id: KyberPreKeyId,
+        body: &KyberPreKeyRecord,
+    ) -> Result<(), SignalProtocolError> {
+        use crate::schema::kyber_prekeys::dsl::*;
+        use diesel::prelude::*;
+
+        // Insert or replace?
+        diesel::insert_into(kyber_prekeys)
+            .values(orm::KyberPrekey {
+                id: u32::from(kyber_prekey_id) as _,
+                record: body.serialize()?,
+                identity: self.1.identity(),
+                is_last_resort: true,
+            })
+            .execute(&mut *self.0.db())
+            .expect("db");
+
+        Ok(())
+    }
+
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn load_last_resort_kyber_pre_keys(
+        &self,
+    ) -> Result<Vec<KyberPreKeyRecord>, SignalProtocolError> {
+        use crate::schema::kyber_prekeys::dsl::*;
+        use diesel::prelude::*;
+
+        // XXX Do we need to ensure these are marked as unused?
+        let prekey_records: Vec<orm::KyberPrekey> = kyber_prekeys
+            .filter(is_last_resort.eq(true).and(identity.eq(self.1.identity())))
+            .load(&mut *self.0.db())
+            .expect("db");
+
+        Ok(prekey_records
+            .into_iter()
+            .map(|pkr| KyberPreKeyRecord::deserialize(&pkr.record))
+            .collect::<Result<_, _>>()?)
+    }
+
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn remove_kyber_pre_key(
+        &mut self,
+        _kyber_prekey_id: KyberPreKeyId,
+    ) -> Result<(), SignalProtocolError> {
+        // Mark as used should be used instead
+        unimplemented!("unexpected in this flow")
+    }
+
+    /// Analogous to markAllOneTimeKyberPreKeysStaleIfNecessary
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn mark_all_one_time_kyber_pre_keys_stale_if_necessary(
+        &mut self,
+        _stale_time: chrono::DateTime<chrono::Utc>,
+    ) -> Result<(), SignalProtocolError> {
+        unimplemented!("unexpected in this flow")
+    }
+
+    /// Analogue of deleteAllStaleOneTimeKyberPreKeys
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn delete_all_stale_one_time_kyber_pre_keys(
+        &mut self,
+        _threshold: chrono::DateTime<chrono::Utc>,
+        _min_count: usize,
+    ) -> Result<(), SignalProtocolError> {
+        unimplemented!("unexpected in this flow")
+    }
+}
+
+#[async_trait::async_trait(?Send)]
 impl<T: Identity> PreKeysStore for IdentityStorage<T> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn next_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
