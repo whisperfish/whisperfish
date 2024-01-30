@@ -477,6 +477,7 @@ pub struct KyberPrekey {
     pub id: i32,
     pub record: Vec<u8>,
     pub identity: Identity,
+    pub is_last_resort: bool,
 }
 
 impl Display for KyberPrekey {

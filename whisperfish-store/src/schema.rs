@@ -1,3 +1,5 @@
+use crate::orm::Identity;
+
 // @generated automatically by Diesel CLI.
 pub mod migrations;
 
@@ -118,12 +120,14 @@ diesel::table! {
         id -> Integer,
         record -> Binary,
         identity -> IdentityMapping,
+        is_last_resort -> Bool,
     }
 }
 
 diesel::table! {
     use diesel::sql_types::*;
     use crate::store::orm::MessageTypeMapping;
+
     messages (id) {
         id -> Integer,
         session_id -> Integer,

@@ -1,5 +1,5 @@
 use super::*;
-use libsignal_service::pre_keys::PreKeysStore;
+use libsignal_service::pre_keys::{PreKeysStore, ServiceKyberPreKeyStore};
 use libsignal_service::protocol::{
     self, GenericSignedPreKey, IdentityKeyPair, SignalProtocolError,
 };
@@ -533,6 +533,7 @@ impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
         use crate::schema::kyber_prekeys::dsl::*;
         use diesel::prelude::*;
 
+        // XXX Do we need to ensure this is *not* a last resort key?
         let prekey_record: Option<orm::KyberPrekey> = kyber_prekeys
             .filter(
                 id.eq(u32::from(kyber_prekey_id) as i32)
@@ -563,6 +564,7 @@ impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
                 id: u32::from(kyber_prekey_id) as _,
                 record: body.serialize()?,
                 identity: self.1.identity(),
+                is_last_resort: false,
             })
             .execute(&mut *self.0.db())
             .expect("db");
