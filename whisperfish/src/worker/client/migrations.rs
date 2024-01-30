@@ -124,7 +124,7 @@ impl ClientActor {
         ctx.notify(ComputeGroupV2ExpectedIds);
         ctx.notify(RefreshOwnProfile { force: false });
         ctx.notify(ParseOldReaction);
-        // ctx.notify(InitializePni);
+        ctx.notify(InitializePni);
     }
 }
 
