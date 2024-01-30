@@ -478,4 +478,33 @@ mod tests {
 
         assert_eq!("I <a href=\"mention://9bad15b5-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@rubdos</a> am \u{1f609}  testing co<b>mp</b>lex @-mentions <a href=\"mention://9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@direc85</a>  (sorry for the crashing Whisperfishes)", styled);
     }
+
+    #[test]
+    fn mention_url_twice_crash() {
+        let text = "Mention ￼ URL https://gitlab.com/ Another ￼ Link! https://github.com/";
+        let ranges = [
+            BodyRange {
+                start: 8,
+                length: 1,
+                associated_value: Some(AssociatedValue::MentionUuid(
+                    "89fca563-xxxx-xxxx-xxxx-xxxxxxxxxxxx".to_string(),
+                )),
+            },
+            BodyRange {
+                start: 42,
+                length: 1,
+                associated_value: Some(AssociatedValue::MentionUuid(
+                    "9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx".to_string(),
+                )),
+            },
+        ];
+        println!("{ranges:?}");
+        let styled = to_styled(text, &ranges, |_u| match _u {
+            "89fca563-xxxx-xxxx-xxxx-xxxxxxxxxxxx" => "foobar",
+            "9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx" => "direc85",
+            _ => panic!("unexpected mention {_u}"),
+        });
+
+        assert_eq!("Mention <a href=\"mention://89fca563-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@foobar</a> URL <a href=\"https://gitlab.com/\">https://gitlab.com/</a> Another <a href=\"mention://9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@direc85</a> Link! <a href=\"https://github.com/\">https://github.com/</a>", styled);
+    }
 }
