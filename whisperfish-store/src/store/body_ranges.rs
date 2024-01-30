@@ -200,23 +200,28 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
     let finder = linkify::LinkFinder::new();
     let spans = finder.spans(message);
     let mut segments: Vec<_> = spans
-        .map(|span| Segment {
-            contents: span.as_str(),
-            start: span.start(), // XXX map this to character index!
-            bold: false,
-            italic: false,
-            spoiler: false,
-            strikethrough: false,
-            monospace: false,
-            mention: None,
-            link: span.kind().map(|kind| match kind {
-                linkify::LinkKind::Url => span.as_str(),
-                linkify::LinkKind::Email => span.as_str(),
-                _ => {
-                    tracing::warn!("Unknown LinkKind: {:?}", kind);
-                    span.as_str()
-                }
-            }),
+        .map(|span| {
+            // XXX map this to character index!
+            let start = span.start();
+            let start_utf16 = message[..start].encode_utf16().count();
+            Segment {
+                contents: span.as_str(),
+                start: start_utf16,
+                bold: false,
+                italic: false,
+                spoiler: false,
+                strikethrough: false,
+                monospace: false,
+                mention: None,
+                link: span.kind().map(|kind| match kind {
+                    linkify::LinkKind::Url => span.as_str(),
+                    linkify::LinkKind::Email => span.as_str(),
+                    _ => {
+                        tracing::warn!("Unknown LinkKind: {:?}", kind);
+                        span.as_str()
+                    }
+                }),
+            }
         })
         .collect();
 
