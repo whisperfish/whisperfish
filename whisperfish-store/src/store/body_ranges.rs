@@ -123,7 +123,7 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
     message: &'a str,
     ranges: &'a [BodyRange],
     mention_lookup: impl Fn(&'a str) -> S,
-) -> String {
+) -> std::borrow::Cow<'a, str> {
     #[derive(Debug)]
     struct Segment<'a> {
         contents: &'a str,
@@ -224,6 +224,11 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             }
         })
         .collect();
+
+    // If there are no segments, and no ranges, we can just return the message without reallocating.
+    if segments.len() == 1 && segments[0].link.is_none() && ranges.is_empty() {
+        return message.into();
+    }
 
     fn annotate<'a>(segment: &'_ mut Segment<'a>, style: Option<&'a AssociatedValue>) {
         let Some(style) = style else { return };
@@ -348,11 +353,13 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             result
         })
         .join("")
+        .into()
 }
 
 #[cfg(test)]
 mod tests {
     use rstest::rstest;
+    use std::borrow::Cow;
 
     use super::*;
 
@@ -383,6 +390,25 @@ mod tests {
         println!("{ranges:?}");
         let styled = to_styled(text, &ranges, no_mentions);
         assert_eq!(styled, *expected);
+    }
+
+    #[test]
+    fn nothing_to_show() {
+        let ranges = [];
+        let msg = "Nothing at all";
+        assert_eq!(to_styled(msg, &ranges, no_mentions), Cow::Borrowed(msg))
+    }
+
+    #[test]
+    fn just_a_link() {
+        let ranges = [];
+        let msg = "https://www.example.com";
+        let styled = to_styled(msg, &ranges, no_mentions);
+        assert!(matches!(styled, Cow::Owned(_)));
+        assert_eq!(
+            styled.as_ref(),
+            "<a href=\"https://www.example.com\">https://www.example.com</a>"
+        );
     }
 
     #[test]
