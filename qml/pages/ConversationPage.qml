@@ -176,6 +176,8 @@ Page {
             unreadMessageChecker.running = true
         }
 
+        onCountChanged: unreadMessageChecker.running = true
+
         Component.onCompleted: unreadMessageChecker.running = true
 
         Timer {
