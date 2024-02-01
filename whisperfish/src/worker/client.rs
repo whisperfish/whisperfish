@@ -2561,14 +2561,10 @@ impl Handler<RegisterLinked> for ClientActor {
                                     pni_public_key,
                                 },
                             ) => {
-                                let aci_identity_key_pair = protocol::IdentityKeyPair::new(
-                                    protocol::IdentityKey::new(aci_public_key),
-                                    aci_private_key,
-                                );
-                                let pni_identity_key_pair = protocol::IdentityKeyPair::new(
-                                    protocol::IdentityKey::new(pni_public_key),
-                                    pni_private_key,
-                                );
+                                let aci_identity_key_pair =
+                                    protocol::IdentityKeyPair::new(aci_public_key, aci_private_key);
+                                let pni_identity_key_pair =
+                                    protocol::IdentityKeyPair::new(pni_public_key, pni_private_key);
 
                                 res = Result::<RegisterLinkedResponse, anyhow::Error>::Ok(
                                     RegisterLinkedResponse {
