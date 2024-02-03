@@ -246,7 +246,8 @@ pub struct ClientActor {
 
     unidentified_certificates: unidentified::UnidentifiedCertificates,
     credentials: Option<ServiceCredentials>,
-    local_addr: Option<ServiceAddress>,
+    self_aci: Option<ServiceAddress>,
+    self_pni: Option<ServiceAddress>,
     storage: Option<Storage>,
     ws: Option<SignalWebSocket>,
     config: std::sync::Arc<crate::config::SignalConfig>,
@@ -297,7 +298,8 @@ impl ClientActor {
             migration_state: MigrationCondVar::new(),
             unidentified_certificates: UnidentifiedCertificates::default(),
             credentials: None,
-            local_addr: None,
+            self_aci: None,
+            self_pni: None,
             storage: None,
             ws: None,
             config,
@@ -357,7 +359,7 @@ impl ClientActor {
 
         let ws = self.ws.clone().unwrap();
         let cipher = self.cipher(ServiceIdType::AccountIdentity);
-        let local_addr = self.local_addr.unwrap();
+        let local_addr = self.self_aci.unwrap();
         let device_id = self.config.get_device_id();
         async move {
             let u_ws = u_service
@@ -772,7 +774,7 @@ impl ClientActor {
         use sync_message::request::Type;
         tracing::trace!("Processing sync request {:?}", req.r#type());
 
-        let local_addr = self.local_addr.unwrap();
+        let local_addr = self.self_aci.unwrap();
         let storage = self.storage.clone().unwrap();
         let sender = self.message_sender();
 
@@ -1120,7 +1122,7 @@ impl ClientActor {
             self.storage.as_ref().unwrap().aci_or_pni(service_identity),
             rand::thread_rng(),
             service_cfg.unidentified_sender_trust_root,
-            self.local_addr.unwrap().uuid,
+            self.self_aci.unwrap().uuid,
             device_id.into(),
         )
     }
@@ -1431,7 +1433,7 @@ impl Handler<SendMessage> for ClientActor {
 
         let storage = storage.clone();
         let addr = ctx.address();
-        let self_uuid = self.local_addr.unwrap().uuid;
+        let self_uuid = self.self_aci.unwrap().uuid;
         Box::pin(
             async move {
                 let mut sender = sender.await?;
@@ -1916,7 +1918,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
 
         let storage = self.storage.clone().unwrap();
         let sender = self.message_sender();
-        let local_addr = self.local_addr.unwrap();
+        let local_addr = self.self_aci.unwrap();
 
         let certs = self.unidentified_certificates.clone();
 
@@ -2047,9 +2049,12 @@ impl Handler<StorageReady> for ClientActor {
 
                 // Signal service context
                 // XXX What about the whoami migration?
-                let uuid = aci.expect("local uuid to initialize service cipher");
+                let aci = aci.expect("local uuid to initialize service cipher");
                 // end signal service context
-                act.local_addr = Some(ServiceAddress { uuid });
+                act.self_aci = Some(ServiceAddress { uuid: aci });
+                if let Some(pni) = pni {
+                    act.self_pni = Some(ServiceAddress { uuid: pni });
+                }
 
                 Self::queue_migrations(ctx);
 
@@ -2207,13 +2212,19 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             uuid: Uuid::parse_str(msg.destination_service_id.as_deref().unwrap())
                 .expect("parse uuid"),
         };
-        let mut cipher = self.cipher(
-            if destination == self.local_addr.expect("local addr known") {
-                ServiceIdType::AccountIdentity
-            } else {
-                ServiceIdType::PhoneNumberIdentity
-            },
-        );
+        let service_id = if destination == self.self_aci.expect("local aci known") {
+            ServiceIdType::AccountIdentity
+        } else if destination == self.self_pni.expect("local pni known") {
+            ServiceIdType::PhoneNumberIdentity
+        } else {
+            tracing::warn!(
+                "Message for unknown destination: {:?}. Dropping",
+                destination
+            );
+            return;
+        };
+
+        let mut cipher = self.cipher(service_id);
 
         if msg.is_receipt() {
             self.process_receipt(&msg);

@@ -11,7 +11,7 @@ impl Handler<InitializePni> for ClientActor {
         let service = self.authenticated_service();
         let whoami = self.migration_state.self_uuid_is_known();
         let storage = self.storage.clone().expect("initialized storage");
-        let local_addr = self.local_addr.expect("local addr");
+        let local_addr = self.self_aci.expect("local addr");
 
         Box::pin(
             async move {
