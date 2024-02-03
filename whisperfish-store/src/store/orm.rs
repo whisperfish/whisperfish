@@ -1013,9 +1013,6 @@ impl AugmentedMessage {
     }
 
     pub fn styled_message(&self) -> Cow<'_, str> {
-        if self.body_ranges.is_empty() {
-            return self.inner.text.as_deref().unwrap_or_default().into();
-        }
         crate::store::body_ranges::to_styled(
             self.inner.text.as_deref().unwrap_or_default(),
             self.body_ranges(),
@@ -1035,7 +1032,6 @@ impl AugmentedMessage {
                 }
             },
         )
-        .into()
     }
 }
 
