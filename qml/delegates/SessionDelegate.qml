@@ -26,6 +26,7 @@ ListItem {
     property bool hasSpoilers: model.hasSpoilers
     property bool hasStrikeThrough: model.hasStrikeThrough
     property bool hasAttachment: model.hasAttachment
+    property int expiringMessages: model.expiringMessageTimeout != -1
     property string name: model.isGroup ? model.groupName : getRecipientName(model.recipientE164, model.recipientName, true)
     property string emoji: model.recipientEmoji
     property string message:
@@ -205,7 +206,11 @@ ListItem {
                 if (isGroup) {
                     pageStack.push(Qt.resolvedUrl("../pages/GroupProfilePage.qml"), { session: model, group: group })
                 } else {
-                    pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"), { recipientUuid: model.recipientUuid })
+                    if (model.recipientUuid === SetupWorker.uuid) {
+                        pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"), { session: model } )
+                    } else {
+                        pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { session: model, recipientUuid: model.recipientUuid })
+                    }
                 }
             }
         }
@@ -267,7 +272,6 @@ ListItem {
 
         Row {
             id: timeLabel
-            spacing: Theme.paddingSmall
             anchors {
                 leftMargin: Theme.paddingSmall
                 right: parent.right; rightMargin: Theme.horizontalPageMargin
@@ -286,7 +290,7 @@ ListItem {
 
             Label {
                 anchors.verticalCenter: parent.verticalCenter
-                text: date
+                text: (expiringMessages ? "⏱ " : "") + date
                 highlighted: _labelsHighlighted
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: highlighted ? (isUnread ? Theme.highlightColor :

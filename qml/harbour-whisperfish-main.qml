@@ -137,8 +137,8 @@ ApplicationWindow
     function closeMessageNotification(sid, mid) {
         if(sid in notificationMap) {
             for(var i in notificationMap[sid]) {
-
-                if(notificationMap[sid][i].mid === mid) {
+                // This needs to be a loose comparison for some reason
+                if(notificationMap[sid][i].mid == mid) {
                     notificationMap[sid][i].close()
                     delete notificationMap[sid][i]
                     notificationMap[sid].splice(i, 1)

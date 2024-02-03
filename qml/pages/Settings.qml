@@ -44,7 +44,7 @@ Page {
                 //: Show own profile menu
                 //% "Show my profile"
                 text: qsTrId("whisperfish-settings-show-own-profile-menu")
-                onClicked: pageStack.push(Qt.resolvedUrl("ProfilePage.qml"), { recipientUuid: SetupWorker.uuid })
+                onClicked: pageStack.push(Qt.resolvedUrl("ProfilePage.qml"))
             }
         }
 

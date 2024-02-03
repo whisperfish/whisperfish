@@ -18,8 +18,10 @@ use crate::store::orm::shorten;
 use crate::{config::SignalConfig, millis_to_naive_chrono};
 use anyhow::Context;
 use chrono::prelude::*;
+use diesel::dsl::sql;
 use diesel::prelude::*;
 use diesel::result::*;
+use diesel::sql_types::{Bool, Timestamp};
 use diesel_migrations::EmbeddedMigrations;
 use itertools::Itertools;
 use libsignal_service::groups_v2::InMemoryCredentialsCache;
@@ -38,6 +40,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use uuid::Uuid;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
+const DELETE_AFTER: &str = "DATETIME(expiry_started, '+' || expires_in || ' seconds')";
 
 sql_function!(
     // Represents the Sqlite last_insert_rowid() function
@@ -93,6 +96,12 @@ pub struct Message {
     pub queued: bool,
 }
 
+#[derive(Debug)]
+pub struct MessagePointer {
+    pub message_id: i32,
+    pub session_id: i32,
+}
+
 /// ID-free Message model for insertions
 #[derive(Clone, Debug)]
 pub struct NewMessage<'a> {
@@ -117,6 +126,33 @@ pub struct NewMessage<'a> {
     pub body_ranges: Option<Vec<u8>>,
 
     pub edit: Option<&'a orm::Message>,
+}
+
+impl Default for NewMessage<'_> {
+    fn default() -> Self {
+        Self {
+            session_id: 0,
+            source_e164: None,
+            source_uuid: None,
+            server_guid: None,
+            text: "".to_string(),
+            timestamp: chrono::Utc::now().naive_utc(),
+            sent: false,
+            received: false,
+            is_read: false,
+            flags: 0,
+            attachment: None,
+            mime_type: None,
+            has_attachment: false,
+            outgoing: true,
+            is_unidentified: false,
+            quote_timestamp: None,
+            expires_in: None,
+            story_type: StoryType::None,
+            body_ranges: None,
+            edit: None,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -880,6 +916,19 @@ impl Storage {
         }
     }
 
+    pub fn clear_message_expiry(&self, message_id: i32) {
+        use crate::schema::messages::dsl::*;
+        let affected_rows = diesel::update(messages)
+            .set((expires_in.eq(None::<i32>),))
+            .filter(id.eq(message_id))
+            .execute(&mut *self.db())
+            .expect("existing record updated");
+
+        if affected_rows > 0 {
+            self.observe_update(messages, message_id);
+        }
+    }
+
     #[tracing::instrument(
         skip(self, phonenumber, new_profile_key),
         fields(
@@ -1470,34 +1519,82 @@ impl Storage {
     ///
     /// This is e.g. called from Signal Desktop from a sync message
     #[tracing::instrument(skip(self))]
-    pub fn mark_message_read(
-        &self,
-        timestamp: NaiveDateTime,
-    ) -> Option<(orm::Session, orm::Message)> {
+    pub fn mark_message_read(&self, timestamp: NaiveDateTime) -> Option<MessagePointer> {
         use schema::messages::dsl::*;
-        diesel::update(messages)
+        let mut row: Vec<(i32, i32)> = diesel::update(messages)
             .filter(server_timestamp.eq(timestamp))
             .set(is_read.eq(true))
-            .execute(&mut *self.db())
+            .returning((schema::messages::id, schema::messages::session_id))
+            .load(&mut *self.db())
             .unwrap();
 
-        let message: Option<orm::Message> = messages
-            .filter(server_timestamp.eq(timestamp))
-            .first(&mut *self.db())
-            .ok();
-        if let Some(message) = message {
-            self.observe_update(messages, message.id)
-                .with_relation(schema::sessions::table, message.session_id);
-            let session = self
-                .fetch_session_by_id(message.session_id)
-                .expect("foreignk key");
-            Some((session, message))
-        } else {
+        if row.is_empty() {
             tracing::warn!("Could not find message with timestamp {}", timestamp);
             tracing::warn!(
                 "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
             );
-            None
+            return None;
+        }
+
+        let pointer = row.pop()?;
+        let pointer = MessagePointer {
+            message_id: pointer.0,
+            session_id: pointer.1,
+        };
+
+        self.observe_update(messages, pointer.message_id)
+            .with_relation(schema::sessions::table, pointer.session_id);
+        Some(pointer)
+    }
+
+    /// Handle marking message as read and potentially starting the expiry timer.
+    #[tracing::instrument(skip(self))]
+    pub fn mark_message_read_in_ui(&self, message_id: i32) {
+        use schema::messages::dsl::*;
+
+        // 1) Mark message as read, if necessary
+        let mut session_id_unread: Vec<i32> = diesel::update(messages)
+            .filter(id.eq(message_id))
+            .set(is_read.eq(true))
+            .returning(schema::messages::session_id)
+            .load(&mut *self.db())
+            .unwrap();
+        assert!(
+            session_id_unread.len() <= 1,
+            "message id for unread update is unique"
+        );
+        let session_id_unread = session_id_unread.pop();
+
+        // 2) Start expiry timer, if necessary
+        let mut session_id_expiring = diesel::update(messages)
+            .filter(
+                id.eq(message_id)
+                    .and(schema::messages::expires_in.is_not_null())
+                    .and(schema::messages::expires_in.gt(0))
+                    .and(schema::messages::expiry_started.is_null()),
+            )
+            .set(schema::messages::expiry_started.eq(Some(chrono::Utc::now().naive_utc())))
+            .returning(schema::messages::session_id)
+            .load(&mut *self.db())
+            .expect("set message expiry");
+        assert!(
+            session_id_expiring.len() <= 1,
+            "message id for expiry update is unique"
+        );
+        let session_id_expiring = session_id_expiring.pop();
+
+        // 3) Observe update, if either happened
+        if session_id_unread.is_some() && session_id_expiring.is_some() {
+            assert_eq!(
+                session_id_unread, session_id_expiring,
+                "same session id for expiry and unread update"
+            );
+        }
+        if let Some(m_session_id) = session_id_unread.or(session_id_expiring) {
+            self.observe_update(messages, message_id)
+                .with_relation(schema::sessions::table, PrimaryKey::RowId(m_session_id));
+        } else {
+            tracing::warn!("Could not find message with id {}", message_id);
         }
     }
 
@@ -1508,30 +1605,34 @@ impl Storage {
         receiver_uuid: Uuid,
         timestamp: NaiveDateTime,
         delivered_at: Option<chrono::DateTime<Utc>>,
-    ) -> Option<(orm::Session, orm::Message)> {
+    ) -> Option<MessagePointer> {
         // XXX: probably, the trigger for this method call knows a better time stamp.
         let delivered_at = delivered_at.unwrap_or_else(chrono::Utc::now).naive_utc();
 
         // Find the recipient
         let recipient =
             self.merge_and_fetch_recipient(None, Some(receiver_uuid), None, TrustLevel::Certain);
-        let message_id = schema::messages::table
-            .select(schema::messages::id)
+        let row: Option<(i32, i32)> = schema::messages::table
+            .select((schema::messages::id, schema::messages::session_id))
             .filter(schema::messages::server_timestamp.eq(timestamp))
             .first(&mut *self.db())
             .optional()
             .expect("db");
-        if message_id.is_none() {
+        if row.is_none() {
             tracing::warn!("Could not find message with timestamp {}", timestamp);
             tracing::warn!(
                 "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
             );
         }
-        let message_id = message_id?;
+        let pointer = row?;
+        let pointer = MessagePointer {
+            message_id: pointer.0,
+            session_id: pointer.1,
+        };
 
         let upsert = diesel::insert_into(schema::receipts::table)
             .values((
-                schema::receipts::message_id.eq(message_id),
+                schema::receipts::message_id.eq(pointer.message_id),
                 schema::receipts::recipient_id.eq(recipient.id),
                 schema::receipts::delivered.eq(delivered_at),
             ))
@@ -1540,27 +1641,18 @@ impl Storage {
             .set(schema::receipts::delivered.eq(delivered_at))
             .execute(&mut *self.db());
 
-        use diesel::result::Error::DatabaseError;
         match upsert {
-            Ok(1) => {
+            Ok(n) => {
+                if n != 1 {
+                    tracing::warn!(
+                        "Read receipt had {} affected rows instead of expected 1. Updating anyway.",
+                        n
+                    );
+                }
                 self.observe_upsert(schema::receipts::table, PrimaryKey::Unknown)
-                    .with_relation(schema::messages::table, message_id)
+                    .with_relation(schema::messages::table, pointer.message_id)
                     .with_relation(schema::recipients::table, recipient.id);
-                let message = self.fetch_message_by_id(message_id)?;
-                let session = self.fetch_session_by_id(message.session_id)?;
-                Some((session, message))
-            }
-            Ok(affected_rows) => {
-                // Reason can be a dupe receipt (=0).
-                tracing::warn!(
-                    "Read receipt had {} affected rows instead of expected 1.  Ignoring.",
-                    affected_rows
-                );
-                None
-            }
-            Err(DatabaseError(DatabaseErrorKind::UniqueViolation, _)) => {
-                tracing::error!("receipt already exists, upsert failed");
-                None
+                Some(pointer)
             }
             Err(e) => {
                 tracing::error!("Could not insert receipt: {}.", e);
@@ -2048,6 +2140,91 @@ impl Storage {
         if affected_rows > 0 {
             self.observe_update(schema::sessions::table, session_id);
         }
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn start_message_expiry(&self, message_id: i32) {
+        let affected_rows = diesel::update(
+            schema::messages::table.filter(
+                schema::messages::id
+                    .eq(message_id)
+                    .and(schema::messages::expiry_started.is_null()),
+            ),
+        )
+        .set(schema::messages::expiry_started.eq(Some(chrono::Utc::now().naive_utc())))
+        .execute(&mut *self.db())
+        .expect("set message expiry");
+
+        tracing::trace!("affected {} rows", affected_rows);
+
+        self.observe_update(schema::messages::table, message_id);
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_expired_message_ids(&self) -> Vec<(i32, DateTime<Utc>)> {
+        self.fetch_message_ids_by_expiry(true)
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_expiring_message_ids(&self) -> Vec<(i32, DateTime<Utc>)> {
+        self.fetch_message_ids_by_expiry(false)
+    }
+
+    fn fetch_message_ids_by_expiry(&self, already_expired: bool) -> Vec<(i32, DateTime<Utc>)> {
+        schema::messages::table
+            .select((
+                schema::messages::id,
+                sql::<Timestamp>(DELETE_AFTER).sql("AS delete_after"),
+            ))
+            .filter(
+                sql::<Bool>("delete_after")
+                    .sql(if already_expired { "<=" } else { ">" })
+                    .sql("DATETIME('now')"),
+            )
+            .order_by(sql::<Timestamp>("delete_after").asc())
+            .load(&mut *self.db())
+            .expect("messages by expiry timestamp")
+            .into_iter()
+            .map(|(id, ndt)| (id, DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc)))
+            .collect()
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_next_expiring_message_id(&self) -> Option<(i32, DateTime<Utc>)> {
+        schema::messages::table
+            .select((
+                schema::messages::id,
+                sql::<Timestamp>(DELETE_AFTER).sql("AS delete_after"),
+            ))
+            .filter(schema::messages::expiry_started.is_not_null())
+            .order_by(sql::<Timestamp>("delete_after").asc())
+            .first(&mut *self.db())
+            .optional()
+            .expect("messages by expiry timestamp")
+            .map(|(id, ndt)| (id, DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc)))
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn delete_expired_messages(&mut self) -> usize {
+        let deletions: Vec<i32> = diesel::delete(schema::messages::table)
+            .filter(sql::<Timestamp>(DELETE_AFTER).le(sql::<Timestamp>("DATETIME('now')")))
+            .returning(schema::messages::id)
+            .load(&mut *self.db())
+            .expect("delete expired messages");
+
+        tracing::trace_span!("deleting expired attachments").in_scope(|| {
+            for message_id in &deletions {
+                self.delete_attachments_for_message(*message_id);
+            }
+        });
+
+        tracing::trace!("affected {} rows", deletions.len());
+
+        for deletion in &deletions {
+            self.observe_delete(schema::messages::table, *deletion);
+        }
+
+        deletions.len()
     }
 
     #[tracing::instrument(skip(self))]
@@ -2725,42 +2902,7 @@ impl Storage {
         let _span = tracing::trace_span!("delete attachments", message_id = message.id).entered();
         if !message.is_outbound {
             tracing::trace!("Message is from someone else, deleting attachments...");
-            let regex = self.config.attachments_regex();
-            self.fetch_attachments_for_message(message.id)
-                .into_iter()
-                .for_each(|attachment| {
-                    diesel::delete(schema::attachments::table)
-                        .filter(schema::attachments::id.eq(attachment.id))
-                        .execute(&mut *self.db())
-                        .unwrap();
-                    self.observe_delete(schema::attachments::table, attachment.id)
-                        .with_relation(schema::messages::table, message.id);
-                    if let Some(path) = attachment.attachment_path {
-                        let remaining = schema::attachments::table
-                            .filter(schema::attachments::attachment_path.eq(&path))
-                            .count()
-                            .get_result::<i64>(&mut *self.db())
-                            .unwrap();
-                        if remaining > 0 {
-                            tracing::warn!(
-                                "References to attachment exist, not deleting: {}",
-                                path
-                            );
-                        } else if regex.is_match(&path) {
-                            match std::fs::remove_file(&path) {
-                                Ok(()) => {
-                                    tracing::trace!("Deleted file {}", path);
-                                    n_attachments += 1;
-                                }
-                                Err(e) => {
-                                    tracing::trace!("Could not delete file {}: {:?}", path, e);
-                                }
-                            };
-                        } else {
-                            tracing::warn!("Not deleting attachment: {}", path);
-                        }
-                    }
-                });
+            n_attachments = self.delete_attachments_for_message(message.id);
         }
         drop(_span);
 
@@ -2780,6 +2922,49 @@ impl Storage {
             n_reactions
         );
         n_messages
+    }
+
+    /// Delete all attachments of the message, is no other message references them.
+    #[tracing::instrument(skip(self))]
+    fn delete_attachments_for_message(&mut self, message_id: i32) -> usize {
+        let mut n_attachments = 0;
+        let allowed = self.config.attachments_regex();
+        self.fetch_attachments_for_message(message_id)
+            .into_iter()
+            .for_each(|attachment| {
+                diesel::delete(schema::attachments::table)
+                    .filter(schema::attachments::id.eq(attachment.id))
+                    .execute(&mut *self.db())
+                    .unwrap();
+                if let Some(path) = attachment.attachment_path {
+                    let _span = tracing::debug_span!("considering attachment file deletion", id = attachment.id, path = %path).entered();
+                    let remaining = schema::attachments::table
+                        .filter(schema::attachments::attachment_path.eq(&path))
+                        .count()
+                        .get_result::<i64>(&mut *self.db())
+                        .unwrap();
+                    if remaining > 0 {
+                        tracing::warn!(attachment.id, %path, "references to attachment exist, not deleting");
+                    } else if allowed.is_match(&path) {
+                        match std::fs::remove_file(&path) {
+                            Ok(()) => {
+                                tracing::trace!("deleted file");
+                                n_attachments += 1;
+                            }
+                            Err(e) => {
+                                tracing::trace!("could not delete file: {:?}", e);
+                            }
+                        };
+                    } else {
+                        tracing::warn!(
+                            attachment.id,
+                            ?path,
+                            "not deleting attachment because it does not match the allowed regex"
+                        );
+                    }
+                }
+            });
+        n_attachments
     }
 
     /// Marks all messages that are outbound and unsent as failed.

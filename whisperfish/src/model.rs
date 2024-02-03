@@ -65,6 +65,8 @@ pub mod sessions;
 
 pub mod prompt;
 
+use std::time::Duration;
+
 pub use self::active_model::*;
 pub use self::attachment::*;
 pub use self::contact::*;
@@ -137,6 +139,17 @@ where
     match val {
         Some(s) => s.into(),
         None => QVariant::default(),
+    }
+}
+
+fn int_from_i32_option(val: Option<i32>) -> i32 {
+    val.unwrap_or(-1)
+}
+
+fn int_from_duration_option(val: Option<Duration>) -> i32 {
+    match val {
+        Some(t) => t.as_secs() as _,
+        None => -1,
     }
 }
 

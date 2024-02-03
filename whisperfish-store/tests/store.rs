@@ -770,7 +770,8 @@ async fn test_recipient_actions() {
     storage.dequeue_message(msg.id, ts, false);
 
     assert!(!msg.is_read);
-    let (_, msg) = storage.mark_message_read(msg.server_timestamp).unwrap();
+    let pointer = storage.mark_message_read(msg.server_timestamp).unwrap();
+    let msg = storage.fetch_message_by_id(pointer.message_id).unwrap();
     assert!(msg.is_read);
 
     assert!(storage.fetch_message_receipts(msg.id).is_empty());

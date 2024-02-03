@@ -3,6 +3,7 @@ pub mod migrations;
 
 mod groupv2;
 mod linked_devices;
+mod message_expiry;
 mod profile;
 mod profile_upload;
 mod unidentified;
@@ -24,6 +25,7 @@ use whisperfish_store::orm::StoryType;
 use whisperfish_store::TrustLevel;
 use zkgroup::profiles::ProfileKey;
 
+use super::message_expiry::ExpiredMessagesStream;
 use super::profile_refresh::OutdatedProfileStream;
 use crate::actor::SendReaction;
 use crate::actor::SessionActor;
@@ -94,6 +96,27 @@ impl Display for QueueMessage {
             shorten(&self.message, 9),
             &self.quote,
             &self.attachment,
+        )
+    }
+}
+
+#[derive(actix::Message, Debug)]
+#[rtype(result = "()")]
+pub struct QueueExpiryUpdate {
+    pub session_id: i32,
+    pub expires_in: Option<Duration>,
+}
+
+impl Display for QueueExpiryUpdate {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(
+            f,
+            "QueueExpiryMessage {{ session_id: {}, expires_in: \"{}\" }}",
+            &self.session_id,
+            match &self.expires_in {
+                Some(d) => format!("Some({}s)", d.as_secs()),
+                _ => "None".into(),
+            },
         )
     }
 }
@@ -196,11 +219,14 @@ pub struct ClientWorker {
     refresh_group_v2: qt_method!(fn(&self, session_id: usize)),
 
     delete_file: qt_method!(fn(&self, file_name: String)),
+    startMessageExpiry: qt_method!(fn(&self, message_id: i32)),
 
     refresh_profile: qt_method!(fn(&self, recipient_id: i32)),
     upload_profile: qt_method!(
         fn(&self, given_name: String, family_name: String, about: String, emoji: String)
     ),
+
+    mark_message_read: qt_method!(fn(&self, message_id: i32)),
 }
 
 /// ClientActor keeps track of the connection state.
@@ -221,6 +247,7 @@ pub struct ClientActor {
     start_time: DateTime<Local>,
 
     outdated_profile_stream_handle: Option<SpawnHandle>,
+    message_expiry_notification_handle: Option<tokio::sync::mpsc::UnboundedSender<()>>,
 
     registration_session: Option<RegistrationSessionMetadataResponse>,
 }
@@ -271,6 +298,7 @@ impl ClientActor {
             start_time: Local::now(),
 
             outdated_profile_stream_handle: None,
+            message_expiry_notification_handle: None,
 
             registration_session: None,
         })
@@ -465,6 +493,9 @@ impl ClientActor {
             tracing::info!("Message was ProfileKeyUpdate; not inserting.");
         }
 
+        let expiration_timer_update =
+            msg.flags() & DataMessageFlags::ExpirationTimerUpdate as u32 != 0;
+        let mut set_expiry = true;
         let alt_body = if let Some(reaction) = &msg.reaction {
             if let Some((message, session)) = storage.process_reaction(
                 &sender_recipient
@@ -486,13 +517,19 @@ impl ClientActor {
                 );
             }
             None
-        } else if msg.flags() & DataMessageFlags::ExpirationTimerUpdate as u32 != 0 {
-            Some(format!("Expiration timer has been changed ({:?} seconds).  This is only partially implemented in Whisperfish.", msg.expire_timer))
+        } else if expiration_timer_update {
+            set_expiry = false;
+            // XXX Translation and seconds-to-time formatting
+            Some(format!(
+                "Expiration timer has been changed to {:?} seconds.",
+                msg.expire_timer
+            ))
         } else if let Some(GroupContextV2 {
             group_change: Some(ref _group_change),
             ..
         }) = msg.group_v2
         {
+            set_expiry = false;
             Some(format!(
                 "Group changed by {}",
                 source_phonenumber
@@ -617,9 +654,17 @@ impl ClientActor {
             storage.fetch_or_insert_session_by_recipient_id(recipient.id)
         });
 
-        if msg.flags() & DataMessageFlags::ExpirationTimerUpdate as u32 != 0 {
+        if expiration_timer_update {
             storage.update_expiration_timer(session.id, msg.expire_timer);
+            // Don't auto-destroy the update message
+            set_expiry = false;
         }
+
+        let expires_in = if set_expiry {
+            session.expiring_message_timeout
+        } else {
+            None
+        };
 
         let new_message = crate::store::NewMessage {
             source_e164: source_phonenumber,
@@ -641,7 +686,7 @@ impl ClientActor {
             attachment: None,
             is_read: is_sync_sent,
             quote_timestamp: msg.quote.as_ref().and_then(|x| x.id),
-            expires_in: session.expiring_message_timeout,
+            expires_in,
             story_type: StoryType::None,
             server_guid: metadata.server_guid,
             body_ranges,
@@ -650,6 +695,10 @@ impl ClientActor {
         };
 
         let message = storage.create_message(&new_message);
+
+        if let Some(h) = self.message_expiry_notification_handle.as_ref() {
+            h.send(()).expect("send message expiry notification");
+        }
 
         if settings.get_bool("attachment_log") && !msg.attachments.is_empty() {
             tracing::trace!("Logging message to the attachment log");
@@ -797,11 +846,11 @@ impl ClientActor {
             timestamp,
             millis
         );
-        if let Some((sess, msg)) = storage.mark_message_received(source.uuid, timestamp, None) {
+        if let Some(updated) = storage.mark_message_received(source.uuid, timestamp, None) {
             self.inner
                 .pinned()
                 .borrow_mut()
-                .messageReceipt(sess.id, msg.id)
+                .messageReceipt(updated.session_id, updated.message_id)
         }
     }
 
@@ -957,11 +1006,11 @@ impl ClientActor {
                             ts,
                             read.timestamp()
                         );
-                        if let Some((sess, msg)) = storage.mark_message_read(ts) {
+                        if let Some(updated) = storage.mark_message_read(ts) {
                             self.inner
                                 .pinned()
                                 .borrow_mut()
-                                .messageReceipt(sess.id, msg.id)
+                                .messageReceipt(updated.session_id, updated.message_id)
                         } else {
                             tracing::warn!("Could not mark as received!");
                         }
@@ -1016,7 +1065,7 @@ impl ClientActor {
                 // XXX dispatch on receipt.type
                 for &ts in &receipt.timestamp {
                     // Signal uses timestamps in milliseconds, chrono has nanoseconds
-                    if let Some((sess, msg)) = storage.mark_message_received(
+                    if let Some(updated) = storage.mark_message_received(
                         metadata.sender.uuid,
                         millis_to_naive_chrono(ts),
                         None,
@@ -1024,7 +1073,7 @@ impl ClientActor {
                         self.inner
                             .pinned()
                             .borrow_mut()
-                            .messageReceipt(sess.id, msg.id)
+                            .messageReceipt(updated.session_id, updated.message_id)
                     } else {
                         tracing::warn!("Could not mark {} as received!", ts);
                     }
@@ -1309,20 +1358,53 @@ impl Handler<QueueMessage> for ClientActor {
             } else {
                 None
             },
-            flags: 0,
-            outgoing: true,
-            received: false,
-            sent: false,
             is_read: true,
-            is_unidentified: false,
             quote_timestamp: quote.map(|msg| msg.server_timestamp.timestamp_millis() as u64),
             expires_in: session.expiring_message_timeout,
-            story_type: StoryType::None,
-            server_guid: None,
-            body_ranges: None,
-
-            edit: None,
+            ..Default::default()
         });
+
+        if let Some(h) = self.message_expiry_notification_handle.as_ref() {
+            h.send(()).expect("send message expiry notification");
+        }
+
+        ctx.notify(SendMessage(msg.id));
+    }
+}
+
+impl Handler<QueueExpiryUpdate> for ClientActor {
+    type Result = ();
+
+    fn handle(&mut self, msg: QueueExpiryUpdate, ctx: &mut Self::Context) -> Self::Result {
+        let _span = tracing::trace_span!("QueueMessage", %msg).entered();
+        tracing::trace!(
+            "Sending expiry of {:?} seconds to session {}",
+            msg.expires_in,
+            msg.session_id
+        );
+        let storage = self.storage.as_mut().unwrap();
+
+        let self_recipient = storage
+            .fetch_self_recipient()
+            .expect("self recipient set when sending");
+        let session = storage
+            .fetch_session_by_id(msg.session_id)
+            .expect("existing session when sending");
+
+        let msg = storage.create_message(&crate::store::NewMessage {
+            session_id: session.id,
+            source_e164: self_recipient.e164,
+            source_uuid: self_recipient.uuid,
+            text: format!(
+                "[Whisperfish] Message expiry set to {:?} seconds",
+                msg.expires_in.map(|x| x.as_secs())
+            ),
+            expires_in: msg.expires_in, // None'd in SendMessage handler
+            flags: DataMessageFlags::ExpirationTimerUpdate as i32,
+            ..Default::default()
+        });
+
+        storage.update_expiration_timer(session.id, msg.expires_in.map(|x| x as u32));
 
         ctx.notify(SendMessage(msg.id));
     }
@@ -1384,7 +1466,11 @@ impl Handler<SendMessage> for ClientActor {
                     });
 
                 let mut content = DataMessage {
-                    body: msg.text.clone(),
+                    // Don't send body in "contol messages"
+                    body: match msg.flags {
+                        0 => msg.text.clone(),
+                        _ => None,
+                    },
                     flags: if msg.flags != 0 {
                         Some(msg.flags as _)
                     } else {
@@ -1439,6 +1525,11 @@ impl Handler<SendMessage> for ClientActor {
                     };
                     storage.store_attachment_pointer(attachment.id, &ptr);
                     content.attachments.push(ptr);
+                }
+
+                // Don't let ExpirationTimerUpdate messages expire
+                if msg.flags == DataMessageFlags::ExpirationTimerUpdate as i32 && msg.expires_in.is_some() {
+                    storage.clear_message_expiry(msg.id);
                 }
 
                 let res = addr
@@ -1590,22 +1681,9 @@ impl Handler<EndSession> for ClientActor {
             source_uuid: recipient.uuid,
             text: "[Whisperfish] Reset secure session".into(),
             timestamp: chrono::Utc::now().naive_utc(),
-            has_attachment: false,
-            mime_type: None,
-            attachment: None,
             flags: DataMessageFlags::EndSession.into(),
-            outgoing: true,
-            received: false,
-            sent: false,
             is_read: true,
-            is_unidentified: false,
-            quote_timestamp: None,
-            expires_in: session.expiring_message_timeout,
-            story_type: StoryType::None,
-            server_guid: None,
-            body_ranges: None,
-
-            edit: None,
+            ..Default::default()
         });
         ctx.notify(SendMessage(msg.id));
     }
@@ -1995,10 +2073,20 @@ struct Restart;
 impl Handler<Restart> for ClientActor {
     type Result = ResponseActFuture<Self, ()>;
 
-    fn handle(&mut self, _: Restart, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, _: Restart, ctx: &mut Self::Context) -> Self::Result {
         let service = self.authenticated_service();
         let credentials = self.credentials.clone().unwrap();
         let migrations_ready = self.migration_state.ready();
+
+        if self.message_expiry_notification_handle.is_none() {
+            let (message_expiry_notification_handle, message_expiry_notification) =
+                tokio::sync::mpsc::unbounded_channel();
+            ctx.add_stream(ExpiredMessagesStream::new(
+                self.storage.clone().unwrap(),
+                message_expiry_notification,
+            ));
+            self.message_expiry_notification_handle = Some(message_expiry_notification_handle);
+        }
 
         self.inner.pinned().borrow_mut().connected = false;
         self.inner.pinned().borrow().connectedChanged();
@@ -2165,26 +2253,11 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
                             let msg = crate::store::NewMessage {
                                 session_id: session.id,
-                                source_e164: None,
                                 source_uuid: Some(source_uuid),
                                 text: "[Whisperfish] The identity key for this contact has changed. Please verify your safety number.".into(), // XXX Translate
-                                timestamp: chrono::Utc::now().naive_utc(),
-                                sent: false,
                                 received: true,
-                                is_read: false,
-                                flags: 0,
-                                attachment: None,
-                                mime_type: None,
-                                has_attachment: false,
                                 outgoing: false,
-                                is_unidentified: false,
-                                quote_timestamp: None,
-                                expires_in: session.expiring_message_timeout,
-                                story_type: StoryType::None,
-                                server_guid: None,
-                                body_ranges: None,
-
-                                edit: None,
+                                ..Default::default()
                             };
                             storage.create_message(&msg);
 
@@ -2644,6 +2717,16 @@ impl ClientWorker {
     }
 
     #[with_executor]
+    pub fn mark_message_read(&self, message_id: i32) {
+        let actor = self.actor.clone().unwrap();
+        actix::spawn(async move {
+            if let Err(e) = actor.send(MarkMessageRead { message_id }).await {
+                tracing::error!("{:?}", e);
+            }
+        });
+    }
+
+    #[with_executor]
     pub fn submit_proof_captcha(&self, token: String, response: String) {
         let actor = self.actor.clone().unwrap();
         let schema = "signalcaptcha://";
@@ -2688,6 +2771,28 @@ impl Handler<CompactDb> for ClientActor {
         tracing::trace!("handle(CompactDb)");
         let store = self.storage.clone().unwrap();
         store.compact_db()
+    }
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct MarkMessageRead {
+    pub message_id: i32,
+}
+
+impl Handler<MarkMessageRead> for ClientActor {
+    type Result = ResponseFuture<()>;
+
+    fn handle(&mut self, msg: MarkMessageRead, _ctx: &mut Self::Context) -> Self::Result {
+        let storage = self.storage.clone().unwrap();
+        let handle = self.message_expiry_notification_handle.clone().unwrap();
+        Box::pin(
+            async move {
+                storage.mark_message_read_in_ui(msg.message_id);
+                handle.send(()).expect("send message expiry notification");
+            }
+            .instrument(tracing::debug_span!("mark message read")),
+        )
     }
 }
 

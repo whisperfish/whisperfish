@@ -8,10 +8,9 @@ Page {
     id: profilePage
     objectName: "profilePage"
 
+    property var session: null
     property string profilePicture: ""
-    property alias recipientUuid: recipient.recipientUuid
 
-    property bool isOwnProfile: SetupWorker.uuid === recipient.uuid
     property bool editingProfile: false
 
     onStatusChanged: {
@@ -23,6 +22,7 @@ Page {
     Recipient {
         id: recipient
         app: AppState
+        recipientUuid: SetupWorker.uuid
     }
 
     // Enter edit mode, or save changes
@@ -113,16 +113,6 @@ Page {
                 }
             }
             MenuItem {
-                //: Show a peer's system contact page (menu item)
-                //% "Show contact"
-                text: qsTrId("whisperfish-show-contact-page-menu")
-                enabled: !isOwnProfile && recipient.e164 != null && recipient.e164.length > 0
-                visible: enabled
-                // TODO maybe: replace with a custom link handler
-                onClicked: phoneNumberLinker.linkActivated('tel:' + recipient.e164)
-                LinkedText { id: phoneNumberLinker; visible: false }
-            }
-            MenuItem {
                 //: Undo changes and exit editing you profile details menu item
                 //% "Discard changes"
                 text: qsTrId("whisperfish-revert-profile-changes-menu")
@@ -138,9 +128,15 @@ Page {
                 //: Edit your own profile menu item
                 //% "Edit profile"
                 : qsTrId("whisperfish-edit-profile-menu")
-                enabled: isOwnProfile && (!editingProfile || profileGivenNameEdit.acceptableInput && profileEmojiEdit.acceptableInput)
-                visible: isOwnProfile
+                enabled: (!editingProfile || profileGivenNameEdit.acceptableInput && profileEmojiEdit.acceptableInput)
                 onClicked: toggleEditing()
+            }
+            MenuItem {
+                //: Save the new value of expiring messages timeout
+                //% "Set message expiry"
+                text: qsTrId("whisperfish-save-message-expiry")
+                visible: session != null && expiringMessages.newDuration !== session.expiringMessageTimeout
+                onClicked: MessageModel.createExpiryUpdate(session.sessionId, expiringMessages.newDuration)
             }
         }
 
@@ -207,7 +203,7 @@ Page {
                 id: profileGivenNameEdit
                 visible: editingProfile
                 width: parent.width
-                readOnly: !(isOwnProfile && editingProfile)
+                readOnly: !editingProfile
                 anchors.horizontalCenter: parent.horizontalCenter
                 font.pixelSize: Theme.fontSizeLarge
                 //: Profile, first (given) name field, required
@@ -225,7 +221,7 @@ Page {
                 id: profileFamilyNameEdit
                 visible: editingProfile
                 width: parent.width
-                readOnly: !(isOwnProfile && editingProfile)
+                readOnly: !editingProfile
                 anchors.horizontalCenter: parent.horizontalCenter
                 font.pixelSize: Theme.fontSizeLarge
                 //: Profile, last (family) name field, optional
@@ -264,7 +260,7 @@ Page {
                 id: profileAboutEdit
                 visible: editingProfile || text.length > 0
                 width: parent.width
-                readOnly: !(isOwnProfile && editingProfile)
+                readOnly: !editingProfile
                 font.pixelSize: Theme.fontSizeMedium
                 //: Profile, about you (greeting/status) field
                 //% "Write something about yourself"
@@ -272,9 +268,16 @@ Page {
                 text: recipient.about
             }
 
+            ExpiringMessagesComboBox {
+                id: expiringMessages
+                visible: session != null
+                width: parent.width
+                duration: session.expiringMessageTimeout
+            }
+
             ComboBox {
                 id: recipientUnidentifiedMode
-                visible: !isOwnProfile && SettingsBridge.debug_mode
+                visible: SettingsBridge.debug_mode
                 //: Profile, sealed sending mode option
                 //% "Sealed sending mode"
                 label: qsTrId("whisperfish-profile-unidentified")
@@ -310,7 +313,7 @@ Page {
                 // visible: editingProfile || text.length > 0
                 visible: false
                 width: parent.width
-                readOnly: !(isOwnProfile && editingProfile)
+                readOnly: !editingProfile
                 font.pixelSize: Theme.fontSizeMedium
                 //: Profile, emoji symbol field
                 //% "A few words about yourself"
@@ -318,94 +321,7 @@ Page {
                 text: recipient.emoji
             }
 
-            SectionHeader {
-                visible: !isOwnProfile
-                //: Verify safety numbers
-                //% "Verify safety numbers"
-                text: qsTrId("whisperfish-verify-contact-identity-title")
-            }
-
-            Button {
-                //: Show fingerprint button
-                //% "Show fingerprint"
-                text: qsTrId("whisperfish-show-fingerprint")
-                enabled: numericFingerprint.text.length === 0
-                visible: !isOwnProfile
-                onClicked: {
-                    if(recipient.sessionFingerprint && recipient.sessionFingerprint.length === 60) {
-                        var pretty_fp = ""
-                        for(var i = 1; i <= 12; ++i) {
-                            pretty_fp += recipient.sessionFingerprint.slice(5*(i-1), (5*i))
-                            if(i === 4 || i === 8) {
-                                pretty_fp += "\n"
-                            } else if(i < 12) {
-                                pretty_fp += " "
-                            }
-                        }
-                        numericFingerprint.text = pretty_fp
-                        isKyberEnabled.checked = recipient.sessionIsPostQuantum
-                        isKyberEnabled.visible = true
-                    }
-                }
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
-
-            Rectangle {
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: numericFingerprint.width + 2*Theme.paddingLarge
-                height: numericFingerprint.height + 2*Theme.paddingLarge
-                radius: Theme.paddingLarge
-                color: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
-                visible: !isOwnProfile && numericFingerprint.text.length > 0
-                Label {
-                    id: numericFingerprint
-                    anchors.centerIn: parent
-                    font.family: 'monospace'
-                }
-            }
-
-            TextArea {
-                id: fingerprintDirections
-                anchors.horizontalCenter: parent.horizontalCenter
-                visible: !isOwnProfile
-                readOnly: true
-                font.pixelSize: Theme.fontSizeSmall
-                width: parent.width
-                //: Numeric fingerprint instructions
-                //% "If you wish to verify the security of your end-to-end encryption with %1, compare the numbers above with the numbers on their device."
-                text: qsTrId("whisperfish-numeric-fingerprint-directions").arg(recipient.name)
-            }
-
-            IconTextSwitch {
-                automaticCheck: false
-                visible: false
-                id: isKyberEnabled
-                anchors.horizontalCenter: parent.horizontalCenter
-                //: Profile page: whether a contact has post-quantum secure sessions
-                //% "Post-quantum keys in use"
-                text: qsTrId("whisperfish-profile-pq-enabled")
-                //: Profile page: description for post-quantum secure sessions
-                //% "If checked, this session was initialized with post-quantum secure cryptography."
-                description: qsTrId("whisperfish-profile-pq-enabled-description")
-                checked: recipient.sessionIsPostQuantum
-                icon.source: "image://theme/icon-m-device-lock"
-
-                onClicked: {
-                    if (recipient.sessionIsPostQuantum) {
-                        return;
-                    }
-                    //: Upgrading the session to Kyber remorse popup, past tense
-                    //% "Session reset for post-quantum upgrade"
-                    remorse.execute(qsTrId("whisperfish-kyber-click-explanation"),
-                        function() {
-                            console.log("Resetting secure session (pq upgrade) with " + recipient.e164)
-                            MessageModel.endSession(recipient.recipientId)
-                        })
-                }
-            }
-
             Separator {
-                visible: isOwnProfile
                 horizontalAlignment: Qt.AlignHCenter
                 color: Theme.highlightBackgroundColor
                 width: parent.width
@@ -413,7 +329,6 @@ Page {
 
             TextArea {
                 anchors.horizontalCenter: parent.horizontalCenter
-                visible: isOwnProfile
                 readOnly: true
                 width: parent.width
                 //: Signal Profile description / help text
@@ -423,7 +338,6 @@ Page {
 
             Button {
                 anchors.horizontalCenter: parent.horizontalCenter
-                visible: isOwnProfile
                 //: Button to open link to Signal help page about profiles
                 //% "Learn more"
                 text: qsTrId("whisperfish-own-profile-learn-more-button")

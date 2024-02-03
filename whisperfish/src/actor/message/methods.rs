@@ -1,6 +1,8 @@
 #![allow(non_snake_case)]
 
-use crate::worker::{DeleteMessage, DeleteMessageForAll, ExportAttachment, QueueMessage};
+use crate::worker::{
+    DeleteMessage, DeleteMessageForAll, ExportAttachment, QueueExpiryUpdate, QueueMessage,
+};
 
 use super::*;
 use futures::prelude::*;
@@ -15,6 +17,7 @@ pub struct MessageMethods {
     createMessage: qt_method!(
         fn(&self, session_id: i32, message: QString, attachment: QString, quote: i32, add: bool)
     ),
+    createExpiryUpdate: qt_method!(fn(&self, session_id: i32, expires_in: i32)),
 
     sendMessage: qt_method!(fn(&self, mid: i32)),
     sendReaction:
@@ -49,6 +52,23 @@ impl MessageMethods {
                     message,
                     attachment,
                     quote,
+                })
+                .map(Result::unwrap),
+        );
+    }
+
+    #[with_executor]
+    fn createExpiryUpdate(&mut self, session_id: i32, expires_in: i32) {
+        actix::spawn(
+            self.client_actor
+                .as_ref()
+                .unwrap()
+                .send(QueueExpiryUpdate {
+                    session_id,
+                    expires_in: match expires_in {
+                        x if x > 0 => Some(std::time::Duration::from_secs(x as u64)),
+                        _ => None,
+                    },
                 })
                 .map(Result::unwrap),
         );

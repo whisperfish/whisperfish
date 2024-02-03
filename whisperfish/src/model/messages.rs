@@ -214,6 +214,7 @@ crate::observing_model! {
         hasAttachment HasAttachment,
         hasAvatar HasAvatar,
         draft Draft,
+        expiringMessageTimeout ExpiringMessageTimeout,
     }
 }
 
@@ -340,7 +341,8 @@ define_model_roles! {
         SenderRecipientId(sender_recipient_id via qvariant_from_option): "senderRecipientId",
 
         Delivered(fn delivered(&self)):                       "delivered",
-        Read(fn read(&self)):                                 "read",
+        Read(fn read(&self)):                                 "read", // How many recipient have received the message
+        IsRead(is_read):                                      "isRead", // Is the message unread or read by self
         Viewed(fn viewed(&self)):                             "viewed",
 
         Sent(fn sent(&self)):                                 "sent",
@@ -354,6 +356,9 @@ define_model_roles! {
         QuotedMessageId(quote_id via qvariant_from_option):   "quotedMessageId",
         HasSpoilers(fn has_spoilers(&self)):                  "hasSpoilers",
         HasStrikeThrough(fn has_strike_through(&self)):       "hasStrikeThrough",
+
+        ExpiresIn(expires_in via int_from_i32_option):        "expiresIn",
+        ExpiryStarted(expiry_started via qdatetime_from_naive_option): "expiryStarted",
 
         BodyRanges(fn body_ranges(&self) via body_ranges_qvariantlist): "bodyRanges",
 

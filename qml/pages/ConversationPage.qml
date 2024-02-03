@@ -15,6 +15,7 @@ Page {
     property string conversationName: session.isGroup ? session.groupName : getRecipientName(session.recipientE164, session.recipientName, true)
     property string profilePicture: session.isGroup ? getGroupAvatar(session.groupId) : getRecipientAvatar(session.recipientE164, session.recipientUuid)
     property alias sessionId: session.sessionId
+    property int expiringMessages: session.expiringMessageTimeout != -1
     property DockedPanel activePanel: actionsPanel.open ? actionsPanel : panel
 
     property int _selectedCount: messages.selectedCount // proxy to avoid some costly lookups
@@ -39,17 +40,17 @@ Page {
     onStatusChanged: {
         if (status == PageStatus.Active) {
             // XXX this should be a call into the client/application state/...
-            SessionModel.markRead(sessionId)
-            mainWindow.clearNotifications(sessionId)
+            // TODO: Re-think what marking session as read means
+            //SessionModel.markRead(sessionId)
 
-            var nextPage = pageStack.nextPage()
-            var nextPageName = nextPage ? nextPage.objectName : ''
-
-            if (session.isGroup && nextPageName !== 'groupProfilePage') {
+            if (session.isGroup) {
                 pageStack.pushAttached(Qt.resolvedUrl("GroupProfilePage.qml"), { session: session, group: group })
             }
-            if(!session.isGroup && nextPageName !== 'profilePage'){
-                pageStack.pushAttached(Qt.resolvedUrl("ProfilePage.qml"), { recipientUuid: session.recipientUuid })
+            else if(!session.isGroup && session.recipientUuid !== SetupWorker.uuid) {
+                pageStack.pushAttached(Qt.resolvedUrl("RecipientProfilePage.qml"), { session: session,recipientUuid: session.recipientUuid })
+            }
+            else {
+                pageStack.pushAttached(Qt.resolvedUrl("ProfilePage.qml"), { session: session })
             }
         }
     }
@@ -59,15 +60,16 @@ Page {
         onStateChanged: {
             if ((Qt.application.state === Qt.ApplicationActive) && (status === PageStatus.Active)) {
                 // XXX this should be a call into the client/application state/...
-                SessionModel.markRead(sessionId)
-                mainWindow.clearNotifications(sessionId)
+                // TODO: Re-think what marking session as read means
+                //SessionModel.markRead(sessionId)
+                unreadMessageChecker.running = true
             }
         }
     }
 
     ConversationPageHeader {
         id: pageHeader
-        title: conversationName
+        title: conversationName + (expiringMessages ? "⏱" : "")
         isGroup: session.isGroup
         anchors.top: parent.top
         description: {
@@ -162,6 +164,67 @@ Page {
         }
         onShouldShowDeleteAll: {
             _showDeleteAll = showDeleteAll
+        }
+
+        onMovementStarted: {
+            unreadMessageChecker.stillMoving = true
+            unreadMessageChecker.running = true
+        }
+
+        onMovementEnded: {
+            unreadMessageChecker.stillMoving = false
+            unreadMessageChecker.running = true
+        }
+
+        onCountChanged: unreadMessageChecker.running = true
+
+        Component.onCompleted: unreadMessageChecker.running = true
+
+        Timer {
+            id: unreadMessageChecker
+            property int counter: 1
+            property bool stillMoving: false
+            running: false
+            interval: 200
+            repeat: true
+            onTriggered: {
+                if (!stillMoving) {
+                    counter--
+                    if (counter == 0) {
+                        running = false
+                        counter = 1
+                    }
+                }
+                var unreadOrExpiring = {}
+                var leftX = Theme.itemSizeMedium
+                var rightX = messages.width - Theme.itemSizeMedium
+                for (var Y = 0; Y < height; Y += Theme.itemSizeMedium) {
+                    var item = messages.itemAt(leftX, messages.contentY + Y)
+                    if (item == null) {
+                        item = messages.itemAt(rightX, messages.contentY + Y)
+                    }
+                    if (item
+                        && unreadOrExpiring[item.messageId] === undefined
+                    ) {
+                        // Set these in the "wrapper cache" so they won't
+                        // show up again in the next iteration.
+                        if (!item.messageRead) {
+                            unreadOrExpiring[item.messageId] = true
+                            item.messageRead = true
+                        }
+                        if (item.messageExpiresIn > 0 && item.messageExpiring === false) {
+                            unreadOrExpiring[item.messageId] = true
+                            item.messageExpiring = true
+                        }
+                    }
+                }
+                // XXX mark_messages_read()..?
+                for (var messageId in unreadOrExpiring) {
+                    console.log("Mark message", messageId, "as read")
+                    ClientWorker.mark_message_read(messageId)
+                    closeMessageNotification(sessionId, messageId)
+                }
+            }
         }
     }
 
