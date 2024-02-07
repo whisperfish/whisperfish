@@ -44,6 +44,7 @@ const DELETE_AFTER: &str = "DATETIME(expiry_started, '+' || expires_in || ' seco
 
 sql_function!(
     // Represents the Sqlite last_insert_rowid() function
+    #[deprecated]
     fn last_insert_rowid() -> Integer;
 );
 
@@ -1682,8 +1683,10 @@ impl Storage {
     /// This only yields correct results when the last insertion was in fact a session.
     #[allow(unused)]
     #[tracing::instrument(skip(self))]
+    #[deprecated]
     fn fetch_latest_recipient(&self) -> Option<orm::Recipient> {
         use schema::recipients::dsl::*;
+        #[allow(deprecated)]
         recipients
             .filter(id.eq(last_insert_rowid()))
             .first(&mut *self.db())
@@ -1694,8 +1697,10 @@ impl Storage {
     ///
     /// This only yields correct results when the last insertion was in fact a session.
     #[tracing::instrument(skip(self))]
+    #[deprecated]
     fn fetch_latest_session(&self) -> Option<orm::Session> {
         fetch_session!(self.db(), |query| {
+            #[allow(deprecated)]
             query.filter(schema::sessions::id.eq(last_insert_rowid()))
         })
     }
@@ -2603,7 +2608,9 @@ impl Storage {
     ///
     /// It needs to be locked from the outside because sqlite sucks.
     #[tracing::instrument(skip(self))]
+    #[deprecated]
     fn fetch_latest_message(&self) -> Option<orm::Message> {
+        #[allow(deprecated)]
         schema::messages::table
             .filter(schema::messages::id.eq(last_insert_rowid()))
             .first(&mut *self.db())
@@ -2611,7 +2618,9 @@ impl Storage {
     }
 
     #[tracing::instrument(skip(self))]
+    #[deprecated]
     fn fetch_latest_attachment(&self) -> Option<orm::Attachment> {
+        #[allow(deprecated)]
         schema::attachments::table
             .filter(schema::attachments::id.eq(last_insert_rowid()))
             .first(&mut *self.db())
