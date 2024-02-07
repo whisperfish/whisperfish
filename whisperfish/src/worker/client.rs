@@ -679,11 +679,8 @@ impl ClientActor {
             } else {
                 msg.timestamp()
             }),
-            has_attachment: !msg.attachments.is_empty(),
-            mime_type: None, // Attachments are further handled asynchronously
             received: false, // This is set true by a receipt handler
             session_id: session.id,
-            attachment: None,
             is_read: is_sync_sent,
             quote_timestamp: msg.quote.as_ref().and_then(|x| x.id),
             expires_in,
@@ -1336,38 +1333,26 @@ impl Handler<QueueMessage> for ClientActor {
             None
         };
 
-        let msg = storage.create_message(&crate::store::NewMessage {
+        let inserted_msg = storage.create_message(&crate::store::NewMessage {
             session_id: msg.session_id,
             source_e164: self_recipient.e164,
             source_uuid: self_recipient.uuid,
             text: msg.message,
             timestamp: chrono::Utc::now().naive_utc(),
-            has_attachment,
-            mime_type: if has_attachment {
-                Some(
-                    mime_guess::from_path(&msg.attachment)
-                        .first_or_octet_stream()
-                        .essence_str()
-                        .into(),
-                )
-            } else {
-                None
-            },
-            attachment: if has_attachment {
-                Some(msg.attachment)
-            } else {
-                None
-            },
             quote_timestamp: quote.map(|msg| msg.server_timestamp.timestamp_millis() as u64),
             expires_in: session.expiring_message_timeout,
             ..crate::store::NewMessage::new_outgoing()
         });
 
+        if has_attachment {
+            storage.insert_local_attachment(inserted_msg.id, None, msg.attachment);
+        }
+
         if let Some(h) = self.message_expiry_notification_handle.as_ref() {
             h.send(()).expect("send message expiry notification");
         }
 
-        ctx.notify(SendMessage(msg.id));
+        ctx.notify(SendMessage(inserted_msg.id));
     }
 }
 

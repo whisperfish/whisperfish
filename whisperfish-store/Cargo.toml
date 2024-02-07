@@ -43,6 +43,9 @@ tempfile = { version = "3.4.0", default-features = false }
 tokio = { version = "1.26.0", features = ["fs", "macros"] }
 uuid = { version = "1.5", features = ["v4"] }
 linkify = "0.10"
+mime = "0.3.17"
+mime_guess = "2.0"
+mime_classifier = "0.0.1"
 
 tracing = "0.1"
 

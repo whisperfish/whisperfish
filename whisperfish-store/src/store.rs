@@ -115,9 +115,6 @@ pub struct NewMessage<'a> {
     pub received: bool,
     pub is_read: bool,
     pub flags: i32,
-    pub attachment: Option<String>,
-    pub mime_type: Option<String>,
-    pub has_attachment: bool,
     pub outgoing: bool,
     pub is_unidentified: bool,
     pub quote_timestamp: Option<u64>,
@@ -141,9 +138,6 @@ impl NewMessage<'_> {
             received: true,
             is_read: false,
             flags: 0,
-            attachment: None,
-            mime_type: None,
-            has_attachment: false,
             outgoing: false,
             is_unidentified: false,
             quote_timestamp: None,
@@ -166,9 +160,6 @@ impl NewMessage<'_> {
             received: false,
             is_read: true,
             flags: 0,
-            attachment: None,
-            mime_type: None,
-            has_attachment: false,
             outgoing: true,
             is_unidentified: false,
             quote_timestamp: None,
@@ -2555,42 +2546,57 @@ impl Storage {
 
         tracing::trace!("Inserted message id {}", latest_message.id);
 
-        if let Some(path) = &new_message.attachment {
-            let affected_rows = {
-                let att_file = File::open(path).unwrap();
-                let att_size = match att_file.metadata() {
-                    Ok(m) => Some(m.len() as i32),
-                    Err(_) => None,
-                };
-
-                let att_path = Path::new(path);
-                let att_filename = att_path.file_name().map(|s| s.to_str().unwrap());
-
-                use schema::attachments::dsl::*;
-                diesel::insert_into(attachments)
-                    .values((
-                        message_id.eq(latest_message.id),
-                        content_type.eq(new_message.mime_type.as_ref().unwrap()),
-                        attachment_path.eq(path),
-                        size.eq(att_size),
-                        file_name.eq(att_filename),
-                        is_voice_note.eq(false),
-                        is_borderless.eq(false),
-                        is_quote.eq(false),
-                    ))
-                    .execute(&mut *self.db())
-                    .expect("Insert attachment")
-            };
-            self.observe_insert(schema::attachments::table, PrimaryKey::Unknown)
-                .with_relation(schema::messages::table, latest_message.id);
-
-            assert_eq!(
-                affected_rows, 1,
-                "Did not insert the attachment. Dazed and confused."
-            );
-        }
-
         latest_message
+    }
+
+    #[tracing::instrument(skip(self, path), fields(path = %path.as_ref().display()))]
+    pub fn insert_local_attachment(
+        &self,
+        attachment_message_id: i32,
+        mime_type: Option<&str>,
+        path: impl AsRef<Path>,
+    ) -> i32 {
+        let path = path.as_ref();
+        let att_file = File::open(path).expect("");
+        let att_size = match att_file.metadata() {
+            Ok(m) => Some(m.len() as i32),
+            Err(_) => None,
+        };
+
+        let mime_type = mime_type.map(std::borrow::Cow::from).unwrap_or_else(|| {
+            mime_guess::from_path(path)
+                .first_or_octet_stream()
+                .essence_str()
+                // We need to either retain the Mime object or allocate a new string from the
+                // temporary.
+                .to_string()
+                .into()
+        });
+
+        let filename = path.file_name().map(|s| s.to_str().unwrap());
+
+        let id = {
+            use schema::attachments::dsl::*;
+            diesel::insert_into(attachments)
+                .values((
+                    message_id.eq(attachment_message_id),
+                    content_type.eq(mime_type),
+                    attachment_path.eq(path.as_os_str().to_str().expect("path UTF-8 compliant")),
+                    size.eq(att_size),
+                    file_name.eq(filename),
+                    is_voice_note.eq(false),
+                    is_borderless.eq(false),
+                    is_quote.eq(false),
+                ))
+                .returning(id)
+                .get_result::<i32>(&mut *self.db())
+                .expect("Insert attachment")
+        };
+
+        self.observe_insert(schema::attachments::table, id)
+            .with_relation(schema::messages::table, attachment_message_id);
+
+        id
     }
 
     /// This was implicit in Go, which probably didn't use threads.
