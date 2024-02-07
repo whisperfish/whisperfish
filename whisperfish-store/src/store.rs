@@ -42,12 +42,6 @@ use uuid::Uuid;
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 const DELETE_AFTER: &str = "DATETIME(expiry_started, '+' || expires_in || ' seconds')";
 
-sql_function!(
-    // Represents the Sqlite last_insert_rowid() function
-    #[deprecated]
-    fn last_insert_rowid() -> Integer;
-);
-
 /// How much trust you put into the correctness of the data.
 #[derive(Clone, Copy, Eq, Debug, PartialEq)]
 pub enum TrustLevel {
@@ -1678,33 +1672,6 @@ impl Storage {
         }
     }
 
-    /// Fetches the latest session by last_insert_rowid.
-    ///
-    /// This only yields correct results when the last insertion was in fact a session.
-    #[allow(unused)]
-    #[tracing::instrument(skip(self))]
-    #[deprecated]
-    fn fetch_latest_recipient(&self) -> Option<orm::Recipient> {
-        use schema::recipients::dsl::*;
-        #[allow(deprecated)]
-        recipients
-            .filter(id.eq(last_insert_rowid()))
-            .first(&mut *self.db())
-            .ok()
-    }
-
-    /// Fetches the latest session by last_insert_rowid.
-    ///
-    /// This only yields correct results when the last insertion was in fact a session.
-    #[tracing::instrument(skip(self))]
-    #[deprecated]
-    fn fetch_latest_session(&self) -> Option<orm::Session> {
-        fetch_session!(self.db(), |query| {
-            #[allow(deprecated)]
-            query.filter(schema::sessions::id.eq(last_insert_rowid()))
-        })
-    }
-
     /// Get all sessions in no particular order.
     ///
     /// Getting them ordered by timestamp would be nice,
@@ -2599,29 +2566,6 @@ impl Storage {
             .with_relation(schema::messages::table, attachment_message_id);
 
         id
-    }
-
-    /// This was implicit in Go, which probably didn't use threads.
-    ///
-    /// It needs to be locked from the outside because sqlite sucks.
-    #[tracing::instrument(skip(self))]
-    #[deprecated]
-    fn fetch_latest_message(&self) -> Option<orm::Message> {
-        #[allow(deprecated)]
-        schema::messages::table
-            .filter(schema::messages::id.eq(last_insert_rowid()))
-            .first(&mut *self.db())
-            .ok()
-    }
-
-    #[tracing::instrument(skip(self))]
-    #[deprecated]
-    fn fetch_latest_attachment(&self) -> Option<orm::Attachment> {
-        #[allow(deprecated)]
-        schema::attachments::table
-            .filter(schema::attachments::id.eq(last_insert_rowid()))
-            .first(&mut *self.db())
-            .ok()
     }
 
     #[tracing::instrument(skip(self))]
