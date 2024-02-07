@@ -20,6 +20,7 @@ pub fn millis_to_naive_chrono(ts: u64) -> chrono::NaiveDateTime {
 }
 
 /// Checks if the db contains foreign key violations.
+#[tracing::instrument(skip(db))]
 pub fn check_foreign_keys(db: &mut diesel::SqliteConnection) -> Result<(), anyhow::Error> {
     use diesel::prelude::*;
     use diesel::sql_types::*;
