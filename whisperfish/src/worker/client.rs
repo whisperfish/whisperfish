@@ -168,7 +168,7 @@ struct AttachmentDownloaded {
 
 #[derive(Message)]
 #[rtype(result = "usize")]
-pub struct CompactDb(usize);
+pub struct CompactDb;
 
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -2642,7 +2642,7 @@ impl ClientWorker {
     pub fn compact_db(&self) {
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {
-            if let Err(e) = actor.send(CompactDb(0)).await {
+            if let Err(e) = actor.send(CompactDb).await {
                 tracing::error!("{:?} in compact_db()", e);
             }
         });

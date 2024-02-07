@@ -13,21 +13,6 @@ use libsignal_service::protocol::{DeviceId, ProtocolAddress};
 use qmetaobject::prelude::*;
 use std::collections::VecDeque;
 
-#[derive(Message)]
-#[rtype(result = "()")]
-#[allow(clippy::type_complexity)]
-struct SessionsLoaded(
-    Vec<(
-        orm::Session,
-        Vec<orm::Recipient>,
-        Option<(
-            orm::Message,
-            Vec<orm::Attachment>,
-            Vec<(orm::Receipt, orm::Recipient)>,
-        )>,
-    )>,
-);
-
 #[derive(actix::Message)]
 #[rtype(result = "()")]
 // XXX this should be called *per message* instead of per session,
