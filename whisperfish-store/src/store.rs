@@ -554,7 +554,7 @@ impl Storage {
         let mut db = db_path.open_db()?;
 
         if let Some(database_key) = database_key {
-            tracing::info!("Setting DB encryption");
+            let _span = tracing::info_span!("Setting DB encryption").entered();
 
             // db.batch_execute("PRAGMA cipher_log = stderr;")
             //     .context("setting sqlcipher log output to stderr")?;
@@ -600,6 +600,7 @@ impl Storage {
         // SQLite.
         // That said, our check_foreign_keys() does output more useful information for when things
         // go haywire, albeit a bit later.
+        let _span = tracing::info_span!("Running migrations").entered();
         db.batch_execute("PRAGMA foreign_keys = OFF;").unwrap();
         db.transaction::<_, anyhow::Error, _>(|db| {
             db.run_pending_migrations(MIGRATIONS)
