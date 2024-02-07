@@ -713,12 +713,10 @@ impl ClientActor {
         }
 
         for attachment in &msg.attachments {
-            let attachment = storage.register_attachment(message.id, attachment.clone());
+            let attachment_id = storage.register_attachment(message.id, attachment.clone());
 
             if settings.get_bool("save_attachments") {
-                ctx.notify(FetchAttachment {
-                    attachment_id: attachment.id,
-                });
+                ctx.notify(FetchAttachment { attachment_id });
             }
         }
 

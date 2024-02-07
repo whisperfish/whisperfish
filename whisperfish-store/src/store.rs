@@ -2349,10 +2349,10 @@ impl Storage {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn register_attachment(&mut self, mid: i32, ptr: AttachmentPointer) -> orm::Attachment {
+    pub fn register_attachment(&mut self, mid: i32, ptr: AttachmentPointer) -> i32 {
         use schema::attachments::dsl::*;
 
-        diesel::insert_into(attachments)
+        let inserted_attachment_id = diesel::insert_into(attachments)
             .values((
                 // XXX: many more things to store:
                 // - display order
@@ -2378,17 +2378,17 @@ impl Storage {
                 height.eq(ptr.height.map(|x| x as i32)),
                 pointer.eq(ptr.encode_to_vec()),
             ))
-            .execute(&mut *self.db())
+            .returning(id)
+            .get_result::<i32>(&mut *self.db())
             .expect("insert attachment");
-
-        let latest_attachment = self.fetch_latest_attachment().expect("inserted attachment");
 
         self.observe_insert(
             schema::attachments::table,
-            PrimaryKey::RowId(latest_attachment.id),
+            PrimaryKey::RowId(inserted_attachment_id),
         )
         .with_relation(schema::messages::table, mid);
-        latest_attachment
+
+        inserted_attachment_id
     }
 
     #[tracing::instrument(skip(self))]
