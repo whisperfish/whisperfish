@@ -1,6 +1,7 @@
 %bcond_with harbour
 %bcond_with console_subscriber
 %bcond_with tracy
+%bcond_with flame
 %bcond_with coz
 %bcond_with lto
 %bcond_with sccache
@@ -181,6 +182,10 @@ export RUSTFLAGS="%{?rustflags}"
 
 %if %{with tracy}
 FEATURES="$FEATURES,tracy"
+%endif
+
+%if %{with flame}
+FEATURES="$FEATURES,flame"
 %endif
 
 %if %{with coz}

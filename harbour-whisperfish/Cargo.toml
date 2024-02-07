@@ -24,6 +24,7 @@ signal-hook = "0.3.15"
 console-subscriber = { version = "0.2", optional = true }
 tracing-tracy = { version = "0.10", optional = true }
 tracing-coz = { version = "0.1.1", optional = true }
+tracing-flame = { version = "0.2", optional = true }
 
 [features]
 bundled-sqlcipher = ["whisperfish/bundled-sqlcipher"]
@@ -32,3 +33,4 @@ harbour = ["whisperfish/harbour"]
 console-subscriber = ["dep:console-subscriber"]
 tracy = ["dep:tracing-tracy"]
 coz = ["dep:tracing-coz"]
+flame = ["dep:tracing-flame"]
