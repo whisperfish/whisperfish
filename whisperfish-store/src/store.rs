@@ -2890,19 +2890,25 @@ impl Storage {
         drop(_span);
 
         let _span = tracing::trace_span!("delete reactions", message_id = message.id).entered();
-        let n_reactions = diesel::delete(schema::reactions::table)
+        let reactions: Vec<i32> = diesel::delete(schema::reactions::table)
             .filter(schema::reactions::message_id.eq(message.id))
-            .execute(&mut *self.db())
+            .returning(schema::reactions::reaction_id)
+            .load(&mut *self.db())
             .unwrap();
 
         self.observe_update(schema::messages::table, message.id)
             .with_relation(schema::sessions::table, message.session_id);
 
+        for reaction in &reactions {
+            self.observe_delete(schema::reactions::table, *reaction)
+                .with_relation(schema::messages::table, message.id);
+        }
+
         tracing::trace!("Marked Message {{ id: {} }} deleted", message.id);
         tracing::trace!(
             "Deleted {} attachment(s) and {} reaction(s)",
             n_attachments,
-            n_reactions
+            reactions.len()
         );
         n_messages
     }
