@@ -1597,10 +1597,13 @@ impl Handler<SendMessage> for ClientActor {
                                     MessageSenderError::NotFound { uuid } => {
                                         tracing::warn!("Recipient not found, removing device sessions {}", uuid);
                                         // XXX what about PNI?
-                                        let mut num = storage.aci_storage().delete_all_sessions(&ServiceAddress { uuid }).await?;
+                                        let num = storage.aci_storage().delete_all_sessions(&ServiceAddress { uuid }).await?;
                                         tracing::trace!("Removed {} device session(s)", num);
-                                        num = storage.mark_recipient_registered(uuid, false);
-                                        tracing::trace!("Marked {} recipient(s) as unregistered", num);
+                                        if storage.mark_recipient_registered(uuid, false) {
+                                            tracing::trace!("Marked recipient {uuid} as unregistered");
+                                        } else {
+                                            tracing::warn!("Could not mark recipient as unregistered");
+                                        }
                                     },
                                     _ => {
                                         tracing::error!("The above error goes unhandled.");

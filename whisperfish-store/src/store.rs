@@ -1452,17 +1452,14 @@ impl Storage {
         let new_uuid = new_uuid.to_string();
         let mut db = self.db();
         let db = &mut *db;
+        // TODO: Can this be an upsert with get_result?
         if let Ok(recipient) = recipients.filter(uuid.eq(&new_uuid)).first(db) {
             recipient
         } else {
-            diesel::insert_into(recipients)
+            let recipient: orm::Recipient = diesel::insert_into(recipients)
                 .values(uuid.eq(&new_uuid))
-                .execute(db)
+                .get_result(db)
                 .expect("insert new recipient");
-            let recipient: orm::Recipient = recipients
-                .filter(uuid.eq(&new_uuid))
-                .first(db)
-                .expect("newly inserted recipient");
             self.observe_insert(recipients, recipient.id);
             recipient
         }
@@ -1483,14 +1480,10 @@ impl Storage {
         {
             recipient
         } else {
-            diesel::insert_into(recipients)
+            let recipient: orm::Recipient = diesel::insert_into(recipients)
                 .values(e164.eq(phonenumber.to_string()))
-                .execute(db)
+                .get_result(db)
                 .expect("insert new recipient");
-            let recipient: orm::Recipient = recipients
-                .filter(e164.eq(phonenumber.to_string()))
-                .first(db)
-                .expect("newly inserted recipient");
             self.observe_insert(recipients, recipient.id);
             recipient
         }
@@ -2222,17 +2215,7 @@ impl Storage {
 
     #[tracing::instrument(skip(self))]
     pub fn mark_session_read(&self, session_id: i32) {
-        let ids: Vec<i32> = schema::messages::table
-            .select(schema::messages::id)
-            .filter(
-                schema::messages::session_id
-                    .eq(session_id)
-                    .and(schema::messages::is_read.eq(false)),
-            )
-            .load(&mut *self.db())
-            .expect("fetch unread message IDs");
-
-        let affected_rows = diesel::update(
+        let ids: Vec<i32> = diesel::update(
             schema::messages::table.filter(
                 schema::messages::session_id
                     .eq(session_id)
@@ -2240,10 +2223,9 @@ impl Storage {
             ),
         )
         .set((schema::messages::is_read.eq(true),))
-        .execute(&mut *self.db())
+        .returning(schema::messages::id)
+        .load(&mut *self.db())
         .expect("mark session read");
-
-        assert_eq!(affected_rows, ids.len());
 
         for message_id in ids {
             self.observe_update(schema::messages::table, message_id)
@@ -2291,33 +2273,28 @@ impl Storage {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn mark_recipient_registered(&self, recipient_uuid: Uuid, registered: bool) -> usize {
+    pub fn mark_recipient_registered(&self, recipient_uuid: Uuid, registered: bool) -> bool {
         use schema::recipients::dsl::*;
 
-        let rid: Vec<i32> = recipients
-            .select(id)
-            .filter(uuid.eq(recipient_uuid.to_string()))
-            .load(&mut *self.db())
-            .expect("Recipient id by UUID");
+        let rid: Option<i32> =
+            diesel::update(recipients.filter(uuid.eq(recipient_uuid.to_string())))
+                .set(is_registered.eq(registered))
+                .returning(id)
+                .get_result(&mut *self.db())
+                .optional()
+                .expect("mark recipient (un)registered");
 
-        if rid.is_empty() {
+        let Some(rid) = rid else {
             tracing::trace!(
-                "Recipient with UUID {} not found in database",
+                "Recipient's registration with UUID {} not updated in database",
                 recipient_uuid
             );
-            return 0;
-        }
+            return false;
+        };
 
-        let rid = rid.first().unwrap();
+        self.observe_update(schema::recipients::table, rid);
 
-        let affected_rows = diesel::update(recipients.filter(uuid.eq(recipient_uuid.to_string())))
-            .set(is_registered.eq(registered))
-            .execute(&mut *self.db())
-            .expect("mark recipient (un)registered");
-        if affected_rows > 0 {
-            self.observe_update(schema::recipients::table, *rid);
-        }
-        affected_rows
+        true
     }
 
     #[tracing::instrument(skip(self))]
@@ -2860,25 +2837,21 @@ impl Storage {
     /// and clear the body text, delete its reactions,
     /// and if it was an incoming message, also its attachments from the disk.
     #[tracing::instrument(skip(self))]
-    pub fn delete_message(&mut self, message_id: i32) -> usize {
-        let n_messages = diesel::update(schema::messages::table)
+    pub fn delete_message(&mut self, message_id: i32) -> bool {
+        let message: Option<orm::Message> = diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
             .set((
                 schema::messages::is_remote_deleted.eq(true),
                 schema::messages::text.eq(None::<String>),
             ))
-            .execute(&mut *self.db())
+            .get_result(&mut *self.db())
+            .optional()
             .unwrap();
 
-        if n_messages == 0 {
+        let Some(message) = message else {
             tracing::warn!("Tried to remove non-existing message {}", message_id);
-            return n_messages;
-        }
-
-        let message: orm::Message = schema::messages::table
-            .filter(schema::messages::id.eq(message_id))
-            .first(&mut *self.db())
-            .expect("message we just marked as deleted");
+            return false;
+        };
 
         let mut n_attachments: usize = 0;
 
@@ -2910,7 +2883,8 @@ impl Storage {
             n_attachments,
             reactions.len()
         );
-        n_messages
+
+        true
     }
 
     /// Delete all attachments of the message, is no other message references them.
@@ -2918,6 +2892,7 @@ impl Storage {
     fn delete_attachments_for_message(&mut self, message_id: i32) -> usize {
         let mut n_attachments = 0;
         let allowed = self.config.attachments_regex();
+        // TODO: refactor this with delete-returning-all-columns
         self.fetch_attachments_for_message(message_id)
             .into_iter()
             .for_each(|attachment| {
@@ -2925,6 +2900,9 @@ impl Storage {
                     .filter(schema::attachments::id.eq(attachment.id))
                     .execute(&mut *self.db())
                     .unwrap();
+                self.observe_delete(schema::attachments::table, attachment.id)
+                    .with_relation(schema::messages::table, message_id);
+
                 if let Some(path) = attachment.attachment_path {
                     let _span = tracing::debug_span!("considering attachment file deletion", id = attachment.id, path = %path).entered();
                     let remaining = schema::attachments::table
@@ -2960,17 +2938,7 @@ impl Storage {
     #[tracing::instrument(skip(self))]
     pub fn mark_pending_messages_failed(&self) -> usize {
         use schema::messages::dsl::*;
-        let failed_messages: Vec<orm::Message> = messages
-            .filter(
-                sent_timestamp
-                    .is_null()
-                    .and(is_outbound)
-                    .and(sending_has_failed.eq(false)),
-            )
-            .load(&mut *self.db())
-            .unwrap();
-
-        let count = diesel::update(messages)
+        let failed_messages: Vec<i32> = diesel::update(messages)
             .filter(
                 sent_timestamp
                     .is_null()
@@ -2978,13 +2946,15 @@ impl Storage {
                     .and(sending_has_failed.eq(false)),
             )
             .set(schema::messages::sending_has_failed.eq(true))
-            .execute(&mut *self.db())
+            .returning(schema::messages::id)
+            .load(&mut *self.db())
             .unwrap();
-        assert_eq!(failed_messages.len(), count);
 
-        for message in failed_messages {
-            self.observe_update(schema::messages::table, message.id);
+        for &message in &failed_messages {
+            self.observe_update(schema::messages::table, message);
         }
+
+        let count = failed_messages.len();
         if count == 0 {
             tracing::trace!("Set no messages to failed");
         } else {
