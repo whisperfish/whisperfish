@@ -1881,17 +1881,17 @@ impl Storage {
         let recipient = self.fetch_or_insert_recipient_by_phonenumber(phonenumber);
 
         use schema::sessions::dsl::*;
-        diesel::insert_into(sessions)
+        let session_id = diesel::insert_into(sessions)
             .values((direct_message_recipient_id.eq(recipient.id),))
-            .execute(&mut *self.db())
+            // We'd love to retrieve the whole session, but the Session object is a joined object.
+            .returning(id)
+            .get_result::<i32>(&mut *self.db())
             .unwrap();
 
-        let session = self
-            .fetch_latest_session()
-            .expect("a session has been inserted");
-        self.observe_insert(sessions, session.id)
+        self.observe_insert(sessions, session_id)
             .with_relation(schema::recipients::table, recipient.id);
-        session
+
+        self.fetch_session_by_id(session_id).unwrap()
     }
 
     /// Fetches recipient's DM session, or creates the session.
@@ -1902,17 +1902,17 @@ impl Storage {
         }
 
         use schema::sessions::dsl::*;
-        diesel::insert_into(sessions)
+        let session_id = diesel::insert_into(sessions)
             .values((direct_message_recipient_id.eq(recipient_id),))
-            .execute(&mut *self.db())
+            .returning(id)
+            .get_result::<i32>(&mut *self.db())
             .unwrap();
 
-        let session = self
-            .fetch_latest_session()
-            .expect("a session has been inserted");
-        self.observe_insert(sessions, session.id)
+        self.observe_insert(sessions, session_id)
             .with_relation(schema::recipients::table, recipient_id);
-        session
+
+        self.fetch_session_by_id(session_id)
+            .expect("a session has been inserted")
     }
 
     pub fn fetch_or_insert_session_by_group_v1(&self, group: &GroupV1) -> orm::Session {
@@ -1962,13 +1962,14 @@ impl Storage {
         }
 
         use schema::sessions::dsl::*;
-        diesel::insert_into(sessions)
+        let session_id = diesel::insert_into(sessions)
             .values((group_v1_id.eq(&group_id),))
-            .execute(&mut *self.db())
+            .returning(id)
+            .get_result::<i32>(&mut *self.db())
             .unwrap();
 
         let session = self
-            .fetch_latest_session()
+            .fetch_session_by_id(session_id)
             .expect("a session has been inserted");
         self.observe_insert(schema::sessions::table, session.id)
             .with_relation(schema::group_v1s::table, group_id);
@@ -2025,13 +2026,14 @@ impl Storage {
             .optional()
             .unwrap();
         if let Some(group) = group_v2 {
-            diesel::insert_into(sessions)
+            let session_id = diesel::insert_into(sessions)
                 .values(group_v2_id.eq(&group.id))
-                .execute(&mut *self.db())
+                .returning(id)
+                .get_result(&mut *self.db())
                 .unwrap();
 
             let session = self
-                .fetch_latest_session()
+                .fetch_session_by_id(session_id)
                 .expect("a session has been inserted");
             self.observe_insert(sessions, session.id)
                 .with_relation(schema::group_v2s::table, group.id);
@@ -2116,13 +2118,14 @@ impl Storage {
                 unreachable!("Former group V1 found.  We expect the branch above to have returned a session for it.");
             }
             None => {
-                diesel::insert_into(sessions)
+                let session_id = diesel::insert_into(sessions)
                     .values((group_v2_id.eq(&new_group.id),))
-                    .execute(&mut *self.db())
+                    .returning(id)
+                    .get_result(&mut *self.db())
                     .unwrap();
 
                 let session = self
-                    .fetch_latest_session()
+                    .fetch_session_by_id(session_id)
                     .expect("a session has been inserted");
                 self.observe_insert(sessions, session.id)
                     .with_relation(schema::group_v2s::table, new_group.id);
@@ -2466,7 +2469,7 @@ impl Storage {
             0
         };
 
-        let affected_rows = {
+        let latest_message: orm::Message = {
             use schema::messages::dsl::*;
             diesel::insert_into(messages)
                 .values((
@@ -2496,17 +2499,11 @@ impl Storage {
                     original_message_id.eq(edit_id),
                     revision_number.eq(computed_revision),
                 ))
-                .execute(&mut *self.db())
+                .get_result(&mut *self.db())
                 .expect("inserting a message")
         };
 
-        assert_eq!(
-            affected_rows, 1,
-            "Did not insert the message. Dazed and confused."
-        );
-
         // Then see if the message was inserted ok and what it was
-        let latest_message = self.fetch_latest_message().expect("inserted message");
         assert_eq!(
             latest_message.session_id, session,
             "message insert sanity test failed"
