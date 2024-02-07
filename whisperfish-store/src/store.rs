@@ -2996,17 +2996,20 @@ impl Storage {
     /// Marks a message as failed to send
     #[tracing::instrument(skip(self))]
     pub fn fail_message(&self, message_id: i32) {
-        diesel::update(schema::messages::table)
+        let affected = diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
             .set(schema::messages::sending_has_failed.eq(true))
             .execute(&mut *self.db())
             .unwrap();
-        self.observe_update(schema::messages::table, message_id);
+
+        if affected > 0 {
+            self.observe_update(schema::messages::table, message_id);
+        }
     }
 
     #[tracing::instrument(skip(self))]
     pub fn dequeue_message(&self, message_id: i32, sent_time: NaiveDateTime, unidentified: bool) {
-        diesel::update(schema::messages::table)
+        let affected = diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
             .set((
                 schema::messages::sent_timestamp.eq(sent_time),
@@ -3015,7 +3018,10 @@ impl Storage {
             ))
             .execute(&mut *self.db())
             .unwrap();
-        self.observe_update(schema::messages::table, message_id);
+
+        if affected > 0 {
+            self.observe_update(schema::messages::table, message_id);
+        }
     }
 
     /// Returns a binary peer identity
