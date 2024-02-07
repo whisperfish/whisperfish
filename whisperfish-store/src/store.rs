@@ -2176,7 +2176,12 @@ impl Storage {
                 schema::messages::id,
                 sql::<Timestamp>(DELETE_AFTER).sql("AS delete_after"),
             ))
-            .filter(schema::messages::expiry_started.is_not_null())
+            // This is the exact same filter clause as in the index.
+            .filter(
+                schema::messages::expiry_started
+                    .is_not_null()
+                    .and(schema::messages::expires_in.is_not_null()),
+            )
             .order_by(sql::<Timestamp>("delete_after").asc())
             .first(&mut *self.db())
             .optional()
@@ -2187,7 +2192,16 @@ impl Storage {
     #[tracing::instrument(skip(self))]
     pub fn delete_expired_messages(&mut self) -> usize {
         let deletions: Vec<i32> = diesel::delete(schema::messages::table)
-            .filter(sql::<Timestamp>(DELETE_AFTER).le(sql::<Timestamp>("DATETIME('now')")))
+            .filter(
+                // This is the exact same filter clause as in the index.
+                sql::<Timestamp>(DELETE_AFTER)
+                    .le(sql::<Timestamp>("DATETIME('now')"))
+                    .and(
+                        schema::messages::expiry_started
+                            .is_not_null()
+                            .and(schema::messages::expires_in.is_not_null()),
+                    ),
+            )
             .returning(schema::messages::id)
             .load(&mut *self.db())
             .expect("delete expired messages");
