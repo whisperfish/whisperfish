@@ -2148,7 +2148,9 @@ impl Storage {
 
         tracing::trace!("affected {} rows", affected_rows);
 
-        self.observe_update(schema::messages::table, message_id);
+        if affected_rows > 0 {
+            self.observe_update(schema::messages::table, message_id);
+        }
     }
 
     #[tracing::instrument(skip(self))]
