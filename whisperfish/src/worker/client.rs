@@ -1376,7 +1376,7 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
     type Result = ();
 
     fn handle(&mut self, msg: QueueExpiryUpdate, ctx: &mut Self::Context) -> Self::Result {
-        let _span = tracing::trace_span!("QueueMessage", %msg).entered();
+        let _span = tracing::trace_span!("QueueExpiryUpdate", %msg).entered();
         tracing::trace!(
             "Sending expiry of {:?} seconds to session {}",
             msg.expires_in,
