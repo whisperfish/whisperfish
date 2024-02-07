@@ -2158,9 +2158,15 @@ impl Storage {
                 sql::<Timestamp>(DELETE_AFTER).sql("AS delete_after"),
             ))
             .filter(
-                sql::<Bool>("delete_after")
-                    .sql(if already_expired { "<=" } else { ">" })
-                    .sql("DATETIME('now')"),
+                // This filter is the same as the index
+                schema::messages::expiry_started
+                    .is_not_null()
+                    .and(schema::messages::expires_in.is_not_null())
+                    .and(
+                        sql::<Bool>("delete_after")
+                            .sql(if already_expired { "<=" } else { ">" })
+                            .sql("DATETIME('now')"),
+                    ),
             )
             .order_by(sql::<Timestamp>("delete_after").asc())
             .load(&mut *self.db())
