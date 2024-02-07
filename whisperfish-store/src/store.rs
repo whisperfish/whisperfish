@@ -603,9 +603,14 @@ impl Storage {
         let _span = tracing::info_span!("Running migrations").entered();
         db.batch_execute("PRAGMA foreign_keys = OFF;").unwrap();
         db.transaction::<_, anyhow::Error, _>(|db| {
-            db.run_pending_migrations(MIGRATIONS)
-                .map_err(|e| anyhow::anyhow!("Running migrations: {}", e))?;
-            crate::check_foreign_keys(db)?;
+            let migrations = db
+                .pending_migrations(MIGRATIONS)
+                .map_err(|e| anyhow::anyhow!("Filtering migrations: {}", e))?;
+            if !migrations.is_empty() {
+                db.run_migrations(&migrations)
+                    .map_err(|e| anyhow::anyhow!("Running migrations: {}", e))?;
+                crate::check_foreign_keys(db)?;
+            }
             Ok(())
         })?;
         db.batch_execute("PRAGMA foreign_keys = ON;").unwrap();
