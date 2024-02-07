@@ -1358,10 +1358,9 @@ impl Handler<QueueMessage> for ClientActor {
             } else {
                 None
             },
-            is_read: true,
             quote_timestamp: quote.map(|msg| msg.server_timestamp.timestamp_millis() as u64),
             expires_in: session.expiring_message_timeout,
-            ..Default::default()
+            ..crate::store::NewMessage::new_outgoing()
         });
 
         if let Some(h) = self.message_expiry_notification_handle.as_ref() {
@@ -1401,7 +1400,7 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
             ),
             expires_in: msg.expires_in, // None'd in SendMessage handler
             flags: DataMessageFlags::ExpirationTimerUpdate as i32,
-            ..Default::default()
+            ..crate::store::NewMessage::new_outgoing()
         });
 
         storage.update_expiration_timer(session.id, msg.expires_in.map(|x| x as u32));
@@ -1682,8 +1681,7 @@ impl Handler<EndSession> for ClientActor {
             text: "[Whisperfish] Reset secure session".into(),
             timestamp: chrono::Utc::now().naive_utc(),
             flags: DataMessageFlags::EndSession.into(),
-            is_read: true,
-            ..Default::default()
+            ..crate::store::NewMessage::new_outgoing()
         });
         ctx.notify(SendMessage(msg.id));
     }
@@ -2255,9 +2253,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                                 session_id: session.id,
                                 source_uuid: Some(source_uuid),
                                 text: "[Whisperfish] The identity key for this contact has changed. Please verify your safety number.".into(), // XXX Translate
-                                received: true,
-                                outgoing: false,
-                                ..Default::default()
+                                ..crate::store::NewMessage::new_incoming()
                             };
                             storage.create_message(&msg);
 

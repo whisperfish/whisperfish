@@ -128,8 +128,33 @@ pub struct NewMessage<'a> {
     pub edit: Option<&'a orm::Message>,
 }
 
-impl Default for NewMessage<'_> {
-    fn default() -> Self {
+impl NewMessage<'_> {
+    pub fn new_incoming() -> Self {
+        Self {
+            session_id: 0,
+            source_e164: None,
+            source_uuid: None,
+            server_guid: None,
+            text: "".to_string(),
+            timestamp: chrono::Utc::now().naive_utc(),
+            sent: false,
+            received: true,
+            is_read: false,
+            flags: 0,
+            attachment: None,
+            mime_type: None,
+            has_attachment: false,
+            outgoing: false,
+            is_unidentified: false,
+            quote_timestamp: None,
+            expires_in: None,
+            story_type: StoryType::None,
+            body_ranges: None,
+            edit: None,
+        }
+    }
+
+    pub fn new_outgoing() -> Self {
         Self {
             session_id: 0,
             source_e164: None,
@@ -139,7 +164,7 @@ impl Default for NewMessage<'_> {
             timestamp: chrono::Utc::now().naive_utc(),
             sent: false,
             received: false,
-            is_read: false,
+            is_read: true,
             flags: 0,
             attachment: None,
             mime_type: None,
