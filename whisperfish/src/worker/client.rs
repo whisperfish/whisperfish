@@ -168,7 +168,7 @@ struct AttachmentDownloaded {
 
 #[derive(Message)]
 #[rtype(result = "usize")]
-pub struct CompactDb(usize);
+pub struct CompactDb;
 
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -679,11 +679,8 @@ impl ClientActor {
             } else {
                 msg.timestamp()
             }),
-            has_attachment: !msg.attachments.is_empty(),
-            mime_type: None, // Attachments are further handled asynchronously
             received: false, // This is set true by a receipt handler
             session_id: session.id,
-            attachment: None,
             is_read: is_sync_sent,
             quote_timestamp: msg.quote.as_ref().and_then(|x| x.id),
             expires_in,
@@ -716,12 +713,10 @@ impl ClientActor {
         }
 
         for attachment in &msg.attachments {
-            let attachment = storage.register_attachment(message.id, attachment.clone());
+            let attachment_id = storage.register_attachment(message.id, attachment.clone());
 
             if settings.get_bool("save_attachments") {
-                ctx.notify(FetchAttachment {
-                    attachment_id: attachment.id,
-                });
+                ctx.notify(FetchAttachment { attachment_id });
             }
         }
 
@@ -1336,39 +1331,26 @@ impl Handler<QueueMessage> for ClientActor {
             None
         };
 
-        let msg = storage.create_message(&crate::store::NewMessage {
+        let inserted_msg = storage.create_message(&crate::store::NewMessage {
             session_id: msg.session_id,
             source_e164: self_recipient.e164,
             source_uuid: self_recipient.uuid,
             text: msg.message,
             timestamp: chrono::Utc::now().naive_utc(),
-            has_attachment,
-            mime_type: if has_attachment {
-                Some(
-                    mime_guess::from_path(&msg.attachment)
-                        .first_or_octet_stream()
-                        .essence_str()
-                        .into(),
-                )
-            } else {
-                None
-            },
-            attachment: if has_attachment {
-                Some(msg.attachment)
-            } else {
-                None
-            },
-            is_read: true,
             quote_timestamp: quote.map(|msg| msg.server_timestamp.timestamp_millis() as u64),
             expires_in: session.expiring_message_timeout,
-            ..Default::default()
+            ..crate::store::NewMessage::new_outgoing()
         });
+
+        if has_attachment {
+            storage.insert_local_attachment(inserted_msg.id, None, msg.attachment);
+        }
 
         if let Some(h) = self.message_expiry_notification_handle.as_ref() {
             h.send(()).expect("send message expiry notification");
         }
 
-        ctx.notify(SendMessage(msg.id));
+        ctx.notify(SendMessage(inserted_msg.id));
     }
 }
 
@@ -1376,7 +1358,7 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
     type Result = ();
 
     fn handle(&mut self, msg: QueueExpiryUpdate, ctx: &mut Self::Context) -> Self::Result {
-        let _span = tracing::trace_span!("QueueMessage", %msg).entered();
+        let _span = tracing::trace_span!("QueueExpiryUpdate", %msg).entered();
         tracing::trace!(
             "Sending expiry of {:?} seconds to session {}",
             msg.expires_in,
@@ -1401,7 +1383,7 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
             ),
             expires_in: msg.expires_in, // None'd in SendMessage handler
             flags: DataMessageFlags::ExpirationTimerUpdate as i32,
-            ..Default::default()
+            ..crate::store::NewMessage::new_outgoing()
         });
 
         storage.update_expiration_timer(session.id, msg.expires_in.map(|x| x as u32));
@@ -1615,10 +1597,13 @@ impl Handler<SendMessage> for ClientActor {
                                     MessageSenderError::NotFound { uuid } => {
                                         tracing::warn!("Recipient not found, removing device sessions {}", uuid);
                                         // XXX what about PNI?
-                                        let mut num = storage.aci_storage().delete_all_sessions(&ServiceAddress { uuid }).await?;
+                                        let num = storage.aci_storage().delete_all_sessions(&ServiceAddress { uuid }).await?;
                                         tracing::trace!("Removed {} device session(s)", num);
-                                        num = storage.mark_recipient_registered(uuid, false);
-                                        tracing::trace!("Marked {} recipient(s) as unregistered", num);
+                                        if storage.mark_recipient_registered(uuid, false) {
+                                            tracing::trace!("Marked recipient {uuid} as unregistered");
+                                        } else {
+                                            tracing::warn!("Could not mark recipient as unregistered");
+                                        }
                                     },
                                     _ => {
                                         tracing::error!("The above error goes unhandled.");
@@ -1682,8 +1667,7 @@ impl Handler<EndSession> for ClientActor {
             text: "[Whisperfish] Reset secure session".into(),
             timestamp: chrono::Utc::now().naive_utc(),
             flags: DataMessageFlags::EndSession.into(),
-            is_read: true,
-            ..Default::default()
+            ..crate::store::NewMessage::new_outgoing()
         });
         ctx.notify(SendMessage(msg.id));
     }
@@ -2255,9 +2239,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                                 session_id: session.id,
                                 source_uuid: Some(source_uuid),
                                 text: "[Whisperfish] The identity key for this contact has changed. Please verify your safety number.".into(), // XXX Translate
-                                received: true,
-                                outgoing: false,
-                                ..Default::default()
+                                ..crate::store::NewMessage::new_incoming()
                             };
                             storage.create_message(&msg);
 
@@ -2660,7 +2642,7 @@ impl ClientWorker {
     pub fn compact_db(&self) {
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {
-            if let Err(e) = actor.send(CompactDb(0)).await {
+            if let Err(e) = actor.send(CompactDb).await {
                 tracing::error!("{:?} in compact_db()", e);
             }
         });

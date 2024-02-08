@@ -42,11 +42,6 @@ use uuid::Uuid;
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 const DELETE_AFTER: &str = "DATETIME(expiry_started, '+' || expires_in || ' seconds')";
 
-sql_function!(
-    // Represents the Sqlite last_insert_rowid() function
-    fn last_insert_rowid() -> Integer;
-);
-
 /// How much trust you put into the correctness of the data.
 #[derive(Clone, Copy, Eq, Debug, PartialEq)]
 pub enum TrustLevel {
@@ -115,9 +110,6 @@ pub struct NewMessage<'a> {
     pub received: bool,
     pub is_read: bool,
     pub flags: i32,
-    pub attachment: Option<String>,
-    pub mime_type: Option<String>,
-    pub has_attachment: bool,
     pub outgoing: bool,
     pub is_unidentified: bool,
     pub quote_timestamp: Option<u64>,
@@ -128,8 +120,30 @@ pub struct NewMessage<'a> {
     pub edit: Option<&'a orm::Message>,
 }
 
-impl Default for NewMessage<'_> {
-    fn default() -> Self {
+impl NewMessage<'_> {
+    pub fn new_incoming() -> Self {
+        Self {
+            session_id: 0,
+            source_e164: None,
+            source_uuid: None,
+            server_guid: None,
+            text: "".to_string(),
+            timestamp: chrono::Utc::now().naive_utc(),
+            sent: false,
+            received: true,
+            is_read: false,
+            flags: 0,
+            outgoing: false,
+            is_unidentified: false,
+            quote_timestamp: None,
+            expires_in: None,
+            story_type: StoryType::None,
+            body_ranges: None,
+            edit: None,
+        }
+    }
+
+    pub fn new_outgoing() -> Self {
         Self {
             session_id: 0,
             source_e164: None,
@@ -139,11 +153,8 @@ impl Default for NewMessage<'_> {
             timestamp: chrono::Utc::now().naive_utc(),
             sent: false,
             received: false,
-            is_read: false,
+            is_read: true,
             flags: 0,
-            attachment: None,
-            mime_type: None,
-            has_attachment: false,
             outgoing: true,
             is_unidentified: false,
             quote_timestamp: None,
@@ -1441,17 +1452,14 @@ impl Storage {
         let new_uuid = new_uuid.to_string();
         let mut db = self.db();
         let db = &mut *db;
+        // TODO: Can this be an upsert with get_result?
         if let Ok(recipient) = recipients.filter(uuid.eq(&new_uuid)).first(db) {
             recipient
         } else {
-            diesel::insert_into(recipients)
+            let recipient: orm::Recipient = diesel::insert_into(recipients)
                 .values(uuid.eq(&new_uuid))
-                .execute(db)
+                .get_result(db)
                 .expect("insert new recipient");
-            let recipient: orm::Recipient = recipients
-                .filter(uuid.eq(&new_uuid))
-                .first(db)
-                .expect("newly inserted recipient");
             self.observe_insert(recipients, recipient.id);
             recipient
         }
@@ -1472,14 +1480,10 @@ impl Storage {
         {
             recipient
         } else {
-            diesel::insert_into(recipients)
+            let recipient: orm::Recipient = diesel::insert_into(recipients)
                 .values(e164.eq(phonenumber.to_string()))
-                .execute(db)
+                .get_result(db)
                 .expect("insert new recipient");
-            let recipient: orm::Recipient = recipients
-                .filter(e164.eq(phonenumber.to_string()))
-                .first(db)
-                .expect("newly inserted recipient");
             self.observe_insert(recipients, recipient.id);
             recipient
         }
@@ -1661,29 +1665,6 @@ impl Storage {
         }
     }
 
-    /// Fetches the latest session by last_insert_rowid.
-    ///
-    /// This only yields correct results when the last insertion was in fact a session.
-    #[allow(unused)]
-    #[tracing::instrument(skip(self))]
-    fn fetch_latest_recipient(&self) -> Option<orm::Recipient> {
-        use schema::recipients::dsl::*;
-        recipients
-            .filter(id.eq(last_insert_rowid()))
-            .first(&mut *self.db())
-            .ok()
-    }
-
-    /// Fetches the latest session by last_insert_rowid.
-    ///
-    /// This only yields correct results when the last insertion was in fact a session.
-    #[tracing::instrument(skip(self))]
-    fn fetch_latest_session(&self) -> Option<orm::Session> {
-        fetch_session!(self.db(), |query| {
-            query.filter(schema::sessions::id.eq(last_insert_rowid()))
-        })
-    }
-
     /// Get all sessions in no particular order.
     ///
     /// Getting them ordered by timestamp would be nice,
@@ -1860,17 +1841,17 @@ impl Storage {
         let recipient = self.fetch_or_insert_recipient_by_phonenumber(phonenumber);
 
         use schema::sessions::dsl::*;
-        diesel::insert_into(sessions)
+        let session_id = diesel::insert_into(sessions)
             .values((direct_message_recipient_id.eq(recipient.id),))
-            .execute(&mut *self.db())
+            // We'd love to retrieve the whole session, but the Session object is a joined object.
+            .returning(id)
+            .get_result::<i32>(&mut *self.db())
             .unwrap();
 
-        let session = self
-            .fetch_latest_session()
-            .expect("a session has been inserted");
-        self.observe_insert(sessions, session.id)
+        self.observe_insert(sessions, session_id)
             .with_relation(schema::recipients::table, recipient.id);
-        session
+
+        self.fetch_session_by_id(session_id).unwrap()
     }
 
     /// Fetches recipient's DM session, or creates the session.
@@ -1881,17 +1862,17 @@ impl Storage {
         }
 
         use schema::sessions::dsl::*;
-        diesel::insert_into(sessions)
+        let session_id = diesel::insert_into(sessions)
             .values((direct_message_recipient_id.eq(recipient_id),))
-            .execute(&mut *self.db())
+            .returning(id)
+            .get_result::<i32>(&mut *self.db())
             .unwrap();
 
-        let session = self
-            .fetch_latest_session()
-            .expect("a session has been inserted");
-        self.observe_insert(sessions, session.id)
+        self.observe_insert(sessions, session_id)
             .with_relation(schema::recipients::table, recipient_id);
-        session
+
+        self.fetch_session_by_id(session_id)
+            .expect("a session has been inserted")
     }
 
     pub fn fetch_or_insert_session_by_group_v1(&self, group: &GroupV1) -> orm::Session {
@@ -1941,13 +1922,14 @@ impl Storage {
         }
 
         use schema::sessions::dsl::*;
-        diesel::insert_into(sessions)
+        let session_id = diesel::insert_into(sessions)
             .values((group_v1_id.eq(&group_id),))
-            .execute(&mut *self.db())
+            .returning(id)
+            .get_result::<i32>(&mut *self.db())
             .unwrap();
 
         let session = self
-            .fetch_latest_session()
+            .fetch_session_by_id(session_id)
             .expect("a session has been inserted");
         self.observe_insert(schema::sessions::table, session.id)
             .with_relation(schema::group_v1s::table, group_id);
@@ -2004,13 +1986,14 @@ impl Storage {
             .optional()
             .unwrap();
         if let Some(group) = group_v2 {
-            diesel::insert_into(sessions)
+            let session_id = diesel::insert_into(sessions)
                 .values(group_v2_id.eq(&group.id))
-                .execute(&mut *self.db())
+                .returning(id)
+                .get_result(&mut *self.db())
                 .unwrap();
 
             let session = self
-                .fetch_latest_session()
+                .fetch_session_by_id(session_id)
                 .expect("a session has been inserted");
             self.observe_insert(sessions, session.id)
                 .with_relation(schema::group_v2s::table, group.id);
@@ -2095,13 +2078,14 @@ impl Storage {
                 unreachable!("Former group V1 found.  We expect the branch above to have returned a session for it.");
             }
             None => {
-                diesel::insert_into(sessions)
+                let session_id = diesel::insert_into(sessions)
                     .values((group_v2_id.eq(&new_group.id),))
-                    .execute(&mut *self.db())
+                    .returning(id)
+                    .get_result(&mut *self.db())
                     .unwrap();
 
                 let session = self
-                    .fetch_latest_session()
+                    .fetch_session_by_id(session_id)
                     .expect("a session has been inserted");
                 self.observe_insert(sessions, session.id)
                     .with_relation(schema::group_v2s::table, new_group.id);
@@ -2157,7 +2141,9 @@ impl Storage {
 
         tracing::trace!("affected {} rows", affected_rows);
 
-        self.observe_update(schema::messages::table, message_id);
+        if affected_rows > 0 {
+            self.observe_update(schema::messages::table, message_id);
+        }
     }
 
     #[tracing::instrument(skip(self))]
@@ -2229,17 +2215,7 @@ impl Storage {
 
     #[tracing::instrument(skip(self))]
     pub fn mark_session_read(&self, session_id: i32) {
-        let ids: Vec<i32> = schema::messages::table
-            .select(schema::messages::id)
-            .filter(
-                schema::messages::session_id
-                    .eq(session_id)
-                    .and(schema::messages::is_read.eq(false)),
-            )
-            .load(&mut *self.db())
-            .expect("fetch unread message IDs");
-
-        let affected_rows = diesel::update(
+        let ids: Vec<i32> = diesel::update(
             schema::messages::table.filter(
                 schema::messages::session_id
                     .eq(session_id)
@@ -2247,10 +2223,9 @@ impl Storage {
             ),
         )
         .set((schema::messages::is_read.eq(true),))
-        .execute(&mut *self.db())
+        .returning(schema::messages::id)
+        .load(&mut *self.db())
         .expect("mark session read");
-
-        assert_eq!(affected_rows, ids.len());
 
         for message_id in ids {
             self.observe_update(schema::messages::table, message_id)
@@ -2298,40 +2273,35 @@ impl Storage {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn mark_recipient_registered(&self, recipient_uuid: Uuid, registered: bool) -> usize {
+    pub fn mark_recipient_registered(&self, recipient_uuid: Uuid, registered: bool) -> bool {
         use schema::recipients::dsl::*;
 
-        let rid: Vec<i32> = recipients
-            .select(id)
-            .filter(uuid.eq(recipient_uuid.to_string()))
-            .load(&mut *self.db())
-            .expect("Recipient id by UUID");
+        let rid: Option<i32> =
+            diesel::update(recipients.filter(uuid.eq(recipient_uuid.to_string())))
+                .set(is_registered.eq(registered))
+                .returning(id)
+                .get_result(&mut *self.db())
+                .optional()
+                .expect("mark recipient (un)registered");
 
-        if rid.is_empty() {
+        let Some(rid) = rid else {
             tracing::trace!(
-                "Recipient with UUID {} not found in database",
+                "Recipient's registration with UUID {} not updated in database",
                 recipient_uuid
             );
-            return 0;
-        }
+            return false;
+        };
 
-        let rid = rid.first().unwrap();
+        self.observe_update(schema::recipients::table, rid);
 
-        let affected_rows = diesel::update(recipients.filter(uuid.eq(recipient_uuid.to_string())))
-            .set(is_registered.eq(registered))
-            .execute(&mut *self.db())
-            .expect("mark recipient (un)registered");
-        if affected_rows > 0 {
-            self.observe_update(schema::recipients::table, *rid);
-        }
-        affected_rows
+        true
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn register_attachment(&mut self, mid: i32, ptr: AttachmentPointer) -> orm::Attachment {
+    pub fn register_attachment(&mut self, mid: i32, ptr: AttachmentPointer) -> i32 {
         use schema::attachments::dsl::*;
 
-        diesel::insert_into(attachments)
+        let inserted_attachment_id = diesel::insert_into(attachments)
             .values((
                 // XXX: many more things to store:
                 // - display order
@@ -2357,17 +2327,17 @@ impl Storage {
                 height.eq(ptr.height.map(|x| x as i32)),
                 pointer.eq(ptr.encode_to_vec()),
             ))
-            .execute(&mut *self.db())
+            .returning(id)
+            .get_result::<i32>(&mut *self.db())
             .expect("insert attachment");
-
-        let latest_attachment = self.fetch_latest_attachment().expect("inserted attachment");
 
         self.observe_insert(
             schema::attachments::table,
-            PrimaryKey::RowId(latest_attachment.id),
+            PrimaryKey::RowId(inserted_attachment_id),
         )
         .with_relation(schema::messages::table, mid);
-        latest_attachment
+
+        inserted_attachment_id
     }
 
     #[tracing::instrument(skip(self))]
@@ -2445,7 +2415,7 @@ impl Storage {
             0
         };
 
-        let affected_rows = {
+        let latest_message: orm::Message = {
             use schema::messages::dsl::*;
             diesel::insert_into(messages)
                 .values((
@@ -2475,17 +2445,11 @@ impl Storage {
                     original_message_id.eq(edit_id),
                     revision_number.eq(computed_revision),
                 ))
-                .execute(&mut *self.db())
+                .get_result(&mut *self.db())
                 .expect("inserting a message")
         };
 
-        assert_eq!(
-            affected_rows, 1,
-            "Did not insert the message. Dazed and confused."
-        );
-
         // Then see if the message was inserted ok and what it was
-        let latest_message = self.fetch_latest_message().expect("inserted message");
         assert_eq!(
             latest_message.session_id, session,
             "message insert sanity test failed"
@@ -2530,61 +2494,57 @@ impl Storage {
 
         tracing::trace!("Inserted message id {}", latest_message.id);
 
-        if let Some(path) = &new_message.attachment {
-            let affected_rows = {
-                let att_file = File::open(path).unwrap();
-                let att_size = match att_file.metadata() {
-                    Ok(m) => Some(m.len() as i32),
-                    Err(_) => None,
-                };
-
-                let att_path = Path::new(path);
-                let att_filename = att_path.file_name().map(|s| s.to_str().unwrap());
-
-                use schema::attachments::dsl::*;
-                diesel::insert_into(attachments)
-                    .values((
-                        message_id.eq(latest_message.id),
-                        content_type.eq(new_message.mime_type.as_ref().unwrap()),
-                        attachment_path.eq(path),
-                        size.eq(att_size),
-                        file_name.eq(att_filename),
-                        is_voice_note.eq(false),
-                        is_borderless.eq(false),
-                        is_quote.eq(false),
-                    ))
-                    .execute(&mut *self.db())
-                    .expect("Insert attachment")
-            };
-            self.observe_insert(schema::attachments::table, PrimaryKey::Unknown)
-                .with_relation(schema::messages::table, latest_message.id);
-
-            assert_eq!(
-                affected_rows, 1,
-                "Did not insert the attachment. Dazed and confused."
-            );
-        }
-
         latest_message
     }
 
-    /// This was implicit in Go, which probably didn't use threads.
-    ///
-    /// It needs to be locked from the outside because sqlite sucks.
-    #[tracing::instrument(skip(self))]
-    fn fetch_latest_message(&self) -> Option<orm::Message> {
-        schema::messages::table
-            .filter(schema::messages::id.eq(last_insert_rowid()))
-            .first(&mut *self.db())
-            .ok()
-    }
+    #[tracing::instrument(skip(self, path), fields(path = %path.as_ref().display()))]
+    pub fn insert_local_attachment(
+        &self,
+        attachment_message_id: i32,
+        mime_type: Option<&str>,
+        path: impl AsRef<Path>,
+    ) -> i32 {
+        let path = path.as_ref();
+        let att_file = File::open(path).expect("");
+        let att_size = match att_file.metadata() {
+            Ok(m) => Some(m.len() as i32),
+            Err(_) => None,
+        };
 
-    #[tracing::instrument(skip(self))]
-    fn fetch_latest_attachment(&self) -> Option<orm::Attachment> {
-        schema::attachments::table
-            .filter(schema::attachments::id.eq(last_insert_rowid()))
-            .first(&mut *self.db())
-            .ok()
+        let mime_type = mime_type.map(std::borrow::Cow::from).unwrap_or_else(|| {
+            mime_guess::from_path(path)
+                .first_or_octet_stream()
+                .essence_str()
+                // We need to either retain the Mime object or allocate a new string from the
+                // temporary.
+                .to_string()
+                .into()
+        });
+
+        let filename = path.file_name().map(|s| s.to_str().unwrap());
+
+        let id = {
+            use schema::attachments::dsl::*;
+            diesel::insert_into(attachments)
+                .values((
+                    message_id.eq(attachment_message_id),
+                    content_type.eq(mime_type),
+                    attachment_path.eq(path.as_os_str().to_str().expect("path UTF-8 compliant")),
+                    size.eq(att_size),
+                    file_name.eq(filename),
+                    is_voice_note.eq(false),
+                    is_borderless.eq(false),
+                    is_quote.eq(false),
+                ))
+                .returning(id)
+                .get_result::<i32>(&mut *self.db())
+                .expect("Insert attachment")
+        };
+
+        self.observe_insert(schema::attachments::table, id)
+            .with_relation(schema::messages::table, attachment_message_id);
+
+        id
     }
 
     #[tracing::instrument(skip(self))]
@@ -2877,25 +2837,21 @@ impl Storage {
     /// and clear the body text, delete its reactions,
     /// and if it was an incoming message, also its attachments from the disk.
     #[tracing::instrument(skip(self))]
-    pub fn delete_message(&mut self, message_id: i32) -> usize {
-        let n_messages = diesel::update(schema::messages::table)
+    pub fn delete_message(&mut self, message_id: i32) -> bool {
+        let message: Option<orm::Message> = diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
             .set((
                 schema::messages::is_remote_deleted.eq(true),
                 schema::messages::text.eq(None::<String>),
             ))
-            .execute(&mut *self.db())
+            .get_result(&mut *self.db())
+            .optional()
             .unwrap();
 
-        if n_messages == 0 {
+        let Some(message) = message else {
             tracing::warn!("Tried to remove non-existing message {}", message_id);
-            return n_messages;
-        }
-
-        let message: orm::Message = schema::messages::table
-            .filter(schema::messages::id.eq(message_id))
-            .first(&mut *self.db())
-            .expect("message we just marked as deleted");
+            return false;
+        };
 
         let mut n_attachments: usize = 0;
 
@@ -2907,21 +2863,28 @@ impl Storage {
         drop(_span);
 
         let _span = tracing::trace_span!("delete reactions", message_id = message.id).entered();
-        let n_reactions = diesel::delete(schema::reactions::table)
+        let reactions: Vec<i32> = diesel::delete(schema::reactions::table)
             .filter(schema::reactions::message_id.eq(message.id))
-            .execute(&mut *self.db())
+            .returning(schema::reactions::reaction_id)
+            .load(&mut *self.db())
             .unwrap();
 
         self.observe_update(schema::messages::table, message.id)
             .with_relation(schema::sessions::table, message.session_id);
 
+        for reaction in &reactions {
+            self.observe_delete(schema::reactions::table, *reaction)
+                .with_relation(schema::messages::table, message.id);
+        }
+
         tracing::trace!("Marked Message {{ id: {} }} deleted", message.id);
         tracing::trace!(
             "Deleted {} attachment(s) and {} reaction(s)",
             n_attachments,
-            n_reactions
+            reactions.len()
         );
-        n_messages
+
+        true
     }
 
     /// Delete all attachments of the message, is no other message references them.
@@ -2929,6 +2892,7 @@ impl Storage {
     fn delete_attachments_for_message(&mut self, message_id: i32) -> usize {
         let mut n_attachments = 0;
         let allowed = self.config.attachments_regex();
+        // TODO: refactor this with delete-returning-all-columns
         self.fetch_attachments_for_message(message_id)
             .into_iter()
             .for_each(|attachment| {
@@ -2936,6 +2900,9 @@ impl Storage {
                     .filter(schema::attachments::id.eq(attachment.id))
                     .execute(&mut *self.db())
                     .unwrap();
+                self.observe_delete(schema::attachments::table, attachment.id)
+                    .with_relation(schema::messages::table, message_id);
+
                 if let Some(path) = attachment.attachment_path {
                     let _span = tracing::debug_span!("considering attachment file deletion", id = attachment.id, path = %path).entered();
                     let remaining = schema::attachments::table
@@ -2971,17 +2938,7 @@ impl Storage {
     #[tracing::instrument(skip(self))]
     pub fn mark_pending_messages_failed(&self) -> usize {
         use schema::messages::dsl::*;
-        let failed_messages: Vec<orm::Message> = messages
-            .filter(
-                sent_timestamp
-                    .is_null()
-                    .and(is_outbound)
-                    .and(sending_has_failed.eq(false)),
-            )
-            .load(&mut *self.db())
-            .unwrap();
-
-        let count = diesel::update(messages)
+        let failed_messages: Vec<i32> = diesel::update(messages)
             .filter(
                 sent_timestamp
                     .is_null()
@@ -2989,13 +2946,15 @@ impl Storage {
                     .and(sending_has_failed.eq(false)),
             )
             .set(schema::messages::sending_has_failed.eq(true))
-            .execute(&mut *self.db())
+            .returning(schema::messages::id)
+            .load(&mut *self.db())
             .unwrap();
-        assert_eq!(failed_messages.len(), count);
 
-        for message in failed_messages {
-            self.observe_update(schema::messages::table, message.id);
+        for &message in &failed_messages {
+            self.observe_update(schema::messages::table, message);
         }
+
+        let count = failed_messages.len();
         if count == 0 {
             tracing::trace!("Set no messages to failed");
         } else {
@@ -3007,17 +2966,20 @@ impl Storage {
     /// Marks a message as failed to send
     #[tracing::instrument(skip(self))]
     pub fn fail_message(&self, message_id: i32) {
-        diesel::update(schema::messages::table)
+        let affected = diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
             .set(schema::messages::sending_has_failed.eq(true))
             .execute(&mut *self.db())
             .unwrap();
-        self.observe_update(schema::messages::table, message_id);
+
+        if affected > 0 {
+            self.observe_update(schema::messages::table, message_id);
+        }
     }
 
     #[tracing::instrument(skip(self))]
     pub fn dequeue_message(&self, message_id: i32, sent_time: NaiveDateTime, unidentified: bool) {
-        diesel::update(schema::messages::table)
+        let affected = diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
             .set((
                 schema::messages::sent_timestamp.eq(sent_time),
@@ -3026,7 +2988,10 @@ impl Storage {
             ))
             .execute(&mut *self.db())
             .unwrap();
-        self.observe_update(schema::messages::table, message_id);
+
+        if affected > 0 {
+            self.observe_update(schema::messages::table, message_id);
+        }
     }
 
     /// Returns a binary peer identity

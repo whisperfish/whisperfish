@@ -138,7 +138,7 @@ async fn main() -> Result<(), anyhow::Error> {
         }
     }
 
-    let attachment = storage.register_attachment(
+    let attachment_id = storage.register_attachment(
         mid,
         // Reconstruct attachment pointer
         AttachmentPointer {
@@ -148,7 +148,7 @@ async fn main() -> Result<(), anyhow::Error> {
     );
 
     let attachment_path = storage
-        .save_attachment(attachment.id, dest, &opt.ext, &ciphertext)
+        .save_attachment(attachment_id, dest, &opt.ext, &ciphertext)
         .await
         .unwrap();
 
