@@ -38,7 +38,7 @@ ListItem {
 
     property string fullMessageText: ""
 
-    readonly property string _message: fullMessageText !== "" ? fullMessageText : (hasData && modelData.styledMessage ? modelData.styledMessage.trim() : '')
+    readonly property string _message: fullMessageText !== "" ? fullMessageText : (hasData ? modelData.styledMessage.trim() : '')
     // TODO implement shared locations (show a map etc.; is probably not an attachment)
 
     Loader {
