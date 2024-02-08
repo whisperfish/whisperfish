@@ -1656,7 +1656,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="71"/>
         <source>Set message expiry</source>
         <extracomment>Save the new value of expiring messages timeout</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Verdwijnende berichten instellen</translation>
     </message>
     <message id="whisperfish-group-member-admin">
         <location filename="../qml/pages/GroupProfilePage.qml" line="215"/>
@@ -2256,36 +2256,36 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="62"/>
         <source>Disappearing messages</source>
         <extracomment>Group/conversation info page, expiring messages setting</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Verdwijnende berichten</translation>
     </message>
     <message id="whisperfish-disappearing-messages-description">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="65"/>
         <source>Set or disable message destruction after a certain time after reading. Only affects messages sent after changing this option.</source>
         <extracomment>Group/conversation info page, expiring messages description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Stel het verdwijnen van berichten na een bepaalde tijd na het lezen in, of schakel dit uit. Enkel van toepassing op berichten verstuurd na het veranderen van deze instelling.</translation>
     </message>
     <message id="whisperfish-disappearing-messages-off">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="78"/>
         <source>Off</source>
         <extracomment>Disappearing messages: off</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Uit</translation>
     </message>
     <message id="whisperfish-disappearing-messages-seconds" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="82"/>
         <source>%n second(s)</source>
         <extracomment>Disappearing messages duration in seconds</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n seconde</numerusform>
+            <numerusform>%n seconden</numerusform>
         </translation>
     </message>
     <message id="whisperfish-disappearing-messages-minutes" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="86"/>
         <source>%n minute(s)</source>
         <extracomment>Disappearing messages duration in minutes</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n minuut</numerusform>
+            <numerusform>%n minuten</numerusform>
         </translation>
     </message>
     <message id="whisperfish-disappearing-messages-hours" numerus="yes">
@@ -2293,18 +2293,18 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="93"/>
         <source>%n hour(s)</source>
         <extracomment>Disappearing messages duration in hours</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n uur</numerusform>
+            <numerusform>%n uren</numerusform>
         </translation>
     </message>
     <message id="whisperfish-disappearing-messages-days" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="97"/>
         <source>%n day(s)</source>
         <extracomment>Disappearing messages duration in days</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n dag</numerusform>
+            <numerusform>%n dagen</numerusform>
         </translation>
     </message>
     <message id="whisperfish-disappearing-messages-weeks" numerus="yes">
@@ -2312,72 +2312,72 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="104"/>
         <source>%n week(s)</source>
         <extracomment>Disappearing messages duration in weeks</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n week</numerusform>
+            <numerusform>%n weken</numerusform>
         </translation>
     </message>
     <message id="whisperfish-disappearing-messages-custom">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="108"/>
         <source>Other</source>
         <extracomment>Disappearing messages: custom duration</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Anders</translation>
     </message>
     <message id="whisperfish-disappearing-messages-amount">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="153"/>
         <source>Amount</source>
         <extracomment>Disappearing messages, custom &quot;time amount&quot; label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Aantal</translation>
     </message>
     <message id="whisperfish-disappearing-messages-time-units">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="176"/>
         <source>Time unit</source>
         <extracomment>Disappearing messages, custom &quot;time length&quot; label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Tijdseenheid</translation>
     </message>
     <message id="whisperfish-units-seconds" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="181"/>
         <source>seconds</source>
         <extracomment>Time unit: seconds</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>seconde</numerusform>
+            <numerusform>seconden</numerusform>
         </translation>
     </message>
     <message id="whisperfish-units-minutes" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="184"/>
         <source>minutes</source>
         <extracomment>Time unit: minutes</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>minuut</numerusform>
+            <numerusform>minuten</numerusform>
         </translation>
     </message>
     <message id="whisperfish-units-hours" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="187"/>
         <source>hours</source>
         <extracomment>Time unit: hours</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>uur</numerusform>
+            <numerusform>uren</numerusform>
         </translation>
     </message>
     <message id="whisperfish-units-days" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="190"/>
         <source>days</source>
         <extracomment>Time unit: days</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>dag</numerusform>
+            <numerusform>dagen</numerusform>
         </translation>
     </message>
     <message id="whisperfish-units-weeks" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="193"/>
         <source>weeks</source>
         <extracomment>Time unit: weeks</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>week</numerusform>
+            <numerusform>weken</numerusform>
         </translation>
     </message>
 </context>
