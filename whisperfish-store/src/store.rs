@@ -291,6 +291,7 @@ impl<P: AsRef<Path>> StorageLocation<P> {
                 .context("path to db contains a non-UTF8 character, please file a bug.")?
                 .to_string(),
         };
+        #[allow(unused_mut)]
         let mut conn = SqliteConnection::establish(&database_url)?;
         #[cfg(feature = "diesel-instrumentation")]
         conn.set_instrumentation(instrumentation::Instrumentation::default());
