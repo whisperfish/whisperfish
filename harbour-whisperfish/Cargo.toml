@@ -34,3 +34,5 @@ console-subscriber = ["dep:console-subscriber"]
 tracy = ["dep:tracing-tracy"]
 coz = ["dep:tracing-coz"]
 flame = ["dep:tracing-flame"]
+
+diesel-instrumentation = ["whisperfish/diesel-instrumentation"]

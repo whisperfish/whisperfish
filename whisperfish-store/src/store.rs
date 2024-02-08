@@ -2,6 +2,8 @@ pub mod orm;
 
 pub mod body_ranges;
 mod encryption;
+#[cfg(feature = "diesel-instrumentation")]
+mod instrumentation;
 pub mod migrations;
 pub mod observer;
 mod protocol_store;
@@ -289,8 +291,10 @@ impl<P: AsRef<Path>> StorageLocation<P> {
                 .context("path to db contains a non-UTF8 character, please file a bug.")?
                 .to_string(),
         };
-
-        Ok(SqliteConnection::establish(&database_url)?)
+        let mut conn = SqliteConnection::establish(&database_url)?;
+        #[cfg(feature = "diesel-instrumentation")]
+        conn.set_instrumentation(instrumentation::Instrumentation::default());
+        Ok(conn)
     }
 }
 

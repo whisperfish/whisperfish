@@ -108,3 +108,4 @@ bundled-openssl = [
     "libsqlite3-sys/bundled-sqlcipher-vendored-openssl",
     "whisperfish-store/bundled-openssl",
 ]
+diesel-instrumentation = ["whisperfish-store/diesel-instrumentation"]

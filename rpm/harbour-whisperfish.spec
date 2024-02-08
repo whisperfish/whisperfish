@@ -6,6 +6,7 @@
 %bcond_with lto
 %bcond_with sccache
 %bcond_with tools
+%bcond_with diesel_instrumentation
 
 # Targets 4.5 and newer default to Zstd RPM compression,
 # which is not supported on 4.4 and older
@@ -190,6 +191,10 @@ FEATURES="$FEATURES,flame"
 
 %if %{with coz}
 FEATURES="$FEATURES,coz"
+%endif
+
+%if %{with diesel_instrumentation}
+FEATURES="$FEATURES,diesel-instrumentation"
 %endif
 
 # We could use the %(version) and %(release), but SFDK will include a datetime stamp,
