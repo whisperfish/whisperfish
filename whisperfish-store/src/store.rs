@@ -2669,6 +2669,11 @@ impl Storage {
             .count()
             .get_result(&mut *self.db())
             .expect("db");
+        let reactions: i64 = schema::reactions::table
+            .filter(schema::reactions::message_id.eq(message_id))
+            .count()
+            .get_result(&mut *self.db())
+            .expect("db");
 
         let is_voice_note = if attachments == 1 {
             schema::attachments::table
@@ -2693,6 +2698,7 @@ impl Storage {
             is_voice_note,
             receipts,
             attachments: attachments as usize,
+            reactions: reactions as usize,
             mentions,
             body_ranges,
         })
@@ -2765,6 +2771,22 @@ impl Storage {
                     .expect("db")
             });
 
+        // message_id, reaction count
+        let reactions: Vec<(i32, i64)> =
+            tracing::trace_span!("fetching reactions",).in_scope(|| {
+                schema::reactions::table
+                    .inner_join(schema::messages::table)
+                    .group_by(schema::reactions::message_id)
+                    .select((
+                        schema::reactions::message_id,
+                        diesel::dsl::count_distinct(schema::reactions::reaction_id),
+                    ))
+                    .filter(schema::messages::session_id.eq(sid))
+                    .order_by(order)
+                    .load(&mut *self.db())
+                    .expect("db")
+            });
+
         let receipts: Vec<(orm::Receipt, orm::Recipient)> =
             tracing::trace_span!("fetching receipts").in_scope(|| {
                 schema::receipts::table
@@ -2784,6 +2806,7 @@ impl Storage {
         tracing::trace_span!("joining messages, attachments, receipts into AugmentedMessage")
             .in_scope(|| {
                 let mut attachments = attachments.into_iter().peekable();
+                let mut reactions = reactions.into_iter().peekable();
                 let receipts = receipts
                     .into_iter()
                     .group_by(|(receipt, _recipient)| receipt.message_id);
@@ -2803,6 +2826,18 @@ impl Storage {
                     } else {
                         (0, false)
                     };
+
+                    let reactions = if reactions
+                        .peek()
+                        .map(|(id, _)| *id == message.id)
+                        .unwrap_or(false)
+                    {
+                        let (_, reactions) = reactions.next().unwrap();
+                        reactions as usize
+                    } else {
+                        0
+                    };
+
                     let receipts = if receipts
                         .peek()
                         .map(|(id, _)| *id == message.id)
@@ -2826,6 +2861,7 @@ impl Storage {
                         inner: message,
                         is_voice_note,
                         attachments,
+                        reactions,
                         receipts,
                         body_ranges,
                         mentions,

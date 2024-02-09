@@ -81,7 +81,7 @@ ListItem {
     property bool showExpand: !isEmpty && !isRemoteDeleted && _message.length > shortenThreshold
 
     readonly property bool hasData: modelData !== null && modelData !== undefined
-    readonly property bool hasReactions: hasData && reactions.count > 0
+    readonly property bool hasReactions: hasData && modelData.reactions > 0
     readonly property bool hasQuotedMessage: !!modelData.quotedMessageId && modelData.quotedMessageId != -1
     readonly property bool hasAttachments: hasData && modelData.attachments > 0
     readonly property bool hasText: hasData && _message !== ''
@@ -93,10 +93,15 @@ ListItem {
     property bool isExpanded: false
     property bool isSelected: listView !== null && listView.selectedMessages[modelData.id] !== undefined
 
-    GroupedReactions {
+    Loader {
         id: reactions
-        app: AppState
-        messageId: modelData.id
+        active: hasReactions
+        sourceComponent: Component {
+            GroupedReactions {
+                app: AppState
+                messageId: modelData.id
+            }
+        }
     }
 
     function handleExternalPressAndHold(mouse) {
@@ -287,7 +292,7 @@ ListItem {
         Item {
             id: infoRow
             anchors {
-                topMargin: Theme.paddingSmall * (reactions.length > 0 ? 2 : 1)
+                topMargin: Theme.paddingSmall * (hasReactions ? 2 : 1)
             }
             property real minContentWidth: emojiItem.width + Theme.paddingSmall + infoItem.width
             width: delegateContentWidth
@@ -295,7 +300,7 @@ ListItem {
 
             EmojiItem {
                 id: emojiItem
-                reactions: reactions.groupedReactions
+                reactions: hasReactions ? reactions.groupedReactions : ""
                 anchors.top: parent.top
                 anchors.left: isOutbound ? parent.left : undefined
                 anchors.right: isOutbound ? undefined : parent.right

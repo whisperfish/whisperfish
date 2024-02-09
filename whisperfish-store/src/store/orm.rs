@@ -904,6 +904,7 @@ impl SessionType {
 pub struct AugmentedMessage {
     pub inner: Message,
     pub attachments: usize,
+    pub reactions: usize,
     pub is_voice_note: bool,
     pub receipts: Vec<(Receipt, Recipient)>,
     pub body_ranges: Vec<crate::store::protos::body_range_list::BodyRange>,
@@ -914,8 +915,9 @@ impl Display for AugmentedMessage {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(
             f,
-            "AugmentedMessage {{ attachments: {}, _receipts: {}, inner: {} }}",
+            "AugmentedMessage {{ attachments: {}, reactions: {}, _receipts: {}, inner: {} }}",
             &self.attachments,
+            &self.reactions,
             &self.receipts.len(),
             &self.inner
         )
@@ -962,6 +964,11 @@ impl AugmentedMessage {
 
     pub fn attachments(&self) -> u32 {
         self.attachments as _
+    }
+
+    pub fn reactions(&self) -> u32 {
+        tracing::trace!("reactions (mid {}): {}", self.id, self.reactions);
+        self.reactions as _
     }
 
     pub fn body_ranges(&self) -> &[crate::store::protos::body_range_list::BodyRange] {
@@ -1573,6 +1580,7 @@ mod tests {
                 },
                 get_recipient(),
             )],
+            reactions: 0,
             body_ranges: vec![],
             mentions: Default::default(),
         }
@@ -1801,7 +1809,7 @@ mod tests {
     #[test]
     fn display_augmented_message() {
         let m = get_augmented_message();
-        assert_eq!(format!("{}", m), "AugmentedMessage { attachments: 2, _receipts: 1, inner: Message { id: 71, session_id: 66, text: \"msg text\" } }")
+        assert_eq!(format!("{}", m), "AugmentedMessage { attachments: 2, reactions: 0, _receipts: 1, inner: Message { id: 71, session_id: 66, text: \"msg text\" } }")
     }
 
     #[test]
@@ -1810,7 +1818,7 @@ mod tests {
             inner: get_dm_session(),
             last_message: Some(get_augmented_message()),
         };
-        assert_eq!(format!("{}", s), "AugmentedSession { inner: Session { id: 2, _has_draft: false, type: DirectMessage { recipient: Recipient { id: 981, name: \"Nick Name\", e164: \"+35840...\", uuid: \"bff93979-...\", pni: unavailable } } }, last_message: AugmentedMessage { attachments: 2, _receipts: 1, inner: Message { id: 71, session_id: 66, text: \"msg text\" } } }");
+        assert_eq!(format!("{}", s), "AugmentedSession { inner: Session { id: 2, _has_draft: false, type: DirectMessage { recipient: Recipient { id: 981, name: \"Nick Name\", e164: \"+35840...\", uuid: \"bff93979-...\", pni: unavailable } } }, last_message: AugmentedMessage { attachments: 2, reactions: 0, _receipts: 1, inner: Message { id: 71, session_id: 66, text: \"msg text\" } } }");
         s.last_message = None;
         assert_eq!(format!("{}", s), "AugmentedSession { inner: Session { id: 2, _has_draft: false, type: DirectMessage { recipient: Recipient { id: 981, name: \"Nick Name\", e164: \"+35840...\", uuid: \"bff93979-...\", pni: unavailable } } }, last_message: None }");
     }

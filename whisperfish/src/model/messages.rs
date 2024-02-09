@@ -25,6 +25,7 @@ crate::observing_model! {
         messageId: i32; READ get_message_id WRITE set_message_id,
         valid: bool; READ get_valid,
         attachments: QVariant; READ attachments,
+        reactions_: u32; READ reactions,
         thumbsAttachments: QVariant; READ visual_attachments,
         detailAttachments: QVariant; READ detail_attachments,
     } WITH OPTIONAL PROPERTIES FROM message WITH ROLE MessageRoles {
@@ -98,6 +99,15 @@ impl MessageImpl {
 
     fn attachments(&self) -> QVariant {
         self.attachments.pinned().into()
+    }
+
+    fn reactions(&self) -> u32 {
+        tracing::trace!(
+            "reactions (mid {:?}): {:?}",
+            self.message.as_ref().map(|m| m.id),
+            self.message.as_ref().map(|m| m.reactions)
+        );
+        self.message.as_ref().map(|m| m.reactions).unwrap_or(0) as _
     }
 
     fn detail_attachments(&self) -> QVariant {
@@ -369,6 +379,7 @@ define_model_roles! {
         RevealedLink(fn revealed_link(&self) via QString::from): "revealedLink",
 
         Attachments(fn attachments(&self)):                   "attachments",
+        Reactions(fn reactions(&self)):                       "reactions",
         IsVoiceNote(is_voice_note):                           "isVoiceNote",
 
         IsLatestRevision(fn is_latest_revision(&self)):       "isLatestRevision",
