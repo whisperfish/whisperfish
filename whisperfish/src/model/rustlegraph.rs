@@ -36,6 +36,7 @@ fn qcolor_to_image(c: QColor) -> Rgba<u8> {
 
 impl RustleGraph {
     #[qmeta_async::with_executor]
+    #[tracing::instrument(skip(self, app))]
     fn set_app(&mut self, app: QPointer<crate::gui::AppState>) {
         self.app = app;
         self.reinit();

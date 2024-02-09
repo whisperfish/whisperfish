@@ -60,6 +60,7 @@ impl EventObserving for RecipientImpl {
 
     fn observe(&mut self, ctx: Self::Context, _event: crate::store::observer::Event) {
         if self.recipient_id.is_some() {
+            tracing::trace!("initializing Recipient");
             self.init(ctx);
         }
     }
@@ -134,6 +135,7 @@ impl RecipientImpl {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self, ctx))]
     fn set_recipient_id(&mut self, ctx: Option<ModelContext<Self>>, id: i32) {
         self.recipient_id = Some(id);
         self.recipient_uuid = None; // Set in init()
@@ -143,6 +145,7 @@ impl RecipientImpl {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self, ctx))]
     fn set_recipient_uuid(&mut self, ctx: Option<ModelContext<Self>>, uuid: String) {
         self.recipient_id = None; // Set in init()
         if let Ok(uuid) = Uuid::parse_str(&uuid) {

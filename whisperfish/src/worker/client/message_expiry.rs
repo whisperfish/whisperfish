@@ -37,6 +37,7 @@ impl StreamHandler<ExpiredMessages> for ClientActor {
 impl ClientWorker {
     #[allow(non_snake_case)]
     #[qmeta_async::with_executor]
+    #[tracing::instrument(skip(self))]
     pub(super) fn startMessageExpiry(&self, message_id: i32) {
         actix::spawn(
             self.actor

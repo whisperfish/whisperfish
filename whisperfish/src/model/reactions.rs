@@ -123,6 +123,7 @@ impl ReactionListModel {
         self.end_reset_model();
     }
 
+    #[tracing::instrument(level = "trace", skip(self, ctx))]
     fn observe(
         &mut self,
         ctx: ModelContext<ReactionsImpl>,

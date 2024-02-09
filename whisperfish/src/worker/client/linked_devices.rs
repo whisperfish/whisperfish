@@ -21,6 +21,7 @@ pub struct UnlinkDevice {
 // methods called from Qt
 impl ClientWorker {
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     pub fn link_device(&self, tsurl: String) {
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {
@@ -31,6 +32,7 @@ impl ClientWorker {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     pub fn unlink_device(&self, id: i64) {
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {
@@ -41,6 +43,7 @@ impl ClientWorker {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     pub fn reload_linked_devices(&self) {
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {

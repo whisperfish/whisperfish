@@ -103,6 +103,7 @@ impl GroupImpl {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self, ctx))]
     fn set_group_id(&mut self, ctx: Option<ModelContext<GroupImpl>>, id: QString) {
         self.id = Some(id.to_string());
         if let Some(ctx) = ctx {

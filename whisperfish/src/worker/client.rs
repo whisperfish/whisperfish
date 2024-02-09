@@ -2650,6 +2650,7 @@ impl Handler<RefreshPreKeys> for ClientActor {
 // methods called from Qt
 impl ClientWorker {
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     pub fn compact_db(&self) {
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {
@@ -2660,6 +2661,7 @@ impl ClientWorker {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     pub fn delete_file(&self, file_name: String) {
         let result = remove_file(&file_name);
         match result {
@@ -2673,6 +2675,7 @@ impl ClientWorker {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     pub fn refresh_profile(&self, recipient_id: i32) {
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {
@@ -2686,6 +2689,7 @@ impl ClientWorker {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     pub fn upload_profile(
         &self,
         given_name: String,
@@ -2729,6 +2733,7 @@ impl ClientWorker {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     pub fn submit_proof_captcha(&self, token: String, response: String) {
         let actor = self.actor.clone().unwrap();
         let schema = "signalcaptcha://";
@@ -2752,6 +2757,7 @@ impl ClientWorker {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn send_typing_notification(&self, session_id: i32, is_start: bool) {
         actix::spawn(
             self.actor

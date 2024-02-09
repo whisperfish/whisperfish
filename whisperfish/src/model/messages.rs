@@ -221,6 +221,7 @@ crate::observing_model! {
 impl EventObserving for SessionImpl {
     type Context = ModelContext<Self>;
 
+    #[tracing::instrument(level = "trace", skip(self, ctx))]
     fn observe(&mut self, ctx: Self::Context, event: crate::store::observer::Event) {
         let storage = ctx.storage();
         if let Some(id) = self.session_id {
@@ -430,6 +431,7 @@ impl MessageListModel {
         self.end_reset_model();
     }
 
+    #[tracing::instrument(level = "trace", skip(self))]
     fn observe(&mut self, storage: Storage, session_id: i32, event: crate::store::observer::Event) {
         // Waterfall handling of event.  If we cannot find a good specialized way of handling
         // the event, we'll reload the whole model.

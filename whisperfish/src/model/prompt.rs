@@ -41,6 +41,7 @@ pub struct Prompt {
 impl Prompt {
     #[allow(non_snake_case)]
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn phoneNumber(&mut self, phone_number: QString) {
         for listener in self.phone_number_listeners.drain(..) {
             if listener.send(phone_number.clone()).is_err() {
@@ -51,6 +52,7 @@ impl Prompt {
 
     #[allow(non_snake_case)]
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn verificationCode(&mut self, code: QString) {
         for listener in self.code_listeners.drain(..) {
             if listener.send(code.clone()).is_err() {
@@ -61,6 +63,7 @@ impl Prompt {
 
     #[allow(non_snake_case)]
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn password(&mut self, password: QString) {
         for listener in self.password_listeners.drain(..) {
             if listener.send(password.clone()).is_err() {
@@ -71,6 +74,7 @@ impl Prompt {
 
     #[allow(non_snake_case)]
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn captcha(&mut self, captcha: QString) {
         for listener in self.captcha_listeners.drain(..) {
             if listener.send(captcha.clone()).is_err() {
@@ -81,10 +85,12 @@ impl Prompt {
 
     #[allow(non_snake_case)]
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn resetPeerIdentity(&self, _confirm: QString) {}
 
     #[allow(non_snake_case)]
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn registerAsPrimary(&mut self, isPrimary: bool) {
         for listener in self.registration_type_listeners.drain(..) {
             if listener.send(isPrimary).is_err() {
@@ -212,6 +218,7 @@ impl Prompt {
 
     #[allow(non_snake_case)]
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn startCaptcha(&mut self) {
         Command::new("/usr/bin/sailfish-qml")
             .args(["harbour-whisperfish"])

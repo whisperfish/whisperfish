@@ -43,6 +43,7 @@ macro_rules! observing_model {
 
         impl Default for $model {
             fn default() -> Self {
+                let _span = tracing::debug_span!("creating {}", stringify!($model)).entered();
                 let inner = std::sync::Arc::<qmetaobject::QObjectBox::<$encapsulated>>::default();
 
                 Self {
@@ -61,6 +62,7 @@ macro_rules! observing_model {
 
         impl $model {
             #[qmeta_async::with_executor]
+            #[tracing::instrument(skip(self, app))]
             fn set_app(&mut self, app: QPointer<$crate::gui::AppState>) {
                 self.app = app;
                 self.reinit();
@@ -110,6 +112,7 @@ macro_rules! observing_model {
 
                 $(
                 #[qmeta_async::with_executor]
+                #[tracing::instrument(skip(self))]
                 fn $setter(&mut self, v: $t) {
                     let storage = self.app.as_pinned().and_then(|app| app.borrow().storage.borrow().clone());
                     let addr = self.actor.clone();
