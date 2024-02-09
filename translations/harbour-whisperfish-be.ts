@@ -8,38 +8,38 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="44"/>
         <source>Attachment</source>
         <extracomment>Session contains an attachment label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Далучэнне</translation>
     </message>
     <message id="whisperfish-session-is-voice-note">
         <location filename="../qml/delegates/SessionDelegate.qml" line="39"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Галасавое паведамленне</translation>
     </message>
     <message id="whisperfish-session-delete-all">
         <location filename="../qml/delegates/SessionDelegate.qml" line="78"/>
         <source>All messages deleted</source>
         <oldsource>Deleting all messages</oldsource>
         <extracomment>Delete all messages from session (past tense)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Усе паведамленні выдалены</translation>
     </message>
     <message id="whisperfish-typing-1">
         <location filename="../qml/delegates/SessionDelegate.qml" line="133"/>
         <source>%1 is typing</source>
         <extracomment>Text shown when one person is typing</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 піша</translation>
     </message>
     <message id="whisperfish-typing-2">
         <location filename="../qml/delegates/SessionDelegate.qml" line="137"/>
         <source>%1 and %2 are typing</source>
         <extracomment>Text shown when two persons are typing</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 і %2 пішуць</translation>
     </message>
     <message id="whisperfish-typing-3-plus">
         <location filename="../qml/delegates/SessionDelegate.qml" line="141"/>
         <source>%1 and %n others are typing</source>
         <extracomment>Text shown when three or more persons are typing</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 і яшчэ %n пішуць</translation>
     </message>
     <message id="whisperfish-session-note-to-self">
         <location filename="../qml/delegates/SessionDelegate.qml" line="233"/>
@@ -48,13 +48,13 @@
         <location filename="../qml/pages/ShareDestinationV2.qml" line="99"/>
         <source>Note to self</source>
         <extracomment>Name of the conversation with one&apos;s own number</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Заметкі</translation>
     </message>
     <message id="whisperfish-message-preview-draft">
         <location filename="../qml/delegates/SessionDelegate.qml" line="256"/>
         <source>Draft: %1</source>
         <extracomment>Message preview for a saved, unsent message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Чарнавік: %1</translation>
     </message>
     <message id="whisperfish-session-mark-unpinned">
         <location filename="../qml/delegates/SessionDelegate.qml" line="386"/>
