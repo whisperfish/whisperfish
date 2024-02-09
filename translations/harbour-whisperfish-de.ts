@@ -159,7 +159,7 @@
         <location filename="../qml/pages/MainPage.qml" line="265"/>
         <source>Start a new conversation through a linked device, or let someone message you</source>
         <extracomment>No messages found, hint on what to do</extracomment>
-        <translation type="unfinished">Starten Sie ein neues Gespräch über ein verlinktes Gerät oder lassen Sie jemanden, Ihnen eine Nachricht senden</translation>
+        <translation>Starte ein neues Gespräch über ein verlinktes Gerät, oder erlaube jemandem, dir eine Nachricht zu senden</translation>
     </message>
     <message id="whisperfish-no-archived-messages-hint-text">
         <location filename="../qml/pages/MainPage.qml" line="275"/>
@@ -222,7 +222,7 @@
         <source>Whisperfish is an unofficial, but advanced Signal client for Sailfish OS. Whisperfish is highly usable, but is still considered beta quality software. Make sure to update regularily! Also, check our Wiki and feel free to contribute to it! Do not ever contact the Signal developers about a Whisperfish issue, contact us instead!</source>
         <oldsource>Whisperfish is an unofficial, but advanced Signal client for Sailfish OS. Whisperfish is highly usable, but is still considered beta quality software. Make sure to update regularily! Also, check our Wiki and feel free to contribute to it! Do not ever contact the Signal developers about a Whisperfish issue, contact us instead!.</oldsource>
         <extracomment>Whisperfish description, longer version, also for Jolla Store</extracomment>
-        <translation type="unfinished">Whisperfish ist ein inoffizieller, aber fortschrittlicher Signal-Client für Sailfish OS. Whisperfish ist sehr brauchbar, wird aber noch als Beta-Software betrachtet. Stellen Sie sicher, dass Sie regelmäßig aktualisieren! Besuchen Sie auch unser Wiki und tragen Sie gerne dazu bei! Wenden Sie sich niemals an die Signal-Entwickler, wenn Sie ein Problem mit Whisperfish haben, sondern an uns!</translation>
+        <translation>Whisperfish ist ein inoffizieller, aber fortschrittlicher Signal-Client für Sailfish OS. Whisperfish ist sehr brauchbar, wird aber noch als Beta-Software betrachtet. Aktualisiere ihn regelmäßig! Besuche auch unser Wiki, und ergänze es! Solltest du ein Problem mit Whiperfish haben, kontaktiere nie die Signal-Entwickler selbst, sondern uns!</translation>
     </message>
     <message id="whisperfish-build-id">
         <location filename="../qml/pages/About.qml" line="78"/>
@@ -336,49 +336,49 @@
         <location filename="../qml/pages/About.qml" line="465"/>
         <source>Catalan translators</source>
         <extracomment>Catalan (ca) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Übersetzer für Katalan</translation>
     </message>
     <message id="whisperfish-translators-ru">
         <location filename="../qml/pages/About.qml" line="481"/>
         <source>Russian translators</source>
         <extracomment>Russian (ru) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Übersetzer für Russisch</translation>
     </message>
     <message id="whisperfish-translators-pt_BR">
         <location filename="../qml/pages/About.qml" line="498"/>
         <source>Portuguese (Brazil) translators</source>
         <extracomment>Portuguese (Brazil) (pt_BR) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Übersetzer für Portugiesisch (Brasilien)</translation>
     </message>
     <message id="whisperfish-translators-ro">
         <location filename="../qml/pages/About.qml" line="515"/>
         <source>Romanian translators</source>
         <extracomment>Romanian (ro) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Übersetzer für Rumänisch</translation>
     </message>
     <message id="whisperfish-translators-tr">
         <location filename="../qml/pages/About.qml" line="531"/>
         <source>Turkish translators</source>
         <extracomment>Turkish (tr) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Übersetzer für Türkisch</translation>
     </message>
     <message id="whisperfish-translators-el">
         <location filename="../qml/pages/About.qml" line="547"/>
         <source>Greek translators</source>
         <extracomment>Greek (el) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Übersetzer für Griechisch</translation>
     </message>
     <message id="whisperfish-translators-eu">
         <location filename="../qml/pages/About.qml" line="564"/>
         <source>Basque translators</source>
         <extracomment>Basque (eu) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Übersetzer für Baskisch</translation>
     </message>
     <message id="whisperfish-translators-es">
         <location filename="../qml/pages/About.qml" line="580"/>
         <source>Spanish translators</source>
         <extracomment>Spanish (es) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Übersetzer für Spanisch</translation>
     </message>
     <message id="whisperfish-liberapay">
         <location filename="../qml/pages/About.qml" line="89"/>
@@ -427,7 +427,7 @@
         <location filename="../qml/pages/AddDevice.qml" line="82"/>
         <source>Scan the QR code displayed by the Signal application that you wish to link</source>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Scanne den QR-Code, der von der Signal-Anwendung angezeigt wird, die du verknüpfen möchtest</translation>
     </message>
     <message id="whisperfish-device-url">
         <location filename="../qml/pages/OldAddDevice.qml" line="43"/>
@@ -567,9 +567,9 @@
         <location filename="../qml/components/MessagesView.qml" line="178"/>
         <source>Deleted %n message(s) for everyone</source>
         <extracomment>Remorse: *globally* deleted one or multiple message (past tense)</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n Nachricht für alle gelöscht</numerusform>
+            <numerusform>%n Nachrichten für alle gelöscht</numerusform>
         </translation>
     </message>
     <message id="whisperfish-copy-message-menu">
@@ -666,7 +666,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="111"/>
         <source>The recipient is not currently registered to Signal, so sending and receiving messages is not possible.</source>
         <extracomment>Profile page, user is not registered warning</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Der Empfänger ist derzeit nicht bei Signal registriert, das Senden und Empfangen von Nachrichten ist daher nicht möglich.</translation>
     </message>
     <message id="whisperfish-profile-joined-name">
         <location filename="../qml/pages/ProfilePage.qml" line="197"/>
@@ -720,28 +720,28 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="176"/>
         <source>Unknown</source>
         <extracomment>Profile, sealed sending mode, unknown option</extracomment>
-        <translation type="unfinished">Unbekannt</translation>
+        <translation>Unbekannt</translation>
     </message>
     <message id="whisperfish-unidentified-disabled">
         <location filename="../qml/pages/ProfilePage.qml" line="295"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="180"/>
         <source>Disabled</source>
         <extracomment>Profile, sealed sending mode, disabled option</extracomment>
-        <translation type="unfinished">Deaktiviert</translation>
+        <translation>Deaktiviert</translation>
     </message>
     <message id="whisperfish-unidentified-enabled">
         <location filename="../qml/pages/ProfilePage.qml" line="300"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="184"/>
         <source>Enabled</source>
         <extracomment>Profile, sealed sending mode, enabled option</extracomment>
-        <translation type="unfinished">Aktiviert</translation>
+        <translation>Aktiviert</translation>
     </message>
     <message id="whisperfish-unidentified-unrestricted">
         <location filename="../qml/pages/ProfilePage.qml" line="305"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="188"/>
         <source>Unrestricted</source>
         <extracomment>Profile, sealed sending mode, unrestricted option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Unbeschränkt</translation>
     </message>
     <message id="whisperfish-profile-emoji">
         <location filename="../qml/pages/ProfilePage.qml" line="320"/>
@@ -765,19 +765,19 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="255"/>
         <source>Post-quantum keys in use</source>
         <extracomment>Profile page: whether a contact has post-quantum secure sessions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Post-Quanten-Schlüssel im Einsatz</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled-description">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="258"/>
         <source>If checked, this session was initialized with post-quantum secure cryptography.</source>
         <extracomment>Profile page: description for post-quantum secure sessions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Wenn aktiv, wurde diese Sitzung mittels Post-Quanten-Kryptographie gestartet.</translation>
     </message>
     <message id="whisperfish-kyber-click-explanation">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="268"/>
         <source>Session reset for post-quantum upgrade</source>
         <extracomment>Upgrading the session to Kyber remorse popup, past tense</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sitzung für ein Post-Quanten-Upgrade zurücksetzen</translation>
     </message>
     <message id="whisperfish-own-profile-help-text">
         <location filename="../qml/pages/ProfilePage.qml" line="336"/>
@@ -1325,55 +1325,55 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="93"/>
         <source>Notification privacy</source>
         <extracomment>Settings page notification privacy</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Privatsphäre von Benachrichtigungen</translation>
     </message>
     <message id="whisperfish-settings-notifications-disable">
         <location filename="../qml/pages/Settings.qml" line="104"/>
         <source>Disable notifications</source>
         <extracomment>Settings page, turn notifications off</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Keine Benachrichtigungen</translation>
     </message>
     <message id="whisperfish-settings-notifications-disable-description">
         <location filename="../qml/pages/Settings.qml" line="107"/>
         <source>Whisperfish will not display any notification</source>
         <extracomment>Settings page, turn notifications off description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Whisperfish zeigt keine Benachrichtigungen an</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimal">
         <location filename="../qml/pages/Settings.qml" line="113"/>
         <source>Minimal notifications</source>
         <extracomment>Settings page, minimal notifications</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Minimale Benachrichtigungen</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimal-description">
         <location filename="../qml/pages/Settings.qml" line="116"/>
         <source>Notification without disclosing the sender or content of the message</source>
         <extracomment>Settings page, minimal notifications description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Benachrichtigungen ohne Absender oder Inhalt der Nachricht anzuzeigen</translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only">
         <location filename="../qml/pages/Settings.qml" line="122"/>
         <source>Sender-only notifications</source>
         <extracomment>Settings page, sender-only notifications</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nur-Absender Benachrichtigung</translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only-description">
         <location filename="../qml/pages/Settings.qml" line="125"/>
         <source>Notifications displaying the sender of a message, without the contents</source>
         <extracomment>Settings page, sender-only notifications description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Benachrichtigungen zeigen den Absender, aber nicht den Inhalt der Nachricht an</translation>
     </message>
     <message id="whisperfish-settings-notifications-complete">
         <location filename="../qml/pages/Settings.qml" line="131"/>
         <source>Complete notifications</source>
         <extracomment>Settings page, complete notifications</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Vollständige Benachrichtigungen</translation>
     </message>
     <message id="whisperfish-settings-notifications-complete-description">
         <location filename="../qml/pages/Settings.qml" line="134"/>
         <source>Notifications displaying the contents and sender of a message</source>
         <extracomment>Settings page, sender-only notifications description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Benachrichtigungen zeigen sowohl Inhalt als auch Absender einer Nachricht an</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimise">
         <location filename="../qml/pages/Settings.qml" line="152"/>
@@ -1403,13 +1403,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="272"/>
         <source>Show phone number</source>
         <extracomment>Settings page, show recipient phone number in conversation view</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Telefonnummer anzeigen</translation>
     </message>
     <message id="whisperfish-settings-show-phone-number-description">
         <location filename="../qml/pages/Settings.qml" line="275"/>
         <source>Show the phone number of the recipient in the conversation page header.</source>
         <extracomment>Settings page, show recipient phone number in conversation view description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Telefonnummer des Empfängers in der Kopfzeile der Nachrichtenseite anzeigen</translation>
     </message>
     <message id="whisperfish-settings-enable-autostart-description">
         <location filename="../qml/pages/Settings.qml" line="323"/>
@@ -1480,27 +1480,27 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="468"/>
         <source>Verbose logging</source>
         <extracomment>Settings page enable verbose logging</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Detaillierte Protokollierung</translation>
     </message>
     <message id="whisperfish-settings-enable-verbose-description">
         <location filename="../qml/pages/Settings.qml" line="471"/>
         <source>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a restart to take effect.</source>
         <oldsource>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a reboot to take effect.</oldsource>
         <extracomment>Settings page enable verbose logging description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Wenn aktiviert gibt Whisperfish detaillierte Protokolle aus. Nützlich beim Ausführen im Terminal. Wird nach einem Neustart wirksam.</translation>
     </message>
     <message id="whisperfish-settings-logfile-autostart">
         <location filename="../qml/pages/Settings.qml" line="485"/>
         <source>Enable log file</source>
         <extracomment>Settings page enable logging to a file</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Protokolldatei aktivieren</translation>
     </message>
     <message id="whisperfish-settings-enable-logfile-description">
         <location filename="../qml/pages/Settings.qml" line="488"/>
         <source>When enabled, Whisperfish saves its output to a log file. Requires a restart to take effect.</source>
         <oldsource>When enabled, Whisperfish saves its output to a log file. Requires a reboot to take effect.</oldsource>
         <extracomment>Settings page enable logfile description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Wenn aktiviert speichert Whisperfish seine Ausgaben in einer Protokolldatei. Wird nach einem Neustart wirksam.</translation>
     </message>
     <message id="whisperfish-settings-compress-db">
         <location filename="../qml/pages/Settings.qml" line="504"/>
@@ -1513,7 +1513,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="516"/>
         <source>Test captcha</source>
         <extracomment>Settings page, test captcha button</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Captcha testen</translation>
     </message>
     <message id="whisperfish-settings-stats-section">
         <location filename="../qml/pages/Settings.qml" line="527"/>
@@ -1658,19 +1658,19 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="71"/>
         <source>Set message expiry</source>
         <extracomment>Save the new value of expiring messages timeout</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ablaufzeit für Nachrichten</translation>
     </message>
     <message id="whisperfish-group-member-admin">
         <location filename="../qml/pages/GroupProfilePage.qml" line="215"/>
         <source>Administrator</source>
         <extracomment>Group member section label for administrator level user</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Administrator</translation>
     </message>
     <message id="whisperfish-group-member-regular">
         <location filename="../qml/pages/GroupProfilePage.qml" line="218"/>
         <source>Member</source>
         <extracomment>Group member section label for regular level user</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mitglied</translation>
     </message>
     <message id="whisperfish-group-member-menu-open-note-to-self">
         <location filename="../qml/pages/GroupProfilePage.qml" line="259"/>
@@ -1755,7 +1755,7 @@ Settings page share contacts</extracomment>
         <source>Signal should have called you with a 6-digit verification code. Please wait a moment, or restart the process if you have not received a call.</source>
         <oldsource>Signal should have called you with a a 6-digit verification code. Please wait a moment, or restart the process if you have not received a call.</oldsource>
         <extracomment>verify registration instructions: voice</extracomment>
-        <translation type="unfinished">Signal sollte dich mit einem 6-stelligen Prüfcode angerufen haben. Bitte warte einen Moment oder starte den Vorgang erneut, wenn du keinen Anruf erhalten hast.</translation>
+        <translation>Signal sollte dich mit einem 6-stelligen Prüfcode angerufen haben. Bitte warte einen Moment oder starte den Vorgang erneut, wenn du keinen Anruf erhalten hast.</translation>
     </message>
     <message id="whisperfish-verify-instructions-sms">
         <location filename="../qml/pages/VerifyRegistrationPage.qml" line="27"/>
@@ -1800,7 +1800,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ChatTextInput.qml" line="210"/>
         <source>The recipient is not registered</source>
         <extracomment>Chat text input placeholder for deleted/unregistered recipient</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Der Empfänger ist nicht registriert</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-personal">
         <location filename="../qml/components/ChatTextInput.qml" line="215"/>
@@ -1876,7 +1876,7 @@ Settings page share contacts</extracomment>
         <source>Voice Message</source>
         <oldsource>Voice note</oldsource>
         <extracomment>Page header subtitle for a voice note</extracomment>
-        <translation type="unfinished">Sprachnachricht</translation>
+        <translation>Sprachnachricht</translation>
     </message>
     <message id="whisperfish-quoted-message-preview-attachment">
         <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="74"/>
@@ -1897,7 +1897,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/SessionDelegate.qml" line="52"/>
         <source>this message was deleted</source>
         <extracomment>Placeholder note for a deleted message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Diese Nachricht wurde gelöscht</translation>
     </message>
     <message id="whisperfish-message-empty-note">
         <location filename="../qml/delegates/MessageDelegate.qml" line="252"/>
@@ -2022,7 +2022,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ViewImagePage.qml" line="66"/>
         <source>Export image</source>
         <extracomment>Copy the attachment image out of Whisperfish</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Bild exportieren</translation>
     </message>
     <message id="whisperfish-view-image-page-loading">
         <location filename="../qml/pages/ViewImagePage.qml" line="268"/>
@@ -2040,7 +2040,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ViewVideoPage.qml" line="57"/>
         <source>Export video</source>
         <extracomment>Copy the attachment video out of Whisperfish</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Video exportieren</translation>
     </message>
     <message id="whisperfish-view-video-page-error">
         <location filename="../qml/pages/ViewVideoPage.qml" line="124"/>
@@ -2061,9 +2061,9 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="88"/>
         <source>%n message(s)</source>
         <extracomment>The number of messages in a conversation, displayed in page header</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n Nachricht</numerusform>
+            <numerusform>%n Nachrichten</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-actions-info-label" numerus="yes">
@@ -2219,7 +2219,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/TestCaptchaPage.qml" line="15"/>
         <source>Captcha Test</source>
         <extracomment>Captcha test page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Captchatest</translation>
     </message>
     <message id="whisperfish-captcha-test-message">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="19"/>
@@ -2227,32 +2227,32 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/TestCaptchaPage.qml" line="84"/>
         <source>You can use this page to test the Whisperfish captcha challenge integration</source>
         <extracomment>Captcha test page description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Teste die Whisperfish Captcha-Challenge Integration auf dieser Seite</translation>
     </message>
     <message id="whisperfish-captcha-test-success">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="56"/>
         <source>Captcha token received!</source>
         <extracomment>Captcha test successful message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Captcha Token erhalten</translation>
     </message>
     <message id="whisperfish-start-test-button-label">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="80"/>
         <source>Start</source>
         <extracomment>continue button label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Start</translation>
     </message>
     <message id="whisperfish-captcha-test-started">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="87"/>
         <source>Test started...</source>
         <extracomment>Captcha test has been started message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Test gestartet...</translation>
     </message>
     <message id="whisperfish-export-file-menu">
         <location filename="../qml/pages/ViewAudioPage.qml" line="28"/>
         <location filename="../qml/pages/ViewFilePage.qml" line="28"/>
         <source>Export file</source>
         <extracomment>Copy the attachment file out of Whisperfish</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Datei exportieren</translation>
     </message>
     <message id="whisperfish-disappearing-messages-setting">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="62"/>
