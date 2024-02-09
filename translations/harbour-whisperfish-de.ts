@@ -92,7 +92,7 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="412"/>
         <source>Archive conversation</source>
         <extracomment>Move the conversation to archived conversations</extracomment>
-        <translation>Konversation archivieren</translation>
+        <translation>Unterhaltung archivieren</translation>
     </message>
     <message id="whisperfish-session-delete">
         <location filename="../qml/delegates/SessionDelegate.qml" line="419"/>
@@ -135,31 +135,31 @@
         <location filename="../qml/pages/MainPage.qml" line="99"/>
         <source>Show archived conversations</source>
         <extracomment>Menu item for showing archived conversations</extracomment>
-        <translation>Archivierte Konversationen anzeigen</translation>
+        <translation>Archivierte Unterhaltungen anzeigen</translation>
     </message>
     <message id="whisperfish-show-inbox-menu">
         <location filename="../qml/pages/MainPage.qml" line="102"/>
         <source>Return to conversations</source>
         <extracomment>Menu item for returning to &quot;inbox&quot; from archived sessions</extracomment>
-        <translation>Zurück zu den Gesprächen</translation>
+        <translation>Zurück zu den Unterhaltungen</translation>
     </message>
     <message id="whisperfish-subtitle-active-conversations">
         <location filename="../qml/pages/MainPage.qml" line="239"/>
         <source>Conversations</source>
         <extracomment>Whisperfish subtitle for active conversations aka. &quot;inbox&quot;</extracomment>
-        <translation>Konversationen</translation>
+        <translation>Unterhaltungen</translation>
     </message>
     <message id="whisperfish-subtitle-archived-conversations">
         <location filename="../qml/pages/MainPage.qml" line="242"/>
         <source>Archived conversations</source>
         <extracomment>Whisperfish subtitle for archived conversations</extracomment>
-        <translation>Archivierte Konversationen</translation>
+        <translation>Archivierte Unterhaltungen</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text-237">
         <location filename="../qml/pages/MainPage.qml" line="265"/>
         <source>Start a new conversation through a linked device, or let someone message you</source>
         <extracomment>No messages found, hint on what to do</extracomment>
-        <translation>Starte ein neues Gespräch über ein verlinktes Gerät, oder erlaube jemandem, dir eine Nachricht zu senden</translation>
+        <translation>Starte eine neue Unterhaltung über ein verlinktes Gerät, oder erlaube jemandem, dir eine Nachricht zu senden</translation>
     </message>
     <message id="whisperfish-no-archived-messages-hint-text">
         <location filename="../qml/pages/MainPage.qml" line="275"/>
@@ -246,91 +246,91 @@
         <location filename="../qml/pages/About.qml" line="184"/>
         <source>Norwegian Bokmål translators</source>
         <extracomment>Norwegian Bokmål (nb_NO) language about page translation section</extracomment>
-        <translation>Norwegisch Bokmål Übesetzer</translation>
+        <translation>Übersetzer für Norwegisch Bokmål</translation>
     </message>
     <message id="whisperfish-translators-nl_BE">
         <location filename="../qml/pages/About.qml" line="200"/>
         <source>Dutch (Belgium) translators</source>
         <extracomment>Dutch (Belgium) (nl_BE) language about page translation section</extracomment>
-        <translation>Niederländische (Belgien) Übersetzer</translation>
+        <translation>Übersetzer ins Niederländische (Belgien)</translation>
     </message>
     <message id="whisperfish-translators-lt">
         <location filename="../qml/pages/About.qml" line="220"/>
         <source>Lithuanian translators</source>
         <extracomment>Lithuanian (lt) language about page translation section</extracomment>
-        <translation>Litauische Übersetzer</translation>
+        <translation>Übersetzer ins Litauische</translation>
     </message>
     <message id="whisperfish-translators-nl">
         <location filename="../qml/pages/About.qml" line="236"/>
         <source>Dutch translators</source>
         <extracomment>Dutch (nl) language about page translation section</extracomment>
-        <translation>Niederländische Übersetzer</translation>
+        <translation>Übersetzer ins Niederländische</translation>
     </message>
     <message id="whisperfish-translators-it">
         <location filename="../qml/pages/About.qml" line="256"/>
         <source>Italian translators</source>
         <extracomment>Italian (it) language about page translation section</extracomment>
-        <translation>Italienische Übersetzer</translation>
+        <translation>Übersetzer ins Italienische</translation>
     </message>
     <message id="whisperfish-translators-de">
         <location filename="../qml/pages/About.qml" line="273"/>
         <source>German translators</source>
         <extracomment>German (de) language about page translation section</extracomment>
-        <translation>Deutsche Übersetzer/innen</translation>
+        <translation>Übersetzer ins Deutsche</translation>
     </message>
     <message id="whisperfish-translators-fr">
         <location filename="../qml/pages/About.qml" line="297"/>
         <source>French translators</source>
         <extracomment>French (fr) language about page translation section</extracomment>
-        <translation>Französischübersetzer</translation>
+        <translation>Übersetzer ins Französische</translation>
     </message>
     <message id="whisperfish-translators-fi">
         <location filename="../qml/pages/About.qml" line="317"/>
         <source>Finnish translators</source>
         <extracomment>Finnish (fi) language about page translation section</extracomment>
-        <translation>Finnischübersetzer</translation>
+        <translation>Übersetzer ins Finnische</translation>
     </message>
     <message id="whisperfish-translators-sl">
         <location filename="../qml/pages/About.qml" line="338"/>
         <source>Slovenian translators</source>
         <extracomment>Slovenian (sl) language about page translation section</extracomment>
-        <translation>Slowenischübersetzer</translation>
+        <translation>Übersetzer ins Slowenische</translation>
     </message>
     <message id="whisperfish-translators-sv">
         <location filename="../qml/pages/About.qml" line="354"/>
         <source>Swedish translators</source>
         <extracomment>Swedish (sv) language about page translation section</extracomment>
-        <translation>Schwedischübersetzer</translation>
+        <translation>Übersetzer ins Schwedische</translation>
     </message>
     <message id="whisperfish-translators-pl">
         <location filename="../qml/pages/About.qml" line="374"/>
         <source>Polish translators</source>
         <extracomment>Polish (pl) language about page translation section</extracomment>
-        <translation>Polnischübersetzer</translation>
+        <translation>Übersetzer ins Polnische</translation>
     </message>
     <message id="whisperfish-translators-zh_CN">
         <location filename="../qml/pages/About.qml" line="394"/>
         <source>Chinese (Simplified) translators</source>
         <extracomment>Chinese (Simplified) (zh_CN) language about page translation section</extracomment>
-        <translation>Chinesisch Übersetzer</translation>
+        <translation>Übersetzer ins Chinesische</translation>
     </message>
     <message id="whisperfish-translators-hu">
         <location filename="../qml/pages/About.qml" line="413"/>
         <source>Hungarian translators</source>
         <extracomment>Hungarian (hu) language about page translation section</extracomment>
-        <translation>Ungarisch Übersetzer</translation>
+        <translation>Übersetzer ins Ungarische</translation>
     </message>
     <message id="whisperfish-translators-pt_PT">
         <location filename="../qml/pages/About.qml" line="431"/>
         <source>Portuguese (Portugal) translators</source>
         <extracomment>Portuguese (Portugal) (pt_PT) language about page translation section</extracomment>
-        <translation>Portugiesisch Übersetzer</translation>
+        <translation>Übersetzer ins Portugiesische</translation>
     </message>
     <message id="whisperfish-translators-cs">
         <location filename="../qml/pages/About.qml" line="450"/>
         <source>Czech translators</source>
         <extracomment>Czech (cs) language about page translation section</extracomment>
-        <translation>Tschechisch Übersetzer</translation>
+        <translation>Übersetzer ins Tschechische</translation>
     </message>
     <message id="whisperfish-translators-ca">
         <location filename="../qml/pages/About.qml" line="466"/>
@@ -342,43 +342,43 @@
         <location filename="../qml/pages/About.qml" line="482"/>
         <source>Russian translators</source>
         <extracomment>Russian (ru) language about page translation section</extracomment>
-        <translation>Übersetzer für Russisch</translation>
+        <translation>Übersetzer ins Russische</translation>
     </message>
     <message id="whisperfish-translators-pt_BR">
         <location filename="../qml/pages/About.qml" line="499"/>
         <source>Portuguese (Brazil) translators</source>
         <extracomment>Portuguese (Brazil) (pt_BR) language about page translation section</extracomment>
-        <translation>Übersetzer für Portugiesisch (Brasilien)</translation>
+        <translation>Übersetzer ins Portugiesische (Brasilien)</translation>
     </message>
     <message id="whisperfish-translators-ro">
         <location filename="../qml/pages/About.qml" line="516"/>
         <source>Romanian translators</source>
         <extracomment>Romanian (ro) language about page translation section</extracomment>
-        <translation>Übersetzer für Rumänisch</translation>
+        <translation>Übersetzer ins Rumänische</translation>
     </message>
     <message id="whisperfish-translators-tr">
         <location filename="../qml/pages/About.qml" line="532"/>
         <source>Turkish translators</source>
         <extracomment>Turkish (tr) language about page translation section</extracomment>
-        <translation>Übersetzer für Türkisch</translation>
+        <translation>Übersetzer ins Türkische</translation>
     </message>
     <message id="whisperfish-translators-el">
         <location filename="../qml/pages/About.qml" line="548"/>
         <source>Greek translators</source>
         <extracomment>Greek (el) language about page translation section</extracomment>
-        <translation>Übersetzer für Griechisch</translation>
+        <translation>Übersetzer ins Griechische</translation>
     </message>
     <message id="whisperfish-translators-eu">
         <location filename="../qml/pages/About.qml" line="565"/>
         <source>Basque translators</source>
         <extracomment>Basque (eu) language about page translation section</extracomment>
-        <translation>Übersetzer für Baskisch</translation>
+        <translation>Übersetzer ins Baskische</translation>
     </message>
     <message id="whisperfish-translators-es">
         <location filename="../qml/pages/About.qml" line="581"/>
         <source>Spanish translators</source>
         <extracomment>Spanish (es) language about page translation section</extracomment>
-        <translation>Übersetzer für Spanisch</translation>
+        <translation>Übersetzer ins Spanische</translation>
     </message>
     <message id="whisperfish-liberapay">
         <location filename="../qml/pages/About.qml" line="89"/>
@@ -427,7 +427,7 @@
         <location filename="../qml/pages/AddDevice.qml" line="82"/>
         <source>Scan the QR code displayed by the Signal application that you wish to link</source>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
-        <translation>Scanne den QR-Code, der von der Signal-Anwendung angezeigt wird, die du verknüpfen möchtest</translation>
+        <translation>Scanne den QR-Code der von der Signal-Anwendung angezeigt wird, die du verknüpfen möchtest</translation>
     </message>
     <message id="whisperfish-device-url">
         <location filename="../qml/pages/OldAddDevice.qml" line="43"/>
@@ -469,7 +469,7 @@
         <source>Unlinked</source>
         <oldsource>Unlinking</oldsource>
         <extracomment>Unlinking remorse info message for unlinking secondary devices (past tense)</extracomment>
-        <translation>Unverknüpft</translation>
+        <translation>Nicht verbunden</translation>
     </message>
     <message id="whisperfish-current-device-name">
         <location filename="../qml/pages/LinkedDevices.qml" line="77"/>
@@ -523,7 +523,7 @@
         <location filename="../qml/pages/MainPage.qml" line="33"/>
         <source>This Whisperfish release is more than 90 days old. Please check for an update in order to keep Whisperfish running smoothly.</source>
         <extracomment>About whisperfish menu item</extracomment>
-        <translation>Diese Whisperfish-Version ist mehr als 90 Tage alt. Bitte prüfen Sie, ob ein Update verfügbar ist, damit Whisperfish weiterhin reibungslos funktioniert.</translation>
+        <translation>Diese Whisperfish-Version ist mehr als 90 Tage alt. Bitte schau nach, ob ein Update verfügbar ist, damit Whisperfish weiterhin reibungslos funktioniert.</translation>
     </message>
     <message id="whisperfish-settings-menu">
         <location filename="../qml/pages/MainPage.qml" line="69"/>
@@ -666,7 +666,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="111"/>
         <source>The recipient is not currently registered to Signal, so sending and receiving messages is not possible.</source>
         <extracomment>Profile page, user is not registered warning</extracomment>
-        <translation>Der Empfänger ist derzeit nicht bei Signal registriert, das Senden und Empfangen von Nachrichten ist daher nicht möglich.</translation>
+        <translation>Der Empfänger ist derzeit nicht bei Signal registriert, es ist kein Senden oder Empfangen von Nachrichten möglich.</translation>
     </message>
     <message id="whisperfish-profile-joined-name">
         <location filename="../qml/pages/ProfilePage.qml" line="197"/>
@@ -713,7 +713,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="170"/>
         <source>Sealed sending mode</source>
         <extracomment>Profile, sealed sending mode option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Versteckter-Absender-Modus</translation>
     </message>
     <message id="whisperfish-unidentified-unknown">
         <location filename="../qml/pages/ProfilePage.qml" line="290"/>
@@ -747,7 +747,7 @@
         <location filename="../qml/pages/ProfilePage.qml" line="320"/>
         <source>A few words about yourself</source>
         <extracomment>Profile, emoji symbol field</extracomment>
-        <translation>Ein paar Worte zu deiner Person</translation>
+        <translation>Ein paar Worte über dich</translation>
     </message>
     <message id="whisperfish-show-fingerprint">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="202"/>
@@ -783,7 +783,7 @@
         <location filename="../qml/pages/ProfilePage.qml" line="336"/>
         <source>Your profile is encrypted. Your profile and changes to it will be visible to your contacts and when you start or accept new chats.</source>
         <extracomment>Signal Profile description / help text</extracomment>
-        <translation>Dein Profil ist verschlüsselt. Dein Profil und Änderungen daran sind für deine Kontakte sichtbar und wenn du neue Unterhaltungen beginnst oder annimmst.</translation>
+        <translation>Dein Profil ist verschlüsselt. Dein Profil (und Änderungen daran) sind für deine Kontakte sichtbar sobald du neue Unterhaltungen beginnst oder annimmst.</translation>
     </message>
     <message id="whisperfish-own-profile-learn-more-button">
         <location filename="../qml/pages/ProfilePage.qml" line="343"/>
@@ -855,7 +855,7 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <location filename="../qml/pages/NewGroup.qml" line="112"/>
         <source>Please name the group</source>
         <extracomment>Invalid group name error</extracomment>
-        <translation>Bitte benenne die Gruppe</translation>
+        <translation>Bitte gib der Gruppe einen Namen</translation>
     </message>
     <message id="whisperfish-error-invalid-group-members">
         <location filename="../qml/pages/NewGroup.qml" line="108"/>
@@ -886,7 +886,7 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <location filename="../qml/pages/SetupPasswordPage.qml" line="104"/>
         <source>Password is too short</source>
         <extracomment>Password label when too short</extracomment>
-        <translation>Passwort ist zu kurz</translation>
+        <translation>Das Passwort ist zu kurz</translation>
     </message>
     <message id="whisperfish-password-label">
         <location filename="../qml/pages/SetupPasswordPage.qml" line="76"/>
@@ -954,7 +954,7 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <location filename="../qml/pages/RegisterSecondaryPage.qml" line="19"/>
         <source>Please scan the QR code below using the Signal app.</source>
         <extracomment>User instructions</extracomment>
-        <translation>Bitte scannen Sie den unten stehenden QR-Code mit der Signal-App.</translation>
+        <translation>Bitte scanne den untenstehenden QR-Code mit der Signal-App.</translation>
     </message>
     <message id="whisperfish-fatal-error-msg-not-registered">
         <location filename="../qml/pages/RegisterSecondaryPage.qml" line="35"/>
@@ -1091,14 +1091,14 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ProofSubmitPage.qml" line="42"/>
         <source>Signal has requested additional capcha from you. Continue the captcha in order to restore ability to send messages.</source>
         <extracomment>Signal has requested additional captcha description</extracomment>
-        <translation>Signal hat ein zusätzliches Capcha von Ihnen angefordert. Setzen Sie das Captcha fort, um die Fähigkeit zum Senden von Nachrichten wiederherzustellen.</translation>
+        <translation>Signal hat ein zusätzliches Capcha angefordert. Löse dieses Captcha, um wieder Nachrichten senden zu können.</translation>
     </message>
     <message id="whisperfish-captcha-requested-try-again">
         <location filename="../qml/pages/ProofSubmitPage.qml" line="45"/>
         <source>The captcha response wasn&apos;t accepted, please try again.</source>
         <oldsource>The reCaptcha wasn&apos;t accepted, please try again.</oldsource>
         <extracomment>Rate limit captcha has to be tried again</extracomment>
-        <translation>Die Captcha-Antwort wurde nicht akzeptiert, bitte versuchen Sie es erneut.</translation>
+        <translation>Die Captcha-Antwort wurde nicht akzeptiert, bitte nochmal versuchen.</translation>
     </message>
     <message id="whisperfish-done-button-label">
         <location filename="../qml/pages/ProofSubmitPage.qml" line="97"/>
@@ -1421,7 +1421,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="386"/>
         <source>Whisperfish does not have the permission to change the autostart settings. You can enable or disable autostart manually from the command line by running &apos;systemctl --user enable harbour-whisperfish.service&apos; or &apos;systemctl --user disable harbour-whisperfish.service&apos;</source>
         <extracomment>Settings page info how to enable autostart manually</extracomment>
-        <translation>Whisperfish hat nicht die Berechtigung, die Autostart-Einstellungen zu ändern. Sie können den Autostart manuell über die Kommandozeile aktivieren oder deaktivieren, indem Sie systemctl --user enable harbour-whisperfish.service oder systemctl --user disable harbour-whisperfish.service ausführen</translation>
+        <translation>Whisperfish hat nicht die Berechtigung, die Autostart-Einstellungen zu ändern. Du kannst das automatische Starten manuell über die Kommandozeile aktivieren oder deaktivieren, indem du &apos;systemctl --user enable harbour-whisperfish.service&apos; oder &apos;systemctl --user disable harbour-whisperfish.service&apos; ausführst</translation>
     </message>
     <message id="whisperfish-settings-quit-button">
         <location filename="../qml/pages/Settings.qml" line="414"/>
@@ -1767,7 +1767,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/VerifyRegistrationPage.qml" line="45"/>
         <source>Please retry with a valid code.</source>
         <extracomment>verification: prompt to retry with a new code</extracomment>
-        <translation>Wiederholen Sie den Vorgang mit einem gültigen Code.</translation>
+        <translation>Wiederhole den Vorgang mit einem gültigen Code.</translation>
     </message>
     <message id="whisperfish-verify-code-input-label">
         <location filename="../qml/pages/VerifyRegistrationPage.qml" line="86"/>
@@ -2158,7 +2158,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/SetupRegistrationTypePage.qml" line="19"/>
         <source>Do you want to register whisperfish as primariy device or link it as secondary device to an existing signal app?</source>
         <extracomment>registration type prompt text</extracomment>
-        <translation>Wollen Sie Whisperfish als primäres Gerät registrieren oder es als sekundäres Gerät mit einer bestehenden Signal-App verknüpfen?</translation>
+        <translation>Willst du Whisperfish als primäres Gerät registrieren oder als sekundäres Gerät mit einer bestehenden Signal-App verknüpfen?</translation>
     </message>
     <message id="whisperfish-register-primary-button-label">
         <location filename="../qml/pages/SetupRegistrationTypePage.qml" line="50"/>
@@ -2219,7 +2219,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/TestCaptchaPage.qml" line="15"/>
         <source>Captcha Test</source>
         <extracomment>Captcha test page title</extracomment>
-        <translation>Captchatest</translation>
+        <translation>Captcha-Test</translation>
     </message>
     <message id="whisperfish-captcha-test-message">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="19"/>
@@ -2233,7 +2233,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/TestCaptchaPage.qml" line="56"/>
         <source>Captcha token received!</source>
         <extracomment>Captcha test successful message</extracomment>
-        <translation>Captcha Token erhalten</translation>
+        <translation>Captcha-Token erhalten!</translation>
     </message>
     <message id="whisperfish-start-test-button-label">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="80"/>
