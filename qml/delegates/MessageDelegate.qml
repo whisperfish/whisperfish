@@ -204,22 +204,28 @@ ListItem {
 
         Item { width: 1; height: showSender ? senderNameLabel.backgroundGrow+Theme.paddingSmall : 0 }
 
-        QuotedMessagePreview {
+        Loader {
             id: quoteItem
-            visible: showQuotedMessage
-            width: delegateContentWidth
-            maximumWidth: maxMessageWidth
-            showCloseButton: false
-            showBackground: true
-            highlighted: down || root.highlighted
-            messageId: modelData.quotedMessageId ? modelData.quotedMessageId : -1
-            backgroundItem.roundedCorners: backgroundItem.bottomLeft |
-                                           backgroundItem.bottomRight |
-                                           (isOutbound ? backgroundItem.topRight :
-                                                       backgroundItem.topLeft)
-            onClicked: {
-                if (listView.isSelecting) root.clicked(mouse)
-                else quoteClickedSignal(index, messageData)
+            active: showQuotedMessage
+            sourceComponent: Component {
+                QuotedMessagePreview {
+                    // id: quoteItem
+                    visible: showQuotedMessage
+                    width: delegateContentWidth
+                    maximumWidth: maxMessageWidth
+                    showCloseButton: false
+                    showBackground: true
+                    highlighted: down || root.highlighted
+                    messageId: modelData.quotedMessageId ? modelData.quotedMessageId : -1
+                    backgroundItem.roundedCorners: backgroundItem.bottomLeft |
+                                                   backgroundItem.bottomRight |
+                                                   (isOutbound ? backgroundItem.topRight :
+                                                               backgroundItem.topLeft)
+                    onClicked: {
+                        if (listView.isSelecting) root.clicked(mouse)
+                        else quoteClickedSignal(index, messageData)
+                    }
+                }
             }
         }
 
