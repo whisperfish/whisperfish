@@ -1794,7 +1794,7 @@ Settings page share contacts</extracomment>
         <source>Voice Message</source>
         <oldsource>Voice note</oldsource>
         <extracomment>Page header subtitle for a voice note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Галасавое паведамленне</translation>
     </message>
     <message id="whisperfish-quoted-message-preview-attachment">
         <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="74"/>
@@ -1802,7 +1802,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/QuotedMessagePreview.qml" line="140"/>
         <source>Attachment</source>
         <extracomment>Placeholder text if quoted message preview contains no text, only attachments</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Далучэнне</translation>
     </message>
     <message id="whisperfish-sender-label-empty">
         <location filename="../qml/delegates/MessageDelegate.qml" line="195"/>
