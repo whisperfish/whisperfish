@@ -110,26 +110,26 @@
         <location filename="../qml/harbour-whisperfish-main.qml" line="267"/>
         <source>Failed to setup Signal client</source>
         <extracomment>Failed to setup signal client error message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Configurarea clientului de Signal a eșuat</translation>
     </message>
     <message id="whisperfish-fatal-error-invalid-datastore">
         <location filename="../qml/harbour-whisperfish-main.qml" line="272"/>
         <source>Failed to setup data storage</source>
         <oldsource>Failed to setup datastore</oldsource>
         <extracomment>Failed to setup datastore error message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Configurarea stocării datelor a eșuat</translation>
     </message>
     <message id="permission-la-data">
         <location filename="../qml/harbour-whisperfish-main.qml" line="407"/>
         <source>Whisperfish data storage</source>
         <extracomment>Permission for Whisperfish data storage</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Stocarea datelor</translation>
     </message>
     <message id="permission-la-data_description">
         <location filename="../qml/harbour-whisperfish-main.qml" line="411"/>
         <source>Store configuration and messages</source>
         <extracomment>Permission description for Whisperfish data storage</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Salvează configurația și mesajele</translation>
     </message>
     <message id="whisperfish-show-archived-menu">
         <location filename="../qml/pages/MainPage.qml" line="99"/>
@@ -159,7 +159,7 @@
         <location filename="../qml/pages/MainPage.qml" line="265"/>
         <source>Start a new conversation through a linked device, or let someone message you</source>
         <extracomment>No messages found, hint on what to do</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Pornește o nouă conversație folosind un alt aparat asociat, sau permite să te contacteze cineva</translation>
     </message>
     <message id="whisperfish-no-archived-messages-hint-text">
         <location filename="../qml/pages/MainPage.qml" line="275"/>
@@ -427,7 +427,7 @@
         <location filename="../qml/pages/AddDevice.qml" line="82"/>
         <source>Scan the QR code displayed by the Signal application that you wish to link</source>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Scanează codul QR afișat cu o aplicație Signal pe care dorești să o asociezi</translation>
     </message>
     <message id="whisperfish-device-url">
         <location filename="../qml/pages/OldAddDevice.qml" line="43"/>
@@ -494,13 +494,13 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="148"/>
         <source>Unlink</source>
         <extracomment>Device unlink menu option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Șterge asocierea</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text">
         <location filename="../qml/pages/MainPage.qml" line="271"/>
         <source>Pull down to start a new conversation.</source>
         <extracomment>No messages found, hint on what to do</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Trage în jos pentru a începe o nouă conversație.</translation>
     </message>
     <message id="whisperfish-about-menu">
         <location filename="../qml/pages/MainPage.qml" line="63"/>
@@ -512,19 +512,19 @@
         <location filename="../qml/pages/MainPage.qml" line="29"/>
         <source>Please check for updates</source>
         <extracomment>Update notification title text</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Verifică actualizările te rog</translation>
     </message>
     <message id="whisperfish-update-reminder-body">
         <location filename="../qml/pages/MainPage.qml" line="33"/>
         <source>This Whisperfish release is more than 90 days old. Please check for an update in order to keep Whisperfish running smoothly.</source>
         <extracomment>About whisperfish menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Această versiune de Whisperfish este mai veche de 90 de zile. Te rog verifică dacă există o actualizare pentru a continua să folosești Whisperfish fără probleme.</translation>
     </message>
     <message id="whisperfish-settings-menu">
         <location filename="../qml/pages/MainPage.qml" line="69"/>
         <source>Settings</source>
         <extracomment>Whisperfish settings menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Setări</translation>
     </message>
     <message id="whisperfish-new-message-menu">
         <location filename="../qml/pages/MainPage.qml" line="120"/>
@@ -536,59 +536,59 @@
         <location filename="../qml/pages/MainPage.qml" line="255"/>
         <source>Registration required</source>
         <extracomment>Whisperfish registration required message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Este necesara înregistrarea</translation>
     </message>
     <message id="whisperfish-locked-message">
         <location filename="../qml/pages/MainPage.qml" line="259"/>
         <source>Locked</source>
         <extracomment>Whisperfish locked message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Blocat</translation>
     </message>
     <message id="whisperfish-remorse-deleted-messages-locally" numerus="yes">
         <location filename="../qml/components/MessagesView.qml" line="162"/>
         <source>Locally deleted %n message(s)</source>
         <oldsource>Locally deleted %1 messages</oldsource>
         <extracomment>Remorse: *locally* deleted one or multiple message (past tense)</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n mesaj a fost șters local</numerusform>
+            <numerusform>%n mesaje au fost șterse local</numerusform>
+            <numerusform>%n mesaje au fost șterse local</numerusform>
         </translation>
     </message>
     <message id="whisperfish-remorse-deleted-messages-globally" numerus="yes">
         <location filename="../qml/components/MessagesView.qml" line="178"/>
         <source>Deleted %n message(s) for everyone</source>
         <extracomment>Remorse: *globally* deleted one or multiple message (past tense)</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n mesaj a fost șers pentru toată lumea</numerusform>
+            <numerusform>%n mesaje au fost șerse pentru toată lumea</numerusform>
+            <numerusform>%n mesaje au fost șerse pentru toată lumea</numerusform>
         </translation>
     </message>
     <message id="whisperfish-copy-message-menu">
         <location filename="../qml/components/MessagesView.qml" line="450"/>
         <source>Copy</source>
         <extracomment>Copy message menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Copiază</translation>
     </message>
     <message id="whisperfish-forward-message-menu">
         <location filename="../qml/components/MessagesView.qml" line="457"/>
         <source>Forward</source>
         <extracomment>Forward message menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Retransmite</translation>
     </message>
     <message id="whisperfish-select-or-options-message-menu">
         <location filename="../qml/components/MessagesView.qml" line="464"/>
         <source>Select • more</source>
         <extracomment>&quot;Select and show more options&quot; message menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Selectează • mai multe</translation>
     </message>
     <message id="whisperfish-resend-message-menu">
         <location filename="../qml/components/MessagesView.qml" line="443"/>
         <source>Retry sending</source>
         <oldsource>Resend</oldsource>
         <extracomment>Resend message menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Reîncearcă trimiterea</translation>
     </message>
     <message id="whisperfish-reset-identity-menu">
         <location filename="../qml/pages/GroupProfilePage.qml" line="311"/>
@@ -596,7 +596,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="27"/>
         <source>Reset identity key</source>
         <extracomment>Reset identity key menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Reinițializează cheia de identitate</translation>
     </message>
     <message id="whisperfish-reset-identity-message">
         <location filename="../qml/pages/GroupProfilePage.qml" line="318"/>
@@ -604,7 +604,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="31"/>
         <source>Identity key reset</source>
         <extracomment>Reset identity key remorse message (past tense)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Reinițializare cheie identitate</translation>
     </message>
     <message id="whisperfish-reset-session-menu">
         <location filename="../qml/pages/GroupProfilePage.qml" line="327"/>
@@ -612,7 +612,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="40"/>
         <source>Reset Secure Session</source>
         <extracomment>Reset secure session menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Reinițializează sesiune în siguranță</translation>
     </message>
     <message id="whisperfish-reset-session-message">
         <location filename="../qml/pages/GroupProfilePage.qml" line="334"/>
@@ -621,210 +621,210 @@
         <source>Secure session reset</source>
         <oldsource>Resetting secure session</oldsource>
         <extracomment>Reset secure session remorse message (past tense)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Reinițializează siguranță sesiune</translation>
     </message>
     <message id="whisperfish-refresh-profile-menu">
         <location filename="../qml/pages/ProfilePage.qml" line="109"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="53"/>
         <source>Refresh Signal profile</source>
         <extracomment>Refresh contact profile menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Reîmprospătare profil Signal</translation>
     </message>
     <message id="whisperfish-show-contact-page-menu">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="62"/>
         <source>Show contact</source>
         <extracomment>Show a peer&apos;s system contact page (menu item)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Afișează cunoștință</translation>
     </message>
     <message id="whisperfish-revert-profile-changes-menu">
         <location filename="../qml/pages/ProfilePage.qml" line="118"/>
         <source>Discard changes</source>
         <extracomment>Undo changes and exit editing you profile details menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Renunță la schimbări</translation>
     </message>
     <message id="whisperfish-save-profile-menu">
         <location filename="../qml/pages/ProfilePage.qml" line="127"/>
         <source>Save profile changes</source>
         <extracomment>Save changes to your profile menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Salvează schimbările de profil</translation>
     </message>
     <message id="whisperfish-edit-profile-menu">
         <location filename="../qml/pages/ProfilePage.qml" line="130"/>
         <source>Edit profile</source>
         <extracomment>Edit your own profile menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Modifică profil</translation>
     </message>
     <message id="whisperfish-profile-page-unregistered-profile">
         <location filename="../qml/pages/ProfilePage.qml" line="184"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="111"/>
         <source>The recipient is not currently registered to Signal, so sending and receiving messages is not possible.</source>
         <extracomment>Profile page, user is not registered warning</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Adresantul nu este în prezent înregistrat la Signal, trimiterea sau primirea de mesaje nu este posibilă.</translation>
     </message>
     <message id="whisperfish-profile-joined-name">
         <location filename="../qml/pages/ProfilePage.qml" line="197"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="122"/>
         <source>Name</source>
         <extracomment>Profile, name field (first name + last name)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nume</translation>
     </message>
     <message id="whisperfish-profile-given-name">
         <location filename="../qml/pages/ProfilePage.qml" line="211"/>
         <source>First name (required)</source>
         <extracomment>Profile, first (given) name field, required</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Prenume (necesar)</translation>
     </message>
     <message id="whisperfish-profile-family-name">
         <location filename="../qml/pages/ProfilePage.qml" line="229"/>
         <source>Last name (optional)</source>
         <extracomment>Profile, last (family) name field, optional</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nume de familie (opțional)</translation>
     </message>
     <message id="whisperfish-profile-uuid">
         <location filename="../qml/pages/ProfilePage.qml" line="243"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="133"/>
         <source>UUID</source>
         <extracomment>Profile UUID field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>UUID</translation>
     </message>
     <message id="whisperfish-profile-phone-number">
         <location filename="../qml/pages/ProfilePage.qml" line="255"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="144"/>
         <source>Phone number</source>
         <extracomment>Profile phone number field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Număr de telefon</translation>
     </message>
     <message id="whisperfish-profile-about">
         <location filename="../qml/pages/ProfilePage.qml" line="267"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="155"/>
         <source>Write something about yourself</source>
         <extracomment>Profile, about you (greeting/status) field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Spune ceva despre tine</translation>
     </message>
     <message id="whisperfish-profile-unidentified">
         <location filename="../qml/pages/ProfilePage.qml" line="283"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="170"/>
         <source>Sealed sending mode</source>
         <extracomment>Profile, sealed sending mode option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mod de trimitere sigilat</translation>
     </message>
     <message id="whisperfish-unidentified-unknown">
         <location filename="../qml/pages/ProfilePage.qml" line="290"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="176"/>
         <source>Unknown</source>
         <extracomment>Profile, sealed sending mode, unknown option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Necunoscut</translation>
     </message>
     <message id="whisperfish-unidentified-disabled">
         <location filename="../qml/pages/ProfilePage.qml" line="295"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="180"/>
         <source>Disabled</source>
         <extracomment>Profile, sealed sending mode, disabled option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Dezactivat</translation>
     </message>
     <message id="whisperfish-unidentified-enabled">
         <location filename="../qml/pages/ProfilePage.qml" line="300"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="184"/>
         <source>Enabled</source>
         <extracomment>Profile, sealed sending mode, enabled option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Activ</translation>
     </message>
     <message id="whisperfish-unidentified-unrestricted">
         <location filename="../qml/pages/ProfilePage.qml" line="305"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="188"/>
         <source>Unrestricted</source>
         <extracomment>Profile, sealed sending mode, unrestricted option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nerestricționat</translation>
     </message>
     <message id="whisperfish-profile-emoji">
         <location filename="../qml/pages/ProfilePage.qml" line="320"/>
         <source>A few words about yourself</source>
         <extracomment>Profile, emoji symbol field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Câteva cuvinte despre tine</translation>
     </message>
     <message id="whisperfish-show-fingerprint">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="202"/>
         <source>Show fingerprint</source>
         <extracomment>Show fingerprint button</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Arată amprenta</translation>
     </message>
     <message id="whisperfish-numeric-fingerprint-directions">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="245"/>
         <source>If you wish to verify the security of your end-to-end encryption with %1, compare the numbers above with the numbers on their device.</source>
         <extracomment>Numeric fingerprint instructions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Dacă doriți verificarea siguranței criptării de la un capăt la celălalt cu %1, comparați numerele de mai sus cu numerele de pe aparatul lor.</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="255"/>
         <source>Post-quantum keys in use</source>
         <extracomment>Profile page: whether a contact has post-quantum secure sessions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Chei post-quantum folosite</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled-description">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="258"/>
         <source>If checked, this session was initialized with post-quantum secure cryptography.</source>
         <extracomment>Profile page: description for post-quantum secure sessions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Dacă este bifat, această sesiune a fost inițializată cu chei post-quantum de criptografie sigură.</translation>
     </message>
     <message id="whisperfish-kyber-click-explanation">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="268"/>
         <source>Session reset for post-quantum upgrade</source>
         <extracomment>Upgrading the session to Kyber remorse popup, past tense</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Reinițializare sesiune pentru actualizare post-quantum</translation>
     </message>
     <message id="whisperfish-own-profile-help-text">
         <location filename="../qml/pages/ProfilePage.qml" line="336"/>
         <source>Your profile is encrypted. Your profile and changes to it will be visible to your contacts and when you start or accept new chats.</source>
         <extracomment>Signal Profile description / help text</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Profilul dvs. este criptat. Profilul dvs. și schimbările vor fi vizibile cunoștințelor și când porniți sau acceptați noi conversații.</translation>
     </message>
     <message id="whisperfish-own-profile-learn-more-button">
         <location filename="../qml/pages/ProfilePage.qml" line="343"/>
         <source>Learn more</source>
         <extracomment>Button to open link to Signal help page about profiles</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mai mult</translation>
     </message>
     <message id="whisperfish-recipient-number-invalid-chars">
         <location filename="../qml/pages/NewMessage.qml" line="61"/>
         <source>This phone number contains invalid characters.</source>
         <extracomment>invalid recipient phone number: invalid characters</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Numărul de telefon conține caractere invalide.</translation>
     </message>
     <message id="whisperfish-recipient-local-number-not-allowed">
         <location filename="../qml/pages/NewMessage.qml" line="66"/>
         <source>Please set a country code in the settings, or use the international format.</source>
         <extracomment>invalid recipient phone number: local numbers are not allowed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Vă rugăm alegeți un cod de țară în Setări, sau folosiți formatul internațional de număr de telefon.</translation>
     </message>
     <message id="whisperfish-recipient-number-invalid-unspecified">
         <location filename="../qml/pages/NewMessage.qml" line="70"/>
         <source>This phone number appears to be invalid.</source>
         <extracomment>invalid recipient phone number: failed to format</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Numărul de telefon pare invalid.</translation>
     </message>
     <message id="whisperfish-new-message-title">
         <location filename="../qml/pages/NewMessage.qml" line="98"/>
         <source>New message</source>
         <extracomment>New message page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mesaj nou</translation>
     </message>
     <message id="whisperfish-new-group-title">
         <location filename="../qml/pages/NewGroup.qml" line="40"/>
         <source>New Group</source>
         <extracomment>New group page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Grup nou</translation>
     </message>
     <message id="whisperfish-group-name-label">
         <location filename="../qml/pages/NewGroup.qml" line="49"/>
         <source>Group Name</source>
         <extracomment>Group name label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nume grup</translation>
     </message>
     <message id="whisperfish-group-name-placeholder">
         <location filename="../qml/pages/NewGroup.qml" line="52"/>
         <source>Group Name</source>
         <extracomment>Group name placeholder</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nume Grup</translation>
     </message>
     <message id="whisperfish-new-group-message-members">
         <location filename="../qml/pages/NewGroup.qml" line="71"/>
@@ -833,7 +833,7 @@
         <extracomment>New group message members label
 ----------
 Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Membri</translation>
     </message>
     <message id="whisperfish-new-message-recipient">
         <location filename="../qml/pages/NewMessage.qml" line="116"/>
@@ -842,31 +842,31 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <extracomment>New message recipient label
 ----------
 Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Destinatar</translation>
     </message>
     <message id="whisperfish-error-invalid-group-name">
         <location filename="../qml/pages/NewGroup.qml" line="112"/>
         <source>Please name the group</source>
         <extracomment>Invalid group name error</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Alegeți un nume grupului</translation>
     </message>
     <message id="whisperfish-error-invalid-group-members">
         <location filename="../qml/pages/NewGroup.qml" line="108"/>
         <source>Please select group members</source>
         <extracomment>Invalid recipient error</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Alegeți membrii grupului</translation>
     </message>
     <message id="whisperfish-error-invalid-recipient">
         <location filename="../qml/pages/NewMessage.qml" line="175"/>
         <source>Invalid recipient</source>
         <extracomment>Invalid recipient error</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Destinatar invalid</translation>
     </message>
     <message id="whisperfish-initial-setup-welcome-title">
         <location filename="../qml/pages/SetupPasswordPage.qml" line="18"/>
         <source>Welcome to Whisperfish</source>
         <extracomment>welcome screen title when creating a new database</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Bun venit la Whisperfish</translation>
     </message>
     <message id="whisperfish-setup-password-prompt">
         <location filename="../qml/pages/SetupPasswordPage.qml" line="22"/>
@@ -1263,146 +1263,146 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="107"/>
         <source>Whisperfish will not display any notification</source>
         <extracomment>Settings page, turn notifications off description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Whisperfish nu va afișa nicio notificare</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimal">
         <location filename="../qml/pages/Settings.qml" line="113"/>
         <source>Minimal notifications</source>
         <extracomment>Settings page, minimal notifications</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Notificări minimale</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimal-description">
         <location filename="../qml/pages/Settings.qml" line="116"/>
         <source>Notification without disclosing the sender or content of the message</source>
         <extracomment>Settings page, minimal notifications description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Notificări ce nu dezvăluie expeditorul sau conținutul mesajului</translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only">
         <location filename="../qml/pages/Settings.qml" line="122"/>
         <source>Sender-only notifications</source>
         <extracomment>Settings page, sender-only notifications</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Notificări doar cu expeditor</translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only-description">
         <location filename="../qml/pages/Settings.qml" line="125"/>
         <source>Notifications displaying the sender of a message, without the contents</source>
         <extracomment>Settings page, sender-only notifications description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Notificări ce afișează expeditorul unui mesaj, fără conținutul lor</translation>
     </message>
     <message id="whisperfish-settings-notifications-complete">
         <location filename="../qml/pages/Settings.qml" line="131"/>
         <source>Complete notifications</source>
         <extracomment>Settings page, complete notifications</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Notificări complete</translation>
     </message>
     <message id="whisperfish-settings-notifications-complete-description">
         <location filename="../qml/pages/Settings.qml" line="134"/>
         <source>Notifications displaying the contents and sender of a message</source>
         <extracomment>Settings page, sender-only notifications description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Notificări ce afișează conținutul și expeditorul mesajului</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimise">
         <location filename="../qml/pages/Settings.qml" line="152"/>
         <source>Minimise notifications</source>
         <extracomment>Settings page notifications show minimum number of notifications</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Minimalizează notificările</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimise-description">
         <location filename="../qml/pages/Settings.qml" line="155"/>
         <source>If turned on, Whisperfish will suppress all but the first notification from each session.</source>
         <extracomment>Settings page notifications show minimum number of notifications description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Când este activă, Whisperfish nu va da notificări decât prima oară per sesiune.</translation>
     </message>
     <message id="whisperfish-settings-notifications-prefer-device-contacts">
         <location filename="../qml/pages/Settings.qml" line="256"/>
         <source>Prefer device contacts</source>
         <extracomment>Settings page prefer phone contacts</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Preferă cunoștințele din telefon</translation>
     </message>
     <message id="whisperfish-settings-notifications-prefer-device-contacts-description">
         <location filename="../qml/pages/Settings.qml" line="259"/>
         <source>Prefer Sailfish OS address book contact names and avatars over Signal Profile data.</source>
         <extracomment>Settings page prefer phone contacts description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Preferă numele și avatarurile cunoștințelor din agenda Sailfish OS informațiilor din profilul Signal.</translation>
     </message>
     <message id="whisperfish-settings-show-phone-number">
         <location filename="../qml/pages/Settings.qml" line="272"/>
         <source>Show phone number</source>
         <extracomment>Settings page, show recipient phone number in conversation view</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Afișează numărul de telefon</translation>
     </message>
     <message id="whisperfish-settings-show-phone-number-description">
         <location filename="../qml/pages/Settings.qml" line="275"/>
         <source>Show the phone number of the recipient in the conversation page header.</source>
         <extracomment>Settings page, show recipient phone number in conversation view description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Afișează numărul de telefon al destinatarului în antetul paginii.</translation>
     </message>
     <message id="whisperfish-settings-enable-autostart-description">
         <location filename="../qml/pages/Settings.qml" line="323"/>
         <source>When enabled, Whisperfish starts automatically after each boot. If storage encryption is enabled or background-mode is off, the UI will be shown, otherwise the app starts in the background.</source>
         <extracomment>Settings page enable autostart description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Pornește Whisperfish automat la fiecare pornire a telefonului. Dacă este activată criptarea stocării sau modul de lucru în fundal este dezactivat, aplicația va fi vizibilă pe ecran la pornire - altfe, va porni în fundal.</translation>
     </message>
     <message id="whisperfish-settings-auto-unlock-password-field">
         <location filename="../qml/pages/Settings.qml" line="346"/>
         <source>Unlock Password</source>
         <extracomment>Settings page autostart password field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Parola de deblocare</translation>
     </message>
     <message id="whisperfish-settings-save-password-button">
         <location filename="../qml/pages/Settings.qml" line="358"/>
         <source>Save password</source>
         <extracomment>Settings page save autologin password button</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Salvează parola</translation>
     </message>
     <message id="whisperfish-settings-clear-password-button">
         <location filename="../qml/pages/Settings.qml" line="361"/>
         <source>clear password</source>
         <extracomment>Settings page clear autologin password button</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Șterge parola</translation>
     </message>
     <message id="whisperfish-settings-auto-unlock-password-info">
         <location filename="../qml/pages/Settings.qml" line="374"/>
         <source>You can enter your password to make Whisperfish unlock the database automatically at startup. Please note that the password is stored in plain text, and as such usage of this feature is not recommended.</source>
         <oldsource>You can enter your password to make Whisperfish unlock the database automatically at startup. Please note that the password is stored in plain text, and as such usage of this feature is not recommened.</oldsource>
         <extracomment>Settings page info about setting auto unlock password</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Poți introduce parola pentru ca Whisperfish să deblocheze baza de date automat la pornire. Ai grijă că parola este salvată în clar și deci acest mod nu este recomandat.</translation>
     </message>
     <message id="whisperfish-settings-autostart-manual-info">
         <location filename="../qml/pages/Settings.qml" line="386"/>
         <source>Whisperfish does not have the permission to change the autostart settings. You can enable or disable autostart manually from the command line by running &apos;systemctl --user enable harbour-whisperfish.service&apos; or &apos;systemctl --user disable harbour-whisperfish.service&apos;</source>
         <extracomment>Settings page info how to enable autostart manually</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Whisperfish nu are permisiunea să schimbe setările de auto-pornire. Puteți activa sau dezactiva pornirea automată din linia de comandă executând &apos;systemctl --user enable harbour-whisperfish.service&apos; sau &apos;systemctl --user disable harbour-whisperfish.service&apos;</translation>
     </message>
     <message id="whisperfish-settings-quit-button">
         <location filename="../qml/pages/Settings.qml" line="414"/>
         <source>Quit Whisperfish</source>
         <extracomment>Settings page quit app button</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ieșire Whisperfish</translation>
     </message>
     <message id="whisperfish-settings-advanced-section">
         <location filename="../qml/pages/Settings.qml" line="426"/>
         <source>Advanced</source>
         <extracomment>Settings page advanced section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Avansat</translation>
     </message>
     <message id="whisperfish-settings-scale-image-attachments">
         <location filename="../qml/pages/Settings.qml" line="434"/>
         <source>Scale JPEG Attachments</source>
         <extracomment>Settings page scale image attachments</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Micșorează atașamentele JPEG</translation>
     </message>
     <message id="whisperfish-settings-scale-image-attachments-description">
         <location filename="../qml/pages/Settings.qml" line="437"/>
         <source>Scale down JPEG attachments to save on bandwidth.</source>
         <extracomment>Settings page scale image attachments description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Micșorează imaginile JPEG pentru a micșora transferurile.</translation>
     </message>
     <message id="whisperfish-settings-debug-mode">
         <location filename="../qml/pages/Settings.qml" line="451"/>
         <source>Debug mode</source>
         <extracomment>Settings page: debug info toggle</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mod depanare</translation>
     </message>
     <message id="whisperfish-settings-debug-mode-description">
         <location filename="../qml/pages/Settings.qml" line="454"/>
