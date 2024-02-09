@@ -86,7 +86,7 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="409"/>
         <source>Restore to inbox</source>
         <extracomment>Show archived messages again in the main page</extracomment>
-        <translation>Im Posteingang wiederherstellen</translation>
+        <translation>In den Posteingang zurückspeichern</translation>
     </message>
     <message id="whisperfish-session-mark-archived">
         <location filename="../qml/delegates/SessionDelegate.qml" line="412"/>
