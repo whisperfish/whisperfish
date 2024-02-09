@@ -66,7 +66,7 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="389"/>
         <source>Pin to top</source>
         <extracomment>&apos;Pin&apos; conversation to the top of the view</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Прымацаваць зверху</translation>
     </message>
     <message id="whisperfish-session-mark-unmuted">
         <location filename="../qml/delegates/SessionDelegate.qml" line="398"/>
@@ -80,7 +80,7 @@
         <source>Mute conversation</source>
         <oldsource>Mark as muted</oldsource>
         <extracomment>Mark conversation as muted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Прыглушыць размову</translation>
     </message>
     <message id="whisperfish-session-mark-unarchived">
         <location filename="../qml/delegates/SessionDelegate.qml" line="409"/>
@@ -92,7 +92,7 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="412"/>
         <source>Archive conversation</source>
         <extracomment>Move the conversation to archived conversations</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Заархіваваць размову</translation>
     </message>
     <message id="whisperfish-session-delete">
         <location filename="../qml/delegates/SessionDelegate.qml" line="419"/>
@@ -141,19 +141,19 @@
         <location filename="../qml/pages/MainPage.qml" line="102"/>
         <source>Return to conversations</source>
         <extracomment>Menu item for returning to &quot;inbox&quot; from archived sessions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Вярнуцца да размоў</translation>
     </message>
     <message id="whisperfish-subtitle-active-conversations">
         <location filename="../qml/pages/MainPage.qml" line="239"/>
         <source>Conversations</source>
         <extracomment>Whisperfish subtitle for active conversations aka. &quot;inbox&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Размовы</translation>
     </message>
     <message id="whisperfish-subtitle-archived-conversations">
         <location filename="../qml/pages/MainPage.qml" line="242"/>
         <source>Archived conversations</source>
         <extracomment>Whisperfish subtitle for archived conversations</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Заархіваваныя размовы</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text-237">
         <location filename="../qml/pages/MainPage.qml" line="265"/>
@@ -178,20 +178,20 @@
         <location filename="../qml/pages/MainPage.qml" line="298"/>
         <source>Today</source>
         <extracomment>Session section label for today</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Сення</translation>
     </message>
     <message id="whisperfish-session-section-yesterday">
         <location filename="../qml/pages/LinkedDevices.qml" line="120"/>
         <location filename="../qml/pages/MainPage.qml" line="303"/>
         <source>Yesterday</source>
         <extracomment>Session section label for yesterday</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Учора</translation>
     </message>
     <message id="whisperfish-session-section-older">
         <location filename="../qml/pages/MainPage.qml" line="308"/>
         <source>Older</source>
         <extracomment>Session section label for older</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ранней</translation>
     </message>
     <message id="whisperfish-about">
         <location filename="../qml/pages/About.qml" line="22"/>
@@ -234,7 +234,7 @@
         <location filename="../qml/pages/About.qml" line="177"/>
         <source>Translators</source>
         <extracomment>Translators heading in About page</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Перакладчыкі</translation>
     </message>
     <message id="whisperfish-translators-nb_NO">
         <location filename="../qml/pages/About.qml" line="184"/>
