@@ -62,7 +62,7 @@ Page {
                 // XXX this should be a call into the client/application state/...
                 // TODO: Re-think what marking session as read means
                 //SessionModel.markRead(sessionId)
-                unreadMessageChecker.running = true
+                unreadMessageChecker.shouldRun = true
             }
         }
     }
@@ -168,30 +168,33 @@ Page {
 
         onMovementStarted: {
             unreadMessageChecker.stillMoving = true
-            unreadMessageChecker.running = true
+            unreadMessageChecker.shouldRun = true
         }
 
         onMovementEnded: {
             unreadMessageChecker.stillMoving = false
-            unreadMessageChecker.running = true
+            unreadMessageChecker.shouldRun = true
         }
 
-        onCountChanged: unreadMessageChecker.running = true
+        onCountChanged: unreadMessageChecker.shouldRun = true
 
-        Component.onCompleted: unreadMessageChecker.running = true
+        Component.onCompleted: unreadMessageChecker.shouldRun = true
 
         Timer {
             id: unreadMessageChecker
             property int counter: 1
             property bool stillMoving: false
-            running: false
+            property bool shouldRun: false
+            running: shouldRun
+                    && Qt.application.state === Qt.ApplicationActive
+                    && status === PageStatus.Active
             interval: 200
             repeat: true
             onTriggered: {
                 if (!stillMoving) {
                     counter--
                     if (counter == 0) {
-                        running = false
+                        shouldRun = false
                         counter = 1
                     }
                 }

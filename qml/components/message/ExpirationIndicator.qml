@@ -23,7 +23,7 @@ Canvas {
     renderStrategy: Canvas.Threaded
     renderTarget: Canvas.FramebufferObject
     onPaint: {
-        if (!_shouldPaint) return
+        if (!_shouldPaint || expiryStarted == null) return
 
         var ctx = getContext("2d")
 
