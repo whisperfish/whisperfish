@@ -197,13 +197,13 @@
         <location filename="../qml/pages/About.qml" line="22"/>
         <source>About Whisperfish</source>
         <extracomment>Title for about page</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Аб Whisperfish</translation>
     </message>
     <message id="whisperfish-version">
         <location filename="../qml/pages/About.qml" line="35"/>
         <source>Whisperfish v%1</source>
         <extracomment>Whisperfish version string</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Whisperfish в%1</translation>
     </message>
     <message id="whisperfish-description">
         <location filename="../qml/pages/About.qml" line="45"/>
