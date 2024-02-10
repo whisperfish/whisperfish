@@ -282,9 +282,9 @@ Page {
                     "J. Lavoie" + "\n" +
                     "PawelSpoon" + "\n" +
                     "Yo" + "\n" +
+                    "Peter G" + "\n" +
                     "Stephan Lohse" + "\n" +
                     "Alexander Schlarb" + "\n" +
-                    "Peter G" + "\n" +
                     "Simon Hahne" + "\n" +
                     "Sebastian Maus" + "\n" +
                     "carlosgonz"
@@ -384,7 +384,8 @@ Page {
                     "Alexander Schlarb" + "\n" +
                     "Karol Kurek" + "\n" +
                     "Wojtek" + "\n" +
-                    "carlosgonz"
+                    "carlosgonz" + "\n" +
+                    "kan-ibal"
                 }
             }
 
@@ -522,7 +523,8 @@ Page {
                 horizontalAlignment: TextEdit.Center
                 readOnly: true
                 text: {
-                    "Florin Voicu"
+                    "Florin Voicu" + "\n" +
+                    "Vlad G"
                 }
             }
 
