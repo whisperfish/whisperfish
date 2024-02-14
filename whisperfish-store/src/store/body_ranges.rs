@@ -554,4 +554,18 @@ mod tests {
 
         assert_eq!("Spoilers: you shouldn't see <span style='background-color: \"white\"; color: \"white\";'>this </span><span style='background-color: \"white\"; color: \"white\";'>https://localhost/if-the-bug-is-fixed</span><span style='background-color: \"white\"; color: \"white\";'> nor this</span>", styled);
     }
+
+    #[test]
+    fn url_matches_spoiler() {
+        let text = "Spoiler-link https://gitlab.com/ and that's it.";
+        let ranges = [BodyRange {
+            start: 13,
+            length: 19,
+            associated_value: Some(AssociatedValue::Style(2)),
+        }];
+        println!("{ranges:?}");
+        let styled = to_styled(text, &ranges, no_mentions);
+
+        assert_eq!("Spoiler-link <span style='background-color: \"white\"; color: \"white\";'><a style='background-color: \"white\"; color: \"white\";' href=\"https://gitlab.com/\">https://gitlab.com/</a></span> and that's it.", styled);
+    }
 }
