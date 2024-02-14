@@ -9,6 +9,8 @@ use prost::Message;
 pub const SPOILER_TAG_UNCLICKED: &str =
     "<span style='background-color: \"white\"; color: \"white\";'>";
 pub const SPOILER_TAG_CLICKED: &str = "<span>";
+pub const TOUCHING_SPOILERS: &str =
+    "</span><span style='background-color: \"white\"; color: \"white\";'>";
 
 // Note the trailing spaces.
 pub const LINK_TAG_UNCLICKED: &str = "<a style='background-color: \"white\"; color: \"white\";' ";
@@ -374,6 +376,7 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             result
         })
         .join("")
+        .replace(TOUCHING_SPOILERS, "")
         .into()
 }
 
@@ -572,7 +575,7 @@ mod tests {
         println!("{ranges:?}");
         let styled = to_styled(text, &ranges, no_mentions);
 
-        assert_eq!("Spoilers: you shouldn't see <span style='background-color: \"white\"; color: \"white\";'>this </span><span style='background-color: \"white\"; color: \"white\";'><a style='background-color: \"white\"; color: \"white\";' href=\"https://localhost/if-the-bug-is-fixed\">https://localhost/if-the-bug-is-fixed</a></span><span style='background-color: \"white\"; color: \"white\";'> nor this</span>", styled);
+        assert_eq!("Spoilers: you shouldn't see <span style='background-color: \"white\"; color: \"white\";'>this <a style='background-color: \"white\"; color: \"white\";' href=\"https://localhost/if-the-bug-is-fixed\">https://localhost/if-the-bug-is-fixed</a> nor this</span>", styled);
     }
 
     #[test]
