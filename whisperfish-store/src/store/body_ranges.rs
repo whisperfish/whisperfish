@@ -333,7 +333,6 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
                 result.push_str(SPOILER_TAG_UNCLICKED);
             }
 
-            // XXX Optimise: ignore styling elements completely inside a spoiler
             if let Some(mention) = segment.mention {
                 if segment.spoiler {
                     result.push_str(LINK_TAG_UNCLICKED);
