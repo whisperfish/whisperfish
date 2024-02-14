@@ -10,6 +10,10 @@ pub const SPOILER_TAG_UNCLICKED: &str =
     "<span style='background-color: \"white\"; color: \"white\";'>";
 pub const SPOILER_TAG_CLICKED: &str = "<span>";
 
+// Note the trailing spaces.
+pub const LINK_TAG_UNCLICKED: &str = "<a style='background-color: \"white\"; color: \"white\";' ";
+pub const LINK_TAG_CLICKED: &str = "<a ";
+
 pub fn deserialize(message_ranges: &[u8]) -> Vec<database_protos::body_range_list::BodyRange> {
     let message_ranges = database_protos::BodyRangeList::decode(message_ranges as &[u8])
         .expect("valid protobuf in database");
@@ -322,25 +326,41 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             }
             let contents = escape(segment.contents);
 
-            // XXX Optimise: ignore styling elements completely inside a spoiler
+            // XXX Optimise: only insert spoiler start if previous segment was not a spoiler
             if segment.spoiler {
                 result.push_str(SPOILER_TAG_UNCLICKED);
-                result.push_str(&contents);
-                result.push_str("</span>");
-            } else if let Some(mention) = segment.mention {
-                result.push_str("<a href=\"mention://");
+            }
+
+            // XXX Optimise: ignore styling elements completely inside a spoiler
+            if let Some(mention) = segment.mention {
+                if segment.spoiler {
+                    result.push_str(LINK_TAG_UNCLICKED);
+                } else {
+                    result.push_str(LINK_TAG_CLICKED);
+                }
+                result.push_str("href=\"mention://");
                 result.push_str(mention);
                 result.push_str("\">@");
                 result.push_str(mention_lookup(mention).as_ref());
                 result.push_str("</a>");
             } else if let Some(link) = segment.link {
-                result.push_str("<a href=\"");
+                if segment.spoiler {
+                    result.push_str(LINK_TAG_UNCLICKED);
+                } else {
+                    result.push_str(LINK_TAG_CLICKED);
+                }
+                result.push_str("href=\"");
                 result.push_str(link);
                 result.push_str("\">");
                 result.push_str(&contents);
                 result.push_str("</a>");
             } else {
                 result.push_str(&contents);
+            }
+
+            // XXX Optimise: only insert spoiler end if next segment is not a spoiler
+            if segment.spoiler {
+                result.push_str("</span>");
             }
 
             for (add_tag, tag) in tags.iter().rev() {
@@ -552,7 +572,7 @@ mod tests {
         println!("{ranges:?}");
         let styled = to_styled(text, &ranges, no_mentions);
 
-        assert_eq!("Spoilers: you shouldn't see <span style='background-color: \"white\"; color: \"white\";'>this </span><span style='background-color: \"white\"; color: \"white\";'>https://localhost/if-the-bug-is-fixed</span><span style='background-color: \"white\"; color: \"white\";'> nor this</span>", styled);
+        assert_eq!("Spoilers: you shouldn't see <span style='background-color: \"white\"; color: \"white\";'>this </span><span style='background-color: \"white\"; color: \"white\";'><a style='background-color: \"white\"; color: \"white\";' href=\"https://localhost/if-the-bug-is-fixed\">https://localhost/if-the-bug-is-fixed</a></span><span style='background-color: \"white\"; color: \"white\";'> nor this</span>", styled);
     }
 
     #[test]
