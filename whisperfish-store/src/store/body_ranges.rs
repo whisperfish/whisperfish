@@ -322,6 +322,7 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             }
             let contents = escape(segment.contents);
 
+            // XXX Optimise: ignore styling elements completely inside a spoiler
             if segment.spoiler {
                 result.push_str(SPOILER_TAG_UNCLICKED);
                 result.push_str(&contents);
@@ -537,5 +538,20 @@ mod tests {
         });
 
         assert_eq!("Mention <a href=\"mention://89fca563-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@foobar</a> URL <a href=\"https://gitlab.com/\">https://gitlab.com/</a> Another <a href=\"mention://9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@direc85</a> Link! <a href=\"https://github.com/\">https://github.com/</a>", styled);
+    }
+
+    #[test]
+    fn url_in_spoiler() {
+        let text =
+            "Spoilers: you shouldn't see this https://localhost/if-the-bug-is-fixed nor this";
+        let ranges = [BodyRange {
+            start: 28,
+            length: 51,
+            associated_value: Some(AssociatedValue::Style(2)),
+        }];
+        println!("{ranges:?}");
+        let styled = to_styled(text, &ranges, no_mentions);
+
+        assert_eq!("Spoilers: you shouldn't see <span style='background-color: \"white\"; color: \"white\";'>this </span><span style='background-color: \"white\"; color: \"white\";'>https://localhost/if-the-bug-is-fixed</span><span style='background-color: \"white\"; color: \"white\";'> nor this</span>", styled);
     }
 }
