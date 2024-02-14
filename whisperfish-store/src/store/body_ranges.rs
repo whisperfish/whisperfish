@@ -322,7 +322,11 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             }
             let contents = escape(segment.contents);
 
-            if let Some(mention) = segment.mention {
+            if segment.spoiler {
+                result.push_str(SPOILER_TAG_UNCLICKED);
+                result.push_str(&contents);
+                result.push_str("</span>");
+            } else if let Some(mention) = segment.mention {
                 result.push_str("<a href=\"mention://");
                 result.push_str(mention);
                 result.push_str("\">@");
@@ -334,10 +338,6 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
                 result.push_str("\">");
                 result.push_str(&contents);
                 result.push_str("</a>");
-            } else if segment.spoiler {
-                result.push_str(SPOILER_TAG_UNCLICKED);
-                result.push_str(&contents);
-                result.push_str("</span>");
             } else {
                 result.push_str(&contents);
             }
