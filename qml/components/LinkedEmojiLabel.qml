@@ -137,7 +137,8 @@ Label {
         anchors.fill: parent
         enabled: root.hasSpoilers && modelData !== undefined
         onClicked: {
-            root.plainText = root.plainText.replace(modelData.spoilerTag, modelData.revealedTag)
+            var newPlainText = replaceAll(root.plainText, modelData.spoilerTag, modelData.revealedTag)
+            root.plainText = replaceAll(newPlainText, modelData.spoilerLink, modelData.revealedLink)
             root.hasSpoilers = false
         }
     }

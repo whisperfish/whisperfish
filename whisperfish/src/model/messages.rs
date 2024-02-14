@@ -364,6 +364,8 @@ define_model_roles! {
 
         SpoilerTag(fn spoiler_tag(&self) via QString::from):  "spoilerTag",
         RevealedTag(fn revealed_tag(&self) via QString::from): "revealedTag",
+        SpoilerLink(fn spoiler_link(&self) via QString::from): "spoilerLink",
+        RevealedLink(fn revealed_link(&self) via QString::from): "revealedLink",
 
         Attachments(fn attachments(&self)):                   "attachments",
         IsVoiceNote(is_voice_note):                           "isVoiceNote",

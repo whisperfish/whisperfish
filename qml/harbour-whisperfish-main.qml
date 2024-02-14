@@ -225,6 +225,18 @@ ApplicationWindow
         }
     }
 
+    // Qt 5.6 QML version of JavaScript doesn't have String.prototype.replaceAll(),
+    // so we have to implement it ourselves. ECMAScript 2021 has it.
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replaceAll
+    // https://stackoverflow.com/questions/1144783/how-do-i-replace-all-occurrences-of-a-string-in-javascript
+    function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    }
+
+    function replaceAll(str, find, replace) {
+    return str.replace(new RegExp(escapeRegExp(find), 'g'), replace)
+    }
+
     Connections {
         target: ClientWorker
         onMessageReceived: { }
