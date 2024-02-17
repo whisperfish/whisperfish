@@ -14,7 +14,7 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="39"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sesli Mesaj</translation>
     </message>
     <message id="whisperfish-session-delete-all">
         <location filename="../qml/delegates/SessionDelegate.qml" line="78"/>
@@ -159,7 +159,7 @@
         <location filename="../qml/pages/MainPage.qml" line="265"/>
         <source>Start a new conversation through a linked device, or let someone message you</source>
         <extracomment>No messages found, hint on what to do</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Bağlı bir aygıt üzerinden yeni bir konuşma başlatın veya birinin size mesaj göndermesine izin verin</translation>
     </message>
     <message id="whisperfish-no-archived-messages-hint-text">
         <location filename="../qml/pages/MainPage.qml" line="275"/>
@@ -222,7 +222,7 @@
         <source>Whisperfish is an unofficial, but advanced Signal client for Sailfish OS. Whisperfish is highly usable, but is still considered beta quality software. Make sure to update regularily! Also, check our Wiki and feel free to contribute to it! Do not ever contact the Signal developers about a Whisperfish issue, contact us instead!</source>
         <oldsource>Whisperfish is an unofficial, but advanced Signal client for Sailfish OS. Whisperfish is highly usable, but is still considered beta quality software. Make sure to update regularily! Also, check our Wiki and feel free to contribute to it! Do not ever contact the Signal developers about a Whisperfish issue, contact us instead!.</oldsource>
         <extracomment>Whisperfish description, longer version, also for Jolla Store</extracomment>
-        <translation type="unfinished">Whisperfish, Sailfish OS için resmi olmayan ancak gelişmiş bir Signal istemcisidir. Whisperfish oldukça kullanışlıdır, ancak hala beta kalitesinde bir yazılım olarak kabul edilmektedir. Düzenli olarak güncellediğinizden emin olun! Ayrıca, Wiki sayfamıza göz atın ve katkıda bulunmaktan çekinmeyin! Bir Whisperfish sorunu hakkında Signal geliştiricileri ile asla iletişime geçmeyin, bunun yerine bizimle iletişime geçin!</translation>
+        <translation>Whisperfish, Sailfish OS için resmi olmayan ancak gelişmiş bir Signal istemcisidir. Whisperfish oldukça kullanışlıdır, ancak hala beta kalitesinde bir yazılım olarak kabul edilmektedir. Düzenli olarak güncellediğinizden emin olun! Ayrıca, Wiki sayfamıza göz atın ve katkıda bulunmaktan çekinmeyin! Bir Whisperfish sorunu hakkında Signal geliştiricileri ile asla iletişime geçmeyin, bunun yerine bizimle iletişime geçin!</translation>
     </message>
     <message id="whisperfish-build-id">
         <location filename="../qml/pages/About.qml" line="78"/>
@@ -542,7 +542,7 @@
         <location filename="../qml/pages/AddDevice.qml" line="82"/>
         <source>Scan the QR code displayed by the Signal application that you wish to link</source>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Bağlamak istediğiniz Signal uygulaması tarafından gösterilen QR kodunu tarayın</translation>
     </message>
     <message id="whisperfish-device-url">
         <location filename="../qml/pages/OldAddDevice.qml" line="43"/>
@@ -682,8 +682,8 @@
         <location filename="../qml/components/MessagesView.qml" line="178"/>
         <source>Deleted %n message(s) for everyone</source>
         <extracomment>Remorse: *globally* deleted one or multiple message (past tense)</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Herkes için %n mesaj silindi</numerusform>
         </translation>
     </message>
     <message id="whisperfish-copy-message-menu">
@@ -879,19 +879,19 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="255"/>
         <source>Post-quantum keys in use</source>
         <extracomment>Profile page: whether a contact has post-quantum secure sessions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kuantum sonrası anahtarlar kullanılıyor</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled-description">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="258"/>
         <source>If checked, this session was initialized with post-quantum secure cryptography.</source>
         <extracomment>Profile page: description for post-quantum secure sessions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>İşaretliyse, bu oturum kuantum sonrası güvenli kriptografi ile başlatılmıştır.</translation>
     </message>
     <message id="whisperfish-kyber-click-explanation">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="268"/>
         <source>Session reset for post-quantum upgrade</source>
         <extracomment>Upgrading the session to Kyber remorse popup, past tense</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kuantum sonrası yükseltme için oturum sıfırlama</translation>
     </message>
     <message id="whisperfish-own-profile-help-text">
         <location filename="../qml/pages/ProfilePage.qml" line="336"/>
@@ -1517,13 +1517,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="272"/>
         <source>Show phone number</source>
         <extracomment>Settings page, show recipient phone number in conversation view</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Telefon numarasını göster</translation>
     </message>
     <message id="whisperfish-settings-show-phone-number-description">
         <location filename="../qml/pages/Settings.qml" line="275"/>
         <source>Show the phone number of the recipient in the conversation page header.</source>
         <extracomment>Settings page, show recipient phone number in conversation view description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Konuşma sayfası başlığında alıcının telefon numarasını göster.</translation>
     </message>
     <message id="whisperfish-settings-enable-autostart-description">
         <location filename="../qml/pages/Settings.qml" line="323"/>
@@ -1627,7 +1627,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="516"/>
         <source>Test captcha</source>
         <extracomment>Settings page, test captcha button</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Captcha testi</translation>
     </message>
     <message id="whisperfish-settings-stats-section">
         <location filename="../qml/pages/Settings.qml" line="527"/>
@@ -1772,7 +1772,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="71"/>
         <source>Set message expiry</source>
         <extracomment>Save the new value of expiring messages timeout</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mesaj geçerlilik süresini ayarla</translation>
     </message>
     <message id="whisperfish-group-member-admin">
         <location filename="../qml/pages/GroupProfilePage.qml" line="215"/>
@@ -1869,7 +1869,7 @@ Settings page share contacts</extracomment>
         <source>Signal should have called you with a 6-digit verification code. Please wait a moment, or restart the process if you have not received a call.</source>
         <oldsource>Signal should have called you with a a 6-digit verification code. Please wait a moment, or restart the process if you have not received a call.</oldsource>
         <extracomment>verify registration instructions: voice</extracomment>
-        <translation type="unfinished">Signal sizi 6 basamaklı bir doğrulama koduyla aramalıydı. Lütfen bir süre bekleyin veya aranmadıysanız işlemi yeniden başlatın.</translation>
+        <translation>Signal sizi 6 basamaklı bir doğrulama koduyla aramalıydı. Lütfen bir süre bekleyin veya aranmadıysanız işlemi yeniden başlatın.</translation>
     </message>
     <message id="whisperfish-verify-instructions-sms">
         <location filename="../qml/pages/VerifyRegistrationPage.qml" line="27"/>
@@ -1987,7 +1987,7 @@ Settings page share contacts</extracomment>
         <source>Voice Message</source>
         <oldsource>Voice note</oldsource>
         <extracomment>Page header subtitle for a voice note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sesli Mesaj</translation>
     </message>
     <message id="whisperfish-quoted-message-preview-attachment">
         <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="74"/>
@@ -2008,7 +2008,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/SessionDelegate.qml" line="52"/>
         <source>this message was deleted</source>
         <extracomment>Placeholder note for a deleted message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>bu mesaj silindi</translation>
     </message>
     <message id="whisperfish-message-empty-note">
         <location filename="../qml/delegates/MessageDelegate.qml" line="252"/>
@@ -2133,7 +2133,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ViewImagePage.qml" line="66"/>
         <source>Export image</source>
         <extracomment>Copy the attachment image out of Whisperfish</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Resmi dışa aktar</translation>
     </message>
     <message id="whisperfish-view-image-page-loading">
         <location filename="../qml/pages/ViewImagePage.qml" line="268"/>
@@ -2151,7 +2151,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ViewVideoPage.qml" line="57"/>
         <source>Export video</source>
         <extracomment>Copy the attachment video out of Whisperfish</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Videoyu dışa aktar</translation>
     </message>
     <message id="whisperfish-view-video-page-error">
         <location filename="../qml/pages/ViewVideoPage.qml" line="124"/>
@@ -2171,8 +2171,8 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="88"/>
         <source>%n message(s)</source>
         <extracomment>The number of messages in a conversation, displayed in page header</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n mesaj</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-actions-info-label" numerus="yes">
@@ -2321,7 +2321,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/TestCaptchaPage.qml" line="15"/>
         <source>Captcha Test</source>
         <extracomment>Captcha test page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Captcha Testi</translation>
     </message>
     <message id="whisperfish-captcha-test-message">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="19"/>
@@ -2329,65 +2329,65 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/TestCaptchaPage.qml" line="84"/>
         <source>You can use this page to test the Whisperfish captcha challenge integration</source>
         <extracomment>Captcha test page description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Whisperfish captcha sorgulama bütünleşmesini test etmek için bu sayfayı kullanabilirsiniz</translation>
     </message>
     <message id="whisperfish-captcha-test-success">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="56"/>
         <source>Captcha token received!</source>
         <extracomment>Captcha test successful message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Captcha belirteci alındı!</translation>
     </message>
     <message id="whisperfish-start-test-button-label">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="80"/>
         <source>Start</source>
         <extracomment>continue button label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Başlat</translation>
     </message>
     <message id="whisperfish-captcha-test-started">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="87"/>
         <source>Test started...</source>
         <extracomment>Captcha test has been started message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Test başladı...</translation>
     </message>
     <message id="whisperfish-export-file-menu">
         <location filename="../qml/pages/ViewAudioPage.qml" line="28"/>
         <location filename="../qml/pages/ViewFilePage.qml" line="28"/>
         <source>Export file</source>
         <extracomment>Copy the attachment file out of Whisperfish</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Dosyayı dışa aktar</translation>
     </message>
     <message id="whisperfish-disappearing-messages-setting">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="62"/>
         <source>Disappearing messages</source>
         <extracomment>Group/conversation info page, expiring messages setting</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kaybolan mesajlar</translation>
     </message>
     <message id="whisperfish-disappearing-messages-description">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="65"/>
         <source>Set or disable message destruction after a certain time after reading. Only affects messages sent after changing this option.</source>
         <extracomment>Group/conversation info page, expiring messages description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Okunduktan belirli bir süre sonra mesajları silmeyi ayarlayın veya devre dışı bırakın. Yalnızca bu seçenek değiştirildikten sonra gönderilen mesajları etkiler.</translation>
     </message>
     <message id="whisperfish-disappearing-messages-off">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="78"/>
         <source>Off</source>
         <extracomment>Disappearing messages: off</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kapalı</translation>
     </message>
     <message id="whisperfish-disappearing-messages-seconds" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="82"/>
         <source>%n second(s)</source>
         <extracomment>Disappearing messages duration in seconds</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n saniye</numerusform>
         </translation>
     </message>
     <message id="whisperfish-disappearing-messages-minutes" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="86"/>
         <source>%n minute(s)</source>
         <extracomment>Disappearing messages duration in minutes</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n dakika</numerusform>
         </translation>
     </message>
     <message id="whisperfish-disappearing-messages-hours" numerus="yes">
@@ -2395,16 +2395,16 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="93"/>
         <source>%n hour(s)</source>
         <extracomment>Disappearing messages duration in hours</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n saat</numerusform>
         </translation>
     </message>
     <message id="whisperfish-disappearing-messages-days" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="97"/>
         <source>%n day(s)</source>
         <extracomment>Disappearing messages duration in days</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n gün</numerusform>
         </translation>
     </message>
     <message id="whisperfish-disappearing-messages-weeks" numerus="yes">
@@ -2412,66 +2412,66 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="104"/>
         <source>%n week(s)</source>
         <extracomment>Disappearing messages duration in weeks</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n hafta</numerusform>
         </translation>
     </message>
     <message id="whisperfish-disappearing-messages-custom">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="108"/>
         <source>Other</source>
         <extracomment>Disappearing messages: custom duration</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Diğer</translation>
     </message>
     <message id="whisperfish-disappearing-messages-amount">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="153"/>
         <source>Amount</source>
         <extracomment>Disappearing messages, custom &quot;time amount&quot; label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Miktar</translation>
     </message>
     <message id="whisperfish-disappearing-messages-time-units">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="176"/>
         <source>Time unit</source>
         <extracomment>Disappearing messages, custom &quot;time length&quot; label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zaman birimi</translation>
     </message>
     <message id="whisperfish-units-seconds" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="181"/>
         <source>seconds</source>
         <extracomment>Time unit: seconds</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>saniye</numerusform>
         </translation>
     </message>
     <message id="whisperfish-units-minutes" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="184"/>
         <source>minutes</source>
         <extracomment>Time unit: minutes</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>dakika</numerusform>
         </translation>
     </message>
     <message id="whisperfish-units-hours" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="187"/>
         <source>hours</source>
         <extracomment>Time unit: hours</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>saat</numerusform>
         </translation>
     </message>
     <message id="whisperfish-units-days" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="190"/>
         <source>days</source>
         <extracomment>Time unit: days</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>gün</numerusform>
         </translation>
     </message>
     <message id="whisperfish-units-weeks" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="193"/>
         <source>weeks</source>
         <extracomment>Time unit: weeks</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>hafta</numerusform>
         </translation>
     </message>
 </context>
