@@ -300,7 +300,7 @@ ListItem {
 
             EmojiItem {
                 id: emojiItem
-                reactions: hasReactions ? reactions.groupedReactions : ""
+                reactions: reactions.status === Loader.Ready ? reactions.item.groupedReactions : ""
                 anchors.top: parent.top
                 anchors.left: isOutbound ? parent.left : undefined
                 anchors.right: isOutbound ? undefined : parent.right
