@@ -111,6 +111,18 @@ pub fn to_vec(message_ranges: Option<&Vec<u8>>) -> Vec<WireBodyRange> {
         .collect()
 }
 
+fn escape_pre(s: &str) -> std::borrow::Cow<'_, str> {
+    if s.contains('<') || s.contains('>') || s.contains('&') {
+        std::borrow::Cow::Owned(
+            s.replace('&', "&amp;")
+                .replace('<', "&lt;")
+                .replace('>', "&gt;"),
+        )
+    } else {
+        std::borrow::Cow::Borrowed(s)
+    }
+}
+
 fn escape(s: &str) -> std::borrow::Cow<'_, str> {
     if s.contains('<') || s.contains('>') || s.contains('&') || s.contains('\n') {
         std::borrow::Cow::Owned(
@@ -316,7 +328,6 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
                 (segment.bold, "b"),
                 (segment.italic, "i"),
                 (segment.strikethrough, "s"),
-                (segment.monospace, "pre"),
             ];
 
             for (add_tag, tag) in &tags {
@@ -326,7 +337,6 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
                     result.push('>');
                 }
             }
-            let contents = escape(segment.contents);
 
             // XXX Optimise: only insert spoiler start if previous segment was not a spoiler
             if segment.spoiler {
@@ -353,10 +363,14 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
                 result.push_str("href=\"");
                 result.push_str(link);
                 result.push_str("\">");
-                result.push_str(&contents);
+                result.push_str(&escape(segment.contents));
                 result.push_str("</a>");
+            } else if segment.monospace {
+                result.push_str("<pre>");
+                result.push_str(&escape_pre(segment.contents));
+                result.push_str("</pre>");
             } else {
-                result.push_str(&contents);
+                result.push_str(&escape(segment.contents));
             }
 
             // XXX Optimise: only insert spoiler end if next segment is not a spoiler
@@ -589,7 +603,7 @@ mod tests {
 
         assert_eq!(
             styled,
-            "This is a <pre>monospace sentence<br>with line<br>breaks</pre> in it."
+            "This is a <pre>monospace sentence\nwith line\nbreaks</pre> in it."
         );
     }
 
