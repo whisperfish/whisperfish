@@ -247,10 +247,13 @@ SilicaListView {
         id: wrapper
         property string newerSection: ListView.previousSection
         property string olderSection: ListView.nextSection
-        property int messageId: -1
-        property bool messageRead: true
-        property int messageExpiresIn: -1
-        property bool messageExpiring: false
+
+        property bool messageLoaded: loader.status === Loader.Ready && !wrapper.isServiceMessage
+        property int messageId: messageLoaded ? loader.item.modelData.id : -1
+        property bool messageRead: messageLoaded ? loader.item.modelData.isRead === true : true
+        property int messageExpiresIn: messageLoaded ? loader.item.modelData.expiresIn : -1
+        property bool messageExpiring: messageLoaded && loader.item.modelData.expiryStarted != null ? loader.item.modelData.expiryStarted > 0 : true
+
         property bool atSectionBoundary: {
             // Section strings are ISO formatted timestamps.
             // E.g. '2021-02-07T22:00:01'
@@ -326,13 +329,6 @@ SilicaListView {
                     if (isSelecting && !selectionBlocked) {
                         itemSelectionToggled(model)
                     }
-                }
-                // XXX Investigate using these as aliases through Loader
-                onModelDataChanged: {
-                    wrapper.messageId = modelData.id != null ? modelData.id : -1
-                    wrapper.messageRead = modelData.isRead != null ? modelData.isRead : true
-                    wrapper.messageExpiresIn = modelData.expiresIn != null ? modelData.expiresIn : -1
-                    wrapper.messageExpiring = modelData.expiryStarted != null && modelData.expiryStarted > 0
                 }
             }
         }
