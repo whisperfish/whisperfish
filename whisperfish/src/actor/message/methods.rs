@@ -1,7 +1,8 @@
 #![allow(non_snake_case)]
 
 use crate::worker::{
-    DeleteMessage, DeleteMessageForAll, ExportAttachment, QueueExpiryUpdate, QueueMessage,
+    DeleteMessage, DeleteMessageForAll, ExportAttachment, NewAttachment, QueueExpiryUpdate,
+    QueueMessage,
 };
 
 use super::*;
@@ -36,12 +37,35 @@ impl MessageMethods {
         &mut self,
         session_id: i32,
         message: QString,
-        attachment: QString,
+        attachments: QString, // Stringified JSON array
         quote: i32,
         _add: bool,
     ) {
         let message = message.to_string();
-        let attachment = attachment.to_string();
+        let attachments: Vec<NewAttachment> =
+            match serde_json::from_str(&attachments.to_string()).unwrap() {
+                serde_json::Value::Array(attachments) => attachments
+                    .into_iter()
+                    .map(|attachment| {
+                        let attachment = attachment.as_object().unwrap();
+                        NewAttachment {
+                            path: attachment
+                                .get("data")
+                                .unwrap()
+                                .as_str()
+                                .unwrap()
+                                .to_string(),
+                            mime_type: attachment
+                                .get("type")
+                                .unwrap()
+                                .as_str()
+                                .unwrap()
+                                .to_string(),
+                        }
+                    })
+                    .collect(),
+                _ => vec![],
+            };
 
         actix::spawn(
             self.client_actor
@@ -50,7 +74,7 @@ impl MessageMethods {
                 .send(QueueMessage {
                     session_id,
                     message,
-                    attachment,
+                    attachments,
                     quote,
                 })
                 .map(Result::unwrap),
