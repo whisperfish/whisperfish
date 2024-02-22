@@ -240,8 +240,9 @@ ListItem {
             enabled: false
             anchors {
                 left: upperLabel.left; right: unreadBackground.left
-                top: upperLabel.bottom; bottom: parent.bottom
+                top: upperLabel.bottom
             }
+            height: fontMetrics.height + fontMetrics.lineSpacing + fontMetrics.descent/2
             wrapMode: Text.Wrap
             clip: true
 
@@ -267,7 +268,13 @@ ListItem {
             slope: 5
             sourceItem: lowerLabel
             enabled: lowerLabel.contentHeight > lowerLabel.height
-            direction: OpacityRamp.TopToBottom
+            direction: OpacityRamp.LeftToRight
+        }
+
+        FontMetrics {
+            id: fontMetrics
+            font.family: lowerLabel.font.family
+            font.pixelSize: lowerLabel.font.pixelSize
         }
 
         Row {
