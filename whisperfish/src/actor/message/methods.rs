@@ -8,6 +8,7 @@ use crate::worker::{
 use super::*;
 use futures::prelude::*;
 use qmeta_async::with_executor;
+use qttypes::QVariantList;
 
 #[derive(QObject, Default)]
 pub struct MessageMethods {
@@ -16,7 +17,14 @@ pub struct MessageMethods {
     pub client_actor: Option<Addr<ClientActor>>,
 
     createMessage: qt_method!(
-        fn(&self, session_id: i32, message: QString, attachment: QString, quote: i32, add: bool)
+        fn(
+            &self,
+            session_id: i32,
+            message: QString,
+            attachment: QVariantList,
+            quote: i32,
+            add: bool,
+        )
     ),
     createExpiryUpdate: qt_method!(fn(&self, session_id: i32, expires_in: i32)),
 
@@ -37,35 +45,30 @@ impl MessageMethods {
         &mut self,
         session_id: i32,
         message: QString,
-        attachments: QString, // Stringified JSON array
+        attachments_qml: QVariantList,
         quote: i32,
         _add: bool,
     ) {
         let message = message.to_string();
-        let attachments: Vec<NewAttachment> =
-            match serde_json::from_str(&attachments.to_string()).unwrap() {
-                serde_json::Value::Array(attachments) => attachments
-                    .into_iter()
-                    .map(|attachment| {
-                        let attachment = attachment.as_object().unwrap();
-                        NewAttachment {
-                            path: attachment
-                                .get("data")
-                                .unwrap()
-                                .as_str()
-                                .unwrap()
-                                .to_string(),
-                            mime_type: attachment
-                                .get("type")
-                                .unwrap()
-                                .as_str()
-                                .unwrap()
-                                .to_string(),
-                        }
-                    })
-                    .collect(),
-                _ => vec![],
-            };
+        let mut attachments: Vec<NewAttachment> = vec![];
+
+        for attachment_map in &attachments_qml {
+            // QMetaType::QVariantMap = 8
+            // https://doc.qt.io/archives/qt-5.6/qmetatype.html#Type-enum
+            if attachment_map.user_type() == 8 {
+                let attachment = attachment_map.to_qvariantmap();
+                attachments.push(NewAttachment {
+                    path: attachment
+                        .value("data".into(), QVariant::default())
+                        .to_qstring()
+                        .to_string(),
+                    mime_type: attachment
+                        .value("type".into(), QVariant::default())
+                        .to_qstring()
+                        .to_string(),
+                });
+            }
+        }
 
         actix::spawn(
             self.client_actor
