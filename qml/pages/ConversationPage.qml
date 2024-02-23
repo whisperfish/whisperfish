@@ -201,6 +201,7 @@ Page {
                 var unreadOrExpiring = []
                 var leftX = Theme.itemSizeMedium
                 var rightX = messages.width - Theme.itemSizeMedium
+                var added = false
                 for (var Y = 0; Y < height; Y += Theme.itemSizeMedium) {
                     var item = messages.itemAt(leftX, messages.contentY + Y)
                     if (item == null) {
@@ -214,11 +215,13 @@ Page {
                         if (!item.messageRead) {
                             unreadOrExpiring.push(item.messageId)
                             item.messageRead = true
+                            added = true
                         }
-                        if (item.messageExpiresIn > 0 && item.messageExpiring === false) {
+                        if (!added && item.messageExpiring === false && item.messageExpiresIn > 0) {
                             unreadOrExpiring.push(item.messageId)
                             item.messageExpiring = true
                         }
+                        added = false
                     }
                 }
 
