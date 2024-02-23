@@ -1012,6 +1012,14 @@ impl AugmentedMessage {
         String::from(crate::body_ranges::SPOILER_TAG_UNCLICKED)
     }
 
+    pub fn revealed_link(&self) -> String {
+        String::from(crate::body_ranges::LINK_TAG_CLICKED)
+    }
+
+    pub fn spoiler_link(&self) -> String {
+        String::from(crate::body_ranges::LINK_TAG_UNCLICKED)
+    }
+
     pub fn styled_message(&self) -> Cow<'_, str> {
         crate::store::body_ranges::to_styled(
             self.inner.text.as_deref().unwrap_or_default(),
