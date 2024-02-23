@@ -107,26 +107,26 @@
         <translation>Új üzenet</translation>
     </message>
     <message id="whisperfish-fatal-error-setup-client">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="267"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="279"/>
         <source>Failed to setup Signal client</source>
         <extracomment>Failed to setup signal client error message</extracomment>
         <translation>Nem sikerült beállítani a Signal klienst</translation>
     </message>
     <message id="whisperfish-fatal-error-invalid-datastore">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="272"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="284"/>
         <source>Failed to setup data storage</source>
         <oldsource>Failed to setup datastore</oldsource>
         <extracomment>Failed to setup datastore error message</extracomment>
         <translation>Nem sikerült az adattároló beállítása</translation>
     </message>
     <message id="permission-la-data">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="407"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="419"/>
         <source>Whisperfish data storage</source>
         <extracomment>Permission for Whisperfish data storage</extracomment>
         <translation>Whisperfish adattároló</translation>
     </message>
     <message id="permission-la-data_description">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="411"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="423"/>
         <source>Store configuration and messages</source>
         <extracomment>Permission description for Whisperfish data storage</extracomment>
         <translation>Konfiguráció és üzenetek tárolása</translation>
