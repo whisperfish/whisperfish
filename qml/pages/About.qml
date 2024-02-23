@@ -306,6 +306,7 @@ Page {
                     "J. Lavoie" + "\n" +
                     "Alexander Schlarb" + "\n" +
                     "Bérenger" + "\n" +
+                    "Eric" + "\n" +
                     "Thibaut Vandervelden" + "\n" +
                     "carlosgonz"
                 }
