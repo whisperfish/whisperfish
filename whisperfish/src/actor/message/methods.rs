@@ -8,7 +8,8 @@ use crate::worker::{
 use super::*;
 use futures::prelude::*;
 use qmeta_async::with_executor;
-use qttypes::QVariantList;
+use qmetaobject::QMetaType;
+use qttypes::{QVariantList, QVariantMap};
 
 #[derive(QObject, Default)]
 pub struct MessageMethods {
@@ -45,18 +46,19 @@ impl MessageMethods {
         &mut self,
         session_id: i32,
         message: QString,
-        attachments_qml: QVariantList,
+        mut attachments_qml: QVariantList,
         quote: i32,
         _add: bool,
     ) {
         let message = message.to_string();
         let mut attachments: Vec<NewAttachment> = vec![];
 
-        for attachment_map in &attachments_qml {
+        while !attachments_qml.is_empty() {
+            let attachment_map = attachments_qml.remove(0);
             // QMetaType::QVariantMap = 8
             // https://doc.qt.io/archives/qt-5.6/qmetatype.html#Type-enum
             if attachment_map.user_type() == 8 {
-                let attachment = attachment_map.to_qvariantmap();
+                let attachment = QVariantMap::from_qvariant(attachment_map).unwrap();
                 attachments.push(NewAttachment {
                     path: attachment
                         .value("data".into(), QVariant::default())
