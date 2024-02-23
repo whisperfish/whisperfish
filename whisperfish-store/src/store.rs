@@ -1551,57 +1551,6 @@ impl Storage {
         Some(pointer)
     }
 
-    /// Handle marking message as read and potentially starting the expiry timer.
-    #[tracing::instrument(skip(self))]
-    pub fn mark_message_read_in_ui(&self, message_id: i32) {
-        use schema::messages::dsl::*;
-
-        // 1) Mark message as read, if necessary
-        let mut session_id_unread: Vec<i32> = diesel::update(messages)
-            .filter(id.eq(message_id))
-            .set(is_read.eq(true))
-            .returning(schema::messages::session_id)
-            .load(&mut *self.db())
-            .unwrap();
-        assert!(
-            session_id_unread.len() <= 1,
-            "message id for unread update is unique"
-        );
-        let session_id_unread = session_id_unread.pop();
-
-        // 2) Start expiry timer, if necessary
-        let mut session_id_expiring = diesel::update(messages)
-            .filter(
-                id.eq(message_id)
-                    .and(schema::messages::expires_in.is_not_null())
-                    .and(schema::messages::expires_in.gt(0))
-                    .and(schema::messages::expiry_started.is_null()),
-            )
-            .set(schema::messages::expiry_started.eq(Some(chrono::Utc::now().naive_utc())))
-            .returning(schema::messages::session_id)
-            .load(&mut *self.db())
-            .expect("set message expiry");
-        assert!(
-            session_id_expiring.len() <= 1,
-            "message id for expiry update is unique"
-        );
-        let session_id_expiring = session_id_expiring.pop();
-
-        // 3) Observe update, if either happened
-        if session_id_unread.is_some() && session_id_expiring.is_some() {
-            assert_eq!(
-                session_id_unread, session_id_expiring,
-                "same session id for expiry and unread update"
-            );
-        }
-        if let Some(m_session_id) = session_id_unread.or(session_id_expiring) {
-            self.observe_update(messages, message_id)
-                .with_relation(schema::sessions::table, PrimaryKey::RowId(m_session_id));
-        } else {
-            tracing::warn!("Could not find message with id {}", message_id);
-        }
-    }
-
     /// Handle marking multiple messages as read and potentially starting their expiry timer.
     #[tracing::instrument(skip(self))]
     pub fn mark_messages_read_in_ui(&self, msg_ids: Vec<i32>) {
