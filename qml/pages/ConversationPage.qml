@@ -198,7 +198,7 @@ Page {
                         counter = 1
                     }
                 }
-                var unreadOrExpiring = {}
+                var unreadOrExpiring = []
                 var leftX = Theme.itemSizeMedium
                 var rightX = messages.width - Theme.itemSizeMedium
                 for (var Y = 0; Y < height; Y += Theme.itemSizeMedium) {
@@ -212,20 +212,24 @@ Page {
                         // Set these in the "wrapper cache" so they won't
                         // show up again in the next iteration.
                         if (!item.messageRead) {
-                            unreadOrExpiring[item.messageId] = true
+                            unreadOrExpiring.push(item.messageId)
                             item.messageRead = true
                         }
                         if (item.messageExpiresIn > 0 && item.messageExpiring === false) {
-                            unreadOrExpiring[item.messageId] = true
+                            unreadOrExpiring.push(item.messageId)
                             item.messageExpiring = true
                         }
                     }
                 }
-                // XXX mark_messages_read()..?
-                for (var messageId in unreadOrExpiring) {
-                    console.log("Mark message", messageId, "as read")
-                    ClientWorker.mark_message_read(messageId)
-                    closeMessageNotification(sessionId, messageId)
+
+                if (unreadOrExpiring.length > 0) {
+                    console.log("Marking messages as read: " + unreadOrExpiring)
+                    ClientWorker.mark_messages_read(unreadOrExpiring)
+
+                    for (var i in unreadOrExpiring) {
+                        console.log("Closing notification mid", unreadOrExpiring[i], "sid", sessionId)
+                        closeMessageNotification(sessionId, unreadOrExpiring[i])
+                    }
                 }
             }
         }

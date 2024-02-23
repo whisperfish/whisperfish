@@ -1602,6 +1602,51 @@ impl Storage {
         }
     }
 
+    /// Handle marking multiple messages as read and potentially starting their expiry timer.
+    #[tracing::instrument(skip(self))]
+    pub fn mark_messages_read_in_ui(&self, msg_ids: Vec<i32>) {
+        use schema::messages::dsl::*;
+
+        // 1) Mark messages as read, if necessary
+        let messages_unread: Vec<(i32, i32)> = diesel::update(messages)
+            .filter(id.eq_any(&msg_ids))
+            .set(is_read.eq(true))
+            .returning((schema::messages::id, schema::messages::session_id))
+            .load(&mut *self.db())
+            .unwrap();
+
+        // 2) Start expiry timer, if necessary
+        let messages_expiring: Vec<(i32, i32)> = diesel::update(messages)
+            .filter(
+                id.eq_any(msg_ids)
+                    .and(schema::messages::expires_in.is_not_null())
+                    .and(schema::messages::expires_in.gt(0))
+                    .and(schema::messages::expiry_started.is_null()),
+            )
+            .set(schema::messages::expiry_started.eq(Some(chrono::Utc::now().naive_utc())))
+            .returning((schema::messages::id, schema::messages::session_id))
+            .load(&mut *self.db())
+            .expect("set message expiry");
+
+        // Combine the two vectors
+        if messages_unread.is_empty() && messages_expiring.is_empty() {
+            return;
+        }
+
+        let mut messages_changed: Vec<(i32, i32)> = messages_unread
+            .into_iter()
+            .chain(messages_expiring.into_iter())
+            .collect();
+        messages_changed.sort();
+        messages_changed.dedup();
+
+        // 3) Observe update, if either happened
+        for (m_id, s_id) in messages_changed {
+            self.observe_update(messages, m_id)
+                .with_relation(schema::sessions::table, PrimaryKey::RowId(s_id));
+        }
+    }
+
     /// Marks the message with a certain timestamp as received by a certain person.
     #[tracing::instrument(skip(self))]
     pub fn mark_message_received(
