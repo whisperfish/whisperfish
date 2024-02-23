@@ -199,15 +199,11 @@ Page {
                     }
                 }
                 var unreadOrExpiring = []
-                var leftX = Theme.itemSizeMedium
-                var rightX = messages.width - Theme.itemSizeMedium
+                var middle = messages.width / 2
                 var added = false
                 for (var Y = 0; Y < height; Y += Theme.itemSizeMedium) {
-                    var item = messages.itemAt(leftX, messages.contentY + Y)
-                    if (item == null) {
-                        item = messages.itemAt(rightX, messages.contentY + Y)
-                    }
-                    if (item
+                    var item = messages.itemAt(middle, messages.contentY + Y)
+                    if (item !== null
                         && unreadOrExpiring[item.messageId] === undefined
                     ) {
                         // Set these in the "wrapper cache" so they won't
