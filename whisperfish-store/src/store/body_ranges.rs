@@ -231,9 +231,9 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
         })
         .collect();
 
-    // If there are no segments, and no ranges, we can just return the message without reallocating.
+    // If there are no segments, ranges or special characters we can just return the message without reallocating.
     if segments.len() == 1 && segments[0].link.is_none() && ranges.is_empty() {
-        return message.into();
+        return escape(message);
     }
 
     fn annotate<'a>(segment: &'_ mut Segment<'a>, style: Option<&'a AssociatedValue>) {
