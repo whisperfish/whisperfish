@@ -1551,54 +1551,48 @@ impl Storage {
         Some(pointer)
     }
 
-    /// Handle marking message as read and potentially starting the expiry timer.
+    /// Handle marking multiple messages as read and potentially starting their expiry timer.
     #[tracing::instrument(skip(self))]
-    pub fn mark_message_read_in_ui(&self, message_id: i32) {
+    pub fn mark_messages_read_in_ui(&self, msg_ids: Vec<i32>) {
         use schema::messages::dsl::*;
 
-        // 1) Mark message as read, if necessary
-        let mut session_id_unread: Vec<i32> = diesel::update(messages)
-            .filter(id.eq(message_id))
+        // 1) Mark messages as read, if necessary
+        let messages_unread: Vec<(i32, i32)> = diesel::update(messages)
+            .filter(id.eq_any(&msg_ids))
             .set(is_read.eq(true))
-            .returning(schema::messages::session_id)
+            .returning((schema::messages::id, schema::messages::session_id))
             .load(&mut *self.db())
             .unwrap();
-        assert!(
-            session_id_unread.len() <= 1,
-            "message id for unread update is unique"
-        );
-        let session_id_unread = session_id_unread.pop();
 
         // 2) Start expiry timer, if necessary
-        let mut session_id_expiring = diesel::update(messages)
+        let messages_expiring: Vec<(i32, i32)> = diesel::update(messages)
             .filter(
-                id.eq(message_id)
+                id.eq_any(msg_ids)
                     .and(schema::messages::expires_in.is_not_null())
                     .and(schema::messages::expires_in.gt(0))
                     .and(schema::messages::expiry_started.is_null()),
             )
             .set(schema::messages::expiry_started.eq(Some(chrono::Utc::now().naive_utc())))
-            .returning(schema::messages::session_id)
+            .returning((schema::messages::id, schema::messages::session_id))
             .load(&mut *self.db())
             .expect("set message expiry");
-        assert!(
-            session_id_expiring.len() <= 1,
-            "message id for expiry update is unique"
-        );
-        let session_id_expiring = session_id_expiring.pop();
+
+        // Combine the two vectors
+        if messages_unread.is_empty() && messages_expiring.is_empty() {
+            return;
+        }
+
+        let mut messages_changed: Vec<(i32, i32)> = messages_unread
+            .into_iter()
+            .chain(messages_expiring.into_iter())
+            .collect();
+        messages_changed.sort();
+        messages_changed.dedup();
 
         // 3) Observe update, if either happened
-        if session_id_unread.is_some() && session_id_expiring.is_some() {
-            assert_eq!(
-                session_id_unread, session_id_expiring,
-                "same session id for expiry and unread update"
-            );
-        }
-        if let Some(m_session_id) = session_id_unread.or(session_id_expiring) {
-            self.observe_update(messages, message_id)
-                .with_relation(schema::sessions::table, PrimaryKey::RowId(m_session_id));
-        } else {
-            tracing::warn!("Could not find message with id {}", message_id);
+        for (m_id, s_id) in messages_changed {
+            self.observe_update(messages, m_id)
+                .with_relation(schema::sessions::table, PrimaryKey::RowId(s_id));
         }
     }
 

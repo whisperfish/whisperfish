@@ -198,34 +198,37 @@ Page {
                         counter = 1
                     }
                 }
-                var unreadOrExpiring = {}
-                var leftX = Theme.itemSizeMedium
-                var rightX = messages.width - Theme.itemSizeMedium
+                var unreadOrExpiring = []
+                var middle = messages.width / 2
+                var added = false
                 for (var Y = 0; Y < height; Y += Theme.itemSizeMedium) {
-                    var item = messages.itemAt(leftX, messages.contentY + Y)
-                    if (item == null) {
-                        item = messages.itemAt(rightX, messages.contentY + Y)
-                    }
-                    if (item
+                    var item = messages.itemAt(middle, messages.contentY + Y)
+                    if (item !== null
                         && unreadOrExpiring[item.messageId] === undefined
                     ) {
                         // Set these in the "wrapper cache" so they won't
                         // show up again in the next iteration.
                         if (!item.messageRead) {
-                            unreadOrExpiring[item.messageId] = true
+                            unreadOrExpiring.push(item.messageId)
                             item.messageRead = true
+                            added = true
                         }
-                        if (item.messageExpiresIn > 0 && item.messageExpiring === false) {
-                            unreadOrExpiring[item.messageId] = true
+                        if (!added && item.messageExpiring === false && item.messageExpiresIn > 0) {
+                            unreadOrExpiring.push(item.messageId)
                             item.messageExpiring = true
                         }
+                        added = false
                     }
                 }
-                // XXX mark_messages_read()..?
-                for (var messageId in unreadOrExpiring) {
-                    console.log("Mark message", messageId, "as read")
-                    ClientWorker.mark_message_read(messageId)
-                    closeMessageNotification(sessionId, messageId)
+
+                if (unreadOrExpiring.length > 0) {
+                    console.log("Marking messages as read: " + unreadOrExpiring)
+                    ClientWorker.mark_messages_read(unreadOrExpiring)
+
+                    for (var i in unreadOrExpiring) {
+                        console.log("Closing notification mid", unreadOrExpiring[i], "sid", sessionId)
+                        closeMessageNotification(sessionId, unreadOrExpiring[i])
+                    }
                 }
             }
         }

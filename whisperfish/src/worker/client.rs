@@ -63,8 +63,10 @@ use mime_classifier::{ApacheBugFlag, LoadContext, MimeClassifier, NoSniffFlag};
 use phonenumber::PhoneNumber;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
+use qttypes::QVariantList;
 use std::borrow::Cow;
 use std::collections::HashSet;
+use std::convert::TryInto;
 use std::fmt::{Display, Error, Formatter};
 use std::fs::remove_file;
 use std::io::Write;
@@ -232,7 +234,7 @@ pub struct ClientWorker {
         fn(&self, given_name: String, family_name: String, about: String, emoji: String)
     ),
 
-    mark_message_read: qt_method!(fn(&self, message_id: i32)),
+    mark_messages_read: qt_method!(fn(&self, msg_id_list: QVariantList)),
 }
 
 /// ClientActor keeps track of the connection state.
@@ -2708,10 +2710,19 @@ impl ClientWorker {
     }
 
     #[with_executor]
-    pub fn mark_message_read(&self, message_id: i32) {
+    pub fn mark_messages_read(&self, mut msg_id_list: QVariantList) {
+        let mut message_ids: Vec<i32> = vec![];
+        while !msg_id_list.is_empty() {
+            let msg_id_qvar = msg_id_list.remove(0);
+            // QMetaType::Int = 2
+            if msg_id_qvar.user_type() == 2 {
+                message_ids.push(msg_id_qvar.to_int().try_into().unwrap());
+            }
+        }
+
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {
-            if let Err(e) = actor.send(MarkMessageRead { message_id }).await {
+            if let Err(e) = actor.send(MarkMessagesRead { message_ids }).await {
                 tracing::error!("{:?}", e);
             }
         });
@@ -2767,22 +2778,22 @@ impl Handler<CompactDb> for ClientActor {
 
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct MarkMessageRead {
-    pub message_id: i32,
+pub struct MarkMessagesRead {
+    pub message_ids: Vec<i32>,
 }
 
-impl Handler<MarkMessageRead> for ClientActor {
+impl Handler<MarkMessagesRead> for ClientActor {
     type Result = ResponseFuture<()>;
 
-    fn handle(&mut self, msg: MarkMessageRead, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg_ids: MarkMessagesRead, _ctx: &mut Self::Context) -> Self::Result {
         let storage = self.storage.clone().unwrap();
         let handle = self.message_expiry_notification_handle.clone().unwrap();
         Box::pin(
             async move {
-                storage.mark_message_read_in_ui(msg.message_id);
-                handle.send(()).expect("send message expiry notification");
+                storage.mark_messages_read_in_ui(msg_ids.message_ids);
+                handle.send(()).expect("send messages expiry notification");
             }
-            .instrument(tracing::debug_span!("mark message read")),
+            .instrument(tracing::debug_span!("mark messages read")),
         )
     }
 }
