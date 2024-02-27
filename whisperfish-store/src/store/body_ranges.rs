@@ -590,4 +590,28 @@ mod tests {
 
         assert_eq!("Spoiler-link <span style='background-color: \"white\"; color: \"white\";'><a style='background-color: \"white\"; color: \"white\";' href=\"https://gitlab.com/\">https://gitlab.com/</a></span> and that's it.", styled);
     }
+
+    #[test]
+    fn plain_with_lt_and_gt() {
+        let text = "oh no :< oh yes :>";
+        let ranges = [];
+        println!("{ranges:?}");
+        let styled = to_styled(text, &ranges, no_mentions);
+
+        assert_eq!("oh no :&lt; oh yes :&gt;", styled);
+    }
+
+    #[test]
+    fn styled_with_lt_and_gt() {
+        let text = "oh no :< oh yes :>";
+        let ranges = [BodyRange {
+            start: 0,
+            length: 5,
+            associated_value: Some(AssociatedValue::Style(0)),
+        }];
+        println!("{ranges:?}");
+        let styled = to_styled(text, &ranges, no_mentions);
+
+        assert_eq!("<b>oh no</b> :&lt; oh yes :&gt;", styled);
+    }
 }
