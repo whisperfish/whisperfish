@@ -1791,7 +1791,7 @@ Settings page share contacts</extracomment>
         <translation>Bendrinamas kontaktas</translation>
     </message>
     <message id="whisperfish-chat-input-attachment-label" numerus="yes">
-        <location filename="../qml/components/ChatTextInput.qml" line="201"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="200"/>
         <source>%n attachment(s)</source>
         <extracomment>Number of attachments currently selected for sending</extracomment>
         <translation>
@@ -1801,25 +1801,25 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-chat-input-recipient-is-unregistered">
-        <location filename="../qml/components/ChatTextInput.qml" line="210"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="209"/>
         <source>The recipient is not registered</source>
         <extracomment>Chat text input placeholder for deleted/unregistered recipient</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-personal">
-        <location filename="../qml/components/ChatTextInput.qml" line="215"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="214"/>
         <source>Hi %1</source>
         <extracomment>Personalized placeholder for chat input, e.g. &quot;Hi John&quot;</extracomment>
         <translation>Sveiki %1</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-default">
-        <location filename="../qml/components/ChatTextInput.qml" line="220"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="219"/>
         <source>Write a message</source>
         <extracomment>Generic placeholder for chat input</extracomment>
         <translation>Rašyti žinutę</translation>
     </message>
     <message id="whisperfish-select-attachments-page-title">
-        <location filename="../qml/components/ChatTextInput.qml" line="372"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="371"/>
         <source>Select attachments</source>
         <extracomment>Attachment picker page title</extracomment>
         <translation>Pasirinkti priedus</translation>
@@ -2075,7 +2075,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-actions-info-label" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="357"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="349"/>
         <source>%n message(s) selected</source>
         <oldsource>%1 message(s) selected</oldsource>
         <extracomment>Info label shown while selecting messages</extracomment>
@@ -2086,7 +2086,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-clear-selection" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="380"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="372"/>
         <source>Clear selection</source>
         <extracomment>Message action description, shown if one or more messages are selected</extracomment>
         <translation>
@@ -2096,7 +2096,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-copy" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="389"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="381"/>
         <source>Copy %n message(s)</source>
         <oldsource>Copy %1 message(s)</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2107,14 +2107,14 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-info">
-        <location filename="../qml/pages/ConversationPage.qml" line="397"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="389"/>
         <source>Show message info</source>
         <extracomment>Message action description (only available if n==1)</extracomment>
         <translation>Rodyti žinutės informaciją</translation>
     </message>
     <message id="whisperfish-message-action-delete-for-self" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="409"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="441"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="401"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="433"/>
         <source>Locally delete %n message(s)</source>
         <oldsource>Delete %1 message(s) for me</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2125,8 +2125,8 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-delete-for-all" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="421"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="451"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="413"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="443"/>
         <source>Delete %n message(s) for all</source>
         <oldsource>Delete %1 message(s) for all</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2137,7 +2137,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-resend" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="463"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="455"/>
         <source>Retry sending (the) failed message(s)</source>
         <extracomment>Message action description</extracomment>
         <translation>
