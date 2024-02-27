@@ -211,18 +211,18 @@ mod tests {
     #[test]
     fn test_qstring_from_option() {
         let s = qstring_from_option(Some("test"));
-        assert_eq!(s.to_qbytearray().to_string(), String::from("test"));
+        assert_eq!(s.to_qstring().to_string(), String::from("test"));
 
         let s = qstring_from_option(None::<&str>);
-        assert_eq!(s.to_qbytearray().to_string(), String::from(""));
+        assert_eq!(s.to_qstring().to_string(), String::from(""));
     }
 
     #[test]
     fn test_qvariant_from_option() {
         let s = qvariant_from_option(Some(QString::from("test")));
-        assert_eq!(s.to_qbytearray().to_string(), String::from("test"));
+        assert_eq!(s.to_qstring().to_string(), String::from("test"));
 
         let s = qvariant_from_option(None::<&QString>);
-        assert_eq!(s.to_qbytearray().to_string(), String::from(""));
+        assert_eq!(s.to_qstring().to_string(), String::from(""));
     }
 }

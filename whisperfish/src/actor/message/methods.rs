@@ -1,12 +1,15 @@
 #![allow(non_snake_case)]
 
 use crate::worker::{
-    DeleteMessage, DeleteMessageForAll, ExportAttachment, QueueExpiryUpdate, QueueMessage,
+    DeleteMessage, DeleteMessageForAll, ExportAttachment, NewAttachment, QueueExpiryUpdate,
+    QueueMessage,
 };
 
 use super::*;
 use futures::prelude::*;
 use qmeta_async::with_executor;
+use qmetaobject::QMetaType;
+use qttypes::{QVariantList, QVariantMap};
 
 #[derive(QObject, Default)]
 pub struct MessageMethods {
@@ -15,7 +18,14 @@ pub struct MessageMethods {
     pub client_actor: Option<Addr<ClientActor>>,
 
     createMessage: qt_method!(
-        fn(&self, session_id: i32, message: QString, attachment: QString, quote: i32, add: bool)
+        fn(
+            &self,
+            session_id: i32,
+            message: QString,
+            attachment: QVariantList,
+            quote: i32,
+            add: bool,
+        )
     ),
     createExpiryUpdate: qt_method!(fn(&self, session_id: i32, expires_in: i32)),
 
@@ -36,12 +46,31 @@ impl MessageMethods {
         &mut self,
         session_id: i32,
         message: QString,
-        attachment: QString,
+        mut attachments_qml: QVariantList,
         quote: i32,
         _add: bool,
     ) {
         let message = message.to_string();
-        let attachment = attachment.to_string();
+        let mut attachments: Vec<NewAttachment> = vec![];
+
+        while !attachments_qml.is_empty() {
+            let attachment_map = attachments_qml.remove(0);
+            // QMetaType::QVariantMap = 8
+            // https://doc.qt.io/archives/qt-5.6/qmetatype.html#Type-enum
+            if attachment_map.user_type() == 8 {
+                let attachment = QVariantMap::from_qvariant(attachment_map).unwrap();
+                attachments.push(NewAttachment {
+                    path: attachment
+                        .value("data".into(), QVariant::default())
+                        .to_qstring()
+                        .to_string(),
+                    mime_type: attachment
+                        .value("type".into(), QVariant::default())
+                        .to_qstring()
+                        .to_string(),
+                });
+            }
+        }
 
         actix::spawn(
             self.client_actor
@@ -50,7 +79,7 @@ impl MessageMethods {
                 .send(QueueMessage {
                     session_id,
                     message,
-                    attachment,
+                    attachments,
                     quote,
                 })
                 .map(Result::unwrap),

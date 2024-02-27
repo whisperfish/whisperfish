@@ -76,7 +76,6 @@ Item {
         if(SettingsBridge.enable_enter_send) {
             text = text.replace(/(\r\n\t|\n|\r\t)/gm, '')
         }
-        // TODO implement replies in the model
         sendMessage(text, attachments, quoteItem.messageId)
         if (clearAfterSend) reset()
     }

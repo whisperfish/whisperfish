@@ -78,12 +78,18 @@ const TM_MAX_RATE: f32 = 30.0; // messages per minute
 const TM_CACHE_CAPACITY: f32 = 5.0; // 5 min
 const TM_CACHE_TRESHOLD: f32 = 4.5; // 4 min 30 sec
 
+#[derive(Debug)]
+pub struct NewAttachment {
+    pub path: String,
+    pub mime_type: String,
+}
+
 #[derive(actix::Message, Debug)]
 #[rtype(result = "()")]
 pub struct QueueMessage {
     pub session_id: i32,
     pub message: String,
-    pub attachment: String,
+    pub attachments: Vec<NewAttachment>,
     pub quote: i32,
 }
 
@@ -91,11 +97,11 @@ impl Display for QueueMessage {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(
             f,
-            "QueueMessage {{ session_id: {}, message: \"{}\", quote: {}, attachment: \"{}\" }}",
+            "QueueMessage {{ session_id: {}, message: \"{}\", quote: {}, attachments: \"{:?}\" }}",
             &self.session_id,
             shorten(&self.message, 9),
             &self.quote,
-            &self.attachment,
+            &self.attachments,
         )
     }
 }
@@ -1313,7 +1319,6 @@ impl Handler<QueueMessage> for ClientActor {
         let _span = tracing::trace_span!("QueueMessage", %msg).entered();
         let storage = self.storage.as_mut().unwrap();
 
-        let has_attachment = !msg.attachment.is_empty();
         let self_recipient = storage
             .fetch_self_recipient()
             .expect("self recipient set when sending");
@@ -1342,8 +1347,12 @@ impl Handler<QueueMessage> for ClientActor {
             ..crate::store::NewMessage::new_outgoing()
         });
 
-        if has_attachment {
-            storage.insert_local_attachment(inserted_msg.id, None, msg.attachment);
+        for attachment in &msg.attachments {
+            storage.insert_local_attachment(
+                inserted_msg.id,
+                Some(attachment.mime_type.as_str()),
+                attachment.path.clone(),
+            );
         }
 
         if let Some(h) = self.message_expiry_notification_handle.as_ref() {
@@ -3055,13 +3064,50 @@ mod tests {
     use super::*;
 
     #[test]
-    fn queue_message() {
+    fn queue_message_without_attachments() {
+        let attachments = vec![];
         let q = QueueMessage {
-            attachment: "Attachment!".into(),
+            attachments,
             session_id: 8,
             message: "Lorem ipsum dolor sit amet".into(),
             quote: 12,
         };
-        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachment: \"Attachment!\" }");
+        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[]\" }");
+    }
+
+    #[test]
+    fn queue_message_with_one_attachment() {
+        let attachments = vec![NewAttachment {
+            path: "/path/to/pic.jpg".into(),
+            mime_type: "image/jpeg".into(),
+        }];
+        let q = QueueMessage {
+            attachments,
+            session_id: 8,
+            message: "Lorem ipsum dolor sit amet".into(),
+            quote: 12,
+        };
+        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }]\" }");
+    }
+
+    #[test]
+    fn queue_message_with_multiple_attachments() {
+        let attachments = vec![
+            NewAttachment {
+                path: "/path/to/pic.jpg".into(),
+                mime_type: "image/jpeg".into(),
+            },
+            NewAttachment {
+                path: "/path/to/audio.mp3".into(),
+                mime_type: "audio/mpeg".into(),
+            },
+        ];
+        let q = QueueMessage {
+            attachments,
+            session_id: 8,
+            message: "Lorem ipsum dolor sit amet".into(),
+            quote: 12,
+        };
+        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }, NewAttachment { path: \"/path/to/audio.mp3\", mime_type: \"audio/mpeg\" }]\" }");
     }
 }

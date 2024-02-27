@@ -2637,8 +2637,7 @@ dependencies = [
 [[package]]
 name = "qmetaobject"
 version = "0.2.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "426a57e85d36f055a0c82cb0a8a261d49ba051ab2a2ef5471835f69d477816cd"
+source = "git+https://github.com/woboq/qmetaobject-rs#728220c0035ca6c85a99ce2fe5db8bb654ce5492"
 dependencies = [
  "cpp",
  "cpp_build",
@@ -2652,8 +2651,7 @@ dependencies = [
 [[package]]
 name = "qmetaobject_impl"
 version = "0.2.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "afc24897c707dcd6963e359e7f2b123857c508f129bed8ac4d3bd575c1a47627"
+source = "git+https://github.com/woboq/qmetaobject-rs#728220c0035ca6c85a99ce2fe5db8bb654ce5492"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2682,8 +2680,7 @@ dependencies = [
 [[package]]
 name = "qttypes"
 version = "0.2.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d405b0934e4176fb264d6ca597e5c8c2fba562fa155cba681ca160c1eb7edc6e"
+source = "git+https://github.com/woboq/qmetaobject-rs#728220c0035ca6c85a99ce2fe5db8bb654ce5492"
 dependencies = [
  "cpp",
  "cpp_build",
@@ -3182,9 +3179,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.111"
+version = "1.0.114"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "176e46fa42316f18edd598015a5166857fc835ec732f5215eac6b7bdbf0a84f4"
+checksum = "c5f09b1bd632ef549eaa9f60a1f8de742bdbc698e6cee2095fc84dde5f549ae0"
 dependencies = [
  "itoa",
  "ryu",
