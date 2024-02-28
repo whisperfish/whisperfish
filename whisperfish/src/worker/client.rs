@@ -1045,20 +1045,28 @@ impl ClientActor {
                 }
             }
             ContentBody::TypingMessage(typing) => {
-                tracing::info!("{:?} is typing.", metadata.sender);
-                let res = self
-                    .inner
-                    .pinned()
-                    .borrow()
-                    .session_actor
-                    .as_ref()
-                    .expect("session actor running")
-                    .try_send(crate::actor::TypingNotification {
-                        typing,
-                        sender: metadata.sender,
-                    });
-                if let Err(e) = res {
-                    tracing::error!("Could not send typing notification to SessionActor: {}", e);
+                let settings = crate::config::SettingsBridge::default();
+                if settings.get_enable_typing_indicators() {
+                    tracing::info!("{:?} is typing.", metadata.sender);
+                    let res = self
+                        .inner
+                        .pinned()
+                        .borrow()
+                        .session_actor
+                        .as_ref()
+                        .expect("session actor running")
+                        .try_send(crate::actor::TypingNotification {
+                            typing,
+                            sender: metadata.sender,
+                        });
+                    if let Err(e) = res {
+                        tracing::error!(
+                            "Could not send typing notification to SessionActor: {}",
+                            e
+                        );
+                    }
+                } else {
+                    tracing::debug!("Ignoring TypingMessage");
                 }
             }
             ContentBody::ReceiptMessage(receipt) => {
