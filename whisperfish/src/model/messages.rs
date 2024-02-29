@@ -25,6 +25,7 @@ crate::observing_model! {
         messageId: i32; READ get_message_id WRITE set_message_id,
         valid: bool; READ get_valid,
         attachments: QVariant; READ attachments,
+        reactions_: u32; READ reactions,
         thumbsAttachments: QVariant; READ visual_attachments,
         detailAttachments: QVariant; READ detail_attachments,
     } WITH OPTIONAL PROPERTIES FROM message WITH ROLE MessageRoles {
@@ -98,6 +99,15 @@ impl MessageImpl {
 
     fn attachments(&self) -> QVariant {
         self.attachments.pinned().into()
+    }
+
+    fn reactions(&self) -> u32 {
+        tracing::trace!(
+            "reactions (mid {:?}): {:?}",
+            self.message.as_ref().map(|m| m.id),
+            self.message.as_ref().map(|m| m.reactions)
+        );
+        self.message.as_ref().map(|m| m.reactions).unwrap_or(0) as _
     }
 
     fn detail_attachments(&self) -> QVariant {
@@ -221,6 +231,7 @@ crate::observing_model! {
 impl EventObserving for SessionImpl {
     type Context = ModelContext<Self>;
 
+    #[tracing::instrument(level = "trace", skip(self, ctx))]
     fn observe(&mut self, ctx: Self::Context, event: crate::store::observer::Event) {
         let storage = ctx.storage();
         if let Some(id) = self.session_id {
@@ -368,6 +379,7 @@ define_model_roles! {
         RevealedLink(fn revealed_link(&self) via QString::from): "revealedLink",
 
         Attachments(fn attachments(&self)):                   "attachments",
+        Reactions(fn reactions(&self)):                       "reactions",
         IsVoiceNote(is_voice_note):                           "isVoiceNote",
 
         IsLatestRevision(fn is_latest_revision(&self)):       "isLatestRevision",
@@ -430,6 +442,7 @@ impl MessageListModel {
         self.end_reset_model();
     }
 
+    #[tracing::instrument(level = "trace", skip(self))]
     fn observe(&mut self, storage: Storage, session_id: i32, event: crate::store::observer::Event) {
         // Waterfall handling of event.  If we cannot find a good specialized way of handling
         // the event, we'll reload the whole model.

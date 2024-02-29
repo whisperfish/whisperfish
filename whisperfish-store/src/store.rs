@@ -2,6 +2,8 @@ pub mod orm;
 
 pub mod body_ranges;
 mod encryption;
+#[cfg(feature = "diesel-instrumentation")]
+mod instrumentation;
 pub mod migrations;
 pub mod observer;
 mod protocol_store;
@@ -289,8 +291,11 @@ impl<P: AsRef<Path>> StorageLocation<P> {
                 .context("path to db contains a non-UTF8 character, please file a bug.")?
                 .to_string(),
         };
-
-        Ok(SqliteConnection::establish(&database_url)?)
+        #[allow(unused_mut)]
+        let mut conn = SqliteConnection::establish(&database_url)?;
+        #[cfg(feature = "diesel-instrumentation")]
+        conn.set_instrumentation(instrumentation::Instrumentation::default());
+        Ok(conn)
     }
 }
 
@@ -554,7 +559,7 @@ impl Storage {
         let mut db = db_path.open_db()?;
 
         if let Some(database_key) = database_key {
-            tracing::info!("Setting DB encryption");
+            let _span = tracing::info_span!("Setting DB encryption").entered();
 
             // db.batch_execute("PRAGMA cipher_log = stderr;")
             //     .context("setting sqlcipher log output to stderr")?;
@@ -600,11 +605,17 @@ impl Storage {
         // SQLite.
         // That said, our check_foreign_keys() does output more useful information for when things
         // go haywire, albeit a bit later.
+        let _span = tracing::info_span!("Running migrations").entered();
         db.batch_execute("PRAGMA foreign_keys = OFF;").unwrap();
         db.transaction::<_, anyhow::Error, _>(|db| {
-            db.run_pending_migrations(MIGRATIONS)
-                .map_err(|e| anyhow::anyhow!("Running migrations: {}", e))?;
-            crate::check_foreign_keys(db)?;
+            let migrations = db
+                .pending_migrations(MIGRATIONS)
+                .map_err(|e| anyhow::anyhow!("Filtering migrations: {}", e))?;
+            if !migrations.is_empty() {
+                db.run_migrations(&migrations)
+                    .map_err(|e| anyhow::anyhow!("Running migrations: {}", e))?;
+                crate::check_foreign_keys(db)?;
+            }
             Ok(())
         })?;
         db.batch_execute("PRAGMA foreign_keys = ON;").unwrap();
@@ -2157,9 +2168,15 @@ impl Storage {
                 sql::<Timestamp>(DELETE_AFTER).sql("AS delete_after"),
             ))
             .filter(
-                sql::<Bool>("delete_after")
-                    .sql(if already_expired { "<=" } else { ">" })
-                    .sql("DATETIME('now')"),
+                // This filter is the same as the index
+                schema::messages::expiry_started
+                    .is_not_null()
+                    .and(schema::messages::expires_in.is_not_null())
+                    .and(
+                        sql::<Bool>("delete_after")
+                            .sql(if already_expired { "<=" } else { ">" })
+                            .sql("DATETIME('now')"),
+                    ),
             )
             .order_by(sql::<Timestamp>("delete_after").asc())
             .load(&mut *self.db())
@@ -2176,7 +2193,12 @@ impl Storage {
                 schema::messages::id,
                 sql::<Timestamp>(DELETE_AFTER).sql("AS delete_after"),
             ))
-            .filter(schema::messages::expiry_started.is_not_null())
+            // This is the exact same filter clause as in the index.
+            .filter(
+                schema::messages::expiry_started
+                    .is_not_null()
+                    .and(schema::messages::expires_in.is_not_null()),
+            )
             .order_by(sql::<Timestamp>("delete_after").asc())
             .first(&mut *self.db())
             .optional()
@@ -2187,7 +2209,16 @@ impl Storage {
     #[tracing::instrument(skip(self))]
     pub fn delete_expired_messages(&mut self) -> usize {
         let deletions: Vec<i32> = diesel::delete(schema::messages::table)
-            .filter(sql::<Timestamp>(DELETE_AFTER).le(sql::<Timestamp>("DATETIME('now')")))
+            .filter(
+                // This is the exact same filter clause as in the index.
+                sql::<Timestamp>(DELETE_AFTER)
+                    .le(sql::<Timestamp>("DATETIME('now')"))
+                    .and(
+                        schema::messages::expiry_started
+                            .is_not_null()
+                            .and(schema::messages::expires_in.is_not_null()),
+                    ),
+            )
             .returning(schema::messages::id)
             .load(&mut *self.db())
             .expect("delete expired messages");
@@ -2638,6 +2669,11 @@ impl Storage {
             .count()
             .get_result(&mut *self.db())
             .expect("db");
+        let reactions: i64 = schema::reactions::table
+            .filter(schema::reactions::message_id.eq(message_id))
+            .count()
+            .get_result(&mut *self.db())
+            .expect("db");
 
         let is_voice_note = if attachments == 1 {
             schema::attachments::table
@@ -2662,6 +2698,7 @@ impl Storage {
             is_voice_note,
             receipts,
             attachments: attachments as usize,
+            reactions: reactions as usize,
             mentions,
             body_ranges,
         })
@@ -2734,6 +2771,22 @@ impl Storage {
                     .expect("db")
             });
 
+        // message_id, reaction count
+        let reactions: Vec<(i32, i64)> =
+            tracing::trace_span!("fetching reactions",).in_scope(|| {
+                schema::reactions::table
+                    .inner_join(schema::messages::table)
+                    .group_by(schema::reactions::message_id)
+                    .select((
+                        schema::reactions::message_id,
+                        diesel::dsl::count_distinct(schema::reactions::reaction_id),
+                    ))
+                    .filter(schema::messages::session_id.eq(sid))
+                    .order_by(order)
+                    .load(&mut *self.db())
+                    .expect("db")
+            });
+
         let receipts: Vec<(orm::Receipt, orm::Recipient)> =
             tracing::trace_span!("fetching receipts").in_scope(|| {
                 schema::receipts::table
@@ -2753,6 +2806,7 @@ impl Storage {
         tracing::trace_span!("joining messages, attachments, receipts into AugmentedMessage")
             .in_scope(|| {
                 let mut attachments = attachments.into_iter().peekable();
+                let mut reactions = reactions.into_iter().peekable();
                 let receipts = receipts
                     .into_iter()
                     .group_by(|(receipt, _recipient)| receipt.message_id);
@@ -2772,6 +2826,18 @@ impl Storage {
                     } else {
                         (0, false)
                     };
+
+                    let reactions = if reactions
+                        .peek()
+                        .map(|(id, _)| *id == message.id)
+                        .unwrap_or(false)
+                    {
+                        let (_, reactions) = reactions.next().unwrap();
+                        reactions as usize
+                    } else {
+                        0
+                    };
+
                     let receipts = if receipts
                         .peek()
                         .map(|(id, _)| *id == message.id)
@@ -2795,6 +2861,7 @@ impl Storage {
                         inner: message,
                         is_voice_note,
                         attachments,
+                        reactions,
                         receipts,
                         body_ranges,
                         mentions,

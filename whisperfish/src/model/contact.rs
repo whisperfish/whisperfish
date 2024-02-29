@@ -18,6 +18,7 @@ pub struct ContactModel {
 impl ContactModel {
     // The default formatter expected by QML
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn format(&self, number: QString) -> QString {
         let settings = SettingsBridge::default();
         let country_code = settings.get_string("country_code");

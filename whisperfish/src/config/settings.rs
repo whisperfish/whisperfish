@@ -362,6 +362,7 @@ impl SettingsBridge {
 
     #[allow(non_snake_case)]
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn avatarExists(&mut self, uuid: String) -> bool {
         self.avatar_exists(uuid)
     }

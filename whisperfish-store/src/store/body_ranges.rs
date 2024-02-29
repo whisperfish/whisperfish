@@ -111,6 +111,18 @@ pub fn to_vec(message_ranges: Option<&Vec<u8>>) -> Vec<WireBodyRange> {
         .collect()
 }
 
+fn escape_pre(s: &str) -> std::borrow::Cow<'_, str> {
+    if s.contains('<') || s.contains('>') || s.contains('&') {
+        std::borrow::Cow::Owned(
+            s.replace('&', "&amp;")
+                .replace('<', "&lt;")
+                .replace('>', "&gt;"),
+        )
+    } else {
+        std::borrow::Cow::Borrowed(s)
+    }
+}
+
 fn escape(s: &str) -> std::borrow::Cow<'_, str> {
     if s.contains('<') || s.contains('>') || s.contains('&') || s.contains('\n') {
         std::borrow::Cow::Owned(
@@ -316,7 +328,6 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
                 (segment.bold, "b"),
                 (segment.italic, "i"),
                 (segment.strikethrough, "s"),
-                (segment.monospace, "tt"),
             ];
 
             for (add_tag, tag) in &tags {
@@ -326,7 +337,6 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
                     result.push('>');
                 }
             }
-            let contents = escape(segment.contents);
 
             // XXX Optimise: only insert spoiler start if previous segment was not a spoiler
             if segment.spoiler {
@@ -353,10 +363,14 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
                 result.push_str("href=\"");
                 result.push_str(link);
                 result.push_str("\">");
-                result.push_str(&contents);
+                result.push_str(&escape(segment.contents));
                 result.push_str("</a>");
+            } else if segment.monospace {
+                result.push_str("<pre>");
+                result.push_str(&escape_pre(segment.contents));
+                result.push_str("</pre>");
             } else {
-                result.push_str(&contents);
+                result.push_str(&escape(segment.contents));
             }
 
             // XXX Optimise: only insert spoiler end if next segment is not a spoiler
@@ -560,6 +574,54 @@ mod tests {
         });
 
         assert_eq!("Mention <a href=\"mention://89fca563-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@foobar</a> URL <a href=\"https://gitlab.com/\">https://gitlab.com/</a> Another <a href=\"mention://9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@direc85</a> Link! <a href=\"https://github.com/\">https://github.com/</a>", styled);
+    }
+
+    #[test]
+    fn monospace() {
+        let text = "This is a monospace word.";
+        let ranges = [BodyRange {
+            start: 10,
+            length: 9,
+            associated_value: Some(AssociatedValue::Style(4)),
+        }];
+        println!("{ranges:?}");
+        let styled = to_styled(text, &ranges, no_mentions);
+
+        assert_eq!(styled, "This is a <pre>monospace</pre> word.");
+    }
+
+    #[test]
+    fn monospace_with_newlines() {
+        let text = "This is a monospace sentence\nwith line\nbreaks in it.";
+        let ranges = [BodyRange {
+            start: 10,
+            length: 35,
+            associated_value: Some(AssociatedValue::Style(4)),
+        }];
+        println!("{ranges:?}");
+        let styled = to_styled(text, &ranges, no_mentions);
+
+        assert_eq!(
+            styled,
+            "This is a <pre>monospace sentence\nwith line\nbreaks</pre> in it."
+        );
+    }
+
+    #[test]
+    fn monospace_with_tags() {
+        let text = "This is <pre>monospace</pre> with pre tags.";
+        let ranges = [BodyRange {
+            start: 8,
+            length: 20,
+            associated_value: Some(AssociatedValue::Style(4)),
+        }];
+        println!("{ranges:?}");
+        let styled = to_styled(text, &ranges, no_mentions);
+
+        assert_eq!(
+            styled,
+            "This is <pre>&lt;pre&gt;monospace&lt;/pre&gt;</pre> with pre tags."
+        );
     }
 
     #[test]

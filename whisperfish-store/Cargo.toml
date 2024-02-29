@@ -70,4 +70,6 @@ rstest_reuse = "0.6.0"
 bundled-sqlcipher = ["libsqlite3-sys/bundled-sqlcipher"]
 sailfish = ["bundled-sqlcipher", "bundled-openssl"]
 
+diesel-instrumentation = []
+
 bundled-openssl = ["libsqlite3-sys/bundled-sqlcipher-vendored-openssl"]

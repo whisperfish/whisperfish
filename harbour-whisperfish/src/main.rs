@@ -147,6 +147,9 @@ fn main() {
         "whisperfish=info,warn"
     };
 
+    #[cfg(feature = "flame")]
+    let mut _guard = None;
+
     if config.tracing {
         #[cfg(not(feature = "coz"))]
         {
@@ -157,6 +160,15 @@ fn main() {
 
             #[cfg(feature = "tracy")]
             let registry = registry.with(tracing_tracy::TracyLayer::new());
+
+            #[cfg(feature = "flame")]
+            let registry = {
+                eprintln!("Enabling flamegraph tracing");
+                let (layer, guard) =
+                    tracing_flame::FlameLayer::with_file("./tracing.folded").unwrap();
+                _guard = Some(guard);
+                registry.with(layer)
+            };
 
             registry.init();
         }

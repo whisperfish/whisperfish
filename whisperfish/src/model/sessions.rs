@@ -121,6 +121,7 @@ impl SessionListModel {
         self.countChanged();
     }
 
+    #[tracing::instrument(level = "trace", skip(self))]
     fn observe(&mut self, storage: &Storage, event: Event) {
         let session_id = event
             .relation_key_for(schema::sessions::table)

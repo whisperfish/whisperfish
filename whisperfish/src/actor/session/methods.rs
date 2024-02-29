@@ -28,6 +28,7 @@ pub struct SessionMethods {
 impl SessionMethods {
     /// Removes session by id from the database.
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn remove(&self, id: i32) {
         actix::spawn(
             self.actor
@@ -40,6 +41,7 @@ impl SessionMethods {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn markRead(&mut self, id: i32) {
         actix::spawn(
             self.actor
@@ -51,6 +53,7 @@ impl SessionMethods {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn markMuted(&self, id: i32, muted: bool) {
         actix::spawn(
             self.actor
@@ -63,6 +66,7 @@ impl SessionMethods {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn markArchived(&self, id: i32, archived: bool) {
         actix::spawn(
             self.actor
@@ -75,6 +79,7 @@ impl SessionMethods {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn markPinned(&self, id: i32, pinned: bool) {
         actix::spawn(
             self.actor
@@ -87,6 +92,7 @@ impl SessionMethods {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn removeIdentities(&self, recipient_id: i32) {
         actix::spawn(
             self.actor
@@ -99,6 +105,7 @@ impl SessionMethods {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn saveDraft(&self, sid: i32, draft: String) {
         actix::spawn(
             self.actor

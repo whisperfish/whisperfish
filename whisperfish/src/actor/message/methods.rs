@@ -42,6 +42,7 @@ pub struct MessageMethods {
 
 impl MessageMethods {
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn createMessage(
         &mut self,
         session_id: i32,
@@ -87,6 +88,7 @@ impl MessageMethods {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn createExpiryUpdate(&mut self, session_id: i32, expires_in: i32) {
         actix::spawn(
             self.client_actor
@@ -105,6 +107,7 @@ impl MessageMethods {
 
     /// Called when a message should be queued to be sent to OWS
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn sendMessage(&mut self, mid: i32) {
         actix::spawn(
             self.client_actor
@@ -116,6 +119,7 @@ impl MessageMethods {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn sendReaction(&self, message_id: i32, sender_id: i32, emoji: QString, remove: bool) {
         let emoji = emoji.to_string();
 
@@ -134,6 +138,7 @@ impl MessageMethods {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     fn endSession(&mut self, id: i32) {
         actix::spawn(
             self.client_actor
@@ -146,6 +151,7 @@ impl MessageMethods {
 
     /// Remove a message from the database.
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     pub fn remove(&self, id: i32) {
         actix::spawn(
             self.client_actor
@@ -160,6 +166,7 @@ impl MessageMethods {
 
     /// Remove a message from everyone and from the database.
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     pub fn removeForAll(&self, id: i32) {
         actix::spawn(
             self.client_actor
@@ -173,6 +180,7 @@ impl MessageMethods {
     }
 
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     pub fn exportAttachment(&self, attachment_id: i32) {
         actix::spawn(
             self.client_actor

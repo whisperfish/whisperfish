@@ -18,6 +18,7 @@ pub struct RequestGroupV2Info(pub GroupV2, pub [u8; zkgroup::GROUP_MASTER_KEY_LE
 
 impl ClientWorker {
     #[with_executor]
+    #[tracing::instrument(skip(self))]
     pub fn refresh_group_v2(&self, session_id: usize) {
         tracing::trace!("Request to refresh group v2 by session id = {}", session_id);
 

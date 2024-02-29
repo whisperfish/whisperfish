@@ -38,7 +38,7 @@ ListItem {
 
     property string fullMessageText: ""
 
-    readonly property string _message: fullMessageText !== "" ? fullMessageText : (hasData && modelData.styledMessage ? modelData.styledMessage.trim() : '')
+    readonly property string _message: fullMessageText !== "" ? fullMessageText : (hasData ? modelData.styledMessage.trim() : '')
     // TODO implement shared locations (show a map etc.; is probably not an attachment)
 
     Loader {
@@ -81,7 +81,7 @@ ListItem {
     property bool showExpand: !isEmpty && !isRemoteDeleted && _message.length > shortenThreshold
 
     readonly property bool hasData: modelData !== null && modelData !== undefined
-    readonly property bool hasReactions: hasData && reactions.count > 0
+    readonly property bool hasReactions: hasData && modelData.reactions > 0
     readonly property bool hasQuotedMessage: !!modelData.quotedMessageId && modelData.quotedMessageId != -1
     readonly property bool hasAttachments: hasData && modelData.attachments > 0
     readonly property bool hasText: hasData && _message !== ''
@@ -93,10 +93,15 @@ ListItem {
     property bool isExpanded: false
     property bool isSelected: listView !== null && listView.selectedMessages[modelData.id] !== undefined
 
-    GroupedReactions {
+    Loader {
         id: reactions
-        app: AppState
-        messageId: modelData.id
+        active: hasReactions
+        sourceComponent: Component {
+            GroupedReactions {
+                app: AppState
+                messageId: modelData.id
+            }
+        }
     }
 
     function handleExternalPressAndHold(mouse) {
@@ -204,22 +209,28 @@ ListItem {
 
         Item { width: 1; height: showSender ? senderNameLabel.backgroundGrow+Theme.paddingSmall : 0 }
 
-        QuotedMessagePreview {
+        Loader {
             id: quoteItem
-            visible: showQuotedMessage
-            width: delegateContentWidth
-            maximumWidth: maxMessageWidth
-            showCloseButton: false
-            showBackground: true
-            highlighted: down || root.highlighted
-            messageId: modelData.quotedMessageId ? modelData.quotedMessageId : -1
-            backgroundItem.roundedCorners: backgroundItem.bottomLeft |
-                                           backgroundItem.bottomRight |
-                                           (isOutbound ? backgroundItem.topRight :
-                                                       backgroundItem.topLeft)
-            onClicked: {
-                if (listView.isSelecting) root.clicked(mouse)
-                else quoteClickedSignal(index, messageData)
+            active: showQuotedMessage
+            sourceComponent: Component {
+                QuotedMessagePreview {
+                    // id: quoteItem
+                    visible: showQuotedMessage
+                    width: delegateContentWidth
+                    maximumWidth: maxMessageWidth
+                    showCloseButton: false
+                    showBackground: true
+                    highlighted: down || root.highlighted
+                    messageId: modelData.quotedMessageId ? modelData.quotedMessageId : -1
+                    backgroundItem.roundedCorners: backgroundItem.bottomLeft |
+                                                   backgroundItem.bottomRight |
+                                                   (isOutbound ? backgroundItem.topRight :
+                                                               backgroundItem.topLeft)
+                    onClicked: {
+                        if (listView.isSelecting) root.clicked(mouse)
+                        else quoteClickedSignal(index, messageData)
+                    }
+                }
             }
         }
 
@@ -281,7 +292,7 @@ ListItem {
         Item {
             id: infoRow
             anchors {
-                topMargin: Theme.paddingSmall * (reactions.length > 0 ? 2 : 1)
+                topMargin: Theme.paddingSmall * (hasReactions ? 2 : 1)
             }
             property real minContentWidth: emojiItem.width + Theme.paddingSmall + infoItem.width
             width: delegateContentWidth
@@ -289,7 +300,7 @@ ListItem {
 
             EmojiItem {
                 id: emojiItem
-                reactions: reactions.groupedReactions
+                reactions: reactions.status === Loader.Ready ? reactions.item.groupedReactions : ""
                 anchors.top: parent.top
                 anchors.left: isOutbound ? parent.left : undefined
                 anchors.right: isOutbound ? undefined : parent.right
