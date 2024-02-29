@@ -566,25 +566,25 @@
         </translation>
     </message>
     <message id="whisperfish-copy-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="450"/>
+        <location filename="../qml/components/MessagesView.qml" line="446"/>
         <source>Copy</source>
         <extracomment>Copy message menu item</extracomment>
         <translation>Copiază</translation>
     </message>
     <message id="whisperfish-forward-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="457"/>
+        <location filename="../qml/components/MessagesView.qml" line="453"/>
         <source>Forward</source>
         <extracomment>Forward message menu item</extracomment>
         <translation>Retransmite</translation>
     </message>
     <message id="whisperfish-select-or-options-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="464"/>
+        <location filename="../qml/components/MessagesView.qml" line="460"/>
         <source>Select • more</source>
         <extracomment>&quot;Select and show more options&quot; message menu item</extracomment>
         <translation>Selectează • mai multe</translation>
     </message>
     <message id="whisperfish-resend-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="443"/>
+        <location filename="../qml/components/MessagesView.qml" line="439"/>
         <source>Retry sending</source>
         <oldsource>Resend</oldsource>
         <extracomment>Resend message menu item</extracomment>
@@ -1805,20 +1805,20 @@ Settings page share contacts</extracomment>
         <translation type="unfinished">Atașament</translation>
     </message>
     <message id="whisperfish-sender-label-empty">
-        <location filename="../qml/delegates/MessageDelegate.qml" line="195"/>
+        <location filename="../qml/delegates/MessageDelegate.qml" line="200"/>
         <source>no sender</source>
         <extracomment>Label shown if a message doesn&apos;t have a sender.</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-message-deleted-note">
-        <location filename="../qml/delegates/MessageDelegate.qml" line="249"/>
+        <location filename="../qml/delegates/MessageDelegate.qml" line="260"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="53"/>
         <source>this message was deleted</source>
         <extracomment>Placeholder note for a deleted message</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-message-empty-note">
-        <location filename="../qml/delegates/MessageDelegate.qml" line="252"/>
+        <location filename="../qml/delegates/MessageDelegate.qml" line="263"/>
         <source>this message is empty</source>
         <extracomment>Placeholder note if an empty message is encountered.</extracomment>
         <translation type="unfinished"></translation>
