@@ -64,11 +64,49 @@ SilicaItem {
     property real _preferredHeight: page && page.isLandscape ? Theme.itemSizeSmall : Theme.itemSizeLarge
     property string isTypingMessage: ""
 
+    onIsTypingMessageChanged: if (isTypingMessage.length > 0) {
+        clearTypingTimer.restart()
+    }
+
     Component.onCompleted: {
         if (!page) {
             // page = Util.findPage(pageHeader)
             page = pageStack.currentPage
         }
+    }
+
+    Connections {
+        target: SessionModel
+        onSendTypings: {
+            // Only ConversationPage.qml has `sessionId` property.
+            if(pageStack.currentPage.sessionId != typing_data.sid) {
+                return
+            }
+
+            var count = typing_data.names.length
+            if (count == 1)
+                //: Text shown when one person is typing
+                //% "%1 is typing"
+                isTypingMessage = qsTrId("whisperfish-typing-1").arg(typing_data.names[0])
+            else if (count == 2)
+                //: Text shown when two persons are typing
+                //% "%1 and %2 are typing"
+                isTypingMessage = qsTrId("whisperfish-typing-2").arg(typing_data.names[0]).arg(typing_data.names[1])
+            else if (count >= 3)
+                //: Text shown when three or more persons are typing
+                //% "%1 and %n others are typing"
+                typing = qsTrId("whisperfish-typing-3-plus").arg(typing_data.names[0]).arg(count - 1)
+            else
+                isTypingMessage = ""
+        }
+    }
+
+    Timer {
+        id: clearTypingTimer
+        running: false
+        interval: 5000
+        repeat: false
+        onTriggered: isTypingMessage = ""
     }
 
     width: parent ? parent.width : Screen.width
@@ -146,8 +184,7 @@ SilicaItem {
         horizontalAlignment: wrapMode === Text.NoWrap && implicitWidth > width ?
                                  Text.AlignLeft : Text.AlignRight
         truncationMode: TruncationMode.Fade
-        property string incomingText: pageHeader.isTypingMessage
-        text: incomingText
+        text: pageHeader.isTypingMessage
         wrapMode: pageHeader.wrapMode
     }
 

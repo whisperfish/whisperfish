@@ -5,6 +5,7 @@ use actix::prelude::*;
 use futures::prelude::*;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
+use qttypes::{QVariantList, QVariantMap};
 
 #[derive(QObject, Default)]
 pub struct SessionMethods {
@@ -21,6 +22,7 @@ pub struct SessionMethods {
     removeIdentities: qt_method!(fn(&self, recipients_id: i32)),
 
     saveDraft: qt_method!(fn(&self, sid: i32, draft: String)),
+    sendTypings: qt_signal!(typing_data: QVariantMap),
 }
 
 impl SessionMethods {
@@ -106,5 +108,24 @@ impl SessionMethods {
                 .map(Result::unwrap),
         );
         tracing::trace!("Dispatched SafeDraft for {}", sid);
+    }
+
+    pub fn handle_typings(&self, typings: &HashMap<i32, Vec<orm::Recipient>>) {
+        for (sid, recipients) in typings {
+            let mut qnames = QVariantList::default();
+            for r in recipients {
+                qnames.push(if let Some(username) = r.username.as_ref() {
+                    QVariant::from(QString::from(username.as_str()))
+                } else if let Some(name) = r.profile_given_name.as_ref() {
+                    QVariant::from(QString::from(name.as_str()))
+                } else {
+                    QVariant::from(QString::from(r.e164_or_uuid().as_str()))
+                })
+            }
+            let mut item = QVariantMap::default();
+            item.insert("sid".into(), QVariant::from(*sid));
+            item.insert("names".into(), qnames.into());
+            self.sendTypings(item);
+        }
     }
 }
