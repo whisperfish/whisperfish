@@ -8,7 +8,7 @@ ListItem {
     property string date: Format.formatDate(model.timestamp, _dateFormat)
     property bool isGroup: model.isGroup
     property int unreadCount: 0 // TODO implement in model
-    property bool isUnread: hasDraft || model.message !== undefined && !model.read // TODO investigate: is this really a bool?
+    property bool isUnread: hasDraft || !model.read // TODO investigate: is this really a bool?
     property bool isNoteToSelf: SetupWorker.uuid === model.recipientUuid
     property bool isPinned: model.isPinned
     property bool isArchived: model.isArchived
@@ -23,6 +23,7 @@ ListItem {
     property bool isPreviewRead: model.readCount > 0 // TODO investigate: not updated for new message (#151, #55?)
     property bool isPreviewViewed: model.viewCount > 0 // TODO investigate: not updated for new message (#151, #55?)
     property bool isPreviewSent: model.sent // TODO cf. isPreviewReceived (#151)
+    property bool hasText: model.message !== undefined && model.message !== ''
     property bool hasSpoilers: model.hasSpoilers
     property bool hasStrikeThrough: model.hasStrikeThrough
     property bool hasAttachment: model.hasAttachment
@@ -33,12 +34,12 @@ ListItem {
         (_debugMode ? "[" + model.id + "] " : "") +
         (hasAttachment
             ? (model.isVoiceNote
-                ? ("🎤 " + (model.message === ''
+                ? ("🎤 " + (!hasText
                     //: Session is a voice note
                     //% "Voice Message"
                     ? qsTrId("whisperfish-session-is-voice-note") : '')
                 )
-                : ("📎 " + (model.message === ''
+                : ("📎 " + (!hasText
                     //: Session contains an attachment label
                     //% "Attachment"
                     ? qsTrId("whisperfish-session-has-attachment") : '')
@@ -50,10 +51,7 @@ ListItem {
             //: Placeholder note for a deleted message
             //% "this message was deleted"
             ? qsTrId("whisperfish-message-deleted-note")
-            : (model.message !== undefined
-                ? (hasSpoilers || hasStrikeThrough ? model.styledMessage : model.message)
-                : ''
-            )
+            : (hasText ? model.styledMessage : '')
         )
 
     signal relocateItem(int sessionId)
@@ -202,8 +200,8 @@ ListItem {
                       qsTrId("whisperfish-message-preview-draft").arg(draft) :
                       message)
             bypassLinking: true
-            needsRichText: delegate.hasStrikeThrough || delegate.hasSpoilers
-            hasSpoilers: delegate.hasSpoilers // Set to 'false' when text is clicked
+            needsRichText: hasStrikeThrough || hasSpoilers
+            hasSpoilers: hasSpoilers // Set to 'false' when text is clicked
             highlighted: _labelsHighlighted
             verticalAlignment: Text.AlignTop
         }

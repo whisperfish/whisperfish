@@ -231,9 +231,9 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
         })
         .collect();
 
-    // If there are no segments, and no ranges, we can just return the message without reallocating.
+    // If there are no segments, ranges or special characters we can just return the message without reallocating.
     if segments.len() == 1 && segments[0].link.is_none() && ranges.is_empty() {
-        return message.into();
+        return escape(message);
     }
 
     fn annotate<'a>(segment: &'_ mut Segment<'a>, style: Option<&'a AssociatedValue>) {
@@ -589,5 +589,29 @@ mod tests {
         let styled = to_styled(text, &ranges, no_mentions);
 
         assert_eq!("Spoiler-link <span style='background-color: \"white\"; color: \"white\";'><a style='background-color: \"white\"; color: \"white\";' href=\"https://gitlab.com/\">https://gitlab.com/</a></span> and that's it.", styled);
+    }
+
+    #[test]
+    fn plain_with_lt_and_gt() {
+        let text = "oh no :< oh yes :>";
+        let ranges = [];
+        println!("{ranges:?}");
+        let styled = to_styled(text, &ranges, no_mentions);
+
+        assert_eq!("oh no :&lt; oh yes :&gt;", styled);
+    }
+
+    #[test]
+    fn styled_with_lt_and_gt() {
+        let text = "oh no :< oh yes :>";
+        let ranges = [BodyRange {
+            start: 0,
+            length: 5,
+            associated_value: Some(AssociatedValue::Style(0)),
+        }];
+        println!("{ranges:?}");
+        let styled = to_styled(text, &ranges, no_mentions);
+
+        assert_eq!("<b>oh no</b> :&lt; oh yes :&gt;", styled);
     }
 }
