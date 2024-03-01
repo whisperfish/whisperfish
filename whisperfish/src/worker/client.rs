@@ -659,9 +659,7 @@ impl ClientActor {
             storage.fetch_or_insert_session_by_recipient_id(recipient.id)
         });
 
-        if expiration_timer_update {
-            storage.update_expiration_timer(session.id, msg.expire_timer);
-        }
+        storage.update_expiration_timer(session.id, msg.expire_timer);
 
         let expires_in = session.expiring_message_timeout;
 
