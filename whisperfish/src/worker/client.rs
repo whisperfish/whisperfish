@@ -503,7 +503,6 @@ impl ClientActor {
 
         let expiration_timer_update =
             msg.flags() & DataMessageFlags::ExpirationTimerUpdate as u32 != 0;
-        let mut set_expiry = true;
         let alt_body = if let Some(reaction) = &msg.reaction {
             if let Some((message, session)) = storage.process_reaction(
                 &sender_recipient
@@ -526,7 +525,6 @@ impl ClientActor {
             }
             None
         } else if expiration_timer_update {
-            set_expiry = false;
             // XXX Translation and seconds-to-time formatting
             Some(format!(
                 "Expiration timer has been changed to {:?} seconds.",
@@ -537,7 +535,6 @@ impl ClientActor {
             ..
         }) = msg.group_v2
         {
-            set_expiry = false;
             Some(format!(
                 "Group changed by {}",
                 source_phonenumber
@@ -664,15 +661,9 @@ impl ClientActor {
 
         if expiration_timer_update {
             storage.update_expiration_timer(session.id, msg.expire_timer);
-            // Don't auto-destroy the update message
-            set_expiry = false;
         }
 
-        let expires_in = if set_expiry {
-            session.expiring_message_timeout
-        } else {
-            None
-        };
+        let expires_in = session.expiring_message_timeout;
 
         let new_message = crate::store::NewMessage {
             source_e164: source_phonenumber,
@@ -1400,7 +1391,7 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
                 "[Whisperfish] Message expiry set to {:?} seconds",
                 msg.expires_in.map(|x| x.as_secs())
             ),
-            expires_in: msg.expires_in, // None'd in SendMessage handler
+            expires_in: msg.expires_in,
             flags: DataMessageFlags::ExpirationTimerUpdate as i32,
             ..crate::store::NewMessage::new_outgoing()
         });
@@ -1526,11 +1517,6 @@ impl Handler<SendMessage> for ClientActor {
                     };
                     storage.store_attachment_pointer(attachment.id, &ptr);
                     content.attachments.push(ptr);
-                }
-
-                // Don't let ExpirationTimerUpdate messages expire
-                if msg.flags == DataMessageFlags::ExpirationTimerUpdate as i32 && msg.expires_in.is_some() {
-                    storage.clear_message_expiry(msg.id);
                 }
 
                 let res = addr

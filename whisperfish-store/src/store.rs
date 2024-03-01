@@ -938,19 +938,6 @@ impl Storage {
         }
     }
 
-    pub fn clear_message_expiry(&self, message_id: i32) {
-        use crate::schema::messages::dsl::*;
-        let affected_rows = diesel::update(messages)
-            .set((expires_in.eq(None::<i32>),))
-            .filter(id.eq(message_id))
-            .execute(&mut *self.db())
-            .expect("existing record updated");
-
-        if affected_rows > 0 {
-            self.observe_update(messages, message_id);
-        }
-    }
-
     #[tracing::instrument(
         skip(self, phonenumber, new_profile_key),
         fields(
@@ -2137,7 +2124,8 @@ impl Storage {
             schema::messages::table.filter(
                 schema::messages::id
                     .eq(message_id)
-                    .and(schema::messages::expiry_started.is_null()),
+                    .and(schema::messages::expiry_started.is_null())
+                    .and(schema::messages::flags.eq(0)),
             ),
         )
         .set(schema::messages::expiry_started.eq(Some(chrono::Utc::now().naive_utc())))
@@ -2172,6 +2160,7 @@ impl Storage {
                 schema::messages::expiry_started
                     .is_not_null()
                     .and(schema::messages::expires_in.is_not_null())
+                    .and(schema::messages::flags.eq(0))
                     .and(
                         sql::<Bool>("delete_after")
                             .sql(if already_expired { "<=" } else { ">" })
@@ -2197,7 +2186,8 @@ impl Storage {
             .filter(
                 schema::messages::expiry_started
                     .is_not_null()
-                    .and(schema::messages::expires_in.is_not_null()),
+                    .and(schema::messages::expires_in.is_not_null())
+                    .and(schema::messages::flags.eq(0)),
             )
             .order_by(sql::<Timestamp>("delete_after").asc())
             .first(&mut *self.db())
@@ -2216,7 +2206,8 @@ impl Storage {
                     .and(
                         schema::messages::expiry_started
                             .is_not_null()
-                            .and(schema::messages::expires_in.is_not_null()),
+                            .and(schema::messages::expires_in.is_not_null())
+                            .and(schema::messages::flags.eq(0)),
                     ),
             )
             .returning(schema::messages::id)
