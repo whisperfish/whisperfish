@@ -263,7 +263,7 @@ SilicaListView {
                         true : false
         }
         property Item section // overrides the default section item
-        property bool isServiceMessage: false // TODO implement in backend
+        property bool isServiceMessage: loader.item.modelData.flags > 0
 
         height: loader.y + loader.height
         width: parent.width
