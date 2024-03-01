@@ -1387,10 +1387,6 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
             session_id: session.id,
             source_e164: self_recipient.e164,
             source_uuid: self_recipient.uuid,
-            text: format!(
-                "[Whisperfish] Message expiry set to {:?} seconds",
-                msg.expires_in.map(|x| x.as_secs())
-            ),
             expires_in: msg.expires_in,
             flags: DataMessageFlags::ExpirationTimerUpdate as i32,
             ..crate::store::NewMessage::new_outgoing()
@@ -1669,7 +1665,6 @@ impl Handler<EndSession> for ClientActor {
             session_id: session.id,
             source_e164: recipient.e164,
             source_uuid: recipient.uuid,
-            text: "[Whisperfish] Reset secure session".into(),
             timestamp: chrono::Utc::now().naive_utc(),
             flags: DataMessageFlags::EndSession.into(),
             ..crate::store::NewMessage::new_outgoing()
@@ -2243,7 +2238,6 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             let msg = crate::store::NewMessage {
                                 session_id: session.id,
                                 source_uuid: Some(source_uuid),
-                                text: "[Whisperfish] The identity key for this contact has changed. Please verify your safety number.".into(), // XXX Translate
                                 ..crate::store::NewMessage::new_incoming()
                             };
                             storage.create_message(&msg);
