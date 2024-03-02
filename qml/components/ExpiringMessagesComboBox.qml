@@ -7,7 +7,6 @@ Column {
     id: root
     property int duration: -1 // Expiring messages timeout, in seconds.
     property int newDuration
-    property bool blockUpdates: false
 
     function updateNewDuration() {
         switch (unitComboBox.unit) {
