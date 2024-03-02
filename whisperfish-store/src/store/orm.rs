@@ -1805,17 +1805,11 @@ mod tests {
                 NaiveDateTime::parse_from_str("2023-03-31 14:51:25", "%Y-%m-%d %H:%M:%S").unwrap()
             )
         );
-        assert_eq!(a.recipient_name(), "");
-        assert_eq!(a.recipient_uuid(), "");
-        assert_eq!(a.recipient_e164(), "");
-        assert_eq!(a.recipient_emoji(), "");
-        assert_eq!(a.recipient_about(), "");
+        assert_eq!(a.recipient_id(), -1);
         assert_eq!(a.group_name(), Some("G2"));
         assert_eq!(a.group_description(), Some("desc".into()));
         assert_eq!(a.group_id(), Some("abc"));
         assert!(!a.sent());
-        assert!(!a.has_avatar());
-        assert!(a.has_attachment());
         assert_eq!(a.draft(), "".to_string());
         assert_eq!(a.last_message_text(), Some("msg text"));
         assert!(a.is_pinned());
@@ -1837,12 +1831,6 @@ mod tests {
         assert_eq!(a.group_description(), None);
         assert_eq!(a.group_id(), None);
         assert_eq!(a.recipient_id(), 981);
-        assert_eq!(a.recipient_name(), "Nick Name");
-        assert_eq!(a.recipient_uuid(), "bff93979-a0fa-41f5-8ccf-e319135384d8");
-        assert_eq!(a.recipient_e164(), "+358401010101");
-        assert_eq!(a.recipient_emoji(), "🦊");
-        assert_eq!(a.recipient_about(), "About me!");
-        assert!(!a.has_avatar());
     }
 
     #[test]
