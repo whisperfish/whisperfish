@@ -23,12 +23,13 @@ ListItem {
     property bool isPreviewDelivered: model.deliveryCount > 0 // TODO investigate: not updated for new message (#151, #55?)
     property bool isPreviewRead: model.readCount > 0 // TODO investigate: not updated for new message (#151, #55?)
     property bool isPreviewViewed: model.viewCount > 0 // TODO investigate: not updated for new message (#151, #55?)
-    property bool isPreviewSent: model.sent // TODO cf. isPreviewReceived (#151)
-    property bool isRemoteDeleted: lastMessage.remoteDeleted
+    property bool isPreviewSent: hasLastMessage && model.sent // TODO cf. isPreviewReceived (#151)
+    property bool isRemoteDeleted: hasLastMessage && lastMessage.remoteDeleted
     property bool hasText: lastMessage.message !== undefined && lastMessage.message !== ''
-    property bool hasSpoilers: lastMessage.hasSpoilers
-    property bool hasStrikeThrough: lastMessage.hasStrikeThrough
-    property int expiringMessages: model.expiringMessageTimeout != -1
+    property bool hasLastMessage: lastMessage.messageId > 0
+    property bool hasSpoilers: hasLastMessage ? lastMessage.hasSpoilers : false
+    property bool hasStrikeThrough: hasLastMessage ? lastMessage.hasStrikeThrough : false
+    property int expiringMessages: hasLastMessage && model.expiringMessageTimeout != -1
     property string name: model.isGroup ? model.groupName : getRecipientName(recipient.e164, recipient.name, true)
     property string emoji: model.recipientId > 0 && recipient.emoji != null ? recipient.emoji : ''
     property string message:
