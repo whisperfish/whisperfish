@@ -153,8 +153,7 @@ Page {
         onSendMessage: {
             for (var r in sessionList.recipients) {
                 var recp = sessionList.recipients[r]
-                var firstAttachedPath = (attachments.length > 0 ? attachments[0].data : '')
-                MessageModel.createMessage(recp.id, text, firstAttachedPath, -1, true)
+                MessageModel.createMessage(recp.id, text, attachments, -1, true)
             }
             pageStack.pop()
         }

@@ -117,6 +117,7 @@ Page {
         enablePersonalizedPlaceholder: false
         showSeparator: true
         enableAttachments: false
+        // TODO: Support multiple attachments
         attachments: (typeof root.shareObject.resources[0] === 'string' || root.shareObject.resources[0] instanceof String)
             ? [ { data: root.shareObject.resources[0].replace(/^file:\/\//, ''), type: root.shareObject.mimeType } ]
             : []
@@ -158,8 +159,7 @@ Page {
         onSendMessage: {
             for (var r in sessionList.recipients) {
                 var recp = sessionList.recipients[r]
-                var firstAttachedPath = (attachments.length > 0 ? attachments[0].data : '')
-                MessageModel.createMessage(recp.id, text, firstAttachedPath, -1, true)
+                MessageModel.createMessage(recp.id, text, attachments, -1, true)
             }
             pageStack.pop()
         }
