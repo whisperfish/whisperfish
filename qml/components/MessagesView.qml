@@ -248,7 +248,9 @@ SilicaListView {
         property string newerSection: ListView.previousSection
         property string olderSection: ListView.nextSection
 
-        property bool messageLoaded: loader.status === Loader.Ready && !wrapper.isServiceMessage
+        property bool messageLoaded: loader.status === Loader.Ready && loader.item.modelData.flags == 0
+        property bool serviceMessageLoaded: loader.status === Loader.Ready && loader.item.modelData.flags > 0
+
         property int messageId: messageLoaded ? loader.item.modelData.id : -1
         property bool messageRead: messageLoaded ? loader.item.modelData.isRead === true : true
         property int messageExpiresIn: messageLoaded ? loader.item.modelData.expiresIn : -1
@@ -263,7 +265,6 @@ SilicaListView {
                         true : false
         }
         property Item section // overrides the default section item
-        property bool isServiceMessage: loader.item.modelData.flags > 0
 
         height: loader.y + loader.height
         width: parent.width
