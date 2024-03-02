@@ -126,10 +126,6 @@ Page {
         Component.onCompleted: {
             if ('mimeType' in root.shareObject) {
                 switch (root.shareObject.mimeType) {
-                    case 'image/jpeg':
-                    case 'video/mp4':
-                        text = /[^/]*$/.exec(root.shareObject.resources[0])[0]
-                        break;
                     case 'text/x-url':
                         text = root.shareObject.resources[0].linkTitle + '\n\n' + root.shareObject.resources[0].status
                         break;
