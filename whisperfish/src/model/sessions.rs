@@ -322,6 +322,8 @@ define_model_roles! {
         GroupDescription(fn group_description(&self) via qstring_from_option):
                                                                            "groupDescription",
         Message(fn last_message_text(&self) via qstring_from_option):      "message",
+        MessageId(fn last_message_id(&self)):                              "messageId",
+        IsServiceMessage(fn is_service_message(&self)):                    "isServiceMessage",
         StyledMessage(fn last_message_text_styled(&self) via qstring_from_option): "styledMessage",
         Section(fn section(&self) via QString::from):                      "section",
         Timestamp(fn timestamp(&self) via qdatetime_from_naive_option):    "timestamp",

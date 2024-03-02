@@ -50,6 +50,8 @@ crate::observing_model! {
         quotedMessageId QuotedMessageId,
         hasSpoilers HasSpoilers,
         hasStrikeThrough HasStrikeThrough,
+
+        expiresIn ExpiresIn,
     }
 }
 

@@ -2,6 +2,7 @@ import QtQuick 2.6
 import Sailfish.Silica 1.0
 import be.rubdos.whisperfish 1.0
 import "../components"
+import "../delegates"
 
 ListItem {
     id: delegate
@@ -32,26 +33,29 @@ ListItem {
     property string emoji: model.recipientEmoji
     property string message:
         (_debugMode ? "[" + model.id + "] " : "") +
-        (hasAttachment
-            ? (model.isVoiceNote
-                ? ("🎤 " + (!hasText
-                    //: Session is a voice note
-                    //% "Voice Message"
-                    ? qsTrId("whisperfish-session-is-voice-note") : '')
+        (lastMessage.flags == 0
+            ? (hasAttachment
+                    ? (model.isVoiceNote
+                        ? ("🎤 " + (!hasText
+                            //: Session is a voice note
+                            //% "Voice Message"
+                            ? qsTrId("whisperfish-session-is-voice-note") : '')
+                        )
+                        : ("📎 " + (!hasText
+                            //: Session contains an attachment label
+                            //% "Attachment"
+                            ? qsTrId("whisperfish-session-has-attachment") : '')
+                        )
+                    )
+                    : ''
+                ) +
+                (model.remoteDeleted
+                    //: Placeholder note for a deleted message
+                    //% "this message was deleted"
+                    ? qsTrId("whisperfish-message-deleted-note")
+                    : (hasText ? model.styledMessage : '')
                 )
-                : ("📎 " + (!hasText
-                    //: Session contains an attachment label
-                    //% "Attachment"
-                    ? qsTrId("whisperfish-session-has-attachment") : '')
-                )
-            )
-            : ''
-        ) +
-        (model.remoteDeleted
-            //: Placeholder note for a deleted message
-            //% "this message was deleted"
-            ? qsTrId("whisperfish-message-deleted-note")
-            : (hasText ? model.styledMessage : '')
+            : serviceMessage.active ? "<i>"+serviceMessage.item._message+"</i>" : ""
         )
 
     signal relocateItem(int sessionId)
@@ -68,6 +72,25 @@ ListItem {
         id: group
         app: AppState
         groupId: model.groupId ? model.groupId : -1
+    }
+
+    // Note: This is a "Rust model" and always needed.
+    Message {
+        id: lastMessage
+        app: AppState
+        messageId: model.messageId
+    }
+
+    // Note: This is a delegate, which is loaded when needed
+    // and uses Message above as modelData.
+    Loader {
+        id: serviceMessage
+        active: model.isServiceMessage
+        sourceComponent: ServiceMessageDelegate {
+            modelData: lastMessage
+            visible: false
+            enabled: false
+        }
     }
 
     function remove(contentItem) {
@@ -125,12 +148,11 @@ ListItem {
             isNoteToSelf: delegate.isNoteToSelf
             isGroup: delegate.isGroup
             // TODO: Rework infomarks to four corners or something like that; we can currently show only one status or emoji
-            showInfoMark: !isRegistered || isPinned || hasDraft || isNoteToSelf || isMuted || infoMarkEmoji !== ''
+            showInfoMark: !isRegistered || hasDraft || isNoteToSelf || isMuted || infoMarkEmoji !== ''
             infoMarkSource: {
                 if (!isRegistered) 'image://theme/icon-s-warning'
                 else if (hasDraft) 'image://theme/icon-s-edit'
                 else if (isNoteToSelf) 'image://theme/icon-s-retweet' // task|secure|retweet
-                else if (isPinned) 'image://theme/icon-s-high-importance'
                 else if (isMuted) 'image://theme/icon-s-low-importance'
                 else ''
             }

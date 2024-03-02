@@ -1229,6 +1229,14 @@ impl AugmentedSession {
         self.last_message.as_ref().and_then(|m| m.text.as_deref())
     }
 
+    pub fn last_message_id(&self) -> i32 {
+        self.last_message.as_ref().map(|m| m.id).unwrap_or(-1)
+    }
+
+    pub fn is_service_message(&self) -> bool {
+        self.last_message.as_ref().and_then(|m| Some(m.flags > 0)).unwrap_or(false)
+    }
+
     pub fn section(&self) -> String {
         if self.is_pinned {
             return String::from("pinned");

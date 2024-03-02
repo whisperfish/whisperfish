@@ -17,7 +17,6 @@ ListItem {
     // TODO the model should expose the message type as enum
     // TODO what service messages are there?
     // TODO do we need special treatment for service messages in groups?
-    property string _origin: "none" /* modelData.serviceMessageOrigin */ // "self" or "peer"
     property string _type: switch (modelData.flags) {
             // DataMessage::Flags
             case 1:   /* 1 << 0 */ return "endSession"
@@ -30,6 +29,7 @@ ListItem {
             default: return ""
         }
 
+    property string _outgoing: modelData.outgoing === true
     property string _originName: (modelData !== null) ? getRecipientName(modelData.recipientE164, modelData.recipientName, false) : ''
 
     property bool _canShowDetails: (_type === "fingerprintChanged" /*||
@@ -51,65 +51,154 @@ ListItem {
             ""
         }
     }
+
+    function timeFormat(secs) {
+        // These translations are defined in ExpiringMessagesComboBox.qml
+        if (secs >= 604800 && secs % 604800 === 0)
+            return qsTrId("whisperfish-disappearing-messages-weeks", Math.floor(secs / 604800))
+        else if (secs >= 86400 && secs % 86400 === 0)
+            return qsTrId("whisperfish-disappearing-messages-days", Math.floor(secs / 86400))
+        else if (secs >= 3600 && secs % 3600 === 0)
+            return qsTrId("whisperfish-disappearing-messages-hours", Math.floor(secs / 3600))
+        else if (secs >= 60 && secs % 60 === 0)
+            return qsTrId("whisperfish-disappearing-messages-minutes", Math.floor(secs / 60))
+        else
+            return qsTrId("whisperfish-disappearing-messages-seconds", Math.floor(secs))
+    }
+
     property string _message: {
-        if (_type === "joinedGroup" && _origin === "self") {
-            //: Service message, %1 = group name
-            //% "You joined the group “%1”."
-            qsTrId("whisperfish-service-message-joined-group-self").arg(_originName)
-        } else if (_type === "leftGroup" && _origin === "self") {
-            //: Service message
-            //% "You left the group."
-            qsTrId("whisperfish-service-message-left-group-self")
-        } else if (_type === "joinedGroup" && _origin === "peer") {
-            //: Service message, %1 is the new member's name
-            //% "%1 joined the group."
-            qsTrId("whisperfish-service-message-joined-group-peer").arg(_originName)
-        } else if (_type === "leftGroup" && _origin === "peer") {
-            //: Service message, %1 is is the lost member's name
-            //% "%1 left the group."
-            qsTrId("whisperfish-service-message-left-group-peer").arg(_originName)
-        } else if (_type === "missedCallVoice") {
+        if (_type === "expiryUpdate") {
+            // We didn't save the expiresIn for the service messages themselves,
+            // so we may have to parse the "placeholder" text for the value instead.
+            var secs = modelData.expiresIn
+            if (secs == -1 && modelData.message.length > 0) {
+                var matches = modelData.message.match(/(\d)+/)
+                if (Array.isArray(matches)) {
+                    secs = matches[0]
+                } else if (modelData.message.includes("None")) {
+                    secs = 0
+                }
+            }
+
+            if (secs > 0) {
+                _outgoing
+                //: Service message, %1 time
+                //% "You set expiring messages timeout to %1."
+                ? qsTrId("whisperfish-service-message-expity-update-self").arg(timeFormat(secs))
+                //: Service message, %1 is a name, %2 is time
+                //% "%1 set expiring messages timeout to %2."
+                : qsTrId("whisperfish-service-message-expity-update-peer").arg(_originName).arg(timeFormat(secs))
+            } else if (secs === 0) {
+                _outgoing
+                //: Service message
+                //% "You disabled expiring messages."
+                ? qsTrId("whisperfish-service-message-expity-disable-self")
+                //: Service message, %1 is a name
+                //% "%1 disabled expiring messages."
+                : qsTrId("whisperfish-service-message-expity-disable-peer").arg(_originName)
+            } else {
+                _outgoing
+                //: Service message
+                //% "You set or disabled expiring messages timeout."
+                ? qsTrId("whisperfish-service-message-expity-unknown-self")
+                //: Service message, %1 is a name
+                //% "%1 set or disabled expiring messages timeout."
+                : qsTrId("whisperfish-service-message-expity-unknown-peer").arg(_originName)
+            }
+        }
+        else if (_type === "profileKeyUpdate") {
+            _outgoing
             //: Service message, %1 is a name
-            //% "You missed a call from %1."
-            qsTrId("whisperfish-service-message-missed-call-voice").arg(_originName)
-        } else if (_type === "missedCallVideo") {
+            //% "You updated your profile key with %1."
+            ? qsTrId("whisperfish-service-message-profile-key-update-self").arg(_originName)
+            //: Service message, %1 is a name, %2 is time
+            //% "%1 updated their profile key with you."
+            : qsTrId("whisperfish-service-message-profile-key-update-peer").arg(_originName)
+        }
+        else if (_type === "endSession") {
+            _outgoing
+            //: Service message, %1 is a name
+            //% "You ended the session with %1."
+            ? qsTrId("whisperfish-service-message-end-session-self").arg(_originName)
+            //: Service message, %1 is a name
+            //% "%1 ended the session with you."
+            : qsTrId("whisperfish-service-message-end-session-peer").arg(_originName)
+        }
+        else if (_type === "joinedGroup") {
+            _outgoing
+            //: Service message
+            //% "You joined the group."
+            ? qsTrId("whisperfish-service-message-joined-group-self")
+            //: Service message, %1 is a name
+            //% "%1 joined the group."
+            : qsTrId("whisperfish-service-message-joined-group-peer").arg(_originName)
+        }
+        else if (_type === "leftGroup") {
+            _outgoing
+            //: Service message, %1 is a name
+            //% "You left the group."
+            ? qsTrId("whisperfish-service-message-left-group-self")
+            //: Service message, %1 is a name
+            //% "%1 left the group."
+            : qsTrId("whisperfish-service-message-left-group-peer").arg(_originName)
+        }
+        else if (_type === "missedCallVoice") {
+            _outgoing
+            //: Service message, %1 is a name
+            //% "You missed a voice call from %1."
+            ? qsTrId("whisperfish-service-message-missed-call-voice-self").arg(_originName)
+            //: Service message, %1 is a name
+            //% "You tried to voice call %1."
+            : qsTrId("whisperfish-service-message-missed-call-voice-peer").arg(_originName)
+        }
+        else if (_type === "missedCallVideo") {
+            _outgoing
             //: Service message, %1 is a name
             //% "You missed a video call from %1."
-            qsTrId("whisperfish-service-message-missed-call-video").arg(_originName)
-        } else if (_type === "callVoice" && _origin === "self") {
+            ? qsTrId("whisperfish-service-message-missed-call-video-self").arg(_originName)
             //: Service message, %1 is a name
-            //% "You called %1."
-            qsTrId("whisperfish-service-message-call-voice-self").arg(_originName)
-        } else if (_type === "callVideo" && _origin === "self") {
+            //% "You tried to video call %1."
+            : qsTrId("whisperfish-service-message-missed-call-video-peer").arg(_originName)
+        }
+        else if (_type === "callVideo") {
+            _outgoing
             //: Service message, %1 is a name
-            //% "You started a video call with %1."
-            qsTrId("whisperfish-service-message-call-video-self").arg(_originName)
-        } else if (_type === "callVoice" && _origin === "peer") {
+            //% "You had a video call with %1."
+            ? qsTrId("whisperfish-service-message-call-video-self").arg(_originName)
             //: Service message, %1 is a name
-            //% "%1 called you."
-            qsTrId("whisperfish-service-message-call-voice-peer").arg(_originName)
-        } else if (_type === "callVideo" && _origin === "peer") {
+            //% "%1 had a video call with you."
+            : qsTrId("whisperfish-service-message-call-video-peer").arg(_originName)
+        }
+        else if (_type === "callVoice") {
+            _outgoing
             //: Service message, %1 is a name
-            //% "%1 started a video call with you."
-            qsTrId("whisperfish-service-message-call-video-peer").arg(_originName)
-        } else if (_type === "fingerprintChanged") {
+            //% "You had a voice call with %1."
+            ? qsTrId("whisperfish-service-message-call-voice-self").arg(_originName)
+            //: Service message, %1 is a name
+            //% "%1 had a voice call with you."
+            : qsTrId("whisperfish-service-message-call-voice-peer").arg(_originName)
+        }
+        else if (_type === "fingerprintChanged") {
             //: Service message, %1 is a name
             //% "Your safety number with %1 has changed. "
             //% "Swipe right to verify the new number."
             qsTrId("whisperfish-service-message-fingerprint-changed").arg(_originName)
-        } else if (_type === "sessionReset" && _origin === "self") {
+        }
+        else if (_type === "sessionReset") {
+            _outgoing
             //: Service message, %1 is a name
-            //% "You have reset the secure session with %1."
-            qsTrId("whisperfish-service-message-session-reset-self").arg(_originName)
-        } else if (_type === "sessionReset" && _origin === "peer") {
+            //% "You reset the secure session with %1."
+            ? qsTrId("whisperfish-service-message-session-reset-self").arg(_originName)
             //: Service message, %1 is a name
-            //% "%1 has reset the secure session with you."
-            qsTrId("whisperfish-service-message-session-reset-peer").arg(_originName)
-        } else {
-            //: Service message, %1 is an internal message type identifier
+            //% "%1 reset the secure session with you."
+            : qsTrId("whisperfish-service-message-session-reset-peer").arg(_originName)
+        }
+        else {
+            //: Service message, %1 is an integer
             //% "This service message is not yet supported by Whisperfish. "
-            //% "Please file a bug report. (Type: '%1'.)"
-            qsTrId("whisperfish-service-message-not-supported").arg(_type)
+            //% "Please file a bug report. (Type: %1)"
+            qsTrId("whisperfish-service-message-not-supported").arg(modelData.flags)
+            console.warn("Unsupported service message: id", modelData.id, "flags", modelData.flags, "text", modelData.message)
         }
     }
 
