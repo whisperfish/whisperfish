@@ -17,8 +17,19 @@ ListItem {
     // TODO the model should expose the message type as enum
     // TODO what service messages are there?
     // TODO do we need special treatment for service messages in groups?
-    property string _type: "unimplemented" /* modelData.serviceMessageType */ // cf. _message
     property string _origin: "none" /* modelData.serviceMessageOrigin */ // "self" or "peer"
+    property string _type: switch (modelData.flags) {
+            // DataMessage::Flags
+            case 1:   /* 1 << 0 */ return "endSession"
+            case 2:   /* 1 << 1 */ return "expiryUpdate"
+            case 4:   /* 1 << 2 */ return "profileKeyUpdate"
+
+            // Whisperfish-only values:
+            case 256: /* 1 << 8 */ return "identityKeyUpdate"
+
+            default: return ""
+        }
+
     property string _originName: (modelData !== null) ? getRecipientName(modelData.recipientE164, modelData.recipientName, false) : ''
 
     property bool _canShowDetails: (_type === "fingerprintChanged" /*||
