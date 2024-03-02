@@ -11,7 +11,7 @@ members = [
 
 [patch.crates-io]
 # Required for libsignal's lizard2 patches to c25519
-curve25519-dalek = { git = 'https://github.com/signalapp/curve25519-dalek', tag = 'signal-curve25519-4.0.0' }
+curve25519-dalek = { git = 'https://github.com/signalapp/curve25519-dalek', tag = 'signal-curve25519-4.1.1' }
 qttypes = { git = 'https://github.com/woboq/qmetaobject-rs', commit = '728220c0035ca6c85a99ce2fe5db8bb654ce5492' }
 qmetaobject = { git = 'https://github.com/woboq/qmetaobject-rs', commit = '728220c0035ca6c85a99ce2fe5db8bb654ce5492' }
 

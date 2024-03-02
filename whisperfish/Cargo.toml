@@ -32,8 +32,8 @@ libsignal-service-hyper = { git = "https://github.com/whisperfish/libsignal-serv
     "unsend-futures",
 ] }
 
-libsignal-protocol = { git = "https://github.com/signalapp/libsignal", tag = "v0.32.0" }
-zkgroup = { git = "https://github.com/signalapp/libsignal", tag = "v0.32.0" }
+libsignal-protocol = { git = "https://github.com/signalapp/libsignal", tag = "v0.40.1" }
+zkgroup = { git = "https://github.com/signalapp/libsignal", tag = "v0.40.1" }
 
 proc-macro2 = "1.0"
 

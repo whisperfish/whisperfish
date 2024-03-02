@@ -168,29 +168,63 @@ and idiomatic. This can lead to the following scenario:
 - Clippy has issues with your code
 - You mumble and fix your code
 
-To prevent this from happening, to save both your ~~nerves~~ time
+To prevent this from happening and to save both your ~~nerves~~ time
 and CI from spinning up the pipeline only to get stuck on something
-trivial, you can have the locally-installed Rust run similar set of
-commands locally before you push. At the time of writing,
-with Rust 1.70 you can use the following script:
+(non-)trivial, you can use a pre-push hook. With Rust 1.75.0 I use this:
 
-    $ cat local-ci.sh
+    $ cat .git/hooks/pre-push
     #!/bin/sh
-    set -e
-    cargo fmt --check
+
+    fmt() {
+        if [ $2 -eq 0 ]; then
+        echo -e "$1:\tOK"
+        else
+        echo -e "$1:\tFAILED"
+        fi
+    }
+
+    SRC=$(git rev-parse --show-toplevel)
+
+    grepper() {
+        echo -e "$1:\t$(rg "/.*$1" "$2" | wc -l)"
+    }
+
+    echo -e "-----\nRunning tests...\n-----\n"
+    cargo test --color never -- --color never
+    E_TEST=$?
+
+    echo -e "-----\nRunning format...\n-----\n"
+    cargo fmt --check -- --color never
+    E_FMT=$?
+
+    echo -e "-----\nRunning clippy...\n-----\n"
+    cargo clippy --color never --no-deps --all-targets -- -D warnings -A clippy::useless_transmute -A clippy::too-many-arguments
+    E_CLIPPY=$?
+
+    echo -e "-----\nRunning qmllint...\n-----\n"
     find qml/ -name "*.qml" -print0 | xargs -0 qmllint
-    cargo clippy --all-targets -- \
-      -D warnings \
-      -A clippy::useless-transmute \
-      -A clippy::too-many-arguments \
-      -A clippy::type-complexity \
-      -A clippy::redundant-clone \
-      -A clippy::size-of-ref
-    cargo test
+    E_QML=$?
 
-The allowed clippy lints are required to make the clippy behave
-like clippy in Rust 1.52, which is the SFDK Rust version.
+    let "RETVAL = $E_TEST + $E_FMT + $E_CLIPPY + $E_QML"
 
-If you really want to enforce it, you can copy the script as
-`.git/hooks/pre-push` to prevent the non-passing branch going upstream  in the
-first place! This takes
+    echo ""
+    grepper FIXME $SRC
+    grepper TODO $SRC
+    grepper XXX $SRC
+    echo ""
+    fmt QML $E_QML
+    fmt Tests $E_TEST
+    fmt Format $E_FMT
+    fmt Clippy $E_CLIPPY
+    echo ""
+
+    exit $RETVAL
+
+Note that the script requires qmllint and ripgrep. Modify to taste!
+
+For convenience, I also have a separate script to make
+`cargo clippy` and `cargo fmt` fix the found issues:
+
+   $ cat fix.sh
+    #!/bin/sh
+    cargo fmt && cargo clippy --fix --allow-dirty --allow-staged --all-targets -- -D warnings -A clippy::useless-transmute -A clippy::too-many-arguments
