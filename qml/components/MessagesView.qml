@@ -50,6 +50,8 @@ SilicaListView {
     property bool appearDeleted: false
     property var __running_remorse: null
 
+    property QtObject recipient
+
     signal replyTriggered(var index, var modelData)
     signal quoteClicked(var clickedIndex, var quotedData)
     signal itemSelectionToggled(var modelData)
@@ -279,7 +281,7 @@ SilicaListView {
                 section = sectionHeaderComponent.createObject(wrapper, {
                     'title': ListView.section.substr(0, 10) === '' ?
                                  (newerSection.substr(0, 10) === '' ?
-                                      model.recipientName : newerSection) :
+                                      recipient.name : newerSection) :
                                  Format.formatDate(ListView.section, Formatter.DateFull)
                 })
             } else {

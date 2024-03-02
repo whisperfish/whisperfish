@@ -13,6 +13,7 @@ ListItem {
     onClicked: showDetails()
 
     property QtObject modelData
+    property QtObject recipient
 
     // TODO the model should expose the message type as enum
     // TODO what service messages are there?
@@ -30,7 +31,7 @@ ListItem {
         }
 
     property string _outgoing: modelData.outgoing === true
-    property string _originName: (modelData !== null) ? getRecipientName(modelData.recipientE164, modelData.recipientName, false) : ''
+    property string _originName: (modelData !== null) && modelData.recipientId > 0 ? getRecipientName(recipient.e164, recipient.name, false) : ''
 
     property bool _canShowDetails: (_type === "fingerprintChanged" /*||
                                     _type === "sessionReset"*/) ?

@@ -43,9 +43,9 @@ Page {
             property bool isGroup: model.isGroup
             property string profilePicture: model !== undefined ? (isGroup
                 ? getGroupAvatar(model.groupId)
-                : getRecipientAvatar(model.recipientE164, model.recipientUuid)
+                : getRecipientAvatar(recipient.e164, recipient.uuid)
             ) : ''
-            property string name: model.isGroup ? model.groupName : getRecipientName(model.recipientE164, model.recipientName, false)
+            property string name: model.isGroup ? model.groupName : getRecipientName(recipient.e164, recipient.name, false)
             property bool isNoteToSelf: false
             property bool selected: (sessionList.recipients.indexOf(model.id) > -1)
 
@@ -63,6 +63,12 @@ Page {
                     selected = true
                 }
                 textInput.enableSending = Object.keys(sessionList.recipients).length > 0
+            }
+
+            Recipient {
+                id: recipient
+                app: AppState
+                recipientId: model.recipientId
             }
 
             Item {

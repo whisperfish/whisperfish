@@ -108,6 +108,18 @@ CoverBackground {
             enabled: !model.isArchived
             visible: !model.isArchived
 
+            Message {
+                id: lastMessage
+                app: AppState
+                messageId: model.messageId
+            }
+
+            Recipient {
+                id: recipient
+                app: AppState
+                recipientId: model.recipientId
+            }
+
             Label {
                 id: messageLabel
                 anchors {
@@ -119,12 +131,13 @@ CoverBackground {
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.primaryColor
                 truncationMode: TruncationMode.Fade
-                text: (model.hasAttachment
-                    ? ("📎 " + (model.message === ''
+                text: (lastMessage.attachments > 0
+                    ? ("📎 " + (lastMessage.message.length == 0
                         // SessionDelegate defines this
-                        ? qsTrId("whisperfish-session-has-attachment") : '')
-                    ) : ''
-                ) + (model.message !== undefined ? model.message : '')
+                        ? qsTrId("whisperfish-session-has-attachment")
+                        : ''))
+                    : '')
+                    + lastMessage.styledMessage
             }
 
             Label {
@@ -137,7 +150,7 @@ CoverBackground {
                 font.pixelSize: Theme.fontSizeTiny
                 color: Theme.highlightColor
                 truncationMode: TruncationMode.Fade
-                text: model.isGroup ? model.groupName : getRecipientName(model.recipientE164, model.recipientName, false)
+                text: model.isGroup ? model.groupName : getRecipientName(recipient.e164, recipient.name, false)
             }
         }
     }

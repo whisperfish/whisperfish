@@ -198,11 +198,6 @@ crate::observing_model! {
         messages: QVariant; READ messages,
     } WITH OPTIONAL PROPERTIES FROM session WITH ROLE SessionRoles {
         recipientId RecipientId,
-        recipientName RecipientName,
-        recipientUuid RecipientUuid,
-        recipientE164 RecipientE164,
-        recipientEmoji RecipientEmoji,
-        recipientAboutText RecipientAbout,
 
         isGroup IsGroup,
         isGroupV2 IsGroupV2,
@@ -223,8 +218,6 @@ crate::observing_model! {
         isArchived IsArchived,
         isPinned IsPinned,
         viewCount Viewed,
-        hasAttachment HasAttachment,
-        hasAvatar HasAvatar,
         draft Draft,
         expiringMessageTimeout ExpiringMessageTimeout,
     }

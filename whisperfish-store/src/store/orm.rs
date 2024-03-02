@@ -967,7 +967,6 @@ impl AugmentedMessage {
     }
 
     pub fn reactions(&self) -> u32 {
-        tracing::trace!("reactions (mid {}): {}", self.id, self.reactions);
         self.reactions as _
     }
 
@@ -1125,79 +1124,11 @@ impl AugmentedSession {
         }
     }
 
-    pub fn recipient_name(&self) -> &str {
-        match &self.inner.r#type {
-            SessionType::GroupV1(_group) => "",
-            SessionType::GroupV2(_group) => "",
-            SessionType::DirectMessage(recipient) => {
-                recipient.profile_joined_name.as_deref().unwrap_or_default()
-            }
-        }
-    }
-
-    pub fn recipient_uuid(&self) -> Cow<'_, str> {
-        match &self.inner.r#type {
-            SessionType::GroupV1(_group) => "".into(),
-            SessionType::GroupV2(_group) => "".into(),
-            SessionType::DirectMessage(recipient) => recipient.uuid().into(),
-        }
-    }
-
-    pub fn recipient_e164(&self) -> Cow<'_, str> {
-        match &self.inner.r#type {
-            SessionType::GroupV1(_group) => "".into(),
-            SessionType::GroupV2(_group) => "".into(),
-            SessionType::DirectMessage(recipient) => recipient.e164().into(),
-        }
-    }
-
-    pub fn recipient_emoji(&self) -> &str {
-        match &self.inner.r#type {
-            SessionType::GroupV1(_group) => "",
-            SessionType::GroupV2(_group) => "",
-            SessionType::DirectMessage(recipient) => {
-                recipient.about_emoji.as_deref().unwrap_or_default()
-            }
-        }
-    }
-
-    pub fn recipient_about(&self) -> &str {
-        match &self.inner.r#type {
-            SessionType::GroupV1(_group) => "",
-            SessionType::GroupV2(_group) => "",
-            SessionType::DirectMessage(recipient) => recipient.about.as_deref().unwrap_or_default(),
-        }
-    }
-
-    pub fn has_avatar(&self) -> bool {
-        match &self.r#type {
-            SessionType::GroupV1(_) => false,
-            SessionType::GroupV2(group) => group.avatar.is_some(),
-            SessionType::DirectMessage(recipient) => recipient.signal_profile_avatar.is_some(),
-        }
-    }
-
     pub fn is_registered(&self) -> bool {
         match &self.inner.r#type {
             SessionType::GroupV1(_group) => true,
             SessionType::GroupV2(_group) => true,
             SessionType::DirectMessage(recipient) => recipient.is_registered,
-        }
-    }
-
-    pub fn has_attachment(&self) -> bool {
-        if let Some(m) = &self.last_message {
-            m.attachments > 0
-        } else {
-            false
-        }
-    }
-
-    pub fn is_voice_note(&self) -> bool {
-        if let Some(m) = &self.last_message {
-            m.is_voice_note
-        } else {
-            false
         }
     }
 
@@ -1213,28 +1144,12 @@ impl AugmentedSession {
         }
     }
 
-    pub fn has_spoilers(&self) -> bool {
-        if let Some(m) = &self.last_message {
-            m.has_spoilers()
-        } else {
-            false
-        }
-    }
-
-    pub fn last_message_text_styled(&self) -> Option<Cow<'_, str>> {
-        self.last_message.as_ref().map(|m| m.styled_message())
-    }
-
     pub fn last_message_text(&self) -> Option<&str> {
         self.last_message.as_ref().and_then(|m| m.text.as_deref())
     }
 
     pub fn last_message_id(&self) -> i32 {
         self.last_message.as_ref().map(|m| m.id).unwrap_or(-1)
-    }
-
-    pub fn is_service_message(&self) -> bool {
-        self.last_message.as_ref().and_then(|m| Some(m.flags > 0)).unwrap_or(false)
     }
 
     pub fn section(&self) -> String {
@@ -1266,13 +1181,6 @@ impl AugmentedSession {
         } else {
             String::from("older")
         }
-    }
-
-    pub fn is_remote_deleted(&self) -> bool {
-        self.last_message
-            .as_ref()
-            .map(|m| m.is_remote_deleted)
-            .unwrap_or(false)
     }
 
     pub fn is_read(&self) -> bool {

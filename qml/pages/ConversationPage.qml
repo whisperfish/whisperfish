@@ -12,8 +12,8 @@ Page {
     // E.g. when starting a new chat.
     property bool editorFocus: false
 
-    property string conversationName: session.isGroup ? session.groupName : getRecipientName(session.recipientE164, session.recipientName, true)
-    property string profilePicture: session.isGroup ? getGroupAvatar(session.groupId) : getRecipientAvatar(session.recipientE164, session.recipientUuid)
+    property string conversationName: session.isGroup ? session.groupName : getRecipientName(recipient.e164, recipient.name, true)
+    property string profilePicture: session.isGroup ? getGroupAvatar(session.groupId) : getRecipientAvatar(recipient.e164, recipient.uuid)
     property alias sessionId: session.sessionId
     property int expiringMessages: session.expiringMessageTimeout != -1
     property DockedPanel activePanel: actionsPanel.open ? actionsPanel : panel
@@ -30,7 +30,13 @@ Page {
     Group {
         id: group
         app: AppState
-        groupId: session.groupId ? session.groupId : -1
+        groupId: session.groupId
+    }
+
+    Recipient {
+        id: recipient
+        app: AppState
+        recipientId: !session.isGroup ? session.recipientId : -1
     }
 
     onStatusChanged: {
@@ -43,7 +49,7 @@ Page {
                 pageStack.pushAttached(Qt.resolvedUrl("GroupProfilePage.qml"), { session: session, group: group })
             }
             else if(!session.isGroup && session.recipientUuid !== SetupWorker.uuid) {
-                pageStack.pushAttached(Qt.resolvedUrl("RecipientProfilePage.qml"), { session: session,recipientUuid: session.recipientUuid })
+                pageStack.pushAttached(Qt.resolvedUrl("RecipientProfilePage.qml"), { session: session, recipient: recipient })
             }
             else {
                 pageStack.pushAttached(Qt.resolvedUrl("ProfilePage.qml"), { session: session })
@@ -75,15 +81,15 @@ Page {
                 return qsTrId("whisperfish-group-n-members", group.member_count)
             }
             else return (
-                !SettingsBridge.show_phone_number || conversationName === session.recipientE164 || session.recipientE164 == ''
+                !SettingsBridge.show_phone_number || conversationName === recipient.e164 || recipient.e164 == ''
                 ? (
-                    session.recipientAboutText != ''
-                    ? session.recipientAboutText
+                    recipient.about != ''
+                    ? recipient.about
                     //: The number of messages in a conversation, displayed in page header
                     //% "%n message(s)"
                     : qsTrId("whisperfish-chat-n-messages", messages.count)
                 )
-                : session.recipientE164
+                : recipient.e164
             )
         }
         profilePicture: root.profilePicture
@@ -123,6 +129,7 @@ Page {
             right: parent.right
         }
         model: session.messages
+        recipient: recipient
         clip: true // to prevent the view from flowing through the page header
         headerPositioning: ListView.InlineHeader
         header: Item {

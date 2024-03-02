@@ -6,7 +6,7 @@ import "../delegates"
 
 ListItem {
     id: delegate
-    property string date: Format.formatDate(model.timestamp, _dateFormat)
+    property string date: Format.formatDate(lastMessage.timestamp, _dateFormat) // TODO Give session its own timestamp?
     property bool isGroup: model.isGroup
     property int unreadCount: 0 // TODO implement in model
     property bool isUnread: hasDraft || !model.read // TODO investigate: is this really a bool?
@@ -18,24 +18,24 @@ ListItem {
     property string draft: model.draft
     property string profilePicture: model !== undefined ? (isGroup
         ? getGroupAvatar(model.groupId)
-        : getRecipientAvatar(model.recipientE164, model.recipientUuid)
+        : getRecipientAvatar(recipient.e164, recipient.uuid)
     ) : ''
     property bool isPreviewDelivered: model.deliveryCount > 0 // TODO investigate: not updated for new message (#151, #55?)
     property bool isPreviewRead: model.readCount > 0 // TODO investigate: not updated for new message (#151, #55?)
     property bool isPreviewViewed: model.viewCount > 0 // TODO investigate: not updated for new message (#151, #55?)
     property bool isPreviewSent: model.sent // TODO cf. isPreviewReceived (#151)
-    property bool hasText: model.message !== undefined && model.message !== ''
-    property bool hasSpoilers: model.hasSpoilers
-    property bool hasStrikeThrough: model.hasStrikeThrough
-    property bool hasAttachment: model.hasAttachment
+    property bool isRemoteDeleted: lastMessage.remoteDeleted
+    property bool hasText: lastMessage.message !== undefined && lastMessage.message !== ''
+    property bool hasSpoilers: lastMessage.hasSpoilers
+    property bool hasStrikeThrough: lastMessage.hasStrikeThrough
     property int expiringMessages: model.expiringMessageTimeout != -1
-    property string name: model.isGroup ? model.groupName : getRecipientName(model.recipientE164, model.recipientName, true)
-    property string emoji: model.recipientEmoji
+    property string name: model.isGroup ? model.groupName : getRecipientName(recipient.e164, recipient.name, true)
+    property string emoji: model.recipientId > 0 && recipient.emoji != null ? recipient.emoji : ''
     property string message:
         (_debugMode ? "[" + model.id + "] " : "") +
         (lastMessage.flags == 0
-            ? (hasAttachment
-                    ? (model.isVoiceNote
+            ? (lastMessage.attachments.count > 0
+                    ? (lastMessage.isVoiceNote
                         ? ("🎤 " + (!hasText
                             //: Session is a voice note
                             //% "Voice Message"
@@ -49,11 +49,11 @@ ListItem {
                     )
                     : ''
                 ) +
-                (model.remoteDeleted
+                (isRemoteDeleted
                     //: Placeholder note for a deleted message
                     //% "this message was deleted"
                     ? qsTrId("whisperfish-message-deleted-note")
-                    : (hasText ? model.styledMessage : '')
+                    : (hasText ? lastMessage.styledMessage : '')
                 )
             : serviceMessage.active ? "<i>"+serviceMessage.item._message+"</i>" : ""
         )
@@ -85,12 +85,19 @@ ListItem {
     // and uses Message above as modelData.
     Loader {
         id: serviceMessage
-        active: model.isServiceMessage
+        active: lastMessage.flags > 0
         sourceComponent: ServiceMessageDelegate {
             modelData: lastMessage
+            recipient: recipient
             visible: false
             enabled: false
         }
+    }
+
+    Recipient {
+        id: recipient
+        app: AppState
+        recipientId: model.recipientId
     }
 
     function remove(contentItem) {
@@ -174,7 +181,7 @@ ListItem {
                     if (model.recipientUuid === SetupWorker.uuid) {
                         pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"), { session: model } )
                     } else {
-                        pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { session: model, recipientUuid: model.recipientUuid })
+                        pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { session: model, recipient: recipient })
                     }
                 }
             }
@@ -215,7 +222,7 @@ ListItem {
             color: highlighted ? Theme.secondaryHighlightColor :
                                  Theme.secondaryColor
             font.pixelSize: Theme.fontSizeExtraSmall
-            font.italic: model.remoteDeleted
+            font.italic: isRemoteDeleted
             plainText: (needsRichText ? cssStyle : '') + (hasDraft ?
                       //: Message preview for a saved, unsent message
                       //% "Draft: %1"
