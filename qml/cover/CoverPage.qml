@@ -131,13 +131,17 @@ CoverBackground {
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.primaryColor
                 truncationMode: TruncationMode.Fade
-                text: (lastMessage.attachments > 0
+                text: (lastMessage.attachments.count > 0
                     ? ("📎 " + (lastMessage.message.length == 0
                         // SessionDelegate defines this
                         ? qsTrId("whisperfish-session-has-attachment")
                         : ''))
                     : '')
-                    + lastMessage.styledMessage
+                    + (lastMessage.flags > 0
+                        //: Placeholder note for a service message (expiry, profile key...)
+                        //% "Service Message"
+                        ? "⚙️ "+qsTrId("whisperfish-cover-service-message")
+                        : lastMessage.message) // TODO: LinkedEmojiLabel and lastMessage.styledMessage
             }
 
             Label {
