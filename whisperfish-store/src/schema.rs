@@ -147,6 +147,7 @@ diesel::table! {
         latest_revision_id -> Nullable<Integer>,
         original_message_id -> Nullable<Integer>,
         revision_number -> Integer,
+        message_type -> Nullable<Text>,
     }
 }
 

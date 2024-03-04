@@ -53,6 +53,65 @@ pub enum TrustLevel {
     Uncertain,
 }
 
+#[derive(Clone, Copy, Eq, Debug, PartialEq)]
+/// Custom flags to be used with e.g. ServiceMessageDelegate
+pub enum MessageType {
+    Unsupported,
+    ProfileKeyUpdate,
+    EndSession,
+    IdentityKeyChange,
+    GroupChange,
+    Payment,
+    Sticker,
+    GroupCallUpdate,
+    ExpirationTimerUpdate,
+}
+
+impl std::fmt::Display for MessageType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl MessageType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            MessageType::Unsupported => "Unsupported",
+            MessageType::ProfileKeyUpdate => "ProfileKeyUpdate",
+            MessageType::EndSession => "EndSession",
+            MessageType::IdentityKeyChange => "IdentityKeyChange",
+            MessageType::GroupChange => "GroupChange",
+            MessageType::Payment => "Payment",
+            MessageType::Sticker => "Sticker",
+            MessageType::GroupCallUpdate => "GroupCallUpdate",
+            MessageType::ExpirationTimerUpdate => "ExpirationTimerUpdate",
+        }
+    }
+}
+
+impl From<&str> for MessageType {
+    fn from(s: &str) -> Self {
+        match s {
+            "Unsupported" => MessageType::Unsupported,
+            "ProfileKeyUpdate" => MessageType::ProfileKeyUpdate,
+            "EndSession" => MessageType::EndSession,
+            "IdentityKeyChange" => MessageType::IdentityKeyChange,
+            "GroupChange" => MessageType::GroupChange,
+            "Payment" => MessageType::Payment,
+            "Sticker" => MessageType::Sticker,
+            "GroupCallUpdate" => MessageType::GroupCallUpdate,
+            "ExpirationTimerUpdate" => MessageType::ExpirationTimerUpdate,
+            _ => MessageType::Unsupported,
+        }
+    }
+}
+
+impl From<MessageType> for String {
+    fn from(val: MessageType) -> Self {
+        val.as_str().to_string()
+    }
+}
+
 /// Session as it relates to the schema
 #[derive(Queryable, Debug, Clone)]
 pub struct Session {
@@ -91,6 +150,7 @@ pub struct Message {
     pub hasattachment: bool,
     pub outgoing: bool,
     pub queued: bool,
+    pub message_type: Option<String>,
 }
 
 #[derive(Debug)]
@@ -118,6 +178,7 @@ pub struct NewMessage<'a> {
     pub expires_in: Option<std::time::Duration>,
     pub story_type: StoryType,
     pub body_ranges: Option<Vec<u8>>,
+    pub message_type: Option<String>,
 
     pub edit: Option<&'a orm::Message>,
 }
@@ -141,6 +202,7 @@ impl NewMessage<'_> {
             expires_in: None,
             story_type: StoryType::None,
             body_ranges: None,
+            message_type: None,
             edit: None,
         }
     }
@@ -163,6 +225,7 @@ impl NewMessage<'_> {
             expires_in: None,
             story_type: StoryType::None,
             body_ranges: None,
+            message_type: None,
             edit: None,
         }
     }

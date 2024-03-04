@@ -63,6 +63,7 @@ fn fetch_augmented_messages(c: &mut Criterion) {
                     server_guid: None,
                     story_type: orm::StoryType::None,
                     body_ranges: None,
+                    message_type: None,
                     edit: None,
                 });
                 for _attachment in 0..attachments {
