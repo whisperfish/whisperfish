@@ -34,7 +34,7 @@ ListItem {
     property string emoji: model.recipientId > 0 && recipient.emoji != null ? recipient.emoji : ''
     property string message:
         (_debugMode ? "[" + model.id + "] " : "") +
-        (lastMessage.flags == 0
+        (lastMessage.messageType == null
             ? (lastMessage.attachments.count > 0
                     ? (lastMessage.isVoiceNote
                         ? ("🎤 " + (!hasText
@@ -86,7 +86,7 @@ ListItem {
     // and uses Message above as modelData.
     Loader {
         id: serviceMessage
-        active: lastMessage.flags > 0
+        active: lastMessage.messageType != null
         sourceComponent: ServiceMessageDelegate {
             modelData: lastMessage
             recipient: recipient
