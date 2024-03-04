@@ -23,6 +23,8 @@ ListItem {
     property bool _canShowDetails: (_type === "IdentityKeyChange" || _type === "SessionReset") ? true : false
     property int _fontSize: Theme.fontSizeExtraSmall
     property url _iconSource: switch (_type) {
+        case "ExpirationTimerUpdate":
+            return "image://theme/icon-s-timer"
         case "MissedVoiceCall":
         case "MissedCallVideo":
             return "image://theme/icon-s-activity-missed-call"
@@ -32,9 +34,13 @@ ListItem {
         case "IdentityKeyChange":
             return "image://theme/icon-s-outline-secure"
         case "SessionReset":
-            return "image://theme/icon-s-checkmark"
+            return "image://theme/icon-s-developer"
         case "GroupChange":
-            return "image://theme/icon-m-outline-chat" // TODO we need a small outline icon here
+            return "image://theme/icon-s-sync"
+        case "JoinedGroup":
+            return "image://theme/icon-s-new"
+        case "LeftGroup":
+            return "image://theme/icon-s-blocked"
         default:
             return ""
     }
