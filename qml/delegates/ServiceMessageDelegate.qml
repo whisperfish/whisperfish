@@ -115,13 +115,9 @@ ListItem {
             //% "%1 ended the session with you."
             : qsTrId("whisperfish-service-message-end-session-peer").arg(_originName)
         case "GroupChange":
-            return _outgoing
             //: Service message
-            //% "You changed something in the group."
-            ? qsTrId("whisperfish-service-message-changed-group-self")
-            //: Service message, %1 is a name
-            //% "%1 changed something in the group."
-            : qsTrId("whisperfish-service-message-changed--group-peer").arg(_originName)
+            //% "The group was updated."
+            return qsTrId("whisperfish-service-message-changed-group")
         case "JoinedGroup":
             return _outgoing
             //: Service message

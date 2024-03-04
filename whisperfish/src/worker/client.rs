@@ -538,6 +538,7 @@ impl ClientActor {
             ..
         }) = msg.group_v2
         {
+            // TODO: Make sure we have a sender - it's not always there.
             message_type = Some(MessageType::GroupChange);
             Some("")
         } else if !msg.attachments.is_empty() {
