@@ -30,7 +30,7 @@ Page {
     Group {
         id: group
         app: AppState
-        groupId: session.groupId
+        groupId: session.isGroup ? session.groupId : -1
     }
 
     Recipient {
