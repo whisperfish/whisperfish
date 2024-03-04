@@ -250,13 +250,14 @@ SilicaListView {
         property string newerSection: ListView.previousSection
         property string olderSection: ListView.nextSection
 
-        property bool messageLoaded: loader.status === Loader.Ready && loader.item.modelData.flags == 0
-        property bool serviceMessageLoaded: loader.status === Loader.Ready && loader.item.modelData.flags > 0
+        property bool isServiceMessage: model.messageType != null
 
-        property int messageId: messageLoaded ? loader.item.modelData.id : -1
-        property bool messageRead: messageLoaded ? loader.item.modelData.isRead === true : true
-        property int messageExpiresIn: messageLoaded ? loader.item.modelData.expiresIn : -1
-        property bool messageExpiring: messageLoaded && loader.item.modelData.expiryStarted != null ? loader.item.modelData.expiryStarted > 0 : true
+        property bool messageLoaded: loader.status === Loader.Ready
+
+        property int messageId: !isServiceMessage ? model.id : -1
+        property bool messageRead: !isServiceMessage ? model.isRead === true : true
+        property int messageExpiresIn: !isServiceMessage ? model.expiresIn : -1
+        property bool messageExpiring: !isServiceMessage && model.expiryStarted != null ? model.expiryStarted > 0 : true
 
         property bool atSectionBoundary: {
             // Section strings are ISO formatted timestamps.
@@ -310,7 +311,7 @@ SilicaListView {
             // choose the delegate based on message contents
             // NOTE we could make this loader asynchronous if we find a way
             // to calculate the effective message height here
-            sourceComponent: wrapper.isServiceMessage ?
+            sourceComponent: isServiceMessage ?
                                  serviceMessageDelegate :
                                  defaultMessageDelegate
         }
