@@ -462,7 +462,12 @@ impl ClientActor {
             None
         };
 
-        if msg.flags() & DataMessageFlags::EndSession as u32 != 0 {
+        let flags = msg
+            .flags()
+            .try_into()
+            .expect("Message flags doesn't fit into i32");
+
+        if flags & DataMessageFlags::EndSession as i32 != 0 {
             let storage = storage.clone();
             if let Some(svc) = sender_recipient
                 .as_ref()
@@ -497,12 +502,11 @@ impl ClientActor {
             }
         }
 
-        if msg.flags() & DataMessageFlags::ProfileKeyUpdate as u32 != 0 {
             tracing::info!("Message was ProfileKeyUpdate; not inserting.");
+        if flags & DataMessageFlags::ProfileKeyUpdate as i32 != 0 {
         }
 
-        let expiration_timer_update =
-            msg.flags() & DataMessageFlags::ExpirationTimerUpdate as u32 != 0;
+        let expiration_timer_update = flags & DataMessageFlags::ExpirationTimerUpdate as i32 != 0;
         let alt_body = if let Some(reaction) = &msg.reaction {
             if let Some((message, session)) = storage.process_reaction(
                 &sender_recipient
@@ -667,7 +671,7 @@ impl ClientActor {
             source_e164: source_phonenumber,
             source_uuid,
             text,
-            flags: msg.flags() as i32,
+            flags,
             outgoing: is_sync_sent,
             is_unidentified,
             sent: is_sync_sent,
