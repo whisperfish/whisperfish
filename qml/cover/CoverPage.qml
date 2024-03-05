@@ -137,7 +137,7 @@ CoverBackground {
                         ? qsTrId("whisperfish-session-has-attachment")
                         : ''))
                     : '')
-                    + (lastMessage.flags > 0
+                    + (lastMessage.messageType != null
                         //: Placeholder note for a service message (expiry, profile key...)
                         //% "Service Message"
                         ? "⚙️ "+qsTrId("whisperfish-cover-service-message")
