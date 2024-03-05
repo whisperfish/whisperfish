@@ -16,6 +16,8 @@ Page {
         anchors.fill: parent
         contentHeight: column.height
 
+        RemorsePopup { id: remorse }
+
         PullDownMenu {
             MenuItem {
                 // Translation in ProfilePage.qml
