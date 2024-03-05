@@ -95,6 +95,37 @@ impl Display for GroupV2Member {
     }
 }
 
+#[derive(diesel_derive_enum::DbEnum, Debug, Clone, PartialEq, Eq)]
+pub enum MessageType {
+    Unsupported,
+    ProfileKeyUpdate,
+    EndSession,
+    IdentityKeyChange,
+    GroupChange,
+    Payment,
+    Sticker,
+    GroupCallUpdate,
+    ExpirationTimerUpdate,
+    IdentityReset,
+}
+
+impl AsRef<str> for MessageType {
+    fn as_ref(&self) -> &str {
+        match self {
+            MessageType::Unsupported => "unsupported",
+            MessageType::ProfileKeyUpdate => "profile_key_update",
+            MessageType::EndSession => "end_session",
+            MessageType::IdentityKeyChange => "identity_key_change",
+            MessageType::GroupChange => "group_change",
+            MessageType::Payment => "payment",
+            MessageType::Sticker => "sticker",
+            MessageType::GroupCallUpdate => "group_call_update",
+            MessageType::ExpirationTimerUpdate => "expiration_timer_update",
+            MessageType::IdentityReset => "identity_reset",
+        }
+    }
+}
+
 #[derive(Queryable, Identifiable, Debug, Clone, PartialEq, Eq)]
 pub struct Message {
     pub id: i32,
@@ -130,7 +161,7 @@ pub struct Message {
     pub latest_revision_id: Option<i32>,
     pub original_message_id: Option<i32>,
     pub revision: i32,
-    pub message_type: Option<String>,
+    pub message_type: Option<MessageType>,
 }
 
 impl Message {

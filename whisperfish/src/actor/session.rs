@@ -4,7 +4,8 @@ pub use self::typing_notifications::*;
 
 mod methods;
 use methods::*;
-use whisperfish_store::{MessageType, NewMessage};
+use whisperfish_store::orm::MessageType;
+use whisperfish_store::NewMessage;
 
 use crate::gui::StorageReady;
 use crate::platform::QmlApp;
@@ -236,7 +237,7 @@ impl Handler<RemoveIdentities> for SessionActor {
             session_id: session.id,
             sent: true,
             is_read: true,
-            message_type: Some(MessageType::IdentityReset.into()),
+            message_type: Some(MessageType::IdentityReset),
             ..NewMessage::new_outgoing()
         });
 

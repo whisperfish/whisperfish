@@ -249,7 +249,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                     session_id: session.id,
                     sent: true,
                     is_read: true,
-                    message_type: Some(MessageType::GroupChange.into()),
+                    message_type: Some(MessageType::GroupChange),
                     ..NewMessage::new_outgoing()
                 });
 

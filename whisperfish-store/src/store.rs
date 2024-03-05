@@ -10,7 +10,7 @@ mod protocol_store;
 mod protos;
 mod utils;
 
-use self::orm::{AugmentedMessage, StoryType, UnidentifiedAccessMode};
+use self::orm::{AugmentedMessage, MessageType, StoryType, UnidentifiedAccessMode};
 use crate::body_ranges::AssociatedValue;
 use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
@@ -53,68 +53,6 @@ pub enum TrustLevel {
     Uncertain,
 }
 
-#[derive(Clone, Copy, Eq, Debug, PartialEq)]
-/// Custom flags to be used with e.g. ServiceMessageDelegate
-pub enum MessageType {
-    Unsupported,
-    ProfileKeyUpdate,
-    EndSession,
-    IdentityKeyChange,
-    GroupChange,
-    Payment,
-    Sticker,
-    GroupCallUpdate,
-    ExpirationTimerUpdate,
-    IdentityReset,
-}
-
-impl std::fmt::Display for MessageType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl MessageType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            MessageType::Unsupported => "unsupported",
-            MessageType::ProfileKeyUpdate => "profile_key_update",
-            MessageType::EndSession => "end_session",
-            MessageType::IdentityKeyChange => "identity_key_change",
-            MessageType::GroupChange => "group_change",
-            MessageType::Payment => "payment",
-            MessageType::Sticker => "sticker",
-            MessageType::GroupCallUpdate => "group_call_update",
-            MessageType::ExpirationTimerUpdate => "expiration_timer_update",
-            MessageType::IdentityReset => "identity_reset",
-        }
-    }
-}
-
-impl From<&str> for MessageType {
-    fn from(s: &str) -> Self {
-        match s {
-            "unsupported" => MessageType::Unsupported,
-            "profile_key_update" => MessageType::ProfileKeyUpdate,
-            "end_session" => MessageType::EndSession,
-            "identity_key_change" => MessageType::IdentityKeyChange,
-            "group_change" => MessageType::GroupChange,
-            "payment" => MessageType::Payment,
-            "sticker" => MessageType::Sticker,
-            "group_call_update" => MessageType::GroupCallUpdate,
-            "expiration_timer_update" => MessageType::ExpirationTimerUpdate,
-            "identity_reset" => MessageType::IdentityReset,
-            _ => MessageType::Unsupported,
-        }
-    }
-}
-
-impl From<MessageType> for String {
-    fn from(val: MessageType) -> Self {
-        val.as_str().to_string()
-    }
-}
-
 /// Session as it relates to the schema
 #[derive(Queryable, Debug, Clone)]
 pub struct Session {
@@ -153,7 +91,7 @@ pub struct Message {
     pub hasattachment: bool,
     pub outgoing: bool,
     pub queued: bool,
-    pub message_type: Option<String>,
+    pub message_type: Option<MessageType>,
 }
 
 #[derive(Debug)]
@@ -181,7 +119,7 @@ pub struct NewMessage<'a> {
     pub expires_in: Option<std::time::Duration>,
     pub story_type: StoryType,
     pub body_ranges: Option<Vec<u8>>,
-    pub message_type: Option<String>,
+    pub message_type: Option<MessageType>,
 
     pub edit: Option<&'a orm::Message>,
 }

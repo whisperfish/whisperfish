@@ -21,8 +21,9 @@ use libsignal_service::push_service::ServiceIdType;
 use libsignal_service::sender::SendMessageResult;
 use tracing_futures::Instrument;
 use uuid::Uuid;
+use whisperfish_store::orm::MessageType;
 use whisperfish_store::orm::StoryType;
-use whisperfish_store::{MessageType, TrustLevel};
+use whisperfish_store::TrustLevel;
 use zkgroup::profiles::ProfileKey;
 
 use super::message_expiry::ExpiredMessagesStream;
@@ -690,7 +691,7 @@ impl ClientActor {
             story_type: StoryType::None,
             server_guid: metadata.server_guid,
             body_ranges,
-            message_type: message_type.map(|x| x.into()),
+            message_type,
 
             edit: original_message.as_ref(),
         };
@@ -1394,7 +1395,7 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
             source_uuid: self_recipient.uuid,
             expires_in: msg.expires_in,
             flags: DataMessageFlags::ExpirationTimerUpdate as i32,
-            message_type: Some(MessageType::ExpirationTimerUpdate.into()),
+            message_type: Some(MessageType::ExpirationTimerUpdate),
             ..crate::store::NewMessage::new_outgoing()
         });
 
@@ -1673,7 +1674,7 @@ impl Handler<EndSession> for ClientActor {
             source_uuid: recipient.uuid,
             timestamp: chrono::Utc::now().naive_utc(),
             flags: DataMessageFlags::EndSession.into(),
-            message_type: Some(MessageType::EndSession.into()),
+            message_type: Some(MessageType::EndSession),
             ..crate::store::NewMessage::new_outgoing()
         });
         ctx.notify(SendMessage(msg.id));
@@ -2245,7 +2246,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             let msg = crate::store::NewMessage {
                                 session_id: session.id,
                                 source_uuid: Some(source_uuid),
-                                message_type: Some(MessageType::IdentityKeyChange.into()),
+                                message_type: Some(MessageType::IdentityKeyChange),
                                 ..crate::store::NewMessage::new_incoming()
                             };
                             storage.create_message(&msg);
