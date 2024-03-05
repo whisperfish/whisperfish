@@ -4,6 +4,7 @@ pub use self::typing_notifications::*;
 
 mod methods;
 use methods::*;
+use whisperfish_store::{MessageType, NewMessage};
 
 use crate::gui::StorageReady;
 use crate::platform::QmlApp;
@@ -228,6 +229,16 @@ impl Handler<RemoveIdentities> for SessionActor {
                 successes += 1;
             }
         }
+
+        let session = storage.fetch_session_by_recipient_id(recipient_id).unwrap();
+
+        storage.create_message(&NewMessage {
+            session_id: session.id,
+            sent: true,
+            is_read: true,
+            message_type: Some(MessageType::IdentityReset.into()),
+            ..NewMessage::new_outgoing()
+        });
 
         if successes == 0 {
             tracing::warn!("Could not successfully remove any identity keys.  Please file a bug.");

@@ -65,6 +65,7 @@ pub enum MessageType {
     Sticker,
     GroupCallUpdate,
     ExpirationTimerUpdate,
+    IdentityReset,
 }
 
 impl std::fmt::Display for MessageType {
@@ -85,6 +86,7 @@ impl MessageType {
             MessageType::Sticker => "Sticker",
             MessageType::GroupCallUpdate => "GroupCallUpdate",
             MessageType::ExpirationTimerUpdate => "ExpirationTimerUpdate",
+            MessageType::IdentityReset => "IdentityReset",
         }
     }
 }
@@ -101,6 +103,7 @@ impl From<&str> for MessageType {
             "Sticker" => MessageType::Sticker,
             "GroupCallUpdate" => MessageType::GroupCallUpdate,
             "ExpirationTimerUpdate" => MessageType::ExpirationTimerUpdate,
+            "IdentityReset" => MessageType::IdentityReset,
             _ => MessageType::Unsupported,
         }
     }
