@@ -2515,6 +2515,7 @@ impl Storage {
                     is_outbound.eq(new_message.outgoing),
                     use_unidentified.eq(new_message.is_unidentified),
                     flags.eq(new_message.flags),
+                    message_type.eq(new_message.message_type.clone()),
                     quote_id.eq(quoted_message_id),
                     expires_in.eq(new_message.expires_in.map(|x| x.as_secs() as i32)),
                     story_type.eq(new_message.story_type as i32),
