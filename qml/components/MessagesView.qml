@@ -257,7 +257,7 @@ SilicaListView {
         property int messageId: !isServiceMessage ? model.id : -1
         property bool messageRead: !isServiceMessage ? model.isRead === true : true
         property int messageExpiresIn: !isServiceMessage ? model.expiresIn : -1
-        property bool messageExpiring: !isServiceMessage && model.expiryStarted != null ? model.expiryStarted > 0 : true
+        property bool messageExpiring: !isServiceMessage ? model.expiryStarted > 0 : true
 
         property bool atSectionBoundary: {
             // Section strings are ISO formatted timestamps.
