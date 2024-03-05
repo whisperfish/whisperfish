@@ -559,9 +559,10 @@ impl ClientActor {
             Some("")
         } else if !msg.contact.is_empty() {
             Some("")
-        } else {
-            message_type = Some(MessageType::Unsupported);
-            Some("Unsupported message type")
+        }
+        // TODO: Add more message types
+        else {
+            None
         };
 
         if let Some(msg_delete) = &msg.delete {
