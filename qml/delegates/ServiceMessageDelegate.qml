@@ -20,26 +20,26 @@ ListItem {
     property string _outgoing: modelData.outgoing === true
     property string _originName: (modelData !== null) && modelData.recipientId > 0 ? getRecipientName(recipient.e164, recipient.name, false) : ''
 
-    property bool _canShowDetails: (_type === "IdentityKeyChange" || _type === "SessionReset") ? true : false
+    property bool _canShowDetails: (_type === "identity_key_change" || _type === "session_reset") ? true : false
     property int _fontSize: Theme.fontSizeExtraSmall
     property url _iconSource: switch (_type) {
-        case "ExpirationTimerUpdate":
+        case "expiration_timer_update":
             return "image://theme/icon-s-timer"
-        case "MissedVoiceCall":
-        case "MissedCallVideo":
+        case "missed_voice_call":
+        case "missed_video_call":
             return "image://theme/icon-s-activity-missed-call"
-        case "VoiceCall":
-        case "CallVideo":
+        case "voice_call":
+        case "video_call":
             return "image://theme/icon-s-activity-outgoing-call"
-        case "IdentityKeyChange":
+        case "identity_key_change":
             return "image://theme/icon-s-outline-secure"
-        case "SessionReset":
+        case "session_reset":
             return "image://theme/icon-s-developer"
-        case "GroupChange":
+        case "group_change":
             return "image://theme/icon-s-sync"
-        case "JoinedGroup":
+        case "joined_group":
             return "image://theme/icon-s-new"
-        case "LeftGroup":
+        case "left_group":
             return "image://theme/icon-s-blocked"
         default:
             return ""
@@ -60,7 +60,7 @@ ListItem {
     }
 
     property string _message: switch (_type) {
-        case "ExpirationTimerUpdate":
+        case "expiration_timer_update":
             // We didn't save the expiresIn for the service messages themselves,
             // so we may have to parse the "placeholder" text for the value instead.
             var secs = modelData.expiresIn
@@ -98,7 +98,7 @@ ListItem {
                 //% "%1 set or disabled expiring messages timeout."
                 : qsTrId("whisperfish-service-message-expity-unknown-peer").arg(_originName)
             }
-        case "ProfileKeyUpdate":
+        case "profile_key_update":
             return _outgoing
             //: Service message, %1 is a name
             //% "You updated your profile key with %1."
@@ -106,7 +106,7 @@ ListItem {
             //: Service message, %1 is a name, %2 is time
             //% "%1 updated their profile key with you."
             : qsTrId("whisperfish-service-message-profile-key-update-peer").arg(_originName)
-        case "EndSession":
+        case "end_session":
             return _outgoing
             //: Service message, %1 is a name
             //% "You ended the session with %1."
@@ -114,11 +114,11 @@ ListItem {
             //: Service message, %1 is a name
             //% "%1 ended the session with you."
             : qsTrId("whisperfish-service-message-end-session-peer").arg(_originName)
-        case "GroupChange":
+        case "group_change":
             //: Service message
             //% "The group was updated."
             return qsTrId("whisperfish-service-message-changed-group")
-        case "JoinedGroup":
+        case "joined_group":
             return _outgoing
             //: Service message
             //% "You joined the group."
@@ -126,7 +126,7 @@ ListItem {
             //: Service message, %1 is a name
             //% "%1 joined the group."
             : qsTrId("whisperfish-service-message-joined-group-peer").arg(_originName)
-        case "LeftGroup":
+        case "left_group":
             return _outgoing
             //: Service message, %1 is a name
             //% "You left the group."
@@ -134,7 +134,7 @@ ListItem {
             //: Service message, %1 is a name
             //% "%1 left the group."
             : qsTrId("whisperfish-service-message-left-group-peer").arg(_originName)
-        case "MissedVoiceCall":
+        case "missed_voice_call":
             return _outgoing
             //: Service message, %1 is a name
             //% "You missed a voice call from %1."
@@ -142,7 +142,7 @@ ListItem {
             //: Service message, %1 is a name
             //% "You tried to voice call %1."
             : qsTrId("whisperfish-service-message-missed-call-voice-peer").arg(_originName)
-        case "MissedVideoCall":
+        case "missed_video_call":
             return _outgoing
             //: Service message, %1 is a name
             //% "You missed a video call from %1."
@@ -150,7 +150,7 @@ ListItem {
             //: Service message, %1 is a name
             //% "You tried to video call %1."
             : qsTrId("whisperfish-service-message-missed-call-video-peer").arg(_originName)
-        case "VideoCall":
+        case "video_call":
             return _outgoing
             //: Service message, %1 is a name
             //% "You had a video call with %1."
@@ -158,7 +158,7 @@ ListItem {
             //: Service message, %1 is a name
             //% "%1 had a video call with you."
             : qsTrId("whisperfish-service-message-call-video-peer").arg(_originName)
-        case "VoiceCall":
+        case "voice_call":
             return _outgoing
             //: Service message, %1 is a name
             //% "You had a voice call with %1."
@@ -166,12 +166,12 @@ ListItem {
             //: Service message, %1 is a name
             //% "%1 had a voice call with you."
             : qsTrId("whisperfish-service-message-call-voice-peer").arg(_originName)
-        case "IdentityKeyChange":
+        case "identity_key_change":
             //: Service message, %1 is a name
             //% "Your safety number with %1 has changed. "
             //% "Swipe right to verify the new number."
             qsTrId("whisperfish-service-message-fingerprint-changed").arg(_originName)
-        case "SessionReset":
+        case "session_reset":
             return _outgoing
             //: Service message, %1 is a name
             //% "You reset the secure session with %1."
@@ -191,10 +191,10 @@ ListItem {
         var locale = Qt.locale().name.replace(/_.*$/, '').toLowerCase()
         if (!/[a-z][a-z]/.test(locale)) locale = "en-us"
 
-        if (_type === "fingerprintChanged") {
+        if (_type === "fingerprint_changed") {
             // "What is a safety number and why do I see that it changed?"
             Qt.openUrlExternally('https://support.signal.org/hc/%1/articles/360007060632'.arg(locale))
-        } else if (_type === "sessionReset") {
+        } else if (_type === "session_reset") {
             // there seems to be no help article on the issue
             // Qt.openUrlExternally("")
         } else {

@@ -77,16 +77,16 @@ impl std::fmt::Display for MessageType {
 impl MessageType {
     pub fn as_str(&self) -> &'static str {
         match self {
-            MessageType::Unsupported => "Unsupported",
-            MessageType::ProfileKeyUpdate => "ProfileKeyUpdate",
-            MessageType::EndSession => "EndSession",
-            MessageType::IdentityKeyChange => "IdentityKeyChange",
-            MessageType::GroupChange => "GroupChange",
-            MessageType::Payment => "Payment",
-            MessageType::Sticker => "Sticker",
-            MessageType::GroupCallUpdate => "GroupCallUpdate",
-            MessageType::ExpirationTimerUpdate => "ExpirationTimerUpdate",
-            MessageType::IdentityReset => "IdentityReset",
+            MessageType::Unsupported => "unsupported",
+            MessageType::ProfileKeyUpdate => "profile_key_update",
+            MessageType::EndSession => "end_session",
+            MessageType::IdentityKeyChange => "identity_key_change",
+            MessageType::GroupChange => "group_change",
+            MessageType::Payment => "payment",
+            MessageType::Sticker => "sticker",
+            MessageType::GroupCallUpdate => "group_call_update",
+            MessageType::ExpirationTimerUpdate => "expiration_timer_update",
+            MessageType::IdentityReset => "identity_reset",
         }
     }
 }
@@ -94,16 +94,16 @@ impl MessageType {
 impl From<&str> for MessageType {
     fn from(s: &str) -> Self {
         match s {
-            "Unsupported" => MessageType::Unsupported,
-            "ProfileKeyUpdate" => MessageType::ProfileKeyUpdate,
-            "EndSession" => MessageType::EndSession,
-            "IdentityKeyChange" => MessageType::IdentityKeyChange,
-            "GroupChange" => MessageType::GroupChange,
-            "Payment" => MessageType::Payment,
-            "Sticker" => MessageType::Sticker,
-            "GroupCallUpdate" => MessageType::GroupCallUpdate,
-            "ExpirationTimerUpdate" => MessageType::ExpirationTimerUpdate,
-            "IdentityReset" => MessageType::IdentityReset,
+            "unsupported" => MessageType::Unsupported,
+            "profile_key_update" => MessageType::ProfileKeyUpdate,
+            "end_session" => MessageType::EndSession,
+            "identity_key_change" => MessageType::IdentityKeyChange,
+            "group_change" => MessageType::GroupChange,
+            "payment" => MessageType::Payment,
+            "sticker" => MessageType::Sticker,
+            "group_call_update" => MessageType::GroupCallUpdate,
+            "expiration_timer_update" => MessageType::ExpirationTimerUpdate,
+            "identity_reset" => MessageType::IdentityReset,
             _ => MessageType::Unsupported,
         }
     }
