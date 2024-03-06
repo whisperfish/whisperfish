@@ -1028,6 +1028,9 @@ impl AugmentedMessage {
     }
 
     pub fn styled_message(&self) -> Cow<'_, str> {
+        if self.is_remote_deleted {
+            return std::borrow::Cow::Borrowed(self.inner.text.as_deref().unwrap_or_default());
+        }
         crate::store::body_ranges::to_styled(
             self.inner.text.as_deref().unwrap_or_default(),
             self.body_ranges(),
