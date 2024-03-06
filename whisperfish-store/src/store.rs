@@ -2904,6 +2904,7 @@ impl Storage {
             .set((
                 schema::messages::is_remote_deleted.eq(true),
                 schema::messages::text.eq(None::<String>),
+                schema::messages::message_ranges.eq(None::<Vec<u8>>),
             ))
             .get_result(&mut *self.db())
             .optional()
