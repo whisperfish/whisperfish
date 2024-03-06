@@ -86,26 +86,26 @@ ListItem {
                 return _outgoing
                 //: Service message, %1 time
                 //% "You set expiring messages timeout to %1."
-                ? qsTrId("whisperfish-service-message-expity-update-self").arg(timeFormat(secs))
+                ? qsTrId("whisperfish-service-message-expiry-update-self").arg(timeFormat(secs))
                 //: Service message, %1 is a name, %2 is time
                 //% "%1 set expiring messages timeout to %2."
-                : qsTrId("whisperfish-service-message-expity-update-peer").arg(_originName).arg(timeFormat(secs))
+                : qsTrId("whisperfish-service-message-expiry-update-peer").arg(_originName).arg(timeFormat(secs))
             } else if (secs === 0) {
                 return _outgoing
                 //: Service message
                 //% "You disabled expiring messages."
-                ? qsTrId("whisperfish-service-message-expity-disable-self")
+                ? qsTrId("whisperfish-service-message-expiry-disable-self")
                 //: Service message, %1 is a name
                 //% "%1 disabled expiring messages."
-                : qsTrId("whisperfish-service-message-expity-disable-peer").arg(_originName)
+                : qsTrId("whisperfish-service-message-expiry-disable-peer").arg(_originName)
             } else {
                 return _outgoing
                 //: Service message
                 //% "You set or disabled expiring messages timeout."
-                ? qsTrId("whisperfish-service-message-expity-unknown-self")
+                ? qsTrId("whisperfish-service-message-expiry-unknown-self")
                 //: Service message, %1 is a name
                 //% "%1 set or disabled expiring messages timeout."
-                : qsTrId("whisperfish-service-message-expity-unknown-peer").arg(_originName)
+                : qsTrId("whisperfish-service-message-expiry-unknown-peer").arg(_originName)
             }
         case "profile_key_update":
             return _outgoing
