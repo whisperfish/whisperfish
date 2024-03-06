@@ -46,17 +46,26 @@ ListItem {
     }
 
     function timeFormat(secs) {
-        // These translations are defined in ExpiringMessagesComboBox.qml
         if (secs >= 604800 && secs % 604800 === 0)
-            return qsTrId("whisperfish-disappearing-messages-weeks", Math.floor(secs / 604800))
+            //: Expiring message timeout in weeks. Used in whisperfish-service-message-expiry-update-[self|peer]
+            //% "%1 week(s)"
+            return qsTrId("whisperfish-service-message-expiry-in-weeks", Math.floor(secs / 604800))
         else if (secs >= 86400 && secs % 86400 === 0)
-            return qsTrId("whisperfish-disappearing-messages-days", Math.floor(secs / 86400))
+            //: Expiring message timeout in days. Used in whisperfish-service-message-expiry-update-[self|peer]
+            //% "%1 day(s)"
+            return qsTrId("whisperfish-service-message-expiry-in-days", Math.floor(secs / 86400))
         else if (secs >= 3600 && secs % 3600 === 0)
-            return qsTrId("whisperfish-disappearing-messages-hours", Math.floor(secs / 3600))
+            //: Expiring message timeout in hours. Used in whisperfish-service-message-expiry-update-[self|peer]
+            //% "%1 hour(s)"
+            return qsTrId("whisperfish-service-message-expiry-in-hours", Math.floor(secs / 3600))
         else if (secs >= 60 && secs % 60 === 0)
-            return qsTrId("whisperfish-disappearing-messages-minutes", Math.floor(secs / 60))
+            //: Expiring message timeout in minutes. Used in whisperfish-service-message-expiry-update-[self|peer]
+            //% "%1 minute(s)"
+            return qsTrId("whisperfish-service-message-expiry-in-minutes", Math.floor(secs / 60))
         else
-            return qsTrId("whisperfish-disappearing-messages-seconds", Math.floor(secs))
+            //: Expiring message timeout in seconds. Used in whisperfish-service-message-expiry-update-[self|peer]
+            //% "%1 second(s)"
+            return qsTrId("whisperfish-service-message-expiry-in-seconds", Math.floor(secs))
     }
 
     property string _message: switch (_type) {
