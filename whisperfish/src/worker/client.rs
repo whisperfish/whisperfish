@@ -1944,7 +1944,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                                 // XXX change the cert type when we want to introduce E164 privacy.
                                 let access =
                                     certs.access_for(CertType::Complete, recipient, for_story);
-                                Some((member, access))
+                                Some((member, access, recipient.needs_pni_signature))
                             } else {
                                 tracing::warn!(
                                     "No known UUID for {}; will not deliver this message.",
@@ -1971,7 +1971,14 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
 
                         vec![
                             sender
-                                .send_message(&svc, access, content.clone(), timestamp, online)
+                                .send_message(
+                                    &svc,
+                                    access,
+                                    content.clone(),
+                                    timestamp,
+                                    recipient.needs_pni_signature,
+                                    online,
+                                )
                                 .await,
                         ]
                     } else {
