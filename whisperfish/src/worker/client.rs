@@ -2256,6 +2256,9 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             let source_uuid = Uuid::parse_str(addr.name()).expect("only uuid-based identities accessible in the database");
                             tracing::warn!("Untrusted identity for {}; replacing identity and inserting a warning.", addr);
                             let recipient = storage.fetch_or_insert_recipient_by_uuid(source_uuid);
+                            if service_id == ServiceIdType::PhoneNumberIdentity {
+                                storage.mark_recipient_needs_pni_signature(recipient.id, true);
+                            }
                             let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
                             let msg = crate::store::NewMessage {
                                 session_id: session.id,

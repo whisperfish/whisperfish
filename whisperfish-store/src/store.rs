@@ -798,6 +798,22 @@ impl Storage {
             .ok()
     }
 
+    #[tracing::instrument(skip(self))]
+    pub fn mark_recipient_needs_pni_signature(&self, rid: i32, val: bool) {
+        use crate::schema::recipients::dsl::*;
+
+        let affected = diesel::update(recipients)
+            .set(needs_pni_signature.eq(val))
+            .filter(id.eq(rid))
+            .execute(&mut *self.db())
+            .expect("db");
+
+        if affected > 0 {
+            self.observe_update(recipients, rid);
+            tracing::trace!("Recipient {} marked as needing PNI signature: {}", rid, val);
+        }
+    }
+
     #[tracing::instrument]
     pub fn compact_db(&self) -> usize {
         let mut db = self.db();
