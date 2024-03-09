@@ -1,5 +1,6 @@
 use super::*;
 use actix::prelude::*;
+use anyhow::Context;
 
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -12,12 +13,15 @@ impl Handler<InitializePni> for ClientActor {
         let whoami = self.migration_state.self_uuid_is_known();
         let storage = self.storage.clone().expect("initialized storage");
         let local_addr = self.self_aci.expect("local addr");
+        let local_e164 = self.config.get_tel().expect("phone number");
+        let sender = self.message_sender();
 
         Box::pin(
             async move {
                 whoami.await;
 
                 if storage.pni_storage().get_identity_key_pair().await.is_ok() {
+                    // XXX: this is not a great way to check if PNI is initialized
                     tracing::trace!(
                         "PNI identity key pair already exists, assuming PNI is initialized"
                     );
@@ -35,13 +39,31 @@ impl Handler<InitializePni> for ClientActor {
                     }),
                 );
 
-                am.pnp_initialize_devices(
-                    &mut storage.aci_storage(),
-                    &mut storage.pni_storage(),
-                    local_addr,
-                    &mut rand::thread_rng(),
-                )
-                .await?;
+                let identity_key_pair =
+                    protocol::IdentityKeyPair::generate(&mut rand::thread_rng());
+                let mut pni = storage.pni_storage();
+                pni.write_identity_key_pair(identity_key_pair).await?;
+
+                let res = am
+                    .pnp_initialize_devices(
+                        &mut storage.aci_storage(),
+                        &mut storage.pni_storage(),
+                        sender.await?,
+                        local_addr,
+                        local_e164,
+                        &mut rand::thread_rng(),
+                    )
+                    .await
+                    .context("initializing linked devices for PNP");
+
+                if let Err(e) = res {
+                    pni.remove_identity_key_pair().await.with_context(|| {
+                        format!(
+                        "removing PNI identity because failed to initialize PNP on devices: {e:#}"
+                    )
+                    })?;
+                    return Err(e);
+                }
 
                 Ok(())
             }
