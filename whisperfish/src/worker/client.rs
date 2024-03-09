@@ -359,9 +359,27 @@ impl ClientActor {
 
         let ws = self.ws.clone().unwrap();
         let cipher = self.cipher(ServiceIdType::AccountIdentity);
-        let local_addr = self.self_aci.unwrap();
+        let local_aci = self.self_aci.unwrap();
+        let local_pni = self.self_pni.unwrap();
         let device_id = self.config.get_device_id();
+
         async move {
+            let aci_key = storage
+                .aci_storage()
+                .get_identity_key_pair()
+                .await
+                .expect("aci identity set");
+            let pni_key = storage
+                .pni_storage()
+                .get_identity_key_pair()
+                .await
+                .map_err(|_e| {
+                    tracing::warn!(
+                        "PNI identity key pair not set. Assuming PNI is not initialized."
+                    );
+                })
+                .ok();
+
             let u_ws = u_service
                 .ws("/v1/websocket/", "/v1/keepalive", &[], None)
                 .await?;
@@ -372,8 +390,10 @@ impl ClientActor {
                 cipher,
                 rand::thread_rng(),
                 storage.aci_or_pni(ServiceIdType::AccountIdentity), // In what cases do we use the
-                // PNI identity here?
-                local_addr,
+                local_aci,
+                local_pni,
+                aci_key,
+                pni_key,
                 device_id,
             ))
         }
