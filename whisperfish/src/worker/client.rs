@@ -2630,7 +2630,7 @@ impl Handler<RefreshPreKeys> for ClientActor {
                 &mut storage.aci_storage(),
                 ServiceIdType::AccountIdentity,
                 &mut rand::thread_rng(),
-                false,
+                true,
             )
             .await?;
 
@@ -2640,7 +2640,7 @@ impl Handler<RefreshPreKeys> for ClientActor {
                 &mut storage.pni_storage(),
                 ServiceIdType::PhoneNumberIdentity,
                 &mut rand::thread_rng(),
-                false,
+                true,
             )
             .await?;
             Result::<(), ServiceError>::Ok(())
