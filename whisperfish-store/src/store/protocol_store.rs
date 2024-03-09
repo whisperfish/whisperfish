@@ -583,15 +583,14 @@ impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
         &mut self,
         kyber_prekey_id: KyberPreKeyId,
     ) -> Result<(), SignalProtocolError> {
-        // TODO: only remove the kyber pre key if it concerns an ephemeral pre key; last-resort
-        // keys should be retained!  See libsignal-service/src/account_manager.rs `if use_last_resort_key`
         use crate::schema::kyber_prekeys::dsl::*;
         use diesel::prelude::*;
 
         diesel::delete(kyber_prekeys)
             .filter(
                 id.eq((u32::from(kyber_prekey_id)) as i32)
-                    .and(identity.eq(self.1.identity())),
+                    .and(identity.eq(self.1.identity()))
+                    .and(is_last_resort.eq(false)),
             )
             .execute(&mut *self.0.db())
             .expect("db");
