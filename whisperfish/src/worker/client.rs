@@ -1939,6 +1939,12 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
         let storage = self.storage.clone().unwrap();
         let sender = self.message_sender();
         let local_addr = self.self_aci.unwrap();
+        let settings = crate::config::SettingsBridge::default();
+        let cert_type = if settings.get_share_phone_number() {
+            CertType::UuidOnly
+        } else {
+            CertType::Complete
+        };
 
         let certs = self.unidentified_certificates.clone();
 
@@ -1962,8 +1968,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                                 None
                             } else if let Some(member) = member {
                                 // XXX change the cert type when we want to introduce E164 privacy.
-                                let access =
-                                    certs.access_for(CertType::Complete, recipient, for_story);
+                                let access = certs.access_for(cert_type, recipient, for_story);
                                 Some((member, access, recipient.needs_pni_signature))
                             } else {
                                 tracing::warn!(
@@ -1982,7 +1987,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                 orm::SessionType::DirectMessage(recipient) => {
                     let svc = recipient.to_service_address();
 
-                    let access = certs.access_for(CertType::Complete, recipient, for_story);
+                    let access = certs.access_for(cert_type, recipient, for_story);
 
                     if let Some(svc) = svc {
                         if !recipient.is_registered {
