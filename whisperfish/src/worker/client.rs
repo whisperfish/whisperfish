@@ -533,7 +533,7 @@ impl ClientActor {
             None
         } else if expiration_timer_update {
             message_type = Some(MessageType::ExpirationTimerUpdate);
-            Some("")
+            Some("".into())
         } else if let Some(GroupContextV2 {
             group_change: Some(ref _group_change),
             ..
@@ -541,25 +541,28 @@ impl ClientActor {
         {
             // TODO: Make sure we have a sender - it's not always there.
             message_type = Some(MessageType::GroupChange);
-            Some("")
+            Some("".into())
         } else if !msg.attachments.is_empty() {
             tracing::trace!("Received an attachment without body, replacing with empty text.");
-            Some("")
-        } else if msg.sticker.is_some() {
+            Some("".into())
+        } else if let Some(sticker) = &msg.sticker {
             tracing::warn!(
                 "Received a sticker, but they are currently unsupported. Please upvote issue #14."
             );
-            message_type = Some(MessageType::Sticker);
-            Some("")
+            tracing::trace!("{:?}", sticker);
+            Some(format!(
+                "[Whisperfish] Received a sticker: {}",
+                sticker.emoji.as_ref().unwrap()
+            ))
         } else if msg.payment.is_some() {
             // TODO: Save some info about payents?
             message_type = Some(MessageType::Payment);
-            Some("")
+            Some("".into())
         } else if msg.group_call_update.is_some() {
             message_type = Some(MessageType::GroupCallUpdate);
-            Some("")
+            Some("".into())
         } else if !msg.contact.is_empty() {
-            Some("")
+            Some("".into())
         }
         // TODO: Add more message types
         else {
@@ -597,7 +600,7 @@ impl ClientActor {
             }
         }
 
-        let body = msg.body.clone().or(alt_body.map(|x| x.to_string()));
+        let body = msg.body.clone().or(alt_body);
         let text = if let Some(body) = body {
             body
         } else {
