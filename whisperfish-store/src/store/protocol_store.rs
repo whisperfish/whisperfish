@@ -197,46 +197,56 @@ impl<T: Identity> IdentityStorage<T> {
 
         Ok(())
     }
+
+    #[tracing::instrument(level = "trace", skip(self, key_pair))]
+    // Mutability of self is artificial
+    pub async fn write_identity_key_pair(
+        &mut self,
+        key_pair: IdentityKeyPair,
+    ) -> Result<(), SignalProtocolError> {
+        let _lock = self.0.protocol_store.write().await;
+
+        let path = self
+            .0
+            .path
+            .join("storage")
+            .join("identity")
+            .join(self.1.identity_key_filename());
+        tracing::trace!("writing own identity key pair at {}", path.display());
+        self.0
+            .write_file(path, ProtocolStore::serialize_identity_key(key_pair))
+            .await
+            .map_err(|e| {
+                SignalProtocolError::InvalidArgument(format!("Cannot write own identity key {}", e))
+            })?;
+        Ok(())
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn get_identity_key_pair(&self) -> Result<IdentityKeyPair, SignalProtocolError> {
-        let identity_key_pair = self.0.aci_identity_key_pair.read().await;
+        let _lock = self.0.protocol_store.read().await;
 
-        if let Some(identity_key_pair) = *identity_key_pair {
-            Ok(identity_key_pair)
-        } else {
-            drop(identity_key_pair);
-
-            let mut identity_key_pair = self.0.aci_identity_key_pair.write().await;
-
-            let _lock = self.0.protocol_store.read().await;
-
-            let path = self
-                .0
-                .path
-                .join("storage")
-                .join("identity")
-                .join(self.1.identity_key_filename());
-            tracing::trace!("reading own identity key pair at {}", path.display());
-            let key_pair = {
-                use std::convert::TryFrom;
-                let mut buf = self.0.read_file(path).await.map_err(|e| {
-                    SignalProtocolError::InvalidArgument(format!(
-                        "Cannot read own identity key {}",
-                        e
-                    ))
-                })?;
-                buf.insert(0, DJB_TYPE);
-                let public = IdentityKey::decode(&buf[0..33])?;
-                let private = PrivateKey::try_from(&buf[33..])?;
-                IdentityKeyPair::new(public, private)
-            };
-            *identity_key_pair = Some(key_pair);
-            Ok(identity_key_pair.unwrap())
-        }
+        let path = self
+            .0
+            .path
+            .join("storage")
+            .join("identity")
+            .join(self.1.identity_key_filename());
+        tracing::trace!("reading own identity key pair at {}", path.display());
+        let key_pair = {
+            use std::convert::TryFrom;
+            let mut buf = self.0.read_file(path).await.map_err(|e| {
+                SignalProtocolError::InvalidArgument(format!("Cannot read own identity key {}", e))
+            })?;
+            buf.insert(0, DJB_TYPE);
+            let public = IdentityKey::decode(&buf[0..33])?;
+            let private = PrivateKey::try_from(&buf[33..])?;
+            IdentityKeyPair::new(public, private)
+        };
+        Ok(key_pair)
     }
 
     #[tracing::instrument(level = "trace", skip(self))]
