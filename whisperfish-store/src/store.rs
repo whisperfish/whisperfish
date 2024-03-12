@@ -425,7 +425,6 @@ impl Storage {
         regid: u32,
         pni_regid: u32,
         http_password: &str,
-        signaling_key: [u8; 52],
         aci_identity_key_pair: Option<protocol::IdentityKeyPair>,
         pni_identity_key_pair: Option<protocol::IdentityKeyPair>,
     ) -> Result<Storage, anyhow::Error> {
@@ -482,12 +481,6 @@ impl Storage {
         utils::write_file_async_encrypted(
             identity_path.join("http_password"),
             http_password.as_bytes(),
-            store_enc.as_ref(),
-        )
-        .await?;
-        utils::write_file_async_encrypted(
-            identity_path.join("http_signaling_key"),
-            signaling_key,
             store_enc.as_ref(),
         )
         .await?;
@@ -636,20 +629,20 @@ impl Storage {
 
     /// Asynchronously loads the base64 encoded signaling key.
     #[tracing::instrument(skip(self))]
-    pub async fn signaling_key(&self) -> Result<[u8; 52], anyhow::Error> {
-        let v = self
-            .read_file(
-                &self
-                    .path
-                    .join("storage")
-                    .join("identity")
-                    .join("http_signaling_key"),
-            )
-            .await?;
+    pub async fn signaling_key(&self) -> Result<Option<[u8; 52]>, anyhow::Error> {
+        let path = self
+            .path
+            .join("storage")
+            .join("identity")
+            .join("http_signaling_key");
+        if !path.exists() {
+            return Ok(None);
+        }
+        let v = self.read_file(&path).await?;
         anyhow::ensure!(v.len() == 52, "Signaling key is 52 bytes");
         let mut out = [0u8; 52];
         out.copy_from_slice(&v);
-        Ok(out)
+        Ok(Some(out))
     }
 
     // This is public for session_to_db migration
