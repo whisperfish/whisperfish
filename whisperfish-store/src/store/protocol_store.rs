@@ -173,6 +173,32 @@ impl protocol::ProtocolStore for IdentityStorage<Aci> {}
 #[async_trait::async_trait(?Send)]
 impl protocol::ProtocolStore for IdentityStorage<Pni> {}
 
+impl<T: Identity> IdentityStorage<T> {
+    #[tracing::instrument(level = "trace", skip(self, regid))]
+    // Mutability of self is artificial
+    pub async fn write_local_registration_id(
+        &mut self,
+        regid: u32,
+    ) -> Result<(), SignalProtocolError> {
+        let _lock = self.0.protocol_store.write().await;
+
+        let path = self
+            .0
+            .path
+            .join("storage")
+            .join("identity")
+            .join(self.1.regid_filename());
+        self.0
+            .write_file(path, format!("{}", regid).into_bytes())
+            .await
+            .map_err(|e| {
+                SignalProtocolError::InvalidArgument(format!("Cannot write regid {}", e))
+            })?;
+
+        Ok(())
+    }
+}
+
 #[async_trait::async_trait(?Send)]
 impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
     #[tracing::instrument(level = "trace", skip(self))]
