@@ -220,6 +220,22 @@ Page {
                 //% "Privacy"
                 text: qsTrId("whisperfish-settings-privacy-section")
             }
+            IconTextSwitch {
+                anchors.horizontalCenter: parent.horizontalCenter
+                //: Settings page, share recipient phone number with contacts
+                //% "Share phone number"
+                text: qsTrId("whisperfish-settings-share-phone-number")
+                //: Settings page, share recipient phone number with contacts
+                //% "When enabled, your contacts can see your phone number when you message them."
+                description: qsTrId("whisperfish-settings-share-phone-number-description")
+                checked: SettingsBridge.share_phone_number
+                icon.source: "image://theme/icon-m-dialpad"
+                onCheckedChanged: {
+                    if(checked!= SettingsBridge.share_phone_number) {
+                        SettingsBridge.share_phone_number = checked
+                    }
+                }
+            }
             ComboBox {
                 id: notificationPrivacyCombo
                 property string _setting: SettingsBridge.notification_privacy
