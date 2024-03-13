@@ -272,7 +272,7 @@ fn whisperfish_device_capabilities() -> DeviceCapabilities {
         change_number: false,
         gift_badges: false,
         stories: false,
-        pnp: false, // What is PNP?
+        pnp: true,
     }
 }
 
