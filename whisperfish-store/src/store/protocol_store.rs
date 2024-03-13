@@ -653,7 +653,7 @@ impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
         if let Some(pkr) = prekey_record {
             Ok(KyberPreKeyRecord::deserialize(&pkr.record)?)
         } else {
-            Err(SignalProtocolError::InvalidSignedPreKeyId)
+            Err(SignalProtocolError::InvalidKyberPreKeyId)
         }
     }
 
