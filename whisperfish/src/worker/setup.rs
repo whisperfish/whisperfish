@@ -33,6 +33,8 @@ pub struct SetupWorker {
     _phoneNumber: qt_property!(QString; READ phonenumber NOTIFY setupChanged),
     uuid: Option<Uuid>,
     _uuid: qt_property!(QString; READ uuid NOTIFY setupChanged ALIAS uuid),
+    pni: Option<Uuid>,
+    _pni: qt_property!(QString; READ pni NOTIFY setupChanged ALIAS pni),
     deviceId: qt_property!(u32; NOTIFY setupChanged),
 
     registered: qt_property!(bool; NOTIFY setupChanged),
@@ -68,6 +70,7 @@ impl SetupWorker {
         // XXX: nice formatting?
         this.borrow_mut().phonenumber = config.get_tel();
         this.borrow_mut().uuid = config.get_aci();
+        this.borrow_mut().pni = config.get_pni();
         this.borrow_mut().deviceId = config.get_device_id().into();
 
         if !this.borrow().registered {
@@ -385,6 +388,14 @@ impl SetupWorker {
 
     fn uuid(&self) -> QString {
         self.uuid
+            .as_ref()
+            .map(Uuid::to_string)
+            .unwrap_or_default()
+            .into()
+    }
+
+    fn pni(&self) -> QString {
+        self.pni
             .as_ref()
             .map(Uuid::to_string)
             .unwrap_or_default()
