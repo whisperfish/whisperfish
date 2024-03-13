@@ -2320,7 +2320,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                 tracing::trace!(sender = ?content.metadata.sender, "opened envelope");
 
                 Some(content)
-            }.instrument(tracing::trace_span!("opening envelope"))
+            }.instrument(tracing::trace_span!("opening envelope", %service_id))
             .into_actor(self)
             .map(|content, act, ctx| {
                 if let Some(content) = content {
