@@ -493,7 +493,7 @@ impl<T: Identity> PreKeysStore for IdentityStorage<T> {
 
             prekeys
                 .select(max(id))
-                .filter(identity.eq(self.1.identity()))
+                // Don't filter by identity, as we want to know the max for all identities
                 .first(&mut *self.0.db())
                 .expect("db")
         };
@@ -510,7 +510,7 @@ impl<T: Identity> PreKeysStore for IdentityStorage<T> {
 
             signed_prekeys
                 .select(max(id))
-                .filter(identity.eq(self.1.identity()))
+                // Don't filter by identity, as we want to know the max for all identities
                 .first(&mut *self.0.db())
                 .expect("db")
         };
@@ -527,7 +527,7 @@ impl<T: Identity> PreKeysStore for IdentityStorage<T> {
 
             kyber_prekeys
                 .select(max(id))
-                .filter(identity.eq(self.1.identity()))
+                // Don't filter by identity, as we want to know the max for all identities
                 .first(&mut *self.0.db())
                 .expect("db")
         };
