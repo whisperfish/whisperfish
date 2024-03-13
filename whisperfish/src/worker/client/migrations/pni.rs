@@ -8,7 +8,16 @@ pub struct InitializePni;
 
 impl Handler<InitializePni> for ClientActor {
     type Result = ResponseActFuture<Self, ()>;
-    fn handle(&mut self, _: InitializePni, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, _: InitializePni, ctx: &mut Self::Context) -> Self::Result {
+        if self.ws.is_none() {
+            // This should be triggered after restart,
+            // not during the initial connection.
+            tracing::warn!(
+                "Not connected to server, cannot initialize PNI. Retrying in 10 seconds."
+            );
+            ctx.notify_later(InitializePni, Duration::from_secs(10));
+            return Box::pin(async {}.into_actor(self));
+        }
         let service = self.authenticated_service();
         let whoami = self.migration_state.self_uuid_is_known();
         let storage = self.storage.clone().expect("initialized storage");
