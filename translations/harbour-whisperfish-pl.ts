@@ -222,7 +222,7 @@
         <source>Whisperfish is an unofficial, but advanced Signal client for Sailfish OS. Whisperfish is highly usable, but is still considered beta quality software. Make sure to update regularily! Also, check our Wiki and feel free to contribute to it! Do not ever contact the Signal developers about a Whisperfish issue, contact us instead!</source>
         <oldsource>Whisperfish is an unofficial, but advanced Signal client for Sailfish OS. Whisperfish is highly usable, but is still considered beta quality software. Make sure to update regularily! Also, check our Wiki and feel free to contribute to it! Do not ever contact the Signal developers about a Whisperfish issue, contact us instead!.</oldsource>
         <extracomment>Whisperfish description, longer version, also for Jolla Store</extracomment>
-        <translation type="unfinished">Whisperfish to nieoficjalny i zaawansowany klient Signal dla systemu Sailfish OS. Pomimo tego, że Whisperfish oferuje wiele funkcjonalności, wciąż jest uważany za oprogramowanie w fazie rozwoju beta. Pamiętaj o częstych aktualizacjach! Odwiedź również nasze Wiki i pomóż w tworzeniu! Nigdy nie kontaktuj się z twórcami oficjalnego klienta Signal w związku z problemami Whisperfish, kontaktuj się bezpośrednio z nami!.</translation>
+        <translation>Whisperfish to nieoficjalny ale zaawansowany klient Signala dla systemu Sailfish OS. Pomimo tego, że Whisperfish oferuje wiele funkcjonalności, wciąż jest uważany za oprogramowanie w fazie rozwoju beta. Pamiętaj o częstych aktualizacjach! Odwiedź również nasze Wiki i pomóż w tworzeniu! Nigdy nie kontaktuj się z twórcami oficjalnego klienta Signal w związku z problemami Whisperfish, kontaktuj się bezpośrednio z nami!</translation>
     </message>
     <message id="whisperfish-build-id">
         <location filename="../qml/pages/About.qml" line="78"/>
@@ -258,7 +258,7 @@
         <location filename="../qml/pages/About.qml" line="220"/>
         <source>Lithuanian translators</source>
         <extracomment>Lithuanian (lt) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Tłumacze na język litewski</translation>
     </message>
     <message id="whisperfish-translators-nl">
         <location filename="../qml/pages/About.qml" line="236"/>
@@ -702,7 +702,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="144"/>
         <source>Phone number</source>
         <extracomment>Profile phone number field</extracomment>
-        <translation type="unfinished">Numer telefonu</translation>
+        <translation>Numer telefonu</translation>
     </message>
     <message id="whisperfish-profile-about">
         <location filename="../qml/pages/ProfilePage.qml" line="267"/>
@@ -723,21 +723,21 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="176"/>
         <source>Unknown</source>
         <extracomment>Profile, sealed sending mode, unknown option</extracomment>
-        <translation type="unfinished">Nieznany</translation>
+        <translation>Nieznany</translation>
     </message>
     <message id="whisperfish-unidentified-disabled">
         <location filename="../qml/pages/ProfilePage.qml" line="295"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="180"/>
         <source>Disabled</source>
         <extracomment>Profile, sealed sending mode, disabled option</extracomment>
-        <translation type="unfinished">Wyłączone</translation>
+        <translation>Wyłączone</translation>
     </message>
     <message id="whisperfish-unidentified-enabled">
         <location filename="../qml/pages/ProfilePage.qml" line="300"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="184"/>
         <source>Enabled</source>
         <extracomment>Profile, sealed sending mode, enabled option</extracomment>
-        <translation type="unfinished">Włączone</translation>
+        <translation>Włączone</translation>
     </message>
     <message id="whisperfish-unidentified-unrestricted">
         <location filename="../qml/pages/ProfilePage.qml" line="305"/>
@@ -1758,7 +1758,7 @@ Settings page share contacts</extracomment>
         <source>Signal should have called you with a 6-digit verification code. Please wait a moment, or restart the process if you have not received a call.</source>
         <oldsource>Signal should have called you with a a 6-digit verification code. Please wait a moment, or restart the process if you have not received a call.</oldsource>
         <extracomment>verify registration instructions: voice</extracomment>
-        <translation type="unfinished">Signal powinien był zadzwonić do Ciebie z 6-cyfrowym kodem weryfikacyjnym. Poczekaj chwilę lub zrestartuj proces, jeśli nie otrzymałeś połączenia.</translation>
+        <translation>Signal powinien zadzwonić do Ciebie z 6-cyfrowym kodem weryfikacyjnym. Poczekaj chwilę lub powtórz proces, jeśli nie otrzymano połączenia.</translation>
     </message>
     <message id="whisperfish-verify-instructions-sms">
         <location filename="../qml/pages/VerifyRegistrationPage.qml" line="27"/>
@@ -1882,7 +1882,7 @@ Settings page share contacts</extracomment>
         <source>Voice Message</source>
         <oldsource>Voice note</oldsource>
         <extracomment>Page header subtitle for a voice note</extracomment>
-        <translation type="unfinished">Wiadomość głosowa</translation>
+        <translation>Wiadomość głosowa</translation>
     </message>
     <message id="whisperfish-quoted-message-preview-attachment">
         <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="74"/>
