@@ -813,6 +813,20 @@ impl<T: Identity> protocol::SignedPreKeyStore for IdentityStorage<T> {
         if let Some(pkr) = prekey_record {
             Ok(SignedPreKeyRecord::deserialize(&pkr.record)?)
         } else {
+            let prekey_record: Option<orm::SignedPrekey> = signed_prekeys
+                .filter(id.eq(u32::from(signed_prekey_id) as i32))
+                .first(&mut *self.0.db())
+                .optional()
+                .expect("db");
+            if prekey_record.is_some() {
+                tracing::warn!(
+                    "Signed pre key with ID {signed_prekey_id} found on a separate identity!"
+                );
+            } else {
+                tracing::warn!(
+                    "Signed pre key with ID {signed_prekey_id} not found; returning invalid."
+                );
+            }
             Err(SignalProtocolError::InvalidSignedPreKeyId)
         }
     }
