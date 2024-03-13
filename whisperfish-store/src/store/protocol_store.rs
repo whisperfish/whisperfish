@@ -553,6 +553,49 @@ impl<T: Identity> PreKeysStore for IdentityStorage<T> {
     }
 }
 
+impl<T: Identity> IdentityStorage<T> {
+    /// Whether to force a pre key refresh.
+    ///
+    /// Check whether we have:
+    /// - 1 signed EC pre key
+    /// - 1 Kyber last resort key
+    pub async fn needs_pre_key_refresh(&self) -> bool {
+        let signed_count = {
+            use crate::schema::signed_prekeys::dsl::*;
+            use diesel::prelude::*;
+
+            let prekey_records: i64 = signed_prekeys
+                .select(diesel::dsl::count_star())
+                .filter(identity.eq(self.1.identity()))
+                .first(&mut *self.0.db())
+                .expect("db");
+            prekey_records
+        };
+
+        if signed_count == 0 {
+            return true;
+        }
+
+        let kyber_count = {
+            use crate::schema::kyber_prekeys::dsl::*;
+            use diesel::prelude::*;
+
+            let prekey_records: i64 = kyber_prekeys
+                .select(diesel::dsl::count_star())
+                .filter(identity.eq(self.1.identity()).and(is_last_resort.eq(true)))
+                .first(&mut *self.0.db())
+                .expect("db");
+            prekey_records
+        };
+
+        if kyber_count == 0 {
+            return true;
+        }
+
+        false
+    }
+}
+
 #[async_trait::async_trait(?Send)]
 impl<T: Identity> protocol::PreKeyStore for IdentityStorage<T> {
     #[tracing::instrument(level = "trace", skip(self))]

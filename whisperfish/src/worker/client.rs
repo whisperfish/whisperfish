@@ -2727,21 +2727,31 @@ impl Handler<RefreshPreKeys> for ClientActor {
         let pni_distribution = self.migration_state.pni_distributed();
 
         let proc = async move {
+            let mut aci = storage.aci_storage();
+            let mut pni = storage.pni_storage();
+
+            let force_aci = aci.needs_pre_key_refresh().await;
+            let force_pni = pni.needs_pre_key_refresh().await;
+
+            // It's tempting to run those two in parallel,
+            // but I'm afraid the pre-key counts are going to be mixed up.
             am.update_pre_key_bundle(
-                &mut storage.aci_storage(),
+                &mut aci,
                 ServiceIdType::AccountIdentity,
                 &mut rand::thread_rng(),
                 true,
+                force_aci,
             )
             .await?;
 
             let _pni_distribution = pni_distribution.await;
 
             am.update_pre_key_bundle(
-                &mut storage.pni_storage(),
+                &mut pni,
                 ServiceIdType::PhoneNumberIdentity,
                 &mut rand::thread_rng(),
                 true,
+                force_pni,
             )
             .await?;
             Result::<(), ServiceError>::Ok(())
