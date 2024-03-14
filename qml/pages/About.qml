@@ -384,6 +384,7 @@ Page {
                     "A" + "\n" +
                     "Alexander Schlarb" + "\n" +
                     "Karol Kurek" + "\n" +
+                    "Eryk Michalak" + "\n" +
                     "Wojtek" + "\n" +
                     "carlosgonz" + "\n" +
                     "kan-ibal"
