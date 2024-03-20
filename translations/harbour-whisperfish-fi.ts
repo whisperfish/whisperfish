@@ -14,7 +14,7 @@
         <location filename="../qml/cover/CoverPage.qml" line="143"/>
         <source>Service Message</source>
         <extracomment>Placeholder note for a service message (expiry, profile key...)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Palveluviesti</translation>
     </message>
     <message id="whisperfish-session-is-voice-note">
         <location filename="../qml/delegates/SessionDelegate.qml" line="43"/>
@@ -2032,7 +2032,7 @@ Settings page share contacts</extracomment>
         <source>You joined the group.</source>
         <oldsource>You joined the group “%1”.</oldsource>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished">Liityit ryhmään &quot;%1&quot;.</translation>
+        <translation>Liityit ryhmään.</translation>
     </message>
     <message id="whisperfish-service-message-left-group-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="142"/>
@@ -2067,163 +2067,163 @@ Settings page share contacts</extracomment>
         <source>You had a voice call with %1.</source>
         <oldsource>You called %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">Soitit käyttäjälle %1.</translation>
+        <translation>Soitit puhelun käyttäjälle %1.</translation>
     </message>
     <message id="whisperfish-service-message-call-video-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="166"/>
         <source>You had a video call with %1.</source>
         <oldsource>You started a video call with %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">Aloitit videopuhelun käyttäjän %1 kanssa.</translation>
+        <translation>Soitit videopuhelun käyttäjälle %1.</translation>
     </message>
     <message id="whisperfish-service-message-call-voice-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="177"/>
         <source>%1 had a voice call with you.</source>
         <oldsource>%1 called you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">%1 soitti sinulle.</translation>
+        <translation>%1 soitti sinulle puhelun.</translation>
     </message>
     <message id="whisperfish-service-message-call-video-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="169"/>
         <source>%1 had a video call with you.</source>
         <oldsource>%1 started a video call with you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">%1 aloitti videopuhelun kanssasi.</translation>
+        <translation>%1 soitti sinulle videopuhelun.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-weeks" numerus="yes">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="52"/>
         <source>%1 week(s)</source>
         <extracomment>Expiring message timeout in weeks. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 viikko</numerusform>
+            <numerusform>%1 viikkoa</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-days" numerus="yes">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="56"/>
         <source>%1 day(s)</source>
         <extracomment>Expiring message timeout in days. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 päivä</numerusform>
+            <numerusform>%1 päivää</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-hours" numerus="yes">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="60"/>
         <source>%1 hour(s)</source>
         <extracomment>Expiring message timeout in hours. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 tunti</numerusform>
+            <numerusform>%1 tuntia</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-minutes" numerus="yes">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="64"/>
         <source>%1 minute(s)</source>
         <extracomment>Expiring message timeout in minutes. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 minuutti</numerusform>
+            <numerusform>%1 minuuttia</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-seconds" numerus="yes">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="68"/>
         <source>%1 second(s)</source>
         <extracomment>Expiring message timeout in seconds. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 sekunti</numerusform>
+            <numerusform>%1 sekuntia</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-update-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="89"/>
         <source>You set expiring messages timeout to %1.</source>
         <extracomment>Service message, %1 time</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Asetit viestien vanhenemisajaksi %1.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-update-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="92"/>
         <source>%1 set expiring messages timeout to %2.</source>
         <extracomment>Service message, %1 is a name, %2 is time</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 asetti viestien vanhenemisajaksi %2.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-disable-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="97"/>
         <source>You disabled expiring messages.</source>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Poistit vanhenevat viestit käytöstä.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-disable-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="100"/>
         <source>%1 disabled expiring messages.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 poisti vanhenevat viestit käytöstä.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-unknown-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="105"/>
         <source>You set or disabled expiring messages timeout.</source>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Poistit tai muutit viestien vanhenemisaikaa.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-unknown-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="108"/>
         <source>%1 set or disabled expiring messages timeout.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 poisti tai muutti viestien vanhenemisaikaa.</translation>
     </message>
     <message id="whisperfish-service-message-profile-key-update-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="114"/>
         <source>You updated your profile key with %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Päivitit profiiliavaimesi käyttäjän %1 kanssa.</translation>
     </message>
     <message id="whisperfish-service-message-profile-key-update-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="117"/>
         <source>%1 updated their profile key with you.</source>
         <extracomment>Service message, %1 is a name, %2 is time</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 päivitti profiiliavaimensa kanssasi.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="122"/>
         <source>You ended the session with %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Päätit keskuskelun käyttäjän %1 kanssa.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="125"/>
         <source>%1 ended the session with you.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 päätti keskustelun kanssasi.</translation>
     </message>
     <message id="whisperfish-service-message-changed-group">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="129"/>
         <source>The group was updated.</source>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ryhmää muutettiin.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="150"/>
         <source>You missed a voice call from %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 yritti soittaa sinulle puhelun.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="153"/>
         <source>You tried to voice call %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Yritit soittaa puhelun käyttäjälle %1.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-video-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="158"/>
         <source>You missed a video call from %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">Vastaamaton videopuhelu: %1</translation>
+        <translation>%1 yritti soittaa sinulle videopuhelun.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-video-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="161"/>
         <source>You tried to video call %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Yritit soittaa videopuhelun käyttäjälle %1.</translation>
     </message>
     <message id="whisperfish-service-message-fingerprint-changed">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="182"/>
@@ -2236,20 +2236,20 @@ Settings page share contacts</extracomment>
         <source>You reset the secure session with %1.</source>
         <oldsource>You have reset the secure session with %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">Alustit suojatun istunnon käyttäjän %1 kanssa.</translation>
+        <translation>Alustit suojatun istunnon käyttäjän %1 kanssa.</translation>
     </message>
     <message id="whisperfish-service-message-session-reset-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="190"/>
         <source>%1 reset the secure session with you.</source>
         <oldsource>%1 has reset the secure session with you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">%1 alusti suojatun istunnon kanssasi.</translation>
+        <translation>%1 alusti suojatun istunnon kanssasi.</translation>
     </message>
     <message id="whisperfish-service-message-not-supported">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="196"/>
         <source>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: %1)</source>
         <oldsource>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: &apos;%1&apos;.)</oldsource>
-        <translation type="unfinished">Whisperfish ei tue vielä tätä järjestelmäviestiä. Ole hyvä ja tee vikailmoitus. (Viestitunniste: &apos;%1&apos;)</translation>
+        <translation>Whisperfish ei tue vielä tätä järjestelmäviestiä. Ole hyvä ja tee vikailmoitus. (Viestitunniste: &apos;%1&apos;)</translation>
     </message>
     <message id="whisperfish-service-message-more-info">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="252"/>
