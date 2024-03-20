@@ -179,9 +179,19 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
                     }
                 },
             );
-            assert!(fold.is_done());
+            assert!(
+                fold.is_done(),
+                "{:?} char_idx {} is out of bounds",
+                self,
+                char_idx,
+            );
             let (idx, _utf16_pos) = fold.into_inner();
-            assert!(_utf16_pos >= char_idx);
+            assert!(
+                _utf16_pos >= char_idx,
+                "{:?}: char_idx {} is out of bounds",
+                self,
+                char_idx,
+            );
 
             if cfg!(debug_assertions) {
                 let lhs: Vec<u16> = self.contents.encode_utf16().take(char_idx).collect();
