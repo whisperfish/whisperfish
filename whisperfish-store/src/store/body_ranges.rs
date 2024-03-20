@@ -137,6 +137,7 @@ fn escape(s: &str) -> std::borrow::Cow<'_, str> {
 }
 
 /// Returns a styled message, with ranges for bold, italic, links, quotes, etc.
+#[tracing::instrument(level = "debug", skip(mention_lookup))]
 pub fn to_styled<'a, S: AsRef<str> + 'a>(
     message: &'a str,
     ranges: &'a [BodyRange],
