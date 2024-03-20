@@ -11,18 +11,10 @@ Page {
     // Group wallpapers/background are inherently un-sailfishy. We
     // should show them somewhere, somehow nonetheless - just not as
     // a background image. A group admin should be able to change it, too.
-    /* property string groupWallpaper: '' */
 
     property var session: null
     property var group: null
 
-    property bool groupV2: session.isGroupV2 // works until groupV3
-    property string groupId: session.groupId
-    property string groupName: session.groupName
-    property string groupDescription: session.groupDescription ? session.groupDescription : ""
-
-    readonly property string myUuid: SetupWorker.uuid
-    readonly property string myPhone: SetupWorker.phoneNumber
     property bool youAreAdmin: false
     // This variable is needed because MenuItem doesn't see inside SilicaListView.header container
     property int newDuration: -1
@@ -31,6 +23,11 @@ Page {
 
     SilicaListView {
         id: flick
+        anchors.fill: parent
+
+        VerticalScrollDecorator {
+            flickable: flick
+        }
 
         PullDownMenu {
             MenuItem {
@@ -86,14 +83,12 @@ Page {
             }
         }
 
-        anchors.fill: parent
-        model: group.members
         header: Column {
             width: parent.width
 
             PageHeader {
-                title: groupName
-                description: !groupV2
+                title: session.groupName
+                description: !session.isGroupV2
                     //: Indicator for not yet updated groups
                     //% "Not updated to the new group format"
                     ? qsTrId("whisperfish-group-not-updated-to-groupv2")
@@ -107,21 +102,22 @@ Page {
                 width: height
                 highlighted: false
                 labelsHighlighted: false
-                imageSource: groupId !== undefined && groupId !== ''
-                    ? SettingsBridge.avatar_dir + "/" + groupId
+                imageSource: session.groupId !== undefined && session.groupId !== ''
+                    ? SettingsBridge.avatar_dir + "/" + session.groupId
                     : ''
                 isGroup: true
                 showInfoMark: infoMarkSource !== ''
-                infoMarkSource: groupV2 ? '' : 'image://theme/icon-s-filled-warning'
+                infoMarkSource: session.isGroupV2 ? '' : 'image://theme/icon-s-filled-warning'
                 infoMarkSize: 0.9*Theme.iconSizeSmallPlus
                 anchors.horizontalCenter: parent.horizontalCenter
+
                 // TODO Implement a new page derived from ViewImagePage for showing
                 //      profile pictures. A new action overlay at the bottom can provide
                 //      options to change or delete the profile picture.
                 //      Note: adding a PullDownMenu would be best but is not possible.
                 //      ViewImagePage relies on Flickable and breaks if used with SilicaFlickable,
                 //      but PullDownMenu requires a SilicaFlickable as parent.
-                onClicked: pageStack.push(Qt.resolvedUrl("ViewImagePage.qml"), { title: groupName, path: imageSource })
+                onClicked: pageStack.push(Qt.resolvedUrl("ViewImagePage.qml"), { title: session.groupName, path: imageSource })
             }
 
             Item {
@@ -142,9 +138,14 @@ Page {
                     // TODO: the description should be editable if the user has the
                     //       appropriate permission (either admin, or all are allowed to edit)
 
-                    x: Theme.horizontalPageMargin
-                    width: parent.width-2*Theme.horizontalPageMargin
-                    plainText: groupDescription
+                    anchors {
+                        top: parent.top
+                        left: parent.left
+                        right: parent.right
+                        leftMargin: 2 * Theme.horizontalPageMargin
+                        rightMargin: 2 * Theme.horizontalPageMargin
+                    }
+                    plainText: session.groupDescription ? session.groupDescription : ""
                     font.pixelSize: Theme.fontSizeSmall
                     // enableElide: Text.ElideRight -- no elide to enable dynamic height
                     // height: maximumLineCount*font.pixelSize
@@ -188,20 +189,25 @@ Page {
                 }
             }
 
-            Item { width: parent.width; height: Theme.paddingLarge }
+            Item {
+                width: parent.width
+                height: Theme.paddingLarge
+            }
 
             ExpiringMessagesComboBox {
                 id: expiringMessages
-                enabled: youAreAdmin
+                enabled: groupProfile.youAreAdmin
+                // This height hack is required to prevent the newly-created
+                // page from scrolling up a bit when the page is creaged
+                // and first getting rendered.
+                //
+                // Avoid items with dynamic height in headers.
+                height: implicitHeight === 0 ? width : implicitHeight
                 width: parent.width
                 duration: session.expiringMessageTimeout
                 onNewDurationChanged: groupProfile.newDuration = newDuration
             }
-
-            Item { width: parent.width; height: Theme.paddingLarge }
         }
-
-        VerticalScrollDecorator { flickable: flick }
 
         section {
             property: 'role'
@@ -219,22 +225,26 @@ Page {
             }
         }
 
+        model: group.members
         delegate: ListItem {
             id: item
             contentHeight: Theme.itemSizeMedium
-            enabled: !isSelf
+            anchors {
+                left: parent.left
+                right: parent.right
 
-            property bool youAreAdmin: false // TODO implement in backend
-            property bool isVerified: false // TODO implement in backend;  model.isVerified
-            property bool isSelf: model.uuid === myUuid
-            property string profilePicture: getRecipientAvatar(model.e164, model.uuid)
-            property string name: getRecipientName(model.e164, model.name, false)
-            property bool isUnknownContact: name == model.e164
+            }
+
+            //property bool isVerified: false // TODO implement in backend;  model.isVerified
+            property bool isSelf: recipient.recipientUuid == SetupWorker.uuid
+            property string profilePicture: getRecipientAvatar(recipient.e164, recipient.uuid)
+            property string name: getRecipientName(recipient.e164, recipient.name, false)
+            property bool isUnknownContact: name == recipient.e164
 
             // TODO Implement custom contact page for Whisperfish contacts
             onClicked:
-                if(model.e164 != "") {
-                    phonenumberLink.linkActivated('tel:' + model.e164)
+                if(recipient.e164 != null) {
+                    phonenumberLink.linkActivated('tel:' + recipient.e164)
                 }
 
             // For when we need the augmented fields
@@ -260,7 +270,7 @@ Page {
                                   //: Menu item to open the private chat with a group member
                                   //% "Message to %1"
                                   qsTrId("whisperfish-group-member-menu-direct-message").arg(
-                                      isUnknownContact ? (model.e164 ? model.e164 : model.uuid) : name)
+                                      isUnknownContact ? (recipient.e164 ? recipient.e164 : recipient.uuid) : name)
                         onClicked: {
                             var main = pageStack.find(function(page) { return page.objectName == "mainPage"; });
                             pageStack.replaceAbove(main, Qt.resolvedUrl("../pages/ConversationPage.qml"), { sessionId: recipient.directMessageSessionId });
@@ -271,7 +281,7 @@ Page {
                         text: //: Menu item to start a new private chat with a group member
                               //% "Start conversation with %1"
                               qsTrId("whisperfish-group-member-menu-new-direct-message").arg(
-                                      isUnknownContact ? (model.e164 ? model.e164 : model.uuid) : name)
+                                      isUnknownContact ? (recipient.e164 ? recipient.e164 : recipient.uuid) : name)
                         onClicked: {
                             var main = pageStack.find(function(page) { return page.objectName == "mainPage"; });
                             pageStack.replaceAbove(main, Qt.resolvedUrl("../pages/CreateConversationPage.qml"), { uuid: recipient.uuid });
@@ -292,10 +302,10 @@ Page {
                         text: qsTrId("whisperfish-group-member-menu-verify-fingerprint")
                         visible: !isVerified
                         onClicked: {
-                            if (model.uuid === SetupWorker.uuid) {
+                            if (recipient.uuid === SetupWorker.uuid) {
                                 pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"))
                             } else {
-                                pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { recipientUuid: model.uuid })
+                                pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { recipient: recipient })
                             }
                         }
                     }
@@ -303,7 +313,7 @@ Page {
                         //: Menu item to remove a member from a group (requires admin privileges)
                         //% "Remove from this group"
                         text: qsTrId("whisperfish-group-member-menu-remove-from-group")
-                        visible: youAreAdmin
+                        visible: groupProfile.youAreAdmin
                         onClicked: remorse.execute("Changing group members is not yet implemented.", function() {})
                     }
                     MenuItem {
@@ -341,63 +351,62 @@ Page {
                 }
             }
 
-            Row {
-                width: parent.width - 2*Theme.horizontalPageMargin
-                height: parent.height
-                anchors.horizontalCenter: parent.horizontalCenter
-                spacing: Theme.paddingLarge
-
-                ProfilePicture {
-                    highlighted: item.down
-                    labelsHighlighted: highlighted
-                    imageSource: item.profilePicture
-                    isGroup: false // groups can't be members of groups
-                    showInfoMark: false
-                    anchors.verticalCenter: parent.verticalCenter
-                    onPressAndHold: item.openMenu()
-                    onClicked: item.clicked(null)
+            ProfilePicture {
+                id: avatar
+                highlighted: item.down
+                labelsHighlighted: highlighted
+                imageSource: item.profilePicture
+                isGroup: false // groups can't be members of groups
+                showInfoMark: false
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    left: parent.left
+                    leftMargin: Theme.horizontalPageMargin
                 }
+                onPressAndHold: item.openMenu()
+                onClicked: item.clicked(null)
+            }
 
-                Column {
-                    anchors {
-                        verticalCenter: parent.verticalCenter
-                        // where does the extra top padding come from?
-                        verticalCenterOffset: -Theme.paddingSmall
+            Column {
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    left: avatar.right
+                    right: parent.right
+                    leftMargin: Theme.horizontalPageMargin
+                    rightMargin: Theme.horizontalPageMargin
+                }
+                Row {
+                    spacing: Theme.paddingSmall
+                    Label {
+                        visible: SettingsBridge.debug_mode && !isSelf
+                        width: visible ? implicitWidth : 0
+                        height: nameLabel.height
+                        font.pixelSize: Theme.fontSizeTiny
+                        // 0 = Unknown, 1 = Disabled, 2 = Enabled, 3 = Unlimited
+                        color: recipient.unidentifiedAccessMode  >= 2 ? "green" : "red"
+                        text: '🔒'
                     }
-                    Row {
-                        spacing: Theme.paddingSmall
-                        Label {
-                            visible: SettingsBridge.debug_mode && !isSelf
-                            width: visible ? implicitWidth : 0
-                            height: nameLabel.height
-                            font.pixelSize: Theme.fontSizeTiny
-                            // 0 = Unknown, 1 = Disabled, 2 = Enabled, 3 = Unlimited
-                            color: recipient.unidentifiedAccessMode  >= 2 ? "green" : "red"
-                            text: '🔒'
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        Label {
-                            id: nameLabel
-                            font.pixelSize: Theme.fontSizeMedium
-                            text: item.isSelf
-                                //: Title for the user's entry in a list of group members
-                                //% "You"
-                                ? qsTrId("whisperfish-group-member-name-self")
-                                : item.isUnknownContact
-                                    //: Unknown contact in group member list
-                                    //% "Unknown"
-                                    ? qsTrId("whisperfish-unknown-contact")
-                                    : name
-                        }
+                    Label {
+                        id: nameLabel
+                        font.pixelSize: Theme.fontSizeMedium
+                        text: item.isSelf
+                            //: Title for the user's entry in a list of group members
+                            //% "You"
+                            ? qsTrId("whisperfish-group-member-name-self")
+                            : item.isUnknownContact
+                                //: Unknown contact in group member list
+                                //% "Unknown"
+                                ? qsTrId("whisperfish-unknown-contact")
+                                : name
                     }
-                    LinkedText {
-                        id: phonenumberLink
-                        linkColor: color
-                        color: item.down ? Theme.secondaryHighlightColor :
-                                           Theme.secondaryColor
-                        font.pixelSize: Theme.fontSizeSmall
-                        plainText: model.e164
-                    }
+                }
+                LinkedText {
+                    id: phonenumberLink
+                    linkColor: color
+                    color: item.down ? Theme.secondaryHighlightColor :
+                                        Theme.secondaryColor
+                    font.pixelSize: Theme.fontSizeSmall
+                    plainText: recipient.e164 ? recipient.e164 : ''
                 }
             }
         }

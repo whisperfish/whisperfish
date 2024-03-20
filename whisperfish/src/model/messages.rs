@@ -41,6 +41,7 @@ crate::observing_model! {
 
         sent Sent,
         flags Flags,
+        messageType MessageType,
         outgoing Outgoing,
         queued Queued,
         failed Failed,
@@ -50,6 +51,8 @@ crate::observing_model! {
         quotedMessageId QuotedMessageId,
         hasSpoilers HasSpoilers,
         hasStrikeThrough HasStrikeThrough,
+
+        expiresIn ExpiresIn,
     }
 }
 
@@ -196,11 +199,6 @@ crate::observing_model! {
         messages: QVariant; READ messages,
     } WITH OPTIONAL PROPERTIES FROM session WITH ROLE SessionRoles {
         recipientId RecipientId,
-        recipientName RecipientName,
-        recipientUuid RecipientUuid,
-        recipientE164 RecipientE164,
-        recipientEmoji RecipientEmoji,
-        recipientAboutText RecipientAbout,
 
         isGroup IsGroup,
         isGroupV2 IsGroupV2,
@@ -221,8 +219,6 @@ crate::observing_model! {
         isArchived IsArchived,
         isPinned IsPinned,
         viewCount Viewed,
-        hasAttachment HasAttachment,
-        hasAvatar HasAvatar,
         draft Draft,
         expiringMessageTimeout ExpiringMessageTimeout,
     }
@@ -358,6 +354,7 @@ define_model_roles! {
 
         Sent(fn sent(&self)):                                 "sent",
         Flags(flags):                                         "flags",
+        MessageType(message_type via qstring_from_option):    "messageType",
         Outgoing(is_outbound):                                "outgoing",
         Queued(fn queued(&self)):                             "queued",
         Failed(sending_has_failed):                           "failed",

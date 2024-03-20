@@ -59,6 +59,7 @@ pub mod original {
         pub hasattachment: bool,
         pub outgoing: bool,
         pub queued: bool,
+        pub message_type: Option<String>,
     }
 
     /// ID-free Message model for insertions
@@ -76,6 +77,7 @@ pub mod original {
         pub mime_type: Option<String>,
         pub has_attachment: bool,
         pub outgoing: bool,
+        pub message_type: Option<String>,
     }
 }
 
@@ -135,6 +137,7 @@ mod corrected_datatypes {
         pub hasattachment: bool,
         pub outgoing: bool,
         pub queued: bool,
+        pub message_type: Option<String>,
     }
 
     /// ID-free Message model for insertions

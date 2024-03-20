@@ -95,6 +95,35 @@ impl Display for GroupV2Member {
     }
 }
 
+#[derive(diesel_derive_enum::DbEnum, Debug, Clone, PartialEq, Eq)]
+pub enum MessageType {
+    Unsupported,
+    ProfileKeyUpdate,
+    EndSession,
+    IdentityKeyChange,
+    GroupChange,
+    Payment,
+    GroupCallUpdate,
+    ExpirationTimerUpdate,
+    IdentityReset,
+}
+
+impl AsRef<str> for MessageType {
+    fn as_ref(&self) -> &str {
+        match self {
+            MessageType::Unsupported => "unsupported",
+            MessageType::ProfileKeyUpdate => "profile_key_update",
+            MessageType::EndSession => "end_session",
+            MessageType::IdentityKeyChange => "identity_key_change",
+            MessageType::GroupChange => "group_change",
+            MessageType::Payment => "payment",
+            MessageType::GroupCallUpdate => "group_call_update",
+            MessageType::ExpirationTimerUpdate => "expiration_timer_update",
+            MessageType::IdentityReset => "identity_reset",
+        }
+    }
+}
+
 #[derive(Queryable, Identifiable, Debug, Clone, PartialEq, Eq)]
 pub struct Message {
     pub id: i32,
@@ -130,6 +159,7 @@ pub struct Message {
     pub latest_revision_id: Option<i32>,
     pub original_message_id: Option<i32>,
     pub revision: i32,
+    pub message_type: Option<MessageType>,
 }
 
 impl Message {
@@ -214,6 +244,7 @@ impl Default for Message {
             original_message_id: None,
             latest_revision_id: None,
             revision: 0,
+            message_type: None,
         }
     }
 }
@@ -967,7 +998,6 @@ impl AugmentedMessage {
     }
 
     pub fn reactions(&self) -> u32 {
-        tracing::trace!("reactions (mid {}): {}", self.id, self.reactions);
         self.reactions as _
     }
 
@@ -1128,79 +1158,11 @@ impl AugmentedSession {
         }
     }
 
-    pub fn recipient_name(&self) -> &str {
-        match &self.inner.r#type {
-            SessionType::GroupV1(_group) => "",
-            SessionType::GroupV2(_group) => "",
-            SessionType::DirectMessage(recipient) => {
-                recipient.profile_joined_name.as_deref().unwrap_or_default()
-            }
-        }
-    }
-
-    pub fn recipient_uuid(&self) -> Cow<'_, str> {
-        match &self.inner.r#type {
-            SessionType::GroupV1(_group) => "".into(),
-            SessionType::GroupV2(_group) => "".into(),
-            SessionType::DirectMessage(recipient) => recipient.uuid().into(),
-        }
-    }
-
-    pub fn recipient_e164(&self) -> Cow<'_, str> {
-        match &self.inner.r#type {
-            SessionType::GroupV1(_group) => "".into(),
-            SessionType::GroupV2(_group) => "".into(),
-            SessionType::DirectMessage(recipient) => recipient.e164().into(),
-        }
-    }
-
-    pub fn recipient_emoji(&self) -> &str {
-        match &self.inner.r#type {
-            SessionType::GroupV1(_group) => "",
-            SessionType::GroupV2(_group) => "",
-            SessionType::DirectMessage(recipient) => {
-                recipient.about_emoji.as_deref().unwrap_or_default()
-            }
-        }
-    }
-
-    pub fn recipient_about(&self) -> &str {
-        match &self.inner.r#type {
-            SessionType::GroupV1(_group) => "",
-            SessionType::GroupV2(_group) => "",
-            SessionType::DirectMessage(recipient) => recipient.about.as_deref().unwrap_or_default(),
-        }
-    }
-
-    pub fn has_avatar(&self) -> bool {
-        match &self.r#type {
-            SessionType::GroupV1(_) => false,
-            SessionType::GroupV2(group) => group.avatar.is_some(),
-            SessionType::DirectMessage(recipient) => recipient.signal_profile_avatar.is_some(),
-        }
-    }
-
     pub fn is_registered(&self) -> bool {
         match &self.inner.r#type {
             SessionType::GroupV1(_group) => true,
             SessionType::GroupV2(_group) => true,
             SessionType::DirectMessage(recipient) => recipient.is_registered,
-        }
-    }
-
-    pub fn has_attachment(&self) -> bool {
-        if let Some(m) = &self.last_message {
-            m.attachments > 0
-        } else {
-            false
-        }
-    }
-
-    pub fn is_voice_note(&self) -> bool {
-        if let Some(m) = &self.last_message {
-            m.is_voice_note
-        } else {
-            false
         }
     }
 
@@ -1216,20 +1178,12 @@ impl AugmentedSession {
         }
     }
 
-    pub fn has_spoilers(&self) -> bool {
-        if let Some(m) = &self.last_message {
-            m.has_spoilers()
-        } else {
-            false
-        }
-    }
-
-    pub fn last_message_text_styled(&self) -> Option<Cow<'_, str>> {
-        self.last_message.as_ref().map(|m| m.styled_message())
-    }
-
     pub fn last_message_text(&self) -> Option<&str> {
         self.last_message.as_ref().and_then(|m| m.text.as_deref())
+    }
+
+    pub fn last_message_id(&self) -> i32 {
+        self.last_message.as_ref().map(|m| m.id).unwrap_or(-1)
     }
 
     pub fn section(&self) -> String {
@@ -1261,13 +1215,6 @@ impl AugmentedSession {
         } else {
             String::from("older")
         }
-    }
-
-    pub fn is_remote_deleted(&self) -> bool {
-        self.last_message
-            .as_ref()
-            .map(|m| m.is_remote_deleted)
-            .unwrap_or(false)
     }
 
     pub fn is_read(&self) -> bool {
@@ -1892,17 +1839,11 @@ mod tests {
                 NaiveDateTime::parse_from_str("2023-03-31 14:51:25", "%Y-%m-%d %H:%M:%S").unwrap()
             )
         );
-        assert_eq!(a.recipient_name(), "");
-        assert_eq!(a.recipient_uuid(), "");
-        assert_eq!(a.recipient_e164(), "");
-        assert_eq!(a.recipient_emoji(), "");
-        assert_eq!(a.recipient_about(), "");
+        assert_eq!(a.recipient_id(), -1);
         assert_eq!(a.group_name(), Some("G2"));
         assert_eq!(a.group_description(), Some("desc".into()));
         assert_eq!(a.group_id(), Some("abc"));
         assert!(!a.sent());
-        assert!(!a.has_avatar());
-        assert!(a.has_attachment());
         assert_eq!(a.draft(), "".to_string());
         assert_eq!(a.last_message_text(), Some("msg text"));
         assert!(a.is_pinned());
@@ -1924,12 +1865,6 @@ mod tests {
         assert_eq!(a.group_description(), None);
         assert_eq!(a.group_id(), None);
         assert_eq!(a.recipient_id(), 981);
-        assert_eq!(a.recipient_name(), "Nick Name");
-        assert_eq!(a.recipient_uuid(), "bff93979-a0fa-41f5-8ccf-e319135384d8");
-        assert_eq!(a.recipient_e164(), "+358401010101");
-        assert_eq!(a.recipient_emoji(), "🦊");
-        assert_eq!(a.recipient_about(), "About me!");
-        assert!(!a.has_avatar());
     }
 
     #[test]

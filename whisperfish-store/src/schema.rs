@@ -122,6 +122,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use crate::store::orm::MessageTypeMapping;
     messages (id) {
         id -> Integer,
         session_id -> Integer,
@@ -147,6 +149,7 @@ diesel::table! {
         latest_revision_id -> Nullable<Integer>,
         original_message_id -> Nullable<Integer>,
         revision_number -> Integer,
+        message_type -> Nullable<MessageTypeMapping>,
     }
 }
 

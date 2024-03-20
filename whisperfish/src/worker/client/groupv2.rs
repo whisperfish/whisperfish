@@ -5,6 +5,7 @@ use diesel::prelude::*;
 use libsignal_service::groups_v2::{self, *};
 use qmeta_async::with_executor;
 use tokio::io::AsyncWriteExt;
+use whisperfish_store::NewMessage;
 
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -241,6 +242,16 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                 }
 
                 // XXX there's more stuff to store from the DecryptedGroup.
+
+                let session = storage.fetch_session_by_group_v2_id(&group_id_hex).unwrap();
+
+                storage.create_message(&NewMessage {
+                    session_id: session.id,
+                    sent: true,
+                    is_read: true,
+                    message_type: Some(MessageType::GroupChange),
+                    ..NewMessage::new_outgoing()
+                });
 
                 Ok::<_, anyhow::Error>(group)
             }

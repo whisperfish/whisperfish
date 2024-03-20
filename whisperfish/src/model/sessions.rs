@@ -309,11 +309,7 @@ define_model_roles! {
         Id(id):                                                            "id",
         SessionId(id):                                                     "sessionId",
         RecipientId(fn recipient_id(&self)):                               "recipientId",
-        RecipientName(fn recipient_name(&self) via QString::from):         "recipientName",
-        RecipientUuid(fn recipient_uuid(&self) via qstring_from_cow):         "recipientUuid",
-        RecipientE164(fn recipient_e164(&self) via qstring_from_cow):         "recipientE164",
-        RecipientEmoji(fn recipient_emoji(&self) via QString::from):       "recipientEmoji",
-        RecipientAbout(fn recipient_about(&self) via QString::from):       "recipientAboutText",
+
         IsGroup(fn is_group(&self)):                                       "isGroup",
         IsGroupV2(fn is_group_v2(&self)):                                  "isGroupV2",
         IsRegistered(fn is_registered(&self)):                             "isRegistered",
@@ -322,25 +318,21 @@ define_model_roles! {
         GroupDescription(fn group_description(&self) via qstring_from_option):
                                                                            "groupDescription",
         Message(fn last_message_text(&self) via qstring_from_option):      "message",
-        StyledMessage(fn last_message_text_styled(&self) via qstring_from_option): "styledMessage",
+        MessageId(fn last_message_id(&self)):                              "messageId",
+
         Section(fn section(&self) via QString::from):                      "section",
         Timestamp(fn timestamp(&self) via qdatetime_from_naive_option):    "timestamp",
-        RemoteDeleted(fn is_remote_deleted(&self)):                        "remoteDeleted",
-        IsRead(fn is_read(&self)):                                         "read",
-        Sent(fn sent(&self)):                                              "sent",
+        IsRead(fn is_read(&self)):                                         "read", // TODO Give session its own timestamp?
+        Sent(fn sent(&self)):                                              "sent", // TODO cf. isPreviewReceived (#151)
         Delivered(fn delivered(&self)):                                    "deliveryCount",
         Read(fn read(&self)):                                              "readCount",
         IsMuted(fn is_muted(&self)):                                       "isMuted",
         IsArchived(fn is_archived(&self)):                                 "isArchived",
         IsPinned(fn is_pinned(&self)):                                     "isPinned",
         Viewed(fn viewed(&self)):                                          "viewCount",
-        HasAttachment(fn has_attachment(&self)):                           "hasAttachment",
-        IsVoiceNote(fn is_voice_note(&self)):                              "isVoiceNote",
-        HasAvatar(fn has_avatar(&self)):                                   "hasAvatar",
+
         Draft(fn draft(&self) via QString::from):                          "draft",
         ExpiringMessageTimeout(expiring_message_timeout via int_from_duration_option): "expiringMessageTimeout",
-        HasStrikeThrough(fn has_strike_through(&self)):                    "hasStrikeThrough",
-        HasSpoilers(fn has_spoilers(&self)):                               "hasSpoilers",
     }
 }
 

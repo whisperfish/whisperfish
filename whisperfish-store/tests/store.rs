@@ -134,6 +134,7 @@ async fn process_message_exists_session_source(storage: impl Future<Output = InM
             server_guid: None,
             story_type: StoryType::None,
             body_ranges: None,
+            message_type: None,
 
             edit: None,
         };
@@ -176,6 +177,7 @@ async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
         server_guid: None,
         story_type: StoryType::None,
         body_ranges: None,
+        message_type: None,
 
         edit: None,
     };
@@ -208,6 +210,7 @@ async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
         server_guid: None,
         story_type: StoryType::None,
         body_ranges: None,
+        message_type: None,
 
         edit: Some(&msg),
     };
@@ -233,6 +236,7 @@ async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
         server_guid: None,
         story_type: StoryType::None,
         body_ranges: None,
+        message_type: None,
 
         edit: Some(&msg),
     };
@@ -283,6 +287,7 @@ async fn dev_message_update(storage: impl Future<Output = InMemoryDb>) {
         server_guid: None,
         story_type: StoryType::None,
         body_ranges: None,
+        message_type: None,
 
         edit: None,
     };
@@ -312,6 +317,7 @@ async fn dev_message_update(storage: impl Future<Output = InMemoryDb>) {
         server_guid: None,
         story_type: StoryType::None,
         body_ranges: None,
+        message_type: None,
 
         edit: None,
     };
@@ -364,6 +370,7 @@ async fn process_inbound_group_message_without_sender(storage: impl Future<Outpu
         server_guid: None,
         story_type: StoryType::None,
         body_ranges: None,
+        message_type: None,
 
         edit: None,
     };
@@ -413,6 +420,7 @@ async fn process_outbound_group_message_without_sender(storage: impl Future<Outp
         server_guid: None,
         story_type: StoryType::None,
         body_ranges: None,
+        message_type: None,
 
         edit: None,
     };
@@ -463,6 +471,7 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
         server_guid: None,
         story_type: StoryType::None,
         body_ranges: None,
+        message_type: None,
 
         edit: None,
     };
@@ -732,6 +741,7 @@ async fn test_recipient_actions() {
         server_guid: None,
         story_type: StoryType::None,
         body_ranges: None,
+        message_type: None,
 
         edit: None,
     };

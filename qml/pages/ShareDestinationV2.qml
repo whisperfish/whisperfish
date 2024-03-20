@@ -42,9 +42,9 @@ Page {
             property bool isGroup: model.isGroup
             property string profilePicture: model !== undefined ? (isGroup
                 ? getGroupAvatar(model.groupId)
-                : getRecipientAvatar(model.recipientE164, model.recipientUuid)
+                : getRecipientAvatar(recipient.e164, recipient.uuid)
             ) : ''
-            property string name: model.isGroup ? model.groupName : getRecipientName(model.recipientE164, model.recipientName, false)
+            property string name: model.isGroup ? model.groupName : getRecipientName(recipient.e164, recipient.name, false)
             property bool isNoteToSelf: false
             property bool selected: sessionList.recipients.hasOwnProperty("indexOf") ? (sessionList.recipients.indexOf(model.id) > -1) : false
 
@@ -62,6 +62,12 @@ Page {
                     selected = true
                 }
                 textInput.enableSending = Object.keys(sessionList.recipients).length > 0
+            }
+
+            Recipient {
+                id: recipient
+                app: AppState
+                recipientId: model.recipientId
             }
 
             Item {
@@ -111,6 +117,7 @@ Page {
         enablePersonalizedPlaceholder: false
         showSeparator: true
         enableAttachments: false
+        // TODO: Support multiple attachments
         attachments: (typeof root.shareObject.resources[0] === 'string' || root.shareObject.resources[0] instanceof String)
             ? [ { data: root.shareObject.resources[0].replace(/^file:\/\//, ''), type: root.shareObject.mimeType } ]
             : []
@@ -119,10 +126,6 @@ Page {
         Component.onCompleted: {
             if ('mimeType' in root.shareObject) {
                 switch (root.shareObject.mimeType) {
-                    case 'image/jpeg':
-                    case 'video/mp4':
-                        text = /[^/]*$/.exec(root.shareObject.resources[0])[0]
-                        break;
                     case 'text/x-url':
                         text = root.shareObject.resources[0].linkTitle + '\n\n' + root.shareObject.resources[0].status
                         break;
@@ -152,8 +155,7 @@ Page {
         onSendMessage: {
             for (var r in sessionList.recipients) {
                 var recp = sessionList.recipients[r]
-                var firstAttachedPath = (attachments.length > 0 ? attachments[0].data : '')
-                MessageModel.createMessage(recp.id, text, firstAttachedPath, -1, true)
+                MessageModel.createMessage(recp.id, text, attachments, -1, true)
             }
             pageStack.pop()
         }

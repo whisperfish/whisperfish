@@ -13,6 +13,7 @@ table! {
         mime_type -> Nullable<Text>,
         has_attachment -> Bool,
         outgoing -> Bool,
+        message_type -> Nullable<Text>,
     }
 }
 

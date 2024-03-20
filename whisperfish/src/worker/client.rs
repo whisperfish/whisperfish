@@ -21,6 +21,7 @@ use libsignal_service::push_service::ServiceIdType;
 use libsignal_service::sender::SendMessageResult;
 use tracing_futures::Instrument;
 use uuid::Uuid;
+use whisperfish_store::orm::MessageType;
 use whisperfish_store::orm::StoryType;
 use whisperfish_store::TrustLevel;
 use zkgroup::profiles::ProfileKey;
@@ -462,7 +463,13 @@ impl ClientActor {
             None
         };
 
-        if msg.flags() & DataMessageFlags::EndSession as u32 != 0 {
+        let flags = msg
+            .flags()
+            .try_into()
+            .expect("Message flags doesn't fit into i32");
+        let mut message_type: Option<MessageType> = None;
+
+        if flags & DataMessageFlags::EndSession as i32 != 0 {
             let storage = storage.clone();
             if let Some(svc) = sender_recipient
                 .as_ref()
@@ -480,6 +487,7 @@ impl ClientActor {
             } else {
                 tracing::error!("Requested session reset but no service address associated");
             }
+            message_type = Some(MessageType::EndSession);
         }
 
         if (source_phonenumber.is_some() || source_uuid.is_some()) && !is_sync_sent {
@@ -497,13 +505,11 @@ impl ClientActor {
             }
         }
 
-        if msg.flags() & DataMessageFlags::ProfileKeyUpdate as u32 != 0 {
-            tracing::info!("Message was ProfileKeyUpdate; not inserting.");
+        if flags & DataMessageFlags::ProfileKeyUpdate as i32 != 0 {
+            message_type = Some(MessageType::ProfileKeyUpdate);
         }
 
-        let expiration_timer_update =
-            msg.flags() & DataMessageFlags::ExpirationTimerUpdate as u32 != 0;
-        let mut set_expiry = true;
+        let expiration_timer_update = flags & DataMessageFlags::ExpirationTimerUpdate as i32 != 0;
         let alt_body = if let Some(reaction) = &msg.reaction {
             if let Some((message, session)) = storage.process_reaction(
                 &sender_recipient
@@ -526,39 +532,40 @@ impl ClientActor {
             }
             None
         } else if expiration_timer_update {
-            set_expiry = false;
-            // XXX Translation and seconds-to-time formatting
-            Some(format!(
-                "Expiration timer has been changed to {:?} seconds.",
-                msg.expire_timer
-            ))
+            message_type = Some(MessageType::ExpirationTimerUpdate);
+            Some("".into())
         } else if let Some(GroupContextV2 {
             group_change: Some(ref _group_change),
             ..
         }) = msg.group_v2
         {
-            set_expiry = false;
-            Some(format!(
-                "Group changed by {}",
-                source_phonenumber
-                    .as_ref()
-                    .map(PhoneNumber::to_string)
-                    .or(source_uuid.as_ref().map(Uuid::to_string))
-                    .as_deref()
-                    .unwrap_or("nobody")
-            ))
+            // TODO: Make sure we have a sender - it's not always there.
+            message_type = Some(MessageType::GroupChange);
+            Some("".into())
         } else if !msg.attachments.is_empty() {
             tracing::trace!("Received an attachment without body, replacing with empty text.");
             Some("".into())
-        } else if msg.sticker.is_some() {
-            tracing::warn!("Received a sticker, but inserting empty message.");
-            Some("This is a sticker, but stickers are currently unsupported.".into())
-        } else if msg.payment.is_some()
-            || msg.group_call_update.is_some()
-            || !msg.contact.is_empty()
-        {
-            Some("Unimplemented message type".into())
-        } else {
+        } else if let Some(sticker) = &msg.sticker {
+            tracing::warn!(
+                "Received a sticker, but they are currently unsupported. Please upvote issue #14."
+            );
+            tracing::trace!("{:?}", sticker);
+            Some(format!(
+                "[Whisperfish] Received a sticker: {}",
+                sticker.emoji.as_ref().unwrap()
+            ))
+        } else if msg.payment.is_some() {
+            // TODO: Save some info about payents?
+            message_type = Some(MessageType::Payment);
+            Some("".into())
+        } else if msg.group_call_update.is_some() {
+            message_type = Some(MessageType::GroupCallUpdate);
+            Some("".into())
+        } else if !msg.contact.is_empty() {
+            Some("".into())
+        }
+        // TODO: Add more message types
+        else {
             None
         };
 
@@ -662,23 +669,15 @@ impl ClientActor {
             storage.fetch_or_insert_session_by_recipient_id(recipient.id)
         });
 
-        if expiration_timer_update {
-            storage.update_expiration_timer(session.id, msg.expire_timer);
-            // Don't auto-destroy the update message
-            set_expiry = false;
-        }
+        storage.update_expiration_timer(session.id, msg.expire_timer);
 
-        let expires_in = if set_expiry {
-            session.expiring_message_timeout
-        } else {
-            None
-        };
+        let expires_in = session.expiring_message_timeout;
 
         let new_message = crate::store::NewMessage {
             source_e164: source_phonenumber,
             source_uuid,
             text,
-            flags: msg.flags() as i32,
+            flags,
             outgoing: is_sync_sent,
             is_unidentified,
             sent: is_sync_sent,
@@ -695,6 +694,7 @@ impl ClientActor {
             story_type: StoryType::None,
             server_guid: metadata.server_guid,
             body_ranges,
+            message_type,
 
             edit: original_message.as_ref(),
         };
@@ -1396,12 +1396,9 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
             session_id: session.id,
             source_e164: self_recipient.e164,
             source_uuid: self_recipient.uuid,
-            text: format!(
-                "[Whisperfish] Message expiry set to {:?} seconds",
-                msg.expires_in.map(|x| x.as_secs())
-            ),
-            expires_in: msg.expires_in, // None'd in SendMessage handler
+            expires_in: msg.expires_in,
             flags: DataMessageFlags::ExpirationTimerUpdate as i32,
+            message_type: Some(MessageType::ExpirationTimerUpdate),
             ..crate::store::NewMessage::new_outgoing()
         });
 
@@ -1526,11 +1523,6 @@ impl Handler<SendMessage> for ClientActor {
                     };
                     storage.store_attachment_pointer(attachment.id, &ptr);
                     content.attachments.push(ptr);
-                }
-
-                // Don't let ExpirationTimerUpdate messages expire
-                if msg.flags == DataMessageFlags::ExpirationTimerUpdate as i32 && msg.expires_in.is_some() {
-                    storage.clear_message_expiry(msg.id);
                 }
 
                 let res = addr
@@ -1683,9 +1675,9 @@ impl Handler<EndSession> for ClientActor {
             session_id: session.id,
             source_e164: recipient.e164,
             source_uuid: recipient.uuid,
-            text: "[Whisperfish] Reset secure session".into(),
             timestamp: chrono::Utc::now().naive_utc(),
             flags: DataMessageFlags::EndSession.into(),
+            message_type: Some(MessageType::EndSession),
             ..crate::store::NewMessage::new_outgoing()
         });
         ctx.notify(SendMessage(msg.id));
@@ -2257,7 +2249,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             let msg = crate::store::NewMessage {
                                 session_id: session.id,
                                 source_uuid: Some(source_uuid),
-                                text: "[Whisperfish] The identity key for this contact has changed. Please verify your safety number.".into(), // XXX Translate
+                                message_type: Some(MessageType::IdentityKeyChange),
                                 ..crate::store::NewMessage::new_incoming()
                             };
                             storage.create_message(&msg);

@@ -2,10 +2,11 @@ import QtQuick 2.6
 import Sailfish.Silica 1.0
 import be.rubdos.whisperfish 1.0
 import "../components"
+import "../delegates"
 
 ListItem {
     id: delegate
-    property string date: Format.formatDate(model.timestamp, _dateFormat)
+    property string date: Format.formatDate(lastMessage.timestamp, _dateFormat) // TODO Give session its own timestamp?
     property bool isGroup: model.isGroup
     property int unreadCount: 0 // TODO implement in model
     property bool isUnread: hasDraft || !model.read // TODO investigate: is this really a bool?
@@ -17,41 +18,45 @@ ListItem {
     property string draft: model.draft
     property string profilePicture: model !== undefined ? (isGroup
         ? getGroupAvatar(model.groupId)
-        : getRecipientAvatar(model.recipientE164, model.recipientUuid)
+        : getRecipientAvatar(recipient.e164, recipient.uuid)
     ) : ''
     property bool isPreviewDelivered: model.deliveryCount > 0 // TODO investigate: not updated for new message (#151, #55?)
     property bool isPreviewRead: model.readCount > 0 // TODO investigate: not updated for new message (#151, #55?)
     property bool isPreviewViewed: model.viewCount > 0 // TODO investigate: not updated for new message (#151, #55?)
-    property bool isPreviewSent: model.sent // TODO cf. isPreviewReceived (#151)
-    property bool hasText: model.message !== undefined && model.message !== ''
-    property bool hasSpoilers: model.hasSpoilers
-    property bool hasStrikeThrough: model.hasStrikeThrough
-    property bool hasAttachment: model.hasAttachment
-    property int expiringMessages: model.expiringMessageTimeout != -1
-    property string name: model.isGroup ? model.groupName : getRecipientName(model.recipientE164, model.recipientName, true)
-    property string emoji: model.recipientEmoji
+    property bool isPreviewSent: hasLastMessage && model.sent // TODO cf. isPreviewReceived (#151)
+    property bool isRemoteDeleted: hasLastMessage && lastMessage.remoteDeleted
+    property bool hasText: lastMessage.message !== undefined && lastMessage.message !== ''
+    property bool hasLastMessage: lastMessage.messageId > 0
+    property bool hasSpoilers: hasLastMessage ? lastMessage.hasSpoilers : false
+    property bool hasStrikeThrough: hasLastMessage ? lastMessage.hasStrikeThrough : false
+    property int expiringMessages: hasLastMessage && model.expiringMessageTimeout != -1
+    property string name: model.isGroup ? model.groupName : getRecipientName(recipient.e164, recipient.name, true)
+    property string emoji: model.recipientId > 0 && recipient.emoji != null ? recipient.emoji : ''
     property string message:
         (_debugMode ? "[" + model.id + "] " : "") +
-        (hasAttachment
-            ? (model.isVoiceNote
-                ? ("🎤 " + (!hasText
-                    //: Session is a voice note
-                    //% "Voice Message"
-                    ? qsTrId("whisperfish-session-is-voice-note") : '')
+        (lastMessage.messageType == null
+            ? (lastMessage.attachments.count > 0
+                    ? (lastMessage.isVoiceNote
+                        ? ("🎤 " + (!hasText
+                            //: Session is a voice note
+                            //% "Voice Message"
+                            ? qsTrId("whisperfish-session-is-voice-note") : '')
+                        )
+                        : ("📎 " + (!hasText
+                            //: Session contains an attachment label
+                            //% "Attachment"
+                            ? qsTrId("whisperfish-session-has-attachment") : '')
+                        )
+                    )
+                    : ''
+                ) +
+                (isRemoteDeleted
+                    //: Placeholder note for a deleted message
+                    //% "this message was deleted"
+                    ? qsTrId("whisperfish-message-deleted-note")
+                    : (hasText ? lastMessage.styledMessage : '')
                 )
-                : ("📎 " + (!hasText
-                    //: Session contains an attachment label
-                    //% "Attachment"
-                    ? qsTrId("whisperfish-session-has-attachment") : '')
-                )
-            )
-            : ''
-        ) +
-        (model.remoteDeleted
-            //: Placeholder note for a deleted message
-            //% "this message was deleted"
-            ? qsTrId("whisperfish-message-deleted-note")
-            : (hasText ? model.styledMessage : '')
+            : serviceMessage.active ? "<i>"+serviceMessage.item._message+"</i>" : ""
         )
 
     signal relocateItem(int sessionId)
@@ -68,6 +73,32 @@ ListItem {
         id: group
         app: AppState
         groupId: model.groupId ? model.groupId : -1
+    }
+
+    // Note: This is a "Rust model" and always needed.
+    Message {
+        id: lastMessage
+        app: AppState
+        messageId: model.messageId
+    }
+
+    // Note: This is a delegate, which is loaded when needed
+    // and uses Message above as modelData.
+    Loader {
+        id: serviceMessage
+        active: lastMessage.messageType != null
+        sourceComponent: ServiceMessageDelegate {
+            modelData: lastMessage
+            recipient: recipient
+            visible: false
+            enabled: false
+        }
+    }
+
+    Recipient {
+        id: recipient
+        app: AppState
+        recipientId: model.recipientId
     }
 
     function remove(contentItem) {
@@ -125,12 +156,11 @@ ListItem {
             isNoteToSelf: delegate.isNoteToSelf
             isGroup: delegate.isGroup
             // TODO: Rework infomarks to four corners or something like that; we can currently show only one status or emoji
-            showInfoMark: !isRegistered || isPinned || hasDraft || isNoteToSelf || isMuted || infoMarkEmoji !== ''
+            showInfoMark: !isRegistered || hasDraft || isNoteToSelf || isMuted || infoMarkEmoji !== ''
             infoMarkSource: {
                 if (!isRegistered) 'image://theme/icon-s-warning'
                 else if (hasDraft) 'image://theme/icon-s-edit'
                 else if (isNoteToSelf) 'image://theme/icon-s-retweet' // task|secure|retweet
-                else if (isPinned) 'image://theme/icon-s-high-importance'
                 else if (isMuted) 'image://theme/icon-s-low-importance'
                 else ''
             }
@@ -152,7 +182,7 @@ ListItem {
                     if (model.recipientUuid === SetupWorker.uuid) {
                         pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"), { session: model } )
                     } else {
-                        pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { session: model, recipientUuid: model.recipientUuid })
+                        pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { session: model, recipient: recipient })
                     }
                 }
             }
@@ -193,7 +223,7 @@ ListItem {
             color: highlighted ? Theme.secondaryHighlightColor :
                                  Theme.secondaryColor
             font.pixelSize: Theme.fontSizeExtraSmall
-            font.italic: model.remoteDeleted
+            font.italic: isRemoteDeleted
             plainText: (needsRichText ? cssStyle : '') + (hasDraft ?
                       //: Message preview for a saved, unsent message
                       //% "Draft: %1"

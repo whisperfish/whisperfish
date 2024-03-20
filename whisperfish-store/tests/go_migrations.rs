@@ -478,6 +478,7 @@ fn direct_session_with_messages(original_go_db: SqliteConnection) {
             mime_type: None,
             has_attachment: false,
             outgoing: true,
+            message_type: None,
         },
         NewMessage {
             session_id: Some(ids[0]),
@@ -495,6 +496,7 @@ fn direct_session_with_messages(original_go_db: SqliteConnection) {
             mime_type: None,
             has_attachment: false,
             outgoing: false,
+            message_type: None,
         },
         NewMessage {
             session_id: Some(ids[0]),
@@ -512,6 +514,7 @@ fn direct_session_with_messages(original_go_db: SqliteConnection) {
             mime_type: Some("image/jpeg".into()),
             has_attachment: true,
             outgoing: false,
+            message_type: None,
         },
     ];
 
@@ -619,6 +622,7 @@ fn group_sessions_with_messages(original_go_db: SqliteConnection) {
             mime_type: None,
             has_attachment: false,
             outgoing: true,
+            message_type: None,
         },
         NewMessage {
             session_id: Some(ids[1]),
@@ -636,6 +640,7 @@ fn group_sessions_with_messages(original_go_db: SqliteConnection) {
             mime_type: None,
             has_attachment: false,
             outgoing: false,
+            message_type: None,
         },
     ];
 
@@ -693,6 +698,7 @@ fn group_message_without_sender_nor_recipient(original_go_db: SqliteConnection) 
         mime_type: None,
         has_attachment: false,
         outgoing: false,
+        message_type: None,
     }];
 
     let count = messages.len();
@@ -756,6 +762,7 @@ fn timestamp_conversion(original_go_db: SqliteConnection) {
         mime_type: None,
         has_attachment: false,
         outgoing: true,
+        message_type: None,
     };
 
     let count = 100_000;

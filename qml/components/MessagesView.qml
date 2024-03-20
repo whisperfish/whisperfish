@@ -50,6 +50,8 @@ SilicaListView {
     property bool appearDeleted: false
     property var __running_remorse: null
 
+    property QtObject recipient
+
     signal replyTriggered(var index, var modelData)
     signal quoteClicked(var clickedIndex, var quotedData)
     signal itemSelectionToggled(var modelData)
@@ -248,11 +250,14 @@ SilicaListView {
         property string newerSection: ListView.previousSection
         property string olderSection: ListView.nextSection
 
-        property bool messageLoaded: loader.status === Loader.Ready && !wrapper.isServiceMessage
-        property int messageId: messageLoaded ? loader.item.modelData.id : -1
-        property bool messageRead: messageLoaded ? loader.item.modelData.isRead === true : true
-        property int messageExpiresIn: messageLoaded ? loader.item.modelData.expiresIn : -1
-        property bool messageExpiring: messageLoaded && loader.item.modelData.expiryStarted != null ? loader.item.modelData.expiryStarted > 0 : true
+        property bool isServiceMessage: model.messageType != null
+
+        property bool messageLoaded: loader.status === Loader.Ready
+
+        property int messageId: !isServiceMessage ? model.id : -1
+        property bool messageRead: !isServiceMessage ? model.isRead === true : true
+        property int messageExpiresIn: !isServiceMessage ? model.expiresIn : -1
+        property bool messageExpiring: !isServiceMessage ? model.expiryStarted > 0 : true
 
         property bool atSectionBoundary: {
             // Section strings are ISO formatted timestamps.
@@ -263,7 +268,6 @@ SilicaListView {
                         true : false
         }
         property Item section // overrides the default section item
-        property bool isServiceMessage: false // TODO implement in backend
 
         height: loader.y + loader.height
         width: parent.width
@@ -278,7 +282,7 @@ SilicaListView {
                 section = sectionHeaderComponent.createObject(wrapper, {
                     'title': ListView.section.substr(0, 10) === '' ?
                                  (newerSection.substr(0, 10) === '' ?
-                                      model.recipientName : newerSection) :
+                                      recipient.name : newerSection) :
                                  Format.formatDate(ListView.section, Formatter.DateFull)
                 })
             } else {
@@ -307,7 +311,7 @@ SilicaListView {
             // choose the delegate based on message contents
             // NOTE we could make this loader asynchronous if we find a way
             // to calculate the effective message height here
-            sourceComponent: wrapper.isServiceMessage ?
+            sourceComponent: isServiceMessage ?
                                  serviceMessageDelegate :
                                  defaultMessageDelegate
         }

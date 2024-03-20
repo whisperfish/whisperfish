@@ -10,7 +10,7 @@ mod protocol_store;
 mod protos;
 mod utils;
 
-use self::orm::{AugmentedMessage, StoryType, UnidentifiedAccessMode};
+use self::orm::{AugmentedMessage, MessageType, StoryType, UnidentifiedAccessMode};
 use crate::body_ranges::AssociatedValue;
 use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
@@ -91,6 +91,7 @@ pub struct Message {
     pub hasattachment: bool,
     pub outgoing: bool,
     pub queued: bool,
+    pub message_type: Option<MessageType>,
 }
 
 #[derive(Debug)]
@@ -118,6 +119,7 @@ pub struct NewMessage<'a> {
     pub expires_in: Option<std::time::Duration>,
     pub story_type: StoryType,
     pub body_ranges: Option<Vec<u8>>,
+    pub message_type: Option<MessageType>,
 
     pub edit: Option<&'a orm::Message>,
 }
@@ -141,6 +143,7 @@ impl NewMessage<'_> {
             expires_in: None,
             story_type: StoryType::None,
             body_ranges: None,
+            message_type: None,
             edit: None,
         }
     }
@@ -163,6 +166,7 @@ impl NewMessage<'_> {
             expires_in: None,
             story_type: StoryType::None,
             body_ranges: None,
+            message_type: None,
             edit: None,
         }
     }
@@ -935,19 +939,6 @@ impl Storage {
 
         if affected_rows > 0 {
             self.observe_update(sessions, session_id);
-        }
-    }
-
-    pub fn clear_message_expiry(&self, message_id: i32) {
-        use crate::schema::messages::dsl::*;
-        let affected_rows = diesel::update(messages)
-            .set((expires_in.eq(None::<i32>),))
-            .filter(id.eq(message_id))
-            .execute(&mut *self.db())
-            .expect("existing record updated");
-
-        if affected_rows > 0 {
-            self.observe_update(messages, message_id);
         }
     }
 
@@ -2137,7 +2128,8 @@ impl Storage {
             schema::messages::table.filter(
                 schema::messages::id
                     .eq(message_id)
-                    .and(schema::messages::expiry_started.is_null()),
+                    .and(schema::messages::expiry_started.is_null())
+                    .and(schema::messages::message_type.is_null()),
             ),
         )
         .set(schema::messages::expiry_started.eq(Some(chrono::Utc::now().naive_utc())))
@@ -2172,6 +2164,7 @@ impl Storage {
                 schema::messages::expiry_started
                     .is_not_null()
                     .and(schema::messages::expires_in.is_not_null())
+                    .and(schema::messages::message_type.is_null())
                     .and(
                         sql::<Bool>("delete_after")
                             .sql(if already_expired { "<=" } else { ">" })
@@ -2193,11 +2186,11 @@ impl Storage {
                 schema::messages::id,
                 sql::<Timestamp>(DELETE_AFTER).sql("AS delete_after"),
             ))
-            // This is the exact same filter clause as in the index.
             .filter(
                 schema::messages::expiry_started
                     .is_not_null()
-                    .and(schema::messages::expires_in.is_not_null()),
+                    .and(schema::messages::expires_in.is_not_null())
+                    .and(schema::messages::message_type.is_null()),
             )
             .order_by(sql::<Timestamp>("delete_after").asc())
             .first(&mut *self.db())
@@ -2210,13 +2203,13 @@ impl Storage {
     pub fn delete_expired_messages(&mut self) -> usize {
         let deletions: Vec<i32> = diesel::delete(schema::messages::table)
             .filter(
-                // This is the exact same filter clause as in the index.
                 sql::<Timestamp>(DELETE_AFTER)
                     .le(sql::<Timestamp>("DATETIME('now')"))
                     .and(
                         schema::messages::expiry_started
                             .is_not_null()
-                            .and(schema::messages::expires_in.is_not_null()),
+                            .and(schema::messages::expires_in.is_not_null())
+                            .and(schema::messages::message_type.is_null()),
                     ),
             )
             .returning(schema::messages::id)
@@ -2463,6 +2456,7 @@ impl Storage {
                     is_outbound.eq(new_message.outgoing),
                     use_unidentified.eq(new_message.is_unidentified),
                     flags.eq(new_message.flags),
+                    message_type.eq(new_message.message_type.clone()),
                     quote_id.eq(quoted_message_id),
                     expires_in.eq(new_message.expires_in.map(|x| x.as_secs() as i32)),
                     story_type.eq(new_message.story_type as i32),

@@ -9,17 +9,14 @@ Page {
     objectName: "recipientProfilePage"
 
     property string profilePicture: ""
-    property alias recipientUuid: recipient.recipientUuid
     property var session: null
-
-    Recipient {
-        id: recipient
-        app: AppState
-    }
+    property var recipient: null
 
     SilicaFlickable {
         anchors.fill: parent
         contentHeight: column.height
+
+        RemorsePopup { id: remorse }
 
         PullDownMenu {
             MenuItem {
