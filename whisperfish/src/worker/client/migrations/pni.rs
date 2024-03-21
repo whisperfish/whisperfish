@@ -1,6 +1,7 @@
 use super::*;
 use actix::prelude::*;
 use anyhow::Context;
+use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -24,6 +25,7 @@ impl Handler<InitializePni> for ClientActor {
         let local_addr = self.self_aci.expect("local addr");
         let local_e164 = self.config.get_tel().expect("phone number");
         let sender = self.message_sender();
+        let device_id = self.config.get_device_id();
 
         Box::pin(
             async move {
@@ -34,6 +36,11 @@ impl Handler<InitializePni> for ClientActor {
                     tracing::trace!(
                         "PNI identity key pair already exists, assuming PNI is initialized"
                     );
+                    return Ok(());
+                }
+
+                if device_id != DEFAULT_DEVICE_ID.into() {
+                    tracing::info!("Not initializing PNI on linked device");
                     return Ok(());
                 }
                 tracing::info!("PNI identity key pair is not set. Initializing PNI. Hold my beer.");
