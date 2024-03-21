@@ -2763,7 +2763,7 @@ impl Handler<RefreshPreKeys> for ClientActor {
 
         Box::pin(proc.into_actor(self).map(move |result, _act, _ctx| {
             if let Err(e) = result {
-                tracing::error!("refresh pre keys failed: {}", e);
+                tracing::error!("refresh pre keys failed: {:#}", e);
             } else {
                 tracing::trace!("successfully refreshed prekeys");
             }
