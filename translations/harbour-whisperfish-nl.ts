@@ -2131,7 +2131,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="196"/>
         <source>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: %1)</source>
         <oldsource>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: &apos;%1&apos;.)</oldsource>
-        <translation type="unfinished">Dit dienstbericht wordt nog niet ondersteund door Whisperfish. Gelieve hiervoor een foutmelding in te dienen. (Type: ‘%1’.)</translation>
+        <translation>Dit dienstbericht wordt nog niet ondersteund door Whisperfish. Gelieve hiervoor een foutmelding in te dienen. (Type: ‘%1’.)</translation>
     </message>
     <message id="whisperfish-service-message-more-info">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="252"/>
