@@ -2731,7 +2731,6 @@ impl Handler<RefreshPreKeys> for ClientActor {
             let mut pni = storage.pni_storage();
 
             let force_aci = aci.needs_pre_key_refresh().await;
-            let force_pni = pni.needs_pre_key_refresh().await;
 
             // It's tempting to run those two in parallel,
             // but I'm afraid the pre-key counts are going to be mixed up.
@@ -2742,10 +2741,12 @@ impl Handler<RefreshPreKeys> for ClientActor {
                 true,
                 force_aci,
             )
-            .await?;
+            .await
+            .context("refreshing ACI pre keys")?;
 
             let _pni_distribution = pni_distribution.await;
 
+            let force_pni = pni.needs_pre_key_refresh().await;
             am.update_pre_key_bundle(
                 &mut pni,
                 ServiceIdType::PhoneNumberIdentity,
@@ -2753,8 +2754,9 @@ impl Handler<RefreshPreKeys> for ClientActor {
                 true,
                 force_pni,
             )
-            .await?;
-            Result::<(), ServiceError>::Ok(())
+            .await
+            .context("refreshing PNI pre keys")?;
+            anyhow::Result::<()>::Ok(())
         }
         .instrument(tracing::trace_span!("RefreshPreKeys"));
         // XXX: store the last refresh time somewhere.
