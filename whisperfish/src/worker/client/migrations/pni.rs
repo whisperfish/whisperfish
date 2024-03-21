@@ -36,12 +36,12 @@ impl Handler<InitializePni> for ClientActor {
                     tracing::trace!(
                         "PNI identity key pair already exists, assuming PNI is initialized"
                     );
-                    return Ok(());
+                    return Ok(false);
                 }
 
                 if device_id != DEFAULT_DEVICE_ID.into() {
                     tracing::info!("Not initializing PNI on linked device");
-                    return Ok(());
+                    return Ok(false);
                 }
                 tracing::info!("PNI identity key pair is not set. Initializing PNI. Hold my beer.");
 
@@ -81,17 +81,23 @@ impl Handler<InitializePni> for ClientActor {
                     return Err(e);
                 }
 
-                Ok(())
+                Ok(true)
             }
             .instrument(tracing::debug_span!("initialize PNI"))
             .into_actor(self)
-            .map(move |result: anyhow::Result<()>, act: &mut Self, _ctx| {
-                if let Err(e) = result {
-                    tracing::error!("Error initializing PNI: {e:#}");
-                } else {
-                    act.migration_state.notify_pni_distributed();
-                }
-            }),
+            .map(
+                move |result: anyhow::Result<bool>, act: &mut Self, _ctx| match result {
+                    Err(e) => {
+                        tracing::error!("Error initializing PNI: {e:#}");
+                    }
+                    Ok(initialized) => {
+                        act.migration_state.notify_pni_distributed();
+                        if initialized {
+                            tracing::info!("PNI initialized successfully");
+                        }
+                    }
+                },
+            ),
         )
     }
 }
