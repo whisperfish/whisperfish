@@ -221,6 +221,24 @@ impl<T: Identity> IdentityStorage<T> {
             })?;
         Ok(())
     }
+
+    #[tracing::instrument(level = "warn", skip(self))]
+    // Mutability of self is artificial
+    pub async fn remove_identity_key_pair(&mut self) -> Result<(), SignalProtocolError> {
+        let _lock = self.0.protocol_store.write().await;
+
+        let path = self
+            .0
+            .path
+            .join("storage")
+            .join("identity")
+            .join(self.1.identity_key_filename());
+        tracing::warn!("removing own identity key pair at {}", path.display());
+        tokio::fs::remove_file(path).await.map_err(|e| {
+            SignalProtocolError::InvalidArgument(format!("Cannot remove own identity key {}", e))
+        })?;
+        Ok(())
+    }
 }
 
 #[async_trait::async_trait(?Send)]
