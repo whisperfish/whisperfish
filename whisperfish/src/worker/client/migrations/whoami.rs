@@ -28,6 +28,9 @@ impl Handler<WhoAmI> for ClientActor {
             .into_actor(self)
             .map(
                 move |result: Result<Option<WhoAmIResponse>, _>, act, _ctx| {
+                    if result.is_ok() {
+                        act.migration_state.notify_whoami();
+                    }
                     let result = match result {
                         Ok(Some(result)) => result,
                         Ok(None) => return,
@@ -47,8 +50,6 @@ impl Handler<WhoAmI> for ClientActor {
                         tracing::error!("Credentials was none while setting UUID");
                     }
                     act.self_pni = Some(ServiceAddress { uuid: result.pni });
-
-                    act.migration_state.notify_whoami();
                 },
             ),
         )

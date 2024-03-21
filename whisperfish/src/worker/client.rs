@@ -2107,7 +2107,7 @@ impl Handler<Restart> for ClientActor {
     fn handle(&mut self, _: Restart, ctx: &mut Self::Context) -> Self::Result {
         let service = self.authenticated_service();
         let credentials = self.credentials.clone().unwrap();
-        let migrations_ready = self.migration_state.ready();
+        let connectable = self.migration_state.connectable();
 
         if self.message_expiry_notification_handle.is_none() {
             let (message_expiry_notification_handle, message_expiry_notification) =
@@ -2123,7 +2123,7 @@ impl Handler<Restart> for ClientActor {
         self.inner.pinned().borrow().connectedChanged();
         Box::pin(
             async move {
-                migrations_ready.await;
+                connectable.await;
                 let mut receiver = MessageReceiver::new(service.clone());
 
                 let pipe = receiver.create_message_pipe(credentials, false).await?;
