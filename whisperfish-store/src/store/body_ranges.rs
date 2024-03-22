@@ -180,19 +180,13 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
                     }
                 },
             );
-            assert!(
-                fold.is_done(),
-                "{:?} char_idx {} is out of bounds",
-                self,
-                char_idx,
-            );
+            if !fold.is_done() {
+                tracing::warn!(segment=?self, %char_idx, "Fold went out of bounds. Please file an issue.");
+            };
             let (idx, _utf16_pos) = fold.into_inner();
-            assert!(
-                _utf16_pos >= char_idx,
-                "{:?}: char_idx {} is out of bounds",
-                self,
-                char_idx,
-            );
+            if _utf16_pos < char_idx {
+                tracing::warn!(segment=?self, %char_idx, "_utf16_pos < char_idx: out of bounds.  Please file an issue.");
+            }
 
             if cfg!(debug_assertions) {
                 let lhs: Vec<u16> = self.contents.encode_utf16().take(char_idx).collect();
@@ -278,6 +272,7 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
 
     // Every BodyRange splits one or two segments into two, and adds a style to the affected segment.
     for range in ranges {
+        let _span = tracing::debug_span!("processing range", ?range, segments=?segments).entered();
         // XXX Just skip the range if necessary, that's healthier than panicking.
         let end = (range.start + range.length) as usize;
         assert!(end <= message.encode_utf16().count());
