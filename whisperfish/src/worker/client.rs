@@ -781,6 +781,7 @@ impl ClientActor {
             match req.r#type() {
                 Type::Unknown => {
                     tracing::warn!("Unknown sync request from {:?}:{}. Please upgrade Whisperfish or file an issue.", meta.sender, meta.sender_device);
+                    tracing::trace!("Unknown sync request: {:#?}", req);
                     return Ok(());
                 }
                 Type::Contacts => {
@@ -808,17 +809,13 @@ impl ClientActor {
 
                     sender.send_contact_details(&local_addr, None, contacts, false, true).await?;
                 },
-                Type::Blocked => {
-                    anyhow::bail!("Unimplemented {:?}", req.r#type());
-                }
-                Type::Configuration => {
-                    anyhow::bail!("Unimplemented {:?}", req.r#type());
-                }
-                Type::Keys => {
-                    anyhow::bail!("Unimplemented {:?}", req.r#type());
-                }
-                Type::PniIdentity => {
-                    anyhow::bail!("Unimplemented {:?}", req.r#type());
+                // Type::Blocked
+                // Type::Configuration
+                // Type::Keys
+                // Type::PniIdentity
+                _ => {
+                    tracing::trace!("Unimplemented sync request: {:#?}", req);
+                    anyhow::bail!("Unimplemented sync request type: {:?}", req.r#type());
                 },
             };
 
