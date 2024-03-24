@@ -126,6 +126,10 @@ pub trait Identity {
         &self,
         storage: &Storage,
     ) -> impl std::future::Future<Output = impl std::ops::Deref<Target = Option<IdentityKeyPair>>>;
+    fn identity_key_pair_cached_mut(
+        &self,
+        storage: &Storage,
+    ) -> impl std::future::Future<Output = impl std::ops::DerefMut<Target = Option<IdentityKeyPair>>>;
 }
 impl Identity for Aci {
     fn identity(&self) -> orm::Identity {
@@ -143,6 +147,12 @@ impl Identity for Aci {
     ) -> impl std::ops::Deref<Target = Option<IdentityKeyPair>> {
         storage.aci_identity_key_pair.read().await
     }
+    async fn identity_key_pair_cached_mut(
+        &self,
+        storage: &Storage,
+    ) -> impl std::ops::DerefMut<Target = Option<IdentityKeyPair>> {
+        storage.aci_identity_key_pair.write().await
+    }
 }
 impl Identity for Pni {
     fn identity(&self) -> orm::Identity {
@@ -159,6 +169,12 @@ impl Identity for Pni {
         storage: &Storage,
     ) -> impl std::ops::Deref<Target = Option<IdentityKeyPair>> {
         storage.pni_identity_key_pair.read().await
+    }
+    async fn identity_key_pair_cached_mut(
+        &self,
+        storage: &Storage,
+    ) -> impl std::ops::DerefMut<Target = Option<IdentityKeyPair>> {
+        storage.pni_identity_key_pair.write().await
     }
 }
 impl Identity for AciOrPni {
@@ -189,6 +205,17 @@ impl Identity for AciOrPni {
             ServiceIdType::PhoneNumberIdentity => &storage.pni_identity_key_pair,
         }
         .read()
+        .await
+    }
+    async fn identity_key_pair_cached_mut(
+        &self,
+        storage: &Storage,
+    ) -> impl std::ops::DerefMut<Target = Option<IdentityKeyPair>> {
+        match self.0 {
+            ServiceIdType::AccountIdentity => &storage.aci_identity_key_pair,
+            ServiceIdType::PhoneNumberIdentity => &storage.pni_identity_key_pair,
+        }
+        .write()
         .await
     }
 }
