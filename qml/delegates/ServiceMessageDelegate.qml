@@ -20,7 +20,7 @@ ListItem {
     property string _outgoing: modelData.outgoing === true
     property string _originName: (modelData !== null) && modelData.recipientId > 0 ? getRecipientName(recipient.e164, recipient.name, false) : ''
 
-    property bool _canShowDetails: (_type === "identity_key_change" || _type === "session_reset") ? true : false
+    property bool _canShowDetails: (_type === "identity_reset" || _type === "session_reset") ? true : false
     property int _fontSize: Theme.fontSizeExtraSmall
     property url _iconSource: switch (_type) {
         case "expiration_timer_update":
@@ -31,7 +31,7 @@ ListItem {
         case "voice_call":
         case "video_call":
             return "image://theme/icon-s-activity-outgoing-call"
-        case "identity_key_change":
+        case "identity_reset":
             return "image://theme/icon-s-outline-secure"
         case "session_reset":
             return "image://theme/icon-s-developer"
@@ -175,7 +175,7 @@ ListItem {
             //: Service message, %1 is a name
             //% "%1 had a voice call with you."
             : qsTrId("whisperfish-service-message-call-voice-peer").arg(_originName)
-        case "identity_key_change":
+        case "identity_reset":
             //: Service message, %1 is a name
             //% "Your safety number with %1 has changed. "
             //% "Swipe right to verify the new number."

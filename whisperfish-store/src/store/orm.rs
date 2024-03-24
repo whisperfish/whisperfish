@@ -114,7 +114,7 @@ impl AsRef<str> for MessageType {
             MessageType::Unsupported => "unsupported",
             MessageType::ProfileKeyUpdate => "profile_key_update",
             MessageType::EndSession => "end_session",
-            MessageType::IdentityKeyChange => "identity_key_change",
+            MessageType::IdentityKeyChange => "identity_reset",
             MessageType::GroupChange => "group_change",
             MessageType::Payment => "payment",
             MessageType::GroupCallUpdate => "group_call_update",
