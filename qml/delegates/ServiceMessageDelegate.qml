@@ -15,12 +15,12 @@ ListItem {
     property QtObject modelData
     property string peerName
 
-    property var _type: modelData != null ? modelData.messageType : null
+    property var _type: modelData.messageType
 
     property string _outgoing: modelData.outgoing === true
 
     property bool _canShowDetails: (_type === "identity_reset" || _type === "session_reset") ? true : false
-    property int _fontSize: Theme.fontSizeExtraSmall
+    property real _fontSize: Theme.fontSizeExtraSmall
     property url _iconSource: switch (_type) {
         case "expiration_timer_update":
             return "image://theme/icon-s-timer"
