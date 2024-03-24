@@ -188,11 +188,11 @@ ListItem {
             //% "%1 reset the secure session with you."
             : qsTrId("whisperfish-service-message-session-reset-peer").arg(peerName)
         default:
-            //: Service message, %1 is an integer
-            console.warn("Unsupported service message: id", modelData.id, "flags", modelData.flags, "text", modelData.message)
-            //% "This service message is not yet supported by Whisperfish. "
-            //% "Please file a bug report. (Type: %1)"
-            return qsTrId("whisperfish-service-message-not-supported").arg(modelData.flags)
+            //: Service message, %1 is an integer, %2 is a word, %3 is the message text (if any)
+            console.warn("Unsupported service message: id", modelData.id, "flags", modelData.flags, "type", _type, "text", modelData.message)
+            //% "This service message of is not yet supported by Whisperfish. "
+            //% "Please file a bug report. (Flags: %1, Type: %2, Contents: \"%3\")"
+            return qsTrId("whisperfish-service-message-not-supported").arg(modelData.flags).arg(_type).arg(modelData.message != null ? modelData.message : "NULL")
     }
 
     function showDetails() {
