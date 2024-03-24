@@ -343,6 +343,8 @@ SilicaListView {
             ServiceMessageDelegate {
                 // necessary to make implicit properties available
                 modelData: model
+                // TODO: Don't query recipient name for each message separately
+                peerName: model.outgoing ? '' : getRecipientName(recipient.e164, recipient.name)
             }
         }
     }
