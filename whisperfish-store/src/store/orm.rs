@@ -1201,7 +1201,7 @@ impl AugmentedSession {
         let last_message = if let Some(m) = &self.last_message {
             &m.inner
         } else {
-            return String::from("today");
+            return String::from("never");
         };
         let diff = today.signed_duration_since(last_message.server_timestamp);
 
