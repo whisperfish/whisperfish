@@ -117,13 +117,19 @@ Page {
         enablePersonalizedPlaceholder: false
         showSeparator: true
         enableAttachments: false
-        // TODO: Support multiple attachments
-        attachments: (typeof root.shareObject.resources[0] === 'string' || root.shareObject.resources[0] instanceof String)
-            ? [ { data: root.shareObject.resources[0].replace(/^file:\/\//, ''), type: root.shareObject.mimeType } ]
-            : []
+        attachments: []
         enableSending: Object.keys(sessionList.recipients).length > 0
 
         Component.onCompleted: {
+            if (typeof root.shareObject.resources[0] === 'string') {
+                for (var i = 0; i < root.shareObject.resources.length; i++) {
+                    attachments[i] = {
+                        data: root.shareObject.resources[i].replace(/^file:\/\//, ''),
+                        type: root.shareObject.mimeType
+                    }
+                }
+            }
+
             if ('mimeType' in root.shareObject) {
                 switch (root.shareObject.mimeType) {
                     case 'text/x-url':
