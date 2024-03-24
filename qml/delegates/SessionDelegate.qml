@@ -18,7 +18,7 @@ ListItem {
     property string draft: model.draft
     property string profilePicture: model !== undefined ? (isGroup
         ? getGroupAvatar(model.groupId)
-        : getRecipientAvatar(recipient.e164, recipient.uuid)
+        : (recipient.status == Loader.Ready ? getRecipientAvatar(recipient.item.e164, recipient.item.uuid) : '')
     ) : ''
     property bool isPreviewDelivered: model.deliveryCount > 0 // TODO investigate: not updated for new message (#151, #55?)
     property bool isPreviewRead: model.readCount > 0 // TODO investigate: not updated for new message (#151, #55?)
@@ -30,8 +30,8 @@ ListItem {
     property bool hasSpoilers: hasLastMessage ? lastMessage.hasSpoilers : false
     property bool hasStrikeThrough: hasLastMessage ? lastMessage.hasStrikeThrough : false
     property int expiringMessages: hasLastMessage && model.expiringMessageTimeout != -1
-    property string name: model.isGroup ? model.groupName : getRecipientName(recipient.e164, recipient.name, true)
-    property string emoji: model.recipientId > 0 && recipient.emoji != null ? recipient.emoji : ''
+    property string name: model.isGroup ? model.groupName : (recipient.status == Loader.Ready ? getRecipientName(recipient.item.e164, recipient.item.name, true) : '')
+    property string emoji: model.isGroup ? '' : (recipient.status == Loader.Ready ? (recipient.item.emoji != null ? recipient.item.emoji : '') : '')
     property string message:
         (_debugMode ? "[" + model.id + "] " : "") +
         (lastMessage.messageType == null
@@ -69,12 +69,6 @@ ListItem {
     menu: contextMenuComponent
     ListView.onRemove: animateRemoval(delegate)
 
-    Group {
-        id: group
-        app: AppState
-        groupId: model.groupId ? model.groupId : -1
-    }
-
     // Note: This is a "Rust model" and always needed.
     Message {
         id: lastMessage
@@ -95,10 +89,13 @@ ListItem {
         }
     }
 
-    Recipient {
+    Loader {
         id: recipient
-        app: AppState
-        recipientId: model.recipientId
+        active: !model.isGroup
+        sourceComponent: Recipient {
+            app: AppState
+            recipientId: model.recipientId
+        }
     }
 
     function remove(contentItem) {
@@ -177,11 +174,11 @@ ListItem {
             onPressAndHold: delegate.openMenu()
             onClicked: {
                 if (isGroup) {
-                    pageStack.push(Qt.resolvedUrl("../pages/GroupProfilePage.qml"), { session: model, group: group })
+                    pageStack.push(Qt.resolvedUrl("../pages/GroupProfilePage.qml"), { session: model, groupId: model.groupId })
                 } else {
                     if (model.recipientUuid === SetupWorker.uuid) {
                         pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"), { session: model } )
-                    } else {
+                    } else if (recipient.status == Loader.Ready) {
                         pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { session: model, recipient: recipient })
                     }
                 }

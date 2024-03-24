@@ -13,13 +13,18 @@ Page {
     // a background image. A group admin should be able to change it, too.
 
     property var session: null
-    property var group: null
+    property int groupId: -1
 
     property bool youAreAdmin: false
     // This variable is needed because MenuItem doesn't see inside SilicaListView.header container
     property int newDuration: -1
 
     RemorsePopup { id: remorse }
+
+    Group {
+        id: group
+        groupId: groupId
+    }
 
     SilicaListView {
         id: flick
