@@ -12,19 +12,19 @@ Page {
     // should show them somewhere, somehow nonetheless - just not as
     // a background image. A group admin should be able to change it, too.
 
-    property var session: null
-    property int groupId: -1
+    property var session
+    property var groupId
+    property QtObject group: Group {
+        id: group
+        app: AppState
+        groupId: groupProfile.groupId != null ? groupProfile.groupId : (session != null ? session.groupId : -1)
+    }
 
     property bool youAreAdmin: false
     // This variable is needed because MenuItem doesn't see inside SilicaListView.header container
     property int newDuration: -1
 
     RemorsePopup { id: remorse }
-
-    Group {
-        id: group
-        groupId: groupId
-    }
 
     SilicaListView {
         id: flick
@@ -107,8 +107,8 @@ Page {
                 width: height
                 highlighted: false
                 labelsHighlighted: false
-                imageSource: session.groupId !== undefined && session.groupId !== ''
-                    ? SettingsBridge.avatar_dir + "/" + session.groupId
+                imageSource: group.groupId !== -1
+                    ? SettingsBridge.avatar_dir + "/" + group.groupId
                     : ''
                 isGroup: true
                 showInfoMark: infoMarkSource !== ''
