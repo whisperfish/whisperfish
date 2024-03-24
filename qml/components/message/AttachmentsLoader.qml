@@ -34,6 +34,7 @@ Loader {
     readonly property int maxThumbs: 5
 
     signal pressAndHold(var mouse)
+    asynchronous: true
     onPressAndHold: handleExternalPressAndHold(mouse)
 
     // TODO adapt size to screen orientation, i.e. reduce in horizontal mode
@@ -66,6 +67,7 @@ Loader {
                 Loader {
                     width: parent.width
                     height: thumbsHeight
+                    asynchronous: true
                     sourceComponent: {
                         if (thumbsAttachmentCount === 0) null
                         else if (thumbsAttachmentCount === 1) mediaComponent_1
@@ -79,6 +81,7 @@ Loader {
                 Item { width: parent.width; height: root.spacing }
 
                 Loader {
+                    asynchronous: true
                     width: parent.width
                     height: detailHeight
                     sourceComponent: detailComponent
@@ -283,6 +286,7 @@ Loader {
 
             Loader {
                 property int currentAttachmentIndex: 0
+                asynchronous: true
                 width: parent.width
                 height: parent.height/Math.min(maxDetails, detailAttachmentCount)
                 // XXX When we're able to run Rust 1.a-bit-more, with qmetaobject 0.2.7+, we have QVariantMap.
@@ -297,6 +301,7 @@ Loader {
 
                 Loader {
                     id: showMoreDetail
+                    asynchronous: true
                     anchors.fill: parent
                     property int currentAttachmentIndex: 1
                     opacity: detailOverlay.visible ? Theme.opacityFaint : 1.0

@@ -81,6 +81,7 @@ ListItem {
     Loader {
         id: serviceMessage
         active: lastMessage.messageType != null
+        asynchronous: true
         sourceComponent: ServiceMessageDelegate {
             modelData: lastMessage
             peerName: name
@@ -92,6 +93,7 @@ ListItem {
     Loader {
         id: recipient
         active: !model.isGroup
+        asynchronous: true
         sourceComponent: Recipient {
             app: AppState
             recipientId: model.recipientId

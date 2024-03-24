@@ -44,6 +44,7 @@ ListItem {
     Loader {
         id: sender
         active: showSender
+        asynchronous: true
         sourceComponent: Component {
             Recipient {
                 app: AppState
@@ -96,6 +97,7 @@ ListItem {
     Loader {
         id: reactions
         active: hasReactions
+        asynchronous: true
         sourceComponent: Component {
             GroupedReactions {
                 app: AppState
@@ -148,20 +150,15 @@ ListItem {
         }
     }
 
-    Loader {
+    RoundedRect {
         id: background
+        radius: backgroundCornerRadius
         anchors { fill: contentContainer; margins: contentPadding/3 }
-        asynchronous: true
-        sourceComponent: Component {
-            RoundedRect {
-                radius: backgroundCornerRadius
-                roundedCorners: isOutbound ? bottomLeft | topRight : bottomRight | topLeft
-                color: (down || replyArea.pressed || isSelected) ? Theme.highlightBackgroundColor : Theme.secondaryColor
-                opacity: (down || replyArea.pressed || isSelected) ?
-                             (isOutbound ? 0.7*Theme.opacityFaint : 1.0*Theme.opacityFaint) :
-                             (isOutbound ? 0.4*Theme.opacityFaint : 0.8*Theme.opacityFaint)
-            }
-        }
+        roundedCorners: isOutbound ? bottomLeft | topRight : bottomRight | topLeft
+        color: (down || replyArea.pressed || isSelected) ? Theme.highlightBackgroundColor : Theme.secondaryColor
+        opacity: (down || replyArea.pressed || isSelected) ?
+                     (isOutbound ? 0.7*Theme.opacityFaint : 1.0*Theme.opacityFaint) :
+                     (isOutbound ? 0.4*Theme.opacityFaint : 0.8*Theme.opacityFaint)
     }
 
     Loader {
@@ -212,6 +209,7 @@ ListItem {
         Loader {
             id: quoteItem
             active: showQuotedMessage
+            asynchronous: true
             sourceComponent: Component {
                 QuotedMessagePreview {
                     // id: quoteItem
