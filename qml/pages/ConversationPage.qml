@@ -274,7 +274,7 @@ Page {
             Component.onCompleted: text = session.draft
 
             Component.onDestruction: {
-                if(session !== undefined && session.draft !== text) {
+                if(session != null && session.draft !== text) {
                     SessionModel.saveDraft(sessionId, text)
                 }
             }
