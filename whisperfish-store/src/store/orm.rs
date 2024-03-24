@@ -1190,6 +1190,9 @@ impl AugmentedSession {
         if self.is_pinned {
             return String::from("pinned");
         }
+        let Some(last_message) = self.last_message.as_ref() else {
+            return String::from("never");
+        };
 
         // XXX: stub
         let now = chrono::Utc::now();
@@ -1198,19 +1201,15 @@ impl AugmentedSession {
             .unwrap()
             .naive_utc();
 
-        let last_message = if let Some(m) = &self.last_message {
-            &m.inner
-        } else {
-            return String::from("never");
-        };
-        let diff = today.signed_duration_since(last_message.server_timestamp);
+        let server_timestamp = last_message.inner.server_timestamp;
+        let diff = today.signed_duration_since(server_timestamp);
 
         if diff.num_seconds() <= 0 {
             String::from("today")
         } else if diff.num_hours() <= 24 {
             String::from("yesterday")
         } else if diff.num_hours() <= (7 * 24) {
-            let wd = last_message.server_timestamp.weekday().number_from_monday() % 7;
+            let wd = server_timestamp.weekday().number_from_monday() % 7;
             wd.to_string()
         } else {
             String::from("older")
