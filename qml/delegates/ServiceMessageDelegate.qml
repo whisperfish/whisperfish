@@ -47,23 +47,23 @@ ListItem {
     function timeFormat(secs) {
         if (secs >= 604800 && secs % 604800 === 0)
             //: Expiring message timeout in weeks. Used in whisperfish-service-message-expiry-update-[self|peer]
-            //% "%1 week(s)"
+            //% "%n week(s)"
             return qsTrId("whisperfish-service-message-expiry-in-weeks", Math.floor(secs / 604800))
         else if (secs >= 86400 && secs % 86400 === 0)
             //: Expiring message timeout in days. Used in whisperfish-service-message-expiry-update-[self|peer]
-            //% "%1 day(s)"
+            //% "%n day(s)"
             return qsTrId("whisperfish-service-message-expiry-in-days", Math.floor(secs / 86400))
         else if (secs >= 3600 && secs % 3600 === 0)
             //: Expiring message timeout in hours. Used in whisperfish-service-message-expiry-update-[self|peer]
-            //% "%1 hour(s)"
+            //% "%n hour(s)"
             return qsTrId("whisperfish-service-message-expiry-in-hours", Math.floor(secs / 3600))
         else if (secs >= 60 && secs % 60 === 0)
             //: Expiring message timeout in minutes. Used in whisperfish-service-message-expiry-update-[self|peer]
-            //% "%1 minute(s)"
+            //% "%n minute(s)"
             return qsTrId("whisperfish-service-message-expiry-in-minutes", Math.floor(secs / 60))
         else
             //: Expiring message timeout in seconds. Used in whisperfish-service-message-expiry-update-[self|peer]
-            //% "%1 second(s)"
+            //% "%n second(s)"
             return qsTrId("whisperfish-service-message-expiry-in-seconds", Math.floor(secs))
     }
 
