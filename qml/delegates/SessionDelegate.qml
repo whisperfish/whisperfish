@@ -80,7 +80,7 @@ ListItem {
     // and uses Message above as modelData.
     Loader {
         id: serviceMessage
-        active: lastMessage.messageType != null
+        active: recipient.status == Loader.Ready && lastMessage.messageType != null
         asynchronous: true
         sourceComponent: ServiceMessageDelegate {
             modelData: lastMessage
