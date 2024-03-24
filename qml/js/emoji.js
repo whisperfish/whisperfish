@@ -230,12 +230,12 @@ function getStylePath(style, rasterSize, noCache) {
 
     if (xhr.status === 200) {
       styleStatusCache[cacheKey] = {found: true, path: path, uptodate: (i == 0)};
+      console.debug("found emoji style at", path + '/2764.' + style.ext);
       return styleStatusCache[cacheKey];
-    } else {
-      console.error("failed to load emoji style at", path + '/2764.' + style.ext);
     }
   }
 
+  console.error("no emoji style found");
   return notFound;
 }
 
