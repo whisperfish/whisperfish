@@ -325,6 +325,8 @@ impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
             let private = PrivateKey::try_from(&buf[33..])?;
             IdentityKeyPair::new(public, private)
         };
+        drop(_lock);
+        let _lock = self.0.protocol_store.write().await;
         *self.1.identity_key_pair_cached_mut(&self.0).await = Some(key_pair.clone());
         Ok(key_pair)
     }
