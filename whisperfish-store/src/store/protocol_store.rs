@@ -267,6 +267,7 @@ impl<T: Identity> IdentityStorage<T> {
             .join("identity")
             .join(self.1.identity_key_filename());
         tracing::trace!("writing own identity key pair at {}", path.display());
+        *self.1.identity_key_pair_cached_mut(&self.0).await = Some(key_pair);
         self.0
             .write_file(path, ProtocolStore::serialize_identity_key(key_pair))
             .await
@@ -288,6 +289,7 @@ impl<T: Identity> IdentityStorage<T> {
             .join("identity")
             .join(self.1.identity_key_filename());
         tracing::warn!("removing own identity key pair at {}", path.display());
+        *self.1.identity_key_pair_cached_mut(&self.0).await = None;
         tokio::fs::remove_file(path).await.map_err(|e| {
             SignalProtocolError::InvalidArgument(format!("Cannot remove own identity key {}", e))
         })?;
@@ -301,6 +303,10 @@ impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
     async fn get_identity_key_pair(&self) -> Result<IdentityKeyPair, SignalProtocolError> {
         let _lock = self.0.protocol_store.read().await;
 
+        if let Some(ikp) = *self.1.identity_key_pair_cached(&self.0).await {
+            return Ok(ikp);
+        }
+
         let path = self
             .0
             .path
@@ -308,6 +314,7 @@ impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
             .join("identity")
             .join(self.1.identity_key_filename());
         tracing::trace!("reading own identity key pair at {}", path.display());
+
         let key_pair = {
             use std::convert::TryFrom;
             let mut buf = self.0.read_file(path).await.map_err(|e| {
@@ -318,6 +325,7 @@ impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
             let private = PrivateKey::try_from(&buf[33..])?;
             IdentityKeyPair::new(public, private)
         };
+        *self.1.identity_key_pair_cached_mut(&self.0).await = Some(key_pair.clone());
         Ok(key_pair)
     }
 
