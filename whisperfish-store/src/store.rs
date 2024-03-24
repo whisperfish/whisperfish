@@ -312,6 +312,8 @@ pub struct Storage {
     protocol_store: Arc<tokio::sync::RwLock<ProtocolStore>>,
     credential_cache: Arc<tokio::sync::RwLock<InMemoryCredentialsCache>>,
     path: PathBuf,
+    aci_identity_key_pair: Arc<tokio::sync::RwLock<Option<IdentityKeyPair>>>,
+    pni_identity_key_pair: Arc<tokio::sync::RwLock<Option<IdentityKeyPair>>>,
 }
 
 impl Debug for Storage {
@@ -495,6 +497,8 @@ impl Storage {
                 InMemoryCredentialsCache::default(),
             )),
             path: path.to_path_buf(),
+            aci_identity_key_pair: Arc::new(tokio::sync::RwLock::new(Some(aci_identity_key_pair))),
+            pni_identity_key_pair: Arc::new(tokio::sync::RwLock::new(Some(pni_identity_key_pair))),
         })
     }
 
@@ -535,6 +539,9 @@ impl Storage {
                 InMemoryCredentialsCache::default(),
             )),
             path: path.to_path_buf(),
+            // XXX load them from storage already?
+            aci_identity_key_pair: Arc::new(tokio::sync::RwLock::new(None)),
+            pni_identity_key_pair: Arc::new(tokio::sync::RwLock::new(None)),
         };
 
         Ok(storage)
