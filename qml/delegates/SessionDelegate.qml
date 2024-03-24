@@ -89,7 +89,7 @@ ListItem {
         active: lastMessage.messageType != null
         sourceComponent: ServiceMessageDelegate {
             modelData: lastMessage
-            recipient: recipient
+            peerName: name
             visible: false
             enabled: false
         }

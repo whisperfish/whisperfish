@@ -13,12 +13,11 @@ ListItem {
     onClicked: showDetails()
 
     property QtObject modelData
-    property QtObject recipient
+    property string peerName
 
     property var _type: modelData != null ? modelData.messageType : null
 
     property string _outgoing: modelData.outgoing === true
-    property string _originName: (modelData !== null) && modelData.recipientId > 0 ? getRecipientName(recipient.e164, recipient.name, false) : ''
 
     property bool _canShowDetails: (_type === "identity_reset" || _type === "session_reset") ? true : false
     property int _fontSize: Theme.fontSizeExtraSmall
@@ -89,7 +88,7 @@ ListItem {
                 ? qsTrId("whisperfish-service-message-expiry-update-self").arg(timeFormat(secs))
                 //: Service message, %1 is a name, %2 is time
                 //% "%1 set expiring messages timeout to %2."
-                : qsTrId("whisperfish-service-message-expiry-update-peer").arg(_originName).arg(timeFormat(secs))
+                : qsTrId("whisperfish-service-message-expiry-update-peer").arg(peerName).arg(timeFormat(secs))
             } else if (secs === 0) {
                 return _outgoing
                 //: Service message
@@ -97,7 +96,7 @@ ListItem {
                 ? qsTrId("whisperfish-service-message-expiry-disable-self")
                 //: Service message, %1 is a name
                 //% "%1 disabled expiring messages."
-                : qsTrId("whisperfish-service-message-expiry-disable-peer").arg(_originName)
+                : qsTrId("whisperfish-service-message-expiry-disable-peer").arg(peerName)
             } else {
                 return _outgoing
                 //: Service message
@@ -105,7 +104,7 @@ ListItem {
                 ? qsTrId("whisperfish-service-message-expiry-unknown-self")
                 //: Service message, %1 is a name
                 //% "%1 set or disabled expiring messages timeout."
-                : qsTrId("whisperfish-service-message-expiry-unknown-peer").arg(_originName)
+                : qsTrId("whisperfish-service-message-expiry-unknown-peer").arg(peerName)
             }
         case "profile_key_update":
             return _outgoing
@@ -119,10 +118,10 @@ ListItem {
             return _outgoing
             //: Service message, %1 is a name
             //% "You ended the session with %1."
-            ? qsTrId("whisperfish-service-message-end-session-self").arg(_originName)
+            ? qsTrId("whisperfish-service-message-end-session-self").arg(peerName)
             //: Service message, %1 is a name
             //% "%1 ended the session with you."
-            : qsTrId("whisperfish-service-message-end-session-peer").arg(_originName)
+            : qsTrId("whisperfish-service-message-end-session-peer").arg(peerName)
         case "group_change":
             //: Service message
             //% "The group was updated."
@@ -134,7 +133,7 @@ ListItem {
             ? qsTrId("whisperfish-service-message-joined-group-self")
             //: Service message, %1 is a name
             //% "%1 joined the group."
-            : qsTrId("whisperfish-service-message-joined-group-peer").arg(_originName)
+            : qsTrId("whisperfish-service-message-joined-group-peer").arg(peerName)
         case "left_group":
             return _outgoing
             //: Service message, %1 is a name
@@ -142,52 +141,52 @@ ListItem {
             ? qsTrId("whisperfish-service-message-left-group-self")
             //: Service message, %1 is a name
             //% "%1 left the group."
-            : qsTrId("whisperfish-service-message-left-group-peer").arg(_originName)
+            : qsTrId("whisperfish-service-message-left-group-peer").arg(peerName)
         case "missed_voice_call":
             return _outgoing
             //: Service message, %1 is a name
             //% "You missed a voice call from %1."
-            ? qsTrId("whisperfish-service-message-missed-call-voice-self").arg(_originName)
+            ? qsTrId("whisperfish-service-message-missed-call-voice-self").arg(peerName)
             //: Service message, %1 is a name
             //% "You tried to voice call %1."
-            : qsTrId("whisperfish-service-message-missed-call-voice-peer").arg(_originName)
+            : qsTrId("whisperfish-service-message-missed-call-voice-peer").arg(peerName)
         case "missed_video_call":
             return _outgoing
             //: Service message, %1 is a name
             //% "You missed a video call from %1."
-            ? qsTrId("whisperfish-service-message-missed-call-video-self").arg(_originName)
+            ? qsTrId("whisperfish-service-message-missed-call-video-self").arg(peerName)
             //: Service message, %1 is a name
             //% "You tried to video call %1."
-            : qsTrId("whisperfish-service-message-missed-call-video-peer").arg(_originName)
+            : qsTrId("whisperfish-service-message-missed-call-video-peer").arg(peerName)
         case "video_call":
             return _outgoing
             //: Service message, %1 is a name
             //% "You had a video call with %1."
-            ? qsTrId("whisperfish-service-message-call-video-self").arg(_originName)
+            ? qsTrId("whisperfish-service-message-call-video-self").arg(peerName)
             //: Service message, %1 is a name
             //% "%1 had a video call with you."
-            : qsTrId("whisperfish-service-message-call-video-peer").arg(_originName)
+            : qsTrId("whisperfish-service-message-call-video-peer").arg(peerName)
         case "voice_call":
             return _outgoing
             //: Service message, %1 is a name
             //% "You had a voice call with %1."
-            ? qsTrId("whisperfish-service-message-call-voice-self").arg(_originName)
+            ? qsTrId("whisperfish-service-message-call-voice-self").arg(peerName)
             //: Service message, %1 is a name
             //% "%1 had a voice call with you."
-            : qsTrId("whisperfish-service-message-call-voice-peer").arg(_originName)
+            : qsTrId("whisperfish-service-message-call-voice-peer").arg(peerName)
         case "identity_reset":
             //: Service message, %1 is a name
             //% "Your safety number with %1 has changed. "
             //% "Swipe right to verify the new number."
-            qsTrId("whisperfish-service-message-fingerprint-changed").arg(_originName)
+            qsTrId("whisperfish-service-message-fingerprint-changed").arg(peerName)
         case "session_reset":
             return _outgoing
             //: Service message, %1 is a name
             //% "You reset the secure session with %1."
-            ? qsTrId("whisperfish-service-message-session-reset-self").arg(_originName)
+            ? qsTrId("whisperfish-service-message-session-reset-self").arg(peerName)
             //: Service message, %1 is a name
             //% "%1 reset the secure session with you."
-            : qsTrId("whisperfish-service-message-session-reset-peer").arg(_originName)
+            : qsTrId("whisperfish-service-message-session-reset-peer").arg(peerName)
         default:
             //: Service message, %1 is an integer
             console.warn("Unsupported service message: id", modelData.id, "flags", modelData.flags, "text", modelData.message)
