@@ -106,14 +106,10 @@ ListItem {
                 //% "%1 set or disabled expiring messages timeout."
                 : qsTrId("whisperfish-service-message-expiry-unknown-peer").arg(peerName)
             }
-        case "profile_key_update":
-            return _outgoing
-            //: Service message, %1 is a name
-            //% "You updated your profile key with %1."
-            ? qsTrId("whisperfish-service-message-profile-key-update-self").arg(_originName)
-            //: Service message, %1 is a name, %2 is time
-            //% "%1 updated their profile key with you."
-            : qsTrId("whisperfish-service-message-profile-key-update-peer").arg(_originName)
+        case "profile_key_update": // incoming only
+            //: Service message for profile (key) update. %1 is a name
+            //% "%1 updated their profile."
+            qsTrId("whisperfish-service-message-profile-key-update-peer").arg(peerName)
         case "end_session":
             return _outgoing
             //: Service message, %1 is a name
