@@ -4,7 +4,7 @@
 Name: harbour-whisperfish-shareplugin-v2
 Summary: Shareplugin v2 for Whisperfish
 
-Version: 1.0.0
+Version: 1.1.0
 Release: 0%{?dist}
 License: GPLv3+
 Group: Qt/Qt

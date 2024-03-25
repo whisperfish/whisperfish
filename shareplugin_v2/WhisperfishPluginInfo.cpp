@@ -29,6 +29,7 @@ void WhisperfishPluginInfo::query()
     info.setMethodId(QLatin1String(PLUGIN_ID));
     info.setMethodIcon(QLatin1String(APP_ICON));
     info.setShareUIPath(QLatin1String("/usr/share/nemo-transferengine/plugins/sharing/WhisperfishShare.qml"));
+    info.setSupportsMultipleFiles(true);
 
     // We just allow everything and hope for bug reports where special handling is needed.
     capabilities << QLatin1String("application/*")
