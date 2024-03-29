@@ -1,5 +1,3 @@
-use crate::orm::Identity;
-
 // @generated automatically by Diesel CLI.
 pub mod migrations;
 

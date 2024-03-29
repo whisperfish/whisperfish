@@ -327,7 +327,7 @@ impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
         };
         drop(_lock);
         let _lock = self.0.protocol_store.write().await;
-        *self.1.identity_key_pair_cached_mut(&self.0).await = Some(key_pair.clone());
+        *self.1.identity_key_pair_cached_mut(&self.0).await = Some(key_pair);
         Ok(key_pair)
     }
 

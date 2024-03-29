@@ -16,19 +16,9 @@ pub fn storage() -> InMemoryDb {
         let cfg = Arc::new(cfg);
         let temp = temp();
         (
-            Storage::new(
-                cfg,
-                &temp,
-                None,
-                12345,
-                12346,
-                "Some Password",
-                [0; 52],
-                None,
-                None,
-            )
-            .await
-            .expect("Failed to initalize storage"),
+            Storage::new(cfg, &temp, None, 12345, 12346, "Some Password", None, None)
+                .await
+                .expect("Failed to initalize storage"),
             temp,
         )
     })

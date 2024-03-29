@@ -50,7 +50,7 @@ impl Handler<InitializePni> for ClientActor {
                     service.clone(),
                     self_recipient.profile_key.as_ref().map(|bytes| {
                         let mut key = [0u8; 32];
-                        key.copy_from_slice(&bytes);
+                        key.copy_from_slice(bytes);
                         ProfileKey::create(key)
                     }),
                 );
