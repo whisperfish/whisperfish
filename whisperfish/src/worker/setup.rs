@@ -10,13 +10,11 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct RegistrationResult {
-    regid: u32,
-    pni_regid: u32,
+    storage: Storage,
+
     phonenumber: PhoneNumber,
     service_ids: ServiceIds,
     device_id: protocol::DeviceId,
-    aci_identity_key_pair: Option<libsignal_service::protocol::IdentityKeyPair>,
-    pni_identity_key_pair: Option<libsignal_service::protocol::IdentityKeyPair>,
     profile_key: Option<[u8; 32]>,
 }
 
@@ -35,6 +33,8 @@ pub struct SetupWorker {
     _phoneNumber: qt_property!(QString; READ phonenumber NOTIFY setupChanged),
     uuid: Option<Uuid>,
     _uuid: qt_property!(QString; READ uuid NOTIFY setupChanged ALIAS uuid),
+    pni: Option<Uuid>,
+    _pni: qt_property!(QString; READ pni NOTIFY setupChanged ALIAS pni),
     deviceId: qt_property!(u32; NOTIFY setupChanged),
 
     registered: qt_property!(bool; NOTIFY setupChanged),
@@ -70,6 +70,7 @@ impl SetupWorker {
         // XXX: nice formatting?
         this.borrow_mut().phonenumber = config.get_tel();
         this.borrow_mut().uuid = config.get_aci();
+        this.borrow_mut().pni = config.get_pni();
         this.borrow_mut().deviceId = config.get_device_id().into();
 
         if !this.borrow().registered {
@@ -181,6 +182,12 @@ impl SetupWorker {
             .context("No password code provided")?
             .into();
 
+        let storage_password = if storage_password.is_empty() {
+            None
+        } else {
+            Some(storage_password)
+        };
+
         let is_primary: bool = app
             .prompt
             .pinned()
@@ -191,7 +198,7 @@ impl SetupWorker {
 
         // generate a random 24 bytes password
         use rand::distributions::Alphanumeric;
-        use rand::{Rng, RngCore};
+        use rand::Rng;
         let rng = rand::thread_rng();
         let password: String = rng
             .sample_iter(&Alphanumeric)
@@ -201,26 +208,16 @@ impl SetupWorker {
         // XXX in rand 0.8, this needs to be a Vec<u8> and be converted afterwards.
         // let password = std::str::from_utf8(&password)?.to_string();
 
-        // generate a 52 bytes signaling key
-        let mut rng = rand::thread_rng();
-        let mut signaling_key = [0u8; 52];
-        rng.fill_bytes(&mut signaling_key);
-        let signaling_key = signaling_key;
-
         let reg = if is_primary {
-            SetupWorker::register_as_primary(app.clone(), &config, &password, &signaling_key)
+            SetupWorker::register_as_primary(app.clone(), &config, password, storage_password)
                 .await?
         } else {
-            SetupWorker::register_as_secondary(app.clone(), &password, &signaling_key).await?
+            SetupWorker::register_as_secondary(app.clone(), password, storage_password).await?
         };
+
+        let storage = reg.storage;
 
         let mut this = this.borrow_mut();
-
-        let storage_password = if storage_password.is_empty() {
-            None
-        } else {
-            Some(storage_password)
-        };
 
         this.phonenumber = Some(reg.phonenumber.clone());
         this.uuid = Some(reg.service_ids.aci);
@@ -228,21 +225,8 @@ impl SetupWorker {
 
         config.set_tel(reg.phonenumber.clone());
         config.set_aci(reg.service_ids.aci);
+        config.set_pni(reg.service_ids.pni);
         config.set_device_id(reg.device_id.into());
-
-        // Install storage
-        let storage = Storage::new(
-            config.clone(),
-            &config.get_share_dir().to_owned().into(),
-            storage_password.as_deref(),
-            reg.regid,
-            reg.pni_regid,
-            &password,
-            signaling_key,
-            reg.aci_identity_key_pair,
-            reg.pni_identity_key_pair,
-        )
-        .await?;
 
         if let Some(profile_key) = reg.profile_key {
             storage.update_profile_key(
@@ -262,8 +246,8 @@ impl SetupWorker {
     async fn register_as_primary(
         app: Rc<WhisperfishApp>,
         config: &crate::config::SignalConfig,
-        password: &str,
-        signaling_key: &[u8; 52],
+        password: String,
+        storage_password: Option<String>,
     ) -> Result<RegistrationResult, anyhow::Error> {
         let this = app.setup_worker.pinned();
 
@@ -334,37 +318,34 @@ impl SetupWorker {
             .into();
         let code = code.parse()?;
 
-        let (regid, pni_regid, res) = app
+        let (storage, res) = app
             .client_actor
             .send(super::client::ConfirmRegistration {
                 phonenumber: number.clone(),
-                password: password.to_string(),
+                password,
+                storage_password,
                 confirm_code: code,
-                signaling_key: *signaling_key,
             })
             .await??;
 
         tracing::info!("Registration result: {:?}", res);
 
         Ok(RegistrationResult {
-            regid,
-            pni_regid,
+            storage,
             phonenumber: number,
             service_ids: ServiceIds {
                 aci: res.uuid,
                 pni: res.pni,
             },
             device_id: protocol::DeviceId::from(DEFAULT_DEVICE_ID),
-            aci_identity_key_pair: None,
-            pni_identity_key_pair: None,
             profile_key: None,
         })
     }
 
     async fn register_as_secondary(
         app: Rc<WhisperfishApp>,
-        password: &str,
-        signaling_key: &[u8; 52],
+        password: String,
+        storage_password: Option<String>,
     ) -> Result<RegistrationResult, anyhow::Error> {
         use futures::FutureExt;
 
@@ -372,8 +353,8 @@ impl SetupWorker {
 
         let res_fut = app.client_actor.send(super::client::RegisterLinked {
             device_name: String::from("Whisperfish"),
-            password: password.to_string(),
-            signaling_key: *signaling_key,
+            password,
+            storage_password,
             tx_uri,
         });
 
@@ -393,13 +374,10 @@ impl SetupWorker {
                 res = res_fut => {
                     let res = res??;
                     return Ok(RegistrationResult {
-                        regid: res.registration_id,
-                        pni_regid: res.pni_registration_id,
+                        storage: res.storage,
                         phonenumber: res.phone_number,
                         service_ids: res.service_ids,
                         device_id: res.device_id,
-                        aci_identity_key_pair: Some(res.aci_identity_key_pair),
-                        pni_identity_key_pair: Some(res.pni_identity_key_pair),
                         profile_key: Some(res.profile_key),
                     });
                 }
@@ -410,6 +388,14 @@ impl SetupWorker {
 
     fn uuid(&self) -> QString {
         self.uuid
+            .as_ref()
+            .map(Uuid::to_string)
+            .unwrap_or_default()
+            .into()
+    }
+
+    fn pni(&self) -> QString {
+        self.pni
             .as_ref()
             .map(Uuid::to_string)
             .unwrap_or_default()

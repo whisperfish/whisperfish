@@ -2,6 +2,8 @@
 mod groupv2;
 /// Migration to remove R@ reactions and dump them in the correct table.
 mod parse_reactions;
+/// MIgration to initialize PNI
+mod pni;
 /// Migration to ensure our own UUID is known.
 ///
 /// Installs before Whisperfish 0.6 do not have their own UUID present in settings.
@@ -9,24 +11,25 @@ mod whoami;
 
 use self::groupv2::*;
 use self::parse_reactions::*;
+use self::pni::*;
 use self::whoami::*;
 use super::*;
 use crate::store::migrations::session_to_db::SessionStorageMigration;
 use actix::prelude::*;
 use std::sync::Arc;
-use tokio::sync::{Notify, RwLock};
+use tokio::sync::{broadcast, RwLock};
 
 #[derive(Clone)]
 pub(super) struct MigrationCondVar {
     state: Arc<RwLock<MigrationState>>,
-    notify: Arc<Notify>,
+    sender: Arc<broadcast::Sender<()>>,
 }
 
 impl MigrationCondVar {
     pub fn new() -> Self {
         MigrationCondVar {
             state: Arc::new(RwLock::new(MigrationState::new())),
-            notify: Arc::new(Notify::new()),
+            sender: Arc::new(broadcast::Sender::new(1)),
         }
     }
 }
@@ -34,10 +37,10 @@ impl MigrationCondVar {
 pub(super) struct MigrationState {
     pub whoami: bool,
     pub protocol_store_in_db: bool,
-    pub sessions_have_uuid: bool,
     pub gv2_expected_ids: bool,
     pub self_profile_ready: bool,
     pub reactions_ready: bool,
+    pub pni_distributed: bool,
 }
 
 impl MigrationState {
@@ -45,36 +48,68 @@ impl MigrationState {
         MigrationState {
             whoami: false,
             protocol_store_in_db: false,
-            sessions_have_uuid: false,
             gv2_expected_ids: false,
             self_profile_ready: false,
             reactions_ready: false,
+            pni_distributed: false,
         }
     }
 
+    /// Signals true if all migrations are complete.
+    #[tracing::instrument(skip(self))]
     pub fn is_ready(&self) -> bool {
+        tracing::trace!(
+            whoami = %self.whoami,
+            protocol_store_in_db = %self.protocol_store_in_db,
+            gv2_expected_ids = %self.gv2_expected_ids,
+            self_profile_ready = %self.self_profile_ready,
+            reactions_ready = %self.reactions_ready,
+            pni_distributed = %self.pni_distributed,
+            "is_ready",
+        );
         self.whoami
             && self.protocol_store_in_db
-            && self.sessions_have_uuid
             && self.gv2_expected_ids
             && self.self_profile_ready
             && self.reactions_ready
+            && self.pni_distributed
+    }
+
+    /// Signals true if the client is ready to connect.
+    #[tracing::instrument(skip(self))]
+    pub fn connectable(&self) -> bool {
+        tracing::trace!(
+            whoami = %self.whoami,
+            protocol_store_in_db = %self.protocol_store_in_db,
+            gv2_expected_ids = %self.gv2_expected_ids,
+            self_profile_ready = %self.self_profile_ready,
+            "connectable",
+        );
+        self.whoami && self.protocol_store_in_db && self.gv2_expected_ids && self.self_profile_ready
     }
 }
 
 macro_rules! method_for_condition {
     ($method:ident : $state:ident -> $cond:expr) => {
-        #[allow(dead_code)]
         pub fn $method(&self) -> impl Future<Output = ()> + 'static {
-            let notify = self.notify.clone();
+            let mut receiver = self.sender.clone().subscribe();
             let state = self.state.clone();
 
             async move {
                 while {
                     let $state = state.read().await;
-                    $cond
+                    !$cond
                 } {
-                    notify.notified().await;
+                    match receiver.recv().await {
+                        Ok(_)=> {},
+                        Err(broadcast::error::RecvError::Closed) => {
+                            panic!("MigrationCondVar sender closed");
+                        }
+                        Err(broadcast::error::RecvError::Lagged(_)) => {
+                            // tracing::warn!("MigrationCondVar lagged");
+                            // D/c
+                        }
+                    }
                 }
             }
         }
@@ -87,26 +122,29 @@ macro_rules! method_for_condition {
 macro_rules! notify_method_for_var {
     ($method:ident -> $var:ident) => {
         pub fn $method(&self) {
-            let notify = self.notify.clone();
+            let sender = self.sender.clone();
             let state = self.state.clone();
             actix::spawn(async move {
                 state.write().await.$var = true;
-                notify.notify_waiters();
+                sender.send(()).ok(); // XXX: handle error?
             });
         }
     };
 }
 
 impl MigrationCondVar {
-    method_for_condition!(ready : state -> state.is_ready());
+    // method_for_condition!(ready : state -> state.is_ready());
+    method_for_condition!(connectable : state -> state.connectable());
     method_for_condition!(self_uuid_is_known : state -> state.whoami);
-    method_for_condition!(protocol_store_in_db);
+    // method_for_condition!(protocol_store_in_db);
+    method_for_condition!(pni_distributed : state -> state.pni_distributed);
 
     notify_method_for_var!(notify_whoami -> whoami);
     notify_method_for_var!(notify_protocol_store_in_db -> protocol_store_in_db);
     notify_method_for_var!(notify_groupv2_expected_ids -> gv2_expected_ids);
     notify_method_for_var!(notify_self_profile_ready -> self_profile_ready);
     notify_method_for_var!(notify_reactions_ready -> reactions_ready);
+    notify_method_for_var!(notify_pni_distributed -> pni_distributed);
 }
 
 impl ClientActor {
@@ -116,6 +154,7 @@ impl ClientActor {
         ctx.notify(ComputeGroupV2ExpectedIds);
         ctx.notify(RefreshOwnProfile { force: false });
         ctx.notify(ParseOldReaction);
+        ctx.notify(InitializePni);
     }
 }
 

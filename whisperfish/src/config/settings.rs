@@ -28,6 +28,7 @@ pub struct SettingsBridge {
     attachment_log: qt_property!(bool; READ get_attachment_log WRITE set_attachment_log NOTIFY attachment_log_changed),
     quit_on_ui_close: qt_property!(bool; READ get_quit_on_ui_close WRITE set_quit_on_ui_close NOTIFY quit_on_ui_close_changed),
     show_phone_number: qt_property!(bool; READ get_show_phone_number WRITE set_show_phone_number NOTIFY show_phone_number_changed),
+    share_phone_number: qt_property!(bool; READ get_share_phone_number WRITE set_share_phone_number NOTIFY share_phone_number_changed),
 
     // These will be mirrored to `config.yml` at Whisperfish exit
     verbose: qt_property!(bool; READ get_verbose WRITE set_verbose NOTIFY verbose_changed),
@@ -51,6 +52,7 @@ pub struct SettingsBridge {
     attachment_log_changed: qt_signal!(value: bool),
     quit_on_ui_close_changed: qt_signal!(value: bool),
     show_phone_number_changed: qt_signal!(value: bool),
+    share_phone_number_changed: qt_signal!(value: bool),
 
     verbose_changed: qt_signal!(value: bool),
     logfile_changed: qt_signal!(value: bool),
@@ -92,6 +94,7 @@ impl Default for SettingsBridge {
             attachment_log: false,
             quit_on_ui_close: true,
             show_phone_number: true,
+            share_phone_number: false,
 
             verbose: false,
             logfile: false,
@@ -119,6 +122,7 @@ impl Default for SettingsBridge {
             camera_dir_changed: Default::default(),
             plaintext_password_changed: Default::default(),
             show_phone_number_changed: Default::default(),
+            share_phone_number_changed: Default::default(),
 
             verbose_changed: Default::default(),
             logfile_changed: Default::default(),
@@ -237,6 +241,10 @@ impl SettingsBridge {
         self.get_bool("show_phone_number")
     }
 
+    pub fn get_share_phone_number(&self) -> bool {
+        self.get_bool("share_phone_number")
+    }
+
     pub fn get_verbose(&self) -> bool {
         self.get_bool("verbose")
     }
@@ -323,6 +331,11 @@ impl SettingsBridge {
     pub fn set_show_phone_number(&mut self, value: bool) {
         self.set_bool("show_phone_number", value);
         self.show_phone_number_changed(value);
+    }
+
+    pub fn set_share_phone_number(&mut self, value: bool) {
+        self.set_bool("share_phone_number", value);
+        self.share_phone_number_changed(value);
     }
 
     pub fn set_verbose(&mut self, value: bool) {

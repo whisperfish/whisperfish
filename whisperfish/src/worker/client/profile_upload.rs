@@ -41,7 +41,7 @@ impl Handler<MultideviceSyncProfile> for ClientActor {
     type Result = ResponseFuture<()>;
     fn handle(&mut self, _: MultideviceSyncProfile, ctx: &mut Self::Context) -> Self::Result {
         let storage = self.storage.clone().unwrap();
-        let local_addr = self.local_addr.unwrap();
+        let local_addr = self.self_aci.unwrap();
 
         // If not yet connected, retry in 60 seconds
         if self.ws.is_none() {

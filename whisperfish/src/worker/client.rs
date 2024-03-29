@@ -246,7 +246,8 @@ pub struct ClientActor {
 
     unidentified_certificates: unidentified::UnidentifiedCertificates,
     credentials: Option<ServiceCredentials>,
-    local_addr: Option<ServiceAddress>,
+    self_aci: Option<ServiceAddress>,
+    self_pni: Option<ServiceAddress>,
     storage: Option<Storage>,
     ws: Option<SignalWebSocket>,
     config: std::sync::Arc<crate::config::SignalConfig>,
@@ -264,14 +265,13 @@ pub struct ClientActor {
 fn whisperfish_device_capabilities() -> DeviceCapabilities {
     DeviceCapabilities {
         announcement_group: false,
-        gv2: true,
         storage: false,
-        gv1_migration: true,
         sender_key: true,
         change_number: false,
         gift_badges: false,
         stories: false,
-        pnp: false, // What is PNP?
+        pni: true,
+        payment_activation: false,
     }
 }
 
@@ -297,7 +297,8 @@ impl ClientActor {
             migration_state: MigrationCondVar::new(),
             unidentified_certificates: UnidentifiedCertificates::default(),
             credentials: None,
-            local_addr: None,
+            self_aci: None,
+            self_pni: None,
             storage: None,
             ws: None,
             config,
@@ -357,9 +358,27 @@ impl ClientActor {
 
         let ws = self.ws.clone().unwrap();
         let cipher = self.cipher(ServiceIdType::AccountIdentity);
-        let local_addr = self.local_addr.unwrap();
+        let local_aci = self.self_aci.unwrap();
+        let local_pni = self.self_pni.unwrap();
         let device_id = self.config.get_device_id();
+
         async move {
+            let aci_key = storage
+                .aci_storage()
+                .get_identity_key_pair()
+                .await
+                .expect("aci identity set");
+            let pni_key = storage
+                .pni_storage()
+                .get_identity_key_pair()
+                .await
+                .map_err(|_e| {
+                    tracing::warn!(
+                        "PNI identity key pair not set. Assuming PNI is not initialized."
+                    );
+                })
+                .ok();
+
             let u_ws = u_service
                 .ws("/v1/websocket/", "/v1/keepalive", &[], None)
                 .await?;
@@ -370,8 +389,10 @@ impl ClientActor {
                 cipher,
                 rand::thread_rng(),
                 storage.aci_or_pni(ServiceIdType::AccountIdentity), // In what cases do we use the
-                // PNI identity here?
-                local_addr,
+                local_aci,
+                local_pni,
+                aci_key,
+                pni_key,
                 device_id,
             ))
         }
@@ -772,7 +793,7 @@ impl ClientActor {
         use sync_message::request::Type;
         tracing::trace!("Processing sync request {:?}", req.r#type());
 
-        let local_addr = self.local_addr.unwrap();
+        let local_addr = self.self_aci.unwrap();
         let storage = self.storage.clone().unwrap();
         let sender = self.message_sender();
 
@@ -1117,7 +1138,7 @@ impl ClientActor {
             self.storage.as_ref().unwrap().aci_or_pni(service_identity),
             rand::thread_rng(),
             service_cfg.unidentified_sender_trust_root,
-            self.local_addr.unwrap().uuid,
+            self.self_aci.unwrap().uuid,
             device_id.into(),
         )
     }
@@ -1428,7 +1449,7 @@ impl Handler<SendMessage> for ClientActor {
 
         let storage = storage.clone();
         let addr = ctx.address();
-        let self_uuid = self.local_addr.unwrap().uuid;
+        let self_uuid = self.self_aci.unwrap().uuid;
         Box::pin(
             async move {
                 let mut sender = sender.await?;
@@ -1913,7 +1934,13 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
 
         let storage = self.storage.clone().unwrap();
         let sender = self.message_sender();
-        let local_addr = self.local_addr.unwrap();
+        let local_addr = self.self_aci.unwrap();
+        let settings = crate::config::SettingsBridge::default();
+        let cert_type = if settings.get_share_phone_number() {
+            CertType::UuidOnly
+        } else {
+            CertType::Complete
+        };
 
         let certs = self.unidentified_certificates.clone();
 
@@ -1937,9 +1964,8 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                                 None
                             } else if let Some(member) = member {
                                 // XXX change the cert type when we want to introduce E164 privacy.
-                                let access =
-                                    certs.access_for(CertType::Complete, recipient, for_story);
-                                Some((member, access))
+                                let access = certs.access_for(cert_type, recipient, for_story);
+                                Some((member, access, recipient.needs_pni_signature))
                             } else {
                                 tracing::warn!(
                                     "No known UUID for {}; will not deliver this message.",
@@ -1957,7 +1983,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                 orm::SessionType::DirectMessage(recipient) => {
                     let svc = recipient.to_service_address();
 
-                    let access = certs.access_for(CertType::Complete, recipient, for_story);
+                    let access = certs.access_for(cert_type, recipient, for_story);
 
                     if let Some(svc) = svc {
                         if !recipient.is_registered {
@@ -1966,7 +1992,14 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
 
                         vec![
                             sender
-                                .send_message(&svc, access, content.clone(), timestamp, online)
+                                .send_message(
+                                    &svc,
+                                    access,
+                                    content.clone(),
+                                    timestamp,
+                                    recipient.needs_pni_signature,
+                                    online,
+                                )
                                 .await,
                         ]
                     } else {
@@ -2018,7 +2051,7 @@ impl Handler<StorageReady> for ClientActor {
             );
 
             let password = storage_for_password.signal_password().await.unwrap();
-            let signaling_key = Some(storage_for_password.signaling_key().await.unwrap());
+            let signaling_key = storage_for_password.signaling_key().await.unwrap();
 
             (aci, pni, phonenumber, device_id, password, signaling_key)
         }
@@ -2044,9 +2077,12 @@ impl Handler<StorageReady> for ClientActor {
 
                 // Signal service context
                 // XXX What about the whoami migration?
-                let uuid = aci.expect("local uuid to initialize service cipher");
+                let aci = aci.expect("local uuid to initialize service cipher");
                 // end signal service context
-                act.local_addr = Some(ServiceAddress { uuid });
+                act.self_aci = Some(ServiceAddress { uuid: aci });
+                if let Some(pni) = pni {
+                    act.self_pni = Some(ServiceAddress { uuid: pni });
+                }
 
                 Self::queue_migrations(ctx);
 
@@ -2068,7 +2104,7 @@ impl Handler<Restart> for ClientActor {
     fn handle(&mut self, _: Restart, ctx: &mut Self::Context) -> Self::Result {
         let service = self.authenticated_service();
         let credentials = self.credentials.clone().unwrap();
-        let migrations_ready = self.migration_state.ready();
+        let connectable = self.migration_state.connectable();
 
         if self.message_expiry_notification_handle.is_none() {
             let (message_expiry_notification_handle, message_expiry_notification) =
@@ -2084,7 +2120,7 @@ impl Handler<Restart> for ClientActor {
         self.inner.pinned().borrow().connectedChanged();
         Box::pin(
             async move {
-                migrations_ready.await;
+                connectable.await;
                 let mut receiver = MessageReceiver::new(service.clone());
 
                 let pipe = receiver.create_message_pipe(credentials, false).await?;
@@ -2204,13 +2240,19 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             uuid: Uuid::parse_str(msg.destination_service_id.as_deref().unwrap())
                 .expect("parse uuid"),
         };
-        let mut cipher = self.cipher(
-            if destination == self.local_addr.expect("local addr known") {
-                ServiceIdType::AccountIdentity
-            } else {
-                ServiceIdType::PhoneNumberIdentity
-            },
-        );
+        let service_id = if destination == self.self_aci.expect("local aci known") {
+            ServiceIdType::AccountIdentity
+        } else if destination == self.self_pni.expect("local pni known") {
+            ServiceIdType::PhoneNumberIdentity
+        } else {
+            tracing::warn!(
+                "Message for unknown destination: {:?}. Dropping",
+                destination
+            );
+            return;
+        };
+
+        let mut cipher = self.cipher(service_id);
 
         if msg.is_receipt() {
             self.process_receipt(&msg);
@@ -2242,6 +2284,9 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             let source_uuid = Uuid::parse_str(addr.name()).expect("only uuid-based identities accessible in the database");
                             tracing::warn!("Untrusted identity for {}; replacing identity and inserting a warning.", addr);
                             let recipient = storage.fetch_or_insert_recipient_by_uuid(source_uuid);
+                            if service_id == ServiceIdType::PhoneNumberIdentity {
+                                storage.mark_recipient_needs_pni_signature(recipient.id, true);
+                            }
                             let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
                             let msg = crate::store::NewMessage {
                                 session_id: session.id,
@@ -2272,7 +2317,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                 tracing::trace!(sender = ?content.metadata.sender, "opened envelope");
 
                 Some(content)
-            }.instrument(tracing::trace_span!("opening envelope"))
+            }.instrument(tracing::trace_span!("opening envelope", %service_id))
             .into_actor(self)
             .map(|content, act, ctx| {
                 if let Some(content) = content {
@@ -2391,17 +2436,19 @@ impl Handler<Register> for ClientActor {
 }
 
 #[derive(Message)]
-#[rtype(result = "Result<(u32, u32, VerifyAccountResponse), anyhow::Error>")]
+// XXX Refactor this into a ConfirmRegistrationResult struct
+#[rtype(result = "Result<(Storage, VerifyAccountResponse), anyhow::Error>")]
+// XXX Maybe we can merge some fields from the linked registration into this struct.
 pub struct ConfirmRegistration {
     pub phonenumber: PhoneNumber,
     pub password: String,
+    pub storage_password: Option<String>,
     pub confirm_code: String,
-    pub signaling_key: [u8; 52],
 }
 
 impl Handler<ConfirmRegistration> for ClientActor {
-    // regid, pni_regid, response
-    type Result = ResponseActFuture<Self, Result<(u32, u32, VerifyAccountResponse), anyhow::Error>>;
+    // storage, response
+    type Result = ResponseActFuture<Self, Result<(Storage, VerifyAccountResponse), anyhow::Error>>;
 
     fn handle(&mut self, confirm: ConfirmRegistration, _ctx: &mut Self::Context) -> Self::Result {
         use libsignal_service::provisioning::*;
@@ -2409,8 +2456,8 @@ impl Handler<ConfirmRegistration> for ClientActor {
         let ConfirmRegistration {
             phonenumber,
             password,
+            storage_password,
             confirm_code,
-            signaling_key,
         } = confirm;
 
         let registration_id = generate_registration_id(&mut rand::thread_rng());
@@ -2418,11 +2465,17 @@ impl Handler<ConfirmRegistration> for ClientActor {
         tracing::trace!("registration_id: {}", registration_id);
         tracing::trace!("pni_registration_id: {}", pni_registration_id);
 
+        assert!(
+            self.storage.is_none(),
+            "Storage already initialized while registering"
+        );
+        let config = self.config.clone();
+
         let mut push_service = self.authenticated_service_with_credentials(ServiceCredentials {
             aci: None,
             pni: None,
             phonenumber,
-            password: Some(password),
+            password: Some(password.clone()),
             signaling_key: None,
             device_id: None, // !77
         });
@@ -2430,11 +2483,23 @@ impl Handler<ConfirmRegistration> for ClientActor {
             .registration_session
             .clone()
             .expect("confirm registration after creating registration session");
+
         let confirmation_procedure = async move {
+            let storage_dir = config.get_share_dir().to_owned().into();
+            let storage = Storage::new(
+                config.clone(),
+                &storage_dir,
+                storage_password.as_deref(),
+                registration_id,
+                pni_registration_id,
+                &password,
+                None,
+                None,
+            );
+
             // XXX centralize the place where attributes are generated.
             let account_attrs = AccountAttributes {
-                // XXX probably we should remove the signaling key.
-                signaling_key: Some(signaling_key.to_vec()),
+                signaling_key: None,
                 registration_id,
                 voice: false,
                 video: false,
@@ -2454,27 +2519,40 @@ impl Handler<ConfirmRegistration> for ClientActor {
             if !session.verified {
                 anyhow::bail!("Session is not verified");
             }
+
+            // Only now await the Storage,
+            // then we know it is not created unless we are 99% sure we'll actually need it.
+            let storage = storage.await?;
+            let mut aci_store = storage.aci_storage();
+            let mut pni_store = storage.pni_storage();
+
+            // XXX: should we already supply a profile key?
+            let mut account_manager = AccountManager::new(push_service, None);
+
             // XXX: We explicitely opt out of skipping device transfer (the false argument). Double
             //      check whether that's what we want!
-            let result = push_service
-                .submit_registration_request(
+            let result = account_manager
+                .register_account(
+                    &mut rand::thread_rng(),
                     RegistrationMethod::SessionId(&session.id),
                     account_attrs,
+                    &mut aci_store,
+                    &mut pni_store,
                     false,
                 )
                 .await?;
 
-            Ok(result)
+            Ok((storage, result))
         };
 
         Box::pin(
             confirmation_procedure
                 .into_actor(self)
                 .map(move |result, act, _ctx| {
-                    if result.is_ok() {
-                        act.registration_session = None;
-                    }
-                    Ok((registration_id, pni_registration_id, result?))
+                    let (storage, result) = result?;
+                    act.registration_session = None;
+                    act.storage = Some(storage.clone());
+                    Ok((storage, result))
                 }),
         )
     }
@@ -2485,14 +2563,16 @@ impl Handler<ConfirmRegistration> for ClientActor {
 pub struct RegisterLinked {
     pub device_name: String,
     pub password: String,
-    pub signaling_key: [u8; 52],
+    pub storage_password: Option<String>,
     pub tx_uri: futures::channel::oneshot::Sender<String>,
 }
 
 pub struct RegisterLinkedResponse {
+    pub storage: Storage,
+
     pub phone_number: PhoneNumber,
-    pub registration_id: u32,
-    pub pni_registration_id: u32,
+    pub aci_regid: u32,
+    pub pni_regid: u32,
     pub device_id: protocol::DeviceId,
     pub service_ids: ServiceIds,
     pub aci_identity_key_pair: protocol::IdentityKeyPair,
@@ -2510,13 +2590,31 @@ impl Handler<RegisterLinked> for ClientActor {
 
         let (tx, mut rx) = futures::channel::mpsc::channel(1);
 
-        let _signaling_key = reg.signaling_key;
+        assert!(
+            self.storage.is_none(),
+            "Storage already initialized while registering"
+        );
 
-        let mut aci_store = self.storage.as_mut().unwrap().aci_storage();
-        let mut pni_store = self.storage.as_mut().unwrap().pni_storage();
+        let config = self.config.clone();
 
         let registration_procedure = async move {
+            let share_dir = config.get_share_dir().to_owned().into();
+            let storage = Storage::new(
+                config.clone(),
+                &share_dir,
+                reg.storage_password.as_deref(),
+                0, // Temporary regids
+                0,
+                &reg.password,
+                None,
+                None,
+            );
+            // XXX This could also be a return value probably.
+            let storage = storage.await?;
             let mut tx_uri = Some(reg.tx_uri);
+            let mut aci_store = storage.aci_storage();
+            let mut pni_store = storage.pni_storage();
+
             let (fut1, fut2) = future::join(
                 link_device(
                     &mut aci_store,
@@ -2548,8 +2646,8 @@ impl Handler<RegisterLinked> for ClientActor {
                                 NewDeviceRegistration {
                                     phone_number,
                                     device_id,
-                                    registration_id,
-                                    pni_registration_id,
+                                    registration_id: aci_regid,
+                                    pni_registration_id: pni_regid,
                                     profile_key: ProfileKey { bytes: profile_key },
                                     service_ids,
                                     aci_private_key,
@@ -2558,27 +2656,32 @@ impl Handler<RegisterLinked> for ClientActor {
                                     pni_public_key,
                                 },
                             ) => {
-                                let aci_identity_key_pair = protocol::IdentityKeyPair::new(
-                                    protocol::IdentityKey::new(aci_public_key),
-                                    aci_private_key,
-                                );
-                                let pni_identity_key_pair = protocol::IdentityKeyPair::new(
-                                    protocol::IdentityKey::new(pni_public_key),
-                                    pni_private_key,
-                                );
+                                let aci_identity_key_pair =
+                                    protocol::IdentityKeyPair::new(aci_public_key, aci_private_key);
+                                let pni_identity_key_pair =
+                                    protocol::IdentityKeyPair::new(pni_public_key, pni_private_key);
+                                let mut aci_store = storage.aci_storage();
+                                let mut pni_store = storage.pni_storage();
+                                aci_store.write_local_registration_id(aci_regid).await?;
+                                pni_store.write_local_registration_id(pni_regid).await?;
+                                aci_store
+                                    .write_identity_key_pair(aci_identity_key_pair)
+                                    .await?;
+                                pni_store
+                                    .write_identity_key_pair(pni_identity_key_pair)
+                                    .await?;
 
-                                res = Result::<RegisterLinkedResponse, anyhow::Error>::Ok(
-                                    RegisterLinkedResponse {
-                                        phone_number,
-                                        registration_id,
-                                        pni_registration_id,
-                                        device_id,
-                                        service_ids,
-                                        aci_identity_key_pair,
-                                        pni_identity_key_pair,
-                                        profile_key,
-                                    },
-                                );
+                                res = Ok(RegisterLinkedResponse {
+                                    storage: storage.clone(),
+                                    phone_number,
+                                    aci_regid,
+                                    pni_regid,
+                                    device_id,
+                                    service_ids,
+                                    aci_identity_key_pair,
+                                    pni_identity_key_pair,
+                                    profile_key,
+                                });
                             }
                         }
                     }
@@ -2594,7 +2697,12 @@ impl Handler<RegisterLinked> for ClientActor {
         Box::pin(
             registration_procedure
                 .into_actor(self)
-                .map(move |result, _act, _ctx| result),
+                .map(move |result, _act, _ctx| {
+                    let response = result?;
+                    tracing::info!("Registration successful");
+                    _act.storage = Some(response.storage.clone());
+                    Ok(response)
+                }),
         )
     }
 }
@@ -2613,30 +2721,46 @@ impl Handler<RefreshPreKeys> for ClientActor {
         let mut am = AccountManager::new(service, None);
         let storage = self.storage.clone().unwrap();
 
+        let pni_distribution = self.migration_state.pni_distributed();
+
         let proc = async move {
+            let mut aci = storage.aci_storage();
+            let mut pni = storage.pni_storage();
+
+            let force_aci = aci.needs_pre_key_refresh().await;
+
+            // It's tempting to run those two in parallel,
+            // but I'm afraid the pre-key counts are going to be mixed up.
             am.update_pre_key_bundle(
-                &mut storage.aci_storage(),
+                &mut aci,
                 ServiceIdType::AccountIdentity,
                 &mut rand::thread_rng(),
-                false,
+                true,
+                force_aci,
             )
-            .await?;
+            .await
+            .context("refreshing ACI pre keys")?;
 
-            // am.update_pre_key_bundle(
-            //     &mut storage.pni_storage(),
-            //     ServiceIdType::PhoneNumberIdentity,
-            //     &mut rand::thread_rng(),
-            //     false,
-            // )
-            // .await?;
-            Result::<(), ServiceError>::Ok(())
+            let _pni_distribution = pni_distribution.await;
+
+            let force_pni = pni.needs_pre_key_refresh().await;
+            am.update_pre_key_bundle(
+                &mut pni,
+                ServiceIdType::PhoneNumberIdentity,
+                &mut rand::thread_rng(),
+                true,
+                force_pni,
+            )
+            .await
+            .context("refreshing PNI pre keys")?;
+            anyhow::Result::<()>::Ok(())
         }
         .instrument(tracing::trace_span!("RefreshPreKeys"));
         // XXX: store the last refresh time somewhere.
 
         Box::pin(proc.into_actor(self).map(move |result, _act, _ctx| {
             if let Err(e) = result {
-                tracing::error!("refresh pre keys failed: {}", e);
+                tracing::error!("refresh pre keys failed: {:#}", e);
             } else {
                 tracing::trace!("successfully refreshed prekeys");
             }

@@ -82,7 +82,7 @@ async fn main() -> Result<(), anyhow::Error> {
         .mode(phonenumber::Mode::E164)
         .to_string();
     tracing::info!("E164: {}", e164);
-    let signaling_key = Some(storage.signaling_key().await.unwrap());
+    let signaling_key = storage.signaling_key().await.unwrap();
     let credentials = ServiceCredentials {
         aci,
         pni,

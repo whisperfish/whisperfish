@@ -313,8 +313,6 @@ pub struct Storage {
     credential_cache: Arc<tokio::sync::RwLock<InMemoryCredentialsCache>>,
     path: PathBuf,
     aci_identity_key_pair: Arc<tokio::sync::RwLock<Option<IdentityKeyPair>>>,
-    // XXX: Implement PNI https://gitlab.com/whisperfish/whisperfish/-/issues/459
-    #[allow(unused)]
     pni_identity_key_pair: Arc<tokio::sync::RwLock<Option<IdentityKeyPair>>>,
 }
 
@@ -429,7 +427,6 @@ impl Storage {
         regid: u32,
         pni_regid: u32,
         http_password: &str,
-        signaling_key: [u8; 52],
         aci_identity_key_pair: Option<protocol::IdentityKeyPair>,
         pni_identity_key_pair: Option<protocol::IdentityKeyPair>,
     ) -> Result<Storage, anyhow::Error> {
@@ -489,12 +486,6 @@ impl Storage {
             store_enc.as_ref(),
         )
         .await?;
-        utils::write_file_async_encrypted(
-            identity_path.join("http_signaling_key"),
-            signaling_key,
-            store_enc.as_ref(),
-        )
-        .await?;
 
         Ok(Storage {
             db: Arc::new(AssertUnwindSafe(Mutex::new(db))),
@@ -548,6 +539,7 @@ impl Storage {
                 InMemoryCredentialsCache::default(),
             )),
             path: path.to_path_buf(),
+            // XXX load them from storage already?
             aci_identity_key_pair: Arc::new(tokio::sync::RwLock::new(None)),
             pni_identity_key_pair: Arc::new(tokio::sync::RwLock::new(None)),
         };
@@ -644,20 +636,20 @@ impl Storage {
 
     /// Asynchronously loads the base64 encoded signaling key.
     #[tracing::instrument(skip(self))]
-    pub async fn signaling_key(&self) -> Result<[u8; 52], anyhow::Error> {
-        let v = self
-            .read_file(
-                &self
-                    .path
-                    .join("storage")
-                    .join("identity")
-                    .join("http_signaling_key"),
-            )
-            .await?;
+    pub async fn signaling_key(&self) -> Result<Option<[u8; 52]>, anyhow::Error> {
+        let path = self
+            .path
+            .join("storage")
+            .join("identity")
+            .join("http_signaling_key");
+        if !path.exists() {
+            return Ok(None);
+        }
+        let v = self.read_file(&path).await?;
         anyhow::ensure!(v.len() == 52, "Signaling key is 52 bytes");
         let mut out = [0u8; 52];
         out.copy_from_slice(&v);
-        Ok(out)
+        Ok(Some(out))
     }
 
     // This is public for session_to_db migration
@@ -796,6 +788,22 @@ impl Storage {
             .filter(e164.eq(phonenumber.to_string()))
             .first(&mut *self.db())
             .ok()
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn mark_recipient_needs_pni_signature(&self, rid: i32, val: bool) {
+        use crate::schema::recipients::dsl::*;
+
+        let affected = diesel::update(recipients)
+            .set(needs_pni_signature.eq(val))
+            .filter(id.eq(rid))
+            .execute(&mut *self.db())
+            .expect("db");
+
+        if affected > 0 {
+            self.observe_update(recipients, rid);
+            tracing::trace!("Recipient {} marked as needing PNI signature: {}", rid, val);
+        }
     }
 
     #[tracing::instrument]

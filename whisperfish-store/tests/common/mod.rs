@@ -21,7 +21,6 @@ pub fn storage() -> impl Future<Output = InMemoryDb> {
                 12345,
                 12346,
                 "Some Password",
-                [0; 52],
                 None,
                 None,
             )

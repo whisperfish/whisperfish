@@ -1,5 +1,5 @@
 use super::*;
-use libsignal_service::pre_keys::PreKeysStore;
+use libsignal_service::pre_keys::{PreKeysStore, ServiceKyberPreKeyStore};
 use libsignal_service::protocol::{
     self, GenericSignedPreKey, IdentityKeyPair, SignalProtocolError,
 };
@@ -122,6 +122,14 @@ pub trait Identity {
     fn identity(&self) -> orm::Identity;
     fn identity_key_filename(&self) -> &'static str;
     fn regid_filename(&self) -> &'static str;
+    fn identity_key_pair_cached(
+        &self,
+        storage: &Storage,
+    ) -> impl std::future::Future<Output = impl std::ops::Deref<Target = Option<IdentityKeyPair>>>;
+    fn identity_key_pair_cached_mut(
+        &self,
+        storage: &Storage,
+    ) -> impl std::future::Future<Output = impl std::ops::DerefMut<Target = Option<IdentityKeyPair>>>;
 }
 impl Identity for Aci {
     fn identity(&self) -> orm::Identity {
@@ -133,6 +141,18 @@ impl Identity for Aci {
     fn regid_filename(&self) -> &'static str {
         "regid"
     }
+    async fn identity_key_pair_cached(
+        &self,
+        storage: &Storage,
+    ) -> impl std::ops::Deref<Target = Option<IdentityKeyPair>> {
+        storage.aci_identity_key_pair.read().await
+    }
+    async fn identity_key_pair_cached_mut(
+        &self,
+        storage: &Storage,
+    ) -> impl std::ops::DerefMut<Target = Option<IdentityKeyPair>> {
+        storage.aci_identity_key_pair.write().await
+    }
 }
 impl Identity for Pni {
     fn identity(&self) -> orm::Identity {
@@ -143,6 +163,18 @@ impl Identity for Pni {
     }
     fn regid_filename(&self) -> &'static str {
         "pni_regid"
+    }
+    async fn identity_key_pair_cached(
+        &self,
+        storage: &Storage,
+    ) -> impl std::ops::Deref<Target = Option<IdentityKeyPair>> {
+        storage.pni_identity_key_pair.read().await
+    }
+    async fn identity_key_pair_cached_mut(
+        &self,
+        storage: &Storage,
+    ) -> impl std::ops::DerefMut<Target = Option<IdentityKeyPair>> {
+        storage.pni_identity_key_pair.write().await
     }
 }
 impl Identity for AciOrPni {
@@ -164,6 +196,28 @@ impl Identity for AciOrPni {
             ServiceIdType::PhoneNumberIdentity => "pni_regid",
         }
     }
+    async fn identity_key_pair_cached(
+        &self,
+        storage: &Storage,
+    ) -> impl std::ops::Deref<Target = Option<IdentityKeyPair>> {
+        match self.0 {
+            ServiceIdType::AccountIdentity => &storage.aci_identity_key_pair,
+            ServiceIdType::PhoneNumberIdentity => &storage.pni_identity_key_pair,
+        }
+        .read()
+        .await
+    }
+    async fn identity_key_pair_cached_mut(
+        &self,
+        storage: &Storage,
+    ) -> impl std::ops::DerefMut<Target = Option<IdentityKeyPair>> {
+        match self.0 {
+            ServiceIdType::AccountIdentity => &storage.aci_identity_key_pair,
+            ServiceIdType::PhoneNumberIdentity => &storage.pni_identity_key_pair,
+        }
+        .write()
+        .await
+    }
 }
 
 #[async_trait::async_trait(?Send)]
@@ -173,44 +227,108 @@ impl protocol::ProtocolStore for IdentityStorage<Aci> {}
 #[async_trait::async_trait(?Send)]
 impl protocol::ProtocolStore for IdentityStorage<Pni> {}
 
+impl<T: Identity> IdentityStorage<T> {
+    #[tracing::instrument(level = "trace", skip(self, regid))]
+    // Mutability of self is artificial
+    pub async fn write_local_registration_id(
+        &mut self,
+        regid: u32,
+    ) -> Result<(), SignalProtocolError> {
+        let _lock = self.0.protocol_store.write().await;
+
+        let path = self
+            .0
+            .path
+            .join("storage")
+            .join("identity")
+            .join(self.1.regid_filename());
+        self.0
+            .write_file(path, format!("{}", regid).into_bytes())
+            .await
+            .map_err(|e| {
+                SignalProtocolError::InvalidArgument(format!("Cannot write regid {}", e))
+            })?;
+
+        Ok(())
+    }
+
+    #[tracing::instrument(level = "trace", skip(self, key_pair))]
+    // Mutability of self is artificial
+    pub async fn write_identity_key_pair(
+        &mut self,
+        key_pair: IdentityKeyPair,
+    ) -> Result<(), SignalProtocolError> {
+        let _lock = self.0.protocol_store.write().await;
+
+        let path = self
+            .0
+            .path
+            .join("storage")
+            .join("identity")
+            .join(self.1.identity_key_filename());
+        tracing::trace!("writing own identity key pair at {}", path.display());
+        *self.1.identity_key_pair_cached_mut(&self.0).await = Some(key_pair);
+        self.0
+            .write_file(path, ProtocolStore::serialize_identity_key(key_pair))
+            .await
+            .map_err(|e| {
+                SignalProtocolError::InvalidArgument(format!("Cannot write own identity key {}", e))
+            })?;
+        Ok(())
+    }
+
+    #[tracing::instrument(level = "warn", skip(self))]
+    // Mutability of self is artificial
+    pub async fn remove_identity_key_pair(&mut self) -> Result<(), SignalProtocolError> {
+        let _lock = self.0.protocol_store.write().await;
+
+        let path = self
+            .0
+            .path
+            .join("storage")
+            .join("identity")
+            .join(self.1.identity_key_filename());
+        tracing::warn!("removing own identity key pair at {}", path.display());
+        *self.1.identity_key_pair_cached_mut(&self.0).await = None;
+        tokio::fs::remove_file(path).await.map_err(|e| {
+            SignalProtocolError::InvalidArgument(format!("Cannot remove own identity key {}", e))
+        })?;
+        Ok(())
+    }
+}
+
 #[async_trait::async_trait(?Send)]
 impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn get_identity_key_pair(&self) -> Result<IdentityKeyPair, SignalProtocolError> {
-        let identity_key_pair = self.0.aci_identity_key_pair.read().await;
+        let _lock = self.0.protocol_store.read().await;
 
-        if let Some(identity_key_pair) = *identity_key_pair {
-            Ok(identity_key_pair)
-        } else {
-            drop(identity_key_pair);
-
-            let mut identity_key_pair = self.0.aci_identity_key_pair.write().await;
-
-            let _lock = self.0.protocol_store.read().await;
-
-            let path = self
-                .0
-                .path
-                .join("storage")
-                .join("identity")
-                .join(self.1.identity_key_filename());
-            tracing::trace!("reading own identity key pair at {}", path.display());
-            let key_pair = {
-                use std::convert::TryFrom;
-                let mut buf = self.0.read_file(path).await.map_err(|e| {
-                    SignalProtocolError::InvalidArgument(format!(
-                        "Cannot read own identity key {}",
-                        e
-                    ))
-                })?;
-                buf.insert(0, DJB_TYPE);
-                let public = IdentityKey::decode(&buf[0..33])?;
-                let private = PrivateKey::try_from(&buf[33..])?;
-                IdentityKeyPair::new(public, private)
-            };
-            *identity_key_pair = Some(key_pair);
-            Ok(identity_key_pair.unwrap())
+        if let Some(ikp) = *self.1.identity_key_pair_cached(&self.0).await {
+            return Ok(ikp);
         }
+
+        let path = self
+            .0
+            .path
+            .join("storage")
+            .join("identity")
+            .join(self.1.identity_key_filename());
+        tracing::trace!("reading own identity key pair at {}", path.display());
+
+        let key_pair = {
+            use std::convert::TryFrom;
+            let mut buf = self.0.read_file(path).await.map_err(|e| {
+                SignalProtocolError::InvalidArgument(format!("Cannot read own identity key {}", e))
+            })?;
+            buf.insert(0, DJB_TYPE);
+            let public = IdentityKey::decode(&buf[0..33])?;
+            let private = PrivateKey::try_from(&buf[33..])?;
+            IdentityKeyPair::new(public, private)
+        };
+        drop(_lock);
+        let _lock = self.0.protocol_store.write().await;
+        *self.1.identity_key_pair_cached_mut(&self.0).await = Some(key_pair);
+        Ok(key_pair)
     }
 
     #[tracing::instrument(level = "trace", skip(self))]
@@ -373,6 +491,79 @@ impl<T: Identity> protocol::SessionStore for IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
+impl<T: Identity> ServiceKyberPreKeyStore for IdentityStorage<T> {
+    #[tracing::instrument(level = "trace", skip(self, body))]
+    async fn store_last_resort_kyber_pre_key(
+        &mut self,
+        kyber_prekey_id: KyberPreKeyId,
+        body: &KyberPreKeyRecord,
+    ) -> Result<(), SignalProtocolError> {
+        use crate::schema::kyber_prekeys::dsl::*;
+        use diesel::prelude::*;
+
+        // Insert or replace?
+        diesel::insert_into(kyber_prekeys)
+            .values(orm::KyberPrekey {
+                id: u32::from(kyber_prekey_id) as _,
+                record: body.serialize()?,
+                identity: self.1.identity(),
+                is_last_resort: true,
+            })
+            .execute(&mut *self.0.db())
+            .expect("db");
+
+        Ok(())
+    }
+
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn load_last_resort_kyber_pre_keys(
+        &self,
+    ) -> Result<Vec<KyberPreKeyRecord>, SignalProtocolError> {
+        use crate::schema::kyber_prekeys::dsl::*;
+        use diesel::prelude::*;
+
+        // XXX Do we need to ensure these are marked as unused?
+        let prekey_records: Vec<orm::KyberPrekey> = kyber_prekeys
+            .filter(is_last_resort.eq(true).and(identity.eq(self.1.identity())))
+            .load(&mut *self.0.db())
+            .expect("db");
+
+        Ok(prekey_records
+            .into_iter()
+            .map(|pkr| KyberPreKeyRecord::deserialize(&pkr.record))
+            .collect::<Result<_, _>>()?)
+    }
+
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn remove_kyber_pre_key(
+        &mut self,
+        _kyber_prekey_id: KyberPreKeyId,
+    ) -> Result<(), SignalProtocolError> {
+        // Mark as used should be used instead
+        unimplemented!("unexpected in this flow")
+    }
+
+    /// Analogous to markAllOneTimeKyberPreKeysStaleIfNecessary
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn mark_all_one_time_kyber_pre_keys_stale_if_necessary(
+        &mut self,
+        _stale_time: chrono::DateTime<chrono::Utc>,
+    ) -> Result<(), SignalProtocolError> {
+        unimplemented!("unexpected in this flow")
+    }
+
+    /// Analogue of deleteAllStaleOneTimeKyberPreKeys
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn delete_all_stale_one_time_kyber_pre_keys(
+        &mut self,
+        _threshold: chrono::DateTime<chrono::Utc>,
+        _min_count: usize,
+    ) -> Result<(), SignalProtocolError> {
+        unimplemented!("unexpected in this flow")
+    }
+}
+
+#[async_trait::async_trait(?Send)]
 impl<T: Identity> PreKeysStore for IdentityStorage<T> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn next_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
@@ -384,7 +575,7 @@ impl<T: Identity> PreKeysStore for IdentityStorage<T> {
 
             prekeys
                 .select(max(id))
-                .filter(identity.eq(self.1.identity()))
+                // Don't filter by identity, as we want to know the max for all identities
                 .first(&mut *self.0.db())
                 .expect("db")
         };
@@ -401,7 +592,7 @@ impl<T: Identity> PreKeysStore for IdentityStorage<T> {
 
             signed_prekeys
                 .select(max(id))
-                .filter(identity.eq(self.1.identity()))
+                // Don't filter by identity, as we want to know the max for all identities
                 .first(&mut *self.0.db())
                 .expect("db")
         };
@@ -418,7 +609,7 @@ impl<T: Identity> PreKeysStore for IdentityStorage<T> {
 
             kyber_prekeys
                 .select(max(id))
-                .filter(identity.eq(self.1.identity()))
+                // Don't filter by identity, as we want to know the max for all identities
                 .first(&mut *self.0.db())
                 .expect("db")
         };
@@ -441,6 +632,49 @@ impl<T: Identity> PreKeysStore for IdentityStorage<T> {
     async fn set_next_pq_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
         assert_eq!(self.next_pq_pre_key_id().await?, id);
         Ok(())
+    }
+}
+
+impl<T: Identity> IdentityStorage<T> {
+    /// Whether to force a pre key refresh.
+    ///
+    /// Check whether we have:
+    /// - 1 signed EC pre key
+    /// - 1 Kyber last resort key
+    pub async fn needs_pre_key_refresh(&self) -> bool {
+        let signed_count = {
+            use crate::schema::signed_prekeys::dsl::*;
+            use diesel::prelude::*;
+
+            let prekey_records: i64 = signed_prekeys
+                .select(diesel::dsl::count_star())
+                .filter(identity.eq(self.1.identity()))
+                .first(&mut *self.0.db())
+                .expect("db");
+            prekey_records
+        };
+
+        if signed_count == 0 {
+            return true;
+        }
+
+        let kyber_count = {
+            use crate::schema::kyber_prekeys::dsl::*;
+            use diesel::prelude::*;
+
+            let prekey_records: i64 = kyber_prekeys
+                .select(diesel::dsl::count_star())
+                .filter(identity.eq(self.1.identity()).and(is_last_resort.eq(true)))
+                .first(&mut *self.0.db())
+                .expect("db");
+            prekey_records
+        };
+
+        if kyber_count == 0 {
+            return true;
+        }
+
+        false
     }
 }
 
@@ -510,15 +744,14 @@ impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
         &mut self,
         kyber_prekey_id: KyberPreKeyId,
     ) -> Result<(), SignalProtocolError> {
-        // TODO: only remove the kyber pre key if it concerns an ephemeral pre key; last-resort
-        // keys should be retained!  See libsignal-service/src/account_manager.rs `if use_last_resort_key`
         use crate::schema::kyber_prekeys::dsl::*;
         use diesel::prelude::*;
 
         diesel::delete(kyber_prekeys)
             .filter(
                 id.eq((u32::from(kyber_prekey_id)) as i32)
-                    .and(identity.eq(self.1.identity())),
+                    .and(identity.eq(self.1.identity()))
+                    .and(is_last_resort.eq(false)),
             )
             .execute(&mut *self.0.db())
             .expect("db");
@@ -533,6 +766,7 @@ impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
         use crate::schema::kyber_prekeys::dsl::*;
         use diesel::prelude::*;
 
+        // XXX Do we need to ensure this is *not* a last resort key?
         let prekey_record: Option<orm::KyberPrekey> = kyber_prekeys
             .filter(
                 id.eq(u32::from(kyber_prekey_id) as i32)
@@ -544,7 +778,7 @@ impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
         if let Some(pkr) = prekey_record {
             Ok(KyberPreKeyRecord::deserialize(&pkr.record)?)
         } else {
-            Err(SignalProtocolError::InvalidSignedPreKeyId)
+            Err(SignalProtocolError::InvalidKyberPreKeyId)
         }
     }
 
@@ -563,6 +797,7 @@ impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
                 id: u32::from(kyber_prekey_id) as _,
                 record: body.serialize()?,
                 identity: self.1.identity(),
+                is_last_resort: false,
             })
             .execute(&mut *self.0.db())
             .expect("db");
@@ -703,6 +938,20 @@ impl<T: Identity> protocol::SignedPreKeyStore for IdentityStorage<T> {
         if let Some(pkr) = prekey_record {
             Ok(SignedPreKeyRecord::deserialize(&pkr.record)?)
         } else {
+            let prekey_record: Option<orm::SignedPrekey> = signed_prekeys
+                .filter(id.eq(u32::from(signed_prekey_id) as i32))
+                .first(&mut *self.0.db())
+                .optional()
+                .expect("db");
+            if prekey_record.is_some() {
+                tracing::warn!(
+                    "Signed pre key with ID {signed_prekey_id} found on a separate identity!"
+                );
+            } else {
+                tracing::warn!(
+                    "Signed pre key with ID {signed_prekey_id} not found; returning invalid."
+                );
+            }
             Err(SignalProtocolError::InvalidSignedPreKeyId)
         }
     }
@@ -800,7 +1049,7 @@ mod tests {
         storage_password: Option<&str>,
     ) -> Result<(super::Storage, super::StorageLocation<tempfile::TempDir>), anyhow::Error> {
         use rand::distributions::Alphanumeric;
-        use rand::{Rng, RngCore};
+        use rand::Rng;
 
         let location = super::temp();
         let rng = rand::thread_rng();
@@ -811,12 +1060,6 @@ mod tests {
             .take(24)
             .map(char::from)
             .collect();
-
-        // Signaling key that decrypts the incoming Signal messages
-        let mut rng = rand::thread_rng();
-        let mut signaling_key = [0u8; 52];
-        rng.fill_bytes(&mut signaling_key);
-        let signaling_key = signaling_key;
 
         // Registration ID
         let regid = 12345;
@@ -829,7 +1072,6 @@ mod tests {
             regid,
             pni_regid,
             &password,
-            signaling_key,
             None,
             None,
         )

@@ -1,12 +1,14 @@
---- a/schema.rs
-+++ b/schema.rs
-@@ -1,4 +1,5 @@
+--- whisperfish-store/src/schema.rs	2024-03-21 19:54:08.031088264 +0100
++++ whisperfish-store/src/schema.rs	2024-03-21 19:57:00.529175793 +0100
+@@ -1,4 +1,7 @@
++use crate::orm::Identity;
++
  // @generated automatically by Diesel CLI.
 +pub mod migrations;
  
  diesel::table! {
      attachments (id) {
-@@ -99,22 +100,30 @@ diesel::table! {
+@@ -99,23 +102,32 @@
  }
  
  diesel::table! {
@@ -30,16 +32,18 @@
          record -> Binary,
 -        identity -> Text,
 +        identity -> IdentityMapping,
+         is_last_resort -> Bool,
      }
  }
  
  diesel::table! {
 +    use diesel::sql_types::*;
 +    use crate::store::orm::MessageTypeMapping;
++
      messages (id) {
          id -> Integer,
          session_id -> Integer,
-@@ -140,15 +149,18 @@ diesel::table! {
+@@ -141,15 +153,18 @@
          latest_revision_id -> Nullable<Integer>,
          original_message_id -> Nullable<Integer>,
          revision_number -> Integer,
@@ -60,7 +64,7 @@
      }
  }
  
-@@ -204,22 +216,28 @@ diesel::table! {
+@@ -205,22 +220,28 @@
  }
  
  diesel::table! {
@@ -91,7 +95,7 @@
      }
  }
  
-@@ -239,10 +257,13 @@ diesel::table! {
+@@ -240,10 +261,13 @@
  }
  
  diesel::table! {

@@ -60,11 +60,11 @@ Page {
                 title: qsTrId("whisperfish-settings-title")
             }
 
-            // ------ BEGIN NOTIFICATION SETTINGS ------
+            // ------ BEGIN GENERAL SETTINGS ------
             SectionHeader {
-                //: Settings page notifications section
-                //% "Notifications"
-                text: qsTrId("whisperfish-settings-notifications-section")
+                //: Settings page general section
+                //% "General"
+                text: qsTrId("whisperfish-settings-general-section")
             }
             IconTextSwitch {
                 id: useIsTypingMessages
@@ -83,68 +83,6 @@ Page {
                     }
                 }
             }
-
-            ComboBox {
-                id: notificationPrivacyCombo
-                property string _setting: SettingsBridge.notification_privacy
-                width: parent.width
-                //: Settings page notification privacy
-                //% "Notification privacy"
-                label: qsTrId("whisperfish-settings-notification-privacy")
-                //: Settings page notification privacy description
-                //% "Select how Whisperfish produces notifications"
-                description: currentItem.description
-                // Sync this in three places: the menu, here, and settings.rs
-                currentIndex: ["off", "minimal", "sender-only", "complete"].indexOf(SettingsBridge.notification_privacy.toString())
-                menu: ContextMenu {
-                    MenuItem {
-                        property string name: "off"
-                        //: Settings page, turn notifications off
-                        //% "Disable notifications"
-                        text: qsTrId("whisperfish-settings-notifications-disable")
-                        //: Settings page, turn notifications off description
-                        //% "Whisperfish will not display any notification"
-                        property string description: qsTrId("whisperfish-settings-notifications-disable-description")
-                    }
-                    MenuItem {
-                        property string name: "minimal"
-                        //: Settings page, minimal notifications
-                        //% "Minimal notifications"
-                        text: qsTrId("whisperfish-settings-notifications-minimal")
-                        //: Settings page, minimal notifications description
-                        //% "Notification without disclosing the sender or content of the message"
-                        property string description: qsTrId("whisperfish-settings-notifications-minimal-description")
-                    }
-                    MenuItem {
-                        property string name: "sender-only"
-                        //: Settings page, sender-only notifications
-                        //% "Sender-only notifications"
-                        text: qsTrId("whisperfish-settings-notifications-sender-only")
-                        //: Settings page, sender-only notifications description
-                        //% "Notifications displaying the sender of a message, without the contents"
-                        property string description: qsTrId("whisperfish-settings-notifications-sender-only-description")
-                    }
-                    MenuItem {
-                        property string name: "complete"
-                        //: Settings page, complete notifications
-                        //% "Complete notifications"
-                        text: qsTrId("whisperfish-settings-notifications-complete")
-                        //: Settings page, sender-only notifications description
-                        //% "Notifications displaying the contents and sender of a message"
-                        property string description: qsTrId("whisperfish-settings-notifications-complete-description")
-                    }
-                }
-                onCurrentIndexChanged: {
-                    if(
-                        currentIndex > -1
-                        && currentItem !== null
-                        && SettingsBridge.notification_privacy !== currentItem.name
-                    ) {
-                        SettingsBridge.notification_privacy = currentItem.name
-                    }
-                }
-            }
-
             IconTextSwitch {
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page notifications show minimum number of notifications
@@ -162,14 +100,6 @@ Page {
                 }
             }
 
-            // ------ END NOTIFICATION SETTINGS ------
-
-            // ------ BEGIN GENERAL SETTINGS ------
-            SectionHeader {
-                //: Settings page general section
-                //% "General"
-                text: qsTrId("whisperfish-settings-general-section")
-            }
             ComboBox {
                 id: countryCombo
                 property string _setting: SettingsBridge.country_code
@@ -266,22 +196,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                anchors.horizontalCenter: parent.horizontalCenter
-                //: Settings page, show recipient phone number in conversation view
-                //% "Show phone number"
-                text: qsTrId("whisperfish-settings-show-phone-number")
-                //: Settings page, show recipient phone number in conversation view description
-                //% "Show the phone number of the recipient in the conversation page header."
-                description: qsTrId("whisperfish-settings-show-phone-number-description")
-                checked: SettingsBridge.show_phone_number
-                icon.source: "image://theme/icon-m-phone"
-                onCheckedChanged: {
-                    if(checked!= SettingsBridge.show_phone_number) {
-                        SettingsBridge.show_phone_number = checked
-                    }
-                }
-            }
-            IconTextSwitch {
                 id: enableEnterSend
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page enable enter send
@@ -299,6 +213,106 @@ Page {
                 }
             }
             // ------ END GENERAL SETTINGS ------
+
+            // ------ BEGIN PRIVACY SETTINGS ------
+            SectionHeader {
+                //: Settings page "privacy" section
+                //% "Privacy"
+                text: qsTrId("whisperfish-settings-privacy-section")
+            }
+            IconTextSwitch {
+                anchors.horizontalCenter: parent.horizontalCenter
+                //: Settings page, share recipient phone number with contacts
+                //% "Share phone number"
+                text: qsTrId("whisperfish-settings-share-phone-number")
+                //: Settings page, share recipient phone number with contacts
+                //% "When enabled, your contacts can see your phone number when you message them."
+                description: qsTrId("whisperfish-settings-share-phone-number-description")
+                checked: SettingsBridge.share_phone_number
+                icon.source: "image://theme/icon-m-dialpad"
+                onCheckedChanged: {
+                    if(checked!= SettingsBridge.share_phone_number) {
+                        SettingsBridge.share_phone_number = checked
+                    }
+                }
+            }
+            ComboBox {
+                id: notificationPrivacyCombo
+                property string _setting: SettingsBridge.notification_privacy
+                width: parent.width
+                //: Settings page notification privacy
+                //% "Notification privacy"
+                label: qsTrId("whisperfish-settings-notification-privacy")
+                //: Settings page notification privacy description
+                //% "Select how Whisperfish produces notifications"
+                description: currentItem.description
+                // Sync this in three places: the menu, here, and settings.rs
+                currentIndex: ["off", "minimal", "sender-only", "complete"].indexOf(SettingsBridge.notification_privacy.toString())
+                menu: ContextMenu {
+                    MenuItem {
+                        property string name: "off"
+                        //: Settings page, turn notifications off
+                        //% "Disable notifications"
+                        text: qsTrId("whisperfish-settings-notifications-disable")
+                        //: Settings page, turn notifications off description
+                        //% "Whisperfish will not display any notification"
+                        property string description: qsTrId("whisperfish-settings-notifications-disable-description")
+                    }
+                    MenuItem {
+                        property string name: "minimal"
+                        //: Settings page, minimal notifications
+                        //% "Minimal notifications"
+                        text: qsTrId("whisperfish-settings-notifications-minimal")
+                        //: Settings page, minimal notifications description
+                        //% "Notification without disclosing the sender or content of the message"
+                        property string description: qsTrId("whisperfish-settings-notifications-minimal-description")
+                    }
+                    MenuItem {
+                        property string name: "sender-only"
+                        //: Settings page, sender-only notifications
+                        //% "Sender-only notifications"
+                        text: qsTrId("whisperfish-settings-notifications-sender-only")
+                        //: Settings page, sender-only notifications description
+                        //% "Notifications displaying the sender of a message, without the contents"
+                        property string description: qsTrId("whisperfish-settings-notifications-sender-only-description")
+                    }
+                    MenuItem {
+                        property string name: "complete"
+                        //: Settings page, complete notifications
+                        //% "Complete notifications"
+                        text: qsTrId("whisperfish-settings-notifications-complete")
+                        //: Settings page, sender-only notifications description
+                        //% "Notifications displaying the contents and sender of a message"
+                        property string description: qsTrId("whisperfish-settings-notifications-complete-description")
+                    }
+                }
+                onCurrentIndexChanged: {
+                    if(
+                        currentIndex > -1
+                        && currentItem !== null
+                        && SettingsBridge.notification_privacy !== currentItem.name
+                    ) {
+                        SettingsBridge.notification_privacy = currentItem.name
+                    }
+                }
+            }
+            IconTextSwitch {
+                anchors.horizontalCenter: parent.horizontalCenter
+                //: Settings page, show recipient phone number in conversation view
+                //% "Show phone number"
+                text: qsTrId("whisperfish-settings-show-phone-number")
+                //: Settings page, show recipient phone number in conversation view description
+                //% "Show the phone number of the recipient in the conversation page header."
+                description: qsTrId("whisperfish-settings-show-phone-number-description")
+                checked: SettingsBridge.show_phone_number
+                icon.source: "image://theme/icon-m-phone"
+                onCheckedChanged: {
+                    if(checked!= SettingsBridge.show_phone_number) {
+                        SettingsBridge.show_phone_number = checked
+                    }
+                }
+            }
+            // ------ END PRIVACY SETTINGS ------
 
             // ------ BEGIN BACKGROUND&STARTUP SETTINGS ------
             Column {
