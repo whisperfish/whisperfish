@@ -17,7 +17,7 @@ async fn create_old_storage(
     storage_password: Option<&str>,
     path: &current_storage::StorageLocation<tempfile::TempDir>,
 ) -> current_storage::Storage {
-    use rand::{Rng, RngCore};
+    use rand::Rng;
     let rng = rand::thread_rng();
 
     // Signaling password for REST API
@@ -26,12 +26,6 @@ async fn create_old_storage(
         .take(24)
         .map(char::from)
         .collect();
-
-    // Signaling key that decrypts the incoming Signal messages
-    let mut rng = rand::thread_rng();
-    let mut signaling_key = [0u8; 52];
-    rng.fill_bytes(&mut signaling_key);
-    let signaling_key = signaling_key;
 
     // Registration ID
     let regid: u32 = 12345;
@@ -44,7 +38,6 @@ async fn create_old_storage(
         regid,
         pni_regid,
         &password,
-        signaling_key,
         None,
         None,
     )

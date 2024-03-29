@@ -556,7 +556,7 @@ async fn test_create_and_open_storage(
 ) -> Result<(), anyhow::Error> {
     use libsignal_service::pre_keys::PreKeysStore;
     use rand::distributions::Alphanumeric;
-    use rand::{Rng, RngCore};
+    use rand::Rng;
 
     let location = whisperfish_store::temp();
     let rng = rand::thread_rng();
@@ -567,12 +567,6 @@ async fn test_create_and_open_storage(
         .take(24)
         .map(char::from)
         .collect();
-
-    // Signaling key that decrypts the incoming Signal messages
-    let mut rng = rand::thread_rng();
-    let mut signaling_key = [0u8; 52];
-    rng.fill_bytes(&mut signaling_key);
-    let signaling_key = signaling_key;
 
     // Registration ID
     let regid = 12345;
@@ -585,7 +579,6 @@ async fn test_create_and_open_storage(
         regid,
         pni_regid,
         &password,
-        signaling_key,
         None,
         None,
     )
@@ -599,7 +592,7 @@ async fn test_create_and_open_storage(
             use libsignal_service::protocol::IdentityKeyStore;
             // TODO: assert that tables exist
             assert_eq!(password, $storage.signal_password().await?);
-            assert_eq!(signaling_key, $storage.signaling_key().await?);
+            assert_eq!(None, $storage.signaling_key().await?);
             assert_eq!(
                 regid,
                 $storage.aci_storage().get_local_registration_id().await?
@@ -650,7 +643,7 @@ async fn test_create_and_open_storage(
 #[actix_rt::test]
 async fn test_recipient_actions() {
     use rand::distributions::Alphanumeric;
-    use rand::{Rng, RngCore};
+    use rand::Rng;
 
     let location = whisperfish_store::temp();
     let rng = rand::thread_rng();
@@ -661,12 +654,6 @@ async fn test_recipient_actions() {
         .take(24)
         .map(char::from)
         .collect();
-
-    // Signaling key that decrypts the incoming Signal messages
-    let mut rng = rand::thread_rng();
-    let mut signaling_key = [0u8; 52];
-    rng.fill_bytes(&mut signaling_key);
-    let signaling_key = signaling_key;
 
     // Registration ID
     let regid = 12345;
@@ -679,7 +666,6 @@ async fn test_recipient_actions() {
         regid,
         pni_regid,
         &password,
-        signaling_key,
         None,
         None,
     )

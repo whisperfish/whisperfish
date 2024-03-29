@@ -1049,7 +1049,7 @@ mod tests {
         storage_password: Option<&str>,
     ) -> Result<(super::Storage, super::StorageLocation<tempfile::TempDir>), anyhow::Error> {
         use rand::distributions::Alphanumeric;
-        use rand::{Rng, RngCore};
+        use rand::Rng;
 
         let location = super::temp();
         let rng = rand::thread_rng();
@@ -1060,12 +1060,6 @@ mod tests {
             .take(24)
             .map(char::from)
             .collect();
-
-        // Signaling key that decrypts the incoming Signal messages
-        let mut rng = rand::thread_rng();
-        let mut signaling_key = [0u8; 52];
-        rng.fill_bytes(&mut signaling_key);
-        let signaling_key = signaling_key;
 
         // Registration ID
         let regid = 12345;
@@ -1078,7 +1072,6 @@ mod tests {
             regid,
             pni_regid,
             &password,
-            signaling_key,
             None,
             None,
         )
