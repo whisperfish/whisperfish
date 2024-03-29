@@ -183,6 +183,7 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             if !fold.is_done() {
                 tracing::warn!(segment=?self, %char_idx, "Fold went out of bounds. Please file an issue.");
             };
+
             let (idx, _utf16_pos) = fold.into_inner();
             if _utf16_pos < char_idx {
                 tracing::warn!(segment=?self, %char_idx, "_utf16_pos < char_idx: out of bounds.  Please file an issue.");
@@ -401,6 +402,7 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
 
 #[cfg(test)]
 mod tests {
+    use database_protos::body_range_list::body_range::Style;
     use rstest::rstest;
     use std::borrow::Cow;
 
@@ -681,5 +683,27 @@ mod tests {
         let styled = to_styled(text, &ranges, no_mentions);
 
         assert_eq!("<b>oh no</b> :&lt; oh yes :&gt;", styled);
+    }
+
+    #[test]
+    fn kletterli_issue_minimized() {
+        let text = "Bi https://www.rubdos.be/this-does-not-exists\n\nhttps://www.rubdos.be/this-does-not-exists\nSome more text that doesn't really matter anymore";
+
+        let ranges = [
+            BodyRange {
+                start: 0,
+                length: 2,
+                associated_value: Some(AssociatedValue::Style(Style::Bold.into())),
+            },
+            BodyRange {
+                start: 3,
+                length: 44,
+                associated_value: Some(AssociatedValue::Style(Style::Bold.into())),
+            },
+        ];
+
+        println!("{ranges:?}");
+        // This paniced
+        let _styled = to_styled(text, &ranges, no_mentions);
     }
 }
