@@ -506,7 +506,7 @@
         <location filename="../qml/pages/AddDevice.qml" line="82"/>
         <source>Scan the QR code displayed by the Signal application that you wish to link</source>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
-        <translation>Lue QR-koodi sen laitteen Signal-sovelluksella jonka haluat linkittää</translation>
+        <translation>Lue QR-koodi Signal-sovelluksella sillä laitteella, jonka haluat linkittää</translation>
     </message>
     <message id="whisperfish-device-url">
         <location filename="../qml/pages/OldAddDevice.qml" line="43"/>
@@ -674,7 +674,7 @@
         <location filename="../qml/pages/MainPage.qml" line="313"/>
         <source>No messages</source>
         <extracomment>Session section label for never (i.e. no messages, no timestamp)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ei viestejä</translation>
     </message>
     <message id="whisperfish-remorse-deleted-messages-locally" numerus="yes">
         <location filename="../qml/components/MessagesView.qml" line="164"/>
@@ -747,7 +747,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="37"/>
         <source>Reset Secure Session</source>
         <extracomment>Reset secure session menu item</extracomment>
-        <translation>Nollaa salattu istunto</translation>
+        <translation>Alusta salattu istunto</translation>
     </message>
     <message id="whisperfish-reset-session-message">
         <location filename="../qml/pages/GroupProfilePage.qml" line="349"/>
@@ -769,7 +769,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="59"/>
         <source>Show contact</source>
         <extracomment>Show a peer&apos;s system contact page (menu item)</extracomment>
-        <translation>Näytä kontaktin tiedot</translation>
+        <translation>Näytä yhteystiedot</translation>
     </message>
     <message id="whisperfish-revert-profile-changes-menu">
         <location filename="../qml/pages/ProfilePage.qml" line="118"/>
@@ -1128,7 +1128,7 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <source>Enter the phone number you want to register with Signal.</source>
         <oldsource>Connect with Signal</oldsource>
         <extracomment>registration prompt text</extracomment>
-        <translation>Anna puhelinnumero, jolla haluat rekisteröityä Signaliin.</translation>
+        <translation>Anna puhelinnumero, jolla haluat rekisteröityä Signal-käyttäjäksi.</translation>
     </message>
     <message id="whisperfish-share-contacts-label">
         <location filename="../qml/pages/RegisterPage.qml" line="242"/>
@@ -1211,7 +1211,7 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-text-registration-directions">
         <location filename="../qml/pages/RegisterPage.qml" line="216"/>
         <source>Signal will text you a 6-digit verification code.</source>
-        <translation>Signal ilmoittaa sinulle viestillä 6-numeroisen vahvistuskoodin.</translation>
+        <translation>Signal lähettää sinulle viestillä 6-numeroisen vahvistuskoodin.</translation>
     </message>
     <message id="whisperfish-captcha-requested-title">
         <location filename="../qml/pages/ProofSubmitPage.qml" line="15"/>
@@ -1225,7 +1225,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ProofSubmitPage.qml" line="42"/>
         <source>Signal has requested additional capcha from you. Continue the captcha in order to restore ability to send messages.</source>
         <extracomment>Signal has requested additional captcha description</extracomment>
-        <translation>Signal on pyytänyt sinulta lisää capchaa. Jatka captchaa, jotta voit palauttaa kyvyn lähettää viestejä.</translation>
+        <translation>Signal vaati sinulta lisävarmistuksen. Suorita pyydetty captcha-varmistus, jonka jälkeen voit jälleen lähettää viestejä.</translation>
     </message>
     <message id="whisperfish-captcha-requested-try-again">
         <location filename="../qml/pages/ProofSubmitPage.qml" line="45"/>
@@ -1261,14 +1261,14 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ResetPeerIdentity.qml" line="33"/>
         <source>Peer identity is not trusted</source>
         <extracomment>Peer identity not trusted</extracomment>
-        <translation>Palvelimen turvanumero ei ole luotettu</translation>
+        <translation>Keskustelukumppanin identiteettiä ei ole vahvistettu</translation>
     </message>
     <message id="whisperfish-peer-not-trusted-message">
         <location filename="../qml/pages/PeerIdentityChanged.qml" line="43"/>
         <location filename="../qml/pages/ResetPeerIdentity.qml" line="43"/>
         <source>WARNING: %1 identity is no longer trusted. Tap Confirm to reset peer identity.</source>
         <extracomment>Peer identity not trusted message</extracomment>
-        <translation>VAROITUS: %1 turvanumero ei enää ole luotettu. Paina Vahvista alustaaksesi turvanumeron.</translation>
+        <translation>Varoitus: Käyttäjän %1 identiteetti on vaihtunut. Paina Vahvista alustaaksesi turvanumeron.</translation>
     </message>
     <message id="whisperfish-settings-linked-devices-menu">
         <location filename="../qml/pages/Settings.qml" line="28"/>
@@ -1371,14 +1371,14 @@ Settings page share contacts</extracomment>
         <source>Attachments are stored at %1. Currently, when disabled, attachments will not work.</source>
         <oldsource>Attachments are stored at %1</oldsource>
         <extracomment>Settings page save attachments description</extracomment>
-        <translation>Liitteet tallennetaan sijaintiin %1. Valinnan on oltava päällä, jotta liitteiden vastaanottaminen toimii.</translation>
+        <translation>Liittee tallennetaan hakemistoon %1. Valinnan on oltava päällä, jotta liitteiden vastaanottaminen toimii.</translation>
     </message>
     <message id="whisperfish-settings-enable-enter-send">
         <location filename="../qml/pages/Settings.qml" line="203"/>
         <source>Return key send</source>
         <oldsource>EnterKey Send</oldsource>
         <extracomment>Settings page enable enter send</extracomment>
-        <translation>Lähetys rivinvaihdolla</translation>
+        <translation>Lähetä rivinvaihdolla</translation>
     </message>
     <message id="whisperfish-settings-enable-enter-send-description">
         <location filename="../qml/pages/Settings.qml" line="206"/>
@@ -1390,19 +1390,19 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="221"/>
         <source>Privacy</source>
         <extracomment>Settings page &quot;privacy&quot; section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Yksityisyys</translation>
     </message>
     <message id="whisperfish-settings-share-phone-number">
         <location filename="../qml/pages/Settings.qml" line="227"/>
         <source>Share phone number</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Jaa puhelinnumero</translation>
     </message>
     <message id="whisperfish-settings-share-phone-number-description">
         <location filename="../qml/pages/Settings.qml" line="230"/>
         <source>When enabled, your contacts can see your phone number when you message them.</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Jos päällä, keskustelukumppanisi voivat nähdä puhelinnumerosi kun lähetät heille viestejä.</translation>
     </message>
     <message id="whisperfish-settings-startup-shutdown-section">
         <location filename="../qml/pages/Settings.qml" line="327"/>
@@ -1464,13 +1464,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="74"/>
         <source>Enable typing indicators</source>
         <extracomment>Settings page use typing indicators</extracomment>
-        <translation>Ota käyttöön kirjoituksen ilmaisimet</translation>
+        <translation>Käytä kirjoituksen ilmaisimia</translation>
     </message>
     <message id="whisperfish-settings-enable-typing-indicators-description">
         <location filename="../qml/pages/Settings.qml" line="77"/>
         <source>See when others are typing, and let others see when you are typing, if they also have this enabled.</source>
         <extracomment>Settings page scale image attachments description</extracomment>
-        <translation>Jos tämä on sinulla ja keskustelukumppanillasi käytössä, hän näkee ilmoituksen kun kirjoitat ja sinä näet ilmoituksen kun hän kirjoittaa.</translation>
+        <translation>Jos tämä on sinulla ja keskustelukumppanillasi käytössä, hän näkee ilmoituksen kun kirjoitat, ja sinä näet ilmoituksen kun hän kirjoittaa.</translation>
     </message>
     <message id="whisperfish-settings-notification-privacy">
         <location filename="../qml/pages/Settings.qml" line="245"/>
@@ -1536,7 +1536,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="93"/>
         <source>If turned on, Whisperfish will suppress all but the first notification from each session.</source>
         <extracomment>Settings page notifications show minimum number of notifications description</extracomment>
-        <translation>Asetuksen ollessa valittuna Whisperfish näyttää vain istunnon ensimmäisen ilmoituksen.</translation>
+        <translation>Jos päällä, Whisperfish näyttää vain keskustelun ensimmäisen ilmoituksen.</translation>
     </message>
     <message id="whisperfish-settings-notifications-prefer-device-contacts">
         <location filename="../qml/pages/Settings.qml" line="186"/>
@@ -1566,13 +1566,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="337"/>
         <source>When enabled, Whisperfish starts automatically after each boot. If storage encryption is enabled or background-mode is off, the UI will be shown, otherwise the app starts in the background.</source>
         <extracomment>Settings page enable autostart description</extracomment>
-        <translation>Jos käytössä, Whisperfish käynnistyy automaattisesti puhelimen käynnistymisen jälkeen. Pääikkuna avataan, mikäli salasanasuojaus on käytössä tai jos suoritus taustalla on pois päältä. Muutoin sovellus avautuu taustalle.</translation>
+        <translation>Jos päällä, Whisperfish käynnistyy automaattisesti puhelimen käynnistymisen jälkeen. Pääikkuna avataan, mikäli salasanasuojaus on käytössä tai jos suoritus taustalla on pois päältä. Muutoin sovellus avautuu taustalle.</translation>
     </message>
     <message id="whisperfish-settings-autostart-manual-info">
         <location filename="../qml/pages/Settings.qml" line="400"/>
         <source>Whisperfish does not have the permission to change the autostart settings. You can enable or disable autostart manually from the command line by running &apos;systemctl --user enable harbour-whisperfish.service&apos; or &apos;systemctl --user disable harbour-whisperfish.service&apos;</source>
         <extracomment>Settings page info how to enable autostart manually</extracomment>
-        <translation>Whisperfish ei voi muokata käynnistysasetuksia. Voit vaihtaa automaattikäynnistyken päälle tai pois ajamalla päätteessä komennon &apos;systemctl --user enable harbour-whisperfish.service&apos; tai &apos;systemctl --user disable harbour-whisperfish.service&apos;</translation>
+        <translation>Whisperfish ei voi muokata käynnistysasetuksia. Voit asettaa käynnistyksen päätteessä komennolla &apos;systemctl --user enable harbour-whisperfish.service&apos; tai poistaa komennolla &apos;systemctl --user disable harbour-whisperfish.service&apos;</translation>
     </message>
     <message id="whisperfish-settings-quit-button">
         <location filename="../qml/pages/Settings.qml" line="428"/>
@@ -1612,7 +1612,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="451"/>
         <source>Scale down JPEG attachments to save on bandwidth.</source>
         <extracomment>Settings page scale image attachments description</extracomment>
-        <translation>Pienennä JPEG-liitteet säästääksesti kaistanleveyttä.</translation>
+        <translation>Pienennä JPEG-kuvaliitteiden resoluutiota käytettävän datasiirron säästämiseksi.</translation>
     </message>
     <message id="whisperfish-settings-debug-mode">
         <location filename="../qml/pages/Settings.qml" line="465"/>
@@ -1644,7 +1644,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="499"/>
         <source>Enable log file</source>
         <extracomment>Settings page enable logging to a file</extracomment>
-        <translation>Tallenna loki tiedostoon</translation>
+        <translation>Tallenna lokitiedostoja</translation>
     </message>
     <message id="whisperfish-settings-enable-logfile-description">
         <location filename="../qml/pages/Settings.qml" line="502"/>
@@ -1688,7 +1688,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="553"/>
         <source>Disconnected</source>
         <extracomment>Settings page disconnected message</extracomment>
-        <translation>Yhteys katkaistu</translation>
+        <translation>Ei yhdistetty</translation>
     </message>
     <message id="whisperfish-settings-unsent-messages">
         <location filename="../qml/pages/Settings.qml" line="558"/>
@@ -1700,19 +1700,19 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="564"/>
         <source>Total Sessions</source>
         <extracomment>Settings page total sessions</extracomment>
-        <translation>Keskusteluita</translation>
+        <translation>Keskustelujen lukumäärä</translation>
     </message>
     <message id="whisperfish-settings-total-messages">
         <location filename="../qml/pages/Settings.qml" line="570"/>
         <source>Total Messages</source>
         <extracomment>Settings page total messages</extracomment>
-        <translation>Viestejä</translation>
+        <translation>Viestejä yhteensä</translation>
     </message>
     <message id="whisperfish-settings-total-contacts">
         <location filename="../qml/pages/Settings.qml" line="576"/>
         <source>Signal Contacts</source>
         <extracomment>Settings page total signal contacts</extracomment>
-        <translation>Signal-käyttäjiä</translation>
+        <translation>Signal-yhteystietoja</translation>
     </message>
     <message id="whisperfish-settings-encrypted-keystore">
         <source>Encrypted Key Store</source>
@@ -1827,7 +1827,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/GroupProfilePage.qml" line="274"/>
         <source>Open Note to Self</source>
         <extracomment>Menu item to open the conversation with oneself</extracomment>
-        <translation>Avaa oma muistio</translation>
+        <translation>Avaa Omat viestit</translation>
     </message>
     <message id="whisperfish-group-member-menu-direct-message">
         <location filename="../qml/pages/GroupProfilePage.qml" line="277"/>
@@ -1912,7 +1912,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/VerifyRegistrationPage.qml" line="27"/>
         <source>Signal should have sent you a 6-digit verification code via text message. Please wait a moment, or restart the process if you have not received a message.</source>
         <extracomment>verify registration instructions: text message</extracomment>
-        <translation>Signalin pitäisi lähettää sinulle kuusinumeroinen vahvistuskoodintekstiviestinä. Ole hyvä ja odota hetki, tai käynnistä toiminto uudelleen jos viestiä ei tule.</translation>
+        <translation>Signal lähettää sinulle kuusinumeroinen vahvistuskoodin tekstiviestillä. Ole hyvä ja odota hetki, tai käynnistä toiminto uudelleen jos viestiä ei tule.</translation>
     </message>
     <message id="whisperfish-verify-retry-prompt">
         <location filename="../qml/pages/VerifyRegistrationPage.qml" line="45"/>
@@ -2124,9 +2124,9 @@ Settings page share contacts</extracomment>
         <source>%n week(s)</source>
         <oldsource>%1 week(s)</oldsource>
         <extracomment>Expiring message timeout in weeks. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 viikko</numerusform>
-            <numerusform>%1 viikkoa</numerusform>
+        <translation>
+            <numerusform>%n viikko</numerusform>
+            <numerusform>%n viikkoa</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-days" numerus="yes">
@@ -2134,9 +2134,9 @@ Settings page share contacts</extracomment>
         <source>%n day(s)</source>
         <oldsource>%1 day(s)</oldsource>
         <extracomment>Expiring message timeout in days. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 päivä</numerusform>
-            <numerusform>%1 päivää</numerusform>
+        <translation>
+            <numerusform>%n päivä</numerusform>
+            <numerusform>%n päivää</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-hours" numerus="yes">
@@ -2144,9 +2144,9 @@ Settings page share contacts</extracomment>
         <source>%n hour(s)</source>
         <oldsource>%1 hour(s)</oldsource>
         <extracomment>Expiring message timeout in hours. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 tunti</numerusform>
-            <numerusform>%1 tuntia</numerusform>
+        <translation>
+            <numerusform>%n tunti</numerusform>
+            <numerusform>%n tuntia</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-minutes" numerus="yes">
@@ -2154,9 +2154,9 @@ Settings page share contacts</extracomment>
         <source>%n minute(s)</source>
         <oldsource>%1 minute(s)</oldsource>
         <extracomment>Expiring message timeout in minutes. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 minuutti</numerusform>
-            <numerusform>%1 minuuttia</numerusform>
+        <translation>
+            <numerusform>%n minuutti</numerusform>
+            <numerusform>%n minuuttia</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-seconds" numerus="yes">
@@ -2164,9 +2164,9 @@ Settings page share contacts</extracomment>
         <source>%n second(s)</source>
         <oldsource>%1 second(s)</oldsource>
         <extracomment>Expiring message timeout in seconds. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 sekunti</numerusform>
-            <numerusform>%1 sekuntia</numerusform>
+        <translation>
+            <numerusform>%n sekunti</numerusform>
+            <numerusform>%n sekuntia</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-update-self">
@@ -2185,13 +2185,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="96"/>
         <source>You disabled expiring messages.</source>
         <extracomment>Service message</extracomment>
-        <translation>Poistit vanhenevat viestit käytöstä.</translation>
+        <translation>Poistit viestien vanhentumisen käytöstä.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-disable-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="99"/>
         <source>%1 disabled expiring messages.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation>%1 poisti vanhenevat viestit käytöstä.</translation>
+        <translation>%1 poisti viestien vanhentumisen käytöstä.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-unknown-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="104"/>
@@ -2215,7 +2215,7 @@ Settings page share contacts</extracomment>
         <source>%1 updated their profile.</source>
         <oldsource>%1 updated their profile key with you.</oldsource>
         <extracomment>Service message for profile (key) update. %1 is a name</extracomment>
-        <translation type="unfinished">%1 päivitti profiiliavaimensa kanssasi.</translation>
+        <translation>%1 päivitti profiilinsa.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="117"/>
@@ -2283,7 +2283,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="191"/>
         <source>This service message of is not yet supported by Whisperfish. Please file a bug report. (Flags: %1, Type: %2, Contents: &quot;%3&quot;)</source>
         <oldsource>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: %1)</oldsource>
-        <translation type="unfinished">Whisperfish ei tue vielä tätä järjestelmäviestiä. Ole hyvä ja tee vikailmoitus. (Viestitunniste: &apos;%1&apos;)</translation>
+        <translation>Whisperfish ei vielä tue tätä järjestelmäviestiä. Ole hyvä ja tee vikailmoitus. (Liput: %1, Tyyppi: %2, Sisältö: &quot;%3&quot;)</translation>
     </message>
     <message id="whisperfish-service-message-more-info">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="247"/>
@@ -2368,8 +2368,8 @@ Settings page share contacts</extracomment>
         <oldsource>%1 message(s) selected</oldsource>
         <extracomment>Info label shown while selecting messages</extracomment>
         <translation>
-            <numerusform>%n viesti valittuna</numerusform>
-            <numerusform>%n viestiä valittuna</numerusform>
+            <numerusform>%n viesti valittu</numerusform>
+            <numerusform>%n viestiä valittu</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-action-clear-selection" numerus="yes">
@@ -2378,7 +2378,7 @@ Settings page share contacts</extracomment>
         <extracomment>Message action description, shown if one or more messages are selected</extracomment>
         <translation>
             <numerusform>Tyhjennä valinta</numerusform>
-            <numerusform>Tyhjennä valinnat</numerusform>
+            <numerusform>Tyhjennä valinta</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-action-copy" numerus="yes">
@@ -2404,8 +2404,8 @@ Settings page share contacts</extracomment>
         <oldsource>Delete %1 message(s) for me</oldsource>
         <extracomment>Message action description</extracomment>
         <translation>
-            <numerusform>Poista laitteelta %n viesti</numerusform>
-            <numerusform>Poista laitteelta %n viestiä</numerusform>
+            <numerusform>Poista %n viesti laitteelta</numerusform>
+            <numerusform>Poista %n viestiä laitteelta</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-action-delete-for-all" numerus="yes">
@@ -2415,8 +2415,8 @@ Settings page share contacts</extracomment>
         <oldsource>Delete %1 message(s) for all</oldsource>
         <extracomment>Message action description</extracomment>
         <translation>
-            <numerusform>Poista kaikilta %n viesti</numerusform>
-            <numerusform>Poista kaikilta %n viestiä</numerusform>
+            <numerusform>Poista %n viesti kaikilta</numerusform>
+            <numerusform>Poista %n viestiä kaikilta</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-action-resend" numerus="yes">
@@ -2424,7 +2424,7 @@ Settings page share contacts</extracomment>
         <source>Retry sending (the) failed message(s)</source>
         <extracomment>Message action description</extracomment>
         <translation>
-            <numerusform>Yritä viestin lähettämistä uudelleen</numerusform>
+            <numerusform>Yritä lähettää viesti uudelleen</numerusform>
             <numerusform>Yritä viestien lähettämistä uudelleen</numerusform>
         </translation>
     </message>
@@ -2446,8 +2446,8 @@ Settings page share contacts</extracomment>
         <source>Unread&lt;br/&gt;message(s)</source>
         <extracomment>Unread messages count cover label. Code requires exact line break tag &quot;&lt;br/&gt;&quot;.</extracomment>
         <translation>
-            <numerusform>Lukematon&lt;br/&gt;viesti</numerusform>
-            <numerusform>Lukematonta&lt;br/&gt;viestiä</numerusform>
+            <numerusform>lukematon&lt;br/&gt;viesti</numerusform>
+            <numerusform>lukematonta&lt;br/&gt;viestiä</numerusform>
         </translation>
     </message>
     <message id="whisperfish-registration-type-message">
