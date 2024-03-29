@@ -183,7 +183,7 @@
         <location filename="../qml/pages/MainPage.qml" line="313"/>
         <source>No messages</source>
         <extracomment>Session section label for never (i.e. no messages, no timestamp)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mesaj yok</translation>
     </message>
     <message id="whisperfish-session-section-today">
         <location filename="../qml/pages/LinkedDevices.qml" line="117"/>
@@ -2113,8 +2113,8 @@ Settings page share contacts</extracomment>
         <source>%n week(s)</source>
         <oldsource>%1 week(s)</oldsource>
         <extracomment>Expiring message timeout in weeks. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 hafta</numerusform>
+        <translation>
+            <numerusform>%n hafta</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-days" numerus="yes">
@@ -2122,8 +2122,8 @@ Settings page share contacts</extracomment>
         <source>%n day(s)</source>
         <oldsource>%1 day(s)</oldsource>
         <extracomment>Expiring message timeout in days. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 gün</numerusform>
+        <translation>
+            <numerusform>%n gün</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-hours" numerus="yes">
@@ -2131,8 +2131,8 @@ Settings page share contacts</extracomment>
         <source>%n hour(s)</source>
         <oldsource>%1 hour(s)</oldsource>
         <extracomment>Expiring message timeout in hours. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 saat</numerusform>
+        <translation>
+            <numerusform>%n saat</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-minutes" numerus="yes">
@@ -2140,8 +2140,8 @@ Settings page share contacts</extracomment>
         <source>%n minute(s)</source>
         <oldsource>%1 minute(s)</oldsource>
         <extracomment>Expiring message timeout in minutes. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 dakika</numerusform>
+        <translation>
+            <numerusform>%n dakika</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-seconds" numerus="yes">
@@ -2149,8 +2149,8 @@ Settings page share contacts</extracomment>
         <source>%n second(s)</source>
         <oldsource>%1 second(s)</oldsource>
         <extracomment>Expiring message timeout in seconds. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 saniye</numerusform>
+        <translation>
+            <numerusform>%n saniye</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-update-self">
@@ -2199,7 +2199,7 @@ Settings page share contacts</extracomment>
         <source>%1 updated their profile.</source>
         <oldsource>%1 updated their profile key with you.</oldsource>
         <extracomment>Service message for profile (key) update. %1 is a name</extracomment>
-        <translation type="unfinished">%1 sizinle profil anahtarını güncelledi.</translation>
+        <translation>%1 profilini güncelledi.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="117"/>
@@ -2267,7 +2267,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="191"/>
         <source>This service message of is not yet supported by Whisperfish. Please file a bug report. (Flags: %1, Type: %2, Contents: &quot;%3&quot;)</source>
         <oldsource>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: %1)</oldsource>
-        <translation type="unfinished">Bu hizmet mesajı henüz Whisperfish tarafından desteklenmiyor. Lütfen bir hata raporu gönderin. (Tür: %1.)</translation>
+        <translation>Bu hizmet mesajı henüz Whisperfish tarafından desteklenmiyor. Lütfen bir hata raporu gönderin. (Bayraklar: %1, Tür: %2, İçerikler: &quot;%3&quot;)</translation>
     </message>
     <message id="whisperfish-service-message-more-info">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="247"/>
