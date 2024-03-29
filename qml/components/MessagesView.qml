@@ -307,6 +307,7 @@ SilicaListView {
             id: loader
             y: section ? section.y + section.height : 0
             width: parent.width
+            asynchronous: false
 
             // choose the delegate based on message contents
             // NOTE we could make this loader asynchronous if we find a way
@@ -342,6 +343,8 @@ SilicaListView {
             ServiceMessageDelegate {
                 // necessary to make implicit properties available
                 modelData: model
+                // TODO: Don't query recipient name for each message separately
+                peerName: model.outgoing ? '' : getRecipientName(recipient.e164, recipient.name)
             }
         }
     }

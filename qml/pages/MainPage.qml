@@ -307,6 +307,11 @@ Page {
                             //% "Older"
                             qsTrId("whisperfish-session-section-older")
                             break;
+                        case "never":
+                            //: Session section label for never (i.e. no messages, no timestamp)
+                            //% "No messages"
+                            qsTrId("whisperfish-session-section-never")
+                            break;
                         default:
                             // two days to one week ago
                             Qt.locale().dayName(parseInt(section), Locale.LongFormat)
