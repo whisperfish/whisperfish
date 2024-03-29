@@ -1136,7 +1136,7 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
     </message>
     <message id="whisperfish-share-contacts-label">
         <location filename="../qml/pages/RegisterPage.qml" line="242"/>
-        <location filename="../qml/pages/Settings.qml" line="240"/>
+        <location filename="../qml/pages/Settings.qml" line="170"/>
         <source>Share Contacts</source>
         <extracomment>Share contacts label
 ----------
@@ -1145,7 +1145,7 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-share-contacts-description">
         <location filename="../qml/pages/RegisterPage.qml" line="245"/>
-        <location filename="../qml/pages/Settings.qml" line="243"/>
+        <location filename="../qml/pages/Settings.qml" line="173"/>
         <source>Allow Signal to use your local contact list, to find other Signal users.</source>
         <extracomment>Share contacts description</extracomment>
         <translation>Signal&apos;in diğer Signal kullanıcılarını bulmak için yerel kişi listenizi kullanmasına izin verin.</translation>
@@ -1303,10 +1303,9 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Kimlik</translation>
     </message>
     <message id="whisperfish-settings-notifications-section">
-        <location filename="../qml/pages/Settings.qml" line="67"/>
         <source>Notifications</source>
         <extracomment>Settings page notifications section</extracomment>
-        <translation>Bildirimler</translation>
+        <translation type="vanished">Bildirimler</translation>
     </message>
     <message id="whisperfish-settings-notifications-enable">
         <source>Enable notifications</source>
@@ -1330,101 +1329,119 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Kapatılırsa, Whisperfish içeriğini değil, yalnızca mesajı göndereni gösterecek.</translation>
     </message>
     <message id="whisperfish-settings-general-section">
-        <location filename="../qml/pages/Settings.qml" line="171"/>
+        <location filename="../qml/pages/Settings.qml" line="67"/>
         <source>General</source>
         <extracomment>Settings page general section</extracomment>
         <translation>Genel</translation>
     </message>
     <message id="whisperfish-settings-country-code">
-        <location filename="../qml/pages/Settings.qml" line="179"/>
+        <location filename="../qml/pages/Settings.qml" line="109"/>
         <source>Country Code</source>
         <extracomment>Settings page country code</extracomment>
         <translation>Ülke Kodu</translation>
     </message>
     <message id="whisperfish-settings-country-code-description">
-        <location filename="../qml/pages/Settings.qml" line="182"/>
+        <location filename="../qml/pages/Settings.qml" line="112"/>
         <source>The selected country code determines what happens when a local phone number is entered.</source>
         <extracomment>Settings page country code description</extracomment>
         <translation>Seçilen ülke kodu, yerel bir telefon numarası girildiğinde ne olacağını belirler.</translation>
     </message>
     <message id="whisperfish-settings-country-code-empty">
-        <location filename="../qml/pages/Settings.qml" line="186"/>
+        <location filename="../qml/pages/Settings.qml" line="116"/>
         <source>none</source>
         <extracomment>settings page country code selection: nothing selected</extracomment>
         <translation>yok</translation>
     </message>
     <message id="whisperfish-settings-save-attachments">
-        <location filename="../qml/pages/Settings.qml" line="219"/>
+        <location filename="../qml/pages/Settings.qml" line="149"/>
         <source>Save Attachments</source>
         <extracomment>Settings page save attachments</extracomment>
         <translation>Ekleri Kaydet</translation>
     </message>
     <message id="whisperfish-settings-save-attachments-description">
-        <location filename="../qml/pages/Settings.qml" line="223"/>
+        <location filename="../qml/pages/Settings.qml" line="153"/>
         <source>Attachments are stored at %1. Currently, when disabled, attachments will not work.</source>
         <oldsource>Attachments are stored at %1</oldsource>
         <extracomment>Settings page save attachments description</extracomment>
         <translation>Ekler %1 konumunda saklanıyor. Şu anda, devre dışı bırakıldığında ekler çalışmayacaktır.</translation>
     </message>
     <message id="whisperfish-settings-enable-enter-send">
-        <location filename="../qml/pages/Settings.qml" line="289"/>
+        <location filename="../qml/pages/Settings.qml" line="203"/>
         <source>Return key send</source>
         <oldsource>EnterKey Send</oldsource>
         <extracomment>Settings page enable enter send</extracomment>
         <translation>Enter tuşuyla gönder</translation>
     </message>
     <message id="whisperfish-settings-enable-enter-send-description">
-        <location filename="../qml/pages/Settings.qml" line="292"/>
+        <location filename="../qml/pages/Settings.qml" line="206"/>
         <source>When enabled, the return key functions as a send key. Otherwise, the return key can be used for multi-line messages.</source>
         <extracomment>Settings page enable enter send description</extracomment>
         <translation>Etkinleştirildiğinde, Enter tuşu bir gönderme tuşu işlevi görür. Aksi takdirde, Enter tuşu çok satırlı mesajlar için kullanılabilir.</translation>
     </message>
+    <message id="whisperfish-settings-privacy-section">
+        <location filename="../qml/pages/Settings.qml" line="221"/>
+        <source>Privacy</source>
+        <extracomment>Settings page &quot;privacy&quot; section</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-settings-share-phone-number">
+        <location filename="../qml/pages/Settings.qml" line="227"/>
+        <source>Share phone number</source>
+        <extracomment>Settings page, share recipient phone number with contacts</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-settings-share-phone-number-description">
+        <location filename="../qml/pages/Settings.qml" line="230"/>
+        <source>When enabled, your contacts can see your phone number when you message them.</source>
+        <extracomment>Settings page, share recipient phone number with contacts</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-settings-startup-shutdown-section">
-        <location filename="../qml/pages/Settings.qml" line="313"/>
+        <location filename="../qml/pages/Settings.qml" line="327"/>
         <source>Autostart and Background</source>
         <extracomment>Settings page startup and shutdown section</extracomment>
         <translation>Otomatik Başlatma ve Arka Plan</translation>
     </message>
     <message id="whisperfish-settings-enable-autostart">
-        <location filename="../qml/pages/Settings.qml" line="320"/>
+        <location filename="../qml/pages/Settings.qml" line="334"/>
         <source>Autostart after boot</source>
         <extracomment>Settings page enable autostart</extracomment>
         <translation>Önyüklemeden sonra otomatik başlat</translation>
     </message>
     <message id="whisperfish-settings-auto-unlock-password-field">
-        <location filename="../qml/pages/Settings.qml" line="346"/>
+        <location filename="../qml/pages/Settings.qml" line="360"/>
         <source>Unlock Password</source>
         <extracomment>Settings page autostart password field</extracomment>
         <translation>Parolanın Kilidini Aç</translation>
     </message>
     <message id="whisperfish-settings-save-password-button">
-        <location filename="../qml/pages/Settings.qml" line="358"/>
+        <location filename="../qml/pages/Settings.qml" line="372"/>
         <source>Save password</source>
         <extracomment>Settings page save autologin password button</extracomment>
         <translation>Parolayı kaydet</translation>
     </message>
     <message id="whisperfish-settings-clear-password-button">
-        <location filename="../qml/pages/Settings.qml" line="361"/>
+        <location filename="../qml/pages/Settings.qml" line="375"/>
         <source>clear password</source>
         <extracomment>Settings page clear autologin password button</extracomment>
         <translation>Parolayı temizle</translation>
     </message>
     <message id="whisperfish-settings-auto-unlock-password-info">
-        <location filename="../qml/pages/Settings.qml" line="374"/>
+        <location filename="../qml/pages/Settings.qml" line="388"/>
         <source>You can enter your password to make Whisperfish unlock the database automatically at startup. Please note that the password is stored in plain text, and as such usage of this feature is not recommended.</source>
         <oldsource>You can enter your password to make Whisperfish unlock the database automatically at startup. Please note that the password is stored in plain text, and as such usage of this feature is not recommened.</oldsource>
         <extracomment>Settings page info about setting auto unlock password</extracomment>
         <translation>Whisperfish&apos;in başlangıçta veri tabanının kilidini otomatik olarak açmasını sağlamak için parolanızı girebilirsiniz. Lütfen parolanın düz metin olarak saklandığını ve bu nedenle bu özelliğin kullanılmasının tavsiye edilmediğini unutmayın.</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode-description">
-        <location filename="../qml/pages/Settings.qml" line="396"/>
+        <location filename="../qml/pages/Settings.qml" line="410"/>
         <source>When enabled, Whisperfish keeps running in the background and can send notifications after the app window has been closed.</source>
         <oldsource>When enabled, Whisperfish starts automatically after each boot. If storage encryption is enabled or background-mode is off, the UI will be shown, otherwise the app starts in the background.</oldsource>
         <extracomment>Settings page enable background mode description</extracomment>
         <translation>Etkinleştirildiğinde, Whisperfish arka planda çalışmaya devam eder ve uygulama penceresi kapatıldıktan sonra bildirim gönderebilir.</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
-        <location filename="../qml/pages/Settings.qml" line="393"/>
+        <location filename="../qml/pages/Settings.qml" line="407"/>
         <source>Background mode</source>
         <extracomment>Settings page enable background mode</extracomment>
         <translation>Arka plan modu</translation>
@@ -1448,115 +1465,115 @@ Settings page share contacts</extracomment>
         <translation>Başkalarının ne zaman yazdığını görün ve eğer onlar da bu özelliğe sahipse, başkalarının sizin ne zaman yazdığınızı görmesine izin verin.</translation>
     </message>
     <message id="whisperfish-settings-notification-privacy">
-        <location filename="../qml/pages/Settings.qml" line="93"/>
+        <location filename="../qml/pages/Settings.qml" line="245"/>
         <source>Notification privacy</source>
         <extracomment>Settings page notification privacy</extracomment>
         <translation>Bildirim gizliliği</translation>
     </message>
     <message id="whisperfish-settings-notifications-disable">
-        <location filename="../qml/pages/Settings.qml" line="104"/>
+        <location filename="../qml/pages/Settings.qml" line="256"/>
         <source>Disable notifications</source>
         <extracomment>Settings page, turn notifications off</extracomment>
         <translation>Bildirimleri devre dışı bırak</translation>
     </message>
     <message id="whisperfish-settings-notifications-disable-description">
-        <location filename="../qml/pages/Settings.qml" line="107"/>
+        <location filename="../qml/pages/Settings.qml" line="259"/>
         <source>Whisperfish will not display any notification</source>
         <extracomment>Settings page, turn notifications off description</extracomment>
         <translation>Whisperfish herhangi bir bildirim göstermeyecek</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimal">
-        <location filename="../qml/pages/Settings.qml" line="113"/>
+        <location filename="../qml/pages/Settings.qml" line="265"/>
         <source>Minimal notifications</source>
         <extracomment>Settings page, minimal notifications</extracomment>
         <translation>En az bildirim</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimal-description">
-        <location filename="../qml/pages/Settings.qml" line="116"/>
+        <location filename="../qml/pages/Settings.qml" line="268"/>
         <source>Notification without disclosing the sender or content of the message</source>
         <extracomment>Settings page, minimal notifications description</extracomment>
         <translation>Mesajın göndereni veya içeriği açıklanmadan bildirim</translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only">
-        <location filename="../qml/pages/Settings.qml" line="122"/>
+        <location filename="../qml/pages/Settings.qml" line="274"/>
         <source>Sender-only notifications</source>
         <extracomment>Settings page, sender-only notifications</extracomment>
         <translation>Yalnızca gönderen bildirimleri</translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only-description">
-        <location filename="../qml/pages/Settings.qml" line="125"/>
+        <location filename="../qml/pages/Settings.qml" line="277"/>
         <source>Notifications displaying the sender of a message, without the contents</source>
         <extracomment>Settings page, sender-only notifications description</extracomment>
         <translation>İçeriği olmadan mesajın gönderenini gösteren bildirimler</translation>
     </message>
     <message id="whisperfish-settings-notifications-complete">
-        <location filename="../qml/pages/Settings.qml" line="131"/>
+        <location filename="../qml/pages/Settings.qml" line="283"/>
         <source>Complete notifications</source>
         <extracomment>Settings page, complete notifications</extracomment>
         <translation>Tam bildirimler</translation>
     </message>
     <message id="whisperfish-settings-notifications-complete-description">
-        <location filename="../qml/pages/Settings.qml" line="134"/>
+        <location filename="../qml/pages/Settings.qml" line="286"/>
         <source>Notifications displaying the contents and sender of a message</source>
         <extracomment>Settings page, sender-only notifications description</extracomment>
         <translation>Bir mesajın içeriğini ve göndereni gösteren bildirimler</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimise">
-        <location filename="../qml/pages/Settings.qml" line="152"/>
+        <location filename="../qml/pages/Settings.qml" line="90"/>
         <source>Minimise notifications</source>
         <extracomment>Settings page notifications show minimum number of notifications</extracomment>
         <translation>Bildirimleri küçült</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimise-description">
-        <location filename="../qml/pages/Settings.qml" line="155"/>
+        <location filename="../qml/pages/Settings.qml" line="93"/>
         <source>If turned on, Whisperfish will suppress all but the first notification from each session.</source>
         <extracomment>Settings page notifications show minimum number of notifications description</extracomment>
         <translation>Açılırsa, Whisperfish her oturumdan yalnızca ilk bildirimi gösterecektir.</translation>
     </message>
     <message id="whisperfish-settings-notifications-prefer-device-contacts">
-        <location filename="../qml/pages/Settings.qml" line="256"/>
+        <location filename="../qml/pages/Settings.qml" line="186"/>
         <source>Prefer device contacts</source>
         <extracomment>Settings page prefer phone contacts</extracomment>
         <translation>Aygıt kişilerini tercih et</translation>
     </message>
     <message id="whisperfish-settings-notifications-prefer-device-contacts-description">
-        <location filename="../qml/pages/Settings.qml" line="259"/>
+        <location filename="../qml/pages/Settings.qml" line="189"/>
         <source>Prefer Sailfish OS address book contact names and avatars over Signal Profile data.</source>
         <extracomment>Settings page prefer phone contacts description</extracomment>
         <translation>Signal profil verileri yerine Sailfish OS adres defteri kişi adlarını ve resimlerini tercih edin.</translation>
     </message>
     <message id="whisperfish-settings-show-phone-number">
-        <location filename="../qml/pages/Settings.qml" line="272"/>
+        <location filename="../qml/pages/Settings.qml" line="303"/>
         <source>Show phone number</source>
         <extracomment>Settings page, show recipient phone number in conversation view</extracomment>
         <translation>Telefon numarasını göster</translation>
     </message>
     <message id="whisperfish-settings-show-phone-number-description">
-        <location filename="../qml/pages/Settings.qml" line="275"/>
+        <location filename="../qml/pages/Settings.qml" line="306"/>
         <source>Show the phone number of the recipient in the conversation page header.</source>
         <extracomment>Settings page, show recipient phone number in conversation view description</extracomment>
         <translation>Konuşma sayfası başlığında alıcının telefon numarasını göster.</translation>
     </message>
     <message id="whisperfish-settings-enable-autostart-description">
-        <location filename="../qml/pages/Settings.qml" line="323"/>
+        <location filename="../qml/pages/Settings.qml" line="337"/>
         <source>When enabled, Whisperfish starts automatically after each boot. If storage encryption is enabled or background-mode is off, the UI will be shown, otherwise the app starts in the background.</source>
         <extracomment>Settings page enable autostart description</extracomment>
         <translation>Etkinleştirildiğinde, Whisperfish her önyüklemeden sonra otomatik olarak başlar. Depolama şifrelemesi etkinse veya arka plan modu kapalıysa, kullanıcı arayüzü gösterilecektir, aksi takdirde uygulama arka planda başlar.</translation>
     </message>
     <message id="whisperfish-settings-autostart-manual-info">
-        <location filename="../qml/pages/Settings.qml" line="386"/>
+        <location filename="../qml/pages/Settings.qml" line="400"/>
         <source>Whisperfish does not have the permission to change the autostart settings. You can enable or disable autostart manually from the command line by running &apos;systemctl --user enable harbour-whisperfish.service&apos; or &apos;systemctl --user disable harbour-whisperfish.service&apos;</source>
         <extracomment>Settings page info how to enable autostart manually</extracomment>
         <translation>Whisperfish otomatik başlatma ayarlarını değiştirme iznine sahip değil. Komut satırından &apos;systemctl --user enable harbour-whisperfish.service&apos; veya &apos;systemctl --user disable harbour-whisperfish.service&apos; komutlarını çalıştırarak otomatik başlatmayı elle etkinleştirebilir veya devre dışı bırakabilirsiniz</translation>
     </message>
     <message id="whisperfish-settings-quit-button">
-        <location filename="../qml/pages/Settings.qml" line="414"/>
+        <location filename="../qml/pages/Settings.qml" line="428"/>
         <source>Quit Whisperfish</source>
         <extracomment>Settings page quit app button</extracomment>
         <translation>Whisperfish&apos;ten Çık</translation>
     </message>
     <message id="whisperfish-settings-advanced-section">
-        <location filename="../qml/pages/Settings.qml" line="426"/>
+        <location filename="../qml/pages/Settings.qml" line="440"/>
         <source>Advanced</source>
         <extracomment>Settings page advanced section</extracomment>
         <translation>Gelişmiş</translation>
@@ -1578,113 +1595,113 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Whisperfish yeniden başlatılıyor</translation>
     </message>
     <message id="whisperfish-settings-scale-image-attachments">
-        <location filename="../qml/pages/Settings.qml" line="434"/>
+        <location filename="../qml/pages/Settings.qml" line="448"/>
         <source>Scale JPEG Attachments</source>
         <extracomment>Settings page scale image attachments</extracomment>
         <translation>JPEG Eklerini Ölçekle</translation>
     </message>
     <message id="whisperfish-settings-scale-image-attachments-description">
-        <location filename="../qml/pages/Settings.qml" line="437"/>
+        <location filename="../qml/pages/Settings.qml" line="451"/>
         <source>Scale down JPEG attachments to save on bandwidth.</source>
         <extracomment>Settings page scale image attachments description</extracomment>
         <translation>Bant genişliğinden tasarruf etmek için JPEG eklerini küçültün.</translation>
     </message>
     <message id="whisperfish-settings-debug-mode">
-        <location filename="../qml/pages/Settings.qml" line="451"/>
+        <location filename="../qml/pages/Settings.qml" line="465"/>
         <source>Debug mode</source>
         <extracomment>Settings page: debug info toggle</extracomment>
         <translation>Hata ayıklama modu</translation>
     </message>
     <message id="whisperfish-settings-debug-mode-description">
-        <location filename="../qml/pages/Settings.qml" line="454"/>
+        <location filename="../qml/pages/Settings.qml" line="468"/>
         <source>Show debugging information and controls in the user interface.</source>
         <oldsource>Show debugging information in the user interface.</oldsource>
         <extracomment>Settings page: debug info toggle extended description</extracomment>
         <translation>Kullanıcı arayüzünde hata ayıklama bilgilerini ve denetimleri göster.</translation>
     </message>
     <message id="whisperfish-settings-enable-verbose">
-        <location filename="../qml/pages/Settings.qml" line="468"/>
+        <location filename="../qml/pages/Settings.qml" line="482"/>
         <source>Verbose logging</source>
         <extracomment>Settings page enable verbose logging</extracomment>
         <translation>Ayrıntılı günlük kaydı</translation>
     </message>
     <message id="whisperfish-settings-enable-verbose-description">
-        <location filename="../qml/pages/Settings.qml" line="471"/>
+        <location filename="../qml/pages/Settings.qml" line="485"/>
         <source>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a restart to take effect.</source>
         <oldsource>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a reboot to take effect.</oldsource>
         <extracomment>Settings page enable verbose logging description</extracomment>
         <translation>Etkinleştirildiğinde, Whisperfish ayrıntılı çıktı üretir. Terminalde çalıştırmak için kullanışlıdır. Etkili olması için yeniden başlatma gerektirir.</translation>
     </message>
     <message id="whisperfish-settings-logfile-autostart">
-        <location filename="../qml/pages/Settings.qml" line="485"/>
+        <location filename="../qml/pages/Settings.qml" line="499"/>
         <source>Enable log file</source>
         <extracomment>Settings page enable logging to a file</extracomment>
         <translation>Günlük dosyasını etkinleştir</translation>
     </message>
     <message id="whisperfish-settings-enable-logfile-description">
-        <location filename="../qml/pages/Settings.qml" line="488"/>
+        <location filename="../qml/pages/Settings.qml" line="502"/>
         <source>When enabled, Whisperfish saves its output to a log file. Requires a restart to take effect.</source>
         <oldsource>When enabled, Whisperfish saves its output to a log file. Requires a reboot to take effect.</oldsource>
         <extracomment>Settings page enable logfile description</extracomment>
         <translation>Etkinleştirildiğinde, Whisperfish çıktısını bir günlük dosyasına kaydeder. Etkili olması için yeniden başlatma gerektirir.</translation>
     </message>
     <message id="whisperfish-settings-compress-db">
-        <location filename="../qml/pages/Settings.qml" line="504"/>
+        <location filename="../qml/pages/Settings.qml" line="518"/>
         <source>Compact database</source>
         <oldsource>Compress database</oldsource>
         <extracomment>Settings page &apos;Compact database&apos; button: execute &apos;VACUUM&apos; command on SQLite-database</extracomment>
         <translation>Veri tabanını sıkıştır</translation>
     </message>
     <message id="whisperfish-settings-test-captcha">
-        <location filename="../qml/pages/Settings.qml" line="516"/>
+        <location filename="../qml/pages/Settings.qml" line="530"/>
         <source>Test captcha</source>
         <extracomment>Settings page, test captcha button</extracomment>
         <translation>Captcha testi</translation>
     </message>
     <message id="whisperfish-settings-stats-section">
-        <location filename="../qml/pages/Settings.qml" line="527"/>
+        <location filename="../qml/pages/Settings.qml" line="541"/>
         <source>Statistics</source>
         <extracomment>Settings page stats section</extracomment>
         <translation>İstatistikler</translation>
     </message>
     <message id="whisperfish-settings-websocket">
-        <location filename="../qml/pages/Settings.qml" line="532"/>
+        <location filename="../qml/pages/Settings.qml" line="546"/>
         <source>Websocket Status</source>
         <extracomment>Settings page websocket status</extracomment>
         <translation>Websocket Durumu</translation>
     </message>
     <message id="whisperfish-settings-connected">
-        <location filename="../qml/pages/Settings.qml" line="536"/>
+        <location filename="../qml/pages/Settings.qml" line="550"/>
         <source>Connected</source>
         <extracomment>Settings page connected message</extracomment>
         <translation>Bağlandı</translation>
     </message>
     <message id="whisperfish-settings-disconnected">
-        <location filename="../qml/pages/Settings.qml" line="539"/>
+        <location filename="../qml/pages/Settings.qml" line="553"/>
         <source>Disconnected</source>
         <extracomment>Settings page disconnected message</extracomment>
         <translation>Bağlantı Kesildi</translation>
     </message>
     <message id="whisperfish-settings-unsent-messages">
-        <location filename="../qml/pages/Settings.qml" line="544"/>
+        <location filename="../qml/pages/Settings.qml" line="558"/>
         <source>Unsent Messages</source>
         <extracomment>Settings page unsent messages</extracomment>
         <translation>Gönderilmeyen Mesajlar</translation>
     </message>
     <message id="whisperfish-settings-total-sessions">
-        <location filename="../qml/pages/Settings.qml" line="550"/>
+        <location filename="../qml/pages/Settings.qml" line="564"/>
         <source>Total Sessions</source>
         <extracomment>Settings page total sessions</extracomment>
         <translation>Toplam Oturumlar</translation>
     </message>
     <message id="whisperfish-settings-total-messages">
-        <location filename="../qml/pages/Settings.qml" line="556"/>
+        <location filename="../qml/pages/Settings.qml" line="570"/>
         <source>Total Messages</source>
         <extracomment>Settings page total messages</extracomment>
         <translation>Toplam Mesajlar</translation>
     </message>
     <message id="whisperfish-settings-total-contacts">
-        <location filename="../qml/pages/Settings.qml" line="562"/>
+        <location filename="../qml/pages/Settings.qml" line="576"/>
         <source>Signal Contacts</source>
         <extracomment>Settings page total signal contacts</extracomment>
         <translation>Signal Kişileri</translation>
@@ -1705,19 +1722,19 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Devre Dışı</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db">
-        <location filename="../qml/pages/Settings.qml" line="568"/>
+        <location filename="../qml/pages/Settings.qml" line="582"/>
         <source>Encrypted Database</source>
         <extracomment>Settings page encrypted database</extracomment>
         <translation>Şifreli Veri Tabanı</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-enabled">
-        <location filename="../qml/pages/Settings.qml" line="572"/>
+        <location filename="../qml/pages/Settings.qml" line="586"/>
         <source>Enabled</source>
         <extracomment>Settings page encrypted db enabled</extracomment>
         <translation>Etkin</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-disabled">
-        <location filename="../qml/pages/Settings.qml" line="575"/>
+        <location filename="../qml/pages/Settings.qml" line="589"/>
         <source>Disabled</source>
         <extracomment>Settings page encrypted db disabled</extracomment>
         <translation>Devre Dışı</translation>
