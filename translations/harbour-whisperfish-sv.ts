@@ -23,7 +23,7 @@
         <translation>Röstmeddelande</translation>
     </message>
     <message id="whisperfish-session-delete-all">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="107"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="106"/>
         <source>All messages deleted</source>
         <oldsource>Deleting all messages</oldsource>
         <extracomment>Delete all messages from session (past tense)</extracomment>
@@ -48,7 +48,7 @@
         <translation>%1 och %n andra skriver</translation>
     </message>
     <message id="whisperfish-session-note-to-self">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="206"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="205"/>
         <location filename="../qml/harbour-whisperfish-main.qml" line="120"/>
         <location filename="../qml/pages/ShareDestinationV1.qml" line="106"/>
         <location filename="../qml/pages/ShareDestinationV2.qml" line="105"/>
@@ -57,51 +57,51 @@
         <translation>Anteckning till mig själv</translation>
     </message>
     <message id="whisperfish-message-preview-draft">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="230"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="229"/>
         <source>Draft: %1</source>
         <extracomment>Message preview for a saved, unsent message</extracomment>
         <translation>Utkast: %1</translation>
     </message>
     <message id="whisperfish-session-mark-unpinned">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="366"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="365"/>
         <source>Unpin</source>
         <extracomment>&apos;Unpin&apos; conversation from the top of the view</extracomment>
         <translation>Lossa</translation>
     </message>
     <message id="whisperfish-session-mark-pinned">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="369"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="368"/>
         <source>Pin to top</source>
         <extracomment>&apos;Pin&apos; conversation to the top of the view</extracomment>
         <translation>Fäst på toppen</translation>
     </message>
     <message id="whisperfish-session-mark-unmuted">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="378"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="377"/>
         <source>Unmute conversation</source>
         <oldsource>Mark as unmuted</oldsource>
         <extracomment>Mark conversation as unmuted</extracomment>
         <translation>Slå på ljudet för konversationen</translation>
     </message>
     <message id="whisperfish-session-mark-muted">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="381"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="380"/>
         <source>Mute conversation</source>
         <oldsource>Mark as muted</oldsource>
         <extracomment>Mark conversation as muted</extracomment>
         <translation>Stäng av ljudet för konversation</translation>
     </message>
     <message id="whisperfish-session-mark-unarchived">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="389"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="388"/>
         <source>Restore to inbox</source>
         <extracomment>Show archived messages again in the main page</extracomment>
         <translation>Återställ till inkorgen</translation>
     </message>
     <message id="whisperfish-session-mark-archived">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="392"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="391"/>
         <source>Archive conversation</source>
         <extracomment>Move the conversation to archived conversations</extracomment>
         <translation>Arkivera konversation</translation>
     </message>
     <message id="whisperfish-session-delete">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="399"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="398"/>
         <source>Delete conversation</source>
         <extracomment>Delete all messages from session menu</extracomment>
         <translation>Radera konversation</translation>
@@ -178,6 +178,12 @@
         <source>Pinned</source>
         <extracomment>Session section label for pinned messages</extracomment>
         <translation>Fast nålade</translation>
+    </message>
+    <message id="whisperfish-session-section-never">
+        <location filename="../qml/pages/MainPage.qml" line="313"/>
+        <source>No messages</source>
+        <extracomment>Session section label for never (i.e. no messages, no timestamp)</extracomment>
+        <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-session-section-today">
         <location filename="../qml/pages/LinkedDevices.qml" line="117"/>
@@ -695,32 +701,32 @@
         </translation>
     </message>
     <message id="whisperfish-copy-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="450"/>
+        <location filename="../qml/components/MessagesView.qml" line="453"/>
         <source>Copy</source>
         <extracomment>Copy message menu item</extracomment>
         <translation>Kopiera</translation>
     </message>
     <message id="whisperfish-forward-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="457"/>
+        <location filename="../qml/components/MessagesView.qml" line="460"/>
         <source>Forward</source>
         <extracomment>Forward message menu item</extracomment>
         <translation>Vidarebefordra</translation>
     </message>
     <message id="whisperfish-select-or-options-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="464"/>
+        <location filename="../qml/components/MessagesView.qml" line="467"/>
         <source>Select • more</source>
         <extracomment>&quot;Select and show more options&quot; message menu item</extracomment>
         <translation>Välj - mer</translation>
     </message>
     <message id="whisperfish-resend-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="443"/>
+        <location filename="../qml/components/MessagesView.qml" line="446"/>
         <source>Retry sending</source>
         <oldsource>Resend</oldsource>
         <extracomment>Resend message menu item</extracomment>
         <translation>Försök att skicka igen</translation>
     </message>
     <message id="whisperfish-reset-identity-menu">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="321"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="326"/>
         <location filename="../qml/pages/ProfilePage.qml" line="79"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="24"/>
         <source>Reset identity key</source>
@@ -728,7 +734,7 @@
         <translation>Återställ identitetsnyckel</translation>
     </message>
     <message id="whisperfish-reset-identity-message">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="328"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="333"/>
         <location filename="../qml/pages/ProfilePage.qml" line="84"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="28"/>
         <source>Identity key reset</source>
@@ -736,7 +742,7 @@
         <translation>Identitetsnyckeln återställs</translation>
     </message>
     <message id="whisperfish-reset-session-menu">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="337"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="342"/>
         <location filename="../qml/pages/ProfilePage.qml" line="94"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="37"/>
         <source>Reset Secure Session</source>
@@ -744,7 +750,7 @@
         <translation>Återställ säker session</translation>
     </message>
     <message id="whisperfish-reset-session-message">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="344"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="349"/>
         <location filename="../qml/pages/ProfilePage.qml" line="99"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="41"/>
         <source>Secure session reset</source>
@@ -1726,13 +1732,13 @@ Settings page share contacts</extracomment>
         <translation>Verifiera säkerhetssiffror</translation>
     </message>
     <message id="whisperfish-group-add-member-menu">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="74"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="79"/>
         <source>Add Member</source>
         <extracomment>Add group member menu item</extracomment>
         <translation>Lägg till en medlem</translation>
     </message>
     <message id="whisperfish-unknown-contact">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="399"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="404"/>
         <source>Unknown</source>
         <extracomment>Unknown contact in group member list</extracomment>
         <translation>Okänt</translation>
@@ -1743,39 +1749,39 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Uppdaterad till det nya gruppformatet</translation>
     </message>
     <message id="whisperfish-group-not-updated-to-groupv2">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="94"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="99"/>
         <source>Not updated to the new group format</source>
         <extracomment>Indicator for not yet updated groups</extracomment>
         <translation>Inte uppdaterad till det nya gruppformatet</translation>
     </message>
     <message id="whisperfish-group-refresh">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="36"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="41"/>
         <source>Refresh group</source>
         <extracomment>Refresh group menu item</extracomment>
         <translation>Uppdatera gruppen</translation>
     </message>
     <message id="whisperfish-group-leave-menu">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="45"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="50"/>
         <source>Leave this group</source>
         <oldsource>Leave</oldsource>
         <extracomment>Leave group menu item</extracomment>
         <translation>Lämna gruppen</translation>
     </message>
     <message id="whisperfish-group-leave-remorse">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="53"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="58"/>
         <source>Left group and deleted all messages</source>
         <oldsource>Leaving group and removing ALL messages!</oldsource>
         <extracomment>Leave group remorse message (past tense)</extracomment>
         <translation>Lämnade gruppen och raderade alla meddelanden</translation>
     </message>
     <message id="whisperfish-group-invite-link-menu">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="66"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="71"/>
         <source>Create invitation link</source>
         <extracomment>Create invite link menu item</extracomment>
         <translation>Skapa inbjudningslänk</translation>
     </message>
     <message id="whisperfish-save-message-expiry">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="80"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="85"/>
         <location filename="../qml/pages/ProfilePage.qml" line="137"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="68"/>
         <source>Set message expiry</source>
@@ -1783,55 +1789,55 @@ Settings page share contacts</extracomment>
         <translation>Ange meddelandets tidsgräns</translation>
     </message>
     <message id="whisperfish-group-member-admin">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="221"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="226"/>
         <source>Administrator</source>
         <extracomment>Group member section label for administrator level user</extracomment>
         <translation>Administratör</translation>
     </message>
     <message id="whisperfish-group-member-regular">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="224"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="229"/>
         <source>Member</source>
         <extracomment>Group member section label for regular level user</extracomment>
         <translation>Medlem</translation>
     </message>
     <message id="whisperfish-group-member-menu-open-note-to-self">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="269"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="274"/>
         <source>Open Note to Self</source>
         <extracomment>Menu item to open the conversation with oneself</extracomment>
         <translation>Öppna en egen anteckning</translation>
     </message>
     <message id="whisperfish-group-member-menu-direct-message">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="272"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="277"/>
         <source>Message to %1</source>
         <extracomment>Menu item to open the private chat with a group member</extracomment>
         <translation>Skicka ett meddelande till %1</translation>
     </message>
     <message id="whisperfish-group-member-menu-new-direct-message">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="283"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="288"/>
         <source>Start conversation with %1</source>
         <extracomment>Menu item to start a new private chat with a group member</extracomment>
         <translation>Starta konversation med %1</translation>
     </message>
     <message id="whisperfish-group-member-menu-save-contact">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="295"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="300"/>
         <source>Add to contacts</source>
         <extracomment>Menu item to save a group member to the local address book</extracomment>
         <translation>Lägg till i kontakter</translation>
     </message>
     <message id="whisperfish-group-member-menu-verify-fingerprint">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="302"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="307"/>
         <source>Verify safety number</source>
         <extracomment>Menu item to verify safety numbers with a group member</extracomment>
         <translation>Verifiera säkerhetsnummer</translation>
     </message>
     <message id="whisperfish-group-member-menu-remove-from-group">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="315"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="320"/>
         <source>Remove from this group</source>
         <extracomment>Menu item to remove a member from a group (requires admin privileges)</extracomment>
         <translation>Ta bort från gruppen</translation>
     </message>
     <message id="whisperfish-group-member-name-self">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="395"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="400"/>
         <source>You</source>
         <extracomment>Title for the user&apos;s entry in a list of group members</extracomment>
         <translation>Du</translation>
@@ -1943,7 +1949,7 @@ Settings page share contacts</extracomment>
         <translation>Välj bilagor</translation>
     </message>
     <message id="whisperfish-attachments-plus-n" numerus="yes">
-        <location filename="../qml/components/message/AttachmentsLoader.qml" line="260"/>
+        <location filename="../qml/components/message/AttachmentsLoader.qml" line="263"/>
         <source>+%n</source>
         <extracomment>Label hinting at more attachments than are currently shown. Read as &quot;and %n more&quot;.</extracomment>
         <translation>
@@ -1952,7 +1958,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-attachments-loader-show-more" numerus="yes">
-        <location filename="../qml/components/message/AttachmentsLoader.qml" line="330"/>
+        <location filename="../qml/components/message/AttachmentsLoader.qml" line="335"/>
         <source>and %n more</source>
         <oldsource>and %1 more</oldsource>
         <extracomment>Note if some message attachments are hidden instead of being shown inline</extracomment>
@@ -2009,45 +2015,45 @@ Settings page share contacts</extracomment>
         <translation>Bilaga</translation>
     </message>
     <message id="whisperfish-sender-label-empty">
-        <location filename="../qml/delegates/MessageDelegate.qml" line="200"/>
+        <location filename="../qml/delegates/MessageDelegate.qml" line="198"/>
         <source>no sender</source>
         <extracomment>Label shown if a message doesn&apos;t have a sender.</extracomment>
         <translation>ingen avsändare</translation>
     </message>
     <message id="whisperfish-message-deleted-note">
-        <location filename="../qml/delegates/MessageDelegate.qml" line="260"/>
+        <location filename="../qml/delegates/MessageDelegate.qml" line="259"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="56"/>
         <source>this message was deleted</source>
         <extracomment>Placeholder note for a deleted message</extracomment>
         <translation>detta meddelandet togs bort</translation>
     </message>
     <message id="whisperfish-message-empty-note">
-        <location filename="../qml/delegates/MessageDelegate.qml" line="263"/>
+        <location filename="../qml/delegates/MessageDelegate.qml" line="262"/>
         <source>this message is empty</source>
         <extracomment>Placeholder note if an empty message is encountered.</extracomment>
         <translation>meddelandet är tomt</translation>
     </message>
     <message id="whisperfish-service-message-joined-group-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="134"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="129"/>
         <source>You joined the group.</source>
         <oldsource>You joined the group “%1”.</oldsource>
         <extracomment>Service message</extracomment>
         <translation type="unfinished">Du gick med i gruppen &quot;%1&quot;.</translation>
     </message>
     <message id="whisperfish-service-message-left-group-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="142"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="137"/>
         <source>You left the group.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Du lämnade gruppen.</translation>
     </message>
     <message id="whisperfish-service-message-joined-group-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="137"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="132"/>
         <source>%1 joined the group.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 gick med i gruppen.</translation>
     </message>
     <message id="whisperfish-service-message-left-group-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="145"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="140"/>
         <source>%1 left the group.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 lämnade gruppen.</translation>
@@ -2063,196 +2069,196 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Du missade ett videosamtal från %1.</translation>
     </message>
     <message id="whisperfish-service-message-call-voice-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="174"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="169"/>
         <source>You had a voice call with %1.</source>
         <oldsource>You called %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation type="unfinished">Du ringde %1.</translation>
     </message>
     <message id="whisperfish-service-message-call-video-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="166"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="161"/>
         <source>You had a video call with %1.</source>
         <oldsource>You started a video call with %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation type="unfinished">Du startade ett videosamtal med %1.</translation>
     </message>
     <message id="whisperfish-service-message-call-voice-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="177"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="172"/>
         <source>%1 had a voice call with you.</source>
         <oldsource>%1 called you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation type="unfinished">%1 ringde dig.</translation>
     </message>
     <message id="whisperfish-service-message-call-video-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="169"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="164"/>
         <source>%1 had a video call with you.</source>
         <oldsource>%1 started a video call with you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation type="unfinished">%1 startade ett videosamtal med dig.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-weeks" numerus="yes">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="52"/>
-        <source>%1 week(s)</source>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="51"/>
+        <source>%n week(s)</source>
+        <oldsource>%1 week(s)</oldsource>
         <extracomment>Expiring message timeout in weeks. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
         <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+            <numerusform>%n vecka</numerusform>
+            <numerusform>%n veckor</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-days" numerus="yes">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="56"/>
-        <source>%1 day(s)</source>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="55"/>
+        <source>%n day(s)</source>
+        <oldsource>%1 day(s)</oldsource>
         <extracomment>Expiring message timeout in days. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
         <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+            <numerusform>%n dag</numerusform>
+            <numerusform>%n dagar</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-hours" numerus="yes">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="60"/>
-        <source>%1 hour(s)</source>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="59"/>
+        <source>%n hour(s)</source>
+        <oldsource>%1 hour(s)</oldsource>
         <extracomment>Expiring message timeout in hours. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
         <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+            <numerusform>%n timma</numerusform>
+            <numerusform>%n timmar</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-minutes" numerus="yes">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="64"/>
-        <source>%1 minute(s)</source>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="63"/>
+        <source>%n minute(s)</source>
+        <oldsource>%1 minute(s)</oldsource>
         <extracomment>Expiring message timeout in minutes. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
         <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+            <numerusform>%n minut</numerusform>
+            <numerusform>%n minuter</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-seconds" numerus="yes">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="68"/>
-        <source>%1 second(s)</source>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="67"/>
+        <source>%n second(s)</source>
+        <oldsource>%1 second(s)</oldsource>
         <extracomment>Expiring message timeout in seconds. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
         <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+            <numerusform>%n sekund</numerusform>
+            <numerusform>%n sekunder</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-update-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="89"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="88"/>
         <source>You set expiring messages timeout to %1.</source>
         <extracomment>Service message, %1 time</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-service-message-expiry-update-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="92"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="91"/>
         <source>%1 set expiring messages timeout to %2.</source>
         <extracomment>Service message, %1 is a name, %2 is time</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-service-message-expiry-disable-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="97"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="96"/>
         <source>You disabled expiring messages.</source>
         <extracomment>Service message</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-service-message-expiry-disable-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="100"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="99"/>
         <source>%1 disabled expiring messages.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-service-message-expiry-unknown-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="105"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="104"/>
         <source>You set or disabled expiring messages timeout.</source>
         <extracomment>Service message</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-service-message-expiry-unknown-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="108"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="107"/>
         <source>%1 set or disabled expiring messages timeout.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation type="unfinished"></translation>
     </message>
-    <message id="whisperfish-service-message-profile-key-update-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="114"/>
-        <source>You updated your profile key with %1.</source>
-        <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
     <message id="whisperfish-service-message-profile-key-update-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="117"/>
-        <source>%1 updated their profile key with you.</source>
-        <extracomment>Service message, %1 is a name, %2 is time</extracomment>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="112"/>
+        <source>%1 updated their profile.</source>
+        <oldsource>%1 updated their profile key with you.</oldsource>
+        <extracomment>Service message for profile (key) update. %1 is a name</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-service-message-end-session-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="122"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="117"/>
         <source>You ended the session with %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-service-message-end-session-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="125"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="120"/>
         <source>%1 ended the session with you.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-service-message-changed-group">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="129"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="124"/>
         <source>The group was updated.</source>
         <extracomment>Service message</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="150"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="145"/>
         <source>You missed a voice call from %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="153"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="148"/>
         <source>You tried to voice call %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-service-message-missed-call-video-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="158"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="153"/>
         <source>You missed a video call from %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation type="unfinished">Du missade ett videosamtal från %1.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-video-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="161"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="156"/>
         <source>You tried to video call %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-service-message-fingerprint-changed">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="182"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="177"/>
         <source>Your safety number with %1 has changed. Swipe right to verify the new number.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Ditt säkerhetsnummer med %1 har ändrats. Svep åt höger för att verifiera det nya numret.</translation>
     </message>
     <message id="whisperfish-service-message-session-reset-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="187"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="182"/>
         <source>You reset the secure session with %1.</source>
         <oldsource>You have reset the secure session with %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation type="unfinished">Du har återställt en säker session med %1.</translation>
     </message>
     <message id="whisperfish-service-message-session-reset-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="190"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="185"/>
         <source>%1 reset the secure session with you.</source>
         <oldsource>%1 has reset the secure session with you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation type="unfinished">%1 har återställt en säker session med dig.</translation>
     </message>
     <message id="whisperfish-service-message-not-supported">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="196"/>
-        <source>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: %1)</source>
-        <oldsource>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: &apos;%1&apos;.)</oldsource>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="191"/>
+        <source>This service message of is not yet supported by Whisperfish. Please file a bug report. (Flags: %1, Type: %2, Contents: &quot;%3&quot;)</source>
+        <oldsource>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: %1)</oldsource>
         <translation type="unfinished">Detta servicemeddelande stöds ännu inte av Whisperfish. Vänligen lämna en felrapport. (Id: &apos;%1&apos;.)</translation>
     </message>
     <message id="whisperfish-service-message-more-info">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="252"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="247"/>
         <source>more information</source>
         <translation>tilläggsinformation</translation>
     </message>
