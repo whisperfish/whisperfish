@@ -184,7 +184,7 @@ impl RecipientImpl {
                         .map(|session| session.id)
                         .unwrap_or(-1);
                     // XXX Clean this up after #532
-                    self.recipient_uuid = Some(inner.uuid.expect("valid uuid in db"));
+                    self.recipient_uuid = Some(inner.uuid.unwrap_or(Uuid::nil()));
                     // XXX trigger Qt signal for this?
                     RecipientWithAnalyzedSession {
                         inner,

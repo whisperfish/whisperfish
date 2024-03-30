@@ -131,6 +131,24 @@ Page {
                 text: recipient.uuid
             }
 
+
+            Label {
+                visible: recipient.uuid == null || recipient.uuid == "00000000-0000-0000-0000-000000000000"
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    leftMargin: Theme.paddingLarge
+                    rightMargin: Theme.paddingLarge
+                }
+                font.pixelSize: Theme.fontSizeMedium
+                horizontalAlignment: Text.alignHCenter
+                wrapMode: Text.Wrap 
+                //: Warning about recipient UUID not existing or nil (all zeros)
+                //% "This user profile is broken and can't be used."
+                text: qsTrId("whisperfish-profile-uuid-invalid-warning")
+                color: Theme.errorColor
+            }
+
             TextField {
                 readOnly: true
                 visible: text.length > 0

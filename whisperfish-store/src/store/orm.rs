@@ -1163,7 +1163,9 @@ impl AugmentedSession {
         match &self.inner.r#type {
             SessionType::GroupV1(_group) => true,
             SessionType::GroupV2(_group) => true,
-            SessionType::DirectMessage(recipient) => recipient.is_registered,
+            SessionType::DirectMessage(recipient) => {
+                recipient.is_registered && recipient.uuid.as_ref().is_some_and(|x| !x.is_nil())
+            }
         }
     }
 
