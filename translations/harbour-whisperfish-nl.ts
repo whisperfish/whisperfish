@@ -183,7 +183,7 @@
         <location filename="../qml/pages/MainPage.qml" line="313"/>
         <source>No messages</source>
         <extracomment>Session section label for never (i.e. no messages, no timestamp)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Geen berichten</translation>
     </message>
     <message id="whisperfish-session-section-today">
         <location filename="../qml/pages/LinkedDevices.qml" line="117"/>
@@ -766,7 +766,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="148"/>
         <source>This user profile is broken and can&apos;t be used.</source>
         <extracomment>Warning about recipient UUID not existing or nil (all zeros)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Dit gebruikersprofiel is kapot en onbruikbaar.</translation>
     </message>
     <message id="whisperfish-show-fingerprint">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="217"/>
@@ -1272,19 +1272,19 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="221"/>
         <source>Privacy</source>
         <extracomment>Settings page &quot;privacy&quot; section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Privacy</translation>
     </message>
     <message id="whisperfish-settings-share-phone-number">
         <location filename="../qml/pages/Settings.qml" line="227"/>
         <source>Share phone number</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Deel telefoonnummer</translation>
     </message>
     <message id="whisperfish-settings-share-phone-number-description">
         <location filename="../qml/pages/Settings.qml" line="230"/>
         <source>When enabled, your contacts can see your phone number when you message them.</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ingeschakeld kunnen je contacten je telefoonnummer zien wanneer je hen berichten stuurt.</translation>
     </message>
     <message id="whisperfish-settings-startup-shutdown-section">
         <location filename="../qml/pages/Settings.qml" line="327"/>
@@ -2006,9 +2006,9 @@ Settings page share contacts</extracomment>
         <source>%n week(s)</source>
         <oldsource>%1 week(s)</oldsource>
         <extracomment>Expiring message timeout in weeks. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 week</numerusform>
-            <numerusform>%1 weken</numerusform>
+        <translation>
+            <numerusform>%n week</numerusform>
+            <numerusform>%n weken</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-days" numerus="yes">
@@ -2016,9 +2016,9 @@ Settings page share contacts</extracomment>
         <source>%n day(s)</source>
         <oldsource>%1 day(s)</oldsource>
         <extracomment>Expiring message timeout in days. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 dag</numerusform>
-            <numerusform>%1 dagen</numerusform>
+        <translation>
+            <numerusform>%n dag</numerusform>
+            <numerusform>%n dagen</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-hours" numerus="yes">
@@ -2026,9 +2026,9 @@ Settings page share contacts</extracomment>
         <source>%n hour(s)</source>
         <oldsource>%1 hour(s)</oldsource>
         <extracomment>Expiring message timeout in hours. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 uur</numerusform>
-            <numerusform>%1 uren</numerusform>
+        <translation>
+            <numerusform>%n uur</numerusform>
+            <numerusform>%n uren</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-minutes" numerus="yes">
@@ -2036,9 +2036,9 @@ Settings page share contacts</extracomment>
         <source>%n minute(s)</source>
         <oldsource>%1 minute(s)</oldsource>
         <extracomment>Expiring message timeout in minutes. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 minuut</numerusform>
-            <numerusform>%1 minuten</numerusform>
+        <translation>
+            <numerusform>%n minuut</numerusform>
+            <numerusform>%n minuten</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-seconds" numerus="yes">
@@ -2046,9 +2046,9 @@ Settings page share contacts</extracomment>
         <source>%n second(s)</source>
         <oldsource>%1 second(s)</oldsource>
         <extracomment>Expiring message timeout in seconds. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 seconde</numerusform>
-            <numerusform>%1 seconden</numerusform>
+        <translation>
+            <numerusform>%n seconde</numerusform>
+            <numerusform>%n seconden</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-update-self">
@@ -2097,7 +2097,7 @@ Settings page share contacts</extracomment>
         <source>%1 updated their profile.</source>
         <oldsource>%1 updated their profile key with you.</oldsource>
         <extracomment>Service message for profile (key) update. %1 is a name</extracomment>
-        <translation type="unfinished">%1 updatete diens profielsleutel met jou.</translation>
+        <translation>%1 werkte diens profielsleutel bij.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="117"/>
@@ -2165,7 +2165,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="191"/>
         <source>This service message of is not yet supported by Whisperfish. Please file a bug report. (Flags: %1, Type: %2, Contents: &quot;%3&quot;)</source>
         <oldsource>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: %1)</oldsource>
-        <translation type="unfinished">Dit dienstbericht wordt nog niet ondersteund door Whisperfish. Gelieve hiervoor een foutmelding in te dienen. (Type: ‘%1’.)</translation>
+        <translation>Dit dienstbericht wordt nog niet ondersteund door Whisperfish. Gelieve hiervoor een foutmelding in te dienen. (Vlaggen %1, Type: %2, Inhoud: &quot;%3&quot;)</translation>
     </message>
     <message id="whisperfish-service-message-more-info">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="247"/>
