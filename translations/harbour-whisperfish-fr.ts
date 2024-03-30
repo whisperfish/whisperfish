@@ -1756,49 +1756,49 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-profile-phone-number">
         <location filename="../qml/pages/ProfilePage.qml" line="255"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="141"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="159"/>
         <source>Phone number</source>
         <extracomment>Profile phone number field</extracomment>
         <translation>Numéro de téléphone</translation>
     </message>
     <message id="whisperfish-profile-about">
         <location filename="../qml/pages/ProfilePage.qml" line="267"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="152"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="170"/>
         <source>Write something about yourself</source>
         <extracomment>Profile, about you (greeting/status) field</extracomment>
         <translation>Écrivez quelque chose sur vous</translation>
     </message>
     <message id="whisperfish-profile-unidentified">
         <location filename="../qml/pages/ProfilePage.qml" line="283"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="167"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="185"/>
         <source>Sealed sending mode</source>
         <extracomment>Profile, sealed sending mode option</extracomment>
         <translation>Mode d’envoi scellé</translation>
     </message>
     <message id="whisperfish-unidentified-unknown">
         <location filename="../qml/pages/ProfilePage.qml" line="290"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="173"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="191"/>
         <source>Unknown</source>
         <extracomment>Profile, sealed sending mode, unknown option</extracomment>
         <translation>Inconnu</translation>
     </message>
     <message id="whisperfish-unidentified-disabled">
         <location filename="../qml/pages/ProfilePage.qml" line="295"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="177"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="195"/>
         <source>Disabled</source>
         <extracomment>Profile, sealed sending mode, disabled option</extracomment>
         <translation>Désactivé</translation>
     </message>
     <message id="whisperfish-unidentified-enabled">
         <location filename="../qml/pages/ProfilePage.qml" line="300"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="181"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="199"/>
         <source>Enabled</source>
         <extracomment>Profile, sealed sending mode, enabled option</extracomment>
         <translation>Activé</translation>
     </message>
     <message id="whisperfish-unidentified-unrestricted">
         <location filename="../qml/pages/ProfilePage.qml" line="305"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="185"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="203"/>
         <source>Unrestricted</source>
         <extracomment>Profile, sealed sending mode, unrestricted option</extracomment>
         <translation>Illimité</translation>
@@ -1809,38 +1809,44 @@ Settings page share contacts</extracomment>
         <extracomment>Profile, emoji symbol field</extracomment>
         <translation>Quelques mots sur vous-même</translation>
     </message>
+    <message id="whisperfish-profile-uuid-invalid-warning">
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="148"/>
+        <source>This user profile is broken and can&apos;t be used.</source>
+        <extracomment>Warning about recipient UUID not existing or nil (all zeros)</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-verify-contact-identity-title">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="193"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="211"/>
         <source>Verify safety numbers</source>
         <extracomment>Verify safety numbers</extracomment>
         <translation>Vérifier les numéros de sécurité</translation>
     </message>
     <message id="whisperfish-show-fingerprint">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="199"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="217"/>
         <source>Show fingerprint</source>
         <extracomment>Show fingerprint button</extracomment>
         <translation>Afficher l&apos;empreinte digitale</translation>
     </message>
     <message id="whisperfish-numeric-fingerprint-directions">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="242"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="260"/>
         <source>If you wish to verify the security of your end-to-end encryption with %1, compare the numbers above with the numbers on their device.</source>
         <extracomment>Numeric fingerprint instructions</extracomment>
         <translation>Si vous souhaitez vérifier la fiabilité de votre chiffrement de bout en bout avec %1, comparez les chiffres ci-dessus avec les chiffres sur votre appareil.</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="252"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="270"/>
         <source>Post-quantum keys in use</source>
         <extracomment>Profile page: whether a contact has post-quantum secure sessions</extracomment>
         <translation>Les clés post-quantum utilisées</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled-description">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="255"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="273"/>
         <source>If checked, this session was initialized with post-quantum secure cryptography.</source>
         <extracomment>Profile page: description for post-quantum secure sessions</extracomment>
         <translation>Si ceci est coché, cette session a été initialisée avec une cryptographie post-quantique sécurisée.</translation>
     </message>
     <message id="whisperfish-kyber-click-explanation">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="265"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="283"/>
         <source>Session reset for post-quantum upgrade</source>
         <extracomment>Upgrading the session to Kyber remorse popup, past tense</extracomment>
         <translation>Réinitialisation de session pour la mise à niveau post-quantum</translation>
