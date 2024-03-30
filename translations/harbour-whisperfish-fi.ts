@@ -2446,8 +2446,8 @@ Settings page share contacts</extracomment>
         <source>Unread&lt;br/&gt;message(s)</source>
         <extracomment>Unread messages count cover label. Code requires exact line break tag &quot;&lt;br/&gt;&quot;.</extracomment>
         <translation>
-            <numerusform>lukematon&lt;br/&gt;viesti</numerusform>
-            <numerusform>lukematonta&lt;br/&gt;viestiä</numerusform>
+            <numerusform>Lukematon&lt;br/&gt;viesti</numerusform>
+            <numerusform>Lukematonta&lt;br/&gt;viestiä</numerusform>
         </translation>
     </message>
     <message id="whisperfish-registration-type-message">
