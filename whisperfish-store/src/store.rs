@@ -2377,6 +2377,7 @@ impl Storage {
 
         if count == 1 {
             tracing::trace!("Attachment visual hash saved to id {}", attachment_id);
+            self.observe_update(schema::attachments::table, PrimaryKey::RowId(attachment_id));
         } else {
             tracing::error!(
                 "Could not save attachment visual hash to attachment {}",
