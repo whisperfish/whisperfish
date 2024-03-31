@@ -182,9 +182,6 @@ build:sf:latest:i486:
     <<: *variables
     MER_ARCH: i486
     TARGET_VERSION: $SFOS_VERSION
-  cache:
-    <<: *rust-cache
-    key: "target-i486-$CI_COMMIT_REF_SLUG"
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
