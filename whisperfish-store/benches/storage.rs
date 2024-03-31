@@ -1,27 +1,12 @@
-use std::sync::Arc;
+mod common;
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use libsignal_service::proto::AttachmentPointer;
-use uuid::Uuid;
 use whisperfish_store::config::SignalConfig;
-use whisperfish_store::observer::{Event, Interest, Observatory};
 use whisperfish_store::{orm, temp, NewMessage, Storage, StorageLocation};
 
-#[derive(Default, Clone)]
-pub struct DummyObservatory;
-
-impl Observatory for DummyObservatory {
-    type Subscriber = ();
-
-    fn register(&self, _id: Uuid, _interests: Vec<Interest>, _subscriber: Self::Subscriber) {}
-
-    fn update_interests(&self, _handle: Uuid, _interests: Vec<Interest>) {}
-
-    fn distribute_event(&self, _event: Event) {}
-}
-
 pub type InMemoryDb = (
-    Storage<DummyObservatory>,
+    Storage<common::DummyObservatory>,
     StorageLocation<tempfile::TempDir>,
 );
 
@@ -31,7 +16,7 @@ pub fn storage() -> InMemoryDb {
         .unwrap();
     rt.block_on(async {
         let cfg = SignalConfig::default();
-        let cfg = Arc::new(cfg);
+        let cfg = std::sync::Arc::new(cfg);
         let temp = temp();
         (
             Storage::new(cfg, &temp, None, 12345, 12346, "Some Password", None, None)
