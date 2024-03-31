@@ -1943,7 +1943,7 @@ Settings page share contacts</extracomment>
         <source>You joined the group.</source>
         <oldsource>You joined the group “%1”.</oldsource>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished">G’hed de groep ‘%1’ vervoegd.</translation>
+        <translation>G’hed de groep vervoegd.</translation>
     </message>
     <message id="whisperfish-service-message-left-group-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="137"/>
