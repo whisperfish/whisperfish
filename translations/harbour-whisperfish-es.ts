@@ -881,7 +881,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="148"/>
         <source>This user profile is broken and can&apos;t be used.</source>
         <extracomment>Warning about recipient UUID not existing or nil (all zeros)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Este perfil de usuario está roto y no se puede utilizar.</translation>
     </message>
     <message id="whisperfish-show-fingerprint">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="217"/>
