@@ -161,6 +161,16 @@ build:sf:latest:shareplugin_v2:aarch64:
       - cargo/registry/index/
       - cargo/registry/cache/
       - cargo/git/db/
+
+      - target/*/debug/deps
+      - target/*/debug/build
+      - target/*/release/deps
+      - target/*/release/build
+      # i686
+      - target/debug/deps
+      - target/debug/build
+      - target/release/deps
+      - target/release/build
     key: target-$MER_ARCH
   script:
     - .ci/build-with-mb2.sh
