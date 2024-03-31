@@ -13,6 +13,7 @@ pub use self::linked_devices::*;
 use self::migrations::MigrationCondVar;
 pub use self::profile_upload::*;
 use self::unidentified::UnidentifiedCertificates;
+use image::GenericImageView;
 use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::Sent;
@@ -1506,23 +1507,46 @@ impl Handler<SendMessage> for ClientActor {
 
                 let attachments = storage.fetch_attachments_for_message(msg.id);
 
-                for attachment in &attachments {
+                for mut attachment in attachments {
                     let attachment_path = attachment
                         .attachment_path
-                        .clone() // Clone for the spawn_blocking below
                         .expect("attachment path when uploading");
                     let contents =
-                        tokio::fs::read(attachment_path)
+                        tokio::fs::read(&attachment_path)
                             .await
                             .context("reading attachment")?;
-                    let attachment_path = attachment.attachment_path.as_deref().unwrap();
+
+                    let content_type = match mime_guess::from_path(&attachment_path).first() {
+                        Some(mime) => mime.essence_str().into(),
+                        None => String::from("application/octet-stream"),
+                    };
+
+                    if attachment.visual_hash.is_none() && content_type.starts_with("image/") {
+                        tracing::info!("Computing blurhash for attachment {}", attachment.id);
+                        match image::load_from_memory(&contents) {
+                            Ok(img) => {
+                                let (width, height) = img.dimensions();
+                                let img = img.to_rgba8();
+                                let hash = tokio::task::spawn_blocking(move || {
+                                    blurhash::encode(4, 3, width, height, &img).expect("blurhash encodable image")
+                                })
+                                .await
+                                .context("computing blurhash")?;
+                                storage.store_attachment_visual_hash(attachment.id, &hash, width, height);
+                                attachment.visual_hash = Some(hash);
+                                attachment.width = Some(width as i32);
+                                attachment.height = Some(height as i32);
+                            }
+                            Err(e) => {
+                                tracing::warn!("Could not load image for blurhash: {}", e);
+                            }
+                        }
+                    }
+
                     let spec = AttachmentSpec {
-                        content_type: match mime_guess::from_path(attachment_path).first() {
-                            Some(mime) => mime.essence_str().into(),
-                            None => String::from("application/octet-stream"),
-                        },
+                        content_type,
                         length: contents.len(),
-                        file_name: Path::new(attachment_path)
+                        file_name: Path::new(&attachment_path)
                             .file_name()
                             .map(|f| f.to_string_lossy().into_owned()),
                         preview: None,
@@ -1530,8 +1554,8 @@ impl Handler<SendMessage> for ClientActor {
                         borderless: Some(attachment.is_borderless),
                         width: attachment.width.map(|x| x as u32),
                         height: attachment.height.map(|x| x as u32),
-                        caption: None,
-                        blur_hash: None,
+                        caption: attachment.caption,
+                        blur_hash: attachment.visual_hash,
                     };
                     let ptr = match sender.upload_attachment(spec, contents).await {
                         Ok(v) => v,
