@@ -30,17 +30,17 @@ AttachmentItemBase {
         // timestamp: audioMessage.position ? (audioMessage.position / 1000.0) : 0.0
     }
 
-    // Qt 5.9+ can just use the notifyInterval of Audio, but we have to trick the animation into being smooth.
+    // Qt 5.9+ can just use the notifyInterval of MediaPlayer, but we have to trick the animation into being smooth.
     Timer {
-        running: audioMessage.playbackState == Audio.PlayingState
+        running: audioMessage.playbackState == MediaPlayer.PlayingState
         repeat: true
         interval: 20 // ms, 50fps
         onTriggered: rustlegraph.timestamp = audioMessage.position / 1000.
     }
 
     Timer {
-        running: audioMessage.playbackState == Audio.PlayingState
-        repeat: true
+        running: audioMessage.playbackState == MediaPlayer.PlayingState
+
         interval: 100 // ms, 10fps
         property int seconds: 0
         property int minutes: 0
@@ -81,7 +81,7 @@ AttachmentItemBase {
         }
     }
 
-    Audio {
+    MediaPlayer {
         id: audioMessage
         source: attach.data
         // Qt 5.9+
@@ -99,10 +99,10 @@ AttachmentItemBase {
             IconButton {
                 width: item.height
                 height: item.height
-                icon.source: audioMessage.playbackState === Audio.PlayingState
+                icon.source: audioMessage.playbackState === MediaPlayer.PlayingState
                         ? "image://theme/icon-m-simple-pause"
                         : "image://theme/icon-m-simple-play"
-                onClicked: audioMessage.playbackState === Audio.PlayingState
+                onClicked: audioMessage.playbackState === MediaPlayer.PlayingState
                            ? audioMessage.pause()
                            : audioMessage.play()
                 onPressAndHold: audioMessage.stop()
