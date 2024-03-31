@@ -1532,8 +1532,10 @@ impl Handler<SendMessage> for ClientActor {
                                 })
                                 .await
                                 .context("computing blurhash")?;
-                                storage.store_attachment_visual_hash(attachment.id, &hash);
+                                storage.store_attachment_visual_hash(attachment.id, &hash, width, height);
                                 attachment.visual_hash = Some(hash);
+                                attachment.width = Some(width as i32);
+                                attachment.height = Some(height as i32);
                             }
                             Err(e) => {
                                 tracing::warn!("Could not load image for blurhash: {}", e);

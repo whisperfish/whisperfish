@@ -2367,13 +2367,23 @@ impl Storage {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn store_attachment_visual_hash(&self, attachment_id: i32, hash: &str) {
+    pub fn store_attachment_visual_hash(
+        &self,
+        attachment_id: i32,
+        hash: &str,
+        new_width: u32,
+        new_height: u32,
+    ) {
         use schema::attachments::dsl::*;
 
         let count = diesel::update(attachments.filter(id.eq(attachment_id)))
-            .set(visual_hash.eq(hash))
+            .set((
+                visual_hash.eq(hash),
+                width.eq(new_width as i32),
+                height.eq(new_height as i32),
+            ))
             .execute(&mut *self.db())
-            .expect("store sent attachment pointer");
+            .expect("store attachment visual hash");
 
         if count == 1 {
             tracing::trace!("Attachment visual hash saved to id {}", attachment_id);
