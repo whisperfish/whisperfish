@@ -13,6 +13,7 @@ pub use self::linked_devices::*;
 use self::migrations::MigrationCondVar;
 pub use self::profile_upload::*;
 use self::unidentified::UnidentifiedCertificates;
+use image::GenericImageView;
 use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::Sent;
@@ -1506,7 +1507,7 @@ impl Handler<SendMessage> for ClientActor {
 
                 let attachments = storage.fetch_attachments_for_message(msg.id);
 
-                for attachment in attachments {
+                for mut attachment in attachments {
                     let attachment_path = attachment
                         .attachment_path
                         .expect("attachment path when uploading");
@@ -1514,11 +1515,34 @@ impl Handler<SendMessage> for ClientActor {
                         tokio::fs::read(&attachment_path)
                             .await
                             .context("reading attachment")?;
+
+                    let content_type = match mime_guess::from_path(&attachment_path).first() {
+                        Some(mime) => mime.essence_str().into(),
+                        None => String::from("application/octet-stream"),
+                    };
+
+                    if attachment.visual_hash.is_none() && content_type.starts_with("image/") {
+                        tracing::info!("Computing blurhash for attachment {}", attachment.id);
+                        match image::load_from_memory(&contents) {
+                            Ok(img) => {
+                                let (width, height) = img.dimensions();
+                                let img = img.to_rgba8();
+                                let hash = tokio::task::spawn_blocking(move || {
+                                    blurhash::encode(4, 3, width, height, &img).expect("blurhash encodable image")
+                                })
+                                .await
+                                .context("computing blurhash")?;
+                                storage.store_attachment_visual_hash(attachment.id, &hash);
+                                attachment.visual_hash = Some(hash);
+                            }
+                            Err(e) => {
+                                tracing::warn!("Could not load image for blurhash: {}", e);
+                            }
+                        }
+                    }
+
                     let spec = AttachmentSpec {
-                        content_type: match mime_guess::from_path(&attachment_path).first() {
-                            Some(mime) => mime.essence_str().into(),
-                            None => String::from("application/octet-stream"),
-                        },
+                        content_type,
                         length: contents.len(),
                         file_name: Path::new(&attachment_path)
                             .file_name()
