@@ -1506,23 +1506,21 @@ impl Handler<SendMessage> for ClientActor {
 
                 let attachments = storage.fetch_attachments_for_message(msg.id);
 
-                for attachment in &attachments {
+                for attachment in attachments {
                     let attachment_path = attachment
                         .attachment_path
-                        .clone() // Clone for the spawn_blocking below
                         .expect("attachment path when uploading");
                     let contents =
-                        tokio::fs::read(attachment_path)
+                        tokio::fs::read(&attachment_path)
                             .await
                             .context("reading attachment")?;
-                    let attachment_path = attachment.attachment_path.as_deref().unwrap();
                     let spec = AttachmentSpec {
-                        content_type: match mime_guess::from_path(attachment_path).first() {
+                        content_type: match mime_guess::from_path(&attachment_path).first() {
                             Some(mime) => mime.essence_str().into(),
                             None => String::from("application/octet-stream"),
                         },
                         length: contents.len(),
-                        file_name: Path::new(attachment_path)
+                        file_name: Path::new(&attachment_path)
                             .file_name()
                             .map(|f| f.to_string_lossy().into_owned()),
                         preview: None,
