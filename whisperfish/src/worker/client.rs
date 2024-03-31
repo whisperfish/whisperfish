@@ -1528,8 +1528,8 @@ impl Handler<SendMessage> for ClientActor {
                         borderless: Some(attachment.is_borderless),
                         width: attachment.width.map(|x| x as u32),
                         height: attachment.height.map(|x| x as u32),
-                        caption: None,
-                        blur_hash: None,
+                        caption: attachment.caption,
+                        blur_hash: attachment.visual_hash,
                     };
                     let ptr = match sender.upload_attachment(spec, contents).await {
                         Ok(v) => v,
