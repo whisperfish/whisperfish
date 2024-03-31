@@ -15,7 +15,7 @@ use crate::body_ranges::AssociatedValue;
 use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
 use crate::schema;
-use crate::store::observer::{Observatory, PrimaryKey};
+use crate::store::observer::{Observable, PrimaryKey};
 use crate::store::orm::shorten;
 use crate::{config::SignalConfig, millis_to_naive_chrono};
 use anyhow::Context;
@@ -304,10 +304,7 @@ impl<P: AsRef<Path>> StorageLocation<P> {
 }
 
 #[derive(Clone)]
-pub struct Storage<O>
-where
-    O: Observatory + Clone,
-{
+pub struct Storage<O: Observable> {
     db: Arc<AssertUnwindSafe<Mutex<SqliteConnection>>>,
     observatory: O,
     config: Arc<SignalConfig>,
@@ -319,7 +316,7 @@ where
     pni_identity_key_pair: Arc<tokio::sync::RwLock<Option<IdentityKeyPair>>>,
 }
 
-impl<O: Observatory + Clone> Debug for Storage<O> {
+impl<O: Observable> Debug for Storage<O> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Storage")
             .field("path", &self.path)
@@ -371,56 +368,7 @@ macro_rules! fetch_sessions {
     }};
 }
 
-impl<O: Observatory + Clone> Storage<O> {
-    /// Returns the path to the storage.
-    pub fn path(&self) -> &Path {
-        &self.path
-    }
-
-    pub fn db(&self) -> MutexGuard<'_, SqliteConnection> {
-        self.db.lock().expect("storage is alive")
-    }
-
-    pub fn is_encrypted(&self) -> bool {
-        self.store_enc.is_some()
-    }
-
-    pub fn clear_old_logs(
-        path: &std::path::PathBuf,
-        keep_count: usize,
-        filename_regex: &str,
-    ) -> bool {
-        self::utils::clear_old_logs(path, keep_count, filename_regex)
-    }
-
-    fn scaffold_directories(root: impl AsRef<Path>) -> Result<(), anyhow::Error> {
-        let root = root.as_ref();
-
-        let directories = [
-            root.to_path_buf() as PathBuf,
-            root.join("db"),
-            root.join("storage"),
-            root.join("storage").join("identity"),
-            root.join("storage").join("attachments"),
-            root.join("storage").join("avatars"),
-        ];
-
-        for dir in &directories {
-            if dir.exists() {
-                if dir.is_dir() {
-                    continue;
-                } else {
-                    anyhow::bail!(
-                        "Trying to create directory {:?}, but already exists as non-directory.",
-                        dir
-                    );
-                }
-            }
-            std::fs::create_dir(dir)?;
-        }
-        Ok(())
-    }
-
+impl<O: Observable + Default> Storage<O> {
     /// Writes (*overwrites*) a new Storage object to the provided path.
     #[allow(clippy::too_many_arguments)]
     pub async fn new<T: AsRef<Path> + Debug>(
@@ -432,10 +380,7 @@ impl<O: Observatory + Clone> Storage<O> {
         http_password: &str,
         aci_identity_key_pair: Option<protocol::IdentityKeyPair>,
         pni_identity_key_pair: Option<protocol::IdentityKeyPair>,
-    ) -> Result<Self, anyhow::Error>
-    where
-        O: Default,
-    {
+    ) -> Result<Self, anyhow::Error> {
         let path: &Path = std::ops::Deref::deref(db_path);
 
         tracing::info!("Creating directory structure");
@@ -513,10 +458,7 @@ impl<O: Observatory + Clone> Storage<O> {
         config: Arc<SignalConfig>,
         db_path: &StorageLocation<T>,
         password: Option<String>,
-    ) -> Result<Self, anyhow::Error>
-    where
-        O: Default,
-    {
+    ) -> Result<Self, anyhow::Error> {
         let path: &Path = std::ops::Deref::deref(db_path);
 
         let store_enc = if let Some(password) = password {
@@ -554,6 +496,57 @@ impl<O: Observatory + Clone> Storage<O> {
         };
 
         Ok(storage)
+    }
+}
+
+impl<O: Observable> Storage<O> {
+    /// Returns the path to the storage.
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    pub fn db(&self) -> MutexGuard<'_, SqliteConnection> {
+        self.db.lock().expect("storage is alive")
+    }
+
+    pub fn is_encrypted(&self) -> bool {
+        self.store_enc.is_some()
+    }
+
+    pub fn clear_old_logs(
+        path: &std::path::PathBuf,
+        keep_count: usize,
+        filename_regex: &str,
+    ) -> bool {
+        self::utils::clear_old_logs(path, keep_count, filename_regex)
+    }
+
+    fn scaffold_directories(root: impl AsRef<Path>) -> Result<(), anyhow::Error> {
+        let root = root.as_ref();
+
+        let directories = [
+            root.to_path_buf() as PathBuf,
+            root.join("db"),
+            root.join("storage"),
+            root.join("storage").join("identity"),
+            root.join("storage").join("attachments"),
+            root.join("storage").join("avatars"),
+        ];
+
+        for dir in &directories {
+            if dir.exists() {
+                if dir.is_dir() {
+                    continue;
+                } else {
+                    anyhow::bail!(
+                        "Trying to create directory {:?}, but already exists as non-directory.",
+                        dir
+                    );
+                }
+            }
+            std::fs::create_dir(dir)?;
+        }
+        Ok(())
     }
 
     #[tracing::instrument]
@@ -686,10 +679,7 @@ impl<O: Observatory + Clone> Storage<O> {
         sender: &orm::Recipient,
         data_message: &DataMessage,
         reaction: &Reaction,
-    ) -> Option<(orm::Message, orm::Session)>
-    where
-        O: Observatory,
-    {
+    ) -> Option<(orm::Message, orm::Session)> {
         // XXX error handling...
         let ts = reaction.target_sent_timestamp.expect("target timestamp");
         let ts = millis_to_naive_chrono(ts);
@@ -737,9 +727,7 @@ impl<O: Observatory + Clone> Storage<O> {
         sender_id: i32,
         new_emoji: String,
         sent_ts: NaiveDateTime,
-    ) where
-        O: Observatory,
-    {
+    ) {
         use crate::schema::reactions::dsl::*;
         use diesel::dsl::*;
         diesel::insert_into(reactions)
@@ -765,10 +753,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn remove_reaction(&mut self, msg_id: i32, sender_id: i32)
-    where
-        O: Observatory,
-    {
+    pub fn remove_reaction(&mut self, msg_id: i32, sender_id: i32) {
         use crate::schema::reactions::dsl::*;
         diesel::delete(reactions)
             .filter(author.eq(sender_id))
@@ -781,10 +766,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn fetch_self_recipient(&self) -> Option<orm::Recipient>
-    where
-        O: Observatory,
-    {
+    pub fn fetch_self_recipient(&self) -> Option<orm::Recipient> {
         let e164 = self.config.get_tel();
         let uuid = self.config.get_aci();
         if e164.is_none() {
@@ -892,10 +874,7 @@ impl<O: Observatory + Clone> Storage<O> {
         &self,
         recipient_id: i32,
         mode: UnidentifiedAccessMode,
-    ) -> bool
-    where
-        O: Observatory,
-    {
+    ) -> bool {
         use crate::schema::recipients::dsl::*;
         let affected = diesel::update(recipients)
             .set(unidentified_access_mode.eq(mode))
@@ -909,10 +888,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self, recipient_uuid), fields(recipient_uuid = shorten(&recipient_uuid.to_string(), 12).as_ref()))]
-    pub fn mark_profile_outdated(&self, recipient_uuid: Uuid) -> Option<orm::Recipient>
-    where
-        O: Observatory,
-    {
+    pub fn mark_profile_outdated(&self, recipient_uuid: Uuid) -> Option<orm::Recipient> {
         use crate::schema::recipients::dsl::*;
         diesel::update(recipients)
             .set(last_profile_fetch.eq(Option::<NaiveDateTime>::None))
@@ -934,9 +910,7 @@ impl<O: Observatory + Clone> Storage<O> {
         new_family_name: &Option<String>,
         new_about: &Option<String>,
         new_emoji: &Option<String>,
-    ) where
-        O: Observatory,
-    {
+    ) {
         let new_joined_name = match (new_given_name.clone(), new_family_name.clone()) {
             (Some(g), Some(f)) => Some(format!("{} {}", g, f)),
             (Some(g), None) => Some(g),
@@ -964,10 +938,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn update_expiration_timer(&self, session_id: i32, timer: Option<u32>)
-    where
-        O: Observatory,
-    {
+    pub fn update_expiration_timer(&self, session_id: i32, timer: Option<u32>) {
         // Carry out the update only if the timer changes
         use crate::schema::sessions::dsl::*;
         let affected_rows = diesel::update(sessions)
@@ -995,10 +966,7 @@ impl<O: Observatory + Clone> Storage<O> {
         pni: Option<Uuid>,
         new_profile_key: &[u8],
         trust_level: TrustLevel,
-    ) -> (orm::Recipient, bool)
-    where
-        O: Observatory,
-    {
+    ) -> (orm::Recipient, bool) {
         // XXX check profile_key length
         let recipient = self.merge_and_fetch_recipient(phonenumber, uuid, pni, trust_level);
 
@@ -1046,10 +1014,7 @@ impl<O: Observatory + Clone> Storage<O> {
     /// Save profile data to db and trigger GUI update.
     /// Assumes the avatar image has been saved/deleted in advance.
     #[tracing::instrument(skip(self))]
-    pub fn save_profile(&self, profile: StoreProfile)
-    where
-        O: Observatory,
-    {
+    pub fn save_profile(&self, profile: StoreProfile) {
         use crate::store::schema::recipients::dsl::*;
         use diesel::prelude::*;
         diesel::update(recipients)
@@ -1088,10 +1053,7 @@ impl<O: Observatory + Clone> Storage<O> {
         uuid: Option<Uuid>,
         _pni: Option<Uuid>,
         trust_level: TrustLevel,
-    ) -> orm::Recipient
-    where
-        O: Observatory,
-    {
+    ) -> orm::Recipient {
         let (id, uuid, phonenumber, changed) = self
             .db()
             .transaction::<_, Error, _>(|db| {
@@ -1297,10 +1259,7 @@ impl<O: Observatory + Clone> Storage<O> {
     /// Executes `merge_recipient_inner` inside a transaction, and then returns the result.
     #[allow(unused)]
     #[tracing::instrument(skip(self))]
-    fn merge_recipients(&self, source_id: i32, dest_id: i32) -> orm::Recipient
-    where
-        O: Observatory,
-    {
+    fn merge_recipients(&self, source_id: i32, dest_id: i32) -> orm::Recipient {
         let mut db = self.db();
         let merged_id = db
             .transaction::<_, Error, _>(|db| Self::merge_recipients_inner(db, source_id, dest_id))
@@ -1499,10 +1458,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn fetch_or_insert_recipient_by_uuid(&self, new_uuid: Uuid) -> orm::Recipient
-    where
-        O: Observatory,
-    {
+    pub fn fetch_or_insert_recipient_by_uuid(&self, new_uuid: Uuid) -> orm::Recipient {
         use crate::schema::recipients::dsl::*;
 
         let new_uuid = new_uuid.to_string();
@@ -1525,10 +1481,7 @@ impl<O: Observatory + Clone> Storage<O> {
     pub fn fetch_or_insert_recipient_by_phonenumber(
         &self,
         phonenumber: &PhoneNumber,
-    ) -> orm::Recipient
-    where
-        O: Observatory,
-    {
+    ) -> orm::Recipient {
         use crate::schema::recipients::dsl::*;
 
         let mut db = self.db();
@@ -1582,10 +1535,7 @@ impl<O: Observatory + Clone> Storage<O> {
     ///
     /// This is e.g. called from Signal Desktop from a sync message
     #[tracing::instrument(skip(self))]
-    pub fn mark_message_read(&self, timestamp: NaiveDateTime) -> Option<MessagePointer>
-    where
-        O: Observatory,
-    {
+    pub fn mark_message_read(&self, timestamp: NaiveDateTime) -> Option<MessagePointer> {
         use schema::messages::dsl::*;
         let mut row: Vec<(i32, i32)> = diesel::update(messages)
             .filter(server_timestamp.eq(timestamp))
@@ -1665,10 +1615,7 @@ impl<O: Observatory + Clone> Storage<O> {
         receiver_uuid: Uuid,
         timestamp: NaiveDateTime,
         delivered_at: Option<chrono::DateTime<Utc>>,
-    ) -> Option<MessagePointer>
-    where
-        O: Observatory,
-    {
+    ) -> Option<MessagePointer> {
         // XXX: probably, the trigger for this method call knows a better time stamp.
         let delivered_at = delivered_at.unwrap_or_else(chrono::Utc::now).naive_utc();
 
@@ -1889,10 +1836,10 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self, phonenumber), fields(phonenumber = %phonenumber))]
-    pub fn fetch_or_insert_session_by_phonenumber(&self, phonenumber: &PhoneNumber) -> orm::Session
-    where
-        O: Observatory,
-    {
+    pub fn fetch_or_insert_session_by_phonenumber(
+        &self,
+        phonenumber: &PhoneNumber,
+    ) -> orm::Session {
         if let Some(session) = self.fetch_session_by_phonenumber(phonenumber) {
             return session;
         }
@@ -1915,10 +1862,7 @@ impl<O: Observatory + Clone> Storage<O> {
 
     /// Fetches recipient's DM session, or creates the session.
     #[tracing::instrument(skip(self))]
-    pub fn fetch_or_insert_session_by_recipient_id(&self, recipient_id: i32) -> orm::Session
-    where
-        O: Observatory,
-    {
+    pub fn fetch_or_insert_session_by_recipient_id(&self, recipient_id: i32) -> orm::Session {
         if let Some(session) = self.fetch_session_by_recipient_id(recipient_id) {
             return session;
         }
@@ -1937,10 +1881,7 @@ impl<O: Observatory + Clone> Storage<O> {
             .expect("a session has been inserted")
     }
 
-    pub fn fetch_or_insert_session_by_group_v1(&self, group: &GroupV1) -> orm::Session
-    where
-        O: Observatory,
-    {
+    pub fn fetch_or_insert_session_by_group_v1(&self, group: &GroupV1) -> orm::Session {
         let group_id = hex::encode(&group.id);
 
         let _span = tracing::info_span!(
@@ -2002,10 +1943,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn fetch_session_by_group_v1_id(&self, group_id_hex: &str) -> Option<orm::Session>
-    where
-        O: Observatory,
-    {
+    pub fn fetch_session_by_group_v1_id(&self, group_id_hex: &str) -> Option<orm::Session> {
         if group_id_hex.len() != 32 {
             tracing::warn!(
                 "Trying to fetch GV1 with ID of {} != 32 chars",
@@ -2019,10 +1957,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn fetch_session_by_group_v2_id(&self, group_id_hex: &str) -> Option<orm::Session>
-    where
-        O: Observatory,
-    {
+    pub fn fetch_session_by_group_v2_id(&self, group_id_hex: &str) -> Option<orm::Session> {
         if group_id_hex.len() != 64 {
             tracing::warn!(
                 "Trying to fetch GV2 with ID of {} != 64 chars",
@@ -2035,10 +1970,7 @@ impl<O: Observatory + Clone> Storage<O> {
         })
     }
 
-    pub fn fetch_or_insert_session_by_group_v2(&self, group: &GroupV2) -> orm::Session
-    where
-        O: Observatory,
-    {
+    pub fn fetch_or_insert_session_by_group_v2(&self, group: &GroupV2) -> orm::Session {
         let group_id = group.secret.get_group_identifier();
         let group_id_hex = hex::encode(group_id);
         let _span = tracing::info_span!(
@@ -2169,10 +2101,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn delete_session(&self, session_id: i32)
-    where
-        O: Observatory,
-    {
+    pub fn delete_session(&self, session_id: i32) {
         let affected_rows =
             diesel::delete(schema::sessions::table.filter(schema::sessions::id.eq(session_id)))
                 .execute(&mut *self.db())
@@ -2187,10 +2116,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn save_draft(&self, session_id: i32, draft: String)
-    where
-        O: Observatory,
-    {
+    pub fn save_draft(&self, session_id: i32, draft: String) {
         let draft = if draft.is_empty() { None } else { Some(draft) };
 
         let affected_rows =
@@ -2207,10 +2133,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn start_message_expiry(&self, message_id: i32)
-    where
-        O: Observatory,
-    {
+    pub fn start_message_expiry(&self, message_id: i32) {
         let affected_rows = diesel::update(
             schema::messages::table.filter(
                 schema::messages::id
@@ -2319,10 +2242,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn mark_session_read(&self, session_id: i32)
-    where
-        O: Observatory,
-    {
+    pub fn mark_session_read(&self, session_id: i32) {
         let ids: Vec<i32> = diesel::update(
             schema::messages::table.filter(
                 schema::messages::session_id
@@ -2342,10 +2262,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn mark_session_muted(&self, session_id: i32, muted: bool)
-    where
-        O: Observatory,
-    {
+    pub fn mark_session_muted(&self, session_id: i32, muted: bool) {
         use schema::sessions::dsl::*;
 
         let affected_rows = diesel::update(sessions.filter(id.eq(session_id)))
@@ -2358,10 +2275,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn mark_session_archived(&self, session_id: i32, archived: bool)
-    where
-        O: Observatory,
-    {
+    pub fn mark_session_archived(&self, session_id: i32, archived: bool) {
         use schema::sessions::dsl::*;
 
         let affected_rows = diesel::update(sessions.filter(id.eq(session_id)))
@@ -2374,10 +2288,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn mark_session_pinned(&self, session_id: i32, pinned: bool)
-    where
-        O: Observatory,
-    {
+    pub fn mark_session_pinned(&self, session_id: i32, pinned: bool) {
         use schema::sessions::dsl::*;
 
         let affected_rows = diesel::update(sessions.filter(id.eq(session_id)))
@@ -2390,10 +2301,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn mark_recipient_registered(&self, recipient_uuid: Uuid, registered: bool) -> bool
-    where
-        O: Observatory,
-    {
+    pub fn mark_recipient_registered(&self, recipient_uuid: Uuid, registered: bool) -> bool {
         use schema::recipients::dsl::*;
 
         let rid: Option<i32> =
@@ -2418,10 +2326,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn register_attachment(&mut self, mid: i32, ptr: AttachmentPointer) -> i32
-    where
-        O: Observatory,
-    {
+    pub fn register_attachment(&mut self, mid: i32, ptr: AttachmentPointer) -> i32 {
         use schema::attachments::dsl::*;
 
         let inserted_attachment_id = diesel::insert_into(attachments)
@@ -2520,10 +2425,7 @@ impl<O: Observatory + Clone> Storage<O> {
     ///
     /// Panics is new_message.session_id is None.
     #[tracing::instrument(skip(self), fields(session_id = new_message.session_id))]
-    pub fn create_message(&self, new_message: &NewMessage) -> orm::Message
-    where
-        O: Observatory,
-    {
+    pub fn create_message(&self, new_message: &NewMessage) -> orm::Message {
         // XXX Storing the message with its attachments should happen in a transaction.
         // Meh.
         let session = new_message.session_id;
@@ -3030,10 +2932,7 @@ impl<O: Observatory + Clone> Storage<O> {
     /// and clear the body text, delete its reactions,
     /// and if it was an incoming message, also its attachments from the disk.
     #[tracing::instrument(skip(self))]
-    pub fn delete_message(&mut self, message_id: i32) -> bool
-    where
-        O: Observatory,
-    {
+    pub fn delete_message(&mut self, message_id: i32) -> bool {
         let message: Option<orm::Message> = diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
             .set((
@@ -3133,10 +3032,7 @@ impl<O: Observatory + Clone> Storage<O> {
 
     /// Marks all messages that are outbound and unsent as failed.
     #[tracing::instrument(skip(self))]
-    pub fn mark_pending_messages_failed(&self) -> usize
-    where
-        O: Observatory,
-    {
+    pub fn mark_pending_messages_failed(&self) -> usize {
         use schema::messages::dsl::*;
         let failed_messages: Vec<i32> = diesel::update(messages)
             .filter(
@@ -3165,10 +3061,7 @@ impl<O: Observatory + Clone> Storage<O> {
 
     /// Marks a message as failed to send
     #[tracing::instrument(skip(self))]
-    pub fn fail_message(&self, message_id: i32)
-    where
-        O: Observatory,
-    {
+    pub fn fail_message(&self, message_id: i32) {
         diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
             .set(schema::messages::sending_has_failed.eq(true))
@@ -3179,10 +3072,7 @@ impl<O: Observatory + Clone> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn dequeue_message(&self, message_id: i32, sent_time: NaiveDateTime, unidentified: bool)
-    where
-        O: Observatory,
-    {
+    pub fn dequeue_message(&self, message_id: i32, sent_time: NaiveDateTime, unidentified: bool) {
         diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
             .set((
@@ -3198,10 +3088,7 @@ impl<O: Observatory + Clone> Storage<O> {
 
     /// Returns a binary peer identity
     #[tracing::instrument(skip(self))]
-    pub async fn peer_identity(&self, addr: ProtocolAddress) -> Result<Vec<u8>, anyhow::Error>
-    where
-        O: Observatory,
-    {
+    pub async fn peer_identity(&self, addr: ProtocolAddress) -> Result<Vec<u8>, anyhow::Error> {
         let ident = self
             .aci_storage() // XXX: What about PNI?
             .get_identity(&addr)
@@ -3230,10 +3117,7 @@ impl<O: Observatory + Clone> Storage<O> {
         dest: &Path,
         ext: &str,
         attachment: &[u8],
-    ) -> Result<PathBuf, anyhow::Error>
-    where
-        O: Observatory,
-    {
+    ) -> Result<PathBuf, anyhow::Error> {
         let fname = Uuid::new_v4();
         let fname = fname.as_simple();
         let fname_formatted = format!("{}", fname);

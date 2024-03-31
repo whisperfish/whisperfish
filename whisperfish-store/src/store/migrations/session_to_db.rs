@@ -1,6 +1,6 @@
 mod quirk;
 
-use crate::observer::Observatory;
+use crate::observer::Observable;
 use crate::store::orm::{self, Prekey, SessionRecord, SignedPrekey};
 use crate::store::Storage;
 use libsignal_service::protocol::{self, IdentityKey, PreKeyId, ProtocolAddress, SignedPreKeyId};
@@ -9,23 +9,16 @@ use protocol::SignalProtocolError;
 use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 
-pub struct SessionStorageMigration<O>(pub Storage<O>)
-where
-    O: Observatory + Clone;
-impl<O> Deref for SessionStorageMigration<O>
-where
-    O: Observatory + Clone,
-{
+pub struct SessionStorageMigration<O: Observable>(pub Storage<O>);
+
+impl<O: Observable> Deref for SessionStorageMigration<O> {
     type Target = Storage<O>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
-impl<O> DerefMut for SessionStorageMigration<O>
-where
-    O: Observatory + Clone,
-{
+impl<O: Observable> DerefMut for SessionStorageMigration<O> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
@@ -61,10 +54,7 @@ fn name_to_protocol_addr(name: &str, id: u32) -> Option<ProtocolAddress> {
     None
 }
 
-impl<O> SessionStorageMigration<O>
-where
-    O: Observatory + Clone,
-{
+impl<O: Observable> SessionStorageMigration<O> {
     #[tracing::instrument(name = "session_to_db", skip(self))]
     pub async fn execute(&self) {
         let session_dir = self.0.path().join("storage").join("sessions");

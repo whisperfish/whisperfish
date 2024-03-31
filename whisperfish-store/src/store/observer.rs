@@ -286,6 +286,10 @@ pub trait Observatory {
     fn distribute_event(&self, event: Event);
 }
 
+pub trait Observable: Observatory + Clone {}
+
+impl<O: Observatory + Clone> Observable for O {}
+
 pub trait EventObserving {
     type Context;
 
@@ -297,7 +301,7 @@ pub trait EventObserving {
 
 pub struct ObservationBuilder<'a, T, O>
 where
-    O: Observatory + Clone,
+    O: Observable,
 {
     storage: &'a super::Storage<O>,
     event: Event,
@@ -306,7 +310,7 @@ where
 
 impl<T, O> Drop for ObservationBuilder<'_, T, O>
 where
-    O: Observatory + Clone,
+    O: Observable,
 {
     fn drop(&mut self) {
         self.storage.distribute_event(self.event.clone());
@@ -316,7 +320,7 @@ where
 impl<'a, T, O> ObservationBuilder<'a, T, O>
 where
     T: diesel::Table + 'static,
-    O: Observatory + Clone,
+    O: Observable,
 {
     pub fn with_relation<U: diesel::Table + 'static>(
         mut self,
@@ -339,7 +343,7 @@ pub struct ObserverHandle {
     id: Uuid,
 }
 
-impl<O: Observatory + Clone> super::Storage<O> {
+impl<O: Observable> super::Storage<O> {
     pub fn register_observer(
         &mut self,
         interests: Vec<Interest>,
