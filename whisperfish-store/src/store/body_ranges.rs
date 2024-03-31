@@ -279,7 +279,7 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
         assert!(end <= message.encode_utf16().count());
         let left = segments
             .binary_search_by(|segment| {
-                if segment.end() < range.start as usize {
+                if segment.end() <= range.start as usize {
                     std::cmp::Ordering::Less
                 } else if segment.start > range.start as usize {
                     std::cmp::Ordering::Greater
