@@ -108,7 +108,7 @@ BackgroundItem {
                 // Reused from main.qml; "You"
                 qsTrId("whisperfish-sender-name-label-outgoing") :
                 (sender.valid ?
-                    getRecipientName(sender.e164, sender.name, false) :
+                    getRecipientName(sender.e164, sender.externalId, sender.name, false) :
                     //: Text shown on quotes when the sender of a quote is unknown
                     //% "Unknown sender"
                     qsTrId("whisperfish-quoted-message-unknown-sender"))

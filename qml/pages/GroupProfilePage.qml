@@ -242,8 +242,8 @@ Page {
 
             //property bool isVerified: false // TODO implement in backend;  model.isVerified
             property bool isSelf: recipient.recipientUuid == SetupWorker.uuid
-            property string profilePicture: getRecipientAvatar(recipient.e164, recipient.uuid)
-            property string name: getRecipientName(recipient.e164, recipient.name, false)
+            property string profilePicture: getRecipientAvatar(recipient.e164, recipient.uuid, recipient.externalId)
+            property string name: getRecipientName(recipient.e164, recipient.externalId, recipient.name, false)
             property bool isUnknownContact: name == recipient.e164
 
             // TODO Implement custom contact page for Whisperfish contacts

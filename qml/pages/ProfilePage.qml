@@ -156,7 +156,7 @@ Page {
                 width: height
                 highlighted: false
                 labelsHighlighted: false
-                imageSource: getRecipientAvatar(recipient.e164, recipient.uuid)
+                imageSource: getRecipientAvatar(recipient.e164, recipient.uuid, recipient.externalId)
                 isGroup: false
                 showInfoMark: true
                 infoMarkSource: 'image://theme/icon-s-chat'

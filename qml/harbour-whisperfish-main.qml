@@ -76,10 +76,19 @@ ApplicationWindow
 
     // Return peer contacts avatar or Signal profile avatar based on
     // user selected preference. Do not use for groups (there's no choice).
-    function getRecipientAvatar(e164, uuid) {
-        if (e164 == null) { e164 = '' }
-        // Only try to search for contact name if contact is a phone number
-        var contact = (contactsReady && e164[0] === '+') ? resolvePeopleModel.personByPhoneNumber(e164, true) : null
+    function getRecipientAvatar(e164, uuid, extId) {
+        var contact = null
+        // In Sailfish OS, extId is a number
+        if (extId != null) {
+            extId = parseInt(extId)
+            contact = contactsReady ? resolvePeopleModel.personById(extId) : null
+            if (contact != null) { console.log("Avatar by extId:", extId) }
+        }
+        if (contact == null && e164 != null && e164[0] === '+') {
+            // Only try to search for contact name if contact is a phone number
+            contact = contactsReady ? resolvePeopleModel.personByPhoneNumber(e164, true) : null
+            if (contact != null) { console.log("Avatar by e164:", e164) }
+        }
 
         var contact_avatar = (contact && contact.avatarPath) ? contact.avatarPath.toString() : null
         var contact_avatar_ok = (contact_avatar !== null) && (contact_avatar !== 'image://theme/icon-m-telephony-contact-avatar')
@@ -106,7 +115,7 @@ ApplicationWindow
     // showNoteToSelf: true:      show "You"
     //                 false:     show "Note to self"
     //                 undefined: show own name instead
-    function getRecipientName(e164, recipientName, shownNoteToSelf) {
+    function getRecipientName(e164, extId, recipientName, shownNoteToSelf) {
         if(!recipientName) {
             recipientName = ''
         }
@@ -125,8 +134,18 @@ ApplicationWindow
             }
         }
 
-        // Only try to search for contact name if contact is a phone number
-        var contact = (contactsReady && e164[0] === '+') ? resolvePeopleModel.personByPhoneNumber(e164, true) : null
+        var contact = null
+        if (extId != null) {
+            // In Sailfish OS, extId is a number
+            extId = parseInt(extId)
+            contact = contactsReady ? resolvePeopleModel.personById(extId) : null
+            if (contact != null) { console.log("Name by extId:", extId) }
+        }
+        if (contact == null && e164 != null && e164[0] === '+') {
+            // Only try to search for contact name if contact is a phone number
+            contact = contactsReady ? resolvePeopleModel.personByPhoneNumber(e164, true) : null
+            if (contact != null) { console.log("Name by e164:", e164) }
+        }
         if(SettingsBridge.prefer_device_contacts) {
             return (contact && contact.displayLabel !== '') ? contact.displayLabel : recipientName
         } else {
@@ -153,7 +172,7 @@ ApplicationWindow
     }
 
     function newMessageNotification(sid, mid, sessionName, senderName, senderIdentifier, senderUuid, message, isGroup) {
-        var name = getRecipientName(senderIdentifier, senderName)
+        var name = getRecipientName(senderIdentifier, undefined, senderName) // FIXME
         var contactName = isGroup ? sessionName : name
 
         // Only ConversationPage.qml has `sessionId` property.

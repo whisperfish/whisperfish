@@ -42,9 +42,9 @@ Page {
             property bool isGroup: model.isGroup
             property string profilePicture: model !== undefined ? (isGroup
                 ? getGroupAvatar(model.groupId)
-                : getRecipientAvatar(recipient.e164, recipient.uuid)
+                : getRecipientAvatar(recipient.e164, recipient.uuid, recipient.externalId)
             ) : ''
-            property string name: model.isGroup ? model.groupName : getRecipientName(recipient.e164, recipient.name, false)
+            property string name: model.isGroup ? model.groupName : getRecipientName(recipient.e164, recipient.externalId, recipient.name, false)
             property bool isNoteToSelf: false
             property bool selected: sessionList.recipients.hasOwnProperty("indexOf") ? (sessionList.recipients.indexOf(model.id) > -1) : false
 

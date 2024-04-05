@@ -54,7 +54,7 @@ ListItem {
     }
 
     // TODO: Don't query recipient name for each message separately
-    readonly property string contactName: (showSender && sender.loaded) ? getRecipientName(sender.item.e164, sender.item.name, false) : "..."
+    readonly property string contactName: (showSender && sender.loaded) ? getRecipientName(sender.item.e164, sender.item.externalId, sender.item.name, false) : "..."
     // sender.loaded && sender.item.valid has a problem when sender is not yet loaded.
     readonly property string contactNameValid: !showSender || (sender.loaded ? sender.item.valid : false)
 

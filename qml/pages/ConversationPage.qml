@@ -12,8 +12,8 @@ Page {
     // E.g. when starting a new chat.
     property bool editorFocus: false
 
-    property string conversationName: session.isGroup ? session.groupName : getRecipientName(recipient.e164, recipient.name, true)
-    property string profilePicture: session.isGroup ? getGroupAvatar(session.groupId) : getRecipientAvatar(recipient.e164, recipient.uuid)
+    property string conversationName: session.isGroup ? session.groupName : getRecipientName(recipient.e164, recipient.externalId, recipient.name, true)
+    property string profilePicture: session.isGroup ? getGroupAvatar(session.groupId) : getRecipientAvatar(recipient.e164, recipient.uuid, recipient.externalId)
     property alias sessionId: session.sessionId
     property int expiringMessages: session.expiringMessageTimeout != -1
     property DockedPanel activePanel: actionsPanel.open ? actionsPanel : panel
