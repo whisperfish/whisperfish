@@ -317,6 +317,7 @@ pub struct Recipient {
     #[diesel(deserialize_as = OptionUuidString)]
     pub pni: Option<Uuid>,
     pub needs_pni_signature: bool,
+    pub external_id: Option<String>,
 }
 
 impl Display for Recipient {
@@ -1445,6 +1446,7 @@ mod tests {
             about_emoji: Some("🦊".into()),
             is_registered: true,
             needs_pni_signature: false,
+            external_id: None,
         }
     }
 

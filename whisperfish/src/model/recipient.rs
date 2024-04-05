@@ -28,6 +28,7 @@ crate::observing_model! {
         valid: bool; READ get_valid,
     } WITH OPTIONAL PROPERTIES FROM recipient WITH ROLE RecipientWithAnalyzedSessionRoles {
         id Id,
+        externalId ExternalId,
         directMessageSessionId DirectMessageSessionId,
         uuid Uuid,
         // These two are aliases
@@ -287,6 +288,7 @@ impl RecipientListModel {}
 define_model_roles! {
     pub(super) enum RecipientWithAnalyzedSessionRoles for RecipientWithAnalyzedSession {
         Id(id): "id",
+        ExternalId(external_id via qstring_from_option): "externalId",
         DirectMessageSessionId(direct_message_recipient_id): "directMessageSessionId",
         Uuid(uuid via qstring_from_optional_to_string): "uuid",
         // These two are aliases
@@ -317,6 +319,7 @@ define_model_roles! {
 define_model_roles! {
     pub(super) enum RecipientRoles for orm::Recipient {
         Id(id): "id",
+        ExternalId(external_id via qstring_from_option): "externalId",
         Uuid(uuid via qstring_from_optional_to_string): "uuid",
         // These two are aliases
         E164(e164 via qstring_from_optional_to_string): "e164",

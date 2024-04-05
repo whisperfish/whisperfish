@@ -214,6 +214,7 @@ diesel::table! {
         unidentified_access_mode -> Integer,
         pni -> Nullable<Text>,
         needs_pni_signature -> Bool,
+        external_id -> Nullable<Text>,
     }
 }
 
