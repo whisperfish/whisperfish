@@ -64,6 +64,20 @@ Page {
                 LinkedText { id: phoneNumberLinker; visible: false }
             }
             MenuItem {
+                //: Menu action to unlink a Signal contact from a Sailfish OS contact
+                //% "Unlink contact"
+                text: qsTrId("whisperfish-recipient-unlink")
+                visible: recipient.externalId != null
+                onClicked: ClientWorker.unlinkRecipient(recipient.recipientId)
+            }
+            MenuItem {
+                //: Menu action to pick a Sailfish OS contact to link the Signal user to
+                //% "Link contact"
+                text: qsTrId("whisperfish-recipient-link")
+                visible: recipient.externalId == null
+                onClicked: pageStack.push(Qt.resolvedUrl("LinkContactPage.qml"), { recipient: recipient })
+            }
+            MenuItem {
                 // Translation in ProfilePage.qml
                 text: qsTrId("whisperfish-save-message-expiry")
                 visible: session != null && expiringMessages.newDuration !== session.expiringMessageTimeout

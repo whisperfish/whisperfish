@@ -3148,6 +3148,21 @@ impl Storage {
         Ok(path)
     }
 
+    pub fn set_recipient_external_id(&mut self, rcpt_id: i32, ext_id: Option<String>) {
+        use crate::schema::recipients::dsl::*;
+
+        let affected = diesel::update(recipients)
+            .set(external_id.eq(&ext_id))
+            .filter(id.eq(rcpt_id))
+            .execute(&mut *self.db())
+            .expect("db");
+
+        if affected > 0 {
+            tracing::debug!("Recipient {} external ID changed to {:?}", rcpt_id, ext_id);
+            self.observe_update(recipients, rcpt_id);
+        }
+    }
+
     #[tracing::instrument]
     pub fn migrate_storage() -> Result<(), anyhow::Error> {
         let data_dir = dirs::data_local_dir().context("No data directory found")?;
