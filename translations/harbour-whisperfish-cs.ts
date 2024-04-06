@@ -79,7 +79,7 @@
         <source>Unmute conversation</source>
         <oldsource>Mark as unmuted</oldsource>
         <extracomment>Mark conversation as unmuted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Přestat ignorovat konverzaci</translation>
     </message>
     <message id="whisperfish-session-mark-muted">
         <location filename="../qml/delegates/SessionDelegate.qml" line="380"/>
@@ -92,7 +92,7 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="388"/>
         <source>Restore to inbox</source>
         <extracomment>Show archived messages again in the main page</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Obnovit do doručené pošty</translation>
     </message>
     <message id="whisperfish-session-mark-archived">
         <location filename="../qml/delegates/SessionDelegate.qml" line="391"/>
@@ -104,7 +104,7 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="398"/>
         <source>Delete conversation</source>
         <extracomment>Delete all messages from session menu</extracomment>
-        <translation>Odstranit konverzaci</translation>
+        <translation>Vymazat konverzaci</translation>
     </message>
     <message id="whisperfish-notification-default-message">
         <location filename="../qml/harbour-whisperfish-main.qml" line="176"/>
@@ -234,7 +234,7 @@
         <source>Whisperfish is an unofficial, but advanced Signal client for Sailfish OS. Whisperfish is highly usable, but is still considered beta quality software. Make sure to update regularily! Also, check our Wiki and feel free to contribute to it! Do not ever contact the Signal developers about a Whisperfish issue, contact us instead!</source>
         <oldsource>Whisperfish is an unofficial, but advanced Signal client for Sailfish OS. Whisperfish is highly usable, but is still considered beta quality software. Make sure to update regularily! Also, check our Wiki and feel free to contribute to it! Do not ever contact the Signal developers about a Whisperfish issue, contact us instead!.</oldsource>
         <extracomment>Whisperfish description, longer version, also for Jolla Store</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Whisperfish je neoficiální, ale pokročilý klient Signal pro OS Sailfish. Whisperfish je vysoce použitelný, ale stále je považován za software v beta kvalitě. Nezapomeňte pravidelně aktualizovat! Podívejte se také na naši Wiki a neváhejte do ní přispívat! Nikdy nekontaktujte vývojáře Signal ohledně problému Whisperfish, ale kontaktujte nás!</translation>
     </message>
     <message id="whisperfish-build-id">
         <location filename="../qml/pages/About.qml" line="78"/>
@@ -481,7 +481,7 @@
         <source>Unlinked</source>
         <oldsource>Unlinking</oldsource>
         <extracomment>Unlinking remorse info message for unlinking secondary devices (past tense)</extracomment>
-        <translation type="unfinished">Odpojení</translation>
+        <translation>Odpojeno</translation>
     </message>
     <message id="whisperfish-current-device-name">
         <location filename="../qml/pages/LinkedDevices.qml" line="77"/>
@@ -566,10 +566,10 @@
         <source>Locally deleted %n message(s)</source>
         <oldsource>Locally deleted %1 messages</oldsource>
         <extracomment>Remorse: *locally* deleted one or multiple message (past tense)</extracomment>
-        <translation type="unfinished">
-            <numerusform>Místně odstraněné %n zprávy</numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Místně vymazaná %n zpráva</numerusform>
+            <numerusform>Místně vymazané %n zprávy</numerusform>
+            <numerusform>Místně vymazaných %n zpráv</numerusform>
         </translation>
     </message>
     <message id="whisperfish-react-message-menu">
@@ -581,10 +581,10 @@
         <location filename="../qml/components/MessagesView.qml" line="180"/>
         <source>Deleted %n message(s) for everyone</source>
         <extracomment>Remorse: *globally* deleted one or multiple message (past tense)</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Smazáno %n zprávy pro všechny</numerusform>
+            <numerusform>Smazáno %n zprávy pro všechny</numerusform>
+            <numerusform>Smazáno %n zpráv pro všechny</numerusform>
         </translation>
     </message>
     <message id="whisperfish-copy-message-menu">
@@ -610,7 +610,7 @@
         <source>Retry sending</source>
         <oldsource>Resend</oldsource>
         <extracomment>Resend message menu item</extracomment>
-        <translation type="unfinished">Znovu odeslat</translation>
+        <translation>Znovu odeslat</translation>
     </message>
     <message id="whisperfish-reset-identity-menu">
         <location filename="../qml/pages/GroupProfilePage.qml" line="326"/>
@@ -618,7 +618,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="24"/>
         <source>Reset identity key</source>
         <extracomment>Reset identity key menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Resetovat klíč identity</translation>
     </message>
     <message id="whisperfish-reset-identity-message">
         <location filename="../qml/pages/GroupProfilePage.qml" line="333"/>
@@ -626,7 +626,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="28"/>
         <source>Identity key reset</source>
         <extracomment>Reset identity key remorse message (past tense)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Resetování identifikačního klíče</translation>
     </message>
     <message id="whisperfish-reset-session-menu">
         <location filename="../qml/pages/GroupProfilePage.qml" line="342"/>
@@ -643,14 +643,14 @@
         <source>Secure session reset</source>
         <oldsource>Resetting secure session</oldsource>
         <extracomment>Reset secure session remorse message (past tense)</extracomment>
-        <translation type="unfinished">Resetování zabezpečené zasedání</translation>
+        <translation>Zabezpečené zasedání resetováno</translation>
     </message>
     <message id="whisperfish-refresh-profile-menu">
         <location filename="../qml/pages/ProfilePage.qml" line="109"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="50"/>
         <source>Refresh Signal profile</source>
         <extracomment>Refresh contact profile menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Obnovit profil Signálu</translation>
     </message>
     <message id="whisperfish-show-contact-page-menu">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="59"/>
@@ -662,80 +662,80 @@
         <location filename="../qml/pages/ProfilePage.qml" line="118"/>
         <source>Discard changes</source>
         <extracomment>Undo changes and exit editing you profile details menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zrušit změny</translation>
     </message>
     <message id="whisperfish-save-profile-menu">
         <location filename="../qml/pages/ProfilePage.qml" line="127"/>
         <source>Save profile changes</source>
         <extracomment>Save changes to your profile menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Uložit změny profilu</translation>
     </message>
     <message id="whisperfish-edit-profile-menu">
         <location filename="../qml/pages/ProfilePage.qml" line="130"/>
         <source>Edit profile</source>
         <extracomment>Edit your own profile menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Upravit profil</translation>
     </message>
     <message id="whisperfish-profile-page-unregistered-profile">
         <location filename="../qml/pages/ProfilePage.qml" line="184"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="108"/>
         <source>The recipient is not currently registered to Signal, so sending and receiving messages is not possible.</source>
         <extracomment>Profile page, user is not registered warning</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Příjemce není aktuálně registrován v Signal, takže odesílání a přijímání zpráv není možné.</translation>
     </message>
     <message id="whisperfish-profile-joined-name">
         <location filename="../qml/pages/ProfilePage.qml" line="197"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="119"/>
         <source>Name</source>
         <extracomment>Profile, name field (first name + last name)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Jméno</translation>
     </message>
     <message id="whisperfish-profile-given-name">
         <location filename="../qml/pages/ProfilePage.qml" line="211"/>
         <source>First name (required)</source>
         <extracomment>Profile, first (given) name field, required</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Křestní jméno (povinné)</translation>
     </message>
     <message id="whisperfish-profile-family-name">
         <location filename="../qml/pages/ProfilePage.qml" line="229"/>
         <source>Last name (optional)</source>
         <extracomment>Profile, last (family) name field, optional</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Příjmení (volitelné)</translation>
     </message>
     <message id="whisperfish-profile-uuid">
         <location filename="../qml/pages/ProfilePage.qml" line="243"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="130"/>
         <source>UUID</source>
         <extracomment>Profile UUID field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>UUID</translation>
     </message>
     <message id="whisperfish-profile-phone-number">
         <location filename="../qml/pages/ProfilePage.qml" line="255"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="159"/>
         <source>Phone number</source>
         <extracomment>Profile phone number field</extracomment>
-        <translation type="unfinished">Telefonní číslo</translation>
+        <translation>Telefonní číslo</translation>
     </message>
     <message id="whisperfish-profile-about">
         <location filename="../qml/pages/ProfilePage.qml" line="267"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="170"/>
         <source>Write something about yourself</source>
         <extracomment>Profile, about you (greeting/status) field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Napiš něco o sobě</translation>
     </message>
     <message id="whisperfish-profile-unidentified">
         <location filename="../qml/pages/ProfilePage.qml" line="283"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="185"/>
         <source>Sealed sending mode</source>
         <extracomment>Profile, sealed sending mode option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Zapečetěný režim odesílání</translation>
     </message>
     <message id="whisperfish-unidentified-unknown">
         <location filename="../qml/pages/ProfilePage.qml" line="290"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="191"/>
         <source>Unknown</source>
         <extracomment>Profile, sealed sending mode, unknown option</extracomment>
-        <translation type="unfinished">Neznámý</translation>
+        <translation>Neznámý</translation>
     </message>
     <message id="whisperfish-unidentified-disabled">
         <location filename="../qml/pages/ProfilePage.qml" line="295"/>
@@ -756,25 +756,25 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="203"/>
         <source>Unrestricted</source>
         <extracomment>Profile, sealed sending mode, unrestricted option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Neomezený</translation>
     </message>
     <message id="whisperfish-profile-emoji">
         <location filename="../qml/pages/ProfilePage.qml" line="320"/>
         <source>A few words about yourself</source>
         <extracomment>Profile, emoji symbol field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Pár slov o sobě</translation>
     </message>
     <message id="whisperfish-profile-uuid-invalid-warning">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="148"/>
         <source>This user profile is broken and can&apos;t be used.</source>
         <extracomment>Warning about recipient UUID not existing or nil (all zeros)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Tento uživatelský profil je poškozený a nelze jse použít.</translation>
     </message>
     <message id="whisperfish-show-fingerprint">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="217"/>
         <source>Show fingerprint</source>
         <extracomment>Show fingerprint button</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazit otisk prstu</translation>
     </message>
     <message id="whisperfish-numeric-fingerprint-directions">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="260"/>
@@ -786,31 +786,31 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="270"/>
         <source>Post-quantum keys in use</source>
         <extracomment>Profile page: whether a contact has post-quantum secure sessions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Používané post-kvantové klíče</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled-description">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="273"/>
         <source>If checked, this session was initialized with post-quantum secure cryptography.</source>
         <extracomment>Profile page: description for post-quantum secure sessions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Pokud zaškrtnuto, tato zasedání bylo inicializováno pomocí post-kvantové zabezpečené kryptografie.</translation>
     </message>
     <message id="whisperfish-kyber-click-explanation">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="283"/>
         <source>Session reset for post-quantum upgrade</source>
         <extracomment>Upgrading the session to Kyber remorse popup, past tense</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Reset zasedání pro postkvantovou aktualizaci</translation>
     </message>
     <message id="whisperfish-own-profile-help-text">
         <location filename="../qml/pages/ProfilePage.qml" line="336"/>
         <source>Your profile is encrypted. Your profile and changes to it will be visible to your contacts and when you start or accept new chats.</source>
         <extracomment>Signal Profile description / help text</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Váš profil je zašifrován. Váš profil a jeho změny budou viditelné pro vaše kontakty a když zahájíte nebo přijmete nové konverzace.</translation>
     </message>
     <message id="whisperfish-own-profile-learn-more-button">
         <location filename="../qml/pages/ProfilePage.qml" line="343"/>
         <source>Learn more</source>
         <extracomment>Button to open link to Signal help page about profiles</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zjisti více</translation>
     </message>
     <message id="whisperfish-recipient-number-invalid-chars">
         <location filename="../qml/pages/NewMessage.qml" line="61"/>
@@ -969,13 +969,13 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <location filename="../qml/pages/RegisterSecondaryPage.qml" line="15"/>
         <source>Link as secondary device</source>
         <extracomment>register as secondary device qr page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Propojit jako sekundární zařízení</translation>
     </message>
     <message id="whisperfish-register-linked-message">
         <location filename="../qml/pages/RegisterSecondaryPage.qml" line="19"/>
         <source>Please scan the QR code below using the Signal app.</source>
         <extracomment>User instructions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Naskenuj prosím níže uvedený QR kód pomocí aplikace Signal.</translation>
     </message>
     <message id="whisperfish-fatal-error-msg-not-registered">
         <location filename="../qml/pages/RegisterSecondaryPage.qml" line="35"/>
@@ -1021,13 +1021,13 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <location filename="../qml/pages/RegisterPage.qml" line="113"/>
         <source>Country or area</source>
         <extracomment>Label for country selection menu</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Země nebo oblast</translation>
     </message>
     <message id="whisperfish-not-selected">
         <location filename="../qml/pages/RegisterPage.qml" line="118"/>
         <source>Not selected</source>
         <extracomment>Placeholder for country not selected</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nevybraný</translation>
     </message>
     <message id="whisperfish-share-contacts-label">
         <location filename="../qml/pages/RegisterPage.qml" line="242"/>
@@ -1093,7 +1093,7 @@ Settings page share contacts</extracomment>
         <source>Signal will call you with a 6-digit verification code. Please be ready to write it down.</source>
         <oldsource>Signal will call you with a 6-digit verification code. Please be ready to write this down.</oldsource>
         <extracomment>Registration directions</extracomment>
-        <translation type="unfinished">Signál vám zavolá s šestimístným ověřovacím kódem. Prosím, připravte se to napsat.</translation>
+        <translation>Signál ti zavolá s šestimístným ověřovacím kódem. Prosím, připrav se to napsat.</translation>
     </message>
     <message id="whisperfish-text-registration-directions">
         <location filename="../qml/pages/RegisterPage.qml" line="216"/>
@@ -1105,27 +1105,27 @@ Settings page share contacts</extracomment>
         <source>Captcha requested</source>
         <oldsource>reCaptcha requested</oldsource>
         <extracomment>Signal has requested additional captcha page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Captcha vžádáno</translation>
     </message>
     <message id="whisperfish-captcha-requested-message">
         <location filename="../qml/pages/ProofSubmitPage.qml" line="19"/>
         <location filename="../qml/pages/ProofSubmitPage.qml" line="42"/>
         <source>Signal has requested additional capcha from you. Continue the captcha in order to restore ability to send messages.</source>
         <extracomment>Signal has requested additional captcha description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Signal si od tebe vyžádal další capcha. Pokračuj v captcha, abys obnovil možnost odesílat zprávy.</translation>
     </message>
     <message id="whisperfish-captcha-requested-try-again">
         <location filename="../qml/pages/ProofSubmitPage.qml" line="45"/>
         <source>The captcha response wasn&apos;t accepted, please try again.</source>
         <oldsource>The reCaptcha wasn&apos;t accepted, please try again.</oldsource>
         <extracomment>Rate limit captcha has to be tried again</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Odpověď captcha nebyla přijata, zkus to prosím znovu.</translation>
     </message>
     <message id="whisperfish-done-button-label">
         <location filename="../qml/pages/ProofSubmitPage.qml" line="97"/>
         <source>Done</source>
         <extracomment>Done button label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Hotovo</translation>
     </message>
     <message id="whisperfish-continue-button-label">
         <location filename="../qml/pages/ProofSubmitPage.qml" line="100"/>
@@ -1258,7 +1258,7 @@ Settings page share contacts</extracomment>
         <source>Attachments are stored at %1. Currently, when disabled, attachments will not work.</source>
         <oldsource>Attachments are stored at %1</oldsource>
         <extracomment>Settings page save attachments description</extracomment>
-        <translation type="unfinished">Přílohy jsou uloženy v %1</translation>
+        <translation>Přílohy jsou uloženy v %1. V současné době, když jsou zakázány, přílohy nebudou fungovat.</translation>
     </message>
     <message id="whisperfish-settings-enable-enter-send">
         <location filename="../qml/pages/Settings.qml" line="203"/>
@@ -1277,19 +1277,19 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="221"/>
         <source>Privacy</source>
         <extracomment>Settings page &quot;privacy&quot; section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Soukromí</translation>
     </message>
     <message id="whisperfish-settings-share-phone-number">
         <location filename="../qml/pages/Settings.qml" line="227"/>
         <source>Share phone number</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sdílej telefonní číslo</translation>
     </message>
     <message id="whisperfish-settings-share-phone-number-description">
         <location filename="../qml/pages/Settings.qml" line="230"/>
         <source>When enabled, your contacts can see your phone number when you message them.</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Když povoleno, kontakty uvidí tvoje telefonní číslo, když jim pošlete zprávu.</translation>
     </message>
     <message id="whisperfish-settings-startup-shutdown-section">
         <location filename="../qml/pages/Settings.qml" line="327"/>
@@ -1307,26 +1307,26 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="360"/>
         <source>Unlock Password</source>
         <extracomment>Settings page autostart password field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Odemknout heslo</translation>
     </message>
     <message id="whisperfish-settings-save-password-button">
         <location filename="../qml/pages/Settings.qml" line="372"/>
         <source>Save password</source>
         <extracomment>Settings page save autologin password button</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Uložit heslo</translation>
     </message>
     <message id="whisperfish-settings-clear-password-button">
         <location filename="../qml/pages/Settings.qml" line="375"/>
         <source>clear password</source>
         <extracomment>Settings page clear autologin password button</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Vymazat heslo</translation>
     </message>
     <message id="whisperfish-settings-auto-unlock-password-info">
         <location filename="../qml/pages/Settings.qml" line="388"/>
         <source>You can enter your password to make Whisperfish unlock the database automatically at startup. Please note that the password is stored in plain text, and as such usage of this feature is not recommended.</source>
         <oldsource>You can enter your password to make Whisperfish unlock the database automatically at startup. Please note that the password is stored in plain text, and as such usage of this feature is not recommened.</oldsource>
         <extracomment>Settings page info about setting auto unlock password</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Můžeš zadat své heslo, aby Whisperfish automaticky odemkl databázi při spuštění. Vezměš prosím na vědomí, že heslo je uloženo jako prostý text, a proto se použití této funkce nedoporučuje.</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode-description">
         <location filename="../qml/pages/Settings.qml" line="410"/>
@@ -1345,73 +1345,73 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="46"/>
         <source>Show my profile</source>
         <extracomment>Show own profile menu</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazit můj profil</translation>
     </message>
     <message id="whisperfish-settings-enable-typing-indicators">
         <location filename="../qml/pages/Settings.qml" line="74"/>
         <source>Enable typing indicators</source>
         <extracomment>Settings page use typing indicators</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Povolit indikátory psaní</translation>
     </message>
     <message id="whisperfish-settings-enable-typing-indicators-description">
         <location filename="../qml/pages/Settings.qml" line="77"/>
         <source>See when others are typing, and let others see when you are typing, if they also have this enabled.</source>
         <extracomment>Settings page scale image attachments description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Vidit, kdy ostatní píší, a umožněte ostatním, aby viděli, když píšeš, pokud to mají také povoleno.</translation>
     </message>
     <message id="whisperfish-settings-notification-privacy">
         <location filename="../qml/pages/Settings.qml" line="245"/>
         <source>Notification privacy</source>
         <extracomment>Settings page notification privacy</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Soukromí oznámení</translation>
     </message>
     <message id="whisperfish-settings-notifications-disable">
         <location filename="../qml/pages/Settings.qml" line="256"/>
         <source>Disable notifications</source>
         <extracomment>Settings page, turn notifications off</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zakázat oznámení</translation>
     </message>
     <message id="whisperfish-settings-notifications-disable-description">
         <location filename="../qml/pages/Settings.qml" line="259"/>
         <source>Whisperfish will not display any notification</source>
         <extracomment>Settings page, turn notifications off description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Whisperfish nezobrazí žádné upozornění</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimal">
         <location filename="../qml/pages/Settings.qml" line="265"/>
         <source>Minimal notifications</source>
         <extracomment>Settings page, minimal notifications</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Minimální notifikace</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimal-description">
         <location filename="../qml/pages/Settings.qml" line="268"/>
         <source>Notification without disclosing the sender or content of the message</source>
         <extracomment>Settings page, minimal notifications description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Upozornění bez uvedení odesílatele nebo obsahu zprávy</translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only">
         <location filename="../qml/pages/Settings.qml" line="274"/>
         <source>Sender-only notifications</source>
         <extracomment>Settings page, sender-only notifications</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Oznámení pouze pro odesílatele</translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only-description">
         <location filename="../qml/pages/Settings.qml" line="277"/>
         <source>Notifications displaying the sender of a message, without the contents</source>
         <extracomment>Settings page, sender-only notifications description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Upozornění zobrazující odesílatele zprávy bez obsahu</translation>
     </message>
     <message id="whisperfish-settings-notifications-complete">
         <location filename="../qml/pages/Settings.qml" line="283"/>
         <source>Complete notifications</source>
         <extracomment>Settings page, complete notifications</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kompletní oznámení</translation>
     </message>
     <message id="whisperfish-settings-notifications-complete-description">
         <location filename="../qml/pages/Settings.qml" line="286"/>
         <source>Notifications displaying the contents and sender of a message</source>
         <extracomment>Settings page, sender-only notifications description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Upozornění zobrazující obsah a odesílatele zprávy</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimise">
         <location filename="../qml/pages/Settings.qml" line="90"/>
@@ -1429,25 +1429,25 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="186"/>
         <source>Prefer device contacts</source>
         <extracomment>Settings page prefer phone contacts</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Preferujte kontakty zařízení</translation>
     </message>
     <message id="whisperfish-settings-notifications-prefer-device-contacts-description">
         <location filename="../qml/pages/Settings.qml" line="189"/>
         <source>Prefer Sailfish OS address book contact names and avatars over Signal Profile data.</source>
         <extracomment>Settings page prefer phone contacts description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Upřednostněte jména kontaktů a avatary adresáře Sailfish OS před daty profilu signálu.</translation>
     </message>
     <message id="whisperfish-settings-show-phone-number">
         <location filename="../qml/pages/Settings.qml" line="303"/>
         <source>Show phone number</source>
         <extracomment>Settings page, show recipient phone number in conversation view</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazit telefonní číslo</translation>
     </message>
     <message id="whisperfish-settings-show-phone-number-description">
         <location filename="../qml/pages/Settings.qml" line="306"/>
         <source>Show the phone number of the recipient in the conversation page header.</source>
         <extracomment>Settings page, show recipient phone number in conversation view description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazit telefonní číslo příjemce v záhlaví stránky konverzace.</translation>
     </message>
     <message id="whisperfish-settings-enable-autostart-description">
         <location filename="../qml/pages/Settings.qml" line="337"/>
@@ -1459,7 +1459,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="400"/>
         <source>Whisperfish does not have the permission to change the autostart settings. You can enable or disable autostart manually from the command line by running &apos;systemctl --user enable harbour-whisperfish.service&apos; or &apos;systemctl --user disable harbour-whisperfish.service&apos;</source>
         <extracomment>Settings page info how to enable autostart manually</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Whisperfish nemá oprávnění měnit nastavení automatického spuštění. Autostart můžete povolit nebo zakázat ručně z příkazového řádku spuštěním &apos;systemctl --user enable harbour-whisperfish.service&apos; nebo &apos;systemctl --user disable harbour-whisperfish.service&apos;</translation>
     </message>
     <message id="whisperfish-settings-quit-button">
         <location filename="../qml/pages/Settings.qml" line="428"/>
@@ -1518,40 +1518,40 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="482"/>
         <source>Verbose logging</source>
         <extracomment>Settings page enable verbose logging</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Podrobné protokolování</translation>
     </message>
     <message id="whisperfish-settings-enable-verbose-description">
         <location filename="../qml/pages/Settings.qml" line="485"/>
         <source>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a restart to take effect.</source>
         <oldsource>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a reboot to take effect.</oldsource>
         <extracomment>Settings page enable verbose logging description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Když je povoleno, Whisperfish produkuje podrobný výstup. Užitečné pro běh v terminálu. Aby se projevil, vyžaduje restart.</translation>
     </message>
     <message id="whisperfish-settings-logfile-autostart">
         <location filename="../qml/pages/Settings.qml" line="499"/>
         <source>Enable log file</source>
         <extracomment>Settings page enable logging to a file</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Povolit soubor protokolu</translation>
     </message>
     <message id="whisperfish-settings-enable-logfile-description">
         <location filename="../qml/pages/Settings.qml" line="502"/>
         <source>When enabled, Whisperfish saves its output to a log file. Requires a restart to take effect.</source>
         <oldsource>When enabled, Whisperfish saves its output to a log file. Requires a reboot to take effect.</oldsource>
         <extracomment>Settings page enable logfile description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Když je povoleno, Whisperfish ukládá svůj výstup do souboru protokolu. Aby se projevil, vyžaduje restart.</translation>
     </message>
     <message id="whisperfish-settings-compress-db">
         <location filename="../qml/pages/Settings.qml" line="518"/>
         <source>Compact database</source>
         <oldsource>Compress database</oldsource>
         <extracomment>Settings page &apos;Compact database&apos; button: execute &apos;VACUUM&apos; command on SQLite-database</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Komprimaci databázy</translation>
     </message>
     <message id="whisperfish-settings-test-captcha">
         <location filename="../qml/pages/Settings.qml" line="530"/>
         <source>Test captcha</source>
         <extracomment>Settings page, test captcha button</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Test captcha</translation>
     </message>
     <message id="whisperfish-settings-stats-section">
         <location filename="../qml/pages/Settings.qml" line="541"/>
@@ -1668,7 +1668,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/GroupProfilePage.qml" line="41"/>
         <source>Refresh group</source>
         <extracomment>Refresh group menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Obnovit skupinu</translation>
     </message>
     <message id="whisperfish-group-leave-menu">
         <location filename="../qml/pages/GroupProfilePage.qml" line="50"/>
@@ -1682,7 +1682,7 @@ Settings page share contacts</extracomment>
         <source>Left group and deleted all messages</source>
         <oldsource>Leaving group and removing ALL messages!</oldsource>
         <extracomment>Leave group remorse message (past tense)</extracomment>
-        <translation type="unfinished">Opuštění skupiny a odstranění VŠECH zpráv!</translation>
+        <translation>Opuštění skupiny a vymazaný VŠECH zpráv</translation>
     </message>
     <message id="whisperfish-group-invite-link-menu">
         <location filename="../qml/pages/GroupProfilePage.qml" line="71"/>
@@ -1696,25 +1696,25 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="68"/>
         <source>Set message expiry</source>
         <extracomment>Save the new value of expiring messages timeout</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nastavit vypršení platnosti zprávy</translation>
     </message>
     <message id="whisperfish-group-member-admin">
         <location filename="../qml/pages/GroupProfilePage.qml" line="226"/>
         <source>Administrator</source>
         <extracomment>Group member section label for administrator level user</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Správce</translation>
     </message>
     <message id="whisperfish-group-member-regular">
         <location filename="../qml/pages/GroupProfilePage.qml" line="229"/>
         <source>Member</source>
         <extracomment>Group member section label for regular level user</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Člen</translation>
     </message>
     <message id="whisperfish-group-member-menu-open-note-to-self">
         <location filename="../qml/pages/GroupProfilePage.qml" line="274"/>
         <source>Open Note to Self</source>
         <extracomment>Menu item to open the conversation with oneself</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Otevři poznámku pro sebe</translation>
     </message>
     <message id="whisperfish-group-member-menu-direct-message">
         <location filename="../qml/pages/GroupProfilePage.qml" line="277"/>
@@ -1726,7 +1726,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/GroupProfilePage.qml" line="288"/>
         <source>Start conversation with %1</source>
         <extracomment>Menu item to start a new private chat with a group member</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zahájit konverzaci s %1</translation>
     </message>
     <message id="whisperfish-group-member-menu-save-contact">
         <location filename="../qml/pages/GroupProfilePage.qml" line="300"/>
@@ -1839,7 +1839,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ChatTextInput.qml" line="209"/>
         <source>The recipient is not registered</source>
         <extracomment>Chat text input placeholder for deleted/unregistered recipient</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Příjemce není registrován</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-personal">
         <location filename="../qml/components/ChatTextInput.qml" line="214"/>
@@ -1910,7 +1910,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/QuotedMessagePreview.qml" line="114"/>
         <source>Unknown sender</source>
         <extracomment>Text shown on quotes when the sender of a quote is unknown</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Neznámý odesílatel</translation>
     </message>
     <message id="whisperfish-quoted-message-preview-voice-note">
         <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="72"/>
@@ -1938,7 +1938,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/SessionDelegate.qml" line="56"/>
         <source>this message was deleted</source>
         <extracomment>Placeholder note for a deleted message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>tato zpráva byla smazána</translation>
     </message>
     <message id="whisperfish-message-empty-note">
         <location filename="../qml/delegates/MessageDelegate.qml" line="262"/>
@@ -2014,10 +2014,10 @@ Settings page share contacts</extracomment>
         <source>%n week(s)</source>
         <oldsource>%1 week(s)</oldsource>
         <extracomment>Expiring message timeout in weeks. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n týden</numerusform>
+            <numerusform>%n týdny</numerusform>
+            <numerusform>%n týdnú</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-days" numerus="yes">
@@ -2025,10 +2025,10 @@ Settings page share contacts</extracomment>
         <source>%n day(s)</source>
         <oldsource>%1 day(s)</oldsource>
         <extracomment>Expiring message timeout in days. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n den</numerusform>
+            <numerusform>%n dny</numerusform>
+            <numerusform>%n dní</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-hours" numerus="yes">
@@ -2036,10 +2036,10 @@ Settings page share contacts</extracomment>
         <source>%n hour(s)</source>
         <oldsource>%1 hour(s)</oldsource>
         <extracomment>Expiring message timeout in hours. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n hodina</numerusform>
+            <numerusform>%n hodiny</numerusform>
+            <numerusform>%n hodin</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-minutes" numerus="yes">
@@ -2047,10 +2047,10 @@ Settings page share contacts</extracomment>
         <source>%n minute(s)</source>
         <oldsource>%1 minute(s)</oldsource>
         <extracomment>Expiring message timeout in minutes. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n minuta</numerusform>
+            <numerusform>%n minuty</numerusform>
+            <numerusform>%n minut</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-seconds" numerus="yes">
@@ -2058,84 +2058,84 @@ Settings page share contacts</extracomment>
         <source>%n second(s)</source>
         <oldsource>%1 second(s)</oldsource>
         <extracomment>Expiring message timeout in seconds. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n sekunda</numerusform>
+            <numerusform>%n sekundy</numerusform>
+            <numerusform>%n sekund</numerusform>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-update-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="88"/>
         <source>You set expiring messages timeout to %1.</source>
         <extracomment>Service message, %1 time</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nastavil jsi vypršení platnosti zpráv na %1.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-update-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="91"/>
         <source>%1 set expiring messages timeout to %2.</source>
         <extracomment>Service message, %1 is a name, %2 is time</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 nastavil časový limit vypršení platnosti zpráv na %2.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-disable-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="96"/>
         <source>You disabled expiring messages.</source>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zakázal jsi vypršení platnosti zpráv.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-disable-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="99"/>
         <source>%1 disabled expiring messages.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 zakázal vypršení platnosti zpráv.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-unknown-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="104"/>
         <source>You set or disabled expiring messages timeout.</source>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nastavil jsi nebo zakázali vypršení časového limitu zpráv.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-unknown-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="107"/>
         <source>%1 set or disabled expiring messages timeout.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 nastavil nebo zakázal vypršení časového limitu zpráv.</translation>
     </message>
     <message id="whisperfish-service-message-profile-key-update-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="112"/>
         <source>%1 updated their profile.</source>
         <oldsource>%1 updated their profile key with you.</oldsource>
         <extracomment>Service message for profile (key) update. %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 aktualizoval(a) svůj profil.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="117"/>
         <source>You ended the session with %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ukončil jsi zasedání s %1.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="120"/>
         <source>%1 ended the session with you.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ukončil jsi relaci s %1.</translation>
     </message>
     <message id="whisperfish-service-message-changed-group">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="124"/>
         <source>The group was updated.</source>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Skupina byla aktualizována.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="145"/>
         <source>You missed a voice call from %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zmeškal jsi hlasový hovor od %1.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="148"/>
         <source>You tried to voice call %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Pokusil jse zavolat %1.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-video-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="153"/>
@@ -2147,7 +2147,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="156"/>
         <source>You tried to video call %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Pokusil jse o videohovor %1.</translation>
     </message>
     <message id="whisperfish-service-message-fingerprint-changed">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="177"/>
@@ -2208,7 +2208,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ViewImagePage.qml" line="66"/>
         <source>Export image</source>
         <extracomment>Copy the attachment image out of Whisperfish</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Export obrázku</translation>
     </message>
     <message id="whisperfish-view-image-page-loading">
         <location filename="../qml/pages/ViewImagePage.qml" line="268"/>
@@ -2226,7 +2226,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ViewVideoPage.qml" line="57"/>
         <source>Export video</source>
         <extracomment>Copy the attachment video out of Whisperfish</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Exportovat video</translation>
     </message>
     <message id="whisperfish-view-video-page-error">
         <location filename="../qml/pages/ViewVideoPage.qml" line="124"/>
@@ -2238,20 +2238,20 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="81"/>
         <source>%n member(s)</source>
         <extracomment>The number of members in a group, you included</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n člen</numerusform>
+            <numerusform>%n členi</numerusform>
+            <numerusform>%n členú</numerusform>
         </translation>
     </message>
     <message id="whisperfish-chat-n-messages" numerus="yes">
         <location filename="../qml/pages/ConversationPage.qml" line="90"/>
         <source>%n message(s)</source>
         <extracomment>The number of messages in a conversation, displayed in page header</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n zpráva</numerusform>
+            <numerusform>%n zprávy</numerusform>
+            <numerusform>%n zpráv</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-actions-info-label" numerus="yes">
@@ -2311,9 +2311,9 @@ Settings page share contacts</extracomment>
         <oldsource>Delete %1 message(s) for all</oldsource>
         <extracomment>Message action description</extracomment>
         <translation>
-            <numerusform>Odstranit %n zprávu pro vše</numerusform>
-            <numerusform>Odstranit %n zprávy pro vše</numerusform>
-            <numerusform>Odstranit %n zpráv pro vše</numerusform>
+            <numerusform>Vymazat %n zprávu pro vše</numerusform>
+            <numerusform>OdVymazat %n zprávy pro vše</numerusform>
+            <numerusform>Vymazat %n zpráv pro vše</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-action-resend" numerus="yes">
@@ -2337,41 +2337,41 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RegistrationCaptcha.qml" line="54"/>
         <source>Signal Captcha</source>
         <extracomment>Registration captcha page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Signální captcha</translation>
     </message>
     <message id="whisperfish-cover-unread-label" numerus="yes">
         <location filename="../qml/cover/CoverPage.qml" line="56"/>
         <source>Unread&lt;br/&gt;message(s)</source>
         <extracomment>Unread messages count cover label. Code requires exact line break tag &quot;&lt;br/&gt;&quot;.</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Nepřečtená&lt;br/&gt;zpráva</numerusform>
+            <numerusform>Nepřečtené&lt;br/&gt;zprávy</numerusform>
+            <numerusform>Nepřečtených&lt;br/&gt;zpráv</numerusform>
         </translation>
     </message>
     <message id="whisperfish-registration-type-message">
         <location filename="../qml/pages/SetupRegistrationTypePage.qml" line="19"/>
         <source>Do you want to register whisperfish as primariy device or link it as secondary device to an existing signal app?</source>
         <extracomment>registration type prompt text</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Chcete zaregistrovat whisperfish jako primární zařízení nebo jej propojit jako sekundární zařízení s existující signální aplikací?</translation>
     </message>
     <message id="whisperfish-register-primary-button-label">
         <location filename="../qml/pages/SetupRegistrationTypePage.qml" line="50"/>
         <source>Primary device</source>
         <extracomment>register as primary device button label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Primární zařízení</translation>
     </message>
     <message id="whisperfish-register-secondary-button-label">
         <location filename="../qml/pages/SetupRegistrationTypePage.qml" line="59"/>
         <source>Secondary device</source>
         <extracomment>link as secondary device button label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sekundární zařízení</translation>
     </message>
     <message id="whisperfish-message-info-title">
         <location filename="../qml/pages/MessageInfoPage.qml" line="46"/>
         <source>Message Info</source>
         <extracomment>Page title for message info/details page</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Informace o zprávě</translation>
     </message>
     <message id="whisperfish-message-info-details">
         <location filename="../qml/pages/MessageInfoPage.qml" line="83"/>
@@ -2383,38 +2383,38 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/MessageInfoPage.qml" line="88"/>
         <source>Message ID</source>
         <extracomment>Label for id of the message (in database)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ID zprávy</translation>
     </message>
     <message id="whisperfish-message-session-id">
         <location filename="../qml/pages/MessageInfoPage.qml" line="94"/>
         <source>Session ID</source>
         <extracomment>Label for session id of the message (in database)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ID zasedání</translation>
     </message>
     <message id="whisperfish-message-timestamp">
         <location filename="../qml/pages/MessageInfoPage.qml" line="100"/>
         <source>Timestamp</source>
         <extracomment>Label for timestamp of the message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Časové razítko</translation>
     </message>
     <message id="whisperfish-message-info-reactions">
         <location filename="../qml/pages/MessageInfoPage.qml" line="107"/>
         <source>Reactions</source>
         <extracomment>Reactions section header</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Reakce</translation>
     </message>
     <message id="whisperfish-creating-conversation-title">
         <location filename="../qml/pages/CreateConversationPage.qml" line="46"/>
         <location filename="../qml/pages/CreateConversationPage.qml" line="47"/>
         <source>Creating conversation</source>
         <extracomment>Page header title when a new conversation is being created</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Vytváření konverzace</translation>
     </message>
     <message id="whisperfish-captcha-test-title">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="15"/>
         <source>Captcha Test</source>
         <extracomment>Captcha test page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Captcha Test</translation>
     </message>
     <message id="whisperfish-captcha-test-message">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="19"/>
@@ -2422,69 +2422,69 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/TestCaptchaPage.qml" line="84"/>
         <source>You can use this page to test the Whisperfish captcha challenge integration</source>
         <extracomment>Captcha test page description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Tuto stránku můžeš použít k otestování integrace Captcha v Whisperfish</translation>
     </message>
     <message id="whisperfish-captcha-test-success">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="56"/>
         <source>Captcha token received!</source>
         <extracomment>Captcha test successful message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Captcha token přijat!</translation>
     </message>
     <message id="whisperfish-start-test-button-label">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="80"/>
         <source>Start</source>
         <extracomment>continue button label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Start</translation>
     </message>
     <message id="whisperfish-captcha-test-started">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="87"/>
         <source>Test started...</source>
         <extracomment>Captcha test has been started message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Test zahájen...</translation>
     </message>
     <message id="whisperfish-export-file-menu">
         <location filename="../qml/pages/ViewAudioPage.qml" line="28"/>
         <location filename="../qml/pages/ViewFilePage.qml" line="28"/>
         <source>Export file</source>
         <extracomment>Copy the attachment file out of Whisperfish</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Exportovat soubor</translation>
     </message>
     <message id="whisperfish-disappearing-messages-setting">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="61"/>
         <source>Disappearing messages</source>
         <extracomment>Group/conversation info page, expiring messages setting</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mizející zprávy</translation>
     </message>
     <message id="whisperfish-disappearing-messages-description">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="64"/>
         <source>Set or disable message destruction after a certain time after reading. Only affects messages sent after changing this option.</source>
         <extracomment>Group/conversation info page, expiring messages description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nastavte nebo zakažte zničení zprávy po určité době po přečtení. Ovlivňuje pouze zprávy odeslané po změně této možnosti.</translation>
     </message>
     <message id="whisperfish-disappearing-messages-off">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="77"/>
         <source>Off</source>
         <extracomment>Disappearing messages: off</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Vypnuto</translation>
     </message>
     <message id="whisperfish-disappearing-messages-seconds" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="81"/>
         <source>%n second(s)</source>
         <extracomment>Disappearing messages duration in seconds</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n sekunda</numerusform>
+            <numerusform>%n sekundy</numerusform>
+            <numerusform>% sekund</numerusform>
         </translation>
     </message>
     <message id="whisperfish-disappearing-messages-minutes" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="85"/>
         <source>%n minute(s)</source>
         <extracomment>Disappearing messages duration in minutes</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n minuta</numerusform>
+            <numerusform>%n minuty</numerusform>
+            <numerusform>%n minut</numerusform>
         </translation>
     </message>
     <message id="whisperfish-disappearing-messages-hours" numerus="yes">
@@ -2492,20 +2492,20 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="92"/>
         <source>%n hour(s)</source>
         <extracomment>Disappearing messages duration in hours</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n hodina</numerusform>
+            <numerusform>%n hodiny</numerusform>
+            <numerusform>%n hodin</numerusform>
         </translation>
     </message>
     <message id="whisperfish-disappearing-messages-days" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="96"/>
         <source>%n day(s)</source>
         <extracomment>Disappearing messages duration in days</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n den</numerusform>
+            <numerusform>%n dny</numerusform>
+            <numerusform>% dní</numerusform>
         </translation>
     </message>
     <message id="whisperfish-disappearing-messages-weeks" numerus="yes">
@@ -2513,78 +2513,78 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="103"/>
         <source>%n week(s)</source>
         <extracomment>Disappearing messages duration in weeks</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n týden</numerusform>
+            <numerusform>%n týdny</numerusform>
+            <numerusform>%n týdnú</numerusform>
         </translation>
     </message>
     <message id="whisperfish-disappearing-messages-custom">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="107"/>
         <source>Other</source>
         <extracomment>Disappearing messages: custom duration</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Jiný</translation>
     </message>
     <message id="whisperfish-disappearing-messages-amount">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="152"/>
         <source>Amount</source>
         <extracomment>Disappearing messages, custom &quot;time amount&quot; label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Množství</translation>
     </message>
     <message id="whisperfish-disappearing-messages-time-units">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="175"/>
         <source>Time unit</source>
         <extracomment>Disappearing messages, custom &quot;time length&quot; label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Časová jednotka</translation>
     </message>
     <message id="whisperfish-units-seconds" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="180"/>
         <source>seconds</source>
         <extracomment>Time unit: seconds</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>sekunda</numerusform>
+            <numerusform>sekundy</numerusform>
+            <numerusform>sekund</numerusform>
         </translation>
     </message>
     <message id="whisperfish-units-minutes" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="183"/>
         <source>minutes</source>
         <extracomment>Time unit: minutes</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>minuta</numerusform>
+            <numerusform>minuty</numerusform>
+            <numerusform>minut</numerusform>
         </translation>
     </message>
     <message id="whisperfish-units-hours" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="186"/>
         <source>hours</source>
         <extracomment>Time unit: hours</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>hodina</numerusform>
+            <numerusform>hodiny</numerusform>
+            <numerusform>hodin</numerusform>
         </translation>
     </message>
     <message id="whisperfish-units-days" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="189"/>
         <source>days</source>
         <extracomment>Time unit: days</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>den</numerusform>
+            <numerusform>dny</numerusform>
+            <numerusform>dnú</numerusform>
         </translation>
     </message>
     <message id="whisperfish-units-weeks" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="192"/>
         <source>weeks</source>
         <extracomment>Time unit: weeks</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>týden</numerusform>
+            <numerusform>týdny</numerusform>
+            <numerusform>týdnú</numerusform>
         </translation>
     </message>
 </context>
