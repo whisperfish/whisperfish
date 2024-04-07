@@ -12,6 +12,9 @@ Page {
 
     property bool editingProfile: false
 
+    // If entering from a group setting, don't expose direct message controls
+    property bool groupContext: false
+
     onStatusChanged: {
         if (editingProfile && status === PageStatus.Inactive) {
             cancelEditing()
@@ -134,7 +137,7 @@ Page {
                 //: Save the new value of expiring messages timeout
                 //% "Set message expiry"
                 text: qsTrId("whisperfish-save-message-expiry")
-                visible: session != null && expiringMessages.newDuration !== session.expiringMessageTimeout
+                visible: !groupContext && session != null && expiringMessages.newDuration !== session.expiringMessageTimeout
                 onClicked: MessageModel.createExpiryUpdate(session.sessionId, expiringMessages.newDuration)
             }
         }
@@ -269,7 +272,7 @@ Page {
 
             ExpiringMessagesComboBox {
                 id: expiringMessages
-                visible: session != null
+                visible: !groupContext && session != null
                 width: parent.width
                 duration: session.expiringMessageTimeout
             }

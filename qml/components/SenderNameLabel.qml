@@ -8,6 +8,7 @@ Item {
     property string source: ''
     property var recipient
     property bool outbound: false
+    property bool isInGroup: false
     property real maximumWidth: metrics.width
 
     property alias horizontalAlignment: label.horizontalAlignment
@@ -28,7 +29,7 @@ Item {
     height: implicitHeight
     enabled: visible
 
-    onClicked: !outbound ? pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { recipient: recipient } ) : {}
+    onClicked: !outbound ? pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { recipient: recipient, groupContext: isInGroup } ) : {}
 
     TextMetrics {
         id: metrics

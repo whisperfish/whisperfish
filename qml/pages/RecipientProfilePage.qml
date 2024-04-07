@@ -11,6 +11,9 @@ Page {
     property var session: null
     property var recipient: null
 
+    // If entering from a group setting, don't expose direct message controls
+    property bool groupContext: false
+
     SilicaFlickable {
         anchors.fill: parent
         contentHeight: column.height
@@ -87,7 +90,7 @@ Page {
             MenuItem {
                 // Translation in ProfilePage.qml
                 text: qsTrId("whisperfish-save-message-expiry")
-                visible: session != null && expiringMessages.newDuration !== session.expiringMessageTimeout
+                visible: !groupContext && session != null && expiringMessages.newDuration !== session.expiringMessageTimeout
                 onClicked: MessageModel.createExpiryUpdate(session.sessionId, expiringMessages.newDuration)
             }
         }
@@ -194,7 +197,7 @@ Page {
 
             ExpiringMessagesComboBox {
                 id: expiringMessages
-                visible: session != null
+                visible: !groupContext && session != null
                 width: parent.width
                 duration: session.expiringMessageTimeout
             }

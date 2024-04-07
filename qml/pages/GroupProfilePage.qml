@@ -247,9 +247,9 @@ Page {
 
             onClicked: {
                 if (recipient.uuid === SetupWorker.uuid) {
-                    pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"))
+                    pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"), { groupContext: true })
                 } else {
-                    pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { recipient: recipient })
+                    pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { recipient: recipient, groupContext: true })
                 }
             }
 
