@@ -103,7 +103,7 @@ ApplicationWindow
         }
 
         var contact_avatar = (contact && contact.avatarPath) ? contact.avatarPath.toString() : ''
-        var contact_avatar_ok = contact_avatar.indexOf('image://theme/') !== 0
+        var contact_avatar_ok = contact_avatar !== '' && contact_avatar.indexOf('image://theme/') !== 0
 
         var signal_avatar = uuid !== undefined ? "file://" + SettingsBridge.avatar_dir + "/" + uuid : ''
         var signal_avatar_ok = uuid !== undefined ? SettingsBridge.avatarExists(uuid) : false
