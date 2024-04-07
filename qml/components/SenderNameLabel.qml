@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import QtQuick 2.6
 import Sailfish.Silica 1.0
-import Sailfish.TextLinking 1.0
 
 Item {
     id: root
     property string source: ''
+    property var recipient
     property bool outbound: false
     property real maximumWidth: metrics.width
 
@@ -28,21 +28,12 @@ Item {
     height: implicitHeight
     enabled: visible
 
-    // TODO This is an ugly hack that relies on 'source' being a phone number.
-    //      - Remove if/when contacts move to UUIDs
-    //      - Implement custom contact page for Whisperfish contacts
-    onClicked: (defaultClickAction && source.length > 0 && source[0] === "+") ?
-                   hackishClickHandler.linkActivated('tel:'+source) : {}
+    onClicked: !outbound ? pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { recipient: recipient } ) : {}
 
     TextMetrics {
         id: metrics
         font: label.font
         text: label.plainText
-    }
-
-    LinkedText {
-        id: hackishClickHandler
-        visible: false
     }
 
     BackgroundItem {
@@ -84,6 +75,5 @@ Item {
         color: Qt.tint(highlighted ? Theme.highlightColor : Theme.primaryColor,
                        '#'+Qt.md5(source).substr(0, 6)+'0F')
         defaultLinkActions: false
-        onLinkActivated: root.clicked(null)
     }
 }

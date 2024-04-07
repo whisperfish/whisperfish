@@ -196,6 +196,7 @@ ListItem {
                       //: Label shown if a message doesn't have a sender.
                       //% "no sender"
                       qsTrId("whisperfish-sender-label-empty")
+            recipient: sender.item          
             outbound: root.isOutbound
             maximumWidth: maxMessageWidth
             highlighted: down || root.highlighted

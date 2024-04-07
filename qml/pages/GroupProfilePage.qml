@@ -1,6 +1,5 @@
 import QtQuick 2.2
 import Sailfish.Silica 1.0
-import Sailfish.TextLinking 1.0
 import be.rubdos.whisperfish 1.0
 import "../components"
 
@@ -246,11 +245,13 @@ Page {
             property string name: getRecipientName(recipient.e164, recipient.externalId, recipient.name, false)
             property bool isUnknownContact: name == recipient.e164
 
-            // TODO Implement custom contact page for Whisperfish contacts
-            onClicked:
-                if(recipient.e164 != null) {
-                    phonenumberLink.linkActivated('tel:' + recipient.e164)
+            onClicked: {
+                if (recipient.uuid === SetupWorker.uuid) {
+                    pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"))
+                } else {
+                    pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { recipient: recipient })
                 }
+            }
 
             // For when we need the augmented fields
             Recipient {
@@ -300,19 +301,6 @@ Page {
                         text: qsTrId("whisperfish-group-member-menu-save-contact")
                         visible: isUnknownContact
                         onClicked: item.clicked(null) // show contact page
-                    }
-                    MenuItem {
-                        //: Menu item to verify safety numbers with a group member
-                        //% "Verify safety number"
-                        text: qsTrId("whisperfish-group-member-menu-verify-fingerprint")
-                        visible: !isVerified
-                        onClicked: {
-                            if (recipient.uuid === SetupWorker.uuid) {
-                                pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"))
-                            } else {
-                                pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { recipient: recipient })
-                            }
-                        }
                     }
                     MenuItem {
                         //: Menu item to remove a member from a group (requires admin privileges)
@@ -405,13 +393,11 @@ Page {
                                 : name
                     }
                 }
-                LinkedText {
-                    id: phonenumberLink
-                    linkColor: color
+                Label {
                     color: item.down ? Theme.secondaryHighlightColor :
                                         Theme.secondaryColor
                     font.pixelSize: Theme.fontSizeSmall
-                    plainText: recipient.e164 ? recipient.e164 : ''
+                    text: recipient.e164 ? recipient.e164 : ''
                 }
             }
         }
