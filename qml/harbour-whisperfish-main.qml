@@ -96,12 +96,10 @@ ApplicationWindow
         if (extId != null) {
             extId = parseInt(extId)
             contact = contactsReady ? resolvePeopleModel.personById(extId) : null
-            if (contact != null) { console.log("Avatar by extId:", extId) }
         }
         if (contact == null && e164 != null && e164[0] === '+') {
             // Only try to search for contact name if contact is a phone number
             contact = contactsReady ? resolvePeopleModel.personByPhoneNumber(e164, true) : null
-            if (contact != null) { console.log("Avatar by e164:", e164) }
         }
 
         var contact_avatar = (contact && contact.avatarPath) ? contact.avatarPath.toString() : ''
@@ -135,7 +133,7 @@ ApplicationWindow
         if(!e164) {
             return recipientName
         }
-        console.log("showNoteToSelf", showNoteToSelf, e164, SetupWorker.phoneNumber)
+
         if((showNoteToSelf !== undefined) && (e164 == SetupWorker.phoneNumber)) {
             if(showNoteToSelf) {
                 //: Name of the conversation with one's own number
@@ -153,12 +151,10 @@ ApplicationWindow
             // In Sailfish OS, extId is a number
             extId = parseInt(extId)
             contact = contactsReady && extId > 0 ? resolvePeopleModel.personById(extId) : null
-            if (contact != null) { console.log("Name by extId:", extId) }
         }
         if (contact == null && e164 != null && e164[0] === '+') {
             // Only try to search for contact name if contact is a phone number
             contact = contactsReady ? resolvePeopleModel.personByPhoneNumber(e164, true) : null
-            if (contact != null) { console.log("Name by e164:", e164) }
         }
         if(SettingsBridge.prefer_device_contacts) {
             return (contact && contact.displayLabel !== '') ? contact.displayLabel : recipientName
