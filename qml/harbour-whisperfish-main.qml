@@ -138,7 +138,7 @@ ApplicationWindow
         if (extId != null) {
             // In Sailfish OS, extId is a number
             extId = parseInt(extId)
-            contact = contactsReady ? resolvePeopleModel.personById(extId) : null
+            contact = contactsReady && extId > 0 ? resolvePeopleModel.personById(extId) : null
             if (contact != null) { console.log("Name by extId:", extId) }
         }
         if (contact == null && e164 != null && e164[0] === '+') {
