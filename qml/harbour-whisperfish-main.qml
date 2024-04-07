@@ -130,7 +130,7 @@ ApplicationWindow
         if(!recipientName) {
             recipientName = ''
         }
-        if(!e164) {
+        if(!e164 && !extId) {
             return recipientName
         }
 
