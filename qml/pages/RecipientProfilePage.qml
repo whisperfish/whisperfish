@@ -1,6 +1,5 @@
 import QtQuick 2.2
 import Sailfish.Silica 1.0
-import Sailfish.TextLinking 1.0
 import be.rubdos.whisperfish 1.0
 import "../components"
 
@@ -57,11 +56,19 @@ Page {
                 //: Show a peer's system contact page (menu item)
                 //% "Show contact"
                 text: qsTrId("whisperfish-show-contact-page-menu")
-                enabled: recipient.e164 != null && recipient.e164.length > 0
+                enabled: recipient && (recipient.e164 && recipient.e164[0] === '+' || recipient.externalId)
                 visible: enabled
-                // TODO maybe: replace with a custom link handler
-                onClicked: phoneNumberLinker.linkActivated('tel:' + recipient.e164)
-                LinkedText { id: phoneNumberLinker; visible: false }
+                onClicked: {
+                    var contact = recipient.externalId
+                        ? resolvePeopleModel.personById(parseInt(recipient.externalId))
+                        : resolvePeopleModel.personByPhoneNumber(recipient.e164)
+                    if (contact != null) {
+                        pageStack.push(pageStack.resolveImportPage('Sailfish.Contacts.ContactCardPage'), { contact: contact })
+                    } else if (recipient.e164 && recipient.e164[0] === '+') {
+                        var newContact = resolvePeopleModel.createContact(recipient.e164, recipient.givenName, recipient.familyName)
+                        pageStack.push(pageStack.resolveImportPage('Sailfish.Contacts.ContactCardPage'), { contact: newContact })
+                    }
+                }
             }
             MenuItem {
                 //: Menu action to unlink a Signal contact from a Sailfish OS contact

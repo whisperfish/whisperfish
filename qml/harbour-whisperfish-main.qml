@@ -2,7 +2,7 @@ import QtQuick 2.2
 import Sailfish.Silica 1.0
 import Nemo.Notifications 1.0
 import Nemo.DBus 2.0
-import org.nemomobile.contacts 1.0
+import org.nemomobile.contacts 1.0 as Contacts
 import "pages"
 
 // Note: This is the main QML file for Whisperfish.
@@ -29,7 +29,7 @@ ApplicationWindow
     property string shareClientId: ""
     property string proofCaptchaToken: ''
 
-    PeopleModel {
+    Contacts.PeopleModel {
         id: resolvePeopleModel
 
         // Specify the PhoneNumberRequired flag to ensure that all phone number
@@ -38,6 +38,20 @@ ApplicationWindow
         // the case where we attempt to message a newly-created contact via
         // the action shortcut icon in the contact card.
         requiredProperty: PeopleModel.PhoneNumberRequired
+
+        property var person: Component { Contacts.Person { } }
+
+        function createContact(e164, first, last) {
+            return person.createObject(null, {
+                'firstName': first ? first : '',
+                'lastName': last ? last : '',
+                'phoneDetails': [{
+                    'type': 11, // phone number type
+                    'number': e164,
+                    'index': -1
+                }]
+            })
+        }
     }
 
     Component {
