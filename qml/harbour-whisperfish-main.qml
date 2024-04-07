@@ -114,15 +114,16 @@ ApplicationWindow
     // showNoteToSelf: true:      show "You"
     //                 false:     show "Note to self"
     //                 undefined: show own name instead
-    function getRecipientName(e164, extId, recipientName, shownNoteToSelf) {
+    function getRecipientName(e164, extId, recipientName, showNoteToSelf) {
         if(!recipientName) {
             recipientName = ''
         }
         if(!e164) {
             return recipientName
         }
-        if((shownNoteToSelf !== undefined) && (e164 === SetupWorker.phoneNumber)) {
-            if(shownNoteToSelf) {
+        console.log("showNoteToSelf", showNoteToSelf, e164, SetupWorker.phoneNumber)
+        if((showNoteToSelf !== undefined) && (e164 == SetupWorker.phoneNumber)) {
+            if(showNoteToSelf) {
                 //: Name of the conversation with one's own number
                 //% "Note to self"
                 return qsTrId("whisperfish-session-note-to-self")
