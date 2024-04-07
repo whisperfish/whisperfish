@@ -90,21 +90,20 @@ ApplicationWindow
             if (contact != null) { console.log("Avatar by e164:", e164) }
         }
 
-        var contact_avatar = (contact && contact.avatarPath) ? contact.avatarPath.toString() : null
-        var contact_avatar_ok = (contact_avatar !== null) && (contact_avatar !== 'image://theme/icon-m-telephony-contact-avatar')
+        var contact_avatar = (contact && contact.avatarPath) ? contact.avatarPath.toString() : ''
+        var contact_avatar_ok = contact_avatar.indexOf('image://theme/') !== 0
 
         var signal_avatar = uuid !== undefined ? "file://" + SettingsBridge.avatar_dir + "/" + uuid : ''
         var signal_avatar_ok = uuid !== undefined ? SettingsBridge.avatarExists(uuid) : false
 
-        if(!contact_avatar_ok && !signal_avatar_ok) {
-            return ''
+        if(signal_avatar_ok && contact_avatar_ok) {
+            return SettingsBridge.prefer_device_contacts ? contact_avatar : signal_avatar
+        } else if (signal_avatar_ok) {
+            return signal_avatar
+        } else if (contact_avatar_ok) {
+            return contact_avatar
         }
-
-        if(SettingsBridge.prefer_device_contacts) {
-            return contact_avatar_ok ? contact_avatar : signal_avatar
-        } else {
-            return signal_avatar_ok ? signal_avatar : contact_avatar
-        }
+        return 'image://theme/icon-m-telephony-contact-avatar'
     }
 
     // Return either given peer name or device contacts name based on
