@@ -93,8 +93,8 @@ ApplicationWindow
         var contact_avatar = (contact && contact.avatarPath) ? contact.avatarPath.toString() : null
         var contact_avatar_ok = (contact_avatar !== null) && (contact_avatar !== 'image://theme/icon-m-telephony-contact-avatar')
 
-        var signal_avatar = "file://" + SettingsBridge.avatar_dir + "/" + uuid
-        var signal_avatar_ok = SettingsBridge.avatarExists(uuid)
+        var signal_avatar = uuid !== undefined ? "file://" + SettingsBridge.avatar_dir + "/" + uuid : ''
+        var signal_avatar_ok = uuid !== undefined ? SettingsBridge.avatarExists(uuid) : false
 
         if(!contact_avatar_ok && !signal_avatar_ok) {
             return ''
