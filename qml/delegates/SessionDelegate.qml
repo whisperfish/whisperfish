@@ -18,7 +18,7 @@ ListItem {
     property string draft: model.draft
     property string profilePicture: model !== undefined ? (isGroup
         ? getGroupAvatar(model.groupId)
-        : (recipient.status == Loader.Ready ? getRecipientAvatar(recipient.item.e164, recipient.item.uuid, recipient.externalId) : '')
+        : (recipient.status == Loader.Ready ? getRecipientAvatar(recipient.item.e164, recipient.item.uuid, recipient.item.externalId) : '')
     ) : ''
     property bool isPreviewDelivered: model.deliveryCount > 0 // TODO investigate: not updated for new message (#151, #55?)
     property bool isPreviewRead: model.readCount > 0 // TODO investigate: not updated for new message (#151, #55?)
@@ -181,7 +181,7 @@ ListItem {
                     if (model.recipientUuid === SetupWorker.uuid) {
                         pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"), { session: model } )
                     } else if (recipient.status == Loader.Ready) {
-                        pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { session: model, recipient: recipient })
+                        pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { session: model, recipient: recipient.item })
                     }
                 }
             }
