@@ -108,7 +108,7 @@ Page {
                 width: height
                 highlighted: false
                 labelsHighlighted: false
-                imageSource: getRecipientAvatar(recipient.e164, recipient.uuid, recipient.externalId)
+                imageSource: "file://" + SettingsBridge.avatar_dir + "/" + recipient.uuid
                 isGroup: false
                 showInfoMark: true
                 infoMarkSource: 'image://theme/icon-s-chat'
