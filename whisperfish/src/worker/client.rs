@@ -1228,6 +1228,7 @@ impl Handler<FetchAttachment> for ClientActor {
             "image/jpg" => "jpg",
             "text/x-signal-plain" => "txt",
             "application/x-signal-view-once" => "bin",
+            "audio/x-scpls" => "pls",
             other => mime_guess::get_mime_extensions_str(other)
                 .and_then(|x| x.first())
                 .copied() // &&str -> &str
