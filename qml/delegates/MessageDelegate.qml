@@ -84,8 +84,8 @@ ListItem {
 
     readonly property bool hasData: modelData !== null && modelData !== undefined
     readonly property bool hasReactions: hasData && modelData.reactions > 0
-    readonly property bool hasQuotedMessage: !!modelData.quotedMessageId && modelData.quotedMessageId != -1
-    readonly property bool hasAttachments: hasData && modelData.attachments > 0
+    readonly property bool hasQuotedMessage: !!modelData.quotedMessageId && modelData.quotedMessageId != -1 && !isRemoteDeleted
+    readonly property bool hasAttachments: hasData && modelData.attachments > 0 && !isRemoteDeleted
     readonly property bool hasText: hasData && _message !== ''
     readonly property bool unidentifiedSender: modelData.unidentifiedSender !== undefined ? modelData.unidentifiedSender : true
     readonly property bool isOutbound: hasData && (modelData.outgoing === true)
@@ -237,7 +237,9 @@ ListItem {
 
         AttachmentsLoader {
             asynchronous: true
-            enabled: hasAttachments
+            enabled: hasAttachments && !isRemoteDeleted
+            visible: enabled
+            active: enabled
             width: delegateContentWidth
             cornersOutbound: isOutbound
             cornersQuoted: showQuotedMessage
@@ -264,7 +266,7 @@ ListItem {
                 bypassLinking: true
                 needsRichText: model.hasStrikeThrough || model.hasSpoilers
                 hasSpoilers: model.hasSpoilers // Set to 'false' when text is clicked
-                font.italic: model.remoteDeleted
+                font.italic: isRemoteDeleted
                 wrapMode: Text.Wrap
                 anchors { left: parent.left; right: parent.right }
                 horizontalAlignment: emojiOnly ? Text.AlignHCenter :

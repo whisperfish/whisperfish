@@ -32,32 +32,47 @@ ListItem {
     property int expiringMessages: hasLastMessage && model.expiringMessageTimeout != -1
     property string name: model.isGroup ? model.groupName : (recipient.status == Loader.Ready ? getRecipientName(recipient.item.e164, recipient.item.name, true) : '')
     property string emoji: model.isGroup ? '' : (recipient.status == Loader.Ready ? (recipient.item.emoji != null ? recipient.item.emoji : '') : '')
-    property string message:
-        (_debugMode ? "[" + model.id + "] " : "") +
-        (lastMessage.messageType == null
-            ? (lastMessage.attachments.count > 0
-                    ? (lastMessage.isVoiceNote
-                        ? ("🎤 " + (!hasText
-                            //: Session is a voice note
-                            //% "Voice Message"
-                            ? qsTrId("whisperfish-session-is-voice-note") : '')
-                        )
-                        : ("📎 " + (!hasText
-                            //: Session contains an attachment label
-                            //% "Attachment"
-                            ? qsTrId("whisperfish-session-has-attachment") : '')
-                        )
-                    )
-                    : ''
-                ) +
-                (isRemoteDeleted
-                    //: Placeholder note for a deleted message
-                    //% "this message was deleted"
-                    ? qsTrId("whisperfish-message-deleted-note")
-                    : (hasText ? lastMessage.styledMessage : '')
-                )
-            : serviceMessage.active ? "<i>"+serviceMessage.item._message+"</i>" : ""
-        )
+    property string message: {
+        var text = ""
+
+        if (_debugMode) {
+            text = "[" + model.id + "] "
+        }
+
+        if (isRemoteDeleted) {
+            //: Placeholder note for a deleted message
+            //% "this message was deleted"
+            return text + qsTrId("whisperfish-message-deleted-note")
+        }
+
+        if (serviceMessage.active) {
+           return text + "<i>" + serviceMessage.item._message + "</i>"
+        }
+
+        if (lastMessage.attachments.count > 0) {
+            if (lastMessage.isVoiceNote) {
+                text += "🎤 "
+                if (!hasText) {
+                    //: Session is a voice note
+                    //% "Voice Message"
+                    text += qsTrId("whisperfish-session-is-voice-note")
+                }
+            } else {
+                text += "📎 "
+                if (!hasText) {
+                    //: Session contains an attachment label
+                    //% "Attachment"
+                    text += qsTrId("whisperfish-session-has-attachment")
+                }
+            }
+        }
+
+        if (hasText) {
+            text += lastMessage.styledMessage
+        }
+
+        return text
+    }
 
     signal relocateItem(int sessionId)
 

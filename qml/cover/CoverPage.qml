@@ -112,6 +112,7 @@ CoverBackground {
                 id: lastMessage
                 app: AppState
                 messageId: model.messageId
+                property bool hasText: lastMessage.message !== undefined && lastMessage.message !== ''
             }
 
             Recipient {
@@ -131,17 +132,41 @@ CoverBackground {
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.primaryColor
                 truncationMode: TruncationMode.Fade
-                text: (lastMessage.attachments.count > 0
-                    ? ("📎 " + (lastMessage.message.length == 0
-                        // SessionDelegate defines this
-                        ? qsTrId("whisperfish-session-has-attachment")
-                        : ''))
-                    : '')
-                    + (lastMessage.messageType != null
+                text: {
+                    var newText = ""
+
+                    if (lastMessage.RemoteDeleted) {
+                        // SessionDelegate.qml defines this
+                        return qsTrId("whisperfish-message-deleted-note")
+                    }
+
+                    if (lastMessage.messageType != null) {
                         //: Placeholder note for a service message (expiry, profile key...)
                         //% "Service Message"
-                        ? "⚙️ "+qsTrId("whisperfish-cover-service-message")
-                        : lastMessage.message) // TODO: LinkedEmojiLabel and lastMessage.styledMessage
+                        return "⚙️ " + qsTrId("whisperfish-cover-service-message")
+                    }
+
+                    if (lastMessage.attachments.count > 0) {
+                        if (lastMessage.isVoiceNote) {
+                            newText += "🎤 "
+                            if (!lastMessage.hasText) {
+                                // SessionDelegate.qml defines this
+                                newText += qsTrId("whisperfish-session-is-voice-note")
+                            }
+                        } else {
+                            newText += "📎 "
+                            if (!lastMessage.hasText) {
+                                // SessionDelegate.qml defines this
+                                newText += qsTrId("whisperfish-session-has-attachment")
+                            }
+                        }
+                    }
+
+                    if (lastMessage.hasText) {
+                        newText += lastMessage.styledMessage
+                    }
+                    return newText
+                } // end text
             }
 
             Label {
