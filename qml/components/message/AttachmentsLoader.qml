@@ -4,6 +4,7 @@ import QtQuick 2.6
 import Sailfish.Silica 1.0
 import be.rubdos.whisperfish 1.0
 import "../attachment"
+import "../../js/attachment.js" as Attachment
 import ".."
 
 // This component must be a child of MessageDelegate.
@@ -277,12 +278,8 @@ Loader {
             id: detailColumn
             enabled: listView != null && !listView.isSelecting
 
-            function isUnplayable(filename) {
-                return /\.m3u$/.test(filename) || /\.m3u8$/.test(filename) || /\.pls$/.test(filename) || /\.asx$/.test(filename) || /\.wpl$/.test(filename) || /\.cue$/.test(filename)
-            }
-
             function componentForMime(detailAttachment) {
-                if (/^audio\//.test(detailAttachment.type) && !isUnplayable(detailAttachment.data)) return detail_audioComponent
+                if (/^audio\//.test(detailAttachment.type) && !Attachment.isPlaylist(detailAttachment.data)) return detail_audioComponent
                 else if (/^text\/(x-)?vcard/.test(detailAttachment.type)) return detail_contactComponent
                 /* else if (detailAttachment.type === 'text/x-signal-plain') return null */
                 else return detail_fileComponent
