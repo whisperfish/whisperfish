@@ -4,26 +4,27 @@
 <context>
     <name></name>
     <message id="whisperfish-session-has-attachment">
-        <location filename="../qml/cover/CoverPage.qml" line="137"/>
-        <location filename="../qml/delegates/SessionDelegate.qml" line="48"/>
+        <location filename="../qml/cover/CoverPage.qml" line="160"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="65"/>
         <source>Attachment</source>
         <extracomment>Session contains an attachment label</extracomment>
         <translation>Επισύναψη</translation>
     </message>
     <message id="whisperfish-cover-service-message">
-        <location filename="../qml/cover/CoverPage.qml" line="143"/>
+        <location filename="../qml/cover/CoverPage.qml" line="146"/>
         <source>Service Message</source>
         <extracomment>Placeholder note for a service message (expiry, profile key...)</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-session-is-voice-note">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="43"/>
+        <location filename="../qml/cover/CoverPage.qml" line="154"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="58"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
         <translation>Ηχητικό μήνυμα</translation>
     </message>
     <message id="whisperfish-session-delete-all">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="106"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="121"/>
         <source>All messages deleted</source>
         <oldsource>Deleting all messages</oldsource>
         <extracomment>Delete all messages from session (past tense)</extracomment>
@@ -48,7 +49,7 @@
         <translation>%1 και %n ακόμη πληκτρολογούν</translation>
     </message>
     <message id="whisperfish-session-note-to-self">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="205"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="220"/>
         <location filename="../qml/harbour-whisperfish-main.qml" line="141"/>
         <location filename="../qml/pages/ShareDestinationV1.qml" line="106"/>
         <location filename="../qml/pages/ShareDestinationV2.qml" line="105"/>
@@ -57,51 +58,51 @@
         <translation>Σημείωμα για εμένα</translation>
     </message>
     <message id="whisperfish-message-preview-draft">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="229"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="244"/>
         <source>Draft: %1</source>
         <extracomment>Message preview for a saved, unsent message</extracomment>
         <translation>Πρόχειρο: %1</translation>
     </message>
     <message id="whisperfish-session-mark-unpinned">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="365"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="380"/>
         <source>Unpin</source>
         <extracomment>&apos;Unpin&apos; conversation from the top of the view</extracomment>
         <translation>Ξεκαρφίτσωμα</translation>
     </message>
     <message id="whisperfish-session-mark-pinned">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="368"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="383"/>
         <source>Pin to top</source>
         <extracomment>&apos;Pin&apos; conversation to the top of the view</extracomment>
         <translation>Καρφίτσωμα στην κορυφή</translation>
     </message>
     <message id="whisperfish-session-mark-unmuted">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="377"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="392"/>
         <source>Unmute conversation</source>
         <oldsource>Mark as unmuted</oldsource>
         <extracomment>Mark conversation as unmuted</extracomment>
         <translation>Κατάργηση σίγασης συνομιλίας</translation>
     </message>
     <message id="whisperfish-session-mark-muted">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="380"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="395"/>
         <source>Mute conversation</source>
         <oldsource>Mark as muted</oldsource>
         <extracomment>Mark conversation as muted</extracomment>
         <translation>Σίγαση συνομιλίας</translation>
     </message>
     <message id="whisperfish-session-mark-unarchived">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="388"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="403"/>
         <source>Restore to inbox</source>
         <extracomment>Show archived messages again in the main page</extracomment>
         <translation>Επαναφορά στα εισερχόμενα</translation>
     </message>
     <message id="whisperfish-session-mark-archived">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="391"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="406"/>
         <source>Archive conversation</source>
         <extracomment>Move the conversation to archived conversations</extracomment>
         <translation>Αρχειοθέτηση συζήτησης</translation>
     </message>
     <message id="whisperfish-session-delete">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="398"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="413"/>
         <source>Delete conversation</source>
         <extracomment>Delete all messages from session menu</extracomment>
         <translation>Διαγραφή συνομιλίας</translation>
@@ -1940,14 +1941,15 @@ Settings page share contacts</extracomment>
         <translation>κανένας αποστολέας</translation>
     </message>
     <message id="whisperfish-message-deleted-note">
-        <location filename="../qml/delegates/MessageDelegate.qml" line="261"/>
-        <location filename="../qml/delegates/SessionDelegate.qml" line="56"/>
+        <location filename="../qml/cover/CoverPage.qml" line="140"/>
+        <location filename="../qml/delegates/MessageDelegate.qml" line="263"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="45"/>
         <source>this message was deleted</source>
         <extracomment>Placeholder note for a deleted message</extracomment>
         <translation>το μήνυμα διαγράφηκε</translation>
     </message>
     <message id="whisperfish-message-empty-note">
-        <location filename="../qml/delegates/MessageDelegate.qml" line="264"/>
+        <location filename="../qml/delegates/MessageDelegate.qml" line="266"/>
         <source>this message is empty</source>
         <extracomment>Placeholder note if an empty message is encountered.</extracomment>
         <translation>Το μήνυμα είναι κενό</translation>
