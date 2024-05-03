@@ -29,12 +29,12 @@ pub struct SetupWorker {
     clientFailed: qt_signal!(),
     setupComplete: qt_signal!(),
 
-    phonenumber: Option<PhoneNumber>,
-    _phoneNumber: qt_property!(QString; READ phonenumber NOTIFY setupChanged),
-    uuid: Option<Uuid>,
-    _uuid: qt_property!(QString; READ uuid NOTIFY setupChanged ALIAS uuid),
-    pni: Option<Uuid>,
-    _pni: qt_property!(QString; READ pni NOTIFY setupChanged ALIAS pni),
+    phoneNumberInner: Option<PhoneNumber>,
+    phoneNumber: qt_property!(QString; READ get_phone_number NOTIFY setupChanged),
+    uuidInner: Option<Uuid>,
+    uuid: qt_property!(QString; READ get_uuid NOTIFY setupChanged ALIAS uuid),
+    pniInner: Option<Uuid>,
+    pni: qt_property!(QString; READ get_pni NOTIFY setupChanged ALIAS pni),
     deviceId: qt_property!(u32; NOTIFY setupChanged),
 
     registered: qt_property!(bool; NOTIFY setupChanged),
@@ -68,9 +68,9 @@ impl SetupWorker {
         app.settings_bridge.pinned().borrow_mut().defaults();
 
         // XXX: nice formatting?
-        this.borrow_mut().phonenumber = config.get_tel();
-        this.borrow_mut().uuid = config.get_aci();
-        this.borrow_mut().pni = config.get_pni();
+        this.borrow_mut().phoneNumberInner = config.get_tel();
+        this.borrow_mut().uuidInner = config.get_aci();
+        this.borrow_mut().pniInner = config.get_pni();
         this.borrow_mut().deviceId = config.get_device_id().into();
 
         if !this.borrow().registered {
@@ -219,8 +219,8 @@ impl SetupWorker {
 
         let mut this = this.borrow_mut();
 
-        this.phonenumber = Some(reg.phonenumber.clone());
-        this.uuid = Some(reg.service_ids.aci);
+        this.phoneNumberInner = Some(reg.phonenumber.clone());
+        this.uuidInner = Some(reg.service_ids.aci);
         this.deviceId = reg.device_id.into();
 
         config.set_tel(reg.phonenumber.clone());
@@ -386,24 +386,24 @@ impl SetupWorker {
         }
     }
 
-    fn uuid(&self) -> QString {
-        self.uuid
+    fn get_uuid(&self) -> QString {
+        self.uuidInner
             .as_ref()
             .map(Uuid::to_string)
             .unwrap_or_default()
             .into()
     }
 
-    fn pni(&self) -> QString {
-        self.pni
+    fn get_pni(&self) -> QString {
+        self.pniInner
             .as_ref()
             .map(Uuid::to_string)
             .unwrap_or_default()
             .into()
     }
 
-    fn phonenumber(&self) -> QString {
-        self.phonenumber
+    fn get_phone_number(&self) -> QString {
+        self.phoneNumberInner
             .as_ref()
             .map(PhoneNumber::to_string)
             .unwrap_or_default()

@@ -1,6 +1,5 @@
 import QtQuick 2.2
 import Sailfish.Silica 1.0
-import Sailfish.TextLinking 1.0
 import be.rubdos.whisperfish 1.0
 import "../components"
 
@@ -11,6 +10,9 @@ Page {
     property string profilePicture: ""
     property var session: null
     property var recipient: null
+
+    // If entering from a group setting, don't expose direct message controls
+    property bool groupContext: false
 
     SilicaFlickable {
         anchors.fill: parent
@@ -57,16 +59,38 @@ Page {
                 //: Show a peer's system contact page (menu item)
                 //% "Show contact"
                 text: qsTrId("whisperfish-show-contact-page-menu")
-                enabled: recipient.e164 != null && recipient.e164.length > 0
+                enabled: recipient && (recipient.e164 && recipient.e164[0] === '+' || recipient.externalId)
                 visible: enabled
-                // TODO maybe: replace with a custom link handler
-                onClicked: phoneNumberLinker.linkActivated('tel:' + recipient.e164)
-                LinkedText { id: phoneNumberLinker; visible: false }
+                onClicked: {
+                    var contact = recipient.externalId
+                        ? resolvePeopleModel.personById(parseInt(recipient.externalId))
+                        : resolvePeopleModel.personByPhoneNumber(recipient.e164)
+                    if (contact != null) {
+                        pageStack.push(pageStack.resolveImportPage('Sailfish.Contacts.ContactCardPage'), { contact: contact })
+                    } else if (recipient.e164 && recipient.e164[0] === '+') {
+                        var newContact = resolvePeopleModel.createContact(recipient.e164, recipient.givenName, recipient.familyName)
+                        pageStack.push(pageStack.resolveImportPage('Sailfish.Contacts.ContactCardPage'), { contact: newContact })
+                    }
+                }
+            }
+            MenuItem {
+                //: Menu action to unlink a Signal contact from a Sailfish OS contact
+                //% "Unlink contact"
+                text: qsTrId("whisperfish-recipient-unlink")
+                visible: recipient.externalId != null
+                onClicked: ClientWorker.unlinkRecipient(recipient.recipientId)
+            }
+            MenuItem {
+                //: Menu action to pick a Sailfish OS contact to link the Signal user to
+                //% "Link contact"
+                text: qsTrId("whisperfish-recipient-link")
+                visible: recipient.externalId == null
+                onClicked: pageStack.push(Qt.resolvedUrl("LinkContactPage.qml"), { recipient: recipient })
             }
             MenuItem {
                 // Translation in ProfilePage.qml
                 text: qsTrId("whisperfish-save-message-expiry")
-                visible: session != null && expiringMessages.newDuration !== session.expiringMessageTimeout
+                visible: !groupContext && session != null && expiringMessages.newDuration !== session.expiringMessageTimeout
                 onClicked: MessageModel.createExpiryUpdate(session.sessionId, expiringMessages.newDuration)
             }
         }
@@ -87,7 +111,7 @@ Page {
                 width: height
                 highlighted: false
                 labelsHighlighted: false
-                imageSource: getRecipientAvatar(recipient.e164, recipient.uuid)
+                imageSource: "file://" + SettingsBridge.avatar_dir + "/" + recipient.uuid
                 isGroup: false
                 showInfoMark: true
                 infoMarkSource: 'image://theme/icon-s-chat'
@@ -173,7 +197,7 @@ Page {
 
             ExpiringMessagesComboBox {
                 id: expiringMessages
-                visible: session != null
+                visible: !groupContext && session != null
                 width: parent.width
                 duration: session.expiringMessageTimeout
             }

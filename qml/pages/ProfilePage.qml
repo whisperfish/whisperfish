@@ -1,6 +1,5 @@
 import QtQuick 2.2
 import Sailfish.Silica 1.0
-import Sailfish.TextLinking 1.0
 import be.rubdos.whisperfish 1.0
 import "../components"
 
@@ -12,6 +11,9 @@ Page {
     property string profilePicture: ""
 
     property bool editingProfile: false
+
+    // If entering from a group setting, don't expose direct message controls
+    property bool groupContext: false
 
     onStatusChanged: {
         if (editingProfile && status === PageStatus.Inactive) {
@@ -135,7 +137,7 @@ Page {
                 //: Save the new value of expiring messages timeout
                 //% "Set message expiry"
                 text: qsTrId("whisperfish-save-message-expiry")
-                visible: session != null && expiringMessages.newDuration !== session.expiringMessageTimeout
+                visible: !groupContext && session != null && expiringMessages.newDuration !== session.expiringMessageTimeout
                 onClicked: MessageModel.createExpiryUpdate(session.sessionId, expiringMessages.newDuration)
             }
         }
@@ -156,7 +158,7 @@ Page {
                 width: height
                 highlighted: false
                 labelsHighlighted: false
-                imageSource: getRecipientAvatar(recipient.e164, recipient.uuid)
+                imageSource: "file://" + SettingsBridge.avatar_dir + "/" + recipient.uuid
                 isGroup: false
                 showInfoMark: true
                 infoMarkSource: 'image://theme/icon-s-chat'
@@ -270,7 +272,7 @@ Page {
 
             ExpiringMessagesComboBox {
                 id: expiringMessages
-                visible: session != null
+                visible: !groupContext && session != null
                 width: parent.width
                 duration: session.expiringMessageTimeout
             }

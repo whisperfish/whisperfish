@@ -230,7 +230,7 @@ impl EventObserving for SessionImpl {
     #[tracing::instrument(level = "trace", skip(self, ctx))]
     fn observe(&mut self, ctx: Self::Context, event: crate::store::observer::Event) {
         let storage = ctx.storage();
-        if let Some(id) = self.session_id {
+        if let Some(session_id) = self.session_id {
             let message_id = event
                 .relation_key_for(schema::messages::table)
                 .and_then(|x| x.as_i32());
@@ -241,15 +241,15 @@ impl EventObserving for SessionImpl {
             } else if event.relation_key_for(schema::reactions::table).is_some() {
                 // Reactions update themselves.
                 tracing::trace!("Skipping reaction update");
-            } else if event.for_row(schema::sessions::table, id) {
-                self.session = storage.fetch_session_by_id_augmented(id);
+            } else if event.for_row(schema::sessions::table, session_id) {
+                self.session = storage.fetch_session_by_id_augmented(session_id);
                 // XXX how to trigger a Qt signal now?
             } else if message_id.is_some() {
-                self.session = storage.fetch_session_by_id_augmented(id);
+                self.session = storage.fetch_session_by_id_augmented(session_id);
                 self.message_list
                     .pinned()
                     .borrow_mut()
-                    .observe(storage, id, event);
+                    .observe(storage, session_id, event);
                 // XXX how to trigger a Qt signal now?
             } else if event.for_table(schema::recipients::table) {
                 let Some(new_recipient) = event
@@ -258,13 +258,13 @@ impl EventObserving for SessionImpl {
                     .and_then(|recipient_id| storage.fetch_recipient_by_id(recipient_id))
                 else {
                     // Only refresh session - messages update themselves.
-                    self.session = storage.fetch_session_by_id_augmented(id);
+                    self.session = storage.fetch_session_by_id_augmented(session_id);
                     return;
                 };
                 if let Some(session) = &mut self.session {
                     match &mut session.inner.r#type {
                         orm::SessionType::DirectMessage(recipient) => {
-                            assert!(recipient.id == id);
+                            assert!(recipient.id == new_recipient.id);
                             *recipient = new_recipient
                         }
                         orm::SessionType::GroupV1(_) => {
@@ -281,7 +281,7 @@ impl EventObserving for SessionImpl {
                     "Falling back to reloading the whole Session for event {:?}",
                     event
                 );
-                self.fetch(storage, id);
+                self.fetch(storage, session_id);
             }
         }
     }

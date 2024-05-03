@@ -2,7 +2,7 @@ import QtQuick 2.2
 import Sailfish.Silica 1.0
 import Nemo.Notifications 1.0
 import Nemo.DBus 2.0
-import org.nemomobile.contacts 1.0
+import org.nemomobile.contacts 1.0 as Contacts
 import "pages"
 
 // Note: This is the main QML file for Whisperfish.
@@ -29,7 +29,7 @@ ApplicationWindow
     property string shareClientId: ""
     property string proofCaptchaToken: ''
 
-    PeopleModel {
+    Contacts.PeopleModel {
         id: resolvePeopleModel
 
         // Specify the PhoneNumberRequired flag to ensure that all phone number
@@ -38,6 +38,20 @@ ApplicationWindow
         // the case where we attempt to message a newly-created contact via
         // the action shortcut icon in the contact card.
         requiredProperty: PeopleModel.PhoneNumberRequired
+
+        property var person: Component { Contacts.Person { } }
+
+        function createContact(e164, first, last) {
+            return person.createObject(null, {
+                'firstName': first ? first : '',
+                'lastName': last ? last : '',
+                'phoneDetails': [{
+                    'type': 11, // phone number type
+                    'number': e164,
+                    'index': -1
+                }]
+            })
+        }
     }
 
     Component {
@@ -76,26 +90,32 @@ ApplicationWindow
 
     // Return peer contacts avatar or Signal profile avatar based on
     // user selected preference. Do not use for groups (there's no choice).
-    function getRecipientAvatar(e164, uuid) {
-        if (e164 == null) { e164 = '' }
-        // Only try to search for contact name if contact is a phone number
-        var contact = (contactsReady && e164[0] === '+') ? resolvePeopleModel.personByPhoneNumber(e164, true) : null
-
-        var contact_avatar = (contact && contact.avatarPath) ? contact.avatarPath.toString() : null
-        var contact_avatar_ok = (contact_avatar !== null) && (contact_avatar !== 'image://theme/icon-m-telephony-contact-avatar')
-
-        var signal_avatar = "file://" + SettingsBridge.avatar_dir + "/" + uuid
-        var signal_avatar_ok = SettingsBridge.avatarExists(uuid)
-
-        if(!contact_avatar_ok && !signal_avatar_ok) {
-            return ''
+    function getRecipientAvatar(e164, uuid, extId) {
+        var contact = null
+        // In Sailfish OS, extId is a number
+        if (extId != null) {
+            extId = parseInt(extId)
+            contact = contactsReady ? resolvePeopleModel.personById(extId) : null
+        }
+        if (contact == null && e164 != null && e164[0] === '+') {
+            // Only try to search for contact name if contact is a phone number
+            contact = contactsReady ? resolvePeopleModel.personByPhoneNumber(e164, true) : null
         }
 
-        if(SettingsBridge.prefer_device_contacts) {
-            return contact_avatar_ok ? contact_avatar : signal_avatar
-        } else {
-            return signal_avatar_ok ? signal_avatar : contact_avatar
+        var contact_avatar = (contact && contact.avatarPath) ? contact.avatarPath.toString() : ''
+        var contact_avatar_ok = contact_avatar !== '' && contact_avatar.indexOf('image://theme/') !== 0
+
+        var signal_avatar = uuid !== undefined ? "file://" + SettingsBridge.avatar_dir + "/" + uuid : ''
+        var signal_avatar_ok = uuid !== undefined ? SettingsBridge.avatarExists(uuid) : false
+
+        if(signal_avatar_ok && contact_avatar_ok) {
+            return SettingsBridge.prefer_device_contacts ? contact_avatar : signal_avatar
+        } else if (signal_avatar_ok) {
+            return signal_avatar
+        } else if (contact_avatar_ok) {
+            return contact_avatar
         }
+        return 'image://theme/icon-m-telephony-contact-avatar'
     }
 
     // Return either given peer name or device contacts name based on
@@ -106,15 +126,16 @@ ApplicationWindow
     // showNoteToSelf: true:      show "You"
     //                 false:     show "Note to self"
     //                 undefined: show own name instead
-    function getRecipientName(e164, recipientName, shownNoteToSelf) {
+    function getRecipientName(e164, extId, recipientName, showNoteToSelf) {
         if(!recipientName) {
             recipientName = ''
         }
-        if(!e164) {
+        if(!e164 && !extId) {
             return recipientName
         }
-        if((shownNoteToSelf !== undefined) && (e164 === SetupWorker.phoneNumber)) {
-            if(shownNoteToSelf) {
+
+        if((showNoteToSelf !== undefined) && (e164 == SetupWorker.phoneNumber)) {
+            if(showNoteToSelf) {
                 //: Name of the conversation with one's own number
                 //% "Note to self"
                 return qsTrId("whisperfish-session-note-to-self")
@@ -125,8 +146,16 @@ ApplicationWindow
             }
         }
 
-        // Only try to search for contact name if contact is a phone number
-        var contact = (contactsReady && e164[0] === '+') ? resolvePeopleModel.personByPhoneNumber(e164, true) : null
+        var contact = null
+        if (extId != null) {
+            // In Sailfish OS, extId is a number
+            extId = parseInt(extId)
+            contact = contactsReady && extId > 0 ? resolvePeopleModel.personById(extId) : null
+        }
+        if (contact == null && e164 != null && e164[0] === '+') {
+            // Only try to search for contact name if contact is a phone number
+            contact = contactsReady ? resolvePeopleModel.personByPhoneNumber(e164, true) : null
+        }
         if(SettingsBridge.prefer_device_contacts) {
             return (contact && contact.displayLabel !== '') ? contact.displayLabel : recipientName
         } else {
@@ -153,7 +182,7 @@ ApplicationWindow
     }
 
     function newMessageNotification(sid, mid, sessionName, senderName, senderIdentifier, senderUuid, message, isGroup) {
-        var name = getRecipientName(senderIdentifier, senderName)
+        var name = getRecipientName(senderIdentifier, undefined, senderName) // FIXME
         var contactName = isGroup ? sessionName : name
 
         // Only ConversationPage.qml has `sessionId` property.

@@ -18,7 +18,7 @@ ListItem {
     property string draft: model.draft
     property string profilePicture: model !== undefined ? (isGroup
         ? getGroupAvatar(model.groupId)
-        : (recipient.status == Loader.Ready ? getRecipientAvatar(recipient.item.e164, recipient.item.uuid) : '')
+        : (recipient.status == Loader.Ready ? getRecipientAvatar(recipient.item.e164, recipient.item.uuid, recipient.item.externalId) : '')
     ) : ''
     property bool isPreviewDelivered: model.deliveryCount > 0 // TODO investigate: not updated for new message (#151, #55?)
     property bool isPreviewRead: model.readCount > 0 // TODO investigate: not updated for new message (#151, #55?)
@@ -30,7 +30,7 @@ ListItem {
     property bool hasSpoilers: hasLastMessage ? lastMessage.hasSpoilers : false
     property bool hasStrikeThrough: hasLastMessage ? lastMessage.hasStrikeThrough : false
     property int expiringMessages: hasLastMessage && model.expiringMessageTimeout != -1
-    property string name: model.isGroup ? model.groupName : (recipient.status == Loader.Ready ? getRecipientName(recipient.item.e164, recipient.item.name, true) : '')
+    property string name: model.isGroup ? model.groupName : (recipient.status == Loader.Ready ? getRecipientName(recipient.item.e164, recipient.item.externalId, recipient.item.name, true) : '')
     property string emoji: model.isGroup ? '' : (recipient.status == Loader.Ready ? (recipient.item.emoji != null ? recipient.item.emoji : '') : '')
     property string message:
         (_debugMode ? "[" + model.id + "] " : "") +
@@ -181,7 +181,7 @@ ListItem {
                     if (model.recipientUuid === SetupWorker.uuid) {
                         pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"), { session: model } )
                     } else if (recipient.status == Loader.Ready) {
-                        pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { session: model, recipient: recipient })
+                        pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { session: model, recipient: recipient.item })
                     }
                 }
             }

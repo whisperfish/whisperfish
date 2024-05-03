@@ -237,6 +237,9 @@ pub struct ClientWorker {
     ),
 
     mark_messages_read: qt_method!(fn(&self, msg_id_list: QVariantList)),
+
+    linkRecipient: qt_method!(fn(&self, recipient_id: i32, external_id: String)),
+    unlinkRecipient: qt_method!(fn(&self, recipient_id: i32)),
 }
 
 /// ClientActor keeps track of the connection state.
@@ -2915,6 +2918,36 @@ impl ClientWorker {
                 .map(Result::unwrap),
         );
     }
+
+    #[with_executor]
+    #[allow(non_snake_case)]
+    fn linkRecipient(&self, recipient_id: i32, external_id: String) {
+        actix::spawn(
+            self.actor
+                .as_ref()
+                .unwrap()
+                .send(LinkRecipient {
+                    recipient_id,
+                    external_id: Some(external_id),
+                })
+                .map(Result::unwrap),
+        );
+    }
+
+    #[with_executor]
+    #[allow(non_snake_case)]
+    fn unlinkRecipient(&self, recipient_id: i32) {
+        actix::spawn(
+            self.actor
+                .as_ref()
+                .unwrap()
+                .send(LinkRecipient {
+                    recipient_id,
+                    external_id: None,
+                })
+                .map(Result::unwrap),
+        );
+    }
 }
 
 impl Handler<CompactDb> for ClientActor {
@@ -3218,6 +3251,29 @@ impl Handler<ExportAttachment> for ClientActor {
                 size
             ),
         };
+    }
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct LinkRecipient {
+    pub recipient_id: i32,
+    pub external_id: Option<String>,
+}
+
+impl Handler<LinkRecipient> for ClientActor {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        LinkRecipient {
+            recipient_id,
+            external_id,
+        }: LinkRecipient,
+        _ctx: &mut Self::Context,
+    ) {
+        let storage = self.storage.as_mut().unwrap();
+        storage.set_recipient_external_id(recipient_id, external_id);
     }
 }
 

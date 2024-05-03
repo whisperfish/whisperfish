@@ -154,7 +154,7 @@ CoverBackground {
                 font.pixelSize: Theme.fontSizeTiny
                 color: Theme.highlightColor
                 truncationMode: TruncationMode.Fade
-                text: model.isGroup ? model.groupName : getRecipientName(recipient.e164, recipient.name, false)
+                text: model.isGroup ? model.groupName : getRecipientName(recipient.e164, recipient.externalId, recipient.name, false)
             }
         }
     }
