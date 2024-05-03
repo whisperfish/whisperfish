@@ -58,7 +58,7 @@ stages:
       files:
         - Cargo.lock
 
-.build:sailfishos:latest:shareplugin: &build-shareplugin
+.build:sf:latest:shareplugin: &build-shareplugin
   image: registry.gitlab.com/whisperfish/sailo-rs/rust-$MER_ARCH-$SFOS_VERSION:latest
   stage: build
   artifacts:
@@ -68,8 +68,8 @@ stages:
     - .ci/build-shareplugin.sh
 
 # BEGIN shareplugin v1
-build:sailfishos:latest:shareplugin_v1:armv7hl:
-  extends: .build:sailfishos:latest:shareplugin
+build:sf:latest:shareplugin_v1:armv7hl:
+  extends: .build:sf:latest:shareplugin
   variables:
     <<: *variables
     MER_ARCH: armv7hl
@@ -80,8 +80,8 @@ build:sailfishos:latest:shareplugin_v1:armv7hl:
       when: never
     - when: on_success
 
-build:sailfishos:latest:shareplugin_v1:i486:
-  extends: .build:sailfishos:latest:shareplugin
+build:sf:latest:shareplugin_v1:i486:
+  extends: .build:sf:latest:shareplugin
   variables:
     <<: *variables
     MER_ARCH: i486
@@ -92,8 +92,8 @@ build:sailfishos:latest:shareplugin_v1:i486:
       when: never
     - when: on_success
 
-build:sailfishos:latest:shareplugin_v1:aarch64:
-  extends: .build:sailfishos:latest:shareplugin
+build:sf:latest:shareplugin_v1:aarch64:
+  extends: .build:sf:latest:shareplugin
   variables:
     <<: *variables
     MER_ARCH: aarch64
@@ -106,8 +106,8 @@ build:sailfishos:latest:shareplugin_v1:aarch64:
 # end shareplugin v1
 
 # begin shareplugin v2
-build:sailfishos:latest:shareplugin_v2:armv7hl:
-  extends: .build:sailfishos:latest:shareplugin
+build:sf:latest:shareplugin_v2:armv7hl:
+  extends: .build:sf:latest:shareplugin
   variables:
     <<: *variables
     MER_ARCH: armv7hl
@@ -117,8 +117,8 @@ build:sailfishos:latest:shareplugin_v2:armv7hl:
       when: never
     - when: on_success
 
-build:sailfishos:latest:shareplugin_v2:i486:
-  extends: .build:sailfishos:latest:shareplugin
+build:sf:latest:shareplugin_v2:i486:
+  extends: .build:sf:latest:shareplugin
   variables:
     <<: *variables
     MER_ARCH: i486
@@ -128,8 +128,8 @@ build:sailfishos:latest:shareplugin_v2:i486:
       when: never
     - when: on_success
 
-build:sailfishos:latest:shareplugin_v2:aarch64:
-  extends: .build:sailfishos:latest:shareplugin
+build:sf:latest:shareplugin_v2:aarch64:
+  extends: .build:sf:latest:shareplugin
   variables:
     <<: *variables
     MER_ARCH: aarch64
@@ -161,11 +161,21 @@ build:sailfishos:latest:shareplugin_v2:aarch64:
       - cargo/registry/index/
       - cargo/registry/cache/
       - cargo/git/db/
+
+      - target/*/debug/deps
+      - target/*/debug/build
+      - target/*/release/deps
+      - target/*/release/build
+      # i686
+      - target/debug/deps
+      - target/debug/build
+      - target/release/deps
+      - target/release/build
     key: target-$MER_ARCH
   script:
     - .ci/build-with-mb2.sh
 
-build:sailfishos:latest:armv7hl:
+build:sf:latest:armv7hl:
   extends: .build-sailfishos
   variables:
     <<: *variables
@@ -176,21 +186,18 @@ build:sailfishos:latest:armv7hl:
       when: never
     - when: on_success
 
-build:sailfishos:latest:i486:
+build:sf:latest:i486:
   extends: .build-sailfishos
   variables:
     <<: *variables
     MER_ARCH: i486
     TARGET_VERSION: $SFOS_VERSION
-  cache:
-    <<: *rust-cache
-    key: "target-i486-$CI_COMMIT_REF_SLUG"
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
 
-build:sailfishos:latest:aarch64:
+build:sf:latest:aarch64:
   extends: .build-sailfishos
   variables:
     <<: *variables
@@ -474,13 +481,13 @@ test:sailfishos:validate-rpms:
   image: registry.gitlab.com/whisperfish/sailo-rs/rpm-validator:latest
   allow_failure: true
   dependencies:
-    - build:sailfishos:latest:armv7hl
-    - build:sailfishos:latest:aarch64
-    - build:sailfishos:latest:i486
+    - build:sf:latest:armv7hl
+    - build:sf:latest:aarch64
+    - build:sf:latest:i486
   needs:
-    - build:sailfishos:latest:armv7hl
-    - build:sailfishos:latest:aarch64
-    - build:sailfishos:latest:i486
+    - build:sf:latest:armv7hl
+    - build:sf:latest:aarch64
+    - build:sf:latest:i486
   script:
     - for rpm in RPMS/*.rpm; do rpmvalidation.sh $rpm; done
   rules:
@@ -499,9 +506,9 @@ notify_matrix_build_ready:
     name: Whisperfish Matrix channel
     url: $MATRIX_HOME_SERVER
   needs:
-    - build:sailfishos:latest:armv7hl
-    - build:sailfishos:latest:aarch64
-    - build:sailfishos:latest:i486
+    - build:sf:latest:armv7hl
+    - build:sf:latest:aarch64
+    - build:sf:latest:i486
   before_script:
     - apt-get update
     - apt-get install --no-install-recommends -y git curl jq ca-certificates
@@ -545,14 +552,14 @@ deploy:openrepos:whisperfish:
       name: OpenRepos
       url: https://openrepos.net/content/rubdos/whisperfish
   needs:
-    - build:sailfishos:latest:armv7hl
-    - build:sailfishos:latest:i486
-    - build:sailfishos:latest:aarch64
+    - build:sf:latest:armv7hl
+    - build:sf:latest:i486
+    - build:sf:latest:aarch64
     - test:stable
   dependencies:
-    - build:sailfishos:latest:armv7hl
-    - build:sailfishos:latest:i486
-    - build:sailfishos:latest:aarch64
+    - build:sf:latest:armv7hl
+    - build:sf:latest:i486
+    - build:sf:latest:aarch64
 
 deploy:openrepos:wf-shareplugin_v1:
   <<: *deploy-openrepos
@@ -563,14 +570,14 @@ deploy:openrepos:wf-shareplugin_v1:
       name: "OpenRepos shareplugin 4.3"
       url: https://openrepos.net/content/rubdos/whisperfish-shareplugin-sailfishos-42-or-below
   needs:
-    - build:sailfishos:latest:shareplugin_v1:armv7hl
-    - build:sailfishos:latest:shareplugin_v1:i486
-    - build:sailfishos:latest:shareplugin_v1:aarch64
+    - build:sf:latest:shareplugin_v1:armv7hl
+    - build:sf:latest:shareplugin_v1:i486
+    - build:sf:latest:shareplugin_v1:aarch64
     - test:stable
   dependencies:
-    - build:sailfishos:latest:shareplugin_v1:armv7hl
-    - build:sailfishos:latest:shareplugin_v1:i486
-    - build:sailfishos:latest:shareplugin_v1:aarch64
+    - build:sf:latest:shareplugin_v1:armv7hl
+    - build:sf:latest:shareplugin_v1:i486
+    - build:sf:latest:shareplugin_v1:aarch64
 
 deploy:openrepos:wf-shareplugin_v2:
   <<: *deploy-openrepos
@@ -581,14 +588,14 @@ deploy:openrepos:wf-shareplugin_v2:
       name: "OpenRepos shareplugin 4.3"
       url: https://openrepos.net/content/rubdos/whisperfish-shareplugin-sailfishos-43
   needs:
-    - build:sailfishos:latest:shareplugin_v2:armv7hl
-    - build:sailfishos:latest:shareplugin_v2:i486
-    - build:sailfishos:latest:shareplugin_v2:aarch64
+    - build:sf:latest:shareplugin_v2:armv7hl
+    - build:sf:latest:shareplugin_v2:i486
+    - build:sf:latest:shareplugin_v2:aarch64
     - test:stable
   dependencies:
-    - build:sailfishos:latest:shareplugin_v2:armv7hl
-    - build:sailfishos:latest:shareplugin_v2:i486
-    - build:sailfishos:latest:shareplugin_v2:aarch64
+    - build:sf:latest:shareplugin_v2:armv7hl
+    - build:sf:latest:shareplugin_v2:i486
+    - build:sf:latest:shareplugin_v2:aarch64
 
 deploy:gitlab:tarball:
   stage: deploy
