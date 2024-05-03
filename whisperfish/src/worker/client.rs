@@ -1216,6 +1216,12 @@ impl Handler<FetchAttachment> for ClientActor {
         let dir = settings.get_string("attachment_dir");
         let dest = PathBuf::from(dir);
 
+        // Take the extension of the file_name string, if it exists
+        let ptr_ext = ptr
+            .file_name
+            .as_ref()
+            .and_then(|file| file.split('.').last());
+
         // Sailfish and/or Rust needs "image/jpg" and some others need coaching
         // before taking a wild guess
         let mut ext = match ptr.content_type() {
@@ -1225,14 +1231,17 @@ impl Handler<FetchAttachment> for ClientActor {
             "image/jpg" => "jpg",
             "text/x-signal-plain" => "txt",
             "application/x-signal-view-once" => "bin",
+            "audio/x-scpls" => "pls",
             other => mime_guess::get_mime_extensions_str(other)
                 .and_then(|x| x.first())
                 .copied() // &&str -> &str
                 .unwrap_or_else(|| {
-                    tracing::warn!("Could not find mime type; defaulting to .bin");
-                    "bin"
+                    let ext = ptr_ext.unwrap_or("bin");
+                    tracing::warn!("Could not find mime type for {other}; defaulting to .{ext}",);
+                    ext
                 }),
-        };
+        }
+        .to_string();
 
         let ptr2 = attachment.clone();
         let attachment_id = attachment.id;
@@ -1303,12 +1312,12 @@ impl Handler<FetchAttachment> for ClientActor {
                     );
                     if computed_type == mime::IMAGE_JPEG {
                         tracing::info!("Received JPEG file with .png suffix, renaming to .jpg");
-                        ext = "jpg";
+                        ext = "jpg".into();
                     }
                 }
 
                 let _attachment_path = storage
-                    .save_attachment(attachment_id, &dest, ext, &ciphertext)
+                    .save_attachment(attachment_id, &dest, &ext, &ciphertext)
                     .await?;
 
                 client_addr

@@ -3,6 +3,7 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Nemo.Thumbnailer 1.0
+import "../../js/attachment.js" as Attachment
 
 MouseArea {
     id: root
@@ -10,7 +11,7 @@ MouseArea {
     property bool highlighted: containsPress
     property string icon: ''
     property bool enableDefaultClickAction: true
-    property bool showThumbnail: _hasAttach && !(attach.is_voice_note || /^audio\//.test(attach.type))
+    property bool showThumbnail: _hasAttach && !(attach.is_voice_note || (/^audio\//.test(attach.type) && !Attachment.isPlaylist(attach.data)))
     default property alias contents: attachmentContentItem.data
 
     // check _effectiveEnableClick in derived types, not enableDefaultClickAction

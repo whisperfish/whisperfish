@@ -4,6 +4,7 @@ import QtQuick 2.6
 import Sailfish.Silica 1.0
 import be.rubdos.whisperfish 1.0
 import "../attachment"
+import "../../js/attachment.js" as Attachment
 import ".."
 
 // This component must be a child of MessageDelegate.
@@ -277,10 +278,10 @@ Loader {
             id: detailColumn
             enabled: listView != null && !listView.isSelecting
 
-            function componentForMime(mimeType) {
-                if (/^audio\//.test(mimeType)) return detail_audioComponent
-                else if (/^text\/(x-)?vcard/.test(mimeType)) return detail_contactComponent
-                /* else if (mimeType === 'text/x-signal-plain') return null */
+            function componentForMime(detailAttachment) {
+                if (/^audio\//.test(detailAttachment.type) && !Attachment.isPlaylist(detailAttachment.data)) return detail_audioComponent
+                else if (/^text\/(x-)?vcard/.test(detailAttachment.type)) return detail_contactComponent
+                /* else if (detailAttachment.type === 'text/x-signal-plain') return null */
                 else return detail_fileComponent
             }
 
@@ -291,7 +292,7 @@ Loader {
                 height: parent.height/Math.min(maxDetails, detailAttachmentCount)
                 // XXX When we're able to run Rust 1.a-bit-more, with qmetaobject 0.2.7+, we have QVariantMap.
                 sourceComponent: detailAttachmentCount >= 1
-                                ? parent.componentForMime(JSON.parse(detailAttachments.get(currentAttachmentIndex)).type)
+                                ? parent.componentForMime(JSON.parse(detailAttachments.get(currentAttachmentIndex)))
                                 : null
             }
 
@@ -307,7 +308,7 @@ Loader {
                     opacity: detailOverlay.visible ? Theme.opacityFaint : 1.0
                     // XXX When we're able to run Rust 1.a-bit-more, with qmetaobject 0.2.7+, we have QVariantMap.
                     sourceComponent: detailAttachmentCount >= maxDetails
-                                    ? detailColumn.componentForMime(JSON.parse(detailAttachments.get(currentAttachmentIndex)).type)
+                                    ? detailColumn.componentForMime(JSON.parse(detailAttachments.get(currentAttachmentIndex)))
                                     : null
                 }
 
