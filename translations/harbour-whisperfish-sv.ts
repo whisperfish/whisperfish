@@ -14,7 +14,7 @@
         <location filename="../qml/cover/CoverPage.qml" line="146"/>
         <source>Service Message</source>
         <extracomment>Placeholder note for a service message (expiry, profile key...)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Servicemeddelande</translation>
     </message>
     <message id="whisperfish-session-is-voice-note">
         <location filename="../qml/cover/CoverPage.qml" line="154"/>
@@ -184,7 +184,7 @@
         <location filename="../qml/pages/MainPage.qml" line="313"/>
         <source>No messages</source>
         <extracomment>Session section label for never (i.e. no messages, no timestamp)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Inga meddelanden</translation>
     </message>
     <message id="whisperfish-session-section-today">
         <location filename="../qml/pages/LinkedDevices.qml" line="117"/>
@@ -882,19 +882,19 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="79"/>
         <source>Unlink contact</source>
         <extracomment>Menu action to unlink a Signal contact from a Sailfish OS contact</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ta bort kontaktlänk</translation>
     </message>
     <message id="whisperfish-recipient-link">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="86"/>
         <source>Link contact</source>
         <extracomment>Menu action to pick a Sailfish OS contact to link the Signal user to</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Länk kontakt</translation>
     </message>
     <message id="whisperfish-profile-uuid-invalid-warning">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="172"/>
         <source>This user profile is broken and can&apos;t be used.</source>
         <extracomment>Warning about recipient UUID not existing or nil (all zeros)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Användarprofilen är defekt och kan inte användas.</translation>
     </message>
     <message id="whisperfish-show-fingerprint">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="241"/>
@@ -1403,19 +1403,19 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="221"/>
         <source>Privacy</source>
         <extracomment>Settings page &quot;privacy&quot; section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Integritet</translation>
     </message>
     <message id="whisperfish-settings-share-phone-number">
         <location filename="../qml/pages/Settings.qml" line="227"/>
         <source>Share phone number</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Dela telefonnumret</translation>
     </message>
     <message id="whisperfish-settings-share-phone-number-description">
         <location filename="../qml/pages/Settings.qml" line="230"/>
         <source>When enabled, your contacts can see your phone number when you message them.</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Om aktiverat, kan dina kontakter se ditt telefonnummer när du skickar ett meddelande till dem.</translation>
     </message>
     <message id="whisperfish-settings-startup-shutdown-section">
         <location filename="../qml/pages/Settings.qml" line="327"/>
@@ -2074,7 +2074,7 @@ Settings page share contacts</extracomment>
         <source>You joined the group.</source>
         <oldsource>You joined the group “%1”.</oldsource>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished">Du gick med i gruppen &quot;%1&quot;.</translation>
+        <translation>Du gick med i gruppen.</translation>
     </message>
     <message id="whisperfish-service-message-left-group-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="137"/>
@@ -2109,35 +2109,35 @@ Settings page share contacts</extracomment>
         <source>You had a voice call with %1.</source>
         <oldsource>You called %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">Du ringde %1.</translation>
+        <translation>Du ringde ett röstsamtal till %1.</translation>
     </message>
     <message id="whisperfish-service-message-call-video-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="161"/>
         <source>You had a video call with %1.</source>
         <oldsource>You started a video call with %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">Du startade ett videosamtal med %1.</translation>
+        <translation>Du startade ett videosamtal med %1.</translation>
     </message>
     <message id="whisperfish-service-message-call-voice-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="172"/>
         <source>%1 had a voice call with you.</source>
         <oldsource>%1 called you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">%1 ringde dig.</translation>
+        <translation>%1 ringde ett röstsamtal till dig.</translation>
     </message>
     <message id="whisperfish-service-message-call-video-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="164"/>
         <source>%1 had a video call with you.</source>
         <oldsource>%1 started a video call with you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">%1 startade ett videosamtal med dig.</translation>
+        <translation>%1 hade ett videosamtal med dig.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-weeks" numerus="yes">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="51"/>
         <source>%n week(s)</source>
         <oldsource>%1 week(s)</oldsource>
         <extracomment>Expiring message timeout in weeks. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n vecka</numerusform>
             <numerusform>%n veckor</numerusform>
         </translation>
@@ -2147,7 +2147,7 @@ Settings page share contacts</extracomment>
         <source>%n day(s)</source>
         <oldsource>%1 day(s)</oldsource>
         <extracomment>Expiring message timeout in days. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n dag</numerusform>
             <numerusform>%n dagar</numerusform>
         </translation>
@@ -2157,7 +2157,7 @@ Settings page share contacts</extracomment>
         <source>%n hour(s)</source>
         <oldsource>%1 hour(s)</oldsource>
         <extracomment>Expiring message timeout in hours. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n timma</numerusform>
             <numerusform>%n timmar</numerusform>
         </translation>
@@ -2167,7 +2167,7 @@ Settings page share contacts</extracomment>
         <source>%n minute(s)</source>
         <oldsource>%1 minute(s)</oldsource>
         <extracomment>Expiring message timeout in minutes. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n minut</numerusform>
             <numerusform>%n minuter</numerusform>
         </translation>
@@ -2177,7 +2177,7 @@ Settings page share contacts</extracomment>
         <source>%n second(s)</source>
         <oldsource>%1 second(s)</oldsource>
         <extracomment>Expiring message timeout in seconds. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n sekund</numerusform>
             <numerusform>%n sekunder</numerusform>
         </translation>
@@ -2186,86 +2186,86 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="88"/>
         <source>You set expiring messages timeout to %1.</source>
         <extracomment>Service message, %1 time</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Du angav tidsgräns för försvinnande meddelanden till %1.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-update-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="91"/>
         <source>%1 set expiring messages timeout to %2.</source>
         <extracomment>Service message, %1 is a name, %2 is time</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 angav tidsgräns för försvinnande meddelanden till %2.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-disable-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="96"/>
         <source>You disabled expiring messages.</source>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Du inaktiverade försvinnande meddelanden.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-disable-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="99"/>
         <source>%1 disabled expiring messages.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 inaktiverade försvinnande meddelanden.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-unknown-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="104"/>
         <source>You set or disabled expiring messages timeout.</source>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Du ställde in eller inaktiverade tidsgränsen för försvinnande meddelanden.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-unknown-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="107"/>
         <source>%1 set or disabled expiring messages timeout.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 ställde in eller inaktiverade tidsgränsen för försvinnande meddelanden.</translation>
     </message>
     <message id="whisperfish-service-message-profile-key-update-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="112"/>
         <source>%1 updated their profile.</source>
         <oldsource>%1 updated their profile key with you.</oldsource>
         <extracomment>Service message for profile (key) update. %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 har uppdaterat sin profil.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="117"/>
         <source>You ended the session with %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Du avslutade sessionen med %1.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="120"/>
         <source>%1 ended the session with you.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 avslutade sessionen med dig.</translation>
     </message>
     <message id="whisperfish-service-message-changed-group">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="124"/>
         <source>The group was updated.</source>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Gruppen uppdaterades.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="145"/>
         <source>You missed a voice call from %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Du missade ett röstsamtal från %1.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="148"/>
         <source>You tried to voice call %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Du försökte ringa röstsamtal till %1.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-video-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="153"/>
         <source>You missed a video call from %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">Du missade ett videosamtal från %1.</translation>
+        <translation>Du missade ett videosamtal från %1.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-video-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="156"/>
         <source>You tried to video call %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Du försökte starta ett videosamtal till %1.</translation>
     </message>
     <message id="whisperfish-service-message-fingerprint-changed">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="177"/>
@@ -2278,20 +2278,20 @@ Settings page share contacts</extracomment>
         <source>You reset the secure session with %1.</source>
         <oldsource>You have reset the secure session with %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">Du har återställt en säker session med %1.</translation>
+        <translation>Du har återställt en säker session med %1.</translation>
     </message>
     <message id="whisperfish-service-message-session-reset-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="185"/>
         <source>%1 reset the secure session with you.</source>
         <oldsource>%1 has reset the secure session with you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">%1 har återställt en säker session med dig.</translation>
+        <translation>%1 har återställt en säker session med dig.</translation>
     </message>
     <message id="whisperfish-service-message-not-supported">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="191"/>
         <source>This service message of is not yet supported by Whisperfish. Please file a bug report. (Flags: %1, Type: %2, Contents: &quot;%3&quot;)</source>
         <oldsource>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: %1)</oldsource>
-        <translation type="unfinished">Detta servicemeddelande stöds ännu inte av Whisperfish. Vänligen lämna en felrapport. (Id: &apos;%1&apos;.)</translation>
+        <translation>Detta servicemeddelande stöds ännu inte av Whisperfish. Vänligen lämna en felrapport. (Id: &apos;%1&apos;.)</translation>
     </message>
     <message id="whisperfish-service-message-more-info">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="247"/>
@@ -2454,8 +2454,8 @@ Settings page share contacts</extracomment>
         <source>Unread&lt;br/&gt;message(s)</source>
         <extracomment>Unread messages count cover label. Code requires exact line break tag &quot;&lt;br/&gt;&quot;.</extracomment>
         <translation>
-            <numerusform>Ett&lt;br/&gt;oläst&lt;br/&gt;meddelande</numerusform>
-            <numerusform>Olästa&lt;br/&gt;meddelanden</numerusform>
+            <numerusform>oläst&lt;br/&gt;meddelande</numerusform>
+            <numerusform>olästa&lt;br/&gt;meddelanden</numerusform>
         </translation>
     </message>
     <message id="whisperfish-registration-type-message">
@@ -2690,7 +2690,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/LinkContactPage.qml" line="10"/>
         <source>Select contact</source>
         <extracomment>Link Signal user to Sailfish OS contact page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Välj kontakt</translation>
     </message>
 </context>
 </TS>
