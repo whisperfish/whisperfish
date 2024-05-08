@@ -882,19 +882,19 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="79"/>
         <source>Unlink contact</source>
         <extracomment>Menu action to unlink a Signal contact from a Sailfish OS contact</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Poista yhteystiedon linkitys</translation>
     </message>
     <message id="whisperfish-recipient-link">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="86"/>
         <source>Link contact</source>
         <extracomment>Menu action to pick a Sailfish OS contact to link the Signal user to</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Linkitä yhteystieto</translation>
     </message>
     <message id="whisperfish-profile-uuid-invalid-warning">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="172"/>
         <source>This user profile is broken and can&apos;t be used.</source>
         <extracomment>Warning about recipient UUID not existing or nil (all zeros)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Tämä käyttäjäprofiili on rikkinäinen, eikä sitä voi käyttää.</translation>
     </message>
     <message id="whisperfish-show-fingerprint">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="241"/>
@@ -2695,7 +2695,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/LinkContactPage.qml" line="10"/>
         <source>Select contact</source>
         <extracomment>Link Signal user to Sailfish OS contact page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Valitse yhteystieto</translation>
     </message>
 </context>
 </TS>
