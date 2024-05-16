@@ -276,7 +276,12 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
         let _span = tracing::debug_span!("processing range", ?range, segments=?segments).entered();
         // XXX Just skip the range if necessary, that's healthier than panicking.
         let end = (range.start + range.length) as usize;
-        assert!(end <= message.encode_utf16().count());
+
+        if end > message.encode_utf16().count() {
+            tracing::warn!(range=?range, "range end out of bounds");
+            return std::borrow::Cow::Borrowed(message);
+        }
+
         let left = segments
             .binary_search_by(|segment| {
                 if segment.end() <= range.start as usize {
