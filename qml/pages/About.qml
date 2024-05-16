@@ -326,8 +326,8 @@ Page {
                 text: {
                     "Matti Viljanen" + "\n" +
                     "J. Lavoie" + "\n" +
-                    "jmcwine" + "\n" +
                     "Tuomas F Nyqvist" + "\n" +
+                    "jmcwine" + "\n" +
                     "Alexander Schlarb" + "\n" +
                     "carlosgonz"
                 }
@@ -361,9 +361,9 @@ Page {
                 horizontalAlignment: TextEdit.Center
                 readOnly: true
                 text: {
+                    "Tuomas F Nyqvist" + "\n" +
                     "bittin1ddc447d824349b2" + "\n" +
                     "Luna Jernberg" + "\n" +
-                    "Tuomas F Nyqvist" + "\n" +
                     "fluffysfriends" + "\n" +
                     "Åke Engelbrektson"
                 }
