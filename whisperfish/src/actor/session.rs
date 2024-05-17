@@ -4,12 +4,12 @@ pub use self::typing_notifications::*;
 
 mod methods;
 use methods::*;
+use whisperfish_store::orm;
 use whisperfish_store::orm::MessageType;
 use whisperfish_store::NewMessage;
 
-use crate::gui::StorageReady;
 use crate::platform::QmlApp;
-use crate::store::{orm, Storage};
+use crate::{gui::StorageReady, store::Storage};
 use actix::prelude::*;
 use libsignal_service::protocol::{DeviceId, ProtocolAddress};
 use qmetaobject::prelude::*;

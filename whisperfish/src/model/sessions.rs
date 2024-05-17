@@ -2,10 +2,12 @@
 
 use crate::model::*;
 use crate::store::observer::{EventObserving, Interest};
-use crate::store::{orm, schema, Storage};
+use crate::store::Storage;
 use qmetaobject::prelude::*;
 use std::collections::HashMap;
 use whisperfish_store::observer::Event;
+use whisperfish_store::schema;
+use whisperfish_store::store::orm;
 
 /// QML-constructable object that interacts with a list of sessions.
 ///

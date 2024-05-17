@@ -1,11 +1,14 @@
-use std::sync::Arc;
+mod common;
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use libsignal_service::proto::AttachmentPointer;
 use whisperfish_store::config::SignalConfig;
 use whisperfish_store::{orm, temp, NewMessage, Storage, StorageLocation};
 
-pub type InMemoryDb = (Storage, StorageLocation<tempfile::TempDir>);
+pub type InMemoryDb = (
+    Storage<common::DummyObservatory>,
+    StorageLocation<tempfile::TempDir>,
+);
 
 pub fn storage() -> InMemoryDb {
     let rt = tokio::runtime::Builder::new_current_thread()
@@ -13,7 +16,7 @@ pub fn storage() -> InMemoryDb {
         .unwrap();
     rt.block_on(async {
         let cfg = SignalConfig::default();
-        let cfg = Arc::new(cfg);
+        let cfg = std::sync::Arc::new(cfg);
         let temp = temp();
         (
             Storage::new(cfg, &temp, None, 12345, 12346, "Some Password", None, None)

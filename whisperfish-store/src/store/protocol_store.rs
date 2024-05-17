@@ -80,58 +80,56 @@ impl ProtocolStore {
     }
 }
 
-impl Storage {
+impl<O: Observable> Storage<O> {
     pub async fn delete_identity(&self, addr: &ProtocolAddress) -> Result<(), SignalProtocolError> {
         self.delete_identity_key(addr);
         Ok(())
     }
-}
-
-impl Storage {
-    pub fn pni_storage(&self) -> PniStorage {
+    pub fn pni_storage(&self) -> PniStorage<O> {
         PniStorage::new(self.clone())
     }
 
-    pub fn aci_storage(&self) -> AciStorage {
+    pub fn aci_storage(&self) -> AciStorage<O> {
         AciStorage::new(self.clone())
     }
 
-    pub fn aci_or_pni(&self, service_id: ServiceIdType) -> AciOrPniStorage {
+    pub fn aci_or_pni(&self, service_id: ServiceIdType) -> AciOrPniStorage<O> {
         IdentityStorage(self.clone(), AciOrPni(service_id))
     }
 }
 
 #[derive(Clone)]
-pub struct IdentityStorage<T>(Storage, T);
-impl<T: Default> IdentityStorage<T> {
-    pub fn new(storage: Storage) -> Self {
+pub struct IdentityStorage<T, O: Observable>(Storage<O>, T);
+
+impl<T: Default, O: Observable + Clone> IdentityStorage<T, O> {
+    pub fn new(storage: Storage<O>) -> Self {
         Self(storage, Default::default())
     }
 }
 #[derive(Default, Clone)]
 pub struct Aci;
-pub type AciStorage = IdentityStorage<Aci>;
+pub type AciStorage<O> = IdentityStorage<Aci, O>;
 #[derive(Default, Clone)]
 pub struct Pni;
-pub type PniStorage = IdentityStorage<Pni>;
+pub type PniStorage<O> = IdentityStorage<Pni, O>;
 // Dynamic dispatch between Aci and Pni
 #[derive(Clone)]
 pub struct AciOrPni(ServiceIdType);
-pub type AciOrPniStorage = IdentityStorage<AciOrPni>;
-pub trait Identity {
+pub type AciOrPniStorage<O> = IdentityStorage<AciOrPni, O>;
+pub trait Identity<O: Observable> {
     fn identity(&self) -> orm::Identity;
     fn identity_key_filename(&self) -> &'static str;
     fn regid_filename(&self) -> &'static str;
     fn identity_key_pair_cached(
         &self,
-        storage: &Storage,
+        storage: &Storage<O>,
     ) -> impl std::future::Future<Output = impl std::ops::Deref<Target = Option<IdentityKeyPair>>>;
     fn identity_key_pair_cached_mut(
         &self,
-        storage: &Storage,
+        storage: &Storage<O>,
     ) -> impl std::future::Future<Output = impl std::ops::DerefMut<Target = Option<IdentityKeyPair>>>;
 }
-impl Identity for Aci {
+impl<O: Observable> Identity<O> for Aci {
     fn identity(&self) -> orm::Identity {
         orm::Identity::Aci
     }
@@ -143,18 +141,18 @@ impl Identity for Aci {
     }
     async fn identity_key_pair_cached(
         &self,
-        storage: &Storage,
+        storage: &Storage<O>,
     ) -> impl std::ops::Deref<Target = Option<IdentityKeyPair>> {
         storage.aci_identity_key_pair.read().await
     }
     async fn identity_key_pair_cached_mut(
         &self,
-        storage: &Storage,
+        storage: &Storage<O>,
     ) -> impl std::ops::DerefMut<Target = Option<IdentityKeyPair>> {
         storage.aci_identity_key_pair.write().await
     }
 }
-impl Identity for Pni {
+impl<O: Observable> Identity<O> for Pni {
     fn identity(&self) -> orm::Identity {
         orm::Identity::Pni
     }
@@ -166,18 +164,18 @@ impl Identity for Pni {
     }
     async fn identity_key_pair_cached(
         &self,
-        storage: &Storage,
+        storage: &Storage<O>,
     ) -> impl std::ops::Deref<Target = Option<IdentityKeyPair>> {
         storage.pni_identity_key_pair.read().await
     }
     async fn identity_key_pair_cached_mut(
         &self,
-        storage: &Storage,
+        storage: &Storage<O>,
     ) -> impl std::ops::DerefMut<Target = Option<IdentityKeyPair>> {
         storage.pni_identity_key_pair.write().await
     }
 }
-impl Identity for AciOrPni {
+impl<O: Observable> Identity<O> for AciOrPni {
     fn identity(&self) -> orm::Identity {
         match self.0 {
             ServiceIdType::AccountIdentity => orm::Identity::Aci,
@@ -198,7 +196,7 @@ impl Identity for AciOrPni {
     }
     async fn identity_key_pair_cached(
         &self,
-        storage: &Storage,
+        storage: &Storage<O>,
     ) -> impl std::ops::Deref<Target = Option<IdentityKeyPair>> {
         match self.0 {
             ServiceIdType::AccountIdentity => &storage.aci_identity_key_pair,
@@ -209,7 +207,7 @@ impl Identity for AciOrPni {
     }
     async fn identity_key_pair_cached_mut(
         &self,
-        storage: &Storage,
+        storage: &Storage<O>,
     ) -> impl std::ops::DerefMut<Target = Option<IdentityKeyPair>> {
         match self.0 {
             ServiceIdType::AccountIdentity => &storage.aci_identity_key_pair,
@@ -221,13 +219,13 @@ impl Identity for AciOrPni {
 }
 
 #[async_trait::async_trait(?Send)]
-impl protocol::ProtocolStore for IdentityStorage<AciOrPni> {}
+impl<O: Observable> protocol::ProtocolStore for IdentityStorage<AciOrPni, O> {}
 #[async_trait::async_trait(?Send)]
-impl protocol::ProtocolStore for IdentityStorage<Aci> {}
+impl<O: Observable> protocol::ProtocolStore for IdentityStorage<Aci, O> {}
 #[async_trait::async_trait(?Send)]
-impl protocol::ProtocolStore for IdentityStorage<Pni> {}
+impl<O: Observable> protocol::ProtocolStore for IdentityStorage<Pni, O> {}
 
-impl<T: Identity> IdentityStorage<T> {
+impl<T: Identity<O>, O: Observable> IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self, regid))]
     // Mutability of self is artificial
     pub async fn write_local_registration_id(
@@ -298,7 +296,7 @@ impl<T: Identity> IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observable> protocol::IdentityKeyStore for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn get_identity_key_pair(&self) -> Result<IdentityKeyPair, SignalProtocolError> {
         let _lock = self.0.protocol_store.read().await;
@@ -428,7 +426,7 @@ impl<T: Identity> protocol::IdentityKeyStore for IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> protocol::SessionStore for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observable> protocol::SessionStore for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn load_session(
         &self,
@@ -491,7 +489,7 @@ impl<T: Identity> protocol::SessionStore for IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> ServiceKyberPreKeyStore for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observable> ServiceKyberPreKeyStore for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self, body))]
     async fn store_last_resort_kyber_pre_key(
         &mut self,
@@ -564,7 +562,7 @@ impl<T: Identity> ServiceKyberPreKeyStore for IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> PreKeysStore for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observable> PreKeysStore for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn next_pre_key_id(&self) -> Result<u32, SignalProtocolError> {
         use diesel::dsl::*;
@@ -635,7 +633,7 @@ impl<T: Identity> PreKeysStore for IdentityStorage<T> {
     }
 }
 
-impl<T: Identity> IdentityStorage<T> {
+impl<T: Identity<O>, O: Observable> IdentityStorage<T, O> {
     /// Whether to force a pre key refresh.
     ///
     /// Check whether we have:
@@ -679,7 +677,7 @@ impl<T: Identity> IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> protocol::PreKeyStore for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observable> protocol::PreKeyStore for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn get_pre_key(&self, prekey_id: PreKeyId) -> Result<PreKeyRecord, SignalProtocolError> {
         use crate::schema::prekeys::dsl::*;
@@ -738,7 +736,7 @@ impl<T: Identity> protocol::PreKeyStore for IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observable> protocol::KyberPreKeyStore for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn mark_kyber_pre_key_used(
         &mut self,
@@ -806,7 +804,7 @@ impl<T: Identity> protocol::KyberPreKeyStore for IdentityStorage<T> {
     }
 }
 
-impl<T: Identity> IdentityStorage<T> {
+impl<T: Identity<O>, O: Observable> IdentityStorage<T, O> {
     /// Check whether session exists.
     ///
     /// This does *not* lock the protocol store.  If a transactional check is required, use the
@@ -832,7 +830,7 @@ impl<T: Identity> IdentityStorage<T> {
 }
 
 // BEGIN identity key block
-impl Storage {
+impl<O: Observable> Storage<O> {
     /// Removes the identity matching `addr` from the database, independent of PNI or ACI.
     ///
     /// Does not lock the protocol storage.
@@ -851,7 +849,7 @@ impl Storage {
 // END identity key
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> SessionStoreExt for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observable> SessionStoreExt for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn get_sub_device_sessions(
         &self,
@@ -918,7 +916,7 @@ impl<T: Identity> SessionStoreExt for IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> protocol::SignedPreKeyStore for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observable> protocol::SignedPreKeyStore for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self))]
     async fn get_signed_pre_key(
         &self,
@@ -980,7 +978,7 @@ impl<T: Identity> protocol::SignedPreKeyStore for IdentityStorage<T> {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity> SenderKeyStore for IdentityStorage<T> {
+impl<T: Identity<O>, O: Observable> SenderKeyStore for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self, record))]
     async fn store_sender_key(
         &mut self,
@@ -1032,480 +1030,5 @@ impl<T: Identity> SenderKeyStore for IdentityStorage<T> {
             Some(x) => Ok(Some(SenderKeyRecord::deserialize(&x.record)?)),
             None => Ok(None),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::sync::Arc;
-
-    use libsignal_service::session_store::SessionStoreExt;
-    use libsignal_service::{protocol::*, ServiceAddress};
-    use rstest::rstest;
-
-    use crate::config::SignalConfig;
-
-    async fn create_example_storage(
-        storage_password: Option<&str>,
-    ) -> Result<(super::Storage, super::StorageLocation<tempfile::TempDir>), anyhow::Error> {
-        use rand::distributions::Alphanumeric;
-        use rand::Rng;
-
-        let location = super::temp();
-        let rng = rand::thread_rng();
-
-        // Signaling password for REST API
-        let password: String = rng
-            .sample_iter(&Alphanumeric)
-            .take(24)
-            .map(char::from)
-            .collect();
-
-        // Registration ID
-        let regid = 12345;
-        let pni_regid = 12345;
-
-        let storage = super::Storage::new(
-            Arc::new(SignalConfig::default()),
-            &location,
-            storage_password,
-            regid,
-            pni_regid,
-            &password,
-            None,
-            None,
-        )
-        .await?;
-
-        Ok((storage, location))
-    }
-
-    fn create_random_protocol_address() -> (ServiceAddress, ProtocolAddress) {
-        use rand::Rng;
-        let mut rng = rand::thread_rng();
-
-        let user_id = uuid::Uuid::new_v4();
-        let device_id = rng.gen_range(2..=20);
-
-        let svc = ServiceAddress::from(user_id);
-        let prot = ProtocolAddress::new(user_id.to_string(), DeviceId::from(device_id));
-        (svc, prot)
-    }
-
-    fn create_random_identity_key() -> IdentityKey {
-        let mut rng = rand::thread_rng();
-
-        let key_pair = IdentityKeyPair::generate(&mut rng);
-
-        *key_pair.identity_key()
-    }
-
-    fn create_random_prekey() -> PreKeyRecord {
-        use rand::Rng;
-        let mut rng = rand::thread_rng();
-
-        let key_pair = KeyPair::generate(&mut rng);
-        let id: u32 = rng.gen();
-
-        PreKeyRecord::new(PreKeyId::from(id), &key_pair)
-    }
-
-    fn create_random_signed_prekey() -> SignedPreKeyRecord {
-        use rand::Rng;
-        let mut rng = rand::thread_rng();
-
-        let key_pair = KeyPair::generate(&mut rng);
-        let id: u32 = rng.gen();
-        let timestamp: u64 = rng.gen();
-        let signature = vec![0; 3];
-
-        SignedPreKeyRecord::new(SignedPreKeyId::from(id), timestamp, &key_pair, &signature)
-    }
-
-    /// XXX Right now, this functions seems a bit unnecessary, but we will change the creation of a
-    /// storage and it might be necessary to check the own identity_key_pair in the protocol store.
-    #[rstest(password, case(Some("some password")), case(None))]
-    #[tokio::test]
-    async fn own_identity_key_pair(password: Option<&str>) {
-        // create a new storage
-        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
-
-        // Copy the identity key pair
-        let id_key1 = storage.aci_storage().get_identity_key_pair().await.unwrap();
-
-        // Get access to the protocol store
-        // XXX IdentityKeyPair does not implement the std::fmt::Debug trait *arg*
-        //assert_eq!(id_key1.unwrap(), store.get_identity_key_pair().await.unwrap());
-        assert_eq!(
-            id_key1.serialize(),
-            storage
-                .aci_storage()
-                .get_identity_key_pair()
-                .await
-                .unwrap()
-                .serialize()
-        );
-    }
-
-    /// XXX Right now, this functions seems a bit unnecessary, but we will change the creation of a
-    /// storage and it might be necessary to check the regid in the protocol store.
-    #[rstest(password, case(Some("some password")), case(None))]
-    #[tokio::test]
-    async fn own_regid(password: Option<&str>) {
-        // create a new storage
-        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
-
-        // Copy the regid
-        let regid_1 = storage
-            .aci_storage()
-            .get_local_registration_id()
-            .await
-            .unwrap();
-
-        // Get access to the protocol store
-        assert_eq!(
-            regid_1,
-            storage
-                .aci_storage()
-                .get_local_registration_id()
-                .await
-                .unwrap()
-        );
-    }
-
-    #[rstest(password, case(Some("some password")), case(None))]
-    #[tokio::test]
-    async fn save_retrieve_identity_key(password: Option<&str>) {
-        // Create a new storage
-        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
-
-        // We need two identity keys and two addresses
-        let (_svc1, addr1) = create_random_protocol_address();
-        let (_svc2, addr2) = create_random_protocol_address();
-        let key1 = create_random_identity_key();
-        let key2 = create_random_identity_key();
-
-        let mut storage = storage.aci_storage();
-
-        // In the beginning, the storage should be emtpy and return an error
-        // XXX Doesn't implement equality *arg*
-        assert_eq!(storage.get_identity(&addr1).await.unwrap(), None);
-        assert_eq!(storage.get_identity(&addr2).await.unwrap(), None);
-
-        // We store both keys and should get false because there wasn't a key with that address
-        // yet
-        assert!(!storage.save_identity(&addr1, &key1).await.unwrap());
-        assert!(!storage.save_identity(&addr2, &key2).await.unwrap());
-
-        // Now, we should get both keys
-        assert_eq!(storage.get_identity(&addr1).await.unwrap(), Some(key1));
-        assert_eq!(storage.get_identity(&addr2).await.unwrap(), Some(key2));
-
-        // After removing key2, it shouldn't be there
-        storage.0.delete_identity(&addr2).await.unwrap();
-        // XXX Doesn't implement equality *arg*
-        assert_eq!(storage.get_identity(&addr2).await.unwrap(), None);
-
-        // We can now overwrite key1 with key1 and should get true returned
-        assert!(storage.save_identity(&addr1, &key1).await.unwrap());
-
-        // We can now overwrite key1 with key2 and should get false returned
-        assert!(!storage.save_identity(&addr1, &key2).await.unwrap());
-    }
-
-    // Direction does not matter yet
-    #[rstest(password, case(Some("some password")), case(None))]
-    #[tokio::test]
-    async fn is_trusted_identity(password: Option<&str>) {
-        // Create a new storage
-        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
-
-        // We need two identity keys and two addresses
-        let (_, addr1) = create_random_protocol_address();
-        let key1 = create_random_identity_key();
-        let key2 = create_random_identity_key();
-
-        let mut storage = storage.aci_storage();
-
-        // Test trust on first use
-        assert!(storage
-            .is_trusted_identity(&addr1, &key1, Direction::Receiving)
-            .await
-            .unwrap());
-
-        // Test inserted key
-        storage.save_identity(&addr1, &key1).await.unwrap();
-        assert!(storage
-            .is_trusted_identity(&addr1, &key1, Direction::Receiving)
-            .await
-            .unwrap());
-
-        // Test wrong key
-        assert!(!storage
-            .is_trusted_identity(&addr1, &key2, Direction::Receiving)
-            .await
-            .unwrap());
-    }
-
-    #[rstest(password, case(Some("some password")), case(None))]
-    #[tokio::test]
-    async fn save_retrieve_prekey(password: Option<&str>) {
-        // Create a new storage
-        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
-
-        // We need two identity keys and two addresses
-        let id1 = 0u32;
-        let id2 = 1u32;
-        let key1 = create_random_prekey();
-        let key2 = create_random_prekey();
-
-        let mut storage = storage.aci_storage();
-
-        // In the beginning, the storage should be emtpy and return an error
-        // XXX Doesn't implement equality *arg*
-        assert_eq!(
-            storage
-                .get_pre_key(PreKeyId::from(id1))
-                .await
-                .unwrap_err()
-                .to_string(),
-            SignalProtocolError::InvalidPreKeyId.to_string()
-        );
-
-        // Storing both keys and testing retrieval
-        storage
-            .save_pre_key(PreKeyId::from(id1), &key1)
-            .await
-            .unwrap();
-        storage
-            .save_pre_key(PreKeyId::from(id2), &key2)
-            .await
-            .unwrap();
-
-        // Now, we should get both keys
-        assert_eq!(
-            storage
-                .get_pre_key(PreKeyId::from(id1))
-                .await
-                .unwrap()
-                .serialize()
-                .unwrap(),
-            key1.serialize().unwrap()
-        );
-        assert_eq!(
-            storage
-                .get_pre_key(PreKeyId::from(id2))
-                .await
-                .unwrap()
-                .serialize()
-                .unwrap(),
-            key2.serialize().unwrap()
-        );
-
-        // After removing key2, it shouldn't be there
-        storage.remove_pre_key(PreKeyId::from(id2)).await.unwrap();
-        // XXX Doesn't implement equality *arg*
-        assert_eq!(
-            storage
-                .get_pre_key(PreKeyId::from(id2))
-                .await
-                .unwrap_err()
-                .to_string(),
-            SignalProtocolError::InvalidPreKeyId.to_string()
-        );
-
-        // Let's check whether we can overwrite a key
-        storage
-            .save_pre_key(PreKeyId::from(id1), &key2)
-            .await
-            .unwrap();
-    }
-
-    #[rstest(password, case(Some("some password")), case(None))]
-    #[tokio::test]
-    async fn save_retrieve_signed_prekey(password: Option<&str>) {
-        // Create a new storage
-        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
-
-        // We need two identity keys and two addresses
-        let id1 = 0u32;
-        let id2 = 1u32;
-        let key1 = create_random_signed_prekey();
-        let key2 = create_random_signed_prekey();
-
-        let mut storage = storage.aci_storage();
-
-        // In the beginning, the storage should be emtpy and return an error
-        // XXX Doesn't implement equality *arg*
-        assert_eq!(
-            storage
-                .get_signed_pre_key(SignedPreKeyId::from(id1))
-                .await
-                .unwrap_err()
-                .to_string(),
-            SignalProtocolError::InvalidSignedPreKeyId.to_string()
-        );
-
-        // Storing both keys and testing retrieval
-        storage
-            .save_signed_pre_key(SignedPreKeyId::from(id1), &key1)
-            .await
-            .unwrap();
-        storage
-            .save_signed_pre_key(SignedPreKeyId::from(id2), &key2)
-            .await
-            .unwrap();
-
-        // Now, we should get both keys
-        assert_eq!(
-            storage
-                .get_signed_pre_key(SignedPreKeyId::from(id1))
-                .await
-                .unwrap()
-                .serialize()
-                .unwrap(),
-            key1.serialize().unwrap()
-        );
-        assert_eq!(
-            storage
-                .get_signed_pre_key(SignedPreKeyId::from(id2))
-                .await
-                .unwrap()
-                .serialize()
-                .unwrap(),
-            key2.serialize().unwrap()
-        );
-
-        // Let's check whether we can overwrite a key
-        storage
-            .save_signed_pre_key(SignedPreKeyId::from(id1), &key2)
-            .await
-            .unwrap();
-    }
-
-    #[rstest(password, case(Some("some password")), case(None))]
-    #[tokio::test]
-    async fn save_retrieve_session(password: Option<&str>) {
-        // Create a new storage
-        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
-
-        // Collection of some addresses and sessions
-        let (_svc1, addr1) = create_random_protocol_address();
-        let (_svc2, addr2) = create_random_protocol_address();
-        let (svc3, addr3) = create_random_protocol_address();
-        let addr4 = ProtocolAddress::new(
-            addr3.name().to_string(),
-            DeviceId::from(u32::from(addr3.device_id()) + 1),
-        );
-        let session1 = SessionRecord::new_fresh();
-        let session2 = SessionRecord::new_fresh();
-        let session3 = SessionRecord::new_fresh();
-        let session4 = SessionRecord::new_fresh();
-
-        let mut storage = storage.aci_storage();
-
-        // In the beginning, the storage should be emtpy and return an error
-        assert!(storage.load_session(&addr1).await.unwrap().is_none());
-        assert!(storage.load_session(&addr2).await.unwrap().is_none());
-
-        // Store all four sessions: three different names, one name with two different device ids.
-        storage.store_session(&addr1, &session1).await.unwrap();
-        storage.store_session(&addr2, &session2).await.unwrap();
-        storage.store_session(&addr3, &session3).await.unwrap();
-        storage.store_session(&addr4, &session4).await.unwrap();
-
-        // Now, we should get the sessions to the first two addresses
-        assert_eq!(
-            storage
-                .load_session(&addr1)
-                .await
-                .unwrap()
-                .unwrap()
-                .serialize()
-                .unwrap(),
-            session1.serialize().unwrap()
-        );
-        assert_eq!(
-            storage
-                .load_session(&addr2)
-                .await
-                .unwrap()
-                .unwrap()
-                .serialize()
-                .unwrap(),
-            session2.serialize().unwrap()
-        );
-
-        // Let's check whether we can overwrite a key
-        storage
-            .store_session(&addr1, &session2)
-            .await
-            .expect("Overwrite session");
-
-        // Get all device ids for the same address
-        let mut ids = storage.get_sub_device_sessions(&svc3).await.unwrap();
-        ids.sort_unstable();
-        assert_eq!(
-            DeviceId::from(ids[0]),
-            std::cmp::min(addr3.device_id(), addr4.device_id())
-        );
-        assert_eq!(
-            DeviceId::from(ids[1]),
-            std::cmp::max(addr3.device_id(), addr4.device_id())
-        );
-
-        // If we call delete all sessions, all sessions of one person/address should be removed
-        assert_eq!(storage.delete_all_sessions(&svc3).await.unwrap(), 2);
-        assert!(storage.load_session(&addr3).await.unwrap().is_none());
-        assert!(storage.load_session(&addr4).await.unwrap().is_none());
-
-        // If we delete the first two sessions, they shouldn't be in the store anymore
-        SessionStoreExt::delete_session(&storage, &addr1)
-            .await
-            .unwrap();
-        SessionStoreExt::delete_session(&storage, &addr2)
-            .await
-            .unwrap();
-        assert!(storage.load_session(&addr1).await.unwrap().is_none());
-        assert!(storage.load_session(&addr2).await.unwrap().is_none());
-    }
-
-    #[rstest(password, case(Some("some password")), case(None))]
-    #[tokio::test]
-    async fn get_next_pre_key_ids(password: Option<&str>) {
-        use libsignal_service::pre_keys::PreKeysStore;
-        // Create a new storage
-        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
-
-        // Create two pre keys and one signed pre key
-        let key1 = create_random_prekey();
-        let key2 = create_random_prekey();
-        let key3 = create_random_signed_prekey();
-
-        let mut storage = storage.aci_storage();
-
-        // In the beginning zero should be returned
-        assert_eq!(storage.next_pre_key_id().await.unwrap(), 0);
-        assert_eq!(storage.next_pq_pre_key_id().await.unwrap(), 0);
-        assert_eq!(storage.next_signed_pre_key_id().await.unwrap(), 0);
-
-        // Now, we add our keys
-        storage
-            .save_pre_key(PreKeyId::from(0), &key1)
-            .await
-            .unwrap();
-        storage
-            .save_pre_key(PreKeyId::from(1), &key2)
-            .await
-            .unwrap();
-        storage
-            .save_signed_pre_key(SignedPreKeyId::from(0), &key3)
-            .await
-            .unwrap();
-
-        // Adapt to keys in the storage
-        assert_eq!(storage.next_pre_key_id().await.unwrap(), 2);
-        assert_eq!(storage.next_pq_pre_key_id().await.unwrap(), 0);
-        assert_eq!(storage.next_signed_pre_key_id().await.unwrap(), 1);
     }
 }

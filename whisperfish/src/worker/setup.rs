@@ -1,5 +1,6 @@
 use crate::gui::WhisperfishApp;
-use crate::store::{Storage, TrustLevel};
+use crate::store::Storage;
+use crate::store::TrustLevel;
 use anyhow::Context;
 use libsignal_service::protocol;
 use libsignal_service::push_service::{ServiceIds, VerificationTransport, DEFAULT_DEVICE_ID};

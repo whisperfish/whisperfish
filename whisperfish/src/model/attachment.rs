@@ -1,8 +1,10 @@
 #![allow(non_snake_case)]
 
+use whisperfish_store::observer::{Event, EventObserving, Interest};
+use whisperfish_store::orm;
+
 use crate::model::*;
-use crate::store::observer::{EventObserving, Interest};
-use crate::store::{orm, Storage};
+use crate::store::Storage;
 use std::collections::HashMap;
 use std::process::Command;
 
@@ -56,7 +58,7 @@ impl AttachmentImpl {
 impl EventObserving for AttachmentImpl {
     type Context = ModelContext<Self>;
 
-    fn observe(&mut self, ctx: Self::Context, _event: crate::store::observer::Event) {
+    fn observe(&mut self, ctx: Self::Context, _event: Event) {
         if let Some(id) = self.attachment_id {
             self.fetch(ctx.storage(), id);
         }

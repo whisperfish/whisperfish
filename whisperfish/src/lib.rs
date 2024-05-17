@@ -8,9 +8,8 @@ pub mod platform;
 pub mod qblurhashimageprovider;
 pub mod qrustlegraphimageprovider;
 pub mod qtlog;
+pub mod store;
 pub mod worker;
-
-pub use whisperfish_store as store;
 
 pub fn user_agent() -> String {
     format!("Whisperfish/{}", env!("CARGO_PKG_VERSION"))

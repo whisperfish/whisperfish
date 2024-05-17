@@ -15,7 +15,7 @@ use crate::body_ranges::AssociatedValue;
 use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
 use crate::schema;
-use crate::store::observer::PrimaryKey;
+use crate::store::observer::{Observable, PrimaryKey};
 use crate::store::orm::shorten;
 use crate::{config::SignalConfig, millis_to_naive_chrono};
 use anyhow::Context;
@@ -304,9 +304,9 @@ impl<P: AsRef<Path>> StorageLocation<P> {
 }
 
 #[derive(Clone)]
-pub struct Storage {
+pub struct Storage<O: Observable> {
     db: Arc<AssertUnwindSafe<Mutex<SqliteConnection>>>,
-    observatory: Arc<tokio::sync::RwLock<observer::Observatory>>,
+    observatory: O,
     config: Arc<SignalConfig>,
     store_enc: Option<encryption::StorageEncryption>,
     protocol_store: Arc<tokio::sync::RwLock<ProtocolStore>>,
@@ -316,7 +316,7 @@ pub struct Storage {
     pni_identity_key_pair: Arc<tokio::sync::RwLock<Option<IdentityKeyPair>>>,
 }
 
-impl Debug for Storage {
+impl<O: Observable> Debug for Storage<O> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Storage")
             .field("path", &self.path)
@@ -368,56 +368,7 @@ macro_rules! fetch_sessions {
     }};
 }
 
-impl Storage {
-    /// Returns the path to the storage.
-    pub fn path(&self) -> &Path {
-        &self.path
-    }
-
-    pub fn db(&self) -> MutexGuard<'_, SqliteConnection> {
-        self.db.lock().expect("storage is alive")
-    }
-
-    pub fn is_encrypted(&self) -> bool {
-        self.store_enc.is_some()
-    }
-
-    pub fn clear_old_logs(
-        path: &std::path::PathBuf,
-        keep_count: usize,
-        filename_regex: &str,
-    ) -> bool {
-        self::utils::clear_old_logs(path, keep_count, filename_regex)
-    }
-
-    fn scaffold_directories(root: impl AsRef<Path>) -> Result<(), anyhow::Error> {
-        let root = root.as_ref();
-
-        let directories = [
-            root.to_path_buf() as PathBuf,
-            root.join("db"),
-            root.join("storage"),
-            root.join("storage").join("identity"),
-            root.join("storage").join("attachments"),
-            root.join("storage").join("avatars"),
-        ];
-
-        for dir in &directories {
-            if dir.exists() {
-                if dir.is_dir() {
-                    continue;
-                } else {
-                    anyhow::bail!(
-                        "Trying to create directory {:?}, but already exists as non-directory.",
-                        dir
-                    );
-                }
-            }
-            std::fs::create_dir(dir)?;
-        }
-        Ok(())
-    }
-
+impl<O: Observable + Default> Storage<O> {
     /// Writes (*overwrites*) a new Storage object to the provided path.
     #[allow(clippy::too_many_arguments)]
     pub async fn new<T: AsRef<Path> + Debug>(
@@ -429,7 +380,7 @@ impl Storage {
         http_password: &str,
         aci_identity_key_pair: Option<protocol::IdentityKeyPair>,
         pni_identity_key_pair: Option<protocol::IdentityKeyPair>,
-    ) -> Result<Storage, anyhow::Error> {
+    ) -> Result<Self, anyhow::Error> {
         let path: &Path = std::ops::Deref::deref(db_path);
 
         tracing::info!("Creating directory structure");
@@ -507,7 +458,7 @@ impl Storage {
         config: Arc<SignalConfig>,
         db_path: &StorageLocation<T>,
         password: Option<String>,
-    ) -> Result<Storage, anyhow::Error> {
+    ) -> Result<Self, anyhow::Error> {
         let path: &Path = std::ops::Deref::deref(db_path);
 
         let store_enc = if let Some(password) = password {
@@ -545,6 +496,57 @@ impl Storage {
         };
 
         Ok(storage)
+    }
+}
+
+impl<O: Observable> Storage<O> {
+    /// Returns the path to the storage.
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    pub fn db(&self) -> MutexGuard<'_, SqliteConnection> {
+        self.db.lock().expect("storage is alive")
+    }
+
+    pub fn is_encrypted(&self) -> bool {
+        self.store_enc.is_some()
+    }
+
+    pub fn clear_old_logs(
+        path: &std::path::PathBuf,
+        keep_count: usize,
+        filename_regex: &str,
+    ) -> bool {
+        self::utils::clear_old_logs(path, keep_count, filename_regex)
+    }
+
+    fn scaffold_directories(root: impl AsRef<Path>) -> Result<(), anyhow::Error> {
+        let root = root.as_ref();
+
+        let directories = [
+            root.to_path_buf() as PathBuf,
+            root.join("db"),
+            root.join("storage"),
+            root.join("storage").join("identity"),
+            root.join("storage").join("attachments"),
+            root.join("storage").join("avatars"),
+        ];
+
+        for dir in &directories {
+            if dir.exists() {
+                if dir.is_dir() {
+                    continue;
+                } else {
+                    anyhow::bail!(
+                        "Trying to create directory {:?}, but already exists as non-directory.",
+                        dir
+                    );
+                }
+            }
+            std::fs::create_dir(dir)?;
+        }
+        Ok(())
     }
 
     #[tracing::instrument]
@@ -3060,20 +3062,18 @@ impl Storage {
     /// Marks a message as failed to send
     #[tracing::instrument(skip(self))]
     pub fn fail_message(&self, message_id: i32) {
-        let affected = diesel::update(schema::messages::table)
+        diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
             .set(schema::messages::sending_has_failed.eq(true))
             .execute(&mut *self.db())
             .unwrap();
 
-        if affected > 0 {
-            self.observe_update(schema::messages::table, message_id);
-        }
+        self.observe_update(schema::messages::table, message_id);
     }
 
     #[tracing::instrument(skip(self))]
     pub fn dequeue_message(&self, message_id: i32, sent_time: NaiveDateTime, unidentified: bool) {
-        let affected = diesel::update(schema::messages::table)
+        diesel::update(schema::messages::table)
             .filter(schema::messages::id.eq(message_id))
             .set((
                 schema::messages::sent_timestamp.eq(sent_time),
@@ -3083,9 +3083,7 @@ impl Storage {
             .execute(&mut *self.db())
             .unwrap();
 
-        if affected > 0 {
-            self.observe_update(schema::messages::table, message_id);
-        }
+        self.observe_update(schema::messages::table, message_id);
     }
 
     /// Returns a binary peer identity

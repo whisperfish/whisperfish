@@ -1,5 +1,4 @@
-use crate::store::orm::Recipient;
-use crate::store::Storage;
+use crate::{store::orm::Recipient, store::Storage};
 use chrono::prelude::*;
 use diesel::prelude::*;
 use futures::Stream;
@@ -42,7 +41,7 @@ impl OutdatedProfileStream {
     }
 
     fn next_out_of_date_profile(&mut self) -> Option<OutdatedProfile> {
-        use crate::store::schema::recipients::dsl::*;
+        use whisperfish_store::schema::recipients::dsl::*;
 
         // https://github.com/signalapp/Signal-Android/blob/09b9349f6c0cf02688a79d8c2c9edeb8b32dd3cf/app/src/main/java/org/thoughtcrime/securesms/database/RecipientDatabase.kt#L3209
         let _last_interaction_threshold = Utc::now() - chrono::Duration::days(30);
@@ -103,7 +102,7 @@ impl OutdatedProfileStream {
         // No immediate updates needed at this point,
         // so we look at the next recipient,
         // and schedule a wake.
-        use crate::store::schema::recipients::dsl::*;
+        use whisperfish_store::schema::recipients::dsl::*;
 
         let mut db = self.storage.db();
         let next_wake: Option<Recipient> = recipients

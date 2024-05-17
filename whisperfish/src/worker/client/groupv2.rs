@@ -68,7 +68,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                     .expect("access control present in DecryptedGroup");
                 {
                     // XXX if the group does not exist, consider inserting here.
-                    use crate::store::schema::group_v2s::dsl::*;
+                    use whisperfish_store::schema::group_v2s::dsl::*;
                     diesel::update(group_v2s)
                         .set((
                             name.eq(&group.title),
@@ -99,14 +99,14 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         .disappearing_messages_timer
                         .as_ref()
                         .map(|d| d.duration as i32);
-                    use crate::store::schema::sessions::dsl::*;
+                    use whisperfish_store::schema::sessions::dsl::*;
                     diesel::update(sessions)
                         .set((expiring_message_timeout.eq(timeout),))
                         .filter(group_v2_id.eq(&group_id_hex))
                         .execute(&mut *storage.db())
                         .expect("update session disappearing_messages_timer");
                 }
-                storage.observe_update(crate::store::schema::group_v2s::table, group_id_hex.clone());
+                storage.observe_update(whisperfish_store::schema::group_v2s::table, group_id_hex.clone());
 
                 // We know the group's members.
                 // First assert their existence in the database.
@@ -156,7 +156,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                     member.uuid.to_string()
                 });
                 storage.db().transaction::<(), diesel::result::Error, _>(|db| {
-                    use crate::store::schema::{group_v2_members, recipients, group_v2s};
+                    use whisperfish_store::schema::{group_v2_members, recipients, group_v2s};
                     let stale_members: Vec<i32> = group_v2_members::table
                         .select(group_v2_members::recipient_id)
                         .inner_join(recipients::table)
@@ -187,7 +187,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                 }).expect("dropping stale members");
 
                 {
-                    use crate::store::schema::{group_v2_members, recipients, group_v2s};
+                    use whisperfish_store::schema::{group_v2_members, recipients, group_v2s};
                     for member in &group.members {
                         // XXX there's a bit of duplicate work going on here.
                         let recipient =
@@ -404,7 +404,7 @@ impl Handler<GroupAvatarFetched> for ClientActor {
                 let mut f = tokio::fs::File::create(out_path).await?;
                 f.write_all(&bytes).await?;
 
-                storage.observe_update(crate::store::schema::group_v2s::table, group_id);
+                storage.observe_update(whisperfish_store::schema::group_v2s::table, group_id);
 
                 Ok(())
             }

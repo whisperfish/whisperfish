@@ -1,7 +1,9 @@
+mod common;
+
 #[cfg(test)]
 mod tests {
+    use super::common::SimpleStorage;
     use std::fs;
-    use whisperfish_store::Storage;
 
     #[test]
     #[rustfmt::skip]
@@ -23,15 +25,15 @@ mod tests {
         // Same as in harbour-whisperfish main.rs
         const LOGFILE_REGEX: &str = r"harbour-whisperfish.\d{8}_\d{6}\.log";
 
-        assert!(!Storage::clear_old_logs(&temp_pathbuf, 1, LOGFILE_REGEX));
+        assert!(!SimpleStorage::clear_old_logs(&temp_pathbuf, 1, LOGFILE_REGEX));
 
         let nonexistent = temp_pathbuf.join("foobar");
-        assert!(!Storage::clear_old_logs(&nonexistent, 5, LOGFILE_REGEX));
+        assert!(!SimpleStorage::clear_old_logs(&nonexistent, 5, LOGFILE_REGEX));
 
-        assert!(Storage::clear_old_logs(&temp_pathbuf, 5, LOGFILE_REGEX));
+        assert!(SimpleStorage::clear_old_logs(&temp_pathbuf, 5, LOGFILE_REGEX));
         assert_eq!(fs::read_dir(&temp_pathbuf).unwrap().count(), 7);
 
-        assert!(Storage::clear_old_logs(&temp_pathbuf, 3, LOGFILE_REGEX));
+        assert!(SimpleStorage::clear_old_logs(&temp_pathbuf, 3, LOGFILE_REGEX));
         assert_eq!(fs::read_dir(&temp_pathbuf).unwrap().count(), 5);
 
         let mut remaining: Vec<String> = fs::read_dir(&temp_pathbuf)

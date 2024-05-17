@@ -1,10 +1,27 @@
 use rstest::fixture;
 use std::future::Future;
 use std::sync::Arc;
+use uuid::Uuid;
 use whisperfish_store::config::SignalConfig;
+use whisperfish_store::observer::{Event, Interest, Observatory};
 use whisperfish_store::{temp, Storage, StorageLocation};
 
-pub type InMemoryDb = (Storage, StorageLocation<tempfile::TempDir>);
+#[derive(Default, Clone)]
+pub struct DummyObservatory;
+
+impl Observatory for DummyObservatory {
+    type Subscriber = ();
+
+    fn register(&self, _id: Uuid, _interests: Vec<Interest>, _subscriber: Self::Subscriber) {}
+
+    fn update_interests(&self, _handle: Uuid, _interests: Vec<Interest>) {}
+
+    fn distribute_event(&self, _event: Event) {}
+}
+
+pub type SimpleStorage = Storage<DummyObservatory>;
+
+pub type InMemoryDb = (SimpleStorage, StorageLocation<tempfile::TempDir>);
 
 /// We do not want to test on a live db, use temporary dir
 #[fixture]

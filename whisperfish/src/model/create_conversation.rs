@@ -2,9 +2,10 @@
 
 use crate::model::*;
 use crate::store::observer::{EventObserving, Interest};
-use crate::store::{schema, Storage};
+use crate::store::Storage;
 use phonenumber::PhoneNumber;
 use qmetaobject::prelude::*;
+use whisperfish_store::schema;
 
 /// QML-constructable object that queries a session based on e164 or uuid, and creates it if
 /// necessary.
