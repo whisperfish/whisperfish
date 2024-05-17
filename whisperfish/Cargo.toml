@@ -25,10 +25,10 @@ fs2 = "0.4.3"
 blurhash = { git = "https://github.com/whisperfish/blurhash-rs.git", branch = "main" }
 percent-encoding = "2.2"
 
-libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features = [
+libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "handle-pni-uuid", features = [
     "unsend-futures",
 ] }
-libsignal-service-hyper = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features = [
+libsignal-service-hyper = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "handle-pni-uuid", features = [
     "unsend-futures",
 ] }
 

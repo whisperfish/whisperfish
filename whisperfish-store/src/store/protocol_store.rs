@@ -1,5 +1,5 @@
 use super::*;
-use libsignal_service::pre_keys::{PreKeysStore, ServiceKyberPreKeyStore};
+use libsignal_service::pre_keys::{KyberPreKeyStoreExt, PreKeysStore};
 use libsignal_service::protocol::{
     self, GenericSignedPreKey, IdentityKeyPair, SignalProtocolError,
 };
@@ -489,7 +489,7 @@ impl<T: Identity<O>, O: Observable> protocol::SessionStore for IdentityStorage<T
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity<O>, O: Observable> ServiceKyberPreKeyStore for IdentityStorage<T, O> {
+impl<T: Identity<O>, O: Observable> KyberPreKeyStoreExt for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self, body))]
     async fn store_last_resort_kyber_pre_key(
         &mut self,
@@ -630,6 +630,38 @@ impl<T: Identity<O>, O: Observable> PreKeysStore for IdentityStorage<T, O> {
     async fn set_next_pq_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
         assert_eq!(self.next_pq_pre_key_id().await?, id);
         Ok(())
+    }
+
+    async fn signed_pre_keys_count(&self) -> Result<usize, SignalProtocolError> {
+        use diesel::prelude::*;
+
+        let signed_prekey_count: i64 = {
+            use crate::schema::signed_prekeys::dsl::*;
+
+            signed_prekeys
+                .select(diesel::dsl::count_star())
+                .filter(identity.eq(self.1.identity()))
+                .first(&mut *self.0.db())
+                .expect("db")
+        };
+
+        Ok(signed_prekey_count as usize)
+    }
+
+    async fn kyber_pre_keys_count(&self, _last_resort: bool) -> Result<usize, SignalProtocolError> {
+        use diesel::prelude::*;
+
+        let kyber_prekey_count: i64 = {
+            use crate::schema::kyber_prekeys::dsl::*;
+
+            kyber_prekeys
+                .select(diesel::dsl::count_star())
+                .filter(identity.eq(self.1.identity()))
+                .first(&mut *self.0.db())
+                .expect("db")
+        };
+
+        Ok(kyber_prekey_count as usize)
     }
 }
 

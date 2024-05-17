@@ -2766,8 +2766,6 @@ impl Handler<RefreshPreKeys> for ClientActor {
             let mut aci = storage.aci_storage();
             let mut pni = storage.pni_storage();
 
-            let force_aci = aci.needs_pre_key_refresh().await;
-
             // It's tempting to run those two in parallel,
             // but I'm afraid the pre-key counts are going to be mixed up.
             am.update_pre_key_bundle(
@@ -2775,20 +2773,17 @@ impl Handler<RefreshPreKeys> for ClientActor {
                 ServiceIdType::AccountIdentity,
                 &mut rand::thread_rng(),
                 true,
-                force_aci,
             )
             .await
             .context("refreshing ACI pre keys")?;
 
             let _pni_distribution = pni_distribution.await;
 
-            let force_pni = pni.needs_pre_key_refresh().await;
             am.update_pre_key_bundle(
                 &mut pni,
                 ServiceIdType::PhoneNumberIdentity,
                 &mut rand::thread_rng(),
                 true,
-                force_pni,
             )
             .await
             .context("refreshing PNI pre keys")?;

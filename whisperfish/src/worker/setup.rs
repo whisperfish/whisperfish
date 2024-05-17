@@ -335,7 +335,7 @@ impl SetupWorker {
             storage,
             phonenumber: number,
             service_ids: ServiceIds {
-                aci: res.uuid,
+                aci: res.aci,
                 pni: res.pni,
             },
             device_id: protocol::DeviceId::from(DEFAULT_DEVICE_ID),

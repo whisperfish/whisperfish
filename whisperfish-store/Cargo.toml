@@ -48,7 +48,7 @@ mime_classifier = "0.0.1"
 
 tracing = "0.1"
 
-libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features = [
+libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "handle-pni-uuid", features = [
     "unsend-futures",
 ] }
 
