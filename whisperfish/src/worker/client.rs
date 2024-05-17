@@ -2277,7 +2277,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
         }
         let destination = ServiceAddress {
             uuid: Uuid::parse_str(msg.destination_service_id.as_deref().unwrap())
-                .expect("parse uuid"),
+                .unwrap_or_else(|e| panic!("parse uuid: {:?} -- {:?}", msg, e)),
         };
         let service_id = if destination == self.self_aci.expect("local aci known") {
             ServiceIdType::AccountIdentity
