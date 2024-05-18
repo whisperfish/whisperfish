@@ -71,6 +71,7 @@ use qmetaobject::prelude::*;
 use qttypes::QVariantList;
 use std::borrow::Cow;
 use std::collections::HashSet;
+use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::fmt::{Display, Error, Formatter};
 use std::fs::remove_file;
@@ -1665,7 +1666,7 @@ impl Handler<SendMessage> for ClientActor {
                                     MessageSenderError::NotFound { uuid } => {
                                         tracing::warn!("Recipient not found, removing device sessions {}", uuid);
                                         // XXX what about PNI?
-                                        let num = storage.aci_storage().delete_all_sessions(&ServiceAddress { uuid }).await?;
+                                        let num = storage.aci_storage().delete_all_sessions(&ServiceAddress::from(uuid)).await?;
                                         tracing::trace!("Removed {} device session(s)", num);
                                         if storage.mark_recipient_registered(uuid, false) {
                                             tracing::trace!("Marked recipient {uuid} as unregistered");
@@ -2118,9 +2119,15 @@ impl Handler<StorageReady> for ClientActor {
                 // XXX What about the whoami migration?
                 let aci = aci.expect("local uuid to initialize service cipher");
                 // end signal service context
-                act.self_aci = Some(ServiceAddress { uuid: aci });
+                act.self_aci = Some(ServiceAddress {
+                    uuid: aci,
+                    identity: ServiceIdType::AccountIdentity,
+                });
                 if let Some(pni) = pni {
-                    act.self_pni = Some(ServiceAddress { uuid: pni });
+                    act.self_pni = Some(ServiceAddress {
+                        uuid: pni,
+                        identity: ServiceIdType::PhoneNumberIdentity,
+                    });
                 }
 
                 Self::queue_migrations(ctx);
@@ -2275,23 +2282,32 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             tracing::warn!("Message has no destination service id; ignoring");
             return;
         }
-        let destination = ServiceAddress {
-            uuid: Uuid::parse_str(msg.destination_service_id.as_deref().unwrap())
-                .unwrap_or_else(|e| panic!("parse uuid: {:?} -- {:?}", msg, e)),
-        };
-        let service_id = if destination == self.self_aci.expect("local aci known") {
-            ServiceIdType::AccountIdentity
-        } else if destination == self.self_pni.expect("local pni known") {
-            ServiceIdType::PhoneNumberIdentity
-        } else {
-            tracing::warn!(
-                "Message for unknown destination: {:?}. Dropping",
-                destination
-            );
-            return;
-        };
+        let destination =
+            ServiceAddress::try_from(msg.destination_service_id.as_deref().unwrap()).unwrap();
+        match destination.identity {
+            ServiceIdType::AccountIdentity => {
+                if destination != self.self_aci.expect("local aci known") {
+                    tracing::warn!(
+                        "Message for unknown destination: dest {:?}, self {:?}",
+                        destination,
+                        self.self_aci.unwrap()
+                    );
+                    return;
+                }
+            }
+            ServiceIdType::PhoneNumberIdentity => {
+                if destination != self.self_pni.expect("local pni known") {
+                    tracing::warn!(
+                        "Message for unknown destination: dest {:?}, self {:?}",
+                        destination,
+                        self.self_pni.unwrap()
+                    );
+                    return;
+                }
+            }
+        }
 
-        let mut cipher = self.cipher(service_id);
+        let mut cipher = self.cipher(destination.identity);
 
         if msg.is_receipt() {
             self.process_receipt(&msg);
@@ -2323,7 +2339,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             let source_uuid = Uuid::parse_str(addr.name()).expect("only uuid-based identities accessible in the database");
                             tracing::warn!("Untrusted identity for {}; replacing identity and inserting a warning.", addr);
                             let recipient = storage.fetch_or_insert_recipient_by_uuid(source_uuid);
-                            if service_id == ServiceIdType::PhoneNumberIdentity {
+                            if destination.identity == ServiceIdType::PhoneNumberIdentity {
                                 storage.mark_recipient_needs_pni_signature(recipient.id, true);
                             }
                             let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
@@ -2356,7 +2372,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                 tracing::trace!(sender = ?content.metadata.sender, "opened envelope");
 
                 Some(content)
-            }.instrument(tracing::trace_span!("opening envelope", %service_id))
+            }.instrument(tracing::trace_span!("opening envelope", %destination.identity))
             .into_actor(self)
             .map(|content, act, ctx| {
                 if let Some(content) = content {

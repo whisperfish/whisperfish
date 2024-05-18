@@ -540,9 +540,7 @@ impl Recipient {
     }
 
     pub fn to_service_address(&self) -> Option<libsignal_service::ServiceAddress> {
-        // XXX what about PNI?
-        self.uuid
-            .map(|uuid| libsignal_service::ServiceAddress { uuid })
+        self.uuid.map(ServiceAddress::from)
     }
 
     pub fn uuid(&self) -> String {
@@ -1794,6 +1792,7 @@ mod tests {
             r.to_service_address(),
             Some(libsignal_service::ServiceAddress {
                 uuid: uuid::Uuid::parse_str("bff93979-a0fa-41f5-8ccf-e319135384d8").unwrap(),
+                identity: libsignal_service::push_service::ServiceIdType::AccountIdentity,
             })
         );
         assert_eq!(r.uuid(), "bff93979-a0fa-41f5-8ccf-e319135384d8");
