@@ -14,7 +14,7 @@
         <location filename="../qml/cover/CoverPage.qml" line="146"/>
         <source>Service Message</source>
         <extracomment>Placeholder note for a service message (expiry, profile key...)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mensagem de serviço</translation>
     </message>
     <message id="whisperfish-session-is-voice-note">
         <location filename="../qml/cover/CoverPage.qml" line="154"/>
@@ -765,7 +765,7 @@
         <location filename="../qml/pages/MainPage.qml" line="313"/>
         <source>No messages</source>
         <extracomment>Session section label for never (i.e. no messages, no timestamp)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sem mensagens</translation>
     </message>
     <message id="whisperfish-session-section-today">
         <location filename="../qml/pages/LinkedDevices.qml" line="117"/>
@@ -1297,19 +1297,19 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="221"/>
         <source>Privacy</source>
         <extracomment>Settings page &quot;privacy&quot; section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Privacidade</translation>
     </message>
     <message id="whisperfish-settings-share-phone-number">
         <location filename="../qml/pages/Settings.qml" line="227"/>
         <source>Share phone number</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Partilhar número de telefone</translation>
     </message>
     <message id="whisperfish-settings-share-phone-number-description">
         <location filename="../qml/pages/Settings.qml" line="230"/>
         <source>When enabled, your contacts can see your phone number when you message them.</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Quando ativado, os teus contactos podem ver o teu número de telefone quando envias mensagens.</translation>
     </message>
     <message id="whisperfish-settings-startup-shutdown-section">
         <location filename="../qml/pages/Settings.qml" line="327"/>
@@ -1810,19 +1810,19 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="79"/>
         <source>Unlink contact</source>
         <extracomment>Menu action to unlink a Signal contact from a Sailfish OS contact</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Desassocia o contacto</translation>
     </message>
     <message id="whisperfish-recipient-link">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="86"/>
         <source>Link contact</source>
         <extracomment>Menu action to pick a Sailfish OS contact to link the Signal user to</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Associa o contacto</translation>
     </message>
     <message id="whisperfish-profile-uuid-invalid-warning">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="172"/>
         <source>This user profile is broken and can&apos;t be used.</source>
         <extracomment>Warning about recipient UUID not existing or nil (all zeros)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Este perfile de utilizador está danificado e não é possível utilizá-lo.</translation>
     </message>
     <message id="whisperfish-verify-contact-identity-title">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="235"/>
@@ -2181,74 +2181,74 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="88"/>
         <source>You set expiring messages timeout to %1.</source>
         <extracomment>Service message, %1 time</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>configuraste mensagens caducas para expirar em %1.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-update-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="91"/>
         <source>%1 set expiring messages timeout to %2.</source>
         <extracomment>Service message, %1 is a name, %2 is time</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 configurou mensagens caducas para expirar em %2.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-disable-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="96"/>
         <source>You disabled expiring messages.</source>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Desativaste mensagens caducas.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-disable-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="99"/>
         <source>%1 disabled expiring messages.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 desativou mensagens caducas.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-unknown-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="104"/>
         <source>You set or disabled expiring messages timeout.</source>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ativaste ou desativaste o tempo para expirar das mensagens caducas.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-unknown-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="107"/>
         <source>%1 set or disabled expiring messages timeout.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 ativou ou desativou o tempo para expirar das mensagens caducas.</translation>
     </message>
     <message id="whisperfish-service-message-profile-key-update-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="112"/>
         <source>%1 updated their profile.</source>
         <oldsource>%1 updated their profile key with you.</oldsource>
         <extracomment>Service message for profile (key) update. %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 atualizou o seu perfile.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="117"/>
         <source>You ended the session with %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Terminaste a sessão com %1.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="120"/>
         <source>%1 ended the session with you.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 terminou a sessão contigo.</translation>
     </message>
     <message id="whisperfish-service-message-changed-group">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="124"/>
         <source>The group was updated.</source>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>O grupo foi atualizado.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="145"/>
         <source>You missed a voice call from %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Perdeste uma chamada de voz de %1.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="148"/>
         <source>You tried to voice call %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Tentaste fazer uma chamada de voz para %1.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-video-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="153"/>
@@ -2260,7 +2260,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="156"/>
         <source>You tried to video call %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Tentaste fazer uma chamada vídeo para %1.</translation>
     </message>
     <message id="whisperfish-service-message-fingerprint-changed">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="177"/>
@@ -2685,7 +2685,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/LinkContactPage.qml" line="10"/>
         <source>Select contact</source>
         <extracomment>Link Signal user to Sailfish OS contact page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Seleciona contacto</translation>
     </message>
 </context>
 </TS>
