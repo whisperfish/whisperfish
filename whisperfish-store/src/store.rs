@@ -27,10 +27,10 @@ use diesel::sql_types::{Bool, Timestamp};
 use diesel_migrations::EmbeddedMigrations;
 use itertools::Itertools;
 use libsignal_service::groups_v2::InMemoryCredentialsCache;
-use libsignal_service::prelude::*;
 use libsignal_service::proto::{attachment_pointer, data_message::Reaction, DataMessage};
 use libsignal_service::protocol::{self, *};
 use libsignal_service::zkgroup::api::groups::GroupSecretParams;
+use libsignal_service::{prelude::*, ServiceIdType};
 use phonenumber::PhoneNumber;
 pub use protocol_store::AciOrPniStorage;
 use protocol_store::ProtocolStore;
@@ -3089,12 +3089,25 @@ impl<O: Observable> Storage<O> {
     /// Returns a binary peer identity
     #[tracing::instrument(skip(self))]
     pub async fn peer_identity(&self, addr: ProtocolAddress) -> Result<Vec<u8>, anyhow::Error> {
-        let ident = self
-            .aci_storage() // XXX: What about PNI?
-            .get_identity(&addr)
-            .await?
-            .context("No such identity")?;
-        Ok(ident.serialize().into())
+        let service_address = ServiceAddress::try_from(addr.name())?;
+        match service_address.identity {
+            ServiceIdType::AccountIdentity => {
+                let ident = self
+                    .aci_storage()
+                    .get_identity(&addr)
+                    .await?
+                    .context("No such ACI identity")?;
+                Ok(ident.serialize().into())
+            }
+            ServiceIdType::PhoneNumberIdentity => {
+                let ident = self
+                    .pni_storage()
+                    .get_identity(&addr)
+                    .await?
+                    .context("No such PNI identity")?;
+                Ok(ident.serialize().into())
+            }
+        }
     }
 
     pub async fn credential_cache(
