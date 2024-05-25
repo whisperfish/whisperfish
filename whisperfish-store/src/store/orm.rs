@@ -1,8 +1,8 @@
 use super::schema::*;
 use chrono::prelude::*;
 use diesel::sql_types::Integer;
-use libsignal_service::prelude::*;
 use libsignal_service::proto::GroupContextV2;
+use libsignal_service::{prelude::*, ServiceIdType};
 use phonenumber::PhoneNumber;
 use std::borrow::Cow;
 use std::fmt::{Display, Error, Formatter};
@@ -540,7 +540,17 @@ impl Recipient {
     }
 
     pub fn to_service_address(&self) -> Option<libsignal_service::ServiceAddress> {
-        self.uuid.map(ServiceAddress::from)
+        match (self.uuid, self.pni) {
+            (Some(uuid), _) => Some(ServiceAddress {
+                uuid,
+                identity: ServiceIdType::AccountIdentity,
+            }),
+            (None, Some(pni)) => Some(ServiceAddress {
+                uuid: pni,
+                identity: ServiceIdType::PhoneNumberIdentity,
+            }),
+            _ => None,
+        }
     }
 
     pub fn uuid(&self) -> String {
