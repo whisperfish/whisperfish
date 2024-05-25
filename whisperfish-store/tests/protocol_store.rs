@@ -177,7 +177,10 @@ mod tests {
         assert_eq!(aci_storage.get_identity(&addr2).await.unwrap(), Some(key2));
 
         // After removing key2, it shouldn't be there
-        storage.delete_identity(&addr2).await.unwrap();
+        storage
+            .delete_identity(&ServiceAddress::try_from(&addr2).unwrap())
+            .await
+            .unwrap();
         // XXX Doesn't implement equality *arg*
         assert_eq!(aci_storage.get_identity(&addr2).await.unwrap(), None);
 

@@ -1680,15 +1680,22 @@ impl Handler<SendMessage> for ClientActor {
                                             tracing::warn!("Rate limit proof requested, but type 'recaptcha' wasn't available!");
                                         }
                                     },
-                                    MessageSenderError::NotFound { uuid } => {
-                                        tracing::warn!("Recipient not found, removing device sessions {}", uuid);
-                                        // XXX what about PNI?
-                                        let num = storage.aci_storage().delete_all_sessions(&ServiceAddress::from(uuid)).await?;
+                                    MessageSenderError::NotFound { addr } => {
+                                        tracing::warn!("Recipient not found, removing device sessions {:?}", addr);
+                                        let num = match addr.identity {
+                                            ServiceIdType::AccountIdentity => {
+                                                storage.aci_storage().delete_all_sessions(&addr).await?
+                                            },
+                                            ServiceIdType::PhoneNumberIdentity => {
+                                                storage.aci_storage().delete_all_sessions(&addr).await?
+                                            }
+                                        };
+
                                         tracing::trace!("Removed {} device session(s)", num);
-                                        if storage.mark_recipient_registered(uuid, false) {
-                                            tracing::trace!("Marked recipient {uuid} as unregistered");
+                                        if storage.mark_recipient_registered(addr, false) {
+                                            tracing::trace!("Marked recipient {addr:?} as unregistered");
                                         } else {
-                                            tracing::warn!("Could not mark recipient as unregistered");
+                                            tracing::warn!("Could not mark recipient {addr:?} as unregistered");
                                         }
                                     },
                                     _ => {
@@ -2353,16 +2360,16 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             SignalProtocolError::UntrustedIdentity(addr),
                         )) => {
                             // This branch is the only one that loops, and it *should not* loop more than once.
-                            let source_uuid = Uuid::parse_str(addr.name()).expect("only uuid-based identities accessible in the database");
+                            let srv_addr = ServiceAddress::try_from(addr.name()).expect("valid ACI or PNI UUID in ProtocolAddress");
                             tracing::warn!("Untrusted identity for {}; replacing identity and inserting a warning.", addr);
-                            let recipient = storage.fetch_or_insert_recipient_by_uuid(source_uuid);
+                            let recipient = storage.fetch_or_insert_recipient_by_uuid(srv_addr.uuid);
                             if destination.identity == ServiceIdType::PhoneNumberIdentity {
                                 storage.mark_recipient_needs_pni_signature(recipient.id, true);
                             }
                             let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
                             let msg = crate::store::NewMessage {
                                 session_id: session.id,
-                                source_uuid: Some(source_uuid),
+                                source_uuid: Some(srv_addr.uuid),
                                 message_type: Some(MessageType::IdentityKeyChange),
                                 ..crate::store::NewMessage::new_incoming()
                             };
@@ -2370,11 +2377,10 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
 
                             if !recipient.is_registered {
                                 tracing::warn!("Recipient was marked as unregistered, marking as registered.");
-                                storage.mark_recipient_registered(source_uuid, true);
+                                storage.mark_recipient_registered(srv_addr, true);
                             }
 
-                            let removed = storage.delete_identity_key(&addr);
-                            if ! removed {
+                            if !storage.delete_identity_key(&srv_addr) {
                                 tracing::error!("Could not remove identity key for {}.  Please file a bug.", addr);
                                 return None;
                             }

@@ -3,7 +3,9 @@ mod typing_notifications;
 pub use self::typing_notifications::*;
 
 mod methods;
+use libsignal_service::{ServiceAddress, ServiceIdType};
 use methods::*;
+
 use whisperfish_store::orm;
 use whisperfish_store::orm::MessageType;
 use whisperfish_store::NewMessage;
@@ -11,7 +13,7 @@ use whisperfish_store::NewMessage;
 use crate::platform::QmlApp;
 use crate::{gui::StorageReady, store::Storage};
 use actix::prelude::*;
-use libsignal_service::protocol::{DeviceId, ProtocolAddress};
+
 use qmetaobject::prelude::*;
 use std::collections::{HashMap, VecDeque};
 
@@ -210,26 +212,35 @@ impl Handler<RemoveIdentities> for SessionActor {
             return;
         };
 
-        let identities = match (recipient.e164, recipient.uuid) {
-            (None, None) => {
-                tracing::debug!("No identities to remove");
-                return;
+        let mut successes = 0;
+
+        if let Some(aci) = recipient.uuid {
+            tracing::debug!("Removing identity ACI {}", aci);
+            if storage.delete_identity_key(&ServiceAddress {
+                uuid: aci,
+                identity: ServiceIdType::AccountIdentity,
+            }) {
+                tracing::trace!("ACI identity {} removed", aci);
+                successes += 1;
+            } else {
+                tracing::trace!("ACI identity {} not found", aci);
             }
-            (None, Some(uuid)) => vec![uuid.to_string()],
-            (Some(e164), None) => vec![e164.to_string()],
-            (Some(e164), Some(uuid)) => vec![e164.to_string(), uuid.to_string()],
         };
 
-        let mut successes = 0;
-        for identity in identities {
-            tracing::debug!("Removing identity {}", identity);
-            let addr = ProtocolAddress::new(identity.clone(), DeviceId::from(1));
-            if !storage.delete_identity_key(&addr) {
-                tracing::trace!("Could not remove identity {}.", identity);
-            } else {
+        if let Some(pni) = recipient.pni {
+            tracing::debug!("Removing identity PNI {}", pni);
+            if storage.delete_identity_key(&ServiceAddress {
+                uuid: pni,
+                identity: ServiceIdType::PhoneNumberIdentity,
+            }) {
+                tracing::trace!("PNI identity {} removed", pni);
                 successes += 1;
+            } else {
+                tracing::trace!("PNI identity {} not found", pni);
             }
-        }
+        };
+
+        // XXX What about e164?
 
         let session = storage.fetch_session_by_recipient_id(recipient_id).unwrap();
 
@@ -242,7 +253,10 @@ impl Handler<RemoveIdentities> for SessionActor {
         });
 
         if successes == 0 {
-            tracing::warn!("Could not successfully remove any identity keys.  Please file a bug.");
+            tracing::warn!(
+                "Could not find and remove any identities for recipient {}. Please file a bug.",
+                recipient_id
+            );
         }
     }
 }

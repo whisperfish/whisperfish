@@ -81,7 +81,7 @@ impl ProtocolStore {
 }
 
 impl<O: Observable> Storage<O> {
-    pub async fn delete_identity(&self, addr: &ProtocolAddress) -> Result<(), SignalProtocolError> {
+    pub async fn delete_identity(&self, addr: &ServiceAddress) -> Result<(), SignalProtocolError> {
         self.delete_identity_key(addr);
         Ok(())
     }
@@ -863,15 +863,18 @@ impl<T: Identity<O>, O: Observable> IdentityStorage<T, O> {
 
 // BEGIN identity key block
 impl<O: Observable> Storage<O> {
-    /// Removes the identity matching `addr` from the database, independent of PNI or ACI.
+    /// Removes the identity matching ServiceAddress (ACI or PNI) from the database.
     ///
     /// Does not lock the protocol storage.
     #[tracing::instrument(level = "warn", skip(self))]
-    pub fn delete_identity_key(&self, addr: &ProtocolAddress) -> bool {
+    pub fn delete_identity_key(&self, addr: &ServiceAddress) -> bool {
         use crate::schema::identity_records::dsl::*;
-        let addr = addr.name();
         let amount = diesel::delete(identity_records)
-            .filter(address.eq(addr))
+            .filter(
+                address
+                    .eq(addr.uuid.to_string())
+                    .and(identity.eq(orm::Identity::from(addr.identity.to_string().as_str()))),
+            )
             .execute(&mut *self.db())
             .expect("db");
 

@@ -439,6 +439,16 @@ impl Display for Identity {
     }
 }
 
+impl From<&str> for Identity {
+    fn from(kind: &str) -> Self {
+        match kind {
+            "aci" => Identity::Aci,
+            "pni" => Identity::Pni,
+            _ => unreachable!(),
+        }
+    }
+}
+
 #[derive(Queryable, Identifiable, Insertable, Debug, Clone)]
 pub struct SignedPrekey {
     pub id: i32,

@@ -2301,21 +2301,36 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn mark_recipient_registered(&self, recipient_uuid: Uuid, registered: bool) -> bool {
+    pub fn mark_recipient_registered(
+        &self,
+        service_address: ServiceAddress,
+        registered: bool,
+    ) -> bool {
         use schema::recipients::dsl::*;
 
-        let rid: Option<i32> =
-            diesel::update(recipients.filter(uuid.eq(recipient_uuid.to_string())))
-                .set(is_registered.eq(registered))
-                .returning(id)
-                .get_result(&mut *self.db())
-                .optional()
-                .expect("mark recipient (un)registered");
+        let rid: Option<i32> = match service_address.identity {
+            ServiceIdType::AccountIdentity => {
+                diesel::update(recipients.filter(uuid.eq(service_address.uuid.to_string())))
+                    .set(is_registered.eq(registered))
+                    .returning(id)
+                    .get_result(&mut *self.db())
+                    .optional()
+                    .expect("mark recipient (un)registered")
+            }
+            ServiceIdType::PhoneNumberIdentity => {
+                diesel::update(recipients.filter(pni.eq(service_address.uuid.to_string())))
+                    .set(is_registered.eq(registered))
+                    .returning(id)
+                    .get_result(&mut *self.db())
+                    .optional()
+                    .expect("mark recipient (un)registered")
+            }
+        };
 
         let Some(rid) = rid else {
             tracing::trace!(
-                "Recipient's registration with UUID {} not updated in database",
-                recipient_uuid
+                "Registration of {:?} not updated in database",
+                service_address
             );
             return false;
         };
