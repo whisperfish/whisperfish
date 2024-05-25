@@ -500,17 +500,34 @@ impl ClientActor {
 
         if flags & DataMessageFlags::EndSession as i32 != 0 {
             let storage = storage.clone();
-            if let Some(svc) = sender_recipient
+            if let Some(svc_addr) = sender_recipient
                 .as_ref()
                 .and_then(|r| r.to_service_address())
             {
                 actix::spawn(async move {
-                    // XXX What about PNI sessions?
-                    if let Err(e) = storage.aci_storage().delete_all_sessions(&svc).await {
-                        tracing::error!(
-                            "End session requested, but could not end session: {:?}",
-                            e
-                        );
+                    match svc_addr.identity {
+                        ServiceIdType::AccountIdentity => {
+                            if let Err(e) =
+                                storage.aci_storage().delete_all_sessions(&svc_addr).await
+                            {
+                                tracing::error!(
+                                    "End session requested for ACI {:?}, but could not end session: {:?}",
+                                    &svc_addr.uuid,
+                                    e
+                                );
+                            }
+                        }
+                        ServiceIdType::PhoneNumberIdentity => {
+                            if let Err(e) =
+                                storage.aci_storage().delete_all_sessions(&svc_addr).await
+                            {
+                                tracing::error!(
+                                    "End session requested for PNI {:?}, but could not end session: {:?}",
+                                    &svc_addr.uuid,
+                                    e
+                                );
+                            }
+                        }
                     }
                 });
             } else {
