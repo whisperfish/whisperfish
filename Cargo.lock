@@ -1801,7 +1801,7 @@ dependencies = [
 [[package]]
 name = "libsignal-service"
 version = "0.1.0"
-source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=handle-pni-uuid#5bf21ce96bd30013e6e3704fb82014d91d111e56"
+source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=handle-pni-uuid#8691fe731984c4481df7c05fb7f08835826d13f3"
 dependencies = [
  "aes",
  "aes-gcm",
@@ -1836,7 +1836,7 @@ dependencies = [
 [[package]]
 name = "libsignal-service-hyper"
 version = "0.1.0"
-source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=handle-pni-uuid#5bf21ce96bd30013e6e3704fb82014d91d111e56"
+source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=handle-pni-uuid#8691fe731984c4481df7c05fb7f08835826d13f3"
 dependencies = [
  "async-trait",
  "async-tungstenite",
