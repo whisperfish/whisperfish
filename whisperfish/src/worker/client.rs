@@ -443,7 +443,7 @@ impl ClientActor {
 
         let session_type = orm::SessionType::DirectMessage(
             storage
-                .fetch_recipient_by_uuid(metadata.sender.uuid)
+                .fetch_recipient_by_service_address(&metadata.sender)
                 .expect("needs-receipt sender recipient"),
         );
 

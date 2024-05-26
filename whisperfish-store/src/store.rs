@@ -1458,6 +1458,25 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
+    pub fn fetch_recipient_by_service_address(
+        &self,
+        srv_addr: &ServiceAddress,
+    ) -> Option<orm::Recipient> {
+        use crate::schema::recipients::dsl::*;
+
+        match srv_addr.identity {
+            ServiceIdType::AccountIdentity => recipients
+                .filter(uuid.eq(&srv_addr.uuid.to_string()))
+                .first(&mut *self.db())
+                .ok(),
+            ServiceIdType::PhoneNumberIdentity => recipients
+                .filter(pni.eq(&srv_addr.uuid.to_string()))
+                .first(&mut *self.db())
+                .ok(),
+        }
+    }
+
+    #[tracing::instrument(skip(self))]
     pub fn fetch_or_insert_recipient_by_uuid(&self, new_uuid: Uuid) -> orm::Recipient {
         use crate::schema::recipients::dsl::*;
 
