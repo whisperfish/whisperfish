@@ -959,6 +959,7 @@ impl<O: Observable> Storage<O> {
                 .as_ref()
                 .map(|p| p.to_string()).as_deref(),
         ))]
+    // XXX UUID to ServiceAddress
     pub fn update_profile_key(
         &self,
         phonenumber: Option<PhoneNumber>,
@@ -1047,6 +1048,7 @@ impl<O: Observable> Storage<O> {
                 .as_ref()
                 .map(|p| p.to_string()).as_deref(),
         ))]
+    // XXX UUID to ServiceAddress
     pub fn merge_and_fetch_recipient(
         &self,
         phonenumber: Option<PhoneNumber>,
