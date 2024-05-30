@@ -1742,6 +1742,18 @@ impl<O: Observable> Storage<O> {
         })
     }
 
+    #[tracing::instrument(skip(self, addr))]
+    pub fn fetch_session_by_address(&self, addr: &ServiceAddress) -> Option<orm::Session> {
+        match addr.identity {
+            ServiceIdType::AccountIdentity => fetch_session!(self.db(), |query| {
+                query.filter(schema::recipients::uuid.eq(addr.uuid.to_string()))
+            }),
+            ServiceIdType::PhoneNumberIdentity => fetch_session!(self.db(), |query| {
+                query.filter(schema::recipients::pni.eq(addr.uuid.to_string()))
+            }),
+        }
+    }
+
     #[tracing::instrument(skip(self))]
     pub fn fetch_session_by_recipient_id(&self, recipient_id: i32) -> Option<orm::Session> {
         fetch_session!(self.db(), |query| {
@@ -1878,6 +1890,28 @@ impl<O: Observable> Storage<O> {
         use schema::sessions::dsl::*;
         let session_id = diesel::insert_into(sessions)
             .values((direct_message_recipient_id.eq(recipient.id),))
+            // We'd love to retrieve the whole session, but the Session object is a joined object.
+            .returning(id)
+            .get_result::<i32>(&mut *self.db())
+            .unwrap();
+
+        self.observe_insert(sessions, session_id)
+            .with_relation(schema::recipients::table, recipient.id);
+
+        self.fetch_session_by_id(session_id).unwrap()
+    }
+
+    #[tracing::instrument(skip(self, addr))]
+    pub fn fetch_or_insert_session_by_address(&self, addr: &ServiceAddress) -> orm::Session {
+        if let Some(session) = self.fetch_session_by_address(addr) {
+            return session;
+        }
+
+        let recipient = self.fetch_or_insert_recipient_by_address(addr);
+
+        use schema::sessions::dsl::*;
+        let session_id = diesel::insert_into(sessions)
+            .values(direct_message_recipient_id.eq(recipient.id))
             // We'd love to retrieve the whole session, but the Session object is a joined object.
             .returning(id)
             .get_result::<i32>(&mut *self.db())
