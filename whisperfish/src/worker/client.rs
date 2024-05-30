@@ -2298,27 +2298,12 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
         }
         let destination =
             ServiceAddress::try_from(msg.destination_service_id.as_deref().unwrap()).unwrap();
-        match destination.identity {
-            ServiceIdType::AccountIdentity => {
-                if destination != self.self_aci.expect("local aci known") {
-                    tracing::warn!(
-                        "Message for unknown destination: dest {:?}, self {:?}",
-                        destination,
-                        self.self_aci.unwrap()
-                    );
-                    return;
-                }
-            }
-            ServiceIdType::PhoneNumberIdentity => {
-                if destination != self.self_pni.expect("local pni known") {
-                    tracing::warn!(
-                        "Message for unknown destination: dest {:?}, self {:?}",
-                        destination,
-                        self.self_pni.unwrap()
-                    );
-                    return;
-                }
-            }
+        if ![self.self_aci, self.self_pni]
+            .iter()
+            .any(|self_dest| self_dest == &Some(destination))
+        {
+            tracing::warn!("Message for unknown destination: dest {:?}", destination);
+            return;
         }
 
         let mut cipher = self.cipher(destination.identity);
