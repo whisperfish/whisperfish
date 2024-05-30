@@ -664,7 +664,7 @@ impl ClientActor {
             let source_service_id = svc_addr.to_service_id();
             sent.unidentified_status.iter().any(|x| {
                 x.unidentified()
-                    && Some(x.destination_service_id()) == Some(source_service_id.as_str())
+                    && x.destination_service_id() == source_service_id
             })
         } else {
             metadata.unidentified_sender
