@@ -549,6 +549,7 @@ impl Recipient {
         }
     }
 
+    /// Create a ServiceAddress from the Recipient. Prefers ACI over PNI.
     pub fn to_service_address(&self) -> Option<libsignal_service::ServiceAddress> {
         match (self.uuid, self.pni) {
             (Some(uuid), _) => Some(ServiceAddress {
