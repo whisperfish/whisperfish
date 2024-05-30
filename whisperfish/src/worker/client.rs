@@ -526,7 +526,7 @@ impl ClientActor {
                         }
                         ServiceIdType::PhoneNumberIdentity => {
                             if let Err(e) =
-                                storage.aci_storage().delete_all_sessions(&svc_addr).await
+                                storage.pni_storage().delete_all_sessions(&svc_addr).await
                             {
                                 tracing::error!(
                                     "End session requested for PNI {:?}, but could not end session: {:?}",
@@ -1677,7 +1677,7 @@ impl Handler<SendMessage> for ClientActor {
                                                 storage.aci_storage().delete_all_sessions(&addr).await?
                                             },
                                             ServiceIdType::PhoneNumberIdentity => {
-                                                storage.aci_storage().delete_all_sessions(&addr).await?
+                                                storage.pni_storage().delete_all_sessions(&addr).await?
                                             }
                                         };
 
