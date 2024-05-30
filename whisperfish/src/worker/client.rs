@@ -482,22 +482,11 @@ impl ClientActor {
         let source_uuid = svc_addr.uuid;
 
         let mut storage = self.storage.clone().expect("storage");
-        let sender_recipient = {
-            match svc_addr.identity {
-                ServiceIdType::AccountIdentity => Some(storage.merge_and_fetch_recipient(
-                    source_phonenumber.clone(),
-                    Some(source_uuid),
-                    None,
-                    crate::store::TrustLevel::Certain,
-                )),
-                ServiceIdType::PhoneNumberIdentity => Some(storage.merge_and_fetch_recipient(
-                    source_phonenumber.clone(),
-                    None,
-                    Some(source_uuid),
-                    crate::store::TrustLevel::Certain,
-                )),
-            }
-        };
+        let sender_recipient = Some(storage.merge_and_fetch_recipient(
+            source_phonenumber.clone(),
+            Some(source_addr),
+            crate::store::TrustLevel::Certain,
+        ));
 
         let flags = msg
             .flags()
@@ -544,11 +533,9 @@ impl ClientActor {
         }
 
         if let Some(key) = msg.profile_key.as_deref() {
-            // XXX UUID to ServiceAddress
             let (recipient, was_updated) = storage.update_profile_key(
                 source_phonenumber.clone(),
-                Some(svc_addr.uuid),
-                None,
+                Some(source_addr),
                 key,
                 crate::store::TrustLevel::Certain,
             );
@@ -714,8 +701,7 @@ impl ClientActor {
         let session = group.unwrap_or_else(|| {
             let recipient = storage.merge_and_fetch_recipient(
                 source_phonenumber.clone(),
-                Some(source_uuid),
-                None,
+                Some(source_addr),
                 TrustLevel::Certain,
             );
             storage.fetch_or_insert_session_by_recipient_id(recipient.id)
@@ -726,8 +712,7 @@ impl ClientActor {
         let expires_in = session.expiring_message_timeout;
 
         let new_message = crate::store::NewMessage {
-            source_e164: source_phonenumber,
-            source_uuid: Some(source_uuid),
+            source_addr: Some(src_addr),
             text,
             flags,
             outgoing: is_sync_sent,
@@ -1390,8 +1375,7 @@ impl Handler<QueueMessage> for ClientActor {
 
         let inserted_msg = storage.create_message(&crate::store::NewMessage {
             session_id: msg.session_id,
-            source_e164: self_recipient.e164,
-            source_uuid: self_recipient.uuid,
+            source_addr: self_recipient.to_service_address(),
             text: msg.message,
             timestamp: chrono::Utc::now().naive_utc(),
             quote_timestamp: quote.map(|msg| msg.server_timestamp.timestamp_millis() as u64),
@@ -1436,8 +1420,7 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
 
         let msg = storage.create_message(&crate::store::NewMessage {
             session_id: session.id,
-            source_e164: self_recipient.e164,
-            source_uuid: self_recipient.uuid,
+            source_addr: self_recipient.to_service_address(),
             expires_in: msg.expires_in,
             flags: DataMessageFlags::ExpirationTimerUpdate as i32,
             message_type: Some(MessageType::ExpirationTimerUpdate),
@@ -1612,7 +1595,7 @@ impl Handler<SendMessage> for ClientActor {
                         for result in results.iter().filter_map(|res| res.as_ref().ok()) {
                             // Look up recipient to check the current state
                             let recipient = storage
-                                .fetch_recipient_by_uuid(result.recipient.uuid)
+                                .fetch_recipient_by_service_address(&result.recipient)
                                 .expect("sent recipient in db");
                             let target_state = if result.unidentified {
                                 // Unrestricted and success; keep unrestricted
@@ -1745,8 +1728,7 @@ impl Handler<EndSession> for ClientActor {
 
         let msg = storage.create_message(&crate::store::NewMessage {
             session_id: session.id,
-            source_e164: recipient.e164,
-            source_uuid: recipient.uuid,
+            source_addr: recipient.to_service_address(),
             timestamp: chrono::Utc::now().naive_utc(),
             flags: DataMessageFlags::EndSession.into(),
             message_type: Some(MessageType::EndSession),
@@ -2263,8 +2245,8 @@ impl Handler<RefreshProfile> for ClientActor {
                 }
             },
         };
-        if let Some(uuid) = recipient.uuid {
-            storage.mark_profile_outdated(uuid);
+        if let Some(addr) = recipient.to_service_address() {
+            storage.mark_profile_outdated(&addr);
         } else {
             tracing::error!(
                 "Recipient without uuid; not refreshing profile: {:?}",

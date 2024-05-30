@@ -7,6 +7,7 @@ use actix::{ActorContext, Handler};
 use futures::TryFutureExt;
 use libsignal_service::protocol::SessionStore;
 use libsignal_service::session_store::SessionStoreExt;
+use libsignal_service::{ServiceAddress, ServiceIdType};
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
 use std::collections::HashMap;
@@ -17,6 +18,7 @@ use uuid::Uuid;
 pub struct RecipientImpl {
     base: qt_base_class!(trait QObject),
     recipient_id: Option<i32>,
+    // XXX What about PNI?
     recipient_uuid: Option<Uuid>,
     recipient: Option<RecipientWithAnalyzedSession>,
 }
@@ -163,20 +165,25 @@ impl RecipientImpl {
     fn init(&mut self, ctx: ModelContext<Self>) {
         let storage = ctx.storage();
         let recipient = if let Some(uuid) = self.recipient_uuid {
-            storage.fetch_recipient_by_uuid(uuid).map(|inner| {
-                let direct_message_recipient_id = storage
-                    .fetch_session_by_recipient_id(inner.id)
-                    .map(|session| session.id)
-                    .unwrap_or(-1);
-                self.recipient_id = Some(inner.id);
-                // XXX trigger Qt signal for this?
-                RecipientWithAnalyzedSession {
-                    inner,
-                    direct_message_recipient_id,
-                    fingerprint: None,
-                    versions: Vec::new(),
-                }
-            })
+            storage
+                .fetch_recipient_by_service_address(&ServiceAddress {
+                    uuid,
+                    identity: ServiceIdType::AccountIdentity,
+                })
+                .map(|inner| {
+                    let direct_message_recipient_id = storage
+                        .fetch_session_by_recipient_id(inner.id)
+                        .map(|session| session.id)
+                        .unwrap_or(-1);
+                    self.recipient_id = Some(inner.id);
+                    // XXX trigger Qt signal for this?
+                    RecipientWithAnalyzedSession {
+                        inner,
+                        direct_message_recipient_id,
+                        fingerprint: None,
+                        versions: Vec::new(),
+                    }
+                })
         } else if let Some(id) = self.recipient_id {
             if id >= 0 {
                 storage.fetch_recipient_by_id(id).map(|inner| {

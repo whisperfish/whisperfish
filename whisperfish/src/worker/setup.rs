@@ -4,6 +4,8 @@ use crate::store::TrustLevel;
 use anyhow::Context;
 use libsignal_service::protocol;
 use libsignal_service::push_service::{ServiceIds, VerificationTransport, DEFAULT_DEVICE_ID};
+use libsignal_service::ServiceAddress;
+use libsignal_service::ServiceIdType;
 use phonenumber::PhoneNumber;
 use qmetaobject::prelude::*;
 use std::rc::Rc;
@@ -222,6 +224,7 @@ impl SetupWorker {
 
         this.phoneNumberInner = Some(reg.phonenumber.clone());
         this.uuidInner = Some(reg.service_ids.aci);
+        this.pniInner = Some(reg.service_ids.pni);
         this.deviceId = reg.device_id.into();
 
         config.set_tel(reg.phonenumber.clone());
@@ -230,10 +233,13 @@ impl SetupWorker {
         config.set_device_id(reg.device_id.into());
 
         if let Some(profile_key) = reg.profile_key {
+            // XXX What about PNI? Is only providing ACI here fine?
             storage.update_profile_key(
                 Some(reg.phonenumber),
-                Some(reg.service_ids.aci),
-                Some(reg.service_ids.pni),
+                Some(ServiceAddress {
+                    uuid: reg.service_ids.aci,
+                    identity: ServiceIdType::AccountIdentity,
+                }),
                 &profile_key,
                 TrustLevel::Certain,
             );

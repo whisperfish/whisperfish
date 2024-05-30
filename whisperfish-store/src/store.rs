@@ -16,7 +16,6 @@ use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
 use crate::schema;
 use crate::store::observer::{Observable, PrimaryKey};
-use crate::store::orm::shorten;
 use crate::{config::SignalConfig, millis_to_naive_chrono};
 use anyhow::Context;
 use chrono::prelude::*;
@@ -104,8 +103,7 @@ pub struct MessagePointer {
 #[derive(Clone, Debug)]
 pub struct NewMessage<'a> {
     pub session_id: i32,
-    pub source_e164: Option<PhoneNumber>,
-    pub source_uuid: Option<Uuid>,
+    pub source_addr: Option<ServiceAddress>,
     pub server_guid: Option<Uuid>,
     pub text: String,
     pub timestamp: NaiveDateTime,
@@ -128,8 +126,7 @@ impl NewMessage<'_> {
     pub fn new_incoming() -> Self {
         Self {
             session_id: 0,
-            source_e164: None,
-            source_uuid: None,
+            source_addr: None,
             server_guid: None,
             text: "".to_string(),
             timestamp: chrono::Utc::now().naive_utc(),
@@ -151,8 +148,7 @@ impl NewMessage<'_> {
     pub fn new_outgoing() -> Self {
         Self {
             session_id: 0,
-            source_e164: None,
-            source_uuid: None,
+            source_addr: None,
             server_guid: None,
             text: "".to_string(),
             timestamp: chrono::Utc::now().naive_utc(),
@@ -768,15 +764,15 @@ impl<O: Observable> Storage<O> {
     #[tracing::instrument(skip(self))]
     pub fn fetch_self_recipient(&self) -> Option<orm::Recipient> {
         let e164 = self.config.get_tel();
-        let uuid = self.config.get_aci();
+        let addr = self.config.get_addr();
         if e164.is_none() {
             tracing::warn!("No e164 set, cannot fetch self.");
             return None;
         }
-        if uuid.is_none() {
-            tracing::warn!("No uuid set. Continuing with only e164");
+        if addr.is_none() {
+            tracing::warn!("No aci/pni uuid set. Continuing with only e164");
         }
-        Some(self.merge_and_fetch_recipient(e164, uuid, None, TrustLevel::Certain))
+        Some(self.merge_and_fetch_recipient(e164, addr, TrustLevel::Certain))
     }
 
     #[tracing::instrument(skip(self, phonenumber), fields(phonenumber = %phonenumber))]
@@ -830,43 +826,24 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(
-        skip(self, phonenumber),
-        fields(
-            phonenumber = phonenumber
-                .as_ref()
-                .map(|p| p.to_string()).as_deref(),
-        ))]
-    pub fn fetch_recipient(
-        &self,
-        phonenumber: Option<PhoneNumber>,
-        uuid: Option<Uuid>,
-    ) -> Option<orm::Recipient> {
-        if phonenumber.is_none() && uuid.is_none() {
-            panic!("fetch_recipient requires at least one of e164 or uuid");
+        skip(self, addr),
+        fields(addr = addr.to_service_id())
+    )]
+    pub fn fetch_recipient(&self, addr: ServiceAddress) -> Option<orm::Recipient> {
+        use crate::schema::recipients::dsl::*;
+
+        let mut query = recipients.into_boxed();
+
+        match addr.identity {
+            ServiceIdType::AccountIdentity => {
+                query = query.filter(uuid.eq(addr.uuid.to_string()));
+            }
+            ServiceIdType::PhoneNumberIdentity => {
+                query = query.filter(pni.eq(addr.uuid.to_string()));
+            }
         }
 
-        use schema::recipients;
-        let by_e164: Option<orm::Recipient> = phonenumber
-            .map(|phonenumber| {
-                recipients::table
-                    .filter(recipients::e164.eq(phonenumber.to_string()))
-                    .first(&mut *self.db())
-                    .optional()
-            })
-            .transpose()
-            .expect("db")
-            .flatten();
-        let by_uuid: Option<orm::Recipient> = uuid
-            .map(|uuid| {
-                recipients::table
-                    .filter(recipients::uuid.eq(uuid.to_string()))
-                    .first(&mut *self.db())
-                    .optional()
-            })
-            .transpose()
-            .expect("db")
-            .flatten();
-        by_uuid.or(by_e164)
+        query.first(&mut *self.db()).optional().expect("db")
     }
 
     #[tracing::instrument(skip(self))]
@@ -967,17 +944,16 @@ impl<O: Observable> Storage<O> {
                 .as_ref()
                 .map(|p| p.to_string()).as_deref(),
         ))]
-    // XXX UUID to ServiceAddress
+
     pub fn update_profile_key(
         &self,
         phonenumber: Option<PhoneNumber>,
-        uuid: Option<Uuid>,
-        pni: Option<Uuid>,
+        addr: Option<ServiceAddress>,
         new_profile_key: &[u8],
         trust_level: TrustLevel,
     ) -> (orm::Recipient, bool) {
         // XXX check profile_key length
-        let recipient = self.merge_and_fetch_recipient(phonenumber, uuid, pni, trust_level);
+        let recipient = self.merge_and_fetch_recipient(phonenumber, addr, trust_level);
 
         let is_unset = recipient.profile_key.is_none()
             || recipient.profile_key.as_ref().map(Vec::len) == Some(0);
@@ -1056,30 +1032,28 @@ impl<O: Observable> Storage<O> {
                 .as_ref()
                 .map(|p| p.to_string()).as_deref(),
         ))]
-    // XXX UUID to ServiceAddress
     pub fn merge_and_fetch_recipient(
         &self,
         phonenumber: Option<PhoneNumber>,
-        uuid: Option<Uuid>,
-        _pni: Option<Uuid>,
+        addr: Option<ServiceAddress>,
         trust_level: TrustLevel,
     ) -> orm::Recipient {
-        let (id, uuid, phonenumber, changed) = self
+        let (id, addr, phonenumber, changed) = self
             .db()
             .transaction::<_, Error, _>(|db| {
-                Self::merge_and_fetch_recipient_inner(db, phonenumber, uuid, trust_level)
+                Self::merge_and_fetch_recipient_inner(db, phonenumber, addr, trust_level)
             })
             .expect("database");
-        let recipient = match (id, uuid, &phonenumber) {
+        let recipient = match (id, addr, &phonenumber) {
             (Some(id), _, _) => self
                 .fetch_recipient_by_id(id)
-                .expect("existing updated recipient"),
-            (_, Some(uuid), _) => self
-                .fetch_recipient_by_uuid(uuid)
-                .expect("existing updated recipient"),
+                .expect("existing updated recipient by id"),
+            (_, Some(addr), _) => self
+                .fetch_recipient_by_service_address(&addr)
+                .expect("existing updated recipient by aci"),
             (_, _, Some(e164)) => self
                 .fetch_recipient_by_phonenumber(e164)
-                .expect("existing updated recipient"),
+                .expect("existing updated recipient by e164"),
             (None, None, None) => {
                 unreachable!("this should get implemented with an Either or custom enum instead")
             }
@@ -1104,10 +1078,18 @@ impl<O: Observable> Storage<O> {
     fn merge_and_fetch_recipient_inner(
         db: &mut SqliteConnection,
         phonenumber: Option<PhoneNumber>,
-        uuid: Option<Uuid>,
+        addr: Option<ServiceAddress>,
         trust_level: TrustLevel,
-    ) -> Result<(Option<i32>, Option<Uuid>, Option<PhoneNumber>, bool), Error> {
-        if phonenumber.is_none() && uuid.is_none() {
+    ) -> Result<
+        (
+            Option<i32>,
+            Option<ServiceAddress>,
+            Option<PhoneNumber>,
+            bool,
+        ),
+        Error,
+    > {
+        if phonenumber.is_none() && addr.is_none() {
             panic!("merge_and_fetch_recipient requires at least one of e164 or uuid");
         }
 
@@ -1122,26 +1104,30 @@ impl<O: Observable> Storage<O> {
             })
             .transpose()?
             .flatten();
-        let by_uuid: Option<orm::Recipient> = uuid
-            .map(|uuid| {
-                recipients::table
-                    .filter(recipients::uuid.eq(uuid.to_string()))
+        let by_addr: Option<orm::Recipient> = addr
+            .map(|addr| match addr.identity {
+                ServiceIdType::AccountIdentity => recipients::table
+                    .filter(recipients::uuid.eq(addr.uuid.to_string()))
                     .first(db)
-                    .optional()
+                    .optional(),
+                ServiceIdType::PhoneNumberIdentity => recipients::table
+                    .filter(recipients::pni.eq(addr.uuid.to_string()))
+                    .first(db)
+                    .optional(),
             })
             .transpose()?
             .flatten();
 
-        match (by_e164, by_uuid) {
-            (Some(by_e164), Some(by_uuid)) if by_e164.id == by_uuid.id => {
+        match (by_e164, by_addr) {
+            (Some(by_e164), Some(by_addr)) if by_e164.id == by_addr.id => {
                 // Both are equal, easy.
-                Ok((Some(by_uuid.id), None, None, false))
+                Ok((Some(by_addr.id), None, None, false))
             }
-            (Some(by_e164), Some(by_uuid)) => {
+            (Some(by_e164), Some(by_addr)) => {
                 tracing::warn!(
                     "Conflicting results for {} and {}. Finding a resolution.",
                     by_e164.e164.as_ref().unwrap(),
-                    by_uuid.uuid.as_ref().unwrap()
+                    addr.unwrap().to_service_id(),
                 );
                 match (by_e164.uuid, trust_level) {
                     (Some(_uuid), TrustLevel::Certain) => {
@@ -1157,20 +1143,20 @@ impl<O: Observable> Storage<O> {
                                 recipients::e164
                                     .eq(phonenumber.as_ref().map(PhoneNumber::to_string)),
                             )
-                            .filter(recipients::id.eq(by_uuid.id))
+                            .filter(recipients::id.eq(by_addr.id))
                             .execute(db)?;
                         // Fetch again for the update
-                        Ok((Some(by_uuid.id), None, None, true))
+                        Ok((Some(by_addr.id), None, None, true))
                     }
                     (Some(_uuid), TrustLevel::Uncertain) => {
                         tracing::info!("Differing UUIDs, low trust, likely case of reregistration. Doing absolutely nothing. Sorry.");
-                        Ok((Some(by_uuid.id), None, None, false))
+                        Ok((Some(by_addr.id), None, None, false))
                     }
                     (None, TrustLevel::Certain) => {
                         tracing::info!(
                             "Merging contacts: one with e164, the other only uuid, high trust."
                         );
-                        let merged = Self::merge_recipients_inner(db, by_e164.id, by_uuid.id)?;
+                        let merged = Self::merge_recipients_inner(db, by_e164.id, by_addr.id)?;
                         // XXX probably more recipient identifiers should be moved
                         diesel::update(recipients::table)
                             .set(
@@ -1186,61 +1172,83 @@ impl<O: Observable> Storage<O> {
                         tracing::info!(
                             "Not merging contacts: one with e164, the other only uuid, low trust."
                         );
-                        Ok((Some(by_uuid.id), None, None, false))
+                        Ok((Some(by_addr.id), None, None, false))
                     }
                 }
             }
-            (None, Some(by_uuid)) => {
+            (None, Some(by_addr)) => {
                 if let Some(phonenumber) = phonenumber {
                     match trust_level {
                         TrustLevel::Certain => {
                             tracing::info!(
                                 "Found phone number {} for contact {}. High trust, so updating.",
                                 phonenumber,
-                                by_uuid.uuid.as_ref().unwrap()
+                                addr.unwrap().to_service_id(),
                             );
                             diesel::update(recipients::table)
                                 .set(recipients::e164.eq(phonenumber.to_string()))
-                                .filter(recipients::id.eq(by_uuid.id))
+                                .filter(recipients::id.eq(by_addr.id))
                                 .execute(db)?;
-                            Ok((Some(by_uuid.id), None, None, true))
+                            Ok((Some(by_addr.id), None, None, true))
                         }
                         TrustLevel::Uncertain => {
-                            tracing::info!("Found phone number {} for contact {}. Low trust, so doing nothing. Sorry again.", phonenumber, by_uuid.uuid.as_ref().unwrap());
-                            Ok((Some(by_uuid.id), None, None, false))
+                            tracing::info!("Found phone number {} for contact {}. Low trust, so doing nothing. Sorry again.", phonenumber, addr.unwrap().to_service_id());
+                            Ok((Some(by_addr.id), None, None, false))
                         }
                     }
                 } else {
-                    Ok((Some(by_uuid.id), None, None, false))
+                    Ok((Some(by_addr.id), None, None, false))
                 }
             }
             (Some(by_e164), None) => {
-                if let Some(uuid) = uuid {
+                if let Some(addr) = addr {
                     match trust_level {
                         TrustLevel::Certain => {
                             tracing::info!(
                                 "Found UUID {} for contact {}. High trust, so updating.",
-                                uuid,
+                                addr.to_service_id(),
                                 by_e164.e164.unwrap()
                             );
-                            diesel::update(recipients::table)
-                                .set(recipients::uuid.eq(uuid.to_string()))
-                                .filter(recipients::id.eq(by_e164.id))
-                                .execute(db)?;
+                            match addr.identity {
+                                ServiceIdType::AccountIdentity => {
+                                    diesel::update(recipients::table)
+                                        .set(recipients::uuid.eq(addr.uuid.to_string()))
+                                        .filter(recipients::id.eq(by_e164.id))
+                                        .execute(db)?;
+                                }
+                                ServiceIdType::PhoneNumberIdentity => {
+                                    diesel::update(recipients::table)
+                                        .set(recipients::pni.eq(addr.uuid.to_string()))
+                                        .filter(recipients::id.eq(by_e164.id))
+                                        .execute(db)?;
+                                }
+                            };
+
                             Ok((Some(by_e164.id), None, None, true))
                         }
                         TrustLevel::Uncertain => {
                             tracing::info!(
                                 "Found UUID {} for contact {}. Low trust, creating a new contact.",
-                                uuid,
+                                addr.to_service_id(),
                                 by_e164.e164.unwrap()
                             );
 
-                            diesel::insert_into(recipients::table)
-                                .values(recipients::uuid.eq(uuid.to_string()))
-                                .execute(db)
-                                .expect("insert new recipient");
-                            Ok((None, Some(uuid), None, true))
+                            match addr.identity {
+                                ServiceIdType::AccountIdentity => {
+                                    diesel::insert_into(recipients::table)
+                                        .values(recipients::uuid.eq(addr.uuid.to_string()))
+                                        .execute(db)
+                                        .expect("insert new recipient");
+                                }
+                                ServiceIdType::PhoneNumberIdentity => {
+                                    diesel::insert_into(recipients::table)
+                                        .values(recipients::pni.eq(addr.uuid.to_string()))
+                                        .execute(db)
+                                        .expect("insert new recipient");
+                                }
+                            };
+
+                            Ok((None, Some(addr), None, true))
                         }
                     }
                 } else {
@@ -1248,18 +1256,37 @@ impl<O: Observable> Storage<O> {
                 }
             }
             (None, None) => {
-                let insert_e164 = (trust_level == TrustLevel::Certain) || uuid.is_none();
+                let insert_e164 = (trust_level == TrustLevel::Certain) || addr.is_none();
                 let insert_phonenumber = if insert_e164 { phonenumber } else { None };
-                diesel::insert_into(recipients::table)
-                    .values((
-                        recipients::e164
-                            .eq(insert_phonenumber.as_ref().map(PhoneNumber::to_string)),
-                        recipients::uuid.eq(uuid.as_ref().map(Uuid::to_string)),
-                    ))
-                    .execute(db)
-                    .expect("insert new recipient");
 
-                Ok((None, uuid, insert_phonenumber, true))
+                if let Some(addr) = addr {
+                    match addr.identity {
+                        ServiceIdType::AccountIdentity => {
+                            diesel::insert_into(recipients::table)
+                                .values((
+                                    recipients::e164.eq(insert_phonenumber
+                                        .as_ref()
+                                        .map(PhoneNumber::to_string)),
+                                    recipients::uuid.eq(addr.uuid.to_string()),
+                                ))
+                                .execute(db)
+                                .expect("insert new recipient");
+                        }
+                        ServiceIdType::PhoneNumberIdentity => {
+                            diesel::insert_into(recipients::table)
+                                .values((
+                                    recipients::e164.eq(insert_phonenumber
+                                        .as_ref()
+                                        .map(PhoneNumber::to_string)),
+                                    recipients::pni.eq(addr.uuid.to_string()),
+                                ))
+                                .execute(db)
+                                .expect("insert new recipient");
+                        }
+                    };
+                };
+
+                Ok((None, addr, insert_phonenumber, true))
             }
         }
     }
@@ -1454,11 +1481,11 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn fetch_recipient_by_uuid(&self, recipient_uuid: Uuid) -> Option<orm::Recipient> {
+    pub fn fetch_recipient_by_e164(&self, phonenumber: &PhoneNumber) -> Option<orm::Recipient> {
         use crate::schema::recipients::dsl::*;
 
         if let Ok(recipient) = recipients
-            .filter(uuid.eq(&recipient_uuid.to_string()))
+            .filter(e164.eq(phonenumber.to_string()))
             .first(&mut *self.db())
         {
             Some(recipient)
@@ -1487,23 +1514,39 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn fetch_or_insert_recipient_by_uuid(&self, new_uuid: Uuid) -> orm::Recipient {
+    pub fn fetch_or_insert_recipient_by_address(&self, addr: &ServiceAddress) -> orm::Recipient {
         use crate::schema::recipients::dsl::*;
 
-        let new_uuid = new_uuid.to_string();
         let mut db = self.db();
         let db = &mut *db;
-        // TODO: Can this be an upsert with get_result?
-        if let Ok(recipient) = recipients.filter(uuid.eq(&new_uuid)).first(db) {
-            recipient
-        } else {
-            let recipient: orm::Recipient = diesel::insert_into(recipients)
-                .values(uuid.eq(&new_uuid))
-                .get_result(db)
-                .expect("insert new recipient");
-            self.observe_insert(recipients, recipient.id);
-            recipient
-        }
+
+        let recipient: orm::Recipient = match addr.identity {
+            ServiceIdType::AccountIdentity => {
+                if let Ok(existing) = recipients.filter(uuid.eq(&addr.uuid.to_string())).first(db) {
+                    existing
+                } else {
+                    let new_rcpt: orm::Recipient = diesel::insert_into(recipients)
+                        .values(uuid.eq(&addr.uuid.to_string()))
+                        .get_result(db)
+                        .expect("insert new recipient");
+                    self.observe_insert(recipients, new_rcpt.id);
+                    new_rcpt
+                }
+            }
+            ServiceIdType::PhoneNumberIdentity => {
+                if let Ok(existing) = recipients.filter(pni.eq(&addr.uuid.to_string())).first(db) {
+                    existing
+                } else {
+                    let new_rcpt: orm::Recipient = diesel::insert_into(recipients)
+                        .values(pni.eq(&addr.uuid.to_string()))
+                        .get_result(db)
+                        .expect("insert new recipient");
+                    self.observe_insert(recipients, new_rcpt.id);
+                    new_rcpt
+                }
+            }
+        };
+        recipient
     }
 
     #[tracing::instrument(skip(self, phonenumber), fields(phonenumber = %phonenumber))]
@@ -1641,7 +1684,7 @@ impl<O: Observable> Storage<O> {
     #[tracing::instrument(skip(self))]
     pub fn mark_message_received(
         &self,
-        receiver_uuid: Uuid,
+        receiver_addr: ServiceAddress,
         timestamp: NaiveDateTime,
         delivered_at: Option<chrono::DateTime<Utc>>,
     ) -> Option<MessagePointer> {
@@ -1650,7 +1693,7 @@ impl<O: Observable> Storage<O> {
 
         // Find the recipient
         let recipient =
-            self.merge_and_fetch_recipient(None, Some(receiver_uuid), None, TrustLevel::Certain);
+            self.merge_and_fetch_recipient(None, Some(receiver_addr), TrustLevel::Certain);
         let row: Option<(i32, i32)> = schema::messages::table
             .select((schema::messages::id, schema::messages::session_id))
             .filter(schema::messages::server_timestamp.eq(timestamp))
@@ -2508,10 +2551,8 @@ impl<O: Observable> Storage<O> {
         // Meh.
         let session = new_message.session_id;
 
-        let has_source = new_message.source_e164.is_some() || new_message.source_uuid.is_some();
-        let sender_id = if has_source {
-            self.fetch_recipient(new_message.source_e164.clone(), new_message.source_uuid)
-                .map(|r| r.id)
+        let sender_id = if let Some(sender) = new_message.source_addr {
+            self.fetch_recipient(sender).map(|r| r.id)
         } else {
             None
         };
@@ -3001,7 +3042,12 @@ impl<O: Observable> Storage<O> {
                 },
                 _ => None,
             })
-            .filter_map(|uuid| self.fetch_recipient_by_uuid(uuid))
+            .filter_map(|uuid| {
+                self.fetch_recipient_by_service_address(&ServiceAddress {
+                    uuid,
+                    identity: ServiceIdType::AccountIdentity,
+                })
+            })
             .map(|r| (r.uuid.expect("queried by uuid"), r))
             .collect()
     }

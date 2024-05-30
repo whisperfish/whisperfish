@@ -211,7 +211,10 @@ impl Handler<UploadProfile> for ClientActor {
         let service = self.authenticated_service();
         let client = ctx.address();
         let config = self.config.clone();
-        let uuid = config.get_aci().expect("valid uuid at this point");
+        let addr = ServiceAddress {
+            uuid: config.get_aci().expect("valid uuid at this point"),
+            identity: ServiceIdType::AccountIdentity,
+        };
 
         Box::pin(
             async move {
@@ -237,7 +240,7 @@ impl Handler<UploadProfile> for ClientActor {
                 let mut am = AccountManager::new(service, Some(profile_key));
                 if let Err(e) = am
                     .upload_versioned_profile_without_avatar(
-                        uuid.into(),
+                        addr.uuid.into(),
                         name,
                         self_recipient.about,
                         self_recipient.about_emoji,
@@ -260,8 +263,7 @@ impl Handler<UploadProfile> for ClientActor {
                 // Now also set the database
                 storage.update_profile_key(
                     None,
-                    Some(uuid),
-                    None,
+                    Some(addr),
                     &profile_key.get_bytes(),
                     TrustLevel::Certain,
                 );
