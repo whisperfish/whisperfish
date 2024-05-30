@@ -2,13 +2,13 @@ use crate::{store::orm::Recipient, store::Storage};
 use chrono::prelude::*;
 use diesel::prelude::*;
 use futures::Stream;
+use libsignal_service::ServiceAddress;
 use std::{
     collections::{hash_map, HashMap},
     pin::Pin,
     task::{Context, Poll},
     time::{Duration, Instant},
 };
-use uuid::Uuid;
 use zkgroup::profiles::ProfileKey;
 
 const REYIELD_DELAY: Duration = Duration::from_secs(5 * 60);
@@ -17,12 +17,12 @@ const REYIELD_DELAY: Duration = Duration::from_secs(5 * 60);
 ///
 /// Only yields a UUID once every 5 minutes.
 pub struct OutdatedProfileStream {
-    ignore_map: HashMap<Uuid, Instant>,
+    ignore_map: HashMap<ServiceAddress, Instant>,
     storage: Storage,
     next_wake: Option<Pin<Box<tokio::time::Sleep>>>,
 }
 
-pub struct OutdatedProfile(pub Uuid, pub Option<ProfileKey>);
+pub struct OutdatedProfile(pub ServiceAddress, pub Option<ProfileKey>);
 
 impl OutdatedProfileStream {
     pub fn new(storage: Storage) -> Self {
@@ -37,7 +37,7 @@ impl OutdatedProfileStream {
         // XXX The ignore set should also get cleaned if an external trigger is fired for
         // refreshing a profile.  Currently, this external trigger will only be able to fire every
         // 5 minutes.
-        self.ignore_map.retain(|_uuid, time| *time > Instant::now());
+        self.ignore_map.retain(|_addr, time| *time > Instant::now());
     }
 
     fn next_out_of_date_profile(&mut self) -> Option<OutdatedProfile> {
@@ -66,13 +66,15 @@ impl OutdatedProfileStream {
             .expect("db");
 
         for recipient in out_of_date_profiles {
-            let recipient_uuid = recipient.uuid.expect("database precondition");
+            let recipient_addr = recipient
+                .to_service_address()
+                .expect("recipient to ServiceAddress");
             let recipient_key = if let Some(key) = recipient.profile_key {
                 if key.len() != 32 {
                     tracing::warn!("Invalid profile key in db. Skipping.");
                     continue;
                 }
-                if let hash_map::Entry::Vacant(e) = self.ignore_map.entry(recipient_uuid) {
+                if let hash_map::Entry::Vacant(e) = self.ignore_map.entry(recipient_addr) {
                     e.insert(Instant::now() + REYIELD_DELAY);
                 } else {
                     continue;
@@ -83,7 +85,7 @@ impl OutdatedProfileStream {
             } else {
                 None
             };
-            return Some(OutdatedProfile(recipient_uuid, recipient_key));
+            return Some(OutdatedProfile(recipient_addr, recipient_key));
         }
 
         None
@@ -141,7 +143,10 @@ impl Stream for OutdatedProfileStream {
         self.clean_ignore_set();
 
         if let Some(out_of_date_profile) = self.next_out_of_date_profile() {
-            tracing::trace!("Yielding out-of-date profile {}", out_of_date_profile.0);
+            tracing::trace!(
+                "Yielding out-of-date profile {}",
+                out_of_date_profile.0.to_service_id()
+            );
             return Poll::Ready(Some(out_of_date_profile));
         }
 
