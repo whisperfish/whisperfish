@@ -240,8 +240,6 @@ impl Handler<RemoveIdentities> for SessionActor {
             }
         };
 
-        // XXX What about e164?
-
         let session = storage.fetch_session_by_recipient_id(recipient_id).unwrap();
 
         storage.create_message(&NewMessage {
