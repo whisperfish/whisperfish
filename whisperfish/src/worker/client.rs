@@ -478,8 +478,8 @@ impl ClientActor {
         let timestamp = metadata.timestamp;
         let settings = crate::config::SettingsBridge::default();
         let is_sync_sent = sync_sent.is_some();
-        let svc_addr = metadata.sender;
-        let source_uuid = svc_addr.uuid;
+        let source_addr = metadata.sender;
+        let _source_uuid = source_addr.uuid;
 
         let mut storage = self.storage.clone().expect("storage");
         let sender_recipient = Some(storage.merge_and_fetch_recipient(
@@ -501,30 +501,20 @@ impl ClientActor {
                 .and_then(|r| r.to_service_address())
             {
                 actix::spawn(async move {
-                    match svc_addr.identity {
+                    if let Err(e) = match svc_addr.identity {
                         ServiceIdType::AccountIdentity => {
-                            if let Err(e) =
-                                storage.aci_storage().delete_all_sessions(&svc_addr).await
-                            {
-                                tracing::error!(
-                                    "End session requested for ACI {:?}, but could not end session: {:?}",
-                                    &source_uuid,
-                                    e
-                                );
-                            }
+                            storage.aci_storage().delete_all_sessions(&svc_addr).await
                         }
                         ServiceIdType::PhoneNumberIdentity => {
-                            if let Err(e) =
-                                storage.pni_storage().delete_all_sessions(&svc_addr).await
-                            {
-                                tracing::error!(
-                                    "End session requested for PNI {:?}, but could not end session: {:?}",
-                                    &source_uuid,
-                                    e
-                                );
-                            }
+                            storage.pni_storage().delete_all_sessions(&svc_addr).await
                         }
-                    }
+                    } {
+                        tracing::error!(
+                            "End session requested for {}, but could not end session: {:?}",
+                            &svc_addr.to_service_id(),
+                            e
+                        );
+                    };
                 });
             } else {
                 tracing::error!("Requested session reset but no service address associated");
@@ -648,11 +638,10 @@ impl ClientActor {
         };
 
         let is_unidentified = if let Some(sent) = &sync_sent {
-            let source_service_id = svc_addr.to_service_id();
-            sent.unidentified_status.iter().any(|x| {
-                x.unidentified()
-                    && x.destination_service_id() == source_service_id
-            })
+            let source_service_id = source_addr.to_service_id();
+            sent.unidentified_status
+                .iter()
+                .any(|x| x.unidentified() && x.destination_service_id() == source_service_id)
         } else {
             metadata.unidentified_sender
         };
@@ -712,7 +701,7 @@ impl ClientActor {
         let expires_in = session.expiring_message_timeout;
 
         let new_message = crate::store::NewMessage {
-            source_addr: Some(src_addr),
+            source_addr: Some(source_addr),
             text,
             flags,
             outgoing: is_sync_sent,
@@ -883,7 +872,7 @@ impl ClientActor {
             timestamp,
             millis
         );
-        if let Some(updated) = storage.mark_message_received(source.uuid, timestamp, None) {
+        if let Some(updated) = storage.mark_message_received(source, timestamp, None) {
             self.inner
                 .pinned()
                 .borrow_mut()
@@ -1095,7 +1084,7 @@ impl ClientActor {
                 for &ts in &receipt.timestamp {
                     // Signal uses timestamps in milliseconds, chrono has nanoseconds
                     if let Some(updated) = storage.mark_message_received(
-                        metadata.sender.uuid,
+                        metadata.sender,
                         millis_to_naive_chrono(ts),
                         None,
                     ) {
@@ -1656,12 +1645,10 @@ impl Handler<SendMessage> for ClientActor {
                                     MessageSenderError::NotFound { addr } => {
                                         tracing::warn!("Recipient not found, removing device sessions {:?}", addr);
                                         let num = match addr.identity {
-                                            ServiceIdType::AccountIdentity => {
-                                                storage.aci_storage().delete_all_sessions(&addr).await?
-                                            },
-                                            ServiceIdType::PhoneNumberIdentity => {
-                                                storage.pni_storage().delete_all_sessions(&addr).await?
-                                            }
+                                            ServiceIdType::AccountIdentity =>
+                                                storage.aci_storage().delete_all_sessions(&addr).await?,
+                                            ServiceIdType::PhoneNumberIdentity =>
+                                                storage.pni_storage().delete_all_sessions(&addr).await?,
                                         };
 
                                         tracing::trace!("Removed {} device session(s)", num);
@@ -2317,16 +2304,16 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             SignalProtocolError::UntrustedIdentity(addr),
                         )) => {
                             // This branch is the only one that loops, and it *should not* loop more than once.
-                            let srv_addr = ServiceAddress::try_from(addr.name()).expect("valid ACI or PNI UUID in ProtocolAddress");
+                            let svc_addr = ServiceAddress::try_from(addr.name()).expect("valid ACI or PNI UUID in ProtocolAddress");
                             tracing::warn!("Untrusted identity for {}; replacing identity and inserting a warning.", addr);
-                            let recipient = storage.fetch_or_insert_recipient_by_uuid(srv_addr.uuid);
+                            let recipient = storage.fetch_or_insert_recipient_by_address(&svc_addr);
                             if destination.identity == ServiceIdType::PhoneNumberIdentity {
                                 storage.mark_recipient_needs_pni_signature(recipient.id, true);
                             }
                             let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
                             let msg = crate::store::NewMessage {
                                 session_id: session.id,
-                                source_uuid: Some(srv_addr.uuid),
+                                source_addr: Some(svc_addr),
                                 message_type: Some(MessageType::IdentityKeyChange),
                                 ..crate::store::NewMessage::new_incoming()
                             };
@@ -2334,10 +2321,10 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
 
                             if !recipient.is_registered {
                                 tracing::warn!("Recipient was marked as unregistered, marking as registered.");
-                                storage.mark_recipient_registered(srv_addr, true);
+                                storage.mark_recipient_registered(svc_addr, true);
                             }
 
-                            if !storage.delete_identity_key(&srv_addr) {
+                            if !storage.delete_identity_key(&svc_addr) {
                                 tracing::error!("Could not remove identity key for {}.  Please file a bug.", addr);
                                 return None;
                             }

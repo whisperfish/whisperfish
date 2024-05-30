@@ -133,7 +133,7 @@ impl Handler<RefreshOwnProfile> for ClientActor {
                 }
 
                 let online = service
-                    .retrieve_profile_by_id(addr.clone(), Some(profile_key))
+                    .retrieve_profile_by_id(addr, Some(profile_key))
                     .await;
 
                 let outdated = match online {

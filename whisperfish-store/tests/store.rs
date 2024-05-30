@@ -112,7 +112,7 @@ async fn fetch_messages_without_session(storage: impl Future<Output = InMemoryDb
 async fn process_message_exists_session_source(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
-    let addr1 = ServiceAddress::try_from(uuid::Uuid::new_v4()).unwrap();
+    let addr1 = ServiceAddress::from(uuid::Uuid::new_v4());
     let sess1 = storage.fetch_or_insert_session_by_address(&addr1);
 
     for second in 1..11 {
@@ -155,7 +155,7 @@ async fn process_message_exists_session_source(storage: impl Future<Output = InM
 async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
-    let addr1 = ServiceAddress::try_from(uuid::Uuid::new_v4()).unwrap();
+    let addr1 = ServiceAddress::from(uuid::Uuid::new_v4());
     let sess1 = storage.fetch_or_insert_session_by_address(&addr1);
 
     let timestamp = Utc.timestamp_opt(1, 0).unwrap().naive_utc();
@@ -262,7 +262,7 @@ async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
 async fn dev_message_update(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
-    let addr1 = ServiceAddress::try_from(uuid::Uuid::new_v4()).unwrap();
+    let addr1 = ServiceAddress::from(uuid::Uuid::new_v4());
     let session = storage.fetch_or_insert_session_by_address(&addr1);
 
     let timestamp = Utc::now().naive_utc();
