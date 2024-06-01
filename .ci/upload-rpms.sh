@@ -22,7 +22,7 @@ if [ -n "$CI_COMMIT_TAG" ] || [[ "$CI_COMMIT_BRANCH" == "main" ]]; then
         echo Posting to $URL
 
         # Upload to Gitlab
-        curl --header "PRIVATE-TOKEN: $CI_JOB_TOKEN" \
+        curl --header "PRIVATE-TOKEN: $PRIVATE_TOKEN" \
              --upload-file "$RPM_PATH" \
              $URL
     done
