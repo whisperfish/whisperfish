@@ -770,9 +770,9 @@ impl<O: Observable> Storage<O> {
             return None;
         }
         if addr.is_none() {
-            tracing::warn!("No aci/pni uuid set. Continuing with only e164");
+            tracing::warn!("No uuid set. Continuing with only e164");
         }
-        Some(self.merge_and_fetch_recipient(e164, addr, TrustLevel::Certain))
+        Some(self.merge_and_fetch_recipient_by_address(e164, addr.unwrap(), TrustLevel::Certain))
     }
 
     #[tracing::instrument(skip(self, phonenumber), fields(phonenumber = %phonenumber))]
@@ -953,7 +953,8 @@ impl<O: Observable> Storage<O> {
         trust_level: TrustLevel,
     ) -> (orm::Recipient, bool) {
         // XXX check profile_key length
-        let recipient = self.merge_and_fetch_recipient(phonenumber, addr, trust_level);
+        let recipient =
+            self.merge_and_fetch_recipient_by_address(phonenumber, addr.unwrap(), trust_level);
 
         let is_unset = recipient.profile_key.is_none()
             || recipient.profile_key.as_ref().map(Vec::len) == Some(0);
@@ -1022,6 +1023,24 @@ impl<O: Observable> Storage<O> {
         self.observe_update(schema::recipients::table, profile.r_id);
     }
 
+    /// Helper for guaranteed ACI or PNI cases, with or without E.164.
+    /// XXX: This does *not* trigger observations for removed recipients.
+    pub fn merge_and_fetch_recipient_by_address(
+        &self,
+        phonenumber: Option<PhoneNumber>,
+        addr: ServiceAddress,
+        trust_level: TrustLevel,
+    ) -> orm::Recipient {
+        match addr.identity {
+            ServiceIdType::AccountIdentity => {
+                self.merge_and_fetch_recipient(phonenumber, Some(addr), None, trust_level)
+            }
+            ServiceIdType::PhoneNumberIdentity => {
+                self.merge_and_fetch_recipient(phonenumber, None, Some(addr), trust_level)
+            }
+        }
+    }
+
     /// Equivalent of Androids `RecipientDatabase::getAndPossiblyMerge`.
     ///
     /// XXX: This does *not* trigger observations for removed recipients.
@@ -1035,26 +1054,30 @@ impl<O: Observable> Storage<O> {
     pub fn merge_and_fetch_recipient(
         &self,
         phonenumber: Option<PhoneNumber>,
-        addr: Option<ServiceAddress>,
+        uuid: Option<ServiceAddress>,
+        pni: Option<ServiceAddress>,
         trust_level: TrustLevel,
     ) -> orm::Recipient {
-        let (id, addr, phonenumber, changed) = self
+        let (id, uuid, phonenumber, changed) = self
             .db()
             .transaction::<_, Error, _>(|db| {
-                Self::merge_and_fetch_recipient_inner(db, phonenumber, addr, trust_level)
+                Self::merge_and_fetch_recipient_inner(db, phonenumber, uuid, trust_level)
             })
             .expect("database");
-        let recipient = match (id, addr, &phonenumber) {
-            (Some(id), _, _) => self
+        let recipient = match (id, uuid, pni, &phonenumber) {
+            (Some(id), _, _, _) => self
                 .fetch_recipient_by_id(id)
-                .expect("existing updated recipient by id"),
-            (_, Some(addr), _) => self
-                .fetch_recipient_by_service_address(&addr)
+                .expect("existing updated recipient"),
+            (_, Some(uuid), _, _) => self
+                .fetch_recipient_by_service_address(&uuid)
                 .expect("existing updated recipient by aci"),
-            (_, _, Some(e164)) => self
+            (_, _, Some(uuid), _) => self
+                .fetch_recipient_by_service_address(&uuid)
+                .expect("existing updated recipient by pni"),
+            (_, _, _, Some(e164)) => self
                 .fetch_recipient_by_phonenumber(e164)
-                .expect("existing updated recipient by e164"),
-            (None, None, None) => {
+                .expect("existing updated recipient"),
+            (None, None, None, None) => {
                 unreachable!("this should get implemented with an Either or custom enum instead")
             }
         };
@@ -1693,7 +1716,7 @@ impl<O: Observable> Storage<O> {
 
         // Find the recipient
         let recipient =
-            self.merge_and_fetch_recipient(None, Some(receiver_addr), TrustLevel::Certain);
+            self.merge_and_fetch_recipient_by_address(None, receiver_addr, TrustLevel::Certain);
         let row: Option<(i32, i32)> = schema::messages::table
             .select((schema::messages::id, schema::messages::session_id))
             .filter(schema::messages::server_timestamp.eq(timestamp))

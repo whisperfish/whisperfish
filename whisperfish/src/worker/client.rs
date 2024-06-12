@@ -479,14 +479,24 @@ impl ClientActor {
         let settings = crate::config::SettingsBridge::default();
         let is_sync_sent = sync_sent.is_some();
         let source_addr = metadata.sender;
-        let _source_uuid = source_addr.uuid;
 
         let mut storage = self.storage.clone().expect("storage");
-        let sender_recipient = Some(storage.merge_and_fetch_recipient(
-            source_phonenumber.clone(),
-            Some(source_addr),
-            crate::store::TrustLevel::Certain,
-        ));
+        let sender_recipient = {
+            match source_addr.identity {
+                ServiceIdType::AccountIdentity => Some(storage.merge_and_fetch_recipient(
+                    source_phonenumber.clone(),
+                    Some(source_addr),
+                    None,
+                    crate::store::TrustLevel::Certain,
+                )),
+                ServiceIdType::PhoneNumberIdentity => Some(storage.merge_and_fetch_recipient(
+                    source_phonenumber.clone(),
+                    None,
+                    Some(source_addr),
+                    crate::store::TrustLevel::Certain,
+                )),
+            }
+        };
 
         let flags = msg
             .flags()
@@ -688,11 +698,22 @@ impl ClientActor {
         let body_ranges = crate::store::body_ranges::serialize(&msg.body_ranges);
 
         let session = group.unwrap_or_else(|| {
-            let recipient = storage.merge_and_fetch_recipient(
-                source_phonenumber.clone(),
-                Some(source_addr),
-                TrustLevel::Certain,
-            );
+            let recipient = match source_addr.identity {
+                ServiceIdType::AccountIdentity => storage.merge_and_fetch_recipient(
+                    source_phonenumber.clone(),
+                    Some(source_addr),
+                    None,
+                    TrustLevel::Certain,
+                ),
+
+                ServiceIdType::PhoneNumberIdentity => storage.merge_and_fetch_recipient(
+                    source_phonenumber.clone(),
+                    None,
+                    Some(source_addr),
+                    TrustLevel::Certain,
+                ),
+            };
+
             storage.fetch_or_insert_session_by_recipient_id(recipient.id)
         });
 

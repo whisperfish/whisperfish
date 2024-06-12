@@ -439,6 +439,7 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
         let r2 = storage.merge_and_fetch_recipient(
             Some(pn.clone()),
             Some(uuid1.into()),
+            None,
             whisperfish_store::TrustLevel::Certain,
         );
         assert!(r1.id == r2.id);
