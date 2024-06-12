@@ -568,6 +568,10 @@ impl Recipient {
         self.uuid.as_ref().map(Uuid::to_string).unwrap_or_default()
     }
 
+    pub fn pni(&self) -> String {
+        self.pni.as_ref().map(Uuid::to_string).unwrap_or_default()
+    }
+
     pub fn e164(&self) -> String {
         self.e164
             .as_ref()

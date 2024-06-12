@@ -1054,25 +1054,31 @@ impl<O: Observable> Storage<O> {
     pub fn merge_and_fetch_recipient(
         &self,
         phonenumber: Option<PhoneNumber>,
-        uuid: Option<ServiceAddress>,
+        aci: Option<ServiceAddress>,
         pni: Option<ServiceAddress>,
         trust_level: TrustLevel,
     ) -> orm::Recipient {
-        let (id, uuid, phonenumber, changed) = self
+        let (id, aci_uuid, pni_uuid, phonenumber, changed) = self
             .db()
             .transaction::<_, Error, _>(|db| {
-                Self::merge_and_fetch_recipient_inner(db, phonenumber, uuid, trust_level)
+                Self::merge_and_fetch_recipient_inner(
+                    db,
+                    phonenumber,
+                    aci.map(|u| u.uuid),
+                    pni.map(|u| u.uuid),
+                    trust_level,
+                )
             })
             .expect("database");
-        let recipient = match (id, uuid, pni, &phonenumber) {
+        let recipient = match (id, aci_uuid, pni_uuid, &phonenumber) {
             (Some(id), _, _, _) => self
                 .fetch_recipient_by_id(id)
                 .expect("existing updated recipient"),
-            (_, Some(uuid), _, _) => self
-                .fetch_recipient_by_service_address(&uuid)
+            (_, Some(_), _, _) => self
+                .fetch_recipient_by_service_address(&aci.unwrap())
                 .expect("existing updated recipient by aci"),
-            (_, _, Some(uuid), _) => self
-                .fetch_recipient_by_service_address(&uuid)
+            (_, _, Some(_), _) => self
+                .fetch_recipient_by_service_address(&pni.unwrap())
                 .expect("existing updated recipient by pni"),
             (_, _, _, Some(e164)) => self
                 .fetch_recipient_by_phonenumber(e164)
@@ -1101,18 +1107,20 @@ impl<O: Observable> Storage<O> {
     fn merge_and_fetch_recipient_inner(
         db: &mut SqliteConnection,
         phonenumber: Option<PhoneNumber>,
-        addr: Option<ServiceAddress>,
+        aci: Option<Uuid>,
+        pni: Option<Uuid>,
         trust_level: TrustLevel,
     ) -> Result<
         (
             Option<i32>,
-            Option<ServiceAddress>,
+            Option<Uuid>, // ACI
+            Option<Uuid>, // PNI
             Option<PhoneNumber>,
             bool,
         ),
         Error,
     > {
-        if phonenumber.is_none() && addr.is_none() {
+        if phonenumber.is_none() && aci.is_none() && pni.is_none() {
             panic!("merge_and_fetch_recipient requires at least one of e164 or uuid");
         }
 
@@ -1127,30 +1135,50 @@ impl<O: Observable> Storage<O> {
             })
             .transpose()?
             .flatten();
-        let by_addr: Option<orm::Recipient> = addr
-            .map(|addr| match addr.identity {
-                ServiceIdType::AccountIdentity => recipients::table
-                    .filter(recipients::uuid.eq(addr.uuid.to_string()))
+        let by_aci: Option<orm::Recipient> = aci
+            .map(|uuid| {
+                recipients::table
+                    .filter(recipients::uuid.eq(uuid.to_string()))
                     .first(db)
-                    .optional(),
-                ServiceIdType::PhoneNumberIdentity => recipients::table
-                    .filter(recipients::pni.eq(addr.uuid.to_string()))
+                    .optional()
+            })
+            .transpose()?
+            .flatten();
+        let by_pni: Option<orm::Recipient> = pni
+            .map(|uuid| {
+                recipients::table
+                    .filter(recipients::pni.eq(uuid.to_string()))
                     .first(db)
-                    .optional(),
+                    .optional()
             })
             .transpose()?
             .flatten();
 
-        match (by_e164, by_addr) {
-            (Some(by_e164), Some(by_addr)) if by_e164.id == by_addr.id => {
-                // Both are equal, easy.
-                Ok((Some(by_addr.id), None, None, false))
+        match (&by_e164, &by_aci, &by_pni) {
+            // Three matches
+            (Some(by_e164), Some(by_aci), Some(by_pni))
+                if by_e164.id == by_aci.id && by_aci.id == by_pni.id =>
+            {
+                Ok((Some(by_e164.id), None, None, None, false))
             }
-            (Some(by_e164), Some(by_addr)) => {
+
+            // Two matches and a None
+            (None, Some(by_aci), Some(by_pni)) if by_aci.id == by_pni.id => {
+                Ok((Some(by_aci.id), None, None, None, false))
+            }
+            (Some(by_e164), None, Some(by_pni)) if by_e164.id == by_pni.id => {
+                Ok((Some(by_e164.id), None, None, None, false))
+            }
+            (Some(by_e164), Some(by_aci), None) if by_e164.id == by_aci.id => {
+                Ok((Some(by_aci.id), None, None, None, false))
+            }
+
+            // Two non-matches and a None
+            (Some(by_e164), Some(by_aci), None) => {
                 tracing::warn!(
-                    "Conflicting results for {} and {}. Finding a resolution.",
+                    "Conflicting results for {} and ACI:{}. Finding a resolution.",
                     by_e164.e164.as_ref().unwrap(),
-                    addr.unwrap().to_service_id(),
+                    by_aci.uuid.as_ref().unwrap(),
                 );
                 match (by_e164.uuid, trust_level) {
                     (Some(_uuid), TrustLevel::Certain) => {
@@ -1166,20 +1194,20 @@ impl<O: Observable> Storage<O> {
                                 recipients::e164
                                     .eq(phonenumber.as_ref().map(PhoneNumber::to_string)),
                             )
-                            .filter(recipients::id.eq(by_addr.id))
+                            .filter(recipients::id.eq(by_aci.id))
                             .execute(db)?;
                         // Fetch again for the update
-                        Ok((Some(by_addr.id), None, None, true))
+                        Ok((Some(by_aci.id), None, None, None, true))
                     }
                     (Some(_uuid), TrustLevel::Uncertain) => {
                         tracing::info!("Differing UUIDs, low trust, likely case of reregistration. Doing absolutely nothing. Sorry.");
-                        Ok((Some(by_addr.id), None, None, false))
+                        Ok((Some(by_aci.id), None, None, None, false))
                     }
                     (None, TrustLevel::Certain) => {
                         tracing::info!(
                             "Merging contacts: one with e164, the other only uuid, high trust."
                         );
-                        let merged = Self::merge_recipients_inner(db, by_e164.id, by_addr.id)?;
+                        let merged = Self::merge_recipients_inner(db, by_e164.id, by_aci.id)?;
                         // XXX probably more recipient identifiers should be moved
                         diesel::update(recipients::table)
                             .set(
@@ -1189,127 +1217,186 @@ impl<O: Observable> Storage<O> {
                             .filter(recipients::id.eq(merged))
                             .execute(db)?;
 
-                        Ok((Some(merged), None, None, true))
+                        Ok((Some(merged), None, None, None, true))
                     }
                     (None, TrustLevel::Uncertain) => {
                         tracing::info!(
                             "Not merging contacts: one with e164, the other only uuid, low trust."
                         );
-                        Ok((Some(by_addr.id), None, None, false))
+                        Ok((Some(by_aci.id), None, None, None, false))
                     }
                 }
             }
-            (None, Some(by_addr)) => {
+            (Some(by_e164), None, Some(by_pni)) => {
+                tracing::warn!(
+                    "Conflicting results for {} and PNI:{}. Finding a resolution.",
+                    by_e164.e164.as_ref().unwrap(),
+                    by_pni.uuid.as_ref().unwrap(),
+                );
+                match (by_e164.uuid, trust_level) {
+                    (Some(_uuid), TrustLevel::Certain) => {
+                        tracing::info!("Differing UUIDs, high trust, likely case of reregistration. Stripping the old account, updating new.");
+                        // Strip the old one
+                        diesel::update(recipients::table)
+                            .set(recipients::e164.eq::<Option<String>>(None))
+                            .filter(recipients::id.eq(by_e164.id))
+                            .execute(db)?;
+                        // Set the new one
+                        diesel::update(recipients::table)
+                            .set(
+                                recipients::e164
+                                    .eq(phonenumber.as_ref().map(PhoneNumber::to_string)),
+                            )
+                            .filter(recipients::id.eq(by_pni.id))
+                            .execute(db)?;
+                        // Fetch again for the update
+                        Ok((Some(by_pni.id), None, None, None, true))
+                    }
+                    (Some(_uuid), TrustLevel::Uncertain) => {
+                        tracing::info!("Differing UUIDs, low trust, likely case of reregistration. Doing absolutely nothing. Sorry.");
+                        Ok((Some(by_pni.id), None, None, None, false))
+                    }
+                    (None, TrustLevel::Certain) => {
+                        tracing::info!(
+                            "Merging contacts: one with e164, the other only uuid, high trust."
+                        );
+                        let merged = Self::merge_recipients_inner(db, by_e164.id, by_pni.id)?;
+                        // XXX probably more recipient identifiers should be moved
+                        diesel::update(recipients::table)
+                            .set(
+                                recipients::e164
+                                    .eq(phonenumber.as_ref().map(PhoneNumber::to_string)),
+                            )
+                            .filter(recipients::id.eq(merged))
+                            .execute(db)?;
+
+                        Ok((Some(merged), None, None, None, true))
+                    }
+                    (None, TrustLevel::Uncertain) => {
+                        tracing::info!(
+                            "Not merging contacts: one with e164, the other only uuid, low trust."
+                        );
+                        Ok((Some(by_pni.id), None, None, None, false))
+                    }
+                }
+            }
+
+            // One match only
+            (None, None, Some(by_pni)) => {
                 if let Some(phonenumber) = phonenumber {
                     match trust_level {
                         TrustLevel::Certain => {
                             tracing::info!(
                                 "Found phone number {} for contact {}. High trust, so updating.",
                                 phonenumber,
-                                addr.unwrap().to_service_id(),
+                                by_pni.uuid.as_ref().unwrap()
                             );
                             diesel::update(recipients::table)
                                 .set(recipients::e164.eq(phonenumber.to_string()))
-                                .filter(recipients::id.eq(by_addr.id))
+                                .filter(recipients::id.eq(by_pni.id))
                                 .execute(db)?;
-                            Ok((Some(by_addr.id), None, None, true))
+                            Ok((Some(by_pni.id), None, None, None, true))
                         }
                         TrustLevel::Uncertain => {
-                            tracing::info!("Found phone number {} for contact {}. Low trust, so doing nothing. Sorry again.", phonenumber, addr.unwrap().to_service_id());
-                            Ok((Some(by_addr.id), None, None, false))
+                            tracing::info!("Found phone number {} for contact {}. Low trust, so doing nothing. Sorry again.", phonenumber, by_pni.uuid.as_ref().unwrap());
+                            Ok((Some(by_pni.id), None, None, None, false))
                         }
                     }
                 } else {
-                    Ok((Some(by_addr.id), None, None, false))
+                    Ok((Some(by_pni.id), None, None, None, false))
                 }
             }
-            (Some(by_e164), None) => {
-                if let Some(addr) = addr {
+            (None, Some(by_uuid), None) => {
+                if let Some(phonenumber) = phonenumber {
+                    match trust_level {
+                        TrustLevel::Certain => {
+                            tracing::info!(
+                                "Found phone number {} for contact {}. High trust, so updating.",
+                                phonenumber,
+                                by_uuid.uuid.as_ref().unwrap()
+                            );
+                            diesel::update(recipients::table)
+                                .set(recipients::e164.eq(phonenumber.to_string()))
+                                .filter(recipients::id.eq(by_uuid.id))
+                                .execute(db)?;
+                            Ok((Some(by_uuid.id), None, None, None, true))
+                        }
+                        TrustLevel::Uncertain => {
+                            tracing::info!("Found phone number {} for contact {}. Low trust, so doing nothing. Sorry again.", phonenumber, by_uuid.uuid.as_ref().unwrap());
+                            Ok((Some(by_uuid.id), None, None, None, false))
+                        }
+                    }
+                } else {
+                    Ok((Some(by_uuid.id), None, None, None, false))
+                }
+            }
+            (Some(by_e164), None, None) => {
+                if let Some(uuid) = aci {
                     match trust_level {
                         TrustLevel::Certain => {
                             tracing::info!(
                                 "Found UUID {} for contact {}. High trust, so updating.",
-                                addr.to_service_id(),
-                                by_e164.e164.unwrap()
+                                uuid,
+                                by_e164.e164.as_ref().unwrap()
                             );
-                            match addr.identity {
-                                ServiceIdType::AccountIdentity => {
-                                    diesel::update(recipients::table)
-                                        .set(recipients::uuid.eq(addr.uuid.to_string()))
-                                        .filter(recipients::id.eq(by_e164.id))
-                                        .execute(db)?;
-                                }
-                                ServiceIdType::PhoneNumberIdentity => {
-                                    diesel::update(recipients::table)
-                                        .set(recipients::pni.eq(addr.uuid.to_string()))
-                                        .filter(recipients::id.eq(by_e164.id))
-                                        .execute(db)?;
-                                }
-                            };
-
-                            Ok((Some(by_e164.id), None, None, true))
+                            diesel::update(recipients::table)
+                                .set(recipients::uuid.eq(uuid.to_string()))
+                                .filter(recipients::id.eq(by_e164.id))
+                                .execute(db)?;
+                            Ok((Some(by_e164.id), None, None, None, true))
                         }
                         TrustLevel::Uncertain => {
                             tracing::info!(
                                 "Found UUID {} for contact {}. Low trust, creating a new contact.",
-                                addr.to_service_id(),
-                                by_e164.e164.unwrap()
+                                uuid,
+                                by_e164.e164.as_ref().unwrap()
                             );
 
-                            match addr.identity {
-                                ServiceIdType::AccountIdentity => {
-                                    diesel::insert_into(recipients::table)
-                                        .values(recipients::uuid.eq(addr.uuid.to_string()))
-                                        .execute(db)
-                                        .expect("insert new recipient");
-                                }
-                                ServiceIdType::PhoneNumberIdentity => {
-                                    diesel::insert_into(recipients::table)
-                                        .values(recipients::pni.eq(addr.uuid.to_string()))
-                                        .execute(db)
-                                        .expect("insert new recipient");
-                                }
-                            };
-
-                            Ok((None, Some(addr), None, true))
+                            diesel::insert_into(recipients::table)
+                                .values(recipients::uuid.eq(uuid.to_string()))
+                                .execute(db)
+                                .expect("insert new recipient");
+                            Ok((None, Some(uuid), None, None, true))
                         }
                     }
                 } else {
-                    Ok((Some(by_e164.id), None, None, false))
+                    Ok((Some(by_e164.id), None, None, None, false))
                 }
             }
-            (None, None) => {
-                let insert_e164 = (trust_level == TrustLevel::Certain) || addr.is_none();
+
+            // No matches whatsoever -- insert a new Recipient
+            (None, None, None) => {
+                let insert_e164 = (trust_level == TrustLevel::Certain) || aci.is_none();
                 let insert_phonenumber = if insert_e164 { phonenumber } else { None };
+                diesel::insert_into(recipients::table)
+                    .values((
+                        recipients::e164
+                            .eq(insert_phonenumber.as_ref().map(PhoneNumber::to_string)),
+                        recipients::uuid.eq(aci.as_ref().map(Uuid::to_string)),
+                    ))
+                    .execute(db)
+                    .expect("insert new recipient");
 
-                if let Some(addr) = addr {
-                    match addr.identity {
-                        ServiceIdType::AccountIdentity => {
-                            diesel::insert_into(recipients::table)
-                                .values((
-                                    recipients::e164.eq(insert_phonenumber
-                                        .as_ref()
-                                        .map(PhoneNumber::to_string)),
-                                    recipients::uuid.eq(addr.uuid.to_string()),
-                                ))
-                                .execute(db)
-                                .expect("insert new recipient");
-                        }
-                        ServiceIdType::PhoneNumberIdentity => {
-                            diesel::insert_into(recipients::table)
-                                .values((
-                                    recipients::e164.eq(insert_phonenumber
-                                        .as_ref()
-                                        .map(PhoneNumber::to_string)),
-                                    recipients::pni.eq(addr.uuid.to_string()),
-                                ))
-                                .execute(db)
-                                .expect("insert new recipient");
-                        }
-                    };
-                };
+                Ok((None, aci, None, insert_phonenumber, true))
+            }
 
-                Ok((None, addr, insert_phonenumber, true))
+            // XXX
+            // (Some(by_e164), Some(by_pni), Some(by_uuid)) -- three results with two or no matches
+            // (None, Some(by_e164), Some(by_pni)) -- unmatching ACI and UUID
+            _ => {
+                tracing::error!(
+                    "Could not merge recipients by (E.164:{}, ACI:{}, PNI:{})",
+                    phonenumber.map_or("N/A".into(), |r| format!("{}", r)),
+                    aci.map_or("N/A".into(), |r| format!("{}", r)),
+                    pni.map_or("N/A".into(), |r| format!("{}", r)),
+                );
+                tracing::error!(
+                    "Recipients found: E.164:{}, ACI:{}, PNI{}",
+                    by_e164.map_or("N/A".into(), |r| format!("{}", r.id)),
+                    by_aci.map_or("N/A".into(), |r| format!("{}", r.id)),
+                    by_pni.map_or("N/A".into(), |r| format!("{}", r.id)),
+                );
+                unimplemented!()
             }
         }
     }
