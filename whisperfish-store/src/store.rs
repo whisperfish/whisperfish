@@ -3320,30 +3320,6 @@ impl<O: Observable> Storage<O> {
         self.observe_update(schema::messages::table, message_id);
     }
 
-    /// Returns a binary peer identity
-    #[tracing::instrument(skip(self))]
-    pub async fn peer_identity(&self, addr: ProtocolAddress) -> Result<Vec<u8>, anyhow::Error> {
-        let service_address = ServiceAddress::try_from(addr.name())?;
-        match service_address.identity {
-            ServiceIdType::AccountIdentity => {
-                let ident = self
-                    .aci_storage()
-                    .get_identity(&addr)
-                    .await?
-                    .context("No such ACI identity")?;
-                Ok(ident.serialize().into())
-            }
-            ServiceIdType::PhoneNumberIdentity => {
-                let ident = self
-                    .pni_storage()
-                    .get_identity(&addr)
-                    .await?
-                    .context("No such PNI identity")?;
-                Ok(ident.serialize().into())
-            }
-        }
-    }
-
     pub async fn credential_cache(
         &self,
     ) -> tokio::sync::RwLockReadGuard<'_, InMemoryCredentialsCache> {
