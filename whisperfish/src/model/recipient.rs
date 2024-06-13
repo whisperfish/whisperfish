@@ -204,7 +204,7 @@ impl RecipientImpl {
         // XXX trigger Qt signal for this?
         self.recipient = recipient;
 
-        // If a recipient was found, attempt to compute the fingeprint
+        // If a recipient was found, attempt to compute the fingerprint
         // XXX: we're only computing fingerprints for ACI recipients, figure out what to do for
         // PNI identities.
         if let Some(r) = &self.recipient {
@@ -245,7 +245,7 @@ impl RecipientImpl {
 
                     Result::<_, anyhow::Error>::Ok(())
                 }
-                .map_ok_or_else(|e| tracing::error!("Computing fingeprint: {}", e), |_| ());
+                .map_ok_or_else(|e| tracing::error!("Computing fingerprint: {}", e), |_| ());
                 actix::spawn(compute_fingerprint);
             }
         }
