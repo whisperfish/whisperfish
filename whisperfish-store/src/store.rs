@@ -983,7 +983,7 @@ impl<O: Observable> Storage<O> {
                 .filter(id.eq(recipient.id))
                 .execute(&mut *self.db())
                 .expect("existing record updated");
-            tracing::info!("Updated profile key for {}", recipient.e164_or_uuid());
+            tracing::info!("Updated profile key for {}", recipient.e164_or_address());
 
             if affected_rows > 0 {
                 self.observe_update(recipients, recipient.id);

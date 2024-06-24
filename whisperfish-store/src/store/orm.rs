@@ -579,19 +579,24 @@ impl Recipient {
             .unwrap_or_default()
     }
 
-    pub fn e164_or_uuid(&self) -> String {
+    pub fn e164_or_address(&self) -> String {
         self.e164
             .as_ref()
             .map(PhoneNumber::to_string)
             .or_else(|| self.uuid.as_ref().map(Uuid::to_string))
-            .expect("either uuid or e164")
+            .or_else(|| {
+                self.pni
+                    .as_ref()
+                    .map(|u| "PNI:".to_string() + u.to_string().as_str())
+            })
+            .expect("either e164, aci or pni")
     }
 
     pub fn name(&self) -> Cow<'_, str> {
         self.profile_joined_name
             .as_deref()
             .map(Cow::Borrowed)
-            .unwrap_or_else(|| Cow::Owned(self.e164_or_uuid()))
+            .unwrap_or_else(|| Cow::Owned(self.e164_or_address()))
     }
 }
 
@@ -1821,7 +1826,7 @@ mod tests {
             })
         );
         assert_eq!(r.aci(), "bff93979-a0fa-41f5-8ccf-e319135384d8");
-        assert_eq!(r.e164_or_uuid(), "+358401010101");
+        assert_eq!(r.e164_or_address(), "+358401010101");
         assert_eq!(r.name(), "Nick Name");
     }
 

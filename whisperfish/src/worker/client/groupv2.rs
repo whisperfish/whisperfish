@@ -196,7 +196,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                             storage.fetch_or_insert_recipient_by_address(&ServiceAddress { uuid: member.uuid, identity: ServiceIdType::AccountIdentity });
                         tracing::trace!(
                             "Asserting {} as a member of the group",
-                            recipient.e164_or_uuid()
+                            recipient.e164_or_address()
                         );
 
                         // Upsert in Diesel 2.0... Manually for now.
@@ -211,7 +211,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         if let Some(membership) = membership {
                             tracing::trace!(
                                 "  Member {} already in db. Updating membership.",
-                                recipient.e164_or_uuid()
+                                recipient.e164_or_address()
                             );
                             tracing::info!("Existing membership {:?}; updating", membership);
                             diesel::update(group_v2_members::table)

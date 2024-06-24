@@ -787,7 +787,7 @@ impl ClientActor {
                     .unwrap_or_else(|| "".into()),
                 sender_recipient
                     .as_ref()
-                    .map(|x| x.e164_or_uuid().into())
+                    .map(|x| x.e164_or_address().into())
                     .unwrap_or_else(|| "".into()),
                 sender_recipient
                     .map(|x| x.aci().into())
@@ -2026,7 +2026,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                             } else {
                                 tracing::warn!(
                                     "No known UUID for {}; will not deliver this message.",
-                                    recipient.e164_or_uuid()
+                                    recipient.e164_or_address()
                                 );
                                 None
                             }
