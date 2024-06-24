@@ -2299,17 +2299,20 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             tracing::warn!("Message has no destination service id; ignoring");
             return;
         }
-        let destination =
+        let incoming_address =
             ServiceAddress::try_from(msg.destination_service_id.as_deref().unwrap()).unwrap();
         if ![self.self_aci, self.self_pni]
             .iter()
-            .any(|self_dest| self_dest == &Some(destination))
+            .any(|self_dest| self_dest == &Some(incoming_address))
         {
-            tracing::warn!("Message for unknown destination: dest {:?}", destination);
+            tracing::warn!(
+                "Message destination {:?} doesn't match our ACI or PNI. Dropping.",
+                incoming_address
+            );
             return;
         }
 
-        let mut cipher = self.cipher(destination.identity);
+        let mut cipher = self.cipher(incoming_address.identity);
 
         if msg.is_receipt() {
             self.process_receipt(&msg);
@@ -2335,19 +2338,19 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             return None;
                         }
                         Err(ServiceError::SignalProtocolError(
-                            SignalProtocolError::UntrustedIdentity(addr),
+                            SignalProtocolError::UntrustedIdentity(dest_protocol_address),
                         )) => {
                             // This branch is the only one that loops, and it *should not* loop more than once.
-                            let svc_addr = ServiceAddress::try_from(addr.name()).expect("valid ACI or PNI UUID in ProtocolAddress");
-                            tracing::warn!("Untrusted identity for {}; replacing identity and inserting a warning.", addr);
-                            let recipient = storage.fetch_or_insert_recipient_by_address(&svc_addr);
-                            if destination.identity == ServiceIdType::PhoneNumberIdentity {
+                            let dest_address = ServiceAddress::try_from(dest_protocol_address.name()).expect("valid ACI or PNI UUID in ProtocolAddress");
+                            tracing::warn!("Untrusted identity for {}; replacing identity and inserting a warning.", dest_protocol_address);
+                            let recipient = storage.fetch_or_insert_recipient_by_address(&dest_address);
+                            if dest_address.identity == ServiceIdType::PhoneNumberIdentity {
                                 storage.mark_recipient_needs_pni_signature(recipient.id, true);
                             }
                             let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
                             let msg = crate::store::NewMessage {
                                 session_id: session.id,
-                                source_addr: Some(svc_addr),
+                                source_addr: Some(dest_address),
                                 message_type: Some(MessageType::IdentityKeyChange),
                                 ..crate::store::NewMessage::new_incoming()
                             };
@@ -2355,11 +2358,11 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
 
                             if !recipient.is_registered {
                                 tracing::warn!("Recipient was marked as unregistered, marking as registered.");
-                                storage.mark_recipient_registered(svc_addr, true);
+                                storage.mark_recipient_registered(dest_address, true);
                             }
 
-                            if !storage.delete_identity_key(&svc_addr) {
-                                tracing::error!("Could not remove identity key for {}.  Please file a bug.", addr);
+                            if !storage.delete_identity_key(&dest_address) {
+                                tracing::error!("Could not remove identity key for {}.  Please file a bug.", dest_protocol_address);
                                 return None;
                             }
                         }
@@ -2373,7 +2376,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                 tracing::trace!(sender = ?content.metadata.sender, "opened envelope");
 
                 Some(content)
-            }.instrument(tracing::trace_span!("opening envelope", %destination.identity))
+            }.instrument(tracing::trace_span!("opening envelope", %incoming_address.identity))
             .into_actor(self)
             .map(|content, act, ctx| {
                 if let Some(content) = content {
