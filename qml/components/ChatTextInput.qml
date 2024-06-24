@@ -29,6 +29,8 @@ Item {
     property bool enableTypingIndicators: SettingsBridge.enable_typing_indicators
     property bool recipientIsRegistered: true
 
+    property bool isVoiceNote: false
+
     readonly property bool quotedMessageShown: quoteItem.messageId >= 0
     readonly property bool canSend: enableSending &&
                                     (text.trim().length > 0 ||
@@ -78,6 +80,14 @@ Item {
         }
         sendMessage(text, attachments, quoteItem.messageId)
         if (clearAfterSend) reset()
+    }
+
+    function startRecording() {
+        isVoiceNote = true;
+    }
+
+    function cancelRecording() {
+        isVoiceNote = false;
     }
 
     WallClock {
@@ -178,8 +188,41 @@ Item {
                 }
             }
 
+            Image {
+                id: voiceNoteRecordingIcon
+                source: "image://theme/icon-l-recorder"
+                width: height
+                height: parent.height - 2* Theme.paddingMedium
+
+                visible: isVoiceNote
+
+                anchors {
+                    left: parent.left
+                    leftMargin: Theme.horizontalPageMargin
+                    bottom: parent.bottom
+                    bottomMargin: Theme.paddingMedium
+                }
+            }
+
+            Label {
+                id: voiceNoteRecordingTime
+                anchors {
+                    left: voiceNoteRecordingIcon.right
+                    leftMargin: Theme.paddingMedium
+                    verticalCenter: parent.verticalCenter
+                }
+                visible: isVoiceNote
+                height: parent.height
+                font.pixelSize: Theme.fontSizeMedium
+                text: '00:01:03'
+                verticalAlignment: Text.AlignVCenter
+            }
+
             TextArea {
                 id: input
+
+                visible: !isVoiceNote
+
                 property real minInputHeight: Theme.itemSizeMedium
                 property real maxInputHeight: maxHeight - column.spacing - quoteItem.height
                 height: implicitHeight < maxInputHeight ?
@@ -202,7 +245,7 @@ Item {
                 hideLabelOnEmptyField: false
                 textRightMargin: 0
                 font.pixelSize: Theme.fontSizeSmall
-                enabled: recipientIsRegistered || text.length > 0
+                enabled: (recipientIsRegistered || text.length > 0) && !isVoiceNote
                 placeholderText: if (!recipientIsRegistered) {
                         //: Chat text input placeholder for deleted/unregistered recipient
                         //% "The recipient is not registered"
@@ -237,7 +280,8 @@ Item {
 
             IconButton {
                 id: moreButton
-                enabled: enableSending
+                enabled: enableSending && !isVoiceNote
+                visible: !isVoiceNote
                 anchors {
                     right: sendButton.left; rightMargin: Theme.paddingSmall
                     bottom: parent.bottom; bottomMargin: Theme.paddingMedium
@@ -262,7 +306,7 @@ Item {
                     bottom: moreButton.top
                 }
                 width: cameraButton.width
-                height: cameraButton.height + attachButton.height + (2 * Theme.paddingSmall)
+                height: voiceButton.height + cameraButton.height + attachButton.height + (3 * Theme.paddingSmall)
 
                 clip: false
 
@@ -293,8 +337,8 @@ Item {
                     icon.height: icon.width
                     visible: enableAttachments
                     onClicked: {
-                        inputRow.toggleAttachmentButtons()
-                        // TODO
+                        inputRow.toggleAttachmentButtons();
+                        startRecording();
                     }
                 }
 
@@ -330,6 +374,23 @@ Item {
                         inputRow.toggleAttachmentButtons()
                         pageStack.push(multiDocumentPickerDialog)
                     }
+                }
+            }
+
+            IconButton {
+                id: cancelButton
+                anchors {
+                    // icon-m-cancel has own padding
+                    right: sendButton.left; rightMargin: Theme.paddingMedium
+                    bottom: parent.bottom; bottomMargin: Theme.paddingMedium
+                }
+                icon.width: Theme.iconSizeMedium + 2*Theme.paddingSmall
+                icon.height: width
+                icon.source: "image://theme/icon-m-cancel"
+                visible: isVoiceNote
+                enabled: isVoiceNote
+                onClicked: {
+                    cancelRecording()
                 }
             }
 
