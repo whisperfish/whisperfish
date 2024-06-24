@@ -439,7 +439,7 @@ impl SettingsBridge {
         let new_path = ".local/share/be.rubdos/harbour-whisperfish";
         let keys = ["attachment_dir", "camera_dir"];
         for key in keys.iter() {
-            if self.inner.contains("attachment_dir") {
+            if self.inner.contains(key) {
                 self.inner.set_string(
                     key,
                     self.inner
