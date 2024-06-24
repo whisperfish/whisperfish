@@ -236,6 +236,12 @@ pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
             {
                 let uri = cstr!("be.rubdos.whisperfish");
                 qml_register_type::<model::RustleGraph>(uri, 1, 0, cstr!("RustleGraph"));
+                qml_register_type::<model::VoiceNoteRecorder>(
+                    uri,
+                    1,
+                    0,
+                    cstr!("VoiceNoteRecorder"),
+                );
 
                 qml_register_type::<model::Sessions>(uri, 1, 0, cstr!("Sessions"));
                 qml_register_type::<model::Session>(uri, 1, 0, cstr!("Session"));

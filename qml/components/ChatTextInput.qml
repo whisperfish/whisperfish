@@ -4,6 +4,7 @@ import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Sailfish.Pickers 1.0
 import Nemo.Time 1.0
+import be.rubdos.whisperfish 1.0
 import "../pages"
 
 Item {
@@ -35,7 +36,7 @@ Item {
     readonly property bool canSend: enableSending &&
                                     (text.trim().length > 0 ||
                                      attachments.length > 0 ||
-                                     isVoiceNote) // TODO: maybe change this to recorder.isRecording when it's implemented
+                                     recorder.isRecording)
 
     signal sendMessage(var text, var attachments, var replyTo /* message id */)
     signal sendTypingNotification()
@@ -85,10 +86,17 @@ Item {
 
     function startRecording() {
         isVoiceNote = true;
+        recorder.start();
     }
 
     function cancelRecording() {
         isVoiceNote = false;
+        recorder.stop();
+        recorder.reset();
+    }
+
+    VoiceNoteRecorder {
+        id: recorder
     }
 
     WallClock {
