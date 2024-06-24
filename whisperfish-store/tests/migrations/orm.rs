@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! Helper structs that map directly on `old_schema::*`
 
 use chrono::prelude::*;
