@@ -29,12 +29,14 @@ impl Interest {
 
     /// Watches a table T for changes related to a row in table U identified by a key
     /// `relation_key`.
-    pub fn whole_table_with_relation<T: diesel::Table + 'static, U: diesel::Table + 'static>(
+    pub fn whole_table_with_relation<T, U>(
         _table: T,
         _related_table: U,
         relation_key: impl Into<PrimaryKey>,
     ) -> Self
     where
+        T: diesel::Table + 'static,
+        U: diesel::Table + 'static,
         U: diesel::JoinTo<T>,
     {
         let table = Table::from_diesel::<T>();
@@ -322,12 +324,9 @@ where
     T: diesel::Table + 'static,
     O: Observable,
 {
-    pub fn with_relation<U: diesel::Table + 'static>(
-        mut self,
-        _table: U,
-        relation_key: impl Into<PrimaryKey>,
-    ) -> Self
+    pub fn with_relation<U>(mut self, _table: U, relation_key: impl Into<PrimaryKey>) -> Self
     where
+        U: diesel::Table + 'static,
         U: diesel::JoinTo<T>,
     {
         self.event.relations.push(Relation {
