@@ -552,8 +552,8 @@ impl Recipient {
     /// Create a ServiceAddress from the Recipient. Prefers ACI over PNI.
     pub fn to_service_address(&self) -> Option<libsignal_service::ServiceAddress> {
         match (self.uuid, self.pni) {
-            (Some(uuid), _) => Some(ServiceAddress {
-                uuid,
+            (Some(aci), _) => Some(ServiceAddress {
+                uuid: aci,
                 identity: ServiceIdType::AccountIdentity,
             }),
             (None, Some(pni)) => Some(ServiceAddress {
@@ -564,7 +564,7 @@ impl Recipient {
         }
     }
 
-    pub fn uuid(&self) -> String {
+    pub fn aci(&self) -> String {
         self.uuid.as_ref().map(Uuid::to_string).unwrap_or_default()
     }
 
@@ -1820,7 +1820,7 @@ mod tests {
                 identity: libsignal_service::push_service::ServiceIdType::AccountIdentity,
             })
         );
-        assert_eq!(r.uuid(), "bff93979-a0fa-41f5-8ccf-e319135384d8");
+        assert_eq!(r.aci(), "bff93979-a0fa-41f5-8ccf-e319135384d8");
         assert_eq!(r.e164_or_uuid(), "+358401010101");
         assert_eq!(r.name(), "Nick Name");
     }

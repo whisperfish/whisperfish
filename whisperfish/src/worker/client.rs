@@ -790,7 +790,7 @@ impl ClientActor {
                     .map(|x| x.e164_or_uuid().into())
                     .unwrap_or_else(|| "".into()),
                 sender_recipient
-                    .map(|x| x.uuid().into())
+                    .map(|x| x.aci().into())
                     .unwrap_or_else(|| "".into()),
                 message.text.as_deref().unwrap_or("").into(),
                 session.is_group(),

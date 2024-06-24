@@ -144,7 +144,7 @@ impl ClientActor {
             // XXX: We came here through 404 error, can that mean unregistered user?
             tracing::trace!(
                 "Recipient {} doesn't have a profile on the server",
-                recipient.uuid()
+                recipient.aci()
             );
             let mut db = storage.db();
 
