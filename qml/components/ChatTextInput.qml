@@ -91,7 +91,8 @@ Item {
 
     function startRecording() {
         isVoiceNote = true;
-        recorder.start();
+        var path = SettingsBridge.voice_note_dir + "/Note_" + Qt.formatDateTime(new Date(), "yyyyMMdd_hhmmss") + ".ogg"
+        recorder.start(path);
     }
 
     function cancelRecording() {

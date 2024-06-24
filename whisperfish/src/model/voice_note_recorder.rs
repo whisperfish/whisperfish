@@ -13,7 +13,7 @@ pub struct VoiceNoteRecorder {
     recording_updated: qt_signal!(),
     file_changed: qt_signal!(),
 
-    start: qt_method!(fn(&mut self)),
+    start: qt_method!(fn(&mut self, path: String)),
     stop: qt_method!(fn(&mut self) -> String),
     reset: qt_method!(fn(&mut self)),
 
@@ -37,71 +37,81 @@ impl Recording {
 }
 
 #[tracing::instrument]
-fn start_recording() -> Recording {
-    // TODO: make filename configurable
-    let filename = "/home/nemo/.local/share/be.rubdos/harbour-whisperfish/test.ogg";
+fn start_recording(filename: String) -> Recording {
+    tracing::trace!("initializing recording");
+    let dir = std::path::Path::new(&filename).parent().unwrap();
+    if !dir.exists() {
+        let directory = dir.display();
+        tracing::info!(%directory, "creating for recording");
+        std::fs::create_dir_all(dir).unwrap();
+    }
+
     let main_loop = glib::MainLoop::new(None, false);
     let pipeline = gst::Pipeline::with_name("test-pipeline");
     let main_loop_clone = main_loop.clone();
     let pipeline_clone = pipeline.clone();
-    std::thread::spawn(move || {
-        // Create PlayBin element
-        let pulsesrc = gst::ElementFactory::make("pulsesrc")
-            .name("pulsesrc")
-            .property("client-name", &"Whisperfish voice note recorder")
-            .build()
-            .expect("create pulsesrc element");
 
-        let audio_convert = gst::ElementFactory::make("audioconvert")
-            .name("audio_convert")
-            .build()
-            .unwrap();
+    let filename_clone = filename.clone();
+    std::thread::Builder::new()
+        .name(format!("recording {}", filename))
+        .spawn(move || {
+            // Create PlayBin element
+            let pulsesrc = gst::ElementFactory::make("pulsesrc")
+                .name("pulsesrc")
+                .property("client-name", "Whisperfish voice note recorder")
+                .build()
+                .expect("create pulsesrc element");
 
-        // TODO: Currently, rustlegraph can't render Opus,
-        //       because Symphonia doesn't decode it yet: https://github.com/pdeljanov/Symphonia/issues/8
-        //       So we use Vorbis for now.
-        // let opusenc = gst::ElementFactory::make("opusenc")
-        //     .name("opusenc")
-        //     .build()
-        //     .unwrap();
-        // let enc = opusenc;
-        let vorbisenc = gst::ElementFactory::make("vorbisenc")
-            .name("vorbisenc")
-            .build()
-            .unwrap();
-        let enc = vorbisenc;
+            let audio_convert = gst::ElementFactory::make("audioconvert")
+                .name("audio_convert")
+                .build()
+                .unwrap();
 
-        let oggmux = gst::ElementFactory::make("oggmux")
-            .name("oggmux")
-            .build()
-            .unwrap();
+            // TODO: Currently, rustlegraph can't render Opus,
+            //       because Symphonia doesn't decode it yet: https://github.com/pdeljanov/Symphonia/issues/8
+            //       So we use Vorbis for now.
+            // let opusenc = gst::ElementFactory::make("opusenc")
+            //     .name("opusenc")
+            //     .build()
+            //     .unwrap();
+            // let enc = opusenc;
+            let vorbisenc = gst::ElementFactory::make("vorbisenc")
+                .name("vorbisenc")
+                .build()
+                .unwrap();
+            let enc = vorbisenc;
 
-        let filesink = gst::ElementFactory::make("filesink")
-            .name("filesink")
-            .property("location", &filename)
-            .build()
-            .unwrap();
+            let oggmux = gst::ElementFactory::make("oggmux")
+                .name("oggmux")
+                .build()
+                .unwrap();
 
-        pipeline
-            .add_many([&pulsesrc, &audio_convert, &enc, &oggmux, &filesink])
-            .unwrap();
+            let filesink = gst::ElementFactory::make("filesink")
+                .name("filesink")
+                .property("location", &filename_clone)
+                .build()
+                .unwrap();
 
-        gst::Element::link_many(&[&pulsesrc, &audio_convert, &enc, &oggmux, &filesink]).unwrap();
+            pipeline
+                .add_many([&pulsesrc, &audio_convert, &enc, &oggmux, &filesink])
+                .unwrap();
 
-        pipeline
-            .set_state(gst::State::Playing)
-            .expect("Unable to set the pipeline to the `Playing` state.");
-        tracing::info!("recording loop started");
+            gst::Element::link_many([&pulsesrc, &audio_convert, &enc, &oggmux, &filesink]).unwrap();
 
-        main_loop.run();
-        tracing::info!("recording loop stopped");
-    });
+            pipeline
+                .set_state(gst::State::Playing)
+                .expect("Unable to set the pipeline to the `Playing` state.");
+            tracing::info!("recording loop started");
+
+            main_loop.run();
+            tracing::info!("recording loop stopped");
+        })
+        .unwrap();
 
     Recording {
         main_loop: main_loop_clone,
         pipeline: pipeline_clone,
-        filename: filename.to_string(),
-        start_time: std::time::Instant::now(),
+        filename,
     }
 }
 
@@ -120,17 +130,8 @@ impl VoiceNoteRecorder {
         "".to_string()
     }
 
-    fn get_duration(&self) -> f64 {
-        if let Some(handle) = &self.handle {
-            let duration = handle.start_time.elapsed().as_secs_f64();
-            return duration;
-        }
-
-        0.0
-    }
-
-    fn start(&mut self) {
-        self.handle = Some(start_recording());
+    fn start(&mut self, filename: String) {
+        self.handle = Some(start_recording(filename));
         self.file_changed();
         self.recording_updated();
     }
