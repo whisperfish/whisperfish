@@ -283,9 +283,26 @@ Item {
                 }
 
                 IconButton {
-                    id: cameraButton
+                    id: voiceButton
                     anchors {
                         top: parent.top
+                        horizontalCenter: parent.horizontalCenter
+                    }
+                    icon.source: "image://theme/icon-m-browser-microphone"
+                    icon.width: enableAttachments ? Theme.iconSizeMedium : 0
+                    icon.height: icon.width
+                    visible: enableAttachments
+                    onClicked: {
+                        inputRow.toggleAttachmentButtons()
+                        // TODO
+                    }
+                }
+
+                IconButton {
+                    id: cameraButton
+                    anchors {
+                        top: voiceButton.bottom
+                        topMargin: Theme.paddingSmall
                         horizontalCenter: parent.horizontalCenter
                     }
                     icon.source: "image://theme/icon-m-camera"
