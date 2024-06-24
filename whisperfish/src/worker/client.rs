@@ -470,6 +470,7 @@ impl ClientActor {
         ctx: &mut <Self as Actor>::Context,
         // XXX: remove this argument
         source_phonenumber: Option<PhoneNumber>,
+        source_addr: Option<ServiceAddress>,
         msg: &DataMessage,
         sync_sent: Option<Sent>,
         metadata: &Metadata,
@@ -478,24 +479,17 @@ impl ClientActor {
         let timestamp = metadata.timestamp;
         let settings = crate::config::SettingsBridge::default();
         let is_sync_sent = sync_sent.is_some();
-        let source_addr = metadata.sender;
 
         let mut storage = self.storage.clone().expect("storage");
-        let sender_recipient = {
-            match source_addr.identity {
-                ServiceIdType::AccountIdentity => Some(storage.merge_and_fetch_recipient(
-                    source_phonenumber.clone(),
-                    Some(source_addr),
-                    None,
-                    crate::store::TrustLevel::Certain,
-                )),
-                ServiceIdType::PhoneNumberIdentity => Some(storage.merge_and_fetch_recipient(
-                    source_phonenumber.clone(),
-                    None,
-                    Some(source_addr),
-                    crate::store::TrustLevel::Certain,
-                )),
-            }
+        let sender_recipient = if source_phonenumber.is_some() || source_addr.is_some() {
+            Some(storage.merge_and_fetch_recipient(
+                source_phonenumber.clone(),
+                source_addr,
+                None,
+                crate::store::TrustLevel::Certain,
+            ))
+        } else {
+            None
         };
 
         let flags = msg
@@ -532,15 +526,17 @@ impl ClientActor {
             message_type = Some(MessageType::EndSession);
         }
 
-        if let Some(key) = msg.profile_key.as_deref() {
-            let (recipient, was_updated) = storage.update_profile_key(
-                source_phonenumber.clone(),
-                Some(source_addr),
-                key,
-                crate::store::TrustLevel::Certain,
-            );
-            if was_updated {
-                ctx.notify(RefreshProfile::ByRecipientId(recipient.id));
+        if (source_phonenumber.is_some() || source_addr.is_some()) && !is_sync_sent {
+            if let Some(key) = msg.profile_key.as_deref() {
+                let (recipient, was_updated) = storage.update_profile_key(
+                    source_phonenumber.clone(),
+                    source_addr,
+                    key,
+                    crate::store::TrustLevel::Certain,
+                );
+                if was_updated {
+                    ctx.notify(RefreshProfile::ByRecipientId(recipient.id));
+                }
             }
         }
 
@@ -647,9 +643,12 @@ impl ClientActor {
             return None;
         };
 
-        let is_unidentified = if let Some(sent) = &sync_sent {
-            let source_service_id = source_addr.to_service_id();
-            sent.unidentified_status
+        let is_unidentified = if sync_sent.is_some() && source_addr.is_some() {
+            let source_service_id = source_addr.as_ref().unwrap().to_service_id();
+            sync_sent
+                .as_ref()
+                .unwrap()
+                .unidentified_status
                 .iter()
                 .any(|x| x.unidentified() && x.destination_service_id() == source_service_id)
         } else {
@@ -698,22 +697,12 @@ impl ClientActor {
         let body_ranges = crate::store::body_ranges::serialize(&msg.body_ranges);
 
         let session = group.unwrap_or_else(|| {
-            let recipient = match source_addr.identity {
-                ServiceIdType::AccountIdentity => storage.merge_and_fetch_recipient(
-                    source_phonenumber.clone(),
-                    Some(source_addr),
-                    None,
-                    TrustLevel::Certain,
-                ),
-
-                ServiceIdType::PhoneNumberIdentity => storage.merge_and_fetch_recipient(
-                    source_phonenumber.clone(),
-                    None,
-                    Some(source_addr),
-                    TrustLevel::Certain,
-                ),
-            };
-
+            let recipient = storage.merge_and_fetch_recipient(
+                source_phonenumber.clone(),
+                source_addr,
+                None,
+                TrustLevel::Certain,
+            );
             storage.fetch_or_insert_session_by_recipient_id(recipient.id)
         });
 
@@ -722,7 +711,7 @@ impl ClientActor {
         let expires_in = session.expiring_message_timeout;
 
         let new_message = crate::store::NewMessage {
-            source_addr: Some(source_addr),
+            source_addr,
             text,
             flags,
             outgoing: is_sync_sent,
@@ -926,7 +915,15 @@ impl ClientActor {
                 tracing::trace!("Ignoring NullMessage");
             }
             ContentBody::DataMessage(message) => {
-                let message_id = self.handle_message(ctx, None, &message, None, &metadata, None);
+                let message_id = self.handle_message(
+                    ctx,
+                    None,
+                    Some(metadata.sender),
+                    &message,
+                    None,
+                    &metadata,
+                    None,
+                );
                 if metadata.needs_receipt {
                     // XXX Is this guard correct? If the recipient requests a delivery receipt,
                     //     we may have to send it even if we don't have a message_id.
@@ -948,6 +945,7 @@ impl ClientActor {
                 let message_id = self.handle_message(
                     ctx,
                     None,
+                    Some(metadata.sender),
                     message,
                     None,
                     &metadata,
@@ -973,13 +971,26 @@ impl ClientActor {
                     handled = true;
                     tracing::trace!("Sync sent message");
                     // These are messages sent through a paired device.
+                    let address = sent
+                        .destination_service_id
+                        .as_deref()
+                        .map(ServiceAddress::try_from)
+                        .transpose()
+                        .map_err(|_| {
+                            tracing::warn!(
+                                "Unparsable ServiceAddress {}",
+                                sent.destination_service_id()
+                            )
+                        })
+                        .ok()
+                        .flatten();
                     let phonenumber = sent
                         .destination_e164
                         .as_deref()
                         .map(|s| phonenumber::parse(None, s))
                         .transpose()
                         .map_err(|_| {
-                            tracing::warn!("Unparsable phonenumber: '{}'", sent.destination_e164())
+                            tracing::warn!("Unparsable phonenumber {}", sent.destination_e164())
                         })
                         .ok()
                         .flatten();
@@ -990,6 +1001,7 @@ impl ClientActor {
                             // Empty string mainly when groups,
                             // but maybe needs a check. TODO
                             phonenumber,
+                            address,
                             message,
                             Some(sent.clone()),
                             &metadata,
@@ -1004,6 +1016,7 @@ impl ClientActor {
                             // Empty string mainly when groups,
                             // but maybe needs a check. TODO
                             phonenumber,
+                            address,
                             message,
                             Some(sent.clone()),
                             &metadata,

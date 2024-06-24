@@ -1136,18 +1136,18 @@ impl<O: Observable> Storage<O> {
             .transpose()?
             .flatten();
         let by_aci: Option<orm::Recipient> = aci
-            .map(|uuid| {
+            .map(|u| {
                 recipients::table
-                    .filter(recipients::uuid.eq(uuid.to_string()))
+                    .filter(recipients::uuid.eq(u.to_string()))
                     .first(db)
                     .optional()
             })
             .transpose()?
             .flatten();
         let by_pni: Option<orm::Recipient> = pni
-            .map(|uuid| {
+            .map(|u| {
                 recipients::table
-                    .filter(recipients::pni.eq(uuid.to_string()))
+                    .filter(recipients::pni.eq(u.to_string()))
                     .first(db)
                     .optional()
             })
