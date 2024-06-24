@@ -34,7 +34,8 @@ Item {
     readonly property bool quotedMessageShown: quoteItem.messageId >= 0
     readonly property bool canSend: enableSending &&
                                     (text.trim().length > 0 ||
-                                     attachments.length > 0)
+                                     attachments.length > 0 ||
+                                     isVoiceNote) // TODO: maybe change this to recorder.isRecording when it's implemented
 
     signal sendMessage(var text, var attachments, var replyTo /* message id */)
     signal sendTypingNotification()
