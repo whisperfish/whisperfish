@@ -286,7 +286,7 @@ Page {
             }
             onSendMessage: {
                 console.log(JSON.stringify(attachments))
-                MessageModel.createMessage(sessionId, text, attachments, replyTo, true)
+                MessageModel.createMessage(sessionId, text, attachments, replyTo, true, isVoiceNote)
             }
             onSendTypingNotification: {
                 ClientWorker.send_typing_notification(sessionId, true)

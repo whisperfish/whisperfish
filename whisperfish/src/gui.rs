@@ -228,6 +228,9 @@ macro_rules! cstr {
 
 pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
     qmeta_async::run(|| {
+        // For audio recording
+        gstreamer::init().expect("gstreamer initialization");
+
         let (app, _whisperfish) = with_executor(|| -> anyhow::Result<_> {
             // XXX this arc thing should be removed in the future and refactored
             let config = std::sync::Arc::new(config);

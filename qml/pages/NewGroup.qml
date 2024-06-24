@@ -123,7 +123,7 @@ Page {
                         }
                         var source = numbers.join(",")
                         console.log("Creating group for " + source);
-                        MessageModel.createMessage(source, text, groupName.text, "", false)
+                        MessageModel.createMessage(source, text, groupName.text, "", false, isVoiceNote)
                         pageStack.pop()
                     }
                 }

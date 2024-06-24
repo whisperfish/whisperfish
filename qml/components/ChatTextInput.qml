@@ -38,7 +38,7 @@ Item {
                                      attachments.length > 0 ||
                                      recorder.isRecording)
 
-    signal sendMessage(var text, var attachments, var replyTo /* message id */)
+    signal sendMessage(var text, var attachments, var replyTo /* message id */, var isVoiceNote)
     signal sendTypingNotification()
     signal sendTypingNotificationEnd()
     signal quotedMessageClicked(var messageId)
@@ -54,6 +54,7 @@ Item {
         text = ""
         attachments = []
         resetQuote()
+        isVoiceNote = false
 
         if (input.focus) { // reset keyboard state
             input.focus = false
@@ -76,11 +77,15 @@ Item {
 
     function _send() {
         Qt.inputMethod.commit()
+        if (isVoiceNote) {
+            var filename = recorder.stop();
+            attachments = [{data: filename, type: "audio/ogg"}];
+        }
         if (text.length === 0 && attachments.length === 0) return
         if(SettingsBridge.enable_enter_send) {
             text = text.replace(/(\r\n\t|\n|\r\t)/gm, '')
         }
-        sendMessage(text, attachments, quoteItem.messageId)
+        sendMessage(text, attachments, quoteItem.messageId, isVoiceNote)
         if (clearAfterSend) reset()
     }
 
