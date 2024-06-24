@@ -38,6 +38,7 @@ Requires:   dbus
 
 # For recording voice notes and voice/video calling
 Requires:   gstreamer1.0
+Requires:   opus
 BuildRequires:   gstreamer1.0-devel
 
 # For the captcha QML application
