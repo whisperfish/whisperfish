@@ -577,6 +577,12 @@ Page {
                 value: AppState.recipientCount()
             }
             DetailItem {
+                //: GStreamer version indication in settings
+                //% "GStreamer version"
+                label: qsTrId("whisperfish-settings-gstreamer-version")
+                value: AppState.gstreamer_version
+            }
+            DetailItem {
                 //: Settings page encrypted database
                 //% "Encrypted Database"
                 label: qsTrId("whisperfish-settings-encrypted-db")

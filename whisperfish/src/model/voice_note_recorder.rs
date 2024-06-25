@@ -46,6 +46,13 @@ fn start_recording(filename: String) -> Recording {
         std::fs::create_dir_all(dir).unwrap();
     }
 
+    let ext = std::path::Path::new(&filename)
+        .extension()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_lowercase();
+
     let main_loop = glib::MainLoop::new(None, false);
     let pipeline = gst::Pipeline::with_name("test-pipeline");
     let main_loop_clone = main_loop.clone();
@@ -55,6 +62,7 @@ fn start_recording(filename: String) -> Recording {
     std::thread::Builder::new()
         .name(format!("recording {}", filename))
         .spawn(move || {
+            let ext = ext.as_str();
             // Create PlayBin element
             let pulsesrc = gst::ElementFactory::make("pulsesrc")
                 .name("pulsesrc")
@@ -67,40 +75,44 @@ fn start_recording(filename: String) -> Recording {
                 .build()
                 .unwrap();
 
-            // TODO: Currently, rustlegraph can't render Opus,
-            //       because Symphonia doesn't decode it yet: https://github.com/pdeljanov/Symphonia/issues/8
-            //       So we use Vorbis for now.
-            // let opusenc = gst::ElementFactory::make("opusenc")
-            //     .name("opusenc")
-            //     .build()
-            //     .unwrap();
-            // let enc = opusenc;
-            // TODO: Vorbis is not supported at all on iOS, so we use AAC through libav,
-            //       Sailfish doesn't ship FAAC on gstreamer, so we can't use the superior
-            //       (according to gstreamer docs) FAAC.
-            //       Potentially, we'd want to have a dynamic dispatch: try faac + mp4mux first, then avenc_aac + avmux_adts
-            //       on failure.
-            //       https://github.com/signalapp/Signal-iOS/issues/4539
-            //       https://github.com/signalapp/Signal-iOS/issues/5771
-            // let vorbisenc = gst::ElementFactory::make("vorbisenc")
-            //     .name("vorbisenc")
-            //     .build()
-            //     .unwrap();
-            // let enc = vorbisenc;
-            let avenc_aac = gst::ElementFactory::make("avenc_aac")
-                .name("avenc_aac")
-                .build()
-                .unwrap();
-            let enc = avenc_aac;
+            let enc = match ext {
+                "aac" => {
+                    // TODO: Sailfish doesn't ship FAAC on gstreamer, so we can't use the superior
+                    //       (according to gstreamer docs) FAAC. Instead we use libav_aac
+                    //       Potentially, we'd want to have more dynamic dispatch: try faac + mp4mux first, then avenc_aac + avmux_adts
+                    //       on failure.
+                    gst::ElementFactory::make("avenc_aac")
+                        .name("avenc_aac")
+                        .build()
+                        .unwrap()
+                }
+                "ogg" => {
+                    // TODO: Currently, rustlegraph can't render Opus,
+                    //       because Symphonia doesn't decode it yet: https://github.com/pdeljanov/Symphonia/issues/8
+                    //       So we use Vorbis for now.
+                    // gst::ElementFactory::make("opusenc")
+                    //     .name("opusenc")
+                    //     .build()
+                    //     .unwrap()
+                    gst::ElementFactory::make("vorbisenc")
+                        .name("vorbisenc")
+                        .build()
+                        .unwrap()
+                }
+                _ => panic!("unsupported extension"),
+            };
 
-            // let oggmux = gst::ElementFactory::make("oggmux")
-            //     .name("oggmux")
-            //     .build()
-            //     .unwrap();
-            let mp4mux = gst::ElementFactory::make("avmux_adts")
-                .name("avmux_adts")
-                .build()
-                .unwrap();
+            let mux = match ext {
+                "aac" => gst::ElementFactory::make("avmux_adts")
+                    .name("avmux_adts")
+                    .build()
+                    .unwrap(),
+                "ogg" => gst::ElementFactory::make("oggmux")
+                    .name("oggmux")
+                    .build()
+                    .unwrap(),
+                _ => unreachable!("checked above"),
+            };
 
             let filesink = gst::ElementFactory::make("filesink")
                 .name("filesink")
@@ -109,10 +121,10 @@ fn start_recording(filename: String) -> Recording {
                 .unwrap();
 
             pipeline
-                .add_many([&pulsesrc, &audio_convert, &enc, &mp4mux, &filesink])
+                .add_many([&pulsesrc, &audio_convert, &enc, &mux, &filesink])
                 .unwrap();
 
-            gst::Element::link_many([&pulsesrc, &audio_convert, &enc, &mp4mux, &filesink]).unwrap();
+            gst::Element::link_many([&pulsesrc, &audio_convert, &enc, &mux, &filesink]).unwrap();
 
             pipeline
                 .set_state(gst::State::Playing)
