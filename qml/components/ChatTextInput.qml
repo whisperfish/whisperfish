@@ -355,7 +355,7 @@ Item {
             IconButton {
                 id: moreButton
                 enabled: enableSending && !isVoiceNote
-                visible: !isVoiceNote
+                visible: enableAttachments && !isVoiceNote
                 anchors {
                     right: sendButton.left; rightMargin: Theme.paddingSmall
                     bottom: parent.bottom; bottomMargin: Theme.paddingMedium
