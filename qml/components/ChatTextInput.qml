@@ -245,7 +245,7 @@ Item {
 
             Image {
                 id: voiceNoteRecordingIcon
-                source: "image://theme/icon-l-recorder"
+                source: "../../icons/microphone.png"
                 width: height
                 height: parent.height - 2* Theme.paddingMedium
 
@@ -406,7 +406,7 @@ Item {
                         top: parent.top
                         horizontalCenter: parent.horizontalCenter
                     }
-                    icon.source: "image://theme/icon-m-browser-microphone"
+                    icon.source: "../../icons/microphone.png"
                     icon.width: enableAttachments ? Theme.iconSizeMedium : 0
                     icon.height: icon.width
                     visible: enableAttachments
