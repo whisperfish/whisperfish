@@ -79,7 +79,7 @@ Item {
         Qt.inputMethod.commit()
         if (isVoiceNote) {
             var filename = recorder.stop();
-            attachments = [{data: filename, type: "audio/ogg"}];
+            attachments = [{data: filename, type: "audio/aac"}];
         }
         if (text.length === 0 && attachments.length === 0) return
         if(SettingsBridge.enable_enter_send) {
@@ -91,7 +91,7 @@ Item {
 
     function startRecording() {
         isVoiceNote = true;
-        var path = SettingsBridge.voice_note_dir + "/Note_" + Qt.formatDateTime(new Date(), "yyyyMMdd_hhmmss") + ".ogg"
+        var path = SettingsBridge.voice_note_dir + "/Note_" + Qt.formatDateTime(new Date(), "yyyyMMdd_hhmmss") + ".aac"
         recorder.start(path);
     }
 

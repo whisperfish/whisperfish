@@ -38,6 +38,8 @@ Requires:   dbus
 
 # For recording voice notes and voice/video calling
 Requires:   gstreamer1.0
+# For avmux_mp4 and avmux_aac
+Requires:   gstreamer1.0-libav
 Requires:   opus
 Requires:   libvorbis
 BuildRequires:   gstreamer1.0-devel

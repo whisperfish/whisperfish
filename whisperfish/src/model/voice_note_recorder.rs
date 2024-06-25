@@ -75,14 +75,30 @@ fn start_recording(filename: String) -> Recording {
             //     .build()
             //     .unwrap();
             // let enc = opusenc;
-            let vorbisenc = gst::ElementFactory::make("vorbisenc")
-                .name("vorbisenc")
+            // TODO: Vorbis is not supported at all on iOS, so we use AAC through libav,
+            //       Sailfish doesn't ship FAAC on gstreamer, so we can't use the superior
+            //       (according to gstreamer docs) FAAC.
+            //       Potentially, we'd want to have a dynamic dispatch: try faac + mp4mux first, then avenc_aac + avmux_adts
+            //       on failure.
+            //       https://github.com/signalapp/Signal-iOS/issues/4539
+            //       https://github.com/signalapp/Signal-iOS/issues/5771
+            // let vorbisenc = gst::ElementFactory::make("vorbisenc")
+            //     .name("vorbisenc")
+            //     .build()
+            //     .unwrap();
+            // let enc = vorbisenc;
+            let avenc_aac = gst::ElementFactory::make("avenc_aac")
+                .name("avenc_aac")
                 .build()
                 .unwrap();
-            let enc = vorbisenc;
+            let enc = avenc_aac;
 
-            let oggmux = gst::ElementFactory::make("oggmux")
-                .name("oggmux")
+            // let oggmux = gst::ElementFactory::make("oggmux")
+            //     .name("oggmux")
+            //     .build()
+            //     .unwrap();
+            let mp4mux = gst::ElementFactory::make("avmux_adts")
+                .name("avmux_adts")
                 .build()
                 .unwrap();
 
@@ -93,10 +109,10 @@ fn start_recording(filename: String) -> Recording {
                 .unwrap();
 
             pipeline
-                .add_many([&pulsesrc, &audio_convert, &enc, &oggmux, &filesink])
+                .add_many([&pulsesrc, &audio_convert, &enc, &mp4mux, &filesink])
                 .unwrap();
 
-            gst::Element::link_many([&pulsesrc, &audio_convert, &enc, &oggmux, &filesink]).unwrap();
+            gst::Element::link_many([&pulsesrc, &audio_convert, &enc, &mp4mux, &filesink]).unwrap();
 
             pipeline
                 .set_state(gst::State::Playing)
