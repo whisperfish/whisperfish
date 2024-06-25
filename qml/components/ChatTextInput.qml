@@ -117,7 +117,8 @@ Item {
         //       we use Vorbis.  1.22 is tested on Sailfish 4.6.
         //       This means that voice messages sent from SailfishOS 3.4 will not be playable on iOS.
         //       Sad panda. 🐼
-        return AppState.gstreamer_version_major >= 1 && AppState.gstreamer_version_minor >= 22;
+        return AppState.gstreamer_version_major > 1
+            || AppState.gstreamer_version_major == 1 && AppState.gstreamer_version_minor >= 22;
     }
 
     function startRecording() {
