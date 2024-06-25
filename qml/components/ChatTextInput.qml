@@ -31,6 +31,19 @@ Item {
     property bool recipientIsRegistered: true
 
     property bool isVoiceNote: false
+    property var voiceNoteStartTime: null
+    // In seconds
+    property var voiceNoteDuration: 0;
+
+    // getTime() doesn't work in a declarative context, so we need a timer
+    Timer {
+        running: voiceNoteStartTime != null
+        repeat: true
+        interval: 100
+        onTriggered: {
+            voiceNoteDuration = (new Date().getTime() - voiceNoteStartTime) / 1000;
+        }
+    }
 
     readonly property bool quotedMessageShown: quoteItem.messageId >= 0
     readonly property bool canSend: enableSending &&
@@ -55,6 +68,7 @@ Item {
         attachments = []
         resetQuote()
         isVoiceNote = false
+        voiceNoteStartTime = null;
 
         if (input.focus) { // reset keyboard state
             input.focus = false
@@ -93,12 +107,14 @@ Item {
         isVoiceNote = true;
         var path = SettingsBridge.voice_note_dir + "/Note_" + Qt.formatDateTime(new Date(), "yyyyMMdd_hhmmss") + ".aac"
         recorder.start(path);
+        voiceNoteStartTime = new Date().getTime();
     }
 
     function cancelRecording() {
         isVoiceNote = false;
         recorder.stop();
         recorder.reset();
+        voiceNoteStartTime = null;
     }
 
     VoiceNoteRecorder {
@@ -229,7 +245,15 @@ Item {
                 visible: isVoiceNote
                 height: parent.height
                 font.pixelSize: Theme.fontSizeMedium
-                text: '00:01:03'
+
+                function formatTime(dt) {
+                    var minutes, seconds;
+                    minutes = Math.floor(dt / 60);
+                    seconds = Math.floor(dt % 60);
+                    return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+                }
+
+                text: formatTime(voiceNoteDuration)
                 verticalAlignment: Text.AlignVCenter
             }
 
