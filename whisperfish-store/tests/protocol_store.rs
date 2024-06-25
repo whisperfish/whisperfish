@@ -91,7 +91,7 @@ mod tests {
 
         let key_pair = KeyPair::generate(&mut rng);
         let id: u32 = rng.gen();
-        let timestamp: u64 = rng.gen();
+        let timestamp = Timestamp::from_epoch_millis(rng.gen::<u64>());
         let signature = vec![0; 3];
 
         SignedPreKeyRecord::new(SignedPreKeyId::from(id), timestamp, &key_pair, &signature)
