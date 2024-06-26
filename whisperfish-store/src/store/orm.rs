@@ -4,6 +4,8 @@ use diesel::sql_types::Integer;
 use libsignal_service::prelude::*;
 use libsignal_service::proto::GroupContextV2;
 use phonenumber::PhoneNumber;
+use qmetaobject::QMetaType;
+use qttypes::{QVariantList, QVariantMap};
 use std::borrow::Cow;
 use std::fmt::{Display, Error, Formatter};
 use std::time::Duration;
@@ -1007,6 +1009,25 @@ impl AugmentedMessage {
             .count() as _
     }
 
+    pub fn delivered_receipts(&self) -> QVariantList {
+        self.receipts
+            .iter()
+            .filter(|(r, _)| r.delivered.is_some())
+            .map(|(receipt, recipient)| {
+                let mut item = QVariantMap::default();
+                item.insert(
+                    "timestamp".into(),
+                    receipt.delivered.unwrap().to_string().to_qvariant(),
+                );
+                item.insert(
+                    "recipient".into(),
+                    recipient.name().to_string().to_qvariant(),
+                );
+                item.to_qvariant()
+            })
+            .collect()
+    }
+
     pub fn read(&self) -> u32 {
         self.receipts
             .iter()
@@ -1014,11 +1035,49 @@ impl AugmentedMessage {
             .count() as _
     }
 
+    pub fn read_receipts(&self) -> QVariantList {
+        self.receipts
+            .iter()
+            .filter(|(r, _)| r.read.is_some())
+            .map(|(receipt, recipient)| {
+                let mut item = QVariantMap::default();
+                item.insert(
+                    "timestamp".into(),
+                    receipt.read.unwrap().to_string().to_qvariant(),
+                );
+                item.insert(
+                    "recipient".into(),
+                    recipient.name().to_string().to_qvariant(),
+                );
+                item.to_qvariant()
+            })
+            .collect()
+    }
+
     pub fn viewed(&self) -> u32 {
         self.receipts
             .iter()
             .filter(|(r, _)| r.viewed.is_some())
             .count() as _
+    }
+
+    pub fn viewed_receipts(&self) -> QVariantList {
+        self.receipts
+            .iter()
+            .filter(|(r, _)| r.viewed.is_some())
+            .map(|(receipt, recipient)| {
+                let mut item = QVariantMap::default();
+                item.insert(
+                    "timestamp".into(),
+                    receipt.viewed.unwrap().to_string().to_qvariant(),
+                );
+                item.insert(
+                    "recipient".into(),
+                    recipient.name().to_string().to_qvariant(),
+                );
+                item.to_qvariant()
+            })
+            .collect()
     }
 
     pub fn queued(&self) -> bool {

@@ -37,9 +37,14 @@ crate::observing_model! {
         timestamp Timestamp,
 
         senderRecipientId SenderRecipientId,
+
         delivered Delivered,
         read Read,
         viewed Viewed,
+
+        deliveredReceipts DeliveredReceipts,
+        readReceipts ReadReceipts,
+        viewedReceipts ViewedReceipts,
 
         sent Sent,
         flags Flags,
@@ -353,6 +358,10 @@ define_model_roles! {
         Read(fn read(&self)):                                 "read", // How many recipient have received the message
         IsRead(is_read):                                      "isRead", // Is the message unread or read by self
         Viewed(fn viewed(&self)):                             "viewed",
+
+        DeliveredReceipts(fn delivered_receipts(&self)):      "deliveredReceipts",
+        ReadReceipts(fn read_receipts(&self)):                "readReceipts",
+        ViewedReceipts(fn viewed_receipts(&self)):            "viewedReceipts",
 
         Sent(fn sent(&self)):                                 "sent",
         Flags(flags):                                         "flags",
