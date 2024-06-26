@@ -18,14 +18,19 @@ Page {
     readonly property bool isPrimaryDevice: SettingsBridge.isPrimaryDevice()
 
     // Triggers to send Syng Type::Configuration after closing the page
-    property bool oldTypingIndicators: false
+    property bool _typingIndicators: false
+    property bool _readReceipts: false
 
     Component.onCompleted: {
-        oldTypingIndicators = SettingsBridge.enable_typing_indicators
+        _typingIndicators = SettingsBridge.enable_typing_indicators
+        _readReceipts = SettingsBridge.enable_read_receipts
     }
 
     Component.onDestruction: {
-        if (oldTypingIndicators != SettingsBridge.enable_typing_indicators) {
+        if (
+            _typingIndicators != SettingsBridge.enable_typing_indicators ||
+            _readReceipts != SettingsBridge.enable_read_receipts
+         ) {
             console.log("Configuration sync needed")
             ClientWorker.sendConfiguration()
         }
@@ -107,7 +112,7 @@ Page {
                 //: Settings page use typing indicators
                 //% "Enable typing indicators"
                 text: qsTrId("whisperfish-settings-enable-typing-indicators")
-                //: Settings page scale image attachments description
+                //: Settings page typing indicators description
                 //% "See when others are typing, and let others see when you are typing, if they also have this enabled."
                 description: qsTrId("whisperfish-settings-enable-typing-indicators-description")
                 checked: SettingsBridge.enable_typing_indicators
@@ -115,6 +120,24 @@ Page {
                 onCheckedChanged: {
                     if(checked != SettingsBridge.enable_typing_indicators) {
                         SettingsBridge.enable_typing_indicators = checked
+                    }
+                }
+            }
+            IconTextSwitch {
+                id: useReadReceipts
+                enabled: isPrimaryDevice
+                anchors.horizontalCenter: parent.horizontalCenter
+                //: Settings page use read receipts
+                //% "Enable read receipts"
+                text: qsTrId("whisperfish-settings-enable-read-receipts")
+                //: Settings page scale read receipts description
+                //% "See when others have read your messages, and let others see when you are have read theirs, if they also have this enabled."
+                description: qsTrId("whisperfish-settings-enable-read-receipts-description")
+                checked: SettingsBridge.enable_read_receipts
+                icon.source: "image://theme/icon-m-activity-messaging"
+                onCheckedChanged: {
+                    if(checked != SettingsBridge.enable_read_receipts) {
+                        SettingsBridge.enable_read_receipts = checked
                     }
                 }
             }

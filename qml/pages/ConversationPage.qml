@@ -18,6 +18,8 @@ Page {
     property int expiringMessages: session.expiringMessageTimeout != -1
     property DockedPanel activePanel: actionsPanel.open ? actionsPanel : panel
 
+    property bool sendReadReceipts: SettingsBridge.enable_read_receipts
+
     property int _selectedCount: messages.selectedCount // proxy to avoid some costly lookups
     property bool _showDeleteAll: false
 
@@ -227,7 +229,8 @@ Page {
 
                 if (unreadOrExpiring.length > 0) {
                     console.log("Marking messages as read: " + unreadOrExpiring)
-                    ClientWorker.mark_messages_read(unreadOrExpiring)
+                    console.log("Sending read receipts: " + sendReadReceipts)
+                    ClientWorker.mark_messages_read(unreadOrExpiring, sendReadReceipts)
 
                     for (var i in unreadOrExpiring) {
                         console.log("Closing notification mid", unreadOrExpiring[i], "sid", sessionId)

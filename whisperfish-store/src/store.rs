@@ -2522,6 +2522,14 @@ impl<O: Observable> Storage<O> {
             .ok()
     }
 
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_messages_by_ids(&self, ids: Vec<i32>) -> Vec<orm::Message> {
+        schema::messages::table
+            .filter(schema::messages::id.eq_any(ids))
+            .load(&mut *self.db())
+            .expect("db")
+    }
+
     /// Returns a vector of messages for a specific session, ordered by server timestamp.
     #[tracing::instrument(skip(self))]
     pub fn fetch_all_messages(&self, session_id: i32, only_most_recent: bool) -> Vec<orm::Message> {

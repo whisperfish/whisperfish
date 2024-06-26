@@ -74,6 +74,8 @@ use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
 use qttypes::QVariantList;
 use std::borrow::Cow;
+use std::collections::hash_map::Entry::Vacant;
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::convert::TryInto;
@@ -248,7 +250,7 @@ pub struct ClientWorker {
         fn(&self, given_name: String, family_name: String, about: String, emoji: String)
     ),
 
-    mark_messages_read: qt_method!(fn(&self, msg_id_list: QVariantList)),
+    mark_messages_read: qt_method!(fn(&self, msg_id_list: QVariantList, send_read_receipts: bool)),
 
     linkRecipient: qt_method!(fn(&self, recipient_id: i32, external_id: String)),
     unlinkRecipient: qt_method!(fn(&self, recipient_id: i32)),
@@ -469,6 +471,58 @@ impl ClientActor {
             online: false,
             for_story: false,
         });
+
+        Some(())
+    }
+
+    /// Send read receipts to recipients.
+    ///
+    /// Assumes that read receipts setting is enabled.
+    pub fn handle_needs_read_receipts(
+        &mut self,
+        ctx: &mut <Self as Actor>::Context,
+        message_ids: Vec<i32>,
+    ) -> Option<()> {
+        let storage = self.storage.as_ref().unwrap();
+        let messages = storage.fetch_messages_by_ids(message_ids);
+        // let all_sessions = storage.fetch_all_sessions_augmented();
+        let mut sessions: HashMap<i32, orm::Session> = HashMap::new();
+
+        // Iterate over messages
+
+        for message in messages.iter() {
+            if let Vacant(slot) = sessions.entry(message.session_id) {
+                let session = storage.fetch_session_by_id(message.session_id)?;
+                slot.insert(session);
+            }
+        }
+
+        tracing::trace!(
+            "Sending read receipts for {} messages in {} sessions",
+            messages.len(),
+            sessions.len()
+        );
+
+        for (session_id, session) in sessions {
+            let timestamp: Vec<u64> = messages
+                .iter()
+                .filter(|m| m.session_id == session_id)
+                .map(|m| m.server_timestamp.and_utc().timestamp_millis() as u64)
+                .collect();
+
+            let content = ReceiptMessage {
+                r#type: Some(receipt_message::Type::Read as _),
+                timestamp,
+            };
+
+            ctx.notify(DeliverMessage {
+                content,
+                timestamp: Utc::now().timestamp_millis() as u64,
+                session_type: session.r#type,
+                online: false,
+                for_story: false,
+            });
+        }
 
         Some(())
     }
@@ -877,7 +931,7 @@ impl ClientActor {
         let settings = crate::config::SettingsBridge::default();
 
         Configuration {
-            read_receipts: None,
+            read_receipts: Some(settings.get_enable_read_receipts()),
             unidentified_delivery_indicators: None,
             typing_indicators: Some(settings.get_enable_typing_indicators()),
             provisioning_version: None,
@@ -2911,7 +2965,7 @@ impl ClientWorker {
     }
 
     #[with_executor]
-    pub fn mark_messages_read(&self, mut msg_id_list: QVariantList) {
+    pub fn mark_messages_read(&self, mut msg_id_list: QVariantList, send_read_receipts: bool) {
         let mut message_ids: Vec<i32> = vec![];
         while !msg_id_list.is_empty() {
             let msg_id_qvar = msg_id_list.remove(0);
@@ -2923,7 +2977,13 @@ impl ClientWorker {
 
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {
-            if let Err(e) = actor.send(MarkMessagesRead { message_ids }).await {
+            if let Err(e) = actor
+                .send(MarkMessagesRead {
+                    message_ids,
+                    send_read_receipts,
+                })
+                .await
+            {
                 tracing::error!("{:?}", e);
             }
         });
@@ -3029,17 +3089,22 @@ impl Handler<CompactDb> for ClientActor {
 #[rtype(result = "()")]
 pub struct MarkMessagesRead {
     pub message_ids: Vec<i32>,
+    pub send_read_receipts: bool,
 }
 
 impl Handler<MarkMessagesRead> for ClientActor {
     type Result = ResponseFuture<()>;
 
-    fn handle(&mut self, msg_ids: MarkMessagesRead, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, read: MarkMessagesRead, ctx: &mut Self::Context) -> Self::Result {
         let storage = self.storage.clone().unwrap();
         let handle = self.message_expiry_notification_handle.clone().unwrap();
+        tracing::trace!("Sending read receipts: {}", read.send_read_receipts);
+        if read.send_read_receipts {
+            self.handle_needs_read_receipts(ctx, read.message_ids.clone());
+        };
         Box::pin(
             async move {
-                storage.mark_messages_read_in_ui(msg_ids.message_ids);
+                storage.mark_messages_read_in_ui(read.message_ids);
                 handle.send(()).expect("send messages expiry notification");
             }
             .instrument(tracing::debug_span!("mark messages read")),
