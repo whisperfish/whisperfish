@@ -1234,7 +1234,9 @@ impl ClientActor {
                                 }
                             }
                             Type::Viewed => {
-                                // TODO
+                                tracing::warn!(
+                                    "Viewed receipts are not yet implemented. Please upvote issue #670"
+                                );
                             }
                         }
                     }
