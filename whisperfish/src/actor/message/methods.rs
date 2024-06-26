@@ -25,6 +25,7 @@ pub struct MessageMethods {
             attachment: QVariantList,
             quote: i32,
             add: bool,
+            is_voice_note: bool,
         )
     ),
     createExpiryUpdate: qt_method!(fn(&self, session_id: i32, expires_in: i32)),
@@ -50,6 +51,7 @@ impl MessageMethods {
         mut attachments_qml: QVariantList,
         quote: i32,
         _add: bool,
+        is_voice_note: bool,
     ) {
         let message = message.to_string();
         let mut attachments: Vec<NewAttachment> = vec![];
@@ -82,6 +84,7 @@ impl MessageMethods {
                     message,
                     attachments,
                     quote,
+                    is_voice_note,
                 })
                 .map(Result::unwrap),
         );

@@ -98,17 +98,19 @@ pub struct QueueMessage {
     pub message: String,
     pub attachments: Vec<NewAttachment>,
     pub quote: i32,
+    pub is_voice_note: bool,
 }
 
 impl Display for QueueMessage {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(
             f,
-            "QueueMessage {{ session_id: {}, message: \"{}\", quote: {}, attachments: \"{:?}\" }}",
+            "QueueMessage {{ session_id: {}, message: \"{}\", quote: {}, attachments: \"{:?}\", is_voice_note: {} }}",
             &self.session_id,
             shorten(&self.message, 9),
             &self.quote,
             &self.attachments,
+            &self.is_voice_note,
         )
     }
 }
@@ -411,7 +413,7 @@ impl ClientActor {
     }
 
     pub fn clear_transient_timstamps(&mut self) {
-        if self.transient_timestamps.len() > (TM_CACHE_CAPACITY * TM_MAX_RATE) as _ {
+        if self.transient_timestamps.len() > (TM_CACHE_CAPACITY * TM_MAX_RATE) as usize {
             // slots / slots_per_minute = minutes
             const DURATION: u64 = (TM_CACHE_TRESHOLD * 60.0 * 1000.0) as _;
             let limit = (Utc::now().timestamp_millis() as u64) - DURATION;
@@ -1396,6 +1398,7 @@ impl Handler<QueueMessage> for ClientActor {
                 inserted_msg.id,
                 Some(attachment.mime_type.as_str()),
                 attachment.path.clone(),
+                msg.is_voice_note,
             );
         }
 
@@ -3301,8 +3304,9 @@ mod tests {
             session_id: 8,
             message: "Lorem ipsum dolor sit amet".into(),
             quote: 12,
+            is_voice_note: false,
         };
-        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[]\" }");
+        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[]\", is_voice_note: false }");
     }
 
     #[test]
@@ -3316,8 +3320,9 @@ mod tests {
             session_id: 8,
             message: "Lorem ipsum dolor sit amet".into(),
             quote: 12,
+            is_voice_note: false,
         };
-        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }]\" }");
+        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }]\", is_voice_note: false }");
     }
 
     #[test]
@@ -3337,7 +3342,8 @@ mod tests {
             session_id: 8,
             message: "Lorem ipsum dolor sit amet".into(),
             quote: 12,
+            is_voice_note: false,
         };
-        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }, NewAttachment { path: \"/path/to/audio.mp3\", mime_type: \"audio/mpeg\" }]\" }");
+        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }, NewAttachment { path: \"/path/to/audio.mp3\", mime_type: \"audio/mpeg\" }]\", is_voice_note: false }");
     }
 }

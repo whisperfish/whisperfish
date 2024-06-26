@@ -62,6 +62,7 @@ pub mod reactions;
 pub mod recipient;
 pub mod rustlegraph;
 pub mod sessions;
+pub mod voice_note_recorder;
 
 pub mod prompt;
 
@@ -80,6 +81,7 @@ pub use self::reactions::*;
 pub use self::recipient::*;
 pub use self::rustlegraph::*;
 pub use self::sessions::*;
+pub use self::voice_note_recorder::*;
 
 use chrono::prelude::*;
 use qmetaobject::prelude::*;

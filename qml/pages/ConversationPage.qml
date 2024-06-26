@@ -104,7 +104,8 @@ Page {
     //   visible when the view is at the bottom (latest message) and
     //   hidden while scrolling, becomes visible when scrolling down a
     //   little bit, always visible while the keyboard is open, not
-    //   visible during the quick scroll animation
+    //   visible during the quick scroll animation,
+    //   open while recording a voice note.
     //
     // Implementation:
     // The message view is anchored below the page header and extends
@@ -141,7 +142,7 @@ Page {
         onMenuOpenChanged: panel.open = !messages.menuOpen
         onVerticalVelocityChanged: {
             if (panel.moving) return
-            else if (verticalVelocity < 0) panel.hide()
+            else if (verticalVelocity < 0 && !textInput.isVoiceNote) panel.hide()
             else if (verticalVelocity > 0) panel.show()
         }
         onReplyTriggered: {
@@ -285,7 +286,7 @@ Page {
             }
             onSendMessage: {
                 console.log(JSON.stringify(attachments))
-                MessageModel.createMessage(sessionId, text, attachments, replyTo, true)
+                MessageModel.createMessage(sessionId, text, attachments, replyTo, true, isVoiceNote)
             }
             onSendTypingNotification: {
                 ClientWorker.send_typing_notification(sessionId, true)
@@ -304,7 +305,7 @@ Page {
         height: actionsColumn.height + 2*Theme.horizontalPageMargin
         open: false
         dock: Dock.Bottom
-        onOpenChanged: if (open) panel.hide()
+        onOpenChanged: if (open && !textInput.isVoiceNote) panel.hide()
 
         Behavior on opacity { FadeAnimator { duration: 80 } }
 

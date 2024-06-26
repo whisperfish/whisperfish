@@ -2562,6 +2562,7 @@ impl<O: Observable> Storage<O> {
         attachment_message_id: i32,
         mime_type: Option<&str>,
         path: impl AsRef<Path>,
+        voice_note: bool,
     ) -> i32 {
         let path = path.as_ref();
         let att_file = File::open(path).expect("");
@@ -2591,7 +2592,7 @@ impl<O: Observable> Storage<O> {
                     attachment_path.eq(path.as_os_str().to_str().expect("path UTF-8 compliant")),
                     size.eq(att_size),
                     file_name.eq(filename),
-                    is_voice_note.eq(false),
+                    is_voice_note.eq(voice_note),
                     is_borderless.eq(false),
                     is_quote.eq(false),
                 ))

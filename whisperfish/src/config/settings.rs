@@ -38,6 +38,7 @@ pub struct SettingsBridge {
     avatar_dir: qt_property!(String; READ get_avatar_dir WRITE set_avatar_dir NOTIFY avatar_dir_changed),
     attachment_dir: qt_property!(String; READ get_attachment_dir WRITE set_attachment_dir NOTIFY attachment_dir_changed),
     camera_dir: qt_property!(String; READ get_camera_dir WRITE set_camera_dir NOTIFY camera_dir_changed),
+    voice_note_dir: qt_property!(String; READ get_voice_note_dir WRITE set_voice_note_dir NOTIFY voice_note_dir_changed),
     plaintext_password: qt_property!(String; READ get_plaintext_password WRITE set_plaintext_password NOTIFY plaintext_password_changed),
 
     debug_mode_changed: qt_signal!(value: bool),
@@ -61,6 +62,7 @@ pub struct SettingsBridge {
     avatar_dir_changed: qt_signal!(value: String),
     attachment_dir_changed: qt_signal!(value: String),
     camera_dir_changed: qt_signal!(value: String),
+    voice_note_dir_changed: qt_signal!(value: String),
     plaintext_password_changed: qt_signal!(value: String),
 }
 
@@ -103,6 +105,7 @@ impl Default for SettingsBridge {
             avatar_dir: Default::default(),
             attachment_dir: Default::default(),
             camera_dir: Default::default(),
+            voice_note_dir: Default::default(),
             plaintext_password: Default::default(),
 
             debug_mode_changed: Default::default(),
@@ -120,6 +123,7 @@ impl Default for SettingsBridge {
             avatar_dir_changed: Default::default(),
             attachment_dir_changed: Default::default(),
             camera_dir_changed: Default::default(),
+            voice_note_dir_changed: Default::default(),
             plaintext_password_changed: Default::default(),
             show_phone_number_changed: Default::default(),
             share_phone_number_changed: Default::default(),
@@ -269,6 +273,10 @@ impl SettingsBridge {
         self.get_string("camera_dir")
     }
 
+    pub fn get_voice_note_dir(&self) -> String {
+        self.get_string("voice_note_dir")
+    }
+
     pub fn get_plaintext_password(&self) -> String {
         self.get_string("plaintext_password")
     }
@@ -368,6 +376,11 @@ impl SettingsBridge {
         self.camera_dir_changed(value);
     }
 
+    pub fn set_voice_note_dir(&mut self, value: String) {
+        self.set_string("voice_note_dir", &value);
+        self.voice_note_dir_changed(value);
+    }
+
     pub fn set_plaintext_password(&mut self, value: String) {
         self.set_string("plaintext_password", &value);
         self.plaintext_password_changed(value);
@@ -417,6 +430,13 @@ impl SettingsBridge {
                 .default_camera_dir()
                 .to_string_lossy(),
         );
+        self.set_string_if_unset(
+            "voice_note_dir",
+            // XXX this has to be adapted to current config struct
+            &crate::config::SignalConfig::default()
+                .default_voice_note_dir()
+                .to_string_lossy(),
+        );
     }
 
     pub fn get_string(&self, key: impl AsRef<str>) -> String {
@@ -437,9 +457,9 @@ impl SettingsBridge {
     pub fn migrate_qsettings_paths(&mut self) {
         let old_path = ".local/share/harbour-whisperfish";
         let new_path = ".local/share/be.rubdos/harbour-whisperfish";
-        let keys = ["attachment_dir", "camera_dir"];
+        let keys = ["attachment_dir", "camera_dir", "voice_note_dir"];
         for key in keys.iter() {
-            if self.inner.contains("attachment_dir") {
+            if self.inner.contains(key) {
                 self.inner.set_string(
                     key,
                     self.inner

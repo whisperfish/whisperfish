@@ -209,6 +209,10 @@ impl SignalConfig {
         self.share_dir.join("storage").join("camera")
     }
 
+    pub fn default_voice_note_dir(&self) -> std::path::PathBuf {
+        self.share_dir.join("storage").join("voice_notes")
+    }
+
     pub fn get_identity_dir(&self) -> std::path::PathBuf {
         self.share_dir
             .join("storage")

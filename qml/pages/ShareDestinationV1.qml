@@ -153,7 +153,7 @@ Page {
         onSendMessage: {
             for (var r in sessionList.recipients) {
                 var recp = sessionList.recipients[r]
-                MessageModel.createMessage(recp.id, text, attachments, -1, true)
+                MessageModel.createMessage(recp.id, text, attachments, -1, true, isVoiceNote)
             }
             pageStack.pop()
         }

@@ -67,7 +67,7 @@ Page {
 
             IconButton {
                 anchors.centerIn: parent
-                icon.source: "image://theme/icon-l-play?" + (pressed
+                icon.source: "../../icons/play.png?" + (pressed
                             ? Theme.highlightColor
                             : Theme.primaryColor)
                 onClicked: mouseArea.onClicked("")

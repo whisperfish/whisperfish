@@ -162,10 +162,10 @@ Page {
                     // TODO errors should be handled (asynchronously)
                     if (recipientNumber.length > 0) {
                         var firstAttachedPath = (attachments.length > 0 ? attachments[0].data : '')
-                        MessageModel.createMessage(recipientNumber, text, '', firstAttachedPath, false)
+                        MessageModel.createMessage(recipientNumber, text, '', firstAttachedPath, false, isVoiceNote)
 
                         for (var i = 1; i < attachments.length; i++) {
-                            MessageModel.createMessage(recipientNumber, '', '', attachments[i].data, true)
+                            MessageModel.createMessage(recipientNumber, '', '', attachments[i].data, true, isVoiceNote)
                         }
 
                         pageStack.pop() // TODO open the new chat instead of returning to the main page

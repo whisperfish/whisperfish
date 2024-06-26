@@ -4,6 +4,7 @@ import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Sailfish.Pickers 1.0
 import Nemo.Time 1.0
+import be.rubdos.whisperfish 1.0
 import "../pages"
 
 Item {
@@ -29,12 +30,28 @@ Item {
     property bool enableTypingIndicators: SettingsBridge.enable_typing_indicators
     property bool recipientIsRegistered: true
 
+    property bool isVoiceNote: false
+    property var voiceNoteStartTime: null
+    // In seconds
+    property var voiceNoteDuration: 0;
+
+    // getTime() doesn't work in a declarative context, so we need a timer
+    Timer {
+        running: voiceNoteStartTime != null
+        repeat: true
+        interval: 100
+        onTriggered: {
+            voiceNoteDuration = (new Date().getTime() - voiceNoteStartTime) / 1000;
+        }
+    }
+
     readonly property bool quotedMessageShown: quoteItem.messageId >= 0
     readonly property bool canSend: enableSending &&
                                     (text.trim().length > 0 ||
-                                     attachments.length > 0)
+                                     attachments.length > 0 ||
+                                     recorder.isRecording)
 
-    signal sendMessage(var text, var attachments, var replyTo /* message id */)
+    signal sendMessage(var text, var attachments, var replyTo /* message id */, var isVoiceNote)
     signal sendTypingNotification()
     signal sendTypingNotificationEnd()
     signal quotedMessageClicked(var messageId)
@@ -50,6 +67,8 @@ Item {
         text = ""
         attachments = []
         resetQuote()
+        isVoiceNote = false
+        voiceNoteStartTime = null;
 
         if (input.focus) { // reset keyboard state
             input.focus = false
@@ -72,12 +91,58 @@ Item {
 
     function _send() {
         Qt.inputMethod.commit()
+        if (isVoiceNote) {
+            var filename = recorder.stop();
+            var type;
+            if (useAac()) {
+                type = "audio/aac";
+            } else {
+                type = "audio/ogg";
+            }
+            attachments = [{data: filename, type: type}];
+        }
         if (text.length === 0 && attachments.length === 0) return
         if(SettingsBridge.enable_enter_send) {
             text = text.replace(/(\r\n\t|\n|\r\t)/gm, '')
         }
-        sendMessage(text, attachments, quoteItem.messageId)
+        sendMessage(text, attachments, quoteItem.messageId, isVoiceNote)
         if (clearAfterSend) reset()
+    }
+
+    function useAac() {
+        // TODO: Vorbis is not supported at all on iOS, so we need to use AAC there.
+        //       https://github.com/signalapp/Signal-iOS/issues/4539
+        //       https://github.com/signalapp/Signal-iOS/issues/5771
+        // TODO: Jolla's gstreamer version is 1.14.5, which crashes on libav_aacenc, so on gstreamer lower than 1.22,
+        //       we use Vorbis.  1.22 is tested on Sailfish 4.6.
+        //       This means that voice messages sent from SailfishOS 3.4 will not be playable on iOS.
+        //       Sad panda. 🐼
+        return AppState.gstreamer_version_major > 1
+            || AppState.gstreamer_version_major == 1 && AppState.gstreamer_version_minor >= 22;
+    }
+
+    function startRecording() {
+        isVoiceNote = true;
+        var ext;
+        if (useAac()) {
+            ext = "aac";
+        } else {
+            ext = "ogg";
+        }
+        var path = SettingsBridge.voice_note_dir + "/Note_" + Qt.formatDateTime(new Date(), "yyyyMMdd_hhmmss") + "." + ext
+        recorder.start(path);
+        voiceNoteStartTime = new Date().getTime();
+    }
+
+    function cancelRecording() {
+        isVoiceNote = false;
+        recorder.stop();
+        recorder.reset();
+        voiceNoteStartTime = null;
+    }
+
+    VoiceNoteRecorder {
+        id: recorder
     }
 
     WallClock {
@@ -178,8 +243,60 @@ Item {
                 }
             }
 
+            Image {
+                id: voiceNoteRecordingIcon
+                source: "../../icons/microphone.png"
+                width: height
+                height: parent.height - 2* Theme.paddingMedium
+
+                visible: isVoiceNote
+
+                anchors {
+                    left: parent.left
+                    leftMargin: Theme.horizontalPageMargin
+                    bottom: parent.bottom
+                    bottomMargin: Theme.paddingMedium
+                }
+            }
+
+            Label {
+                id: voiceNoteRecordingTime
+                anchors {
+                    left: voiceNoteRecordingIcon.right
+                    leftMargin: Theme.paddingMedium
+                    verticalCenter: parent.verticalCenter
+                }
+                visible: isVoiceNote
+                height: parent.height
+                font.pixelSize: if (useAac()) {
+                    Theme.fontSizeMedium
+                } else {
+                    Theme.fontSizeTiny
+                }
+
+                function formatTime(dt) {
+                    var minutes, seconds;
+                    minutes = Math.floor(dt / 60);
+                    seconds = Math.floor(dt % 60);
+                    var s = minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+                    if (useAac()) {
+                        return s;
+                    } else {
+                        //: Short warning note that the voice note is being recorded in Vorbis format
+                        //% "Incompatible with Signal iOS"
+                        return qsTrId("whisperfish-voice-note-vorbis-warning") + " " + s;
+                    }
+                }
+
+                text: formatTime(voiceNoteDuration)
+                verticalAlignment: Text.AlignVCenter
+            }
+
             TextArea {
                 id: input
+
+                visible: !isVoiceNote
+
                 property real minInputHeight: Theme.itemSizeMedium
                 property real maxInputHeight: maxHeight - column.spacing - quoteItem.height
                 height: implicitHeight < maxInputHeight ?
@@ -202,7 +319,7 @@ Item {
                 hideLabelOnEmptyField: false
                 textRightMargin: 0
                 font.pixelSize: Theme.fontSizeSmall
-                enabled: recipientIsRegistered || text.length > 0
+                enabled: (recipientIsRegistered || text.length > 0) && !isVoiceNote
                 placeholderText: if (!recipientIsRegistered) {
                         //: Chat text input placeholder for deleted/unregistered recipient
                         //% "The recipient is not registered"
@@ -237,7 +354,8 @@ Item {
 
             IconButton {
                 id: moreButton
-                enabled: enableSending
+                enabled: enableSending && !isVoiceNote
+                visible: enableAttachments && !isVoiceNote
                 anchors {
                     right: sendButton.left; rightMargin: Theme.paddingSmall
                     bottom: parent.bottom; bottomMargin: Theme.paddingMedium
@@ -262,7 +380,7 @@ Item {
                     bottom: moreButton.top
                 }
                 width: cameraButton.width
-                height: cameraButton.height + attachButton.height + (2 * Theme.paddingSmall)
+                height: voiceButton.height + cameraButton.height + attachButton.height + (3 * Theme.paddingSmall)
 
                 clip: false
 
@@ -283,9 +401,26 @@ Item {
                 }
 
                 IconButton {
-                    id: cameraButton
+                    id: voiceButton
                     anchors {
                         top: parent.top
+                        horizontalCenter: parent.horizontalCenter
+                    }
+                    icon.source: "../../icons/microphone.png"
+                    icon.width: enableAttachments ? Theme.iconSizeMedium : 0
+                    icon.height: icon.width
+                    visible: enableAttachments
+                    onClicked: {
+                        inputRow.toggleAttachmentButtons();
+                        startRecording();
+                    }
+                }
+
+                IconButton {
+                    id: cameraButton
+                    anchors {
+                        top: voiceButton.bottom
+                        topMargin: Theme.paddingSmall
                         horizontalCenter: parent.horizontalCenter
                     }
                     icon.source: "image://theme/icon-m-camera"
@@ -313,6 +448,23 @@ Item {
                         inputRow.toggleAttachmentButtons()
                         pageStack.push(multiDocumentPickerDialog)
                     }
+                }
+            }
+
+            IconButton {
+                id: cancelButton
+                anchors {
+                    // icon-m-cancel has own padding
+                    right: sendButton.left; rightMargin: Theme.paddingMedium
+                    bottom: parent.bottom; bottomMargin: Theme.paddingMedium
+                }
+                icon.width: Theme.iconSizeMedium + 2*Theme.paddingSmall
+                icon.height: width
+                icon.source: "image://theme/icon-m-cancel"
+                visible: isVoiceNote
+                enabled: isVoiceNote
+                onClicked: {
+                    cancelRecording()
                 }
             }
 
