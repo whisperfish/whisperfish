@@ -1,5 +1,7 @@
 use anyhow::Context;
 
+use libsignal_protocol::DeviceId;
+use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
 use qttypes::QSettings;
@@ -13,6 +15,7 @@ pub struct SettingsBridge {
     // stringListSet: qt_method!(fn (&self, key: String, value: String)),
     // stringListValue: qt_method!(fn (&self, key: String, value: String)),
     avatarExists: qt_method!(fn(&self, key: String) -> bool),
+    isPrimaryDevice: qt_method!(fn(&self) -> bool),
 
     inner: QSettings,
 
@@ -74,6 +77,7 @@ impl Default for SettingsBridge {
             base: Default::default(),
 
             avatarExists: Default::default(),
+            isPrimaryDevice: Default::default(),
 
             inner: QSettings::from_path(
                 dirs::config_dir()
@@ -404,6 +408,18 @@ impl SettingsBridge {
     #[tracing::instrument(skip(self))]
     fn avatarExists(&mut self, uuid: String) -> bool {
         self.avatar_exists(uuid)
+    }
+
+    #[allow(non_snake_case)]
+    fn isPrimaryDevice(&mut self) -> bool {
+        // XXX There must be easier way to access current device id...
+        let config = whisperfish_store::config::SignalConfig::read_from_file();
+        if config.is_ok() {
+            let config = config.unwrap();
+            config.get_device_id() == DeviceId::from(DEFAULT_DEVICE_ID)
+        } else {
+            false
+        }
     }
 
     pub fn defaults(&mut self) {

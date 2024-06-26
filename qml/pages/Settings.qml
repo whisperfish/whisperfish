@@ -15,6 +15,7 @@ Page {
 
     // Cache encryption state so it's only queried once from storage
     property bool encryptedDatabase: AppState.isEncrypted()
+    readonly property bool isPrimaryDevice: SettingsBridge.isPrimaryDevice()
 
     // Triggers to send Syng Type::Configuration after closing the page
     property bool oldTypingIndicators: false
@@ -74,6 +75,25 @@ Page {
                 title: qsTrId("whisperfish-settings-title")
             }
 
+            Label {
+                visible: !isPrimaryDevice
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: parent.width - 4*Theme.horizontalPageMargin
+                wrapMode: Text.Wrap
+                //: Settings page, not a primary device note
+                //% "Some setting can only be changed from the primary device."
+                text: qsTrId("whisperfish-settings-some-settings-locked")
+
+                Rectangle {
+                    z: -1
+                    anchors.centerIn: parent
+                    width: parent.width + 2*Theme.horizontalPageMargin
+                    height: parent.height + 2*Theme.horizontalPageMargin + 1
+                    color: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
+                    radius: 2*Theme.horizontalPageMargin
+                }
+            }
+
             // ------ BEGIN GENERAL SETTINGS ------
             SectionHeader {
                 //: Settings page general section
@@ -82,6 +102,7 @@ Page {
             }
             IconTextSwitch {
                 id: useIsTypingMessages
+                enabled: isPrimaryDevice
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page use typing indicators
                 //% "Enable typing indicators"
