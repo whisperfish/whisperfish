@@ -1445,15 +1445,12 @@ impl<O: Observable> Storage<O> {
 
     /// Marks the message with a certain timestamp as received by a certain person.
     #[tracing::instrument(skip(self))]
-    pub fn mark_message_received(
+    pub fn mark_message_delivered(
         &self,
         receiver_addr: ServiceAddress,
         timestamp: NaiveDateTime,
-        delivered_at: Option<chrono::DateTime<Utc>>,
+        delivered_at: NaiveDateTime,
     ) -> Option<MessagePointer> {
-        // XXX: probably, the trigger for this method call knows a better time stamp.
-        let delivered_at = delivered_at.unwrap_or_else(chrono::Utc::now).naive_utc();
-
         // Find the recipient
         let recipient =
             self.merge_and_fetch_recipient_by_address(None, receiver_addr, TrustLevel::Certain);
@@ -1490,7 +1487,7 @@ impl<O: Observable> Storage<O> {
             Ok(n) => {
                 if n != 1 {
                     tracing::warn!(
-                        "Read receipt had {} affected rows instead of expected 1. Updating anyway.",
+                        "Delivery receipt had {} affected rows instead of expected 1. Updating anyway.",
                         n
                     );
                 }

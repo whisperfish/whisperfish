@@ -962,7 +962,7 @@ impl ClientActor {
             timestamp,
             millis
         );
-        if let Some(updated) = storage.mark_message_received(source, timestamp, None) {
+        if let Some(updated) = storage.mark_message_delivered(source, timestamp, timestamp) {
             self.inner
                 .pinned()
                 .borrow_mut()
