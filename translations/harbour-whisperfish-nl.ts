@@ -767,13 +767,13 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="79"/>
         <source>Unlink contact</source>
         <extracomment>Menu action to unlink a Signal contact from a Sailfish OS contact</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Contactgegevens ontkoppelen</translation>
     </message>
     <message id="whisperfish-recipient-link">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="86"/>
         <source>Link contact</source>
         <extracomment>Menu action to pick a Sailfish OS contact to link the Signal user to</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Contactgegevens koppelen</translation>
     </message>
     <message id="whisperfish-profile-uuid-invalid-warning">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="172"/>
@@ -1347,7 +1347,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="582"/>
         <source>GStreamer version</source>
         <extracomment>GStreamer version indication in settings</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>GStreamerversie</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
         <location filename="../qml/pages/Settings.qml" line="407"/>
@@ -1842,7 +1842,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ChatTextInput.qml" line="287"/>
         <source>Incompatible with Signal iOS</source>
         <extracomment>Short warning note that the voice note is being recorded in Vorbis format</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Incompatibel met Signal iOS</translation>
     </message>
     <message id="whisperfish-chat-input-attachment-label" numerus="yes">
         <location filename="../qml/components/ChatTextInput.qml" line="317"/>
@@ -2589,7 +2589,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/LinkContactPage.qml" line="10"/>
         <source>Select contact</source>
         <extracomment>Link Signal user to Sailfish OS contact page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Selecteer contact</translation>
     </message>
 </context>
 </TS>
