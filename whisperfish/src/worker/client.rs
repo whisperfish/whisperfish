@@ -17,9 +17,11 @@ use self::unidentified::UnidentifiedCertificates;
 use image::GenericImageView;
 use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
+use libsignal_service::proto::sync_message::Configuration;
 use libsignal_service::proto::sync_message::Sent;
 use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::push_service::ServiceIdType;
+use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 use libsignal_service::sender::SendMessageResult;
 use tracing_futures::Instrument;
 use uuid::Uuid;
@@ -250,6 +252,8 @@ pub struct ClientWorker {
 
     linkRecipient: qt_method!(fn(&self, recipient_id: i32, external_id: String)),
     unlinkRecipient: qt_method!(fn(&self, recipient_id: i32)),
+
+    sendConfiguration: qt_method!(fn(&self)),
 }
 
 /// ClientActor keeps track of the connection state.
@@ -817,6 +821,7 @@ impl ClientActor {
         let local_addr = self.self_aci.unwrap();
         let storage = self.storage.clone().unwrap();
         let sender = self.message_sender();
+        let configuration = self.get_configuration();
 
         actix::spawn(async move {
             let mut sender = sender.await?;
@@ -852,19 +857,6 @@ impl ClientActor {
                     sender.send_contact_details(&local_addr, None, contacts, false, true).await?;
                 },
                 Type::Configuration => {
-                    use libsignal_service::proto::sync_message::Configuration;
-
-                    let settings = crate::config::SettingsBridge::default();
-
-                    // Each 'None' value is ignored
-                    let configuration = Configuration {
-                        read_receipts: None,
-                        unidentified_delivery_indicators: None,
-                        typing_indicators: Some(settings.get_enable_typing_indicators()),
-                        provisioning_version: None,
-                        link_previews: None,
-                    };
-
                     sender.send_configuration(&local_addr, configuration).await?;
                 },
                 // Type::Blocked
@@ -878,6 +870,19 @@ impl ClientActor {
 
             Ok::<_, anyhow::Error>(())
         }.map(|v| if let Err(e) = v {tracing::error!("{:?} in handle_sync_request()", e)}));
+    }
+
+    fn get_configuration(&self) -> Configuration {
+        // TODO: Get SettingsBridge from WhisperfishApp instead of creating one
+        let settings = crate::config::SettingsBridge::default();
+
+        Configuration {
+            read_receipts: None,
+            unidentified_delivery_indicators: None,
+            typing_indicators: Some(settings.get_enable_typing_indicators()),
+            provisioning_version: None,
+            link_previews: None,
+        }
     }
 
     fn process_receipt(&mut self, msg: &Envelope) {
@@ -2992,6 +2997,18 @@ impl ClientWorker {
                 .map(Result::unwrap),
         );
     }
+
+    #[with_executor]
+    #[allow(non_snake_case)]
+    fn sendConfiguration(&self) {
+        actix::spawn(
+            self.actor
+                .as_ref()
+                .unwrap()
+                .send(SendConfiguration)
+                .map(Result::unwrap),
+        );
+    }
 }
 
 impl Handler<CompactDb> for ClientActor {
@@ -3315,6 +3332,32 @@ impl Handler<LinkRecipient> for ClientActor {
     ) {
         let storage = self.storage.as_mut().unwrap();
         storage.set_recipient_external_id(recipient_id, external_id);
+    }
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct SendConfiguration;
+
+impl Handler<SendConfiguration> for ClientActor {
+    type Result = ();
+
+    fn handle(&mut self, _: SendConfiguration, _ctx: &mut Self::Context) {
+        if self.config.get_device_id() != DeviceId::from(DEFAULT_DEVICE_ID) {
+            tracing::info!("Not the primary device, ignoring SendConfiguration request");
+            return;
+        };
+        let sender = self.message_sender();
+        let local_addr = self.config.get_addr().unwrap();
+        let configuration = self.get_configuration();
+
+        actix::spawn(async move {
+            let mut sender = sender.await.unwrap();
+            sender
+                .send_configuration(&local_addr, configuration)
+                .await
+                .expect("send configuration");
+        });
     }
 }
 

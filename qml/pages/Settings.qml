@@ -16,6 +16,20 @@ Page {
     // Cache encryption state so it's only queried once from storage
     property bool encryptedDatabase: AppState.isEncrypted()
 
+    // Triggers to send Syng Type::Configuration after closing the page
+    property bool oldTypingIndicators: false
+
+    Component.onCompleted: {
+        oldTypingIndicators = SettingsBridge.enable_typing_indicators
+    }
+
+    Component.onDestruction: {
+        if (oldTypingIndicators != SettingsBridge.enable_typing_indicators) {
+            console.log("Configuration sync needed")
+            ClientWorker.sendConfiguration()
+        }
+    }
+
     SilicaFlickable {
         anchors.fill: parent
         contentWidth: parent.width
