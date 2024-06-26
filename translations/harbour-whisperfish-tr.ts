@@ -1463,7 +1463,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="582"/>
         <source>GStreamer version</source>
         <extracomment>GStreamer version indication in settings</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>GStreamer sürümü</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
         <location filename="../qml/pages/Settings.qml" line="407"/>
@@ -1958,7 +1958,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ChatTextInput.qml" line="287"/>
         <source>Incompatible with Signal iOS</source>
         <extracomment>Short warning note that the voice note is being recorded in Vorbis format</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Signal iOS ile uyumsuz</translation>
     </message>
     <message id="whisperfish-chat-input-attachment-label" numerus="yes">
         <location filename="../qml/components/ChatTextInput.qml" line="317"/>
