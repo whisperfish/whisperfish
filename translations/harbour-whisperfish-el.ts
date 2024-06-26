@@ -1346,6 +1346,12 @@ Settings page share contacts</extracomment>
         <extracomment>Settings page enable background mode description</extracomment>
         <translation>Όταν είναι ενεργοποιημένο, το Whisperfish συνεχίζει να λειτουργεί στο παρασκήνιο και μπορεί να στέλνει ειδοποιήσεις αφού κλείσετε το παράθυρο της εφαρμογής.</translation>
     </message>
+    <message id="whisperfish-settings-gstreamer-version">
+        <location filename="../qml/pages/Settings.qml" line="582"/>
+        <source>GStreamer version</source>
+        <extracomment>GStreamer version indication in settings</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-settings-enable-background-mode">
         <location filename="../qml/pages/Settings.qml" line="407"/>
         <source>Background mode</source>
@@ -1628,19 +1634,19 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Απενεργοποιημένη</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db">
-        <location filename="../qml/pages/Settings.qml" line="582"/>
+        <location filename="../qml/pages/Settings.qml" line="588"/>
         <source>Encrypted Database</source>
         <extracomment>Settings page encrypted database</extracomment>
         <translation>Κρυπτογραφημένη Βάση Δεδομένων</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-enabled">
-        <location filename="../qml/pages/Settings.qml" line="586"/>
+        <location filename="../qml/pages/Settings.qml" line="592"/>
         <source>Enabled</source>
         <extracomment>Settings page encrypted db enabled</extracomment>
         <translation>Ενεργοποιημένη</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-disabled">
-        <location filename="../qml/pages/Settings.qml" line="589"/>
+        <location filename="../qml/pages/Settings.qml" line="595"/>
         <source>Disabled</source>
         <extracomment>Settings page encrypted db disabled</extracomment>
         <translation>Απενεργοποιημένη</translation>
@@ -1835,8 +1841,14 @@ Settings page share contacts</extracomment>
         <extracomment>Placeholder shown as title for an attached contact in a message</extracomment>
         <translation>Διαμοιρασμός επαφής</translation>
     </message>
+    <message id="whisperfish-voice-note-vorbis-warning">
+        <location filename="../qml/components/ChatTextInput.qml" line="287"/>
+        <source>Incompatible with Signal iOS</source>
+        <extracomment>Short warning note that the voice note is being recorded in Vorbis format</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-chat-input-attachment-label" numerus="yes">
-        <location filename="../qml/components/ChatTextInput.qml" line="200"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="317"/>
         <source>%n attachment(s)</source>
         <extracomment>Number of attachments currently selected for sending</extracomment>
         <translation>
@@ -1845,25 +1857,25 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-chat-input-recipient-is-unregistered">
-        <location filename="../qml/components/ChatTextInput.qml" line="209"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="326"/>
         <source>The recipient is not registered</source>
         <extracomment>Chat text input placeholder for deleted/unregistered recipient</extracomment>
         <translation>Ο παραλήπτης δεν είναι εγγεγραμένος</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-personal">
-        <location filename="../qml/components/ChatTextInput.qml" line="214"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="331"/>
         <source>Hi %1</source>
         <extracomment>Personalized placeholder for chat input, e.g. &quot;Hi John&quot;</extracomment>
         <translation>Γειά σου %1</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-default">
-        <location filename="../qml/components/ChatTextInput.qml" line="219"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="336"/>
         <source>Write a message</source>
         <extracomment>Generic placeholder for chat input</extracomment>
         <translation>Γράψτε ένα μήνυμα</translation>
     </message>
     <message id="whisperfish-select-attachments-page-title">
-        <location filename="../qml/components/ChatTextInput.qml" line="371"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="523"/>
         <source>Select attachments</source>
         <extracomment>Attachment picker page title</extracomment>
         <translation>Επιλογή συνημμένων</translation>
@@ -2256,7 +2268,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-actions-info-label" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="355"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="356"/>
         <source>%n message(s) selected</source>
         <oldsource>%1 message(s) selected</oldsource>
         <extracomment>Info label shown while selecting messages</extracomment>
@@ -2266,7 +2278,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-clear-selection" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="378"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="379"/>
         <source>Clear selection</source>
         <extracomment>Message action description, shown if one or more messages are selected</extracomment>
         <translation>
@@ -2275,7 +2287,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-copy" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="387"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="388"/>
         <source>Copy %n message(s)</source>
         <oldsource>Copy %1 message(s)</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2285,14 +2297,14 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-info">
-        <location filename="../qml/pages/ConversationPage.qml" line="395"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="396"/>
         <source>Show message info</source>
         <extracomment>Message action description (only available if n==1)</extracomment>
         <translation>Προβολή πληροφοριών του μηνύματος</translation>
     </message>
     <message id="whisperfish-message-action-delete-for-self" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="407"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="439"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="408"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="440"/>
         <source>Locally delete %n message(s)</source>
         <oldsource>Delete %1 message(s) for me</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2302,8 +2314,8 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-delete-for-all" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="419"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="449"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="420"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="450"/>
         <source>Delete %n message(s) for all</source>
         <oldsource>Delete %1 message(s) for all</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2313,7 +2325,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-resend" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="461"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="462"/>
         <source>Retry sending (the) failed message(s)</source>
         <extracomment>Message action description</extracomment>
         <translation>
