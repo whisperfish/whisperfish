@@ -1193,21 +1193,50 @@ impl ClientActor {
                 }
             }
             ContentBody::ReceiptMessage(receipt) => {
-                tracing::info!("{:?} received a message.", metadata.sender);
-                // XXX dispatch on receipt.type
-                for &ts in &receipt.timestamp {
-                    // Signal uses timestamps in milliseconds, chrono has nanoseconds
-                    if let Some(updated) = storage.mark_message_received(
-                        metadata.sender,
-                        millis_to_naive_chrono(ts),
-                        None,
-                    ) {
-                        self.inner
-                            .pinned()
-                            .borrow_mut()
-                            .messageReceipt(updated.session_id, updated.message_id)
-                    } else {
-                        tracing::warn!("Could not mark {} as received!", ts);
+                use receipt_message::Type;
+
+                if let Some(receipt_type_i32) = receipt.r#type {
+                    if let Ok(receipt_type) = Type::try_from(receipt_type_i32) {
+                        match receipt_type {
+                            Type::Delivery => {
+                                tracing::info!("{:?} received a message.", metadata.sender);
+                                for &ts in &receipt.timestamp {
+                                    // Signal uses timestamps in milliseconds, chrono has nanoseconds
+                                    if let Some(updated) = storage.mark_message_delivered(
+                                        metadata.sender,
+                                        millis_to_naive_chrono(ts),
+                                        millis_to_naive_chrono(metadata.timestamp),
+                                    ) {
+                                        self.inner
+                                            .pinned()
+                                            .borrow_mut()
+                                            .messageReceipt(updated.session_id, updated.message_id)
+                                    } else {
+                                        tracing::warn!("Could not mark {} as received!", ts);
+                                    }
+                                }
+                            }
+                            Type::Read => {
+                                tracing::info!("{:?} read a message.", metadata.sender);
+                                for updated in storage.mark_messages_read(
+                                    metadata.sender,
+                                    &receipt
+                                        .timestamp
+                                        .into_iter()
+                                        .map(millis_to_naive_chrono)
+                                        .collect(),
+                                    millis_to_naive_chrono(metadata.timestamp),
+                                ) {
+                                    self.inner
+                                        .pinned()
+                                        .borrow_mut()
+                                        .messageReceipt(updated.session_id, updated.message_id)
+                                }
+                            }
+                            Type::Viewed => {
+                                // TODO
+                            }
+                        }
                     }
                 }
             }

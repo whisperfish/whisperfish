@@ -1398,6 +1398,81 @@ impl<O: Observable> Storage<O> {
         Some(pointer)
     }
 
+    /// Marks the messages with a certain timestamps as read by a certain person in a certain session.
+    ///
+    /// This is called when a recipient sends a ReceiptMessage with some number of timestamps.
+    #[tracing::instrument(skip(self))]
+    pub fn mark_messages_read(
+        &self,
+        sender: ServiceAddress,
+        timestamps: &Vec<NaiveDateTime>,
+        read_at: NaiveDateTime,
+    ) -> Vec<MessagePointer> {
+        use schema::messages::dsl::*;
+
+        // Find the recipient
+        let rcpt = self.merge_and_fetch_recipient_by_address(None, sender, TrustLevel::Certain);
+
+        let pointers: Vec<MessagePointer> = diesel::update(messages)
+            .filter(server_timestamp.eq_any(timestamps))
+            .set(is_read.eq(true))
+            .returning((schema::messages::id, schema::messages::session_id))
+            .load(&mut *self.db())
+            .unwrap()
+            .iter()
+            .map(|(m_id, s_id)| MessagePointer {
+                message_id: *m_id,
+                session_id: *s_id,
+            })
+            .collect();
+
+        if pointers.is_empty() {
+            tracing::warn!(
+                "Received {} timestamps but {} messages",
+                timestamps.len(),
+                pointers.len()
+            );
+            tracing::warn!(
+                "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
+            );
+            return Vec::new();
+        }
+
+        for ptr in pointers.iter() {
+            self.observe_update(messages, ptr.message_id)
+                .with_relation(schema::sessions::table, ptr.session_id);
+        }
+
+        for ptr in pointers.iter() {
+            let upsert = diesel::insert_into(schema::receipts::table)
+                .values((
+                    schema::receipts::message_id.eq(ptr.message_id),
+                    schema::receipts::recipient_id.eq(rcpt.id),
+                    schema::receipts::read.eq(read_at),
+                ))
+                .on_conflict((schema::receipts::message_id, schema::receipts::recipient_id))
+                .do_update()
+                .set(schema::receipts::read.eq(read_at))
+                .execute(&mut *self.db());
+
+            match upsert {
+                Ok(n) => {
+                    if n != 1 {
+                        tracing::warn!("Read receipt update affected {} rows", n);
+                    }
+                    self.observe_upsert(schema::receipts::table, PrimaryKey::Unknown)
+                        .with_relation(schema::messages::table, ptr.message_id)
+                        .with_relation(schema::recipients::table, rcpt.id);
+                }
+                Err(e) => {
+                    tracing::error!("Could not insert receipt: {}.", e);
+                }
+            }
+        }
+
+        pointers
+    }
+
     /// Handle marking multiple messages as read and potentially starting their expiry timer.
     #[tracing::instrument(skip(self))]
     pub fn mark_messages_read_in_ui(&self, msg_ids: Vec<i32>) {
