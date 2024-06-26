@@ -1217,20 +1217,25 @@ impl ClientActor {
                                 }
                             }
                             Type::Read => {
-                                tracing::info!("{:?} read a message.", metadata.sender);
-                                for updated in storage.mark_messages_read(
-                                    metadata.sender,
-                                    &receipt
-                                        .timestamp
-                                        .into_iter()
-                                        .map(millis_to_naive_chrono)
-                                        .collect(),
-                                    millis_to_naive_chrono(metadata.timestamp),
-                                ) {
-                                    self.inner
-                                        .pinned()
-                                        .borrow_mut()
-                                        .messageReceipt(updated.session_id, updated.message_id)
+                                let settings = crate::config::SettingsBridge::default();
+                                if settings.get_enable_read_receipts() {
+                                    tracing::info!("{:?} read a message.", metadata.sender);
+                                    for updated in storage.mark_messages_read(
+                                        metadata.sender,
+                                        &receipt
+                                            .timestamp
+                                            .into_iter()
+                                            .map(millis_to_naive_chrono)
+                                            .collect(),
+                                        millis_to_naive_chrono(metadata.timestamp),
+                                    ) {
+                                        self.inner
+                                            .pinned()
+                                            .borrow_mut()
+                                            .messageReceipt(updated.session_id, updated.message_id)
+                                    }
+                                } else {
+                                    tracing::debug!("Ignoring DeliveryMessage(Read)");
                                 }
                             }
                             Type::Viewed => {
