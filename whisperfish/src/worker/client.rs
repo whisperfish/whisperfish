@@ -939,37 +939,6 @@ impl ClientActor {
         }
     }
 
-    fn process_receipt(&mut self, msg: &Envelope) {
-        let millis = msg.timestamp();
-
-        // If the receipt timestamp matches a transient timestamp,
-        // such as a TypingMessage or a sent/updated/removed Reaction,
-        // stop processing, since there's no such message in database.
-        if self.transient_timestamps.contains(&millis) {
-            tracing::info!("Transient receipt: {}", millis);
-            return;
-        }
-
-        tracing::info!("Received receipt: {}", millis);
-
-        let storage = self.storage.as_mut().expect("storage initialized");
-        let source = msg.source_address();
-
-        let timestamp = millis_to_naive_chrono(millis);
-        tracing::trace!(
-            "Marking message from {:?} at {} ({}) as received.",
-            source,
-            timestamp,
-            millis
-        );
-        if let Some(updated) = storage.mark_message_delivered(source, timestamp, timestamp) {
-            self.inner
-                .pinned()
-                .borrow_mut()
-                .messageReceipt(updated.session_id, updated.message_id)
-        }
-    }
-
     #[tracing::instrument(level = "debug", skip(self))]
     fn handle_message_not_sealed(&mut self, recipient: ServiceAddress) {
         // TODO: if the contact should have our profile key already, send it again.
@@ -2422,10 +2391,6 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
         }
 
         let mut cipher = self.cipher(incoming_address.identity);
-
-        if msg.is_receipt() {
-            self.process_receipt(&msg);
-        }
 
         if !(msg.is_prekey_signal_message()
             || msg.is_signal_message()
