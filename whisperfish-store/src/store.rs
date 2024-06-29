@@ -29,6 +29,7 @@ use libsignal_service::groups_v2::InMemoryCredentialsCache;
 use libsignal_service::proto::{attachment_pointer, data_message::Reaction, DataMessage};
 use libsignal_service::protocol::{self, *};
 use libsignal_service::zkgroup::api::groups::GroupSecretParams;
+use libsignal_service::zkgroup::PROFILE_KEY_LEN;
 use libsignal_service::{prelude::*, ServiceIdType};
 use phonenumber::PhoneNumber;
 pub use protocol_store::AciOrPniStorage;
@@ -952,9 +953,17 @@ impl<O: Observable> Storage<O> {
         new_profile_key: &[u8],
         trust_level: TrustLevel,
     ) -> (orm::Recipient, bool) {
-        // XXX check profile_key length
         let recipient =
             self.merge_and_fetch_recipient_by_address(phonenumber, addr.unwrap(), trust_level);
+
+        if new_profile_key.len() != PROFILE_KEY_LEN {
+            tracing::error!(
+                "Profile key is not {} but {} bytes long",
+                PROFILE_KEY_LEN,
+                new_profile_key.len()
+            );
+            return (recipient, false);
+        }
 
         let is_unset = recipient.profile_key.is_none()
             || recipient.profile_key.as_ref().map(Vec::len) == Some(0);
