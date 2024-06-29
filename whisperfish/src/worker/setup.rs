@@ -216,8 +216,6 @@ impl SetupWorker {
             .take(24)
             .map(char::from)
             .collect();
-        // XXX in rand 0.8, this needs to be a Vec<u8> and be converted afterwards.
-        // let password = std::str::from_utf8(&password)?.to_string();
 
         let reg = if is_primary {
             SetupWorker::register_as_primary(app.clone(), &config, password, storage_password)
