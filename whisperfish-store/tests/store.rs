@@ -755,11 +755,14 @@ async fn test_recipient_actions() {
     assert!(msg.is_read);
 
     assert!(storage.fetch_message_receipts(msg.id).is_empty());
-    storage.mark_message_delivered(
-        ServiceAddress::new_aci(uuid1),
-        msg.server_timestamp,
-        chrono::Utc::now().naive_utc(),
-    );
+    let num_delivered = storage
+        .mark_messages_delivered(
+            ServiceAddress::new_aci(uuid1),
+            vec![msg.server_timestamp],
+            chrono::Utc::now().naive_utc(),
+        )
+        .len();
+    assert_eq!(num_delivered, 1);
     assert!(!storage.fetch_message_receipts(msg.id).is_empty());
 
     let reaction = Reaction {

@@ -1517,64 +1517,74 @@ impl<O: Observable> Storage<O> {
         }
     }
 
-    /// Marks the message with a certain timestamp as received by a certain person.
+    /// Marks the messages with the certain timestamps as delivered to a certain person.
     #[tracing::instrument(skip(self))]
-    pub fn mark_message_delivered(
+    pub fn mark_messages_delivered(
         &self,
         receiver_addr: ServiceAddress,
-        timestamp: NaiveDateTime,
+        timestamps: Vec<NaiveDateTime>,
         delivered_at: NaiveDateTime,
-    ) -> Option<MessagePointer> {
+    ) -> Vec<MessagePointer> {
         // Find the recipient
-        let recipient =
+        let rcpt =
             self.merge_and_fetch_recipient_by_address(None, receiver_addr, TrustLevel::Certain);
-        let row: Option<(i32, i32)> = schema::messages::table
+
+        let num_timestamps = timestamps.len();
+        let pointers: Vec<MessagePointer> = schema::messages::table
             .select((schema::messages::id, schema::messages::session_id))
-            .filter(schema::messages::server_timestamp.eq(timestamp))
-            .first(&mut *self.db())
-            .optional()
-            .expect("db");
-        if row.is_none() {
-            tracing::warn!("Could not find message with timestamp {}", timestamp);
+            .filter(schema::messages::server_timestamp.eq_any(timestamps))
+            .load(&mut *self.db())
+            .unwrap()
+            .into_iter()
+            .map(|(m_id, s_id)| MessagePointer {
+                message_id: m_id,
+                session_id: s_id,
+            })
+            .collect();
+
+        if pointers.is_empty() {
+            tracing::warn!(
+                "Received {} delivered timestamps but found {} messages",
+                num_timestamps,
+                pointers.len()
+            );
             tracing::warn!(
                 "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
             );
+            return Vec::new();
         }
-        let pointer = row?;
-        let pointer = MessagePointer {
-            message_id: pointer.0,
-            session_id: pointer.1,
-        };
 
-        let upsert = diesel::insert_into(schema::receipts::table)
-            .values((
-                schema::receipts::message_id.eq(pointer.message_id),
-                schema::receipts::recipient_id.eq(recipient.id),
-                schema::receipts::delivered.eq(delivered_at),
-            ))
-            .on_conflict((schema::receipts::message_id, schema::receipts::recipient_id))
-            .do_update()
-            .set(schema::receipts::delivered.eq(delivered_at))
-            .execute(&mut *self.db());
+        for ptr in pointers.iter() {
+            self.observe_update(schema::messages::table, ptr.message_id)
+                .with_relation(schema::sessions::table, ptr.session_id);
 
-        match upsert {
-            Ok(n) => {
-                if n != 1 {
-                    tracing::warn!(
-                        "Delivery receipt had {} affected rows instead of expected 1. Updating anyway.",
-                        n
-                    );
+            let upsert = diesel::insert_into(schema::receipts::table)
+                .values((
+                    schema::receipts::message_id.eq(ptr.message_id),
+                    schema::receipts::recipient_id.eq(rcpt.id),
+                    schema::receipts::delivered.eq(delivered_at),
+                ))
+                .on_conflict((schema::receipts::message_id, schema::receipts::recipient_id))
+                .do_update()
+                .set(schema::receipts::delivered.eq(delivered_at))
+                .execute(&mut *self.db());
+
+            match upsert {
+                Ok(n) => {
+                    if n != 1 {
+                        tracing::warn!("Read receipt update affected {} rows", n);
+                    }
+                    self.observe_upsert(schema::receipts::table, PrimaryKey::Unknown)
+                        .with_relation(schema::messages::table, ptr.message_id)
+                        .with_relation(schema::recipients::table, rcpt.id);
                 }
-                self.observe_upsert(schema::receipts::table, PrimaryKey::Unknown)
-                    .with_relation(schema::messages::table, pointer.message_id)
-                    .with_relation(schema::recipients::table, recipient.id);
-                Some(pointer)
-            }
-            Err(e) => {
-                tracing::error!("Could not insert receipt: {}.", e);
-                None
+                Err(e) => {
+                    tracing::error!("Could not insert receipt: {}.", e);
+                }
             }
         }
+
+        pointers
     }
 
     /// Get all sessions in no particular order.

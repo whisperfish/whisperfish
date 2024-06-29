@@ -1197,23 +1197,24 @@ impl ClientActor {
 
                 if let Some(receipt_type_i32) = receipt.r#type {
                     if let Ok(receipt_type) = Type::try_from(receipt_type_i32) {
+                        let timestamps = receipt
+                            .timestamp
+                            .into_iter()
+                            .map(millis_to_naive_chrono)
+                            .collect();
+                        let rcpt_timestamp = millis_to_naive_chrono(metadata.timestamp);
                         match receipt_type {
                             Type::Delivery => {
                                 tracing::info!("{:?} received a message.", metadata.sender);
-                                for &ts in &receipt.timestamp {
-                                    // Signal uses timestamps in milliseconds, chrono has nanoseconds
-                                    if let Some(updated) = storage.mark_message_delivered(
-                                        metadata.sender,
-                                        millis_to_naive_chrono(ts),
-                                        millis_to_naive_chrono(metadata.timestamp),
-                                    ) {
-                                        self.inner
-                                            .pinned()
-                                            .borrow_mut()
-                                            .messageReceipt(updated.session_id, updated.message_id)
-                                    } else {
-                                        tracing::warn!("Could not mark {} as received!", ts);
-                                    }
+                                for updated in storage.mark_messages_delivered(
+                                    metadata.sender,
+                                    timestamps,
+                                    rcpt_timestamp,
+                                ) {
+                                    self.inner
+                                        .pinned()
+                                        .borrow_mut()
+                                        .messageReceipt(updated.session_id, updated.message_id)
                                 }
                             }
                             Type::Read => {
@@ -1222,12 +1223,8 @@ impl ClientActor {
                                     tracing::info!("{:?} read a message.", metadata.sender);
                                     for updated in storage.mark_messages_read(
                                         metadata.sender,
-                                        &receipt
-                                            .timestamp
-                                            .into_iter()
-                                            .map(millis_to_naive_chrono)
-                                            .collect(),
-                                        millis_to_naive_chrono(metadata.timestamp),
+                                        timestamps,
+                                        rcpt_timestamp,
                                     ) {
                                         self.inner
                                             .pinned()
