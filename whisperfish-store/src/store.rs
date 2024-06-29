@@ -965,6 +965,13 @@ impl<O: Observable> Storage<O> {
             return (recipient, false);
         }
 
+        if let Some(addr) = addr {
+            if addr.identity != ServiceIdType::AccountIdentity {
+                tracing::warn!("Ignoring profile key update for non-ACI {:?}", addr);
+                return (recipient, false);
+            }
+        }
+
         let is_unset = recipient.profile_key.is_none()
             || recipient.profile_key.as_ref().map(Vec::len) == Some(0);
 

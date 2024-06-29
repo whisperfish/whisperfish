@@ -238,7 +238,6 @@ impl SetupWorker {
         config.set_device_id(reg.device_id.into());
 
         if let Some(profile_key) = reg.profile_key {
-            // XXX What about PNI? Is only providing ACI here fine?
             storage.update_profile_key(
                 Some(reg.phonenumber),
                 Some(ServiceAddress::new_aci(reg.service_ids.aci)),
