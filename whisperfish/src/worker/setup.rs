@@ -83,9 +83,12 @@ impl SetupWorker {
             }
             this.borrow_mut().registered = true;
             this.borrow().setupChanged();
-            // write changed config to file here
-            // XXX handle return value here appropriately !!!
-            config.write_to_file().expect("cannot write to config file");
+
+            if let Err(e) = config.write_to_file() {
+                tracing::error!("Error writing config file: {}", e);
+                this.borrow().clientFailed();
+                return;
+            }
         } else if let Err(e) = SetupWorker::setup_storage(app.clone(), config.clone()).await {
             tracing::error!("Error setting up storage: {}", e);
             this.borrow().clientFailed();
