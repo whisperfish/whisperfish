@@ -2134,18 +2134,13 @@ impl Handler<StorageReady> for ClientActor {
 
                 // Signal service context
                 // XXX What about the whoami migration?
-                let aci = aci.expect("local uuid to initialize service cipher");
-                // end signal service context
-                act.self_aci = Some(ServiceAddress {
-                    uuid: aci,
-                    identity: ServiceIdType::AccountIdentity,
-                });
-                if let Some(pni) = pni {
-                    act.self_pni = Some(ServiceAddress {
-                        uuid: pni,
-                        identity: ServiceIdType::PhoneNumberIdentity,
-                    });
+                if aci.is_none() {
+                    tracing::error!("local uuid to initialize service cipher");
+                    return;
                 }
+                // end signal service context
+                act.self_aci = aci.map(ServiceAddress::new_aci);
+                act.self_pni = pni.map(ServiceAddress::new_pni);
 
                 Self::queue_migrations(ctx);
 

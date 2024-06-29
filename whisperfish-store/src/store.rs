@@ -3153,10 +3153,7 @@ impl<O: Observable> Storage<O> {
                 _ => None,
             })
             .filter_map(|uuid| {
-                self.fetch_recipient_by_service_address(&ServiceAddress {
-                    uuid,
-                    identity: ServiceIdType::AccountIdentity,
-                })
+                self.fetch_recipient_by_service_address(&ServiceAddress::new_aci(uuid))
             })
             .map(|r| (r.uuid.expect("queried by uuid"), r))
             .collect()

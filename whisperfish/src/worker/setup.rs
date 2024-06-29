@@ -5,7 +5,6 @@ use anyhow::Context;
 use libsignal_service::protocol;
 use libsignal_service::push_service::{ServiceIds, VerificationTransport, DEFAULT_DEVICE_ID};
 use libsignal_service::ServiceAddress;
-use libsignal_service::ServiceIdType;
 use phonenumber::PhoneNumber;
 use qmetaobject::prelude::*;
 use std::rc::Rc;
@@ -236,10 +235,7 @@ impl SetupWorker {
             // XXX What about PNI? Is only providing ACI here fine?
             storage.update_profile_key(
                 Some(reg.phonenumber),
-                Some(ServiceAddress {
-                    uuid: reg.service_ids.aci,
-                    identity: ServiceIdType::AccountIdentity,
-                }),
+                Some(ServiceAddress::new_aci(reg.service_ids.aci)),
                 &profile_key,
                 TrustLevel::Certain,
             );

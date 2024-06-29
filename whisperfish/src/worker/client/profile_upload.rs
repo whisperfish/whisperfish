@@ -211,10 +211,7 @@ impl Handler<UploadProfile> for ClientActor {
         let service = self.authenticated_service();
         let client = ctx.address();
         let config = self.config.clone();
-        let addr = ServiceAddress {
-            uuid: config.get_aci().expect("valid uuid at this point"),
-            identity: ServiceIdType::AccountIdentity,
-        };
+        let addr = ServiceAddress::new_aci(config.get_aci().expect("valid uuid at this point"));
 
         Box::pin(
             async move {

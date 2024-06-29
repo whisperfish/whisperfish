@@ -112,7 +112,7 @@ async fn fetch_messages_without_session(storage: impl Future<Output = InMemoryDb
 async fn process_message_exists_session_source(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
-    let addr1 = ServiceAddress::from(uuid::Uuid::new_v4());
+    let addr1 = ServiceAddress::new_aci(uuid::Uuid::new_v4());
     let sess1 = storage.fetch_or_insert_session_by_address(&addr1);
 
     for second in 1..11 {
@@ -155,7 +155,7 @@ async fn process_message_exists_session_source(storage: impl Future<Output = InM
 async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
-    let addr1 = ServiceAddress::from(uuid::Uuid::new_v4());
+    let addr1 = ServiceAddress::new_aci(uuid::Uuid::new_v4());
     let sess1 = storage.fetch_or_insert_session_by_address(&addr1);
 
     let timestamp = Utc.timestamp_opt(1, 0).unwrap().naive_utc();
@@ -262,7 +262,7 @@ async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
 async fn dev_message_update(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
-    let addr1 = ServiceAddress::from(uuid::Uuid::new_v4());
+    let addr1 = ServiceAddress::new_aci(uuid::Uuid::new_v4());
     let session = storage.fetch_or_insert_session_by_address(&addr1);
 
     let timestamp = Utc::now().naive_utc();
@@ -438,7 +438,7 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
         let r1 = storage.fetch_or_insert_recipient_by_phonenumber(pn);
         let r2 = storage.merge_and_fetch_recipient(
             Some(pn.clone()),
-            Some(uuid1.into()),
+            Some(ServiceAddress::new_aci(uuid1)),
             None,
             whisperfish_store::TrustLevel::Certain,
         );
@@ -755,7 +755,7 @@ async fn test_recipient_actions() {
     assert!(msg.is_read);
 
     assert!(storage.fetch_message_receipts(msg.id).is_empty());
-    storage.mark_message_received(uuid1.into(), msg.server_timestamp, None);
+    storage.mark_message_received(ServiceAddress::new_aci(uuid1), msg.server_timestamp, None);
     assert!(!storage.fetch_message_receipts(msg.id).is_empty());
 
     let reaction = Reaction {

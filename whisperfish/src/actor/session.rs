@@ -3,7 +3,6 @@ mod typing_notifications;
 pub use self::typing_notifications::*;
 
 mod methods;
-use libsignal_service::{ServiceAddress, ServiceIdType};
 use methods::*;
 
 use whisperfish_store::orm;

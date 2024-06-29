@@ -3,7 +3,7 @@
 use crate::model::*;
 use crate::store::observer::{EventObserving, Interest};
 use crate::store::Storage;
-use libsignal_service::{ServiceAddress, ServiceIdType};
+use libsignal_service::ServiceAddress;
 use phonenumber::PhoneNumber;
 use qmetaobject::prelude::*;
 use whisperfish_store::schema;
@@ -66,11 +66,8 @@ impl CreateConversationImpl {
     }
 
     fn fetch(&mut self, storage: Storage) {
-        let recipient = if let Some(uuid) = self.uuid {
-            storage.fetch_recipient_by_service_address(&ServiceAddress {
-                uuid,
-                identity: ServiceIdType::AccountIdentity,
-            })
+        let recipient = if let Some(aci) = self.uuid {
+            storage.fetch_recipient_by_service_address(&ServiceAddress::new_aci(aci))
         } else if let Some(e164) = &self.e164 {
             storage.fetch_recipient_by_phonenumber(e164)
         } else {

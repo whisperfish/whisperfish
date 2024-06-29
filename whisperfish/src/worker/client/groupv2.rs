@@ -131,7 +131,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                 // We need all the profile keys and UUIDs in the database.
                 for (uuid, profile_key) in members_to_assert {
                     // XXX What about PNI?
-                    let recipient = storage.fetch_or_insert_recipient_by_address(&ServiceAddress { uuid: *uuid, identity: ServiceIdType::AccountIdentity });
+                    let recipient = storage.fetch_or_insert_recipient_by_address(&ServiceAddress::new_aci(*uuid));
                     if let Some(profile_key) = profile_key {
                         let (recipient, _was_changed) = storage.update_profile_key(recipient.e164.clone(), recipient.to_service_address(), &profile_key.get_bytes(), TrustLevel::Uncertain);
                         match recipient.profile_key {
@@ -193,7 +193,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         // XXX there's a bit of duplicate work going on here.
                         // XXX What about PNI?
                         let recipient =
-                            storage.fetch_or_insert_recipient_by_address(&ServiceAddress { uuid: member.uuid, identity: ServiceIdType::AccountIdentity });
+                            storage.fetch_or_insert_recipient_by_address(&ServiceAddress::new_aci(member.uuid));
                         tracing::trace!(
                             "Asserting {} as a member of the group",
                             recipient.e164_or_address()

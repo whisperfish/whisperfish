@@ -1,8 +1,8 @@
 use super::schema::*;
 use chrono::prelude::*;
 use diesel::sql_types::Integer;
+use libsignal_service::prelude::*;
 use libsignal_service::proto::GroupContextV2;
-use libsignal_service::{prelude::*, ServiceIdType};
 use phonenumber::PhoneNumber;
 use std::borrow::Cow;
 use std::fmt::{Display, Error, Formatter};
@@ -551,23 +551,18 @@ impl Recipient {
 
     /// Create a `ServiceAddress` from the `Recipient` if possible. Prefers ACI over PNI.
     pub fn to_service_address(&self) -> Option<libsignal_service::ServiceAddress> {
-        self.to_aci_service_address().or_else(|| self.to_pni_service_address())
+        self.to_aci_service_address()
+            .or_else(|| self.to_pni_service_address())
     }
 
     /// Create an ACI `ServiceAddress` of the `Recipient` if possible.
     pub fn to_aci_service_address(&self) -> Option<ServiceAddress> {
-        self.uuid.map(|aci| ServiceAddress {
-            uuid: aci,
-            identity: ServiceIdType::AccountIdentity,
-        })
+        self.uuid.map(ServiceAddress::new_aci)
     }
 
     /// Create an PNI `ServiceAddress` of the `Recipient` if possible.
     pub fn to_pni_service_address(&self) -> Option<ServiceAddress> {
-        self.pni.map(|pni| ServiceAddress {
-            uuid: pni,
-            identity: ServiceIdType::AccountIdentity,
-        })
+        self.pni.map(ServiceAddress::new_pni)
     }
 
     pub fn aci(&self) -> String {
