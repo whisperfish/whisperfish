@@ -869,16 +869,23 @@ impl<O: Observable> Storage<O> {
     #[tracing::instrument(level = "warn", skip(self))]
     pub fn delete_identity_key(&self, addr: &ServiceAddress) -> bool {
         use crate::schema::identity_records::dsl::*;
-        let amount = diesel::delete(identity_records)
+        let removed = diesel::delete(identity_records)
             .filter(
                 address
                     .eq(addr.uuid.to_string())
                     .and(identity.eq(orm::Identity::from(addr.identity.to_string().as_str()))),
             )
             .execute(&mut *self.db())
-            .expect("db");
+            .expect("db")
+            >= 1;
 
-        amount == 1
+        if removed {
+            tracing::trace!("Identity removed: {:?}", addr)
+        } else {
+            tracing::trace!("Identity not found: {:?}", addr)
+        };
+
+        removed
     }
 }
 // END identity key

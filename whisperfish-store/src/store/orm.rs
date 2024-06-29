@@ -549,19 +549,25 @@ impl Recipient {
         }
     }
 
-    /// Create a ServiceAddress from the Recipient. Prefers ACI over PNI.
+    /// Create a `ServiceAddress` from the `Recipient` if possible. Prefers ACI over PNI.
     pub fn to_service_address(&self) -> Option<libsignal_service::ServiceAddress> {
-        match (self.uuid, self.pni) {
-            (Some(aci), _) => Some(ServiceAddress {
-                uuid: aci,
-                identity: ServiceIdType::AccountIdentity,
-            }),
-            (None, Some(pni)) => Some(ServiceAddress {
-                uuid: pni,
-                identity: ServiceIdType::PhoneNumberIdentity,
-            }),
-            _ => None,
-        }
+        self.to_aci_service_address().or_else(|| self.to_pni_service_address())
+    }
+
+    /// Create an ACI `ServiceAddress` of the `Recipient` if possible.
+    pub fn to_aci_service_address(&self) -> Option<ServiceAddress> {
+        self.uuid.map(|aci| ServiceAddress {
+            uuid: aci,
+            identity: ServiceIdType::AccountIdentity,
+        })
+    }
+
+    /// Create an PNI `ServiceAddress` of the `Recipient` if possible.
+    pub fn to_pni_service_address(&self) -> Option<ServiceAddress> {
+        self.pni.map(|pni| ServiceAddress {
+            uuid: pni,
+            identity: ServiceIdType::AccountIdentity,
+        })
     }
 
     pub fn aci(&self) -> String {

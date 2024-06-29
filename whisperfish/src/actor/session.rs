@@ -212,33 +212,19 @@ impl Handler<RemoveIdentities> for SessionActor {
             return;
         };
 
-        let mut successes = 0;
+        tracing::debug!("Removing identities for recipient ID {}", recipient.id);
 
-        if let Some(aci) = recipient.uuid {
-            tracing::debug!("Removing identity ACI {}", aci);
-            if storage.delete_identity_key(&ServiceAddress {
-                uuid: aci,
-                identity: ServiceIdType::AccountIdentity,
-            }) {
-                tracing::trace!("ACI identity {} removed", aci);
-                successes += 1;
-            } else {
-                tracing::trace!("ACI identity {} not found", aci);
-            }
-        };
+        let mut success = false;
 
-        if let Some(pni) = recipient.pni {
-            tracing::debug!("Removing identity PNI {}", pni);
-            if storage.delete_identity_key(&ServiceAddress {
-                uuid: pni,
-                identity: ServiceIdType::PhoneNumberIdentity,
-            }) {
-                tracing::trace!("PNI identity {} removed", pni);
-                successes += 1;
-            } else {
-                tracing::trace!("PNI identity {} not found", pni);
-            }
-        };
+        success |= recipient
+            .to_aci_service_address()
+            .map(|aci| storage.delete_identity_key(&aci))
+            .unwrap_or(false);
+
+        success |= recipient
+            .to_pni_service_address()
+            .map(|pni| storage.delete_identity_key(&pni))
+            .unwrap_or(false);
 
         let session = storage.fetch_session_by_recipient_id(recipient_id).unwrap();
 
@@ -250,7 +236,7 @@ impl Handler<RemoveIdentities> for SessionActor {
             ..NewMessage::new_outgoing()
         });
 
-        if successes == 0 {
+        if !success {
             tracing::warn!(
                 "Could not find and remove any identities for recipient {}. Please file a bug.",
                 recipient_id
