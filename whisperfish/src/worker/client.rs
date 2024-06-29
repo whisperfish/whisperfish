@@ -7,6 +7,7 @@ mod message_expiry;
 mod profile;
 mod profile_upload;
 mod unidentified;
+mod voice_note_transcription;
 
 pub use self::groupv2::*;
 pub use self::linked_devices::*;
@@ -218,6 +219,8 @@ pub struct ClientWorker {
     send_typing_notification: qt_method!(fn(&self, id: i32, is_start: bool)),
     submit_proof_captcha: qt_method!(fn(&self, token: String, response: String)),
 
+    transcribeVoiceNote: qt_method!(fn(&self, message_id: i32)),
+
     connected: qt_property!(bool; NOTIFY connectedChanged),
     connectedChanged: qt_signal!(),
 
@@ -262,6 +265,8 @@ pub struct ClientActor {
     config: std::sync::Arc<crate::config::SignalConfig>,
 
     transient_timestamps: HashSet<u64>,
+
+    voice_note_transcription_queue: voice_note_transcription::VoiceNoteTranscriptionQueue,
 
     start_time: DateTime<Local>,
 
@@ -313,6 +318,9 @@ impl ClientActor {
             config,
 
             transient_timestamps,
+
+            voice_note_transcription_queue:
+                voice_note_transcription::VoiceNoteTranscriptionQueue::default(),
 
             start_time: Local::now(),
 

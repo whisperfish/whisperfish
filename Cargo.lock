@@ -4503,6 +4503,7 @@ dependencies = [
  "cpp",
  "cpp_build",
  "criterion",
+ "dbus",
  "diesel",
  "diesel_migrations",
  "dirs",
