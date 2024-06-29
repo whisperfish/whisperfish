@@ -1,14 +1,12 @@
---- whisperfish-store/src/schema.rs	2024-03-21 19:54:08.031088264 +0100
-+++ whisperfish-store/src/schema.rs	2024-03-21 19:57:00.529175793 +0100
-@@ -1,4 +1,7 @@
-+use crate::orm::Identity;
-+
+--- whisperfish-store/src/schema.rs	2024-06-29 18:07:26.893773840 +0200
++++ whisperfish-store/src/schema.rs	2024-06-29 18:06:34.266325771 +0200
+@@ -1,4 +1,5 @@
  // @generated automatically by Diesel CLI.
 +pub mod migrations;
  
  diesel::table! {
      attachments (id) {
-@@ -99,23 +102,32 @@
+@@ -99,23 +100,32 @@
  }
  
  diesel::table! {
@@ -43,12 +41,13 @@
      messages (id) {
          id -> Integer,
          session_id -> Integer,
-@@ -141,15 +153,18 @@
+@@ -141,16 +151,19 @@
          latest_revision_id -> Nullable<Integer>,
          original_message_id -> Nullable<Integer>,
          revision_number -> Integer,
 -        message_type -> Nullable<Text>,
 +        message_type -> Nullable<MessageTypeMapping>,
+         transcription -> Nullable<Text>,
      }
  }
  
@@ -64,7 +63,7 @@
      }
  }
  
-@@ -205,22 +220,28 @@
+@@ -207,22 +220,28 @@
  }
  
  diesel::table! {
@@ -95,7 +94,7 @@
      }
  }
  
-@@ -240,10 +261,13 @@
+@@ -242,10 +261,13 @@
  }
  
  diesel::table! {

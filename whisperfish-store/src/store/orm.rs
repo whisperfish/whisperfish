@@ -160,6 +160,8 @@ pub struct Message {
     pub original_message_id: Option<i32>,
     pub revision: i32,
     pub message_type: Option<MessageType>,
+
+    pub transcription: Option<String>,
 }
 
 impl Message {
@@ -245,6 +247,8 @@ impl Default for Message {
             latest_revision_id: None,
             revision: 0,
             message_type: None,
+
+            transcription: None,
         }
     }
 }
