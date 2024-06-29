@@ -2088,9 +2088,13 @@ impl Handler<AttachmentDownloaded> for ClientActor {
 impl Handler<StorageReady> for ClientActor {
     type Result = ResponseActFuture<Self, ()>;
 
-    fn handle(&mut self, storageready: StorageReady, _ctx: &mut Self::Context) -> Self::Result {
-        self.storage = Some(storageready.storage.clone());
-        let phonenumber = self
+    fn handle(
+        &mut self,
+        StorageReady { storage }: StorageReady,
+        _ctx: &mut Self::Context,
+    ) -> Self::Result {
+        self.storage = Some(storage.clone());
+        let e164 = self
             .config
             .get_tel()
             .expect("phonenumber present after any registration");
@@ -2099,56 +2103,43 @@ impl Handler<StorageReady> for ClientActor {
         let pni = self.config.get_pni();
         let device_id = self.config.get_device_id();
 
-        storageready.storage.mark_pending_messages_failed();
+        tracing::info!("E.164: {e164}, ACI: {aci:?}, PNI: {pni:?}, DeviceId: {device_id}");
 
-        let storage_for_password = storageready.storage;
-        let request_password = async move {
-            tracing::info!(
-                "phonenumber: {phonenumber}, ACI: {aci:?}, PNI: {pni:?}, DeviceId: {device_id}"
-            );
+        storage.mark_pending_messages_failed();
 
-            let password = storage_for_password.signal_password().await.unwrap();
-            let signaling_key = storage_for_password.signaling_key().await.unwrap();
-
-            (aci, pni, phonenumber, device_id, password, signaling_key)
+        let credentials = async move {
+            ServiceCredentials {
+                aci,
+                pni,
+                phonenumber: e164,
+                password: Some(storage.signal_password().await.unwrap()),
+                signaling_key: storage.signaling_key().await.unwrap(),
+                device_id: Some(device_id.into()),
+            }
         }
         .instrument(tracing::span!(
             tracing::Level::INFO,
             "reading password and signaling key"
         ));
 
-        Box::pin(request_password.into_actor(self).map(
-            move |(aci, pni, phonenumber, device_id, password, signaling_key), act, ctx| {
-                let _span = tracing::trace_span!("whisperfish startup").entered();
-                // Store credentials
-                let credentials = ServiceCredentials {
-                    aci,
-                    pni,
-                    phonenumber,
-                    password: Some(password),
-                    signaling_key,
-                    device_id: Some(device_id.into()),
-                };
-                act.credentials = Some(credentials);
-                // end store credentials
+        Box::pin(
+            credentials
+                .into_actor(self)
+                .map(move |credentials, act, ctx| {
+                    let _span = tracing::trace_span!("whisperfish startup").entered();
 
-                // Signal service context
-                // XXX What about the whoami migration?
-                if aci.is_none() {
-                    tracing::error!("local uuid to initialize service cipher");
-                    return;
-                }
-                // end signal service context
-                act.self_aci = aci.map(ServiceAddress::new_aci);
-                act.self_pni = pni.map(ServiceAddress::new_pni);
+                    act.credentials = Some(credentials);
+                    let cred = act.credentials.as_ref().unwrap();
 
-                Self::queue_migrations(ctx);
+                    act.self_aci = cred.aci.map(ServiceAddress::new_aci);
+                    act.self_pni = cred.pni.map(ServiceAddress::new_pni);
 
-                ctx.notify(Restart);
+                    Self::queue_migrations(ctx);
 
-                ctx.notify(RefreshPreKeys);
-            },
-        ))
+                    ctx.notify(Restart);
+                    ctx.notify(RefreshPreKeys);
+                }),
+        )
     }
 }
 

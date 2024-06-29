@@ -86,8 +86,14 @@ impl SetupWorker {
             // write changed config to file here
             // XXX handle return value here appropriately !!!
             config.write_to_file().expect("cannot write to config file");
-        } else if let Err(e) = SetupWorker::setup_storage(app.clone(), config).await {
+        } else if let Err(e) = SetupWorker::setup_storage(app.clone(), config.clone()).await {
             tracing::error!("Error setting up storage: {}", e);
+            this.borrow().clientFailed();
+            return;
+        }
+
+        if config.get_aci().is_none() {
+            tracing::error!("ACI UUID not set after registration or opening storage!");
             this.borrow().clientFailed();
             return;
         }
