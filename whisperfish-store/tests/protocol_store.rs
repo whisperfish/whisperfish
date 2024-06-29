@@ -156,7 +156,7 @@ mod tests {
 
         // We need two identity keys and two addresses
         let (_svc1, addr1) = create_random_protocol_address();
-        let (_svc2, addr2) = create_random_protocol_address();
+        let (svc2, addr2) = create_random_protocol_address();
         let key1 = create_random_identity_key();
         let key2 = create_random_identity_key();
 
@@ -177,10 +177,7 @@ mod tests {
         assert_eq!(aci_storage.get_identity(&addr2).await.unwrap(), Some(key2));
 
         // After removing key2, it shouldn't be there
-        storage
-            .delete_identity(&ServiceAddress::try_from(&addr2).unwrap())
-            .await
-            .unwrap();
+        storage.delete_identity_key(&svc2);
         // XXX Doesn't implement equality *arg*
         assert_eq!(aci_storage.get_identity(&addr2).await.unwrap(), None);
 

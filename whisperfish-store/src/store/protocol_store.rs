@@ -81,10 +81,6 @@ impl ProtocolStore {
 }
 
 impl<O: Observable> Storage<O> {
-    pub async fn delete_identity(&self, addr: &ServiceAddress) -> Result<(), SignalProtocolError> {
-        self.delete_identity_key(addr);
-        Ok(())
-    }
     pub fn pni_storage(&self) -> PniStorage<O> {
         PniStorage::new(self.clone())
     }
