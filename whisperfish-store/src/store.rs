@@ -1398,14 +1398,14 @@ impl<O: Observable> Storage<O> {
         Some(pointer)
     }
 
-    /// Marks the messages with a certain timestamps as read by a certain person in a certain session.
+    /// Marks the messages with the certain timestamps as read by a certain person.
     ///
     /// This is called when a recipient sends a ReceiptMessage with some number of timestamps.
     #[tracing::instrument(skip(self))]
     pub fn mark_messages_read(
         &self,
         sender: ServiceAddress,
-        timestamps: &Vec<NaiveDateTime>,
+        timestamps: Vec<NaiveDateTime>,
         read_at: NaiveDateTime,
     ) -> Vec<MessagePointer> {
         use schema::messages::dsl::*;
@@ -1413,23 +1413,24 @@ impl<O: Observable> Storage<O> {
         // Find the recipient
         let rcpt = self.merge_and_fetch_recipient_by_address(None, sender, TrustLevel::Certain);
 
+        let num_timestamps = timestamps.len();
         let pointers: Vec<MessagePointer> = diesel::update(messages)
             .filter(server_timestamp.eq_any(timestamps))
             .set(is_read.eq(true))
             .returning((schema::messages::id, schema::messages::session_id))
             .load(&mut *self.db())
             .unwrap()
-            .iter()
+            .into_iter()
             .map(|(m_id, s_id)| MessagePointer {
-                message_id: *m_id,
-                session_id: *s_id,
+                message_id: m_id,
+                session_id: s_id,
             })
             .collect();
 
         if pointers.is_empty() {
             tracing::warn!(
-                "Received {} timestamps but {} messages",
-                timestamps.len(),
+                "Received {} read timestamps but found {} messages",
+                num_timestamps,
                 pointers.len()
             );
             tracing::warn!(
@@ -1441,9 +1442,7 @@ impl<O: Observable> Storage<O> {
         for ptr in pointers.iter() {
             self.observe_update(messages, ptr.message_id)
                 .with_relation(schema::sessions::table, ptr.session_id);
-        }
 
-        for ptr in pointers.iter() {
             let upsert = diesel::insert_into(schema::receipts::table)
                 .values((
                     schema::receipts::message_id.eq(ptr.message_id),
