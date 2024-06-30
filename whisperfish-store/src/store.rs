@@ -1443,29 +1443,47 @@ impl<O: Observable> Storage<O> {
             self.observe_update(messages, ptr.message_id)
                 .with_relation(schema::sessions::table, ptr.session_id);
 
-            let upsert = diesel::insert_into(schema::receipts::table)
-                .values((
-                    schema::receipts::message_id.eq(ptr.message_id),
-                    schema::receipts::recipient_id.eq(rcpt.id),
-                    schema::receipts::read.eq(read_at),
-                ))
-                .on_conflict((schema::receipts::message_id, schema::receipts::recipient_id))
-                .do_update()
+            // For read receipts, existing row is likely present - try update first
+            let mut affected = diesel::update(schema::receipts::table)
+                .filter(
+                    schema::receipts::message_id
+                        .eq(ptr.message_id)
+                        .and(schema::receipts::recipient_id.eq(rcpt.id))
+                        .and(schema::receipts::read.is_null()),
+                )
                 .set(schema::receipts::read.eq(read_at))
-                .execute(&mut *self.db());
+                .execute(&mut *self.db())
+                .map_err(|e| {
+                    tracing::error!("Could not update delivery receipt: {}", e);
+                    e
+                })
+                .unwrap_or(0);
 
-            match upsert {
-                Ok(n) => {
-                    if n != 1 {
-                        tracing::warn!("Read receipt update affected {} rows", n);
-                    }
-                    self.observe_upsert(schema::receipts::table, PrimaryKey::Unknown)
-                        .with_relation(schema::messages::table, ptr.message_id)
-                        .with_relation(schema::recipients::table, rcpt.id);
-                }
-                Err(e) => {
-                    tracing::error!("Could not insert receipt: {}.", e);
-                }
+            // SQLite doesn't support SupportsOnConflictClauseWhere so we have to resort to two queries
+            if affected == 0 {
+                affected += diesel::insert_into(schema::receipts::table)
+                    .values((
+                        schema::receipts::message_id.eq(ptr.message_id),
+                        schema::receipts::recipient_id.eq(rcpt.id),
+                        schema::receipts::read.eq(read_at),
+                    ))
+                    .on_conflict((schema::receipts::message_id, schema::receipts::recipient_id))
+                    .do_nothing()
+                    .execute(&mut *self.db())
+                    .map_err(|e| {
+                        tracing::error!("Could not save delivery receipt: {}", e);
+                        e
+                    })
+                    .unwrap_or(0);
+            }
+
+            if affected > 1 {
+                tracing::warn!("Delivery receipt update affected {} rows", affected);
+            }
+            if affected > 0 {
+                self.observe_upsert(schema::receipts::table, PrimaryKey::Unknown)
+                    .with_relation(schema::messages::table, ptr.message_id)
+                    .with_relation(schema::recipients::table, rcpt.id);
             }
         }
 
@@ -1558,29 +1576,47 @@ impl<O: Observable> Storage<O> {
             self.observe_update(schema::messages::table, ptr.message_id)
                 .with_relation(schema::sessions::table, ptr.session_id);
 
-            let upsert = diesel::insert_into(schema::receipts::table)
+            // For delivery receipts, existing row is likely absent - try insert first
+            let mut affected = diesel::insert_into(schema::receipts::table)
                 .values((
                     schema::receipts::message_id.eq(ptr.message_id),
                     schema::receipts::recipient_id.eq(rcpt.id),
                     schema::receipts::delivered.eq(delivered_at),
                 ))
                 .on_conflict((schema::receipts::message_id, schema::receipts::recipient_id))
-                .do_update()
-                .set(schema::receipts::delivered.eq(delivered_at))
-                .execute(&mut *self.db());
+                .do_nothing()
+                .execute(&mut *self.db())
+                .map_err(|e| {
+                    tracing::error!("Could not save read receipt: {}", e);
+                    e
+                })
+                .unwrap_or(0);
 
-            match upsert {
-                Ok(n) => {
-                    if n != 1 {
-                        tracing::warn!("Read receipt update affected {} rows", n);
-                    }
-                    self.observe_upsert(schema::receipts::table, PrimaryKey::Unknown)
-                        .with_relation(schema::messages::table, ptr.message_id)
-                        .with_relation(schema::recipients::table, rcpt.id);
-                }
-                Err(e) => {
-                    tracing::error!("Could not insert receipt: {}.", e);
-                }
+            // SQLite doesn't support SupportsOnConflictClauseWhere so we have to resort to two queries
+            if affected == 0 {
+                affected += diesel::update(schema::receipts::table)
+                    .filter(
+                        schema::receipts::message_id
+                            .eq(ptr.message_id)
+                            .and(schema::receipts::recipient_id.eq(rcpt.id))
+                            .and(schema::receipts::delivered.is_null()),
+                    )
+                    .set(schema::receipts::delivered.eq(delivered_at))
+                    .execute(&mut *self.db())
+                    .map_err(|e| {
+                        tracing::error!("Could not update read receipt: {}", e);
+                        e
+                    })
+                    .unwrap_or(0);
+            }
+
+            if affected > 1 {
+                tracing::warn!("Read receipt update affected {} rows", affected);
+            }
+            if affected > 0 {
+                self.observe_upsert(schema::receipts::table, PrimaryKey::Unknown)
+                    .with_relation(schema::messages::table, ptr.message_id)
+                    .with_relation(schema::recipients::table, rcpt.id);
             }
         }
 
