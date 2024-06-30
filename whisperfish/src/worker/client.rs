@@ -851,8 +851,23 @@ impl ClientActor {
 
                     sender.send_contact_details(&local_addr, None, contacts, false, true).await?;
                 },
+                Type::Configuration => {
+                    use libsignal_service::proto::sync_message::Configuration;
+
+                    let settings = crate::config::SettingsBridge::default();
+
+                    // Each 'None' value is ignored
+                    let configuration = Configuration {
+                        read_receipts: None,
+                        unidentified_delivery_indicators: None,
+                        typing_indicators: Some(settings.get_enable_typing_indicators()),
+                        provisioning_version: None,
+                        link_previews: None,
+                    };
+
+                    sender.send_configuration(&local_addr, configuration).await?;
+                },
                 // Type::Blocked
-                // Type::Configuration
                 // Type::Keys
                 // Type::PniIdentity
                 _ => {
