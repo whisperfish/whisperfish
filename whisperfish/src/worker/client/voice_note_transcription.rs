@@ -16,8 +16,8 @@ impl super::ClientWorker {
 
 #[derive(Debug, Default)]
 pub(super) struct VoiceNoteTranscriptionQueue {
-    // message-id, task-id
-    current_message: Option<(i32, i32)>,
+    // attachment-id, task-id
+    current_attachment: Option<(i32, i32)>,
     queue: VecDeque<i32>,
 }
 
@@ -35,9 +35,22 @@ impl actix::Handler<TranscribeVoiceNote> for super::ClientActor {
         TranscribeVoiceNote { message_id }: TranscribeVoiceNote,
         ctx: &mut Self::Context,
     ) -> Self::Result {
-        self.voice_note_transcription_queue
-            .queue
-            .push_back(message_id);
+        let attachments = self
+            .storage
+            .as_ref()
+            .unwrap()
+            .fetch_attachments_for_message(message_id);
+        if attachments.is_empty() {
+            tracing::warn!("No attachments found for message {}", message_id);
+            return;
+        }
+        for attachment in attachments {
+            if attachment.is_voice_note {
+                self.voice_note_transcription_queue
+                    .queue
+                    .push_back(attachment.id);
+            }
+        }
         self.try_queue_next_voice_note_transcription(ctx);
     }
 }
@@ -49,15 +62,15 @@ impl super::ClientActor {
     ) {
         if self
             .voice_note_transcription_queue
-            .current_message
+            .current_attachment
             .is_some()
         {
             return;
         }
 
-        if let Some(message_id) = self.voice_note_transcription_queue.queue.pop_front() {
+        if let Some(attachment_id) = self.voice_note_transcription_queue.queue.pop_front() {
             let task =
-                TranscriptionTask::start_transcribe(self.storage.clone().unwrap(), message_id);
+                TranscriptionTask::start_transcribe(self.storage.clone().unwrap(), attachment_id);
             let addr = ctx.address();
             actix::spawn(async move {
                 // XXX: On failure, we should probably retry
@@ -65,7 +78,7 @@ impl super::ClientActor {
                 let task_id = task.task_id;
 
                 addr.send(TranscriptionStarted {
-                    message_id,
+                    attachment_id,
                     task_id: task.task_id,
                 })
                 .await
@@ -86,7 +99,7 @@ impl super::ClientActor {
 #[derive(actix::Message)]
 #[rtype(result = "()")]
 struct TranscriptionStarted {
-    message_id: i32,
+    attachment_id: i32,
     task_id: i32,
 }
 
@@ -96,12 +109,12 @@ impl actix::Handler<TranscriptionStarted> for super::ClientActor {
     fn handle(
         &mut self,
         TranscriptionStarted {
-            message_id,
+            attachment_id,
             task_id,
         }: TranscriptionStarted,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        self.voice_note_transcription_queue.current_message = Some((message_id, task_id));
+        self.voice_note_transcription_queue.current_attachment = Some((attachment_id, task_id));
     }
 }
 
@@ -123,16 +136,16 @@ impl actix::Handler<TranscriptionFinished> for super::ClientActor {
         }: TranscriptionFinished,
         ctx: &mut Self::Context,
     ) -> Self::Result {
-        if let Some((message_id, current_task_id)) =
-            self.voice_note_transcription_queue.current_message
+        if let Some((attachment_id, current_task_id)) =
+            self.voice_note_transcription_queue.current_attachment
         {
             tracing::info!(
-                "Transcription finished for message {}: {}",
-                message_id,
+                "Transcription finished for attachment {}: {}",
+                attachment_id,
                 transcription
             );
             if current_task_id == task_id {
-                self.voice_note_transcription_queue.current_message = None;
+                self.voice_note_transcription_queue.current_attachment = None;
                 self.try_queue_next_voice_note_transcription(ctx);
             }
         }
@@ -140,7 +153,7 @@ impl actix::Handler<TranscriptionFinished> for super::ClientActor {
 }
 
 struct TranscriptionTask {
-    message_id: i32,
+    attachment_id: i32,
     task_id: i32,
     storage: super::Storage,
     start_time: std::time::Instant,
@@ -148,23 +161,13 @@ struct TranscriptionTask {
 
 impl TranscriptionTask {
     /// Transcribe the voice note
-    async fn start_transcribe(storage: super::Storage, message_id: i32) -> anyhow::Result<Self> {
+    async fn start_transcribe(storage: super::Storage, attachment_id: i32) -> anyhow::Result<Self> {
         let (resource, conn) = dbus_tokio::connection::new_session_sync()?;
 
-        let _message = storage
-            .fetch_message_by_id(message_id)
-            .expect("valid message");
-        let mut attachments = storage.fetch_attachments_for_message(message_id);
-        attachments.retain(|a| a.is_voice_note);
-        if attachments.len() != 1 {
-            tracing::warn!(
-                "Message {} has {} voice notes. Will only transcribe the first one.",
-                message_id,
-                attachments.len()
-            );
-        }
-        assert!(!attachments.is_empty());
-        let attachment = attachments.pop().unwrap();
+        let attachment = storage
+            .fetch_attachment(attachment_id)
+            .expect("valid attachment");
+        assert!(attachment.is_voice_note);
 
         actix::spawn(async {
             let err = resource.await;
@@ -200,7 +203,7 @@ impl TranscriptionTask {
             .await?;
 
         Ok(Self {
-            message_id,
+            attachment_id,
             task_id,
             storage,
             start_time: std::time::Instant::now(),
@@ -254,7 +257,7 @@ impl TranscriptionTask {
                     if task_id == self.task_id {
                         conn.remove_match(intermediate_token).await?;
                         conn.remove_match(token).await?;
-                        self.storage.update_transcription(self.message_id, &text);
+                        self.storage.update_transcription(self.attachment_id, &text);
                         return Ok(text);
                     }
                 }
@@ -265,7 +268,7 @@ impl TranscriptionTask {
                     };
                     tracing::info!(%lang, "Received partial transcription for task {}: {}", task_id, text);
                     if task_id == self.task_id {
-                        self.storage.update_transcription(self.message_id, &text);
+                        self.storage.update_transcription(self.attachment_id, &text);
                     }
                 }
                     tracing::info!(%lang, "Received partial transcription for task {} after {} seconds: {}", task_id, duration.as_secs(), text);

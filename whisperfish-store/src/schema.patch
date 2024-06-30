@@ -1,12 +1,12 @@
---- whisperfish-store/src/schema.rs	2024-06-29 18:07:26.893773840 +0200
-+++ whisperfish-store/src/schema.rs	2024-06-29 18:06:34.266325771 +0200
+--- whisperfish-store/src/schema.rs	2024-06-30 11:16:55.293464789 +0200
++++ whisperfish-store/src/schema.rs	2024-06-30 11:17:13.897227690 +0200
 @@ -1,4 +1,5 @@
  // @generated automatically by Diesel CLI.
 +pub mod migrations;
  
  diesel::table! {
      attachments (id) {
-@@ -99,23 +100,32 @@
+@@ -100,23 +101,32 @@
  }
  
  diesel::table! {
@@ -41,13 +41,12 @@
      messages (id) {
          id -> Integer,
          session_id -> Integer,
-@@ -141,16 +151,19 @@
+@@ -142,15 +152,18 @@
          latest_revision_id -> Nullable<Integer>,
          original_message_id -> Nullable<Integer>,
          revision_number -> Integer,
 -        message_type -> Nullable<Text>,
 +        message_type -> Nullable<MessageTypeMapping>,
-         transcription -> Nullable<Text>,
      }
  }
  

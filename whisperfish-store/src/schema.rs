@@ -35,6 +35,7 @@ diesel::table! {
         cdn_number -> Nullable<Integer>,
         caption -> Nullable<Text>,
         pointer -> Nullable<Binary>,
+        transcription -> Nullable<Text>,
     }
 }
 
@@ -152,7 +153,6 @@ diesel::table! {
         original_message_id -> Nullable<Integer>,
         revision_number -> Integer,
         message_type -> Nullable<MessageTypeMapping>,
-        transcription -> Nullable<Text>,
     }
 }
 

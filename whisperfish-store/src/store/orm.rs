@@ -160,8 +160,6 @@ pub struct Message {
     pub original_message_id: Option<i32>,
     pub revision: i32,
     pub message_type: Option<MessageType>,
-
-    pub transcription: Option<String>,
 }
 
 impl Message {
@@ -247,8 +245,6 @@ impl Default for Message {
             latest_revision_id: None,
             revision: 0,
             message_type: None,
-
-            transcription: None,
         }
     }
 }
@@ -652,6 +648,8 @@ pub struct Attachment {
     pub cdn_number: Option<i32>,
     pub caption: Option<String>,
     pub pointer: Option<Vec<u8>>,
+
+    pub transcription: Option<String>,
 }
 
 impl Display for Attachment {
@@ -1492,6 +1490,7 @@ mod tests {
             cdn_number: None,
             caption: Some("Funny cat!".into()),
             pointer: None,
+            transcription: None,
         }
     }
 

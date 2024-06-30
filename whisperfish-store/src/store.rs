@@ -2557,19 +2557,22 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn update_transcription(&mut self, message_id: i32, new_transcription: &str) {
-        use schema::messages::dsl::*;
+    pub fn update_transcription(&mut self, attachment_id: i32, new_transcription: &str) {
+        use schema::attachments::dsl::*;
 
-        let count = diesel::update(messages.filter(id.eq(message_id)))
+        let count = diesel::update(attachments.filter(id.eq(attachment_id)))
             .set(transcription.eq(new_transcription))
             .execute(&mut *self.db())
             .expect("update transcription");
 
         if count == 1 {
-            tracing::trace!("Transcription updated for message id {}", message_id);
-            self.observe_update(schema::messages::table, message_id);
+            tracing::trace!("Transcription updated for attachment id {}", attachment_id);
+            self.observe_update(schema::attachments::table, attachment_id);
         } else {
-            tracing::error!("Could not update transcription for message {}", message_id);
+            tracing::error!(
+                "Could not update transcription for attachment {}",
+                attachment_id
+            );
         };
     }
 
