@@ -131,6 +131,19 @@ SilicaListView {
         Remorse.popupAction(root, "Resending selected messages is not yet implemented.", function(){})
     }
 
+    function transcribeSelected() { // call through messageAction()
+        var selectedIds = _getSelectedIds()
+        for (var i in selectedIds) {
+            console.log("Scheduling transcription for message (id):", selectedIds[i])
+            ClientWorker.transcribeVoiceNote(selectedIds[i])
+        }
+    }
+
+    function transcribeInline(listItem) { // call through messageAction()
+        console.log("Scheduling transcription for message (id):", listItem.modelData.id)
+        ClientWorker.transcribeVoiceNote(listItem.modelData.id)
+    }
+
     function copyInline(listItem) { // call through messageAction()
         // TODO give some kind of feedback on success
         Clipboard.text = listItem.modelData.message
@@ -460,6 +473,13 @@ SilicaListView {
                 text: qsTrId("whisperfish-forward-message-menu")
                 visible: !!(menu.parent && !menu.parent.modelData.queued) // TODO use .failed
                 onClicked: forwardInline(menu.parent)
+            }
+            MenuItem {
+                //: Transcribe message menu item
+                //% "Transcribe"
+                text: qsTrId("whisperfish-transcribe-message-menu")
+                visible: !!(menu.parent && !menu.parent.modelData.queued && menu.parent.modelData.isVoiceNote)
+                onClicked: transcribeInline(menu.parent)
             }
             MenuItem {
                 //: "Select and show more options" message menu item
