@@ -339,6 +339,24 @@ ApplicationWindow
         }
     }
 
+    DBusInterface {
+        id: dbusSpeechInterface
+
+        service: 'org.mkiol.Speech'
+        path: '/'
+        iface: 'org.mkiol.Speech'
+
+        signalsEnabled: true
+
+        function statePropertyChanged(state) {
+            console.log("Speech state changed: " + state);
+        }
+
+        onPropertiesChanged: {
+            console.log("Speech properties changed" + JSON.stringify(properties));
+        }
+    }
+
     DBusAdaptor {
         service: "be.rubdos.whisperfish"
         path: "/be/rubdos/whisperfish/app"

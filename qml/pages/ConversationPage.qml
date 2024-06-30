@@ -473,7 +473,7 @@ Page {
                     //% "Transcribe %n message(s)"
                     onPressedChanged: infoLabel.toggleHint(
                                           qsTrId("whisperfish-message-action-resend", _selectedCount))
-                    visible: true // TODO show if all selected messages are voice notes
+                    visible: !!(dbusSpeechInterface.State)
                     onClicked: messages.messageAction(messages.transcribeSelected)
                 }
             }

@@ -84,7 +84,6 @@ impl super::ClientActor {
                 .await
                 .unwrap();
 
-                let _transcription = task.wait_for_transcription().await.unwrap();
                 let transcription = task.wait_for_transcription().await.unwrap();
                 addr.send(TranscriptionFinished {
                     task_id,
@@ -92,6 +91,7 @@ impl super::ClientActor {
                 })
                 .await
                 .unwrap();
+            });
         }
     }
 }
@@ -266,12 +266,12 @@ impl TranscriptionTask {
                     let (Some(text), Some(lang), Some(task_id) ): (Option<String>, Option<String>, Option<i32>) = message.get3() else {
                         panic!("Invalid arguments for signal");
                     };
-                    tracing::info!(%lang, "Received partial transcription for task {}: {}", task_id, text);
+                    tracing::info!(%lang, "Received partial transcription for task {} after {} seconds: {}", task_id, duration.as_secs(), text);
                     if task_id == self.task_id {
                         self.storage.update_transcription(self.attachment_id, &text);
                     }
                 }
-                    tracing::info!(%lang, "Received partial transcription for task {} after {} seconds: {}", task_id, duration.as_secs(), text);
+            }
         }
     }
 }
