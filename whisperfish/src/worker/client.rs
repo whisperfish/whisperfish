@@ -17,6 +17,7 @@ use self::unidentified::UnidentifiedCertificates;
 use image::GenericImageView;
 use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
+use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
 use libsignal_service::proto::sync_message::Configuration;
 use libsignal_service::proto::sync_message::Sent;
 use libsignal_service::push_service::RegistrationMethod;
@@ -30,6 +31,7 @@ use whisperfish_store::naive_chrono_to_millis;
 use whisperfish_store::orm;
 use whisperfish_store::orm::shorten;
 use whisperfish_store::orm::MessageType;
+use whisperfish_store::orm::SessionType;
 use whisperfish_store::orm::StoryType;
 use whisperfish_store::TrustLevel;
 use zkgroup::profiles::ProfileKey;
@@ -57,8 +59,9 @@ use libsignal_service::content::{
     TypingMessage,
 };
 use libsignal_service::prelude::*;
+use libsignal_service::proto::receipt_message::Type as ReceiptType;
 use libsignal_service::proto::typing_message::Action;
-use libsignal_service::proto::{receipt_message, ReceiptMessage};
+use libsignal_service::proto::ReceiptMessage;
 use libsignal_service::protocol::{self, *};
 use libsignal_service::push_service::{
     AccountAttributes, DeviceCapabilities, RegistrationSessionMetadataResponse, ServiceIds,
@@ -85,6 +88,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
+use sync_message::request::Type as RequestType;
 
 // Maximum theoretical TypingMessage send rate,
 // plus some change for Reaction messages etc.
@@ -160,7 +164,7 @@ struct DeliverMessage<T> {
     timestamp: u64,
     online: bool,
     for_story: bool,
-    session_type: orm::SessionType,
+    session_type: SessionType,
 }
 
 #[derive(actix::Message)]
@@ -452,13 +456,13 @@ impl ClientActor {
         metadata: &Metadata,
     ) -> Option<()> {
         let content = ReceiptMessage {
-            r#type: Some(receipt_message::Type::Delivery as _),
+            r#type: Some(ReceiptType::Delivery as _),
             timestamp: vec![message.timestamp?],
         };
 
         let storage = self.storage.as_ref().unwrap();
 
-        let session_type = orm::SessionType::DirectMessage(
+        let session_type = SessionType::DirectMessage(
             storage
                 .fetch_recipient(&metadata.sender)
                 .expect("needs-receipt sender recipient"),
@@ -511,7 +515,7 @@ impl ClientActor {
                 .collect();
 
             let content = ReceiptMessage {
-                r#type: Some(receipt_message::Type::Read as _),
+                r#type: Some(ReceiptType::Read as _),
                 timestamp,
             };
 
@@ -836,9 +840,9 @@ impl ClientActor {
         // XXX If from ourselves, skip
         if !is_sync_sent && !session.is_muted {
             let session_name: Cow<'_, str> = match &session.r#type {
-                orm::SessionType::GroupV1(group) => Cow::from(&group.name),
-                orm::SessionType::GroupV2(group) => Cow::from(&group.name),
-                orm::SessionType::DirectMessage(recipient) => recipient.name(),
+                SessionType::GroupV1(group) => Cow::from(&group.name),
+                SessionType::GroupV2(group) => Cow::from(&group.name),
+                SessionType::DirectMessage(recipient) => recipient.name(),
             };
 
             self.inner.pinned().borrow_mut().notifyMessage(
@@ -869,7 +873,6 @@ impl ClientActor {
     }
 
     fn handle_sync_request(&mut self, meta: Metadata, req: SyncRequest) {
-        use sync_message::request::Type;
         tracing::trace!("Processing sync request {:?}", req.r#type());
 
         let local_addr = self.self_aci.unwrap();
@@ -880,12 +883,12 @@ impl ClientActor {
         actix::spawn(async move {
             let mut sender = sender.await?;
             match req.r#type() {
-                Type::Unknown => {
+                RequestType::Unknown => {
                     tracing::warn!("Unknown sync request from {:?}:{}. Please upgrade Whisperfish or file an issue.", meta.sender, meta.sender_device);
                     tracing::trace!("Unknown sync request: {:#?}", req);
                     return Ok(());
                 }
-                Type::Contacts => {
+                RequestType::Contacts => {
                     use libsignal_service::sender::ContactDetails;
                     // In fact, we should query for registered contacts instead of sessions here.
                     // https://gitlab.com/whisperfish/whisperfish/-/issues/133
@@ -910,7 +913,7 @@ impl ClientActor {
 
                     sender.send_contact_details(&local_addr, None, contacts, false, true).await?;
                 },
-                Type::Configuration => {
+                RequestType::Configuration => {
                     sender.send_configuration(&local_addr, configuration).await?;
                 },
                 // Type::Blocked
@@ -1109,20 +1112,20 @@ impl ClientActor {
                 if let Some(fetch) = message.fetch_latest {
                     handled = true;
                     match fetch.r#type() {
-                        sync_message::fetch_latest::Type::Unknown => {
+                        LatestType::Unknown => {
                             tracing::warn!("Sync FetchLatest with unknown type")
                         }
-                        sync_message::fetch_latest::Type::LocalProfile => {
+                        LatestType::LocalProfile => {
                             tracing::trace!("Scheduling local profile refresh");
                             ctx.notify(RefreshOwnProfile { force: true });
                         }
-                        sync_message::fetch_latest::Type::StorageManifest => {
+                        LatestType::StorageManifest => {
                             // XXX
                             tracing::warn!(
                                 "Unimplemented: synchronize fetch request StorageManifest"
                             )
                         }
-                        sync_message::fetch_latest::Type::SubscriptionStatus => {
+                        LatestType::SubscriptionStatus => {
                             tracing::warn!(
                                 "Unimplemented: synchronize fetch request SubscriptionStatus"
                             )
@@ -1159,10 +1162,8 @@ impl ClientActor {
                 }
             }
             ContentBody::ReceiptMessage(receipt) => {
-                use receipt_message::Type;
-
                 if let Some(receipt_type_i32) = receipt.r#type {
-                    if let Ok(receipt_type) = Type::try_from(receipt_type_i32) {
+                    if let Ok(receipt_type) = ReceiptType::try_from(receipt_type_i32) {
                         let timestamps = receipt
                             .timestamp
                             .into_iter()
@@ -1170,8 +1171,11 @@ impl ClientActor {
                             .collect();
                         let rcpt_timestamp = millis_to_naive_chrono(metadata.timestamp);
                         match receipt_type {
-                            Type::Delivery => {
-                                tracing::info!("{:?} received a message.", metadata.sender);
+                            ReceiptType::Delivery => {
+                                tracing::info!(
+                                    "{:?} received a message.",
+                                    metadata.sender.to_service_id()
+                                );
                                 for updated in storage.mark_messages_delivered(
                                     metadata.sender,
                                     timestamps,
@@ -1183,10 +1187,13 @@ impl ClientActor {
                                         .messageReceipt(updated.session_id, updated.message_id)
                                 }
                             }
-                            Type::Read => {
+                            ReceiptType::Read => {
                                 let settings = crate::config::SettingsBridge::default();
                                 if settings.get_enable_read_receipts() {
-                                    tracing::info!("{:?} read a message.", metadata.sender);
+                                    tracing::info!(
+                                        "{:?} read a message.",
+                                        metadata.sender.to_service_id()
+                                    );
                                     for updated in storage.mark_messages_read(
                                         metadata.sender,
                                         timestamps,
@@ -1201,7 +1208,7 @@ impl ClientActor {
                                     tracing::debug!("Ignoring DeliveryMessage(Read)");
                                 }
                             }
-                            Type::Viewed => {
+                            ReceiptType::Viewed => {
                                 tracing::warn!(
                                     "Viewed receipts are not yet implemented. Please upvote issue #670"
                                 );
@@ -1578,7 +1585,7 @@ impl Handler<SendMessage> for ClientActor {
         Box::pin(
             async move {
                 let mut sender = sender.await?;
-                if let orm::SessionType::GroupV1(_group) = &session.r#type {
+                if let SessionType::GroupV1(_group) = &session.r#type {
                     // FIXME
                     tracing::error!("Cannot send to Group V1 anymore.");
                 }
@@ -1889,11 +1896,11 @@ impl Handler<SendTypingNotification> for ClientActor {
         Box::pin(
             async move {
                 let group_id = match &session.r#type {
-                    orm::SessionType::DirectMessage(_) => None,
-                    orm::SessionType::GroupV1(group) => {
+                    SessionType::DirectMessage(_) => None,
+                    SessionType::GroupV1(group) => {
                         Some(hex::decode(&group.id).expect("valid hex identifiers in db"))
                     }
-                    orm::SessionType::GroupV2(group) => {
+                    SessionType::GroupV2(group) => {
                         Some(hex::decode(&group.id).expect("valid hex identifiers in db"))
                     }
                 };
@@ -2101,12 +2108,12 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
             let mut sender = sender.await?;
 
             let results = match &session {
-                orm::SessionType::GroupV1(_group) => {
+                SessionType::GroupV1(_group) => {
                     // FIXME
                     tracing::error!("Cannot send to Group V1 anymore.");
                     Vec::new()
                 }
-                orm::SessionType::GroupV2(group) => {
+                SessionType::GroupV2(group) => {
                     let members = storage.fetch_group_members_by_group_v2_id(&group.id);
                     let members = members
                         .iter()
@@ -2133,7 +2140,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                         .send_message_to_group(&members, content, timestamp, online)
                         .await
                 }
-                orm::SessionType::DirectMessage(recipient) => {
+                SessionType::DirectMessage(recipient) => {
                     let svc = recipient.to_service_address();
 
                     let access = certs.access_for(cert_type, recipient, for_story);
@@ -2329,7 +2336,7 @@ impl Handler<RefreshProfile> for ClientActor {
         let recipient = match profile {
             RefreshProfile::BySession(session_id) => {
                 match storage.fetch_session_by_id(session_id).map(|x| x.r#type) {
-                    Some(orm::SessionType::DirectMessage(recipient)) => recipient,
+                    Some(SessionType::DirectMessage(recipient)) => recipient,
                     None => {
                         tracing::error!("No session with id {}", session_id);
                         return;
@@ -2388,14 +2395,6 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
         }
 
         let mut cipher = self.cipher(incoming_address.identity);
-
-        if !(msg.is_prekey_signal_message()
-            || msg.is_signal_message()
-            || msg.is_unidentified_sender()
-            || msg.is_receipt())
-        {
-            tracing::warn!("Unknown envelope type {:?}", msg.r#type());
-        }
 
         let storage = self.storage.clone().expect("initialized storage");
 
