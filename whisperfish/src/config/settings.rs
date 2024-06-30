@@ -29,6 +29,7 @@ pub struct SettingsBridge {
     quit_on_ui_close: qt_property!(bool; READ get_quit_on_ui_close WRITE set_quit_on_ui_close NOTIFY quit_on_ui_close_changed),
     show_phone_number: qt_property!(bool; READ get_show_phone_number WRITE set_show_phone_number NOTIFY show_phone_number_changed),
     share_phone_number: qt_property!(bool; READ get_share_phone_number WRITE set_share_phone_number NOTIFY share_phone_number_changed),
+    transcribe_voice_notes: qt_property!(bool; READ get_transcribe_voice_notes WRITE set_transcribe_voice_notes NOTIFY transcribe_voice_notes_changed),
 
     // These will be mirrored to `config.yml` at Whisperfish exit
     verbose: qt_property!(bool; READ get_verbose WRITE set_verbose NOTIFY verbose_changed),
@@ -64,6 +65,7 @@ pub struct SettingsBridge {
     camera_dir_changed: qt_signal!(value: String),
     voice_note_dir_changed: qt_signal!(value: String),
     plaintext_password_changed: qt_signal!(value: String),
+    transcribe_voice_notes_changed: qt_signal!(value: bool),
 }
 
 impl Default for SettingsBridge {
@@ -97,6 +99,7 @@ impl Default for SettingsBridge {
             quit_on_ui_close: true,
             show_phone_number: true,
             share_phone_number: false,
+            transcribe_voice_notes: false,
 
             verbose: false,
             logfile: false,
@@ -127,6 +130,7 @@ impl Default for SettingsBridge {
             plaintext_password_changed: Default::default(),
             show_phone_number_changed: Default::default(),
             share_phone_number_changed: Default::default(),
+            transcribe_voice_notes_changed: Default::default(),
 
             verbose_changed: Default::default(),
             logfile_changed: Default::default(),
@@ -249,6 +253,10 @@ impl SettingsBridge {
         self.get_bool("share_phone_number")
     }
 
+    pub fn get_transcribe_voice_notes(&self) -> bool {
+        self.get_bool("transcribe_voice_notes")
+    }
+
     pub fn get_verbose(&self) -> bool {
         self.get_bool("verbose")
     }
@@ -346,6 +354,11 @@ impl SettingsBridge {
         self.share_phone_number_changed(value);
     }
 
+    pub fn set_transcribe_voice_notes(&mut self, value: bool) {
+        self.set_bool("transcribe_voice_notes", value);
+        self.transcribe_voice_notes_changed(value);
+    }
+
     pub fn set_verbose(&mut self, value: bool) {
         self.set_bool("verbose", value);
         self.verbose_changed(value);
@@ -408,6 +421,7 @@ impl SettingsBridge {
         self.set_bool_if_unset("scale_image_attachments", false);
         self.set_bool_if_unset("attachment_log", false);
         self.set_bool_if_unset("quit_on_ui_close", true);
+        self.set_bool_if_unset("transcribe_voice_notes", false);
         self.set_string_if_unset("country_code", "");
         self.set_string_if_unset(
             "avatar_dir",

@@ -23,7 +23,7 @@ pub(super) struct VoiceNoteTranscriptionQueue {
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
-struct TranscribeVoiceNote {
+pub(super) struct TranscribeVoiceNote {
     pub message_id: i32,
 }
 

@@ -212,6 +212,24 @@ Page {
                     }
                 }
             }
+            IconTextSwitch {
+                id: autoTranscribeVoiceNotes
+                anchors.horizontalCenter: parent.horizontalCenter
+                //: Settings page auto transcribe voice notes
+                //% "Transcribe voice notes"
+                text: qsTrId("whisperfish-transcribe-voice-notes-label")
+                //: Auto transcribe voice notes description (always English)
+                //% "Automatically transcribe voice notes to text upon reception. Install Speech Note, and configure the English model to use this feature."
+                description: qsTrId("whisperfish-transcribe-voice-notes-description")
+                checked: SettingsBridge.transcribe_voice_notes
+                enabled: !!(dbusSpeechInterface.State)
+                icon.source: "image://theme/icon-m-file-note-dark"
+                onCheckedChanged: {
+                    if(checked != SettingsBridge.transcribe_voice_notes) {
+                        SettingsBridge.transcribe_voice_notes = checked
+                    }
+                }
+            }
             // ------ END GENERAL SETTINGS ------
 
             // ------ BEGIN PRIVACY SETTINGS ------
