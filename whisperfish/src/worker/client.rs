@@ -1087,25 +1087,22 @@ impl ClientActor {
                     handled = true;
                     tracing::trace!("Sync read message");
                     for read in &message.read {
-                        // XXX: this should probably not be based on ts alone.
-                        let ts = read.timestamp();
-                        let source = read.sender_aci();
-                        // XXX: Also handle PNI
                         // Signal uses timestamps in milliseconds, chrono has nanoseconds
-                        let ts = millis_to_naive_chrono(ts);
-                        tracing::trace!(
-                            "Marking message from {} at {} ({}) as read.",
-                            source,
-                            ts,
-                            read.timestamp()
-                        );
-                        if let Some(updated) = storage.mark_message_read(ts) {
-                            self.inner
-                                .pinned()
-                                .borrow_mut()
-                                .messageReceipt(updated.session_id, updated.message_id)
-                        } else {
-                            tracing::warn!("Could not mark as received!");
+                        // XXX: this should probably not be based on ts alone.
+                        if let Some(timestamp) = read.timestamp.map(millis_to_naive_chrono) {
+                            let source = read.sender_aci();
+                            tracing::trace!(
+                                "Marking message from {} at {} ({}) as read.",
+                                source,
+                                timestamp,
+                                timestamp.timestamp_millis(),
+                            );
+                            if let Some(updated) = storage.mark_message_read(timestamp) {
+                                self.inner
+                                    .pinned()
+                                    .borrow_mut()
+                                    .messageReceipt(updated.session_id, updated.message_id)
+                            }
                         }
                     }
                 }

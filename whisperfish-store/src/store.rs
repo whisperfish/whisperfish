@@ -1366,9 +1366,9 @@ impl<O: Observable> Storage<O> {
             .expect("db")
     }
 
-    /// Marks the message with a certain timestamp as read by a certain person.
-    ///
-    /// This is e.g. called from Signal Desktop from a sync message
+    /// Marks the message read without creating a Receipt entry.
+    /// This is used in handling sync messages only, and should
+    /// only cover messages that was sent through a paired device.
     #[tracing::instrument(skip(self))]
     pub fn mark_message_read(&self, timestamp: NaiveDateTime) -> Option<MessagePointer> {
         use schema::messages::dsl::*;
@@ -1380,7 +1380,7 @@ impl<O: Observable> Storage<O> {
             .unwrap();
 
         if row.is_empty() {
-            tracing::warn!("Could not find message with timestamp {}", timestamp);
+            tracing::warn!("Could not sync message {} as received", timestamp);
             tracing::warn!(
                 "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
             );
