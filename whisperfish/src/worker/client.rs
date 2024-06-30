@@ -27,6 +27,7 @@ use libsignal_service::sender::SendMessageResult;
 use tracing_futures::Instrument;
 use uuid::Uuid;
 use whisperfish_store::millis_to_naive_chrono;
+use whisperfish_store::naive_chrono_rounded_down;
 use whisperfish_store::naive_chrono_to_millis;
 use whisperfish_store::orm;
 use whisperfish_store::orm::shorten;
@@ -1098,7 +1099,7 @@ impl ClientActor {
                                 "Marking message from {} at {} ({}) as read.",
                                 source,
                                 timestamp,
-                                timestamp.timestamp_millis(),
+                                naive_chrono_rounded_down(timestamp),
                             );
                             if let Some(updated) = storage.mark_message_read(timestamp) {
                                 self.inner
@@ -1139,7 +1140,7 @@ impl ClientActor {
             ContentBody::TypingMessage(typing) => {
                 let settings = crate::config::SettingsBridge::default();
                 if settings.get_enable_typing_indicators() {
-                    tracing::info!("{:?} is typing.", metadata.sender);
+                    tracing::info!("{:?} is typing.", metadata.sender.to_service_id());
                     let res = self
                         .inner
                         .pinned()
@@ -1218,7 +1219,7 @@ impl ClientActor {
                 }
             }
             ContentBody::CallMessage(_call) => {
-                tracing::info!("{:?} is calling.", metadata.sender);
+                tracing::info!("{:?} is calling.", metadata.sender.to_service_id());
             }
             _ => {
                 tracing::info!("TODO")
@@ -2443,7 +2444,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                     }
                 };
 
-                tracing::trace!(sender = ?content.metadata.sender, "opened envelope");
+                tracing::trace!(sender = ?content.metadata.sender.to_service_id(), "opened envelope");
 
                 Some(content)
             }.instrument(tracing::trace_span!("opening envelope", %incoming_address.identity))
