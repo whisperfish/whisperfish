@@ -1331,6 +1331,56 @@ impl<O: Observable> Storage<O> {
                     }
                 }
             }
+            (None, Some(by_aci), Some(by_pni)) => {
+                tracing::warn!(
+                    "Conflicting results for ACI:{} and PNI:{}. Finding a resolution.",
+                    by_aci.uuid.as_ref().unwrap(),
+                    by_pni.pni.as_ref().unwrap(),
+                );
+                match (by_aci.pni, trust_level) {
+                    (Some(aci_pni), TrustLevel::Certain) => {
+                        tracing::info!("Differing ACIs, high trust, likely case of phone number change. Moving PNI only.");
+                        // Strip the old one
+                        diesel::update(recipients::table)
+                            .set(recipients::pni.eq::<Option<String>>(None))
+                            .filter(recipients::id.eq(by_pni.id))
+                            .execute(db)?;
+                        // Set the new one
+                        diesel::update(recipients::table)
+                            .set((
+                                recipients::pni.eq(aci_pni.to_string()),
+                                recipients::e164
+                                    .eq(phonenumber.as_ref().map(PhoneNumber::to_string)),
+                            ))
+                            .filter(recipients::id.eq(by_aci.id))
+                            .execute(db)?;
+                        // Fetch again for the update
+                        Ok((Some(by_aci.id), None, None, None, true))
+                    }
+                    (Some(_pni), TrustLevel::Uncertain) => {
+                        tracing::info!("Differing PNIs, low trust, likely case of reregistration. Doing absolutely nothing. Sorry.");
+                        Ok((Some(by_aci.id), None, None, None, false))
+                    }
+                    (None, TrustLevel::Certain) => {
+                        tracing::info!(
+                            "Merging contacts: one with ACI, the other only PNI, high trust."
+                        );
+                        let merged = Self::merge_recipients_inner(db, by_aci.id, by_pni.id)?;
+                        // XXX probably more recipient identifiers should be moved
+                        diesel::update(recipients::table)
+                            .set(recipients::uuid.eq(by_aci.uuid.unwrap().to_string()))
+                            .filter(recipients::id.eq(merged))
+                            .execute(db)?;
+                        Ok((Some(by_aci.id), None, None, None, false))
+                    }
+                    (None, TrustLevel::Uncertain) => {
+                        tracing::info!(
+                            "Not merging contacts: one with ACI, the other only PNI, low trust."
+                        );
+                        Ok((Some(by_aci.id), None, None, None, false))
+                    }
+                }
+            }
 
             // One match only
             (None, None, Some(by_pni)) => {
@@ -1433,7 +1483,6 @@ impl<O: Observable> Storage<O> {
 
             // XXX
             // (Some(by_e164), Some(by_pni), Some(by_uuid)) -- three results with two or no matches
-            // (None, Some(by_e164), Some(by_pni)) -- unmatching ACI and UUID
             _ => {
                 tracing::error!(
                     "Could not merge recipients by (E.164:{}, ACI:{}, PNI:{})",
