@@ -25,6 +25,8 @@ crate::observing_model! {
         original_name OriginalName,
         visual_hash VisualHash,
         is_voice_note IsVoiceNote,
+
+        transcription Transcription,
     }
 }
 
@@ -81,6 +83,7 @@ define_model_roles! {
         OriginalName(file_name via qstring_from_option): "original_name",
         VisualHash(visual_hash via qstring_from_option): "visual_hash",
         IsVoiceNote(is_voice_note):                      "is_voice_note",
+        Transcription(transcription via qstring_from_option): "transcription",
     }
 }
 

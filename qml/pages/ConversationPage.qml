@@ -339,6 +339,7 @@ Page {
         // 4. delete for me
         // 5. delete for all
         // 6* resend        [if at least one failed]
+        // 7* transcribe
 
         Column {
             id: actionsColumn
@@ -463,6 +464,17 @@ Page {
                     visible: false // TODO show if at least one message is failed
                                    // NOTE this action should be *hidden* if it is not applicable
                     onClicked: messages.messageAction(messages.resendSelected)
+                }
+
+                IconButton {
+                    width: visible ? Theme.itemSizeSmall : 0; height: width
+                    icon.source: "image://theme/icon-m-file-note-dark"
+                    //: Message action description
+                    //% "Transcribe %n message(s)"
+                    onPressedChanged: infoLabel.toggleHint(
+                                          qsTrId("whisperfish-message-action-resend", _selectedCount))
+                    visible: dbusSpeechInterface.available
+                    onClicked: messages.messageAction(messages.transcribeSelected)
                 }
             }
         }

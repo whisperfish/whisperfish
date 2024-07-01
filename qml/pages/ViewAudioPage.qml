@@ -50,5 +50,12 @@ Page {
             enableDefaultClickAction: false
             highlighted: false
         }
+
+        Label {
+            visible: attachment.isVoiceNote && attachment.transcription && attachment.transcription != ""
+            wrapMode: _elideEnabled ? Text.WrapAnywhere : Text.Wrap
+            font.pixelSize: Theme.fontSizeMedium
+            text: attachment.transcription
+        }
     }
 }

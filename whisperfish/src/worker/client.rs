@@ -7,6 +7,7 @@ mod message_expiry;
 mod profile;
 mod profile_upload;
 mod unidentified;
+mod voice_note_transcription;
 
 pub use self::groupv2::*;
 pub use self::linked_devices::*;
@@ -218,6 +219,8 @@ pub struct ClientWorker {
     send_typing_notification: qt_method!(fn(&self, id: i32, is_start: bool)),
     submit_proof_captcha: qt_method!(fn(&self, token: String, response: String)),
 
+    transcribeVoiceNote: qt_method!(fn(&self, message_id: i32)),
+
     connected: qt_property!(bool; NOTIFY connectedChanged),
     connectedChanged: qt_signal!(),
 
@@ -262,6 +265,8 @@ pub struct ClientActor {
     config: std::sync::Arc<crate::config::SignalConfig>,
 
     transient_timestamps: HashSet<u64>,
+
+    voice_note_transcription_queue: voice_note_transcription::VoiceNoteTranscriptionQueue,
 
     start_time: DateTime<Local>,
 
@@ -313,6 +318,9 @@ impl ClientActor {
             config,
 
             transient_timestamps,
+
+            voice_note_transcription_queue:
+                voice_note_transcription::VoiceNoteTranscriptionQueue::default(),
 
             start_time: Local::now(),
 
@@ -1331,6 +1339,18 @@ impl Handler<FetchAttachment> for ClientActor {
                         message_id,
                     })
                     .await?;
+
+                if attachment.is_voice_note {
+                    // If the attachment is a voice note, and we enabled automatic transcription,
+                    // trigger the transcription
+                    let settings = crate::config::SettingsBridge::default();
+                    if settings.get_transcribe_voice_notes() {
+                        client_addr
+                            .send(voice_note_transcription::TranscribeVoiceNote { message_id })
+                            .await?;
+                    }
+                }
+
                 Ok(())
             }
             .instrument(tracing::trace_span!(
@@ -1400,6 +1420,17 @@ impl Handler<QueueMessage> for ClientActor {
                 attachment.path.clone(),
                 msg.is_voice_note,
             );
+        }
+
+        if msg.is_voice_note {
+            // If the attachment is a voice note, and we enabled automatic transcription,
+            // trigger the transcription
+            let settings = crate::config::SettingsBridge::default();
+            if settings.get_transcribe_voice_notes() {
+                ctx.notify(voice_note_transcription::TranscribeVoiceNote {
+                    message_id: inserted_msg.id,
+                });
+            }
         }
 
         if let Some(h) = self.message_expiry_notification_handle.as_ref() {

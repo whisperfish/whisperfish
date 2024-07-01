@@ -9,6 +9,8 @@ description = "Private messaging using Signal for SailfishOS -- library."
 
 [dependencies]
 actix = "0.13"
+dbus = "0.9"
+dbus-tokio = "0.7"
 rand = "0.8"
 uuid = { version = "1.5", features = ["v4"] }
 mime = "0.3.17"

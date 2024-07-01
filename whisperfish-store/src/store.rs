@@ -2556,6 +2556,26 @@ impl<O: Observable> Storage<O> {
         latest_message
     }
 
+    #[tracing::instrument(skip(self))]
+    pub fn update_transcription(&mut self, attachment_id: i32, new_transcription: &str) {
+        use schema::attachments::dsl::*;
+
+        let count = diesel::update(attachments.filter(id.eq(attachment_id)))
+            .set(transcription.eq(new_transcription))
+            .execute(&mut *self.db())
+            .expect("update transcription");
+
+        if count == 1 {
+            tracing::trace!("Transcription updated for attachment id {}", attachment_id);
+            self.observe_update(schema::attachments::table, attachment_id);
+        } else {
+            tracing::error!(
+                "Could not update transcription for attachment {}",
+                attachment_id
+            );
+        };
+    }
+
     #[tracing::instrument(skip(self, path), fields(path = %path.as_ref().display()))]
     pub fn insert_local_attachment(
         &self,
