@@ -73,8 +73,16 @@ impl super::ClientActor {
                 TranscriptionTask::start_transcribe(self.storage.clone().unwrap(), attachment_id);
             let addr = ctx.address();
             actix::spawn(async move {
-                // XXX: On failure, we should probably retry
-                let task = task.await.unwrap();
+                let task = match task.await {
+                    Ok(t) => t,
+                    Err(e) => {
+                        // XXX: On failure, we should probably retry, if the daemon was already
+                        // busy.
+                        tracing::error!("Failed to start transcription task: {}", e);
+                        // TODO: mark the transcription as failed
+                        return;
+                    }
+                };
                 let task_id = task.task_id;
 
                 addr.send(TranscriptionStarted {
