@@ -715,7 +715,7 @@
         <location filename="../qml/components/MessagesView.qml" line="480"/>
         <source>Transcribe</source>
         <extracomment>Transcribe message menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Yazıya dönüştür</translation>
     </message>
     <message id="whisperfish-select-or-options-message-menu">
         <location filename="../qml/components/MessagesView.qml" line="487"/>
@@ -1407,25 +1407,25 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="220"/>
         <source>Transcribe voice notes</source>
         <extracomment>Settings page auto transcribe voice notes</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sesli notları yazıya dönüştür</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-available">
         <location filename="../qml/pages/Settings.qml" line="224"/>
         <source>Automatically transcribe voice notes to text upon reception using Speech Note.</source>
         <extracomment>Auto transcribe voice notes description, Speech Note installed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sesli not ile alınan sesli notları otomatik olarak metne dönüştür.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-unavailable">
         <location filename="../qml/pages/Settings.qml" line="227"/>
         <source>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</source>
         <extracomment>Auto transcribe voice notes description (always English), Speech Note installed but not configured.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Alındığında sesli notları otomatik olarak metne dönüştür. Bu özelliği kullanmak için sesli notta İngilizce modelini yapılandırın.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-uninstalled">
         <location filename="../qml/pages/Settings.qml" line="230"/>
         <source>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</source>
         <extracomment>Auto transcribe voice notes description (always English), Speech Note not installed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Alındığında sesli notları otomatik olarak metne dönüştür. Bu özelliği kullanmak için sesli notta İngilizce modelini kurun ve yapılandırın.</translation>
     </message>
     <message id="whisperfish-settings-privacy-section">
         <location filename="../qml/pages/Settings.qml" line="247"/>
