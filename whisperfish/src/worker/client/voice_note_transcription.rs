@@ -210,6 +210,10 @@ impl TranscriptionTask {
             )
             .await?;
 
+        if task_id < 0 {
+            anyhow::bail!("Failed to start transcription task");
+        }
+
         Ok(Self {
             attachment_id,
             task_id,
