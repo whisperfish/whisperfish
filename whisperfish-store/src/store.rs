@@ -1171,21 +1171,54 @@ impl<O: Observable> Storage<O> {
             .flatten();
 
         match (&by_e164, &by_aci, &by_pni) {
-            // Three matches
+            // Three identical matches - we're done
             (Some(by_e164), Some(by_aci), Some(by_pni))
                 if by_e164.id == by_aci.id && by_aci.id == by_pni.id =>
             {
                 Ok((Some(by_e164.id), None, None, None, false))
             }
 
-            // Two matches and a None
+            // Two identical matches only
             (None, Some(by_aci), Some(by_pni)) if by_aci.id == by_pni.id => {
+                if trust_level == TrustLevel::Certain
+                    && phonenumber.is_some()
+                    && by_aci.e164.is_none()
+                    && by_pni.e164.is_none()
+                {
+                    tracing::trace!("Matching ACI and PNI, setting missing E.164");
+                    diesel::update(recipients::table)
+                        .set(recipients::e164.eq(phonenumber.unwrap().to_string()))
+                        .filter(recipients::id.eq(by_aci.id))
+                        .execute(db)?;
+                };
                 Ok((Some(by_aci.id), None, None, None, false))
             }
             (Some(by_e164), None, Some(by_pni)) if by_e164.id == by_pni.id => {
+                if trust_level == TrustLevel::Certain
+                    && aci.is_some()
+                    && by_e164.uuid.is_none()
+                    && by_pni.e164.is_none()
+                {
+                    tracing::trace!("Matching E.164 and PNI, setting missing ACI");
+                    diesel::update(recipients::table)
+                        .set(recipients::uuid.eq(aci.unwrap().to_string()))
+                        .filter(recipients::id.eq(by_pni.id))
+                        .execute(db)?;
+                };
                 Ok((Some(by_e164.id), None, None, None, false))
             }
             (Some(by_e164), Some(by_aci), None) if by_e164.id == by_aci.id => {
+                if trust_level == TrustLevel::Certain
+                    && pni.is_some()
+                    && by_e164.pni.is_none()
+                    && by_aci.e164.is_none()
+                {
+                    tracing::trace!("Matching E.164 and ACI, setting missing PNI");
+                    diesel::update(recipients::table)
+                        .set(recipients::pni.eq(pni.unwrap().to_string()))
+                        .filter(recipients::id.eq(by_aci.id))
+                        .execute(db)?;
+                };
                 Ok((Some(by_aci.id), None, None, None, false))
             }
 
