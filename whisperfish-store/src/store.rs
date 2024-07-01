@@ -1279,38 +1279,39 @@ impl<O: Observable> Storage<O> {
             }
             (Some(by_e164), None, Some(by_pni)) => {
                 tracing::warn!(
-                    "Conflicting results for {} and PNI:{}. Finding a resolution.",
+                    "Conflicting results for {} and PNI:{}. This scenario is unstable. Resolving anyway.",
                     by_e164.e164.as_ref().unwrap(),
-                    by_pni.uuid.as_ref().unwrap(),
+                    by_pni.pni.as_ref().unwrap(),
                 );
-                match (by_e164.uuid, trust_level) {
-                    (Some(_uuid), TrustLevel::Certain) => {
-                        tracing::info!("Differing UUIDs, high trust, likely case of reregistration. Stripping the old account, updating new.");
+                match (by_e164.pni, trust_level) {
+                    (Some(_pni), TrustLevel::Certain) => {
+                        tracing::warn!(
+                            "Both PNIs exist, unstable PNI mapping. Moving PNI to E.164 recipient."
+                        );
                         // Strip the old one
                         diesel::update(recipients::table)
-                            .set(recipients::e164.eq::<Option<String>>(None))
-                            .filter(recipients::id.eq(by_e164.id))
+                            .set(recipients::pni.eq::<Option<String>>(None))
+                            .filter(recipients::id.eq(by_pni.id))
                             .execute(db)?;
                         // Set the new one
                         diesel::update(recipients::table)
-                            .set(
-                                recipients::e164
-                                    .eq(phonenumber.as_ref().map(PhoneNumber::to_string)),
-                            )
-                            .filter(recipients::id.eq(by_pni.id))
+                            .set(recipients::pni.eq(pni.as_ref().map(Uuid::to_string)))
+                            .filter(recipients::id.eq(by_e164.id))
                             .execute(db)?;
                         // Fetch again for the update
-                        Ok((Some(by_pni.id), None, None, None, true))
+                        Ok((Some(by_e164.id), None, None, None, true))
                     }
-                    (Some(_uuid), TrustLevel::Uncertain) => {
-                        tracing::info!("Differing UUIDs, low trust, likely case of reregistration. Doing absolutely nothing. Sorry.");
-                        Ok((Some(by_pni.id), None, None, None, false))
+                    (Some(_pni), TrustLevel::Uncertain) => {
+                        tracing::warn!(
+                            "PNI/E.164 mismatch with low trust. Doing absolutely nothing. Sorry."
+                        );
+                        Ok((Some(by_e164.id), None, None, None, false))
                     }
                     (None, TrustLevel::Certain) => {
                         tracing::info!(
-                            "Merging contacts: one with e164, the other only uuid, high trust."
+                            "Merging contacts: one with E.164, the other only PNI, high trust."
                         );
-                        let merged = Self::merge_recipients_inner(db, by_e164.id, by_pni.id)?;
+                        let merged = Self::merge_recipients_inner(db, by_pni.id, by_e164.id)?;
                         // XXX probably more recipient identifiers should be moved
                         diesel::update(recipients::table)
                             .set(
@@ -1323,10 +1324,10 @@ impl<O: Observable> Storage<O> {
                         Ok((Some(merged), None, None, None, true))
                     }
                     (None, TrustLevel::Uncertain) => {
-                        tracing::info!(
-                            "Not merging contacts: one with e164, the other only uuid, low trust."
+                        tracing::warn!(
+                            "Not merging contacts: one with E.164, the other only PNI, low trust."
                         );
-                        Ok((Some(by_pni.id), None, None, None, false))
+                        Ok((Some(by_e164.id), None, None, None, false))
                     }
                 }
             }
