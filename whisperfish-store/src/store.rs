@@ -1222,7 +1222,7 @@ impl<O: Observable> Storage<O> {
                 Ok((Some(by_aci.id), None, None, None, false))
             }
 
-            // Two non-matches and a None
+            // Two different matches and a miss
             (Some(by_e164), Some(by_aci), None) => {
                 tracing::warn!(
                     "Conflicting results for {} and ACI:{}. Finding a resolution.",
@@ -1230,31 +1230,32 @@ impl<O: Observable> Storage<O> {
                     by_aci.uuid.as_ref().unwrap(),
                 );
                 match (by_e164.uuid, trust_level) {
-                    (Some(_uuid), TrustLevel::Certain) => {
-                        tracing::info!("Differing UUIDs, high trust, likely case of reregistration. Stripping the old account, updating new.");
-                        // Strip the old one
+                    (Some(_aci), TrustLevel::Certain) => {
+                        tracing::info!("Differing ACIs, high trust, likely case of reregistration. Only moving E.164 (and adding PNI).");
+                        // See Signal Desktop RecipientTable::processNonMergePnpUpdate()
                         diesel::update(recipients::table)
-                            .set(recipients::e164.eq::<Option<String>>(None))
+                            .set((recipients::e164.eq::<Option<String>>(None),))
                             .filter(recipients::id.eq(by_e164.id))
                             .execute(db)?;
                         // Set the new one
                         diesel::update(recipients::table)
-                            .set(
+                            .set((
                                 recipients::e164
                                     .eq(phonenumber.as_ref().map(PhoneNumber::to_string)),
-                            )
+                                recipients::pni.eq(pni.as_ref().map(Uuid::to_string)),
+                            ))
                             .filter(recipients::id.eq(by_aci.id))
                             .execute(db)?;
                         // Fetch again for the update
                         Ok((Some(by_aci.id), None, None, None, true))
                     }
-                    (Some(_uuid), TrustLevel::Uncertain) => {
-                        tracing::info!("Differing UUIDs, low trust, likely case of reregistration. Doing absolutely nothing. Sorry.");
+                    (Some(_aci), TrustLevel::Uncertain) => {
+                        tracing::info!("Differing ACIs, low trust, likely case of reregistration. Doing absolutely nothing. Sorry.");
                         Ok((Some(by_aci.id), None, None, None, false))
                     }
                     (None, TrustLevel::Certain) => {
                         tracing::info!(
-                            "Merging contacts: one with e164, the other only uuid, high trust."
+                            "Merging contacts: one with E.164, one with ACI, high trust."
                         );
                         let merged = Self::merge_recipients_inner(db, by_e164.id, by_aci.id)?;
                         // XXX probably more recipient identifiers should be moved
@@ -1270,7 +1271,7 @@ impl<O: Observable> Storage<O> {
                     }
                     (None, TrustLevel::Uncertain) => {
                         tracing::info!(
-                            "Not merging contacts: one with e164, the other only uuid, low trust."
+                            "Not merging contacts: one with E.164, the other only ACI, low trust."
                         );
                         Ok((Some(by_aci.id), None, None, None, false))
                     }
