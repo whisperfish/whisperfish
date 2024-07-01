@@ -347,12 +347,42 @@ ApplicationWindow
         iface: 'org.mkiol.Speech'
 
         signalsEnabled: true
+        // XXX: this is undocumented
+        propertiesEnabled: true
+
+        // XXX: DBusInterface exposes a .status field with a Status enum, but this doesn't seem to work
+        //      We overwrite it with our own property in _updateProperties()
+        property bool installed: status == DBusInterface.Available
+        property bool englishSTTAvailable: false
+
+        property bool available: installed && englishSTTAvailable
+
+        function _updateProperties() {
+            var langs = getProperty("SttLangs");
+
+            installed = typeof getProperty("State") === "number";
+            englishSTTAvailable = installed && "en" in langs;
+
+            console.log("Speech Note update:")
+            console.log("  installed: " + installed);
+            console.log("  englishSTTAvailable: " + englishSTTAvailable);
+            console.log("  SttLangs: " + JSON.stringify(langs));
+        }
+
+        Component.onCompleted: {
+            _updateProperties();
+        }
 
         function statePropertyChanged(state) {
-            console.log("Speech state changed: " + state);
+            _updateProperties();
+        }
+
+        function sttModelsPropertyChanged(state) {
+            _updateProperties();
         }
 
         onPropertiesChanged: {
+            _updateProperties();
             console.log("Speech properties changed" + JSON.stringify(properties));
         }
     }

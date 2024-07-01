@@ -218,11 +218,19 @@ Page {
                 //: Settings page auto transcribe voice notes
                 //% "Transcribe voice notes"
                 text: qsTrId("whisperfish-transcribe-voice-notes-label")
-                //: Auto transcribe voice notes description (always English)
-                //% "Automatically transcribe voice notes to text upon reception. Install Speech Note, and configure the English model to use this feature."
-                description: qsTrId("whisperfish-transcribe-voice-notes-description")
+                description: dbusSpeechInterface.available ?
+                    //: Auto transcribe voice notes description, Speech Note installed
+                    //% "Automatically transcribe voice notes to text upon reception using Speech Note."
+                    qsTrId("whisperfish-transcribe-voice-notes-description-available") : (dbusSpeechInterface.installed ?
+                    //: Auto transcribe voice notes description (always English), Speech Note installed but not configured.
+                    //% "Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature."
+                    qsTrId("whisperfish-transcribe-voice-notes-description-unavailable") :
+                    //: Auto transcribe voice notes description (always English), Speech Note not installed
+                    //% "Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature."
+                    qsTrId("whisperfish-transcribe-voice-notes-description-uninstalled")
+                )
                 checked: SettingsBridge.transcribe_voice_notes
-                enabled: !!(dbusSpeechInterface.State)
+                enabled: dbusSpeechInterface.available
                 icon.source: "image://theme/icon-m-file-note-dark"
                 onCheckedChanged: {
                     if(checked != SettingsBridge.transcribe_voice_notes) {

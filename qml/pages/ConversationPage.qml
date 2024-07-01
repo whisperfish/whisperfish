@@ -473,7 +473,7 @@ Page {
                     //% "Transcribe %n message(s)"
                     onPressedChanged: infoLabel.toggleHint(
                                           qsTrId("whisperfish-message-action-resend", _selectedCount))
-                    visible: !!(dbusSpeechInterface.State)
+                    visible: dbusSpeechInterface.available
                     onClicked: messages.messageAction(messages.transcribeSelected)
                 }
             }

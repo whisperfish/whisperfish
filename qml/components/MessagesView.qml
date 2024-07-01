@@ -478,7 +478,7 @@ SilicaListView {
                 //: Transcribe message menu item
                 //% "Transcribe"
                 text: qsTrId("whisperfish-transcribe-message-menu")
-                visible: !!(menu.parent && !menu.parent.modelData.queued && menu.parent.modelData.isVoiceNote && dbusSpeechInterface.State)
+                visible: !!(menu.parent && !menu.parent.modelData.queued && menu.parent.modelData.isVoiceNote && dbusSpeechInterface.available)
                 onClicked: transcribeInline(menu.parent)
             }
             MenuItem {
