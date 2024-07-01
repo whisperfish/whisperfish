@@ -127,13 +127,13 @@
         <translation>Nem sikerült az adattároló beállítása</translation>
     </message>
     <message id="permission-la-data">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="448"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="496"/>
         <source>Whisperfish data storage</source>
         <extracomment>Permission for Whisperfish data storage</extracomment>
         <translation>Whisperfish adattároló</translation>
     </message>
     <message id="permission-la-data_description">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="452"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="500"/>
         <source>Store configuration and messages</source>
         <extracomment>Permission description for Whisperfish data storage</extracomment>
         <translation>Konfiguráció és üzenetek tárolása</translation>
@@ -563,7 +563,7 @@
         <translation>Zárolva</translation>
     </message>
     <message id="whisperfish-remorse-deleted-messages-locally" numerus="yes">
-        <location filename="../qml/components/MessagesView.qml" line="164"/>
+        <location filename="../qml/components/MessagesView.qml" line="177"/>
         <source>Locally deleted %n message(s)</source>
         <oldsource>Locally deleted %1 messages</oldsource>
         <extracomment>Remorse: *locally* deleted one or multiple message (past tense)</extracomment>
@@ -577,7 +577,7 @@
         <translation type="vanished">Reagálás</translation>
     </message>
     <message id="whisperfish-remorse-deleted-messages-globally" numerus="yes">
-        <location filename="../qml/components/MessagesView.qml" line="180"/>
+        <location filename="../qml/components/MessagesView.qml" line="193"/>
         <source>Deleted %n message(s) for everyone</source>
         <extracomment>Remorse: *globally* deleted one or multiple message (past tense)</extracomment>
         <translation type="unfinished">
@@ -585,25 +585,31 @@
         </translation>
     </message>
     <message id="whisperfish-copy-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="453"/>
+        <location filename="../qml/components/MessagesView.qml" line="466"/>
         <source>Copy</source>
         <extracomment>Copy message menu item</extracomment>
         <translation>Másolás</translation>
     </message>
     <message id="whisperfish-forward-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="460"/>
+        <location filename="../qml/components/MessagesView.qml" line="473"/>
         <source>Forward</source>
         <extracomment>Forward message menu item</extracomment>
         <translation>Továbbítás</translation>
     </message>
+    <message id="whisperfish-transcribe-message-menu">
+        <location filename="../qml/components/MessagesView.qml" line="480"/>
+        <source>Transcribe</source>
+        <extracomment>Transcribe message menu item</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-select-or-options-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="467"/>
+        <location filename="../qml/components/MessagesView.qml" line="487"/>
         <source>Select • more</source>
         <extracomment>&quot;Select and show more options&quot; message menu item</extracomment>
         <translation>Kijelölés • több</translation>
     </message>
     <message id="whisperfish-resend-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="446"/>
+        <location filename="../qml/components/MessagesView.qml" line="459"/>
         <source>Retry sending</source>
         <oldsource>Resend</oldsource>
         <extracomment>Resend message menu item</extracomment>
@@ -1282,76 +1288,100 @@ Settings page share contacts</extracomment>
         <extracomment>Settings page enable enter send description</extracomment>
         <translation>Ha engedélyezve van, az enter gomb küldés gombként funkcionál. Másként az enter gomb többsoros üzenetekhez használható.</translation>
     </message>
+    <message id="whisperfish-transcribe-voice-notes-label">
+        <location filename="../qml/pages/Settings.qml" line="220"/>
+        <source>Transcribe voice notes</source>
+        <extracomment>Settings page auto transcribe voice notes</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-transcribe-voice-notes-description-available">
+        <location filename="../qml/pages/Settings.qml" line="224"/>
+        <source>Automatically transcribe voice notes to text upon reception using Speech Note.</source>
+        <extracomment>Auto transcribe voice notes description, Speech Note installed</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-transcribe-voice-notes-description-unavailable">
+        <location filename="../qml/pages/Settings.qml" line="227"/>
+        <source>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</source>
+        <extracomment>Auto transcribe voice notes description (always English), Speech Note installed but not configured.</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-transcribe-voice-notes-description-uninstalled">
+        <location filename="../qml/pages/Settings.qml" line="230"/>
+        <source>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</source>
+        <extracomment>Auto transcribe voice notes description (always English), Speech Note not installed</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-settings-privacy-section">
-        <location filename="../qml/pages/Settings.qml" line="221"/>
+        <location filename="../qml/pages/Settings.qml" line="247"/>
         <source>Privacy</source>
         <extracomment>Settings page &quot;privacy&quot; section</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-share-phone-number">
-        <location filename="../qml/pages/Settings.qml" line="227"/>
+        <location filename="../qml/pages/Settings.qml" line="253"/>
         <source>Share phone number</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-share-phone-number-description">
-        <location filename="../qml/pages/Settings.qml" line="230"/>
+        <location filename="../qml/pages/Settings.qml" line="256"/>
         <source>When enabled, your contacts can see your phone number when you message them.</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-startup-shutdown-section">
-        <location filename="../qml/pages/Settings.qml" line="327"/>
+        <location filename="../qml/pages/Settings.qml" line="353"/>
         <source>Autostart and Background</source>
         <extracomment>Settings page startup and shutdown section</extracomment>
         <translation>Automatikus indítás és Háttérfeladatok</translation>
     </message>
     <message id="whisperfish-settings-enable-autostart">
-        <location filename="../qml/pages/Settings.qml" line="334"/>
+        <location filename="../qml/pages/Settings.qml" line="360"/>
         <source>Autostart after boot</source>
         <extracomment>Settings page enable autostart</extracomment>
         <translation>Automatikus indítás bootolás után</translation>
     </message>
     <message id="whisperfish-settings-auto-unlock-password-field">
-        <location filename="../qml/pages/Settings.qml" line="360"/>
+        <location filename="../qml/pages/Settings.qml" line="386"/>
         <source>Unlock Password</source>
         <extracomment>Settings page autostart password field</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-save-password-button">
-        <location filename="../qml/pages/Settings.qml" line="372"/>
+        <location filename="../qml/pages/Settings.qml" line="398"/>
         <source>Save password</source>
         <extracomment>Settings page save autologin password button</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-clear-password-button">
-        <location filename="../qml/pages/Settings.qml" line="375"/>
+        <location filename="../qml/pages/Settings.qml" line="401"/>
         <source>clear password</source>
         <extracomment>Settings page clear autologin password button</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-auto-unlock-password-info">
-        <location filename="../qml/pages/Settings.qml" line="388"/>
+        <location filename="../qml/pages/Settings.qml" line="414"/>
         <source>You can enter your password to make Whisperfish unlock the database automatically at startup. Please note that the password is stored in plain text, and as such usage of this feature is not recommended.</source>
         <oldsource>You can enter your password to make Whisperfish unlock the database automatically at startup. Please note that the password is stored in plain text, and as such usage of this feature is not recommened.</oldsource>
         <extracomment>Settings page info about setting auto unlock password</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode-description">
-        <location filename="../qml/pages/Settings.qml" line="410"/>
+        <location filename="../qml/pages/Settings.qml" line="436"/>
         <source>When enabled, Whisperfish keeps running in the background and can send notifications after the app window has been closed.</source>
         <oldsource>When enabled, Whisperfish starts automatically after each boot. If storage encryption is enabled or background-mode is off, the UI will be shown, otherwise the app starts in the background.</oldsource>
         <extracomment>Settings page enable background mode description</extracomment>
         <translation>Ha engedélyezve van, a Whisperfish tovább fut a háttérben, és képes értesítéseket küldeni, miután az alkalmazás ablakát bezárod.</translation>
     </message>
     <message id="whisperfish-settings-gstreamer-version">
-        <location filename="../qml/pages/Settings.qml" line="582"/>
+        <location filename="../qml/pages/Settings.qml" line="608"/>
         <source>GStreamer version</source>
         <extracomment>GStreamer version indication in settings</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
-        <location filename="../qml/pages/Settings.qml" line="407"/>
+        <location filename="../qml/pages/Settings.qml" line="433"/>
         <source>Background mode</source>
         <extracomment>Settings page enable background mode</extracomment>
         <translation>Háttér-mód</translation>
@@ -1375,55 +1405,55 @@ Settings page share contacts</extracomment>
         <translation>Láthatod, hogy mások mikor gépelnek, és mások is láthatják, hogy te mikor gépelsz, ha ez nekik is engedélyezve van.</translation>
     </message>
     <message id="whisperfish-settings-notification-privacy">
-        <location filename="../qml/pages/Settings.qml" line="245"/>
+        <location filename="../qml/pages/Settings.qml" line="271"/>
         <source>Notification privacy</source>
         <extracomment>Settings page notification privacy</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notifications-disable">
-        <location filename="../qml/pages/Settings.qml" line="256"/>
+        <location filename="../qml/pages/Settings.qml" line="282"/>
         <source>Disable notifications</source>
         <extracomment>Settings page, turn notifications off</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notifications-disable-description">
-        <location filename="../qml/pages/Settings.qml" line="259"/>
+        <location filename="../qml/pages/Settings.qml" line="285"/>
         <source>Whisperfish will not display any notification</source>
         <extracomment>Settings page, turn notifications off description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notifications-minimal">
-        <location filename="../qml/pages/Settings.qml" line="265"/>
+        <location filename="../qml/pages/Settings.qml" line="291"/>
         <source>Minimal notifications</source>
         <extracomment>Settings page, minimal notifications</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notifications-minimal-description">
-        <location filename="../qml/pages/Settings.qml" line="268"/>
+        <location filename="../qml/pages/Settings.qml" line="294"/>
         <source>Notification without disclosing the sender or content of the message</source>
         <extracomment>Settings page, minimal notifications description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only">
-        <location filename="../qml/pages/Settings.qml" line="274"/>
+        <location filename="../qml/pages/Settings.qml" line="300"/>
         <source>Sender-only notifications</source>
         <extracomment>Settings page, sender-only notifications</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only-description">
-        <location filename="../qml/pages/Settings.qml" line="277"/>
+        <location filename="../qml/pages/Settings.qml" line="303"/>
         <source>Notifications displaying the sender of a message, without the contents</source>
         <extracomment>Settings page, sender-only notifications description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notifications-complete">
-        <location filename="../qml/pages/Settings.qml" line="283"/>
+        <location filename="../qml/pages/Settings.qml" line="309"/>
         <source>Complete notifications</source>
         <extracomment>Settings page, complete notifications</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notifications-complete-description">
-        <location filename="../qml/pages/Settings.qml" line="286"/>
+        <location filename="../qml/pages/Settings.qml" line="312"/>
         <source>Notifications displaying the contents and sender of a message</source>
         <extracomment>Settings page, sender-only notifications description</extracomment>
         <translation type="unfinished"></translation>
@@ -1453,37 +1483,37 @@ Settings page share contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-show-phone-number">
-        <location filename="../qml/pages/Settings.qml" line="303"/>
+        <location filename="../qml/pages/Settings.qml" line="329"/>
         <source>Show phone number</source>
         <extracomment>Settings page, show recipient phone number in conversation view</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-show-phone-number-description">
-        <location filename="../qml/pages/Settings.qml" line="306"/>
+        <location filename="../qml/pages/Settings.qml" line="332"/>
         <source>Show the phone number of the recipient in the conversation page header.</source>
         <extracomment>Settings page, show recipient phone number in conversation view description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-enable-autostart-description">
-        <location filename="../qml/pages/Settings.qml" line="337"/>
+        <location filename="../qml/pages/Settings.qml" line="363"/>
         <source>When enabled, Whisperfish starts automatically after each boot. If storage encryption is enabled or background-mode is off, the UI will be shown, otherwise the app starts in the background.</source>
         <extracomment>Settings page enable autostart description</extracomment>
         <translation>Ha engedélyezve van, a Whisperfish automatikusan elindul minden bootolás után. Ha a tároló titkosítása engedélyezve van, vagy a háttér-mód ki van kapcsolva, a felhasználói felület megjelenítésre kerül, egyébként az alkalmazás a háttérben indul el.</translation>
     </message>
     <message id="whisperfish-settings-autostart-manual-info">
-        <location filename="../qml/pages/Settings.qml" line="400"/>
+        <location filename="../qml/pages/Settings.qml" line="426"/>
         <source>Whisperfish does not have the permission to change the autostart settings. You can enable or disable autostart manually from the command line by running &apos;systemctl --user enable harbour-whisperfish.service&apos; or &apos;systemctl --user disable harbour-whisperfish.service&apos;</source>
         <extracomment>Settings page info how to enable autostart manually</extracomment>
         <translation>A Whisperfishnek nincs jogosultsága az automatikus indítási beállítások módosítására. Az automatikus indítást manuálisan engedélyezheted a parancssorból a &quot;systemctl --user enable harbour-whisperfish.service&quot;, vagy letilthatod a &quot;systemctl --user disable harbour-whisperfish.service&quot; futtatásával.</translation>
     </message>
     <message id="whisperfish-settings-quit-button">
-        <location filename="../qml/pages/Settings.qml" line="428"/>
+        <location filename="../qml/pages/Settings.qml" line="454"/>
         <source>Quit Whisperfish</source>
         <extracomment>Settings page quit app button</extracomment>
         <translation>Kilépés a Whisperfishből</translation>
     </message>
     <message id="whisperfish-settings-advanced-section">
-        <location filename="../qml/pages/Settings.qml" line="440"/>
+        <location filename="../qml/pages/Settings.qml" line="466"/>
         <source>Advanced</source>
         <extracomment>Settings page advanced section</extracomment>
         <translation>Haladó</translation>
@@ -1505,113 +1535,113 @@ Settings page share contacts</extracomment>
         <translation type="vanished">A Whisperfish újraindítása</translation>
     </message>
     <message id="whisperfish-settings-scale-image-attachments">
-        <location filename="../qml/pages/Settings.qml" line="448"/>
+        <location filename="../qml/pages/Settings.qml" line="474"/>
         <source>Scale JPEG Attachments</source>
         <extracomment>Settings page scale image attachments</extracomment>
         <translation>JPEG csatolmányok skálázása</translation>
     </message>
     <message id="whisperfish-settings-scale-image-attachments-description">
-        <location filename="../qml/pages/Settings.qml" line="451"/>
+        <location filename="../qml/pages/Settings.qml" line="477"/>
         <source>Scale down JPEG attachments to save on bandwidth.</source>
         <extracomment>Settings page scale image attachments description</extracomment>
         <translation>JPEG mellékletek leskálázása a forgalom csökkentéséért.</translation>
     </message>
     <message id="whisperfish-settings-debug-mode">
-        <location filename="../qml/pages/Settings.qml" line="465"/>
+        <location filename="../qml/pages/Settings.qml" line="491"/>
         <source>Debug mode</source>
         <extracomment>Settings page: debug info toggle</extracomment>
         <translation>Hibakeresési mód</translation>
     </message>
     <message id="whisperfish-settings-debug-mode-description">
-        <location filename="../qml/pages/Settings.qml" line="468"/>
+        <location filename="../qml/pages/Settings.qml" line="494"/>
         <source>Show debugging information and controls in the user interface.</source>
         <oldsource>Show debugging information in the user interface.</oldsource>
         <extracomment>Settings page: debug info toggle extended description</extracomment>
         <translation type="unfinished">Hibakeresési információ megjelenítése a felhasználói felületen.</translation>
     </message>
     <message id="whisperfish-settings-enable-verbose">
-        <location filename="../qml/pages/Settings.qml" line="482"/>
+        <location filename="../qml/pages/Settings.qml" line="508"/>
         <source>Verbose logging</source>
         <extracomment>Settings page enable verbose logging</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-enable-verbose-description">
-        <location filename="../qml/pages/Settings.qml" line="485"/>
+        <location filename="../qml/pages/Settings.qml" line="511"/>
         <source>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a restart to take effect.</source>
         <oldsource>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a reboot to take effect.</oldsource>
         <extracomment>Settings page enable verbose logging description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-logfile-autostart">
-        <location filename="../qml/pages/Settings.qml" line="499"/>
+        <location filename="../qml/pages/Settings.qml" line="525"/>
         <source>Enable log file</source>
         <extracomment>Settings page enable logging to a file</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-enable-logfile-description">
-        <location filename="../qml/pages/Settings.qml" line="502"/>
+        <location filename="../qml/pages/Settings.qml" line="528"/>
         <source>When enabled, Whisperfish saves its output to a log file. Requires a restart to take effect.</source>
         <oldsource>When enabled, Whisperfish saves its output to a log file. Requires a reboot to take effect.</oldsource>
         <extracomment>Settings page enable logfile description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-compress-db">
-        <location filename="../qml/pages/Settings.qml" line="518"/>
+        <location filename="../qml/pages/Settings.qml" line="544"/>
         <source>Compact database</source>
         <oldsource>Compress database</oldsource>
         <extracomment>Settings page &apos;Compact database&apos; button: execute &apos;VACUUM&apos; command on SQLite-database</extracomment>
         <translation>Kompakt adatbázis</translation>
     </message>
     <message id="whisperfish-settings-test-captcha">
-        <location filename="../qml/pages/Settings.qml" line="530"/>
+        <location filename="../qml/pages/Settings.qml" line="556"/>
         <source>Test captcha</source>
         <extracomment>Settings page, test captcha button</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-stats-section">
-        <location filename="../qml/pages/Settings.qml" line="541"/>
+        <location filename="../qml/pages/Settings.qml" line="567"/>
         <source>Statistics</source>
         <extracomment>Settings page stats section</extracomment>
         <translation>Statisztikák</translation>
     </message>
     <message id="whisperfish-settings-websocket">
-        <location filename="../qml/pages/Settings.qml" line="546"/>
+        <location filename="../qml/pages/Settings.qml" line="572"/>
         <source>Websocket Status</source>
         <extracomment>Settings page websocket status</extracomment>
         <translation>Websocket állapot</translation>
     </message>
     <message id="whisperfish-settings-connected">
-        <location filename="../qml/pages/Settings.qml" line="550"/>
+        <location filename="../qml/pages/Settings.qml" line="576"/>
         <source>Connected</source>
         <extracomment>Settings page connected message</extracomment>
         <translation>Csatlakoztatva</translation>
     </message>
     <message id="whisperfish-settings-disconnected">
-        <location filename="../qml/pages/Settings.qml" line="553"/>
+        <location filename="../qml/pages/Settings.qml" line="579"/>
         <source>Disconnected</source>
         <extracomment>Settings page disconnected message</extracomment>
         <translation>Nincs kapcsolat</translation>
     </message>
     <message id="whisperfish-settings-unsent-messages">
-        <location filename="../qml/pages/Settings.qml" line="558"/>
+        <location filename="../qml/pages/Settings.qml" line="584"/>
         <source>Unsent Messages</source>
         <extracomment>Settings page unsent messages</extracomment>
         <translation>Elküldetlen üzenetek</translation>
     </message>
     <message id="whisperfish-settings-total-sessions">
-        <location filename="../qml/pages/Settings.qml" line="564"/>
+        <location filename="../qml/pages/Settings.qml" line="590"/>
         <source>Total Sessions</source>
         <extracomment>Settings page total sessions</extracomment>
         <translation>Összes munkamenet</translation>
     </message>
     <message id="whisperfish-settings-total-messages">
-        <location filename="../qml/pages/Settings.qml" line="570"/>
+        <location filename="../qml/pages/Settings.qml" line="596"/>
         <source>Total Messages</source>
         <extracomment>Settings page total messages</extracomment>
         <translation>Összes üzenet</translation>
     </message>
     <message id="whisperfish-settings-total-contacts">
-        <location filename="../qml/pages/Settings.qml" line="576"/>
+        <location filename="../qml/pages/Settings.qml" line="602"/>
         <source>Signal Contacts</source>
         <extracomment>Settings page total signal contacts</extracomment>
         <translation>Signal névjegyek</translation>
@@ -1632,19 +1662,19 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Letiltva</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db">
-        <location filename="../qml/pages/Settings.qml" line="588"/>
+        <location filename="../qml/pages/Settings.qml" line="614"/>
         <source>Encrypted Database</source>
         <extracomment>Settings page encrypted database</extracomment>
         <translation>Titkosított adatbázis</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-enabled">
-        <location filename="../qml/pages/Settings.qml" line="592"/>
+        <location filename="../qml/pages/Settings.qml" line="618"/>
         <source>Enabled</source>
         <extracomment>Settings page encrypted db enabled</extracomment>
         <translation>Engedélyezve</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-disabled">
-        <location filename="../qml/pages/Settings.qml" line="595"/>
+        <location filename="../qml/pages/Settings.qml" line="621"/>
         <source>Disabled</source>
         <extracomment>Settings page encrypted db disabled</extracomment>
         <translation>Letiltva</translation>
@@ -1878,7 +1908,7 @@ Settings page share contacts</extracomment>
         <translation>Csatolmányok kiválasztása</translation>
     </message>
     <message id="whisperfish-attachments-plus-n" numerus="yes">
-        <location filename="../qml/components/message/AttachmentsLoader.qml" line="264"/>
+        <location filename="../qml/components/message/AttachmentsLoader.qml" line="266"/>
         <source>+%n</source>
         <extracomment>Label hinting at more attachments than are currently shown. Read as &quot;and %n more&quot;.</extracomment>
         <translation>
@@ -1886,7 +1916,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-attachments-loader-show-more" numerus="yes">
-        <location filename="../qml/components/message/AttachmentsLoader.qml" line="336"/>
+        <location filename="../qml/components/message/AttachmentsLoader.qml" line="338"/>
         <source>and %n more</source>
         <oldsource>and %1 more</oldsource>
         <extracomment>Note if some message attachments are hidden instead of being shown inline</extracomment>
@@ -1942,21 +1972,21 @@ Settings page share contacts</extracomment>
         <translation>Csatolmány</translation>
     </message>
     <message id="whisperfish-sender-label-empty">
-        <location filename="../qml/delegates/MessageDelegate.qml" line="198"/>
+        <location filename="../qml/delegates/MessageDelegate.qml" line="199"/>
         <source>no sender</source>
         <extracomment>Label shown if a message doesn&apos;t have a sender.</extracomment>
         <translation>nincs feladó</translation>
     </message>
     <message id="whisperfish-message-deleted-note">
         <location filename="../qml/cover/CoverPage.qml" line="140"/>
-        <location filename="../qml/delegates/MessageDelegate.qml" line="263"/>
+        <location filename="../qml/delegates/MessageDelegate.qml" line="265"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="45"/>
         <source>this message was deleted</source>
         <extracomment>Placeholder note for a deleted message</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-message-empty-note">
-        <location filename="../qml/delegates/MessageDelegate.qml" line="266"/>
+        <location filename="../qml/delegates/MessageDelegate.qml" line="268"/>
         <source>this message is empty</source>
         <extracomment>Placeholder note if an empty message is encountered.</extracomment>
         <translation>ez az üzenet üres</translation>
@@ -2256,7 +2286,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-actions-info-label" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="356"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="357"/>
         <source>%n message(s) selected</source>
         <oldsource>%1 message(s) selected</oldsource>
         <extracomment>Info label shown while selecting messages</extracomment>
@@ -2265,7 +2295,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-clear-selection" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="379"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="380"/>
         <source>Clear selection</source>
         <extracomment>Message action description, shown if one or more messages are selected</extracomment>
         <translation>
@@ -2273,7 +2303,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-copy" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="388"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="389"/>
         <source>Copy %n message(s)</source>
         <oldsource>Copy %1 message(s)</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2282,14 +2312,14 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-info">
-        <location filename="../qml/pages/ConversationPage.qml" line="396"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="397"/>
         <source>Show message info</source>
         <extracomment>Message action description (only available if n==1)</extracomment>
         <translation>Üzenet-infó megjelenítése</translation>
     </message>
     <message id="whisperfish-message-action-delete-for-self" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="408"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="440"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="409"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="441"/>
         <source>Locally delete %n message(s)</source>
         <oldsource>Delete %1 message(s) for me</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2298,8 +2328,8 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-delete-for-all" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="420"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="450"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="421"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="451"/>
         <source>Delete %n message(s) for all</source>
         <oldsource>Delete %1 message(s) for all</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2308,7 +2338,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-resend" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="462"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="463"/>
         <source>Retry sending (the) failed message(s)</source>
         <extracomment>Message action description</extracomment>
         <translation>
