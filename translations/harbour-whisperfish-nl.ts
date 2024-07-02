@@ -602,7 +602,7 @@
         <location filename="../qml/components/MessagesView.qml" line="480"/>
         <source>Transcribe</source>
         <extracomment>Transcribe message menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transcriberen</translation>
     </message>
     <message id="whisperfish-select-or-options-message-menu">
         <location filename="../qml/components/MessagesView.qml" line="487"/>
@@ -1291,25 +1291,25 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="220"/>
         <source>Transcribe voice notes</source>
         <extracomment>Settings page auto transcribe voice notes</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Spraakberichten transcriberen</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-available">
         <location filename="../qml/pages/Settings.qml" line="224"/>
         <source>Automatically transcribe voice notes to text upon reception using Speech Note.</source>
         <extracomment>Auto transcribe voice notes description, Speech Note installed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transcribeer automatisch spraakberichten naar tekst met Speech Note bij ontvangst.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-unavailable">
         <location filename="../qml/pages/Settings.qml" line="227"/>
         <source>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</source>
         <extracomment>Auto transcribe voice notes description (always English), Speech Note installed but not configured.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transcribeer automatisch spraakberichten naar tekst bij ontvangst. Configureer het Engelstalige model in Speech Note om deze functionaliteit te gebruiken.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-uninstalled">
         <location filename="../qml/pages/Settings.qml" line="230"/>
         <source>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</source>
         <extracomment>Auto transcribe voice notes description (always English), Speech Note not installed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transcribeer automatisch spraakberichten bij ontvangest. Installeer en configureer het Engelstalige model in Speech Note om deze functionaliteit te gebruiken.</translation>
     </message>
     <message id="whisperfish-settings-privacy-section">
         <location filename="../qml/pages/Settings.qml" line="247"/>
