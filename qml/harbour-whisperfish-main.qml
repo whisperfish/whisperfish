@@ -342,48 +342,37 @@ ApplicationWindow
     DBusInterface {
         id: dbusSpeechInterface
 
+        // https://github.com/mkiol/dsnote/blob/main/dbus/org.mkiol.Speech.xml
         service: 'org.mkiol.Speech'
         path: '/'
         iface: 'org.mkiol.Speech'
 
+        // XXX: these are undocumented
+        watchServiceStatus: true
         signalsEnabled: true
-        // XXX: this is undocumented
         propertiesEnabled: true
 
-        // XXX: DBusInterface exposes a .status field with a Status enum, but this doesn't seem to work
-        //      We overwrite it with our own property in _updateProperties()
+        // 3 == Idle
+        property bool available: installed && _state === 3 && _englishSTTAvailable
         property bool installed: status == DBusInterface.Available
-        property bool englishSTTAvailable: false
 
-        property bool available: installed && englishSTTAvailable
-
-        function _updateProperties() {
-            var langs = getProperty("SttLangs");
-
-            installed = typeof getProperty("State") === "number";
-            englishSTTAvailable = installed && "en" in langs;
-
-            console.log("Speech Note update:")
-            console.log("  installed: " + installed);
-            console.log("  englishSTTAvailable: " + englishSTTAvailable);
-            console.log("  SttLangs: " + JSON.stringify(langs));
-        }
+        property var _state
+        property bool _englishSTTAvailable: false
 
         Component.onCompleted: {
-            _updateProperties();
+            // We need to read e.g. State once to trigger updates
+            _state = getProperty("State");
         }
 
         function statePropertyChanged(state) {
-            _updateProperties();
+            console.log("statePropertyChanged:", state)
+            _state = state
         }
 
-        function sttModelsPropertyChanged(state) {
-            _updateProperties();
-        }
-
-        onPropertiesChanged: {
-            _updateProperties();
-            console.log("Speech properties changed" + JSON.stringify(properties));
+        function sttLangsPropertyChanged(langs) {
+            console.log("sttLangsPropertyChanged:", JSON.stringify(langs))
+            _englishSTTAvailable = "en" in langs;
+            console.log("English available:", _englishSTTAvailable);
         }
     }
 
