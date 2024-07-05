@@ -25,3 +25,6 @@ private-bin /usr/bin/sailfish-qml
 
 dbus-user.own org.whisperfish.*
 dbus-user.own be.rubdos.whisperfish.*
+
+# Speech Note
+dbus-user.talk org.mkiol.Speech.*
