@@ -717,7 +717,7 @@
         <location filename="../qml/components/MessagesView.qml" line="480"/>
         <source>Transcribe</source>
         <extracomment>Transcribe message menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transkribera</translation>
     </message>
     <message id="whisperfish-select-or-options-message-menu">
         <location filename="../qml/components/MessagesView.qml" line="487"/>
@@ -1409,25 +1409,25 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="220"/>
         <source>Transcribe voice notes</source>
         <extracomment>Settings page auto transcribe voice notes</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transkribera röstanteckningar</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-available">
         <location filename="../qml/pages/Settings.qml" line="224"/>
         <source>Automatically transcribe voice notes to text upon reception using Speech Note.</source>
         <extracomment>Auto transcribe voice notes description, Speech Note installed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transkribera röstanteckningar automatiskt, till text vid mottagning, med hjälp av Speech Note.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-unavailable">
         <location filename="../qml/pages/Settings.qml" line="227"/>
         <source>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</source>
         <extracomment>Auto transcribe voice notes description (always English), Speech Note installed but not configured.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transkribera röstanteckningar automatiskt, till text vid mottagning. Konfigurera den engelska modellen i Speech Note, för att använda den här funktionen.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-uninstalled">
         <location filename="../qml/pages/Settings.qml" line="230"/>
         <source>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</source>
         <extracomment>Auto transcribe voice notes description (always English), Speech Note not installed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transkribera röstanteckningar automatiskt, till text vid mottagning. Installera och konfigurera den engelska modellen i Speech Note, för att använda den här funktionen.</translation>
     </message>
     <message id="whisperfish-settings-privacy-section">
         <location filename="../qml/pages/Settings.qml" line="247"/>
@@ -1495,7 +1495,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="608"/>
         <source>GStreamer version</source>
         <extracomment>GStreamer version indication in settings</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>GStreamer-version</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
         <location filename="../qml/pages/Settings.qml" line="433"/>
@@ -1990,7 +1990,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ChatTextInput.qml" line="287"/>
         <source>Incompatible with Signal iOS</source>
         <extracomment>Short warning note that the voice note is being recorded in Vorbis format</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ej kompatibel med Signal iOS</translation>
     </message>
     <message id="whisperfish-chat-input-attachment-label" numerus="yes">
         <location filename="../qml/components/ChatTextInput.qml" line="317"/>
