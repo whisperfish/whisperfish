@@ -1212,9 +1212,7 @@ impl<O: Observable> Storage<O> {
                 } else if pni != common.pni {
                     tracing::debug!("Removing PNI from existing recipient");
                     diesel::update(recipients::table)
-                        .set((
-                            recipients::pni.eq::<Option<String>>(None),
-                        ))
+                        .set((recipients::pni.eq::<Option<String>>(None),))
                         .filter(recipients::id.eq(common.id))
                         .execute(db)
                         .expect("remove pni");
@@ -1222,7 +1220,11 @@ impl<O: Observable> Storage<O> {
 
                 // XXX (change_self || not_self)
 
-                tracing::debug!("Creating new recipient with E164({}) and PNI({})", phonenumber.is_some(), pni.is_some());
+                tracing::debug!(
+                    "Creating new recipient with E164({}) and PNI({})",
+                    phonenumber.is_some(),
+                    pni.is_some()
+                );
                 diesel::insert_into(recipients::table)
                     .values((
                         recipients::e164.eq(phonenumber.as_ref().map(PhoneNumber::to_string)),
