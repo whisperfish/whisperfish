@@ -1189,6 +1189,47 @@ impl<O: Observable> Storage<O> {
             if match_count == 3 {
                 return Ok((Some(common.id), None, None, None, false));
             }
+
+            // This is a special case. The ACI passed in doesn't match the common record. We can't change ACIs, so we need to make a new record.
+            if aci.is_some() && aci != common.uuid {
+                unimplemented!("ACI mismatch handling");
+            }
+
+            if phonenumber.is_some() && phonenumber != common.e164 && trust_level == TrustLevel::Certain {
+                diesel::update(recipients::table)
+                    .set((recipients::e164.eq(phonenumber.as_ref().unwrap().to_string()),))
+                    .filter(recipients::id.eq(common.id))
+                    .execute(db)
+                    .expect("update recipient e164");
+                if common.e164.is_some() {
+                    tracing::warn!("TODO: Phone number change from {:?} to {:?}", common.e164.as_ref().unwrap().to_string(), phonenumber);
+                }
+            }
+
+            if pni.is_some() && pni != common.pni {
+                diesel::update(recipients::table)
+                    .set((recipients::pni.eq(pni.as_ref().unwrap().to_string()),))
+                    .filter(recipients::id.eq(common.id))
+                    .execute(db)
+                    .expect("update recipient pni");
+            }
+
+            if aci.is_some() && aci != common.uuid {
+                diesel::update(recipients::table)
+                    .set((recipients::uuid.eq(aci.as_ref().unwrap().to_string()),))
+                    .filter(recipients::id.eq(common.id))
+                    .execute(db)
+                    .expect("update recipient uuid");
+            }
+
+            let old_service_id = if common.uuid.is_some() { common.uuid } else { common.pni };
+            let new_service_id = if aci.is_some() { aci } else if pni.is_some() { pni } else { old_service_id };
+
+            if old_service_id.is_some() && old_service_id != new_service_id && trust_level == TrustLevel::Certain /* && has_session(old_service_id) */{
+                tracing::warn!("TODO: Session switchover event change from {:?} to {:?}", old_service_id, new_service_id);
+            }
+
+            return Ok((Some(common.id), None, None, None, true));
         }
 
         if by_all.is_empty() {
