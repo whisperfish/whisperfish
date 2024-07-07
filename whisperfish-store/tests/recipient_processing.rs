@@ -136,23 +136,25 @@ mod merge_and_fetch {
     ) {
         let ((storage, _temp_dir), phonenumber) = storage_with_e164_recipient.await;
 
+        let recipient_e164 = storage
+            .fetch_recipient_by_e164(&phonenumber)
+            .expect("e164 in db");
+        assert_eq!(recipient_e164.uuid, None);
+        assert_eq!(recipient_e164.e164, Some(phonenumber.clone()));
+
         let recipient = storage.merge_and_fetch_recipient(
             Some(phonenumber.clone()),
             Some(ServiceAddress::new_aci(UUID)),
             None,
             TrustLevel::Uncertain,
         );
-        assert_eq!(recipient.e164, None);
+
+        assert_eq!(recipient.id, recipient_e164.id);
+
+        assert_eq!(recipient.e164, Some(phonenumber));
         assert_eq!(recipient.uuid, Some(UUID));
 
-        // Now check that the e164 still exists separately.
-        let recipient_e164 = storage
-            .fetch_recipient_by_e164(&phonenumber)
-            .expect("e164 still in db");
-        assert_eq!(recipient_e164.e164.as_ref(), Some(&phonenumber));
-        assert_eq!(recipient_e164.uuid, None);
-
-        assert_eq!(storage.fetch_recipients().len(), 2);
+        assert_eq!(storage.fetch_recipients().len(), 1);
 
         let recipient_uuid = storage
             .fetch_recipient_by_service_address(&ServiceAddress::new_aci(UUID))
