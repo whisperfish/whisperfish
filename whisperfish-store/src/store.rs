@@ -1134,6 +1134,10 @@ impl<O: Observable> Storage<O> {
         }
 
         use schema::recipients;
+        let criteria_count = [phonenumber.is_some(), aci.is_some(), pni.is_some()]
+            .iter()
+            .filter(|c| **c)
+            .count();
         let by_e164: Option<orm::Recipient> = phonenumber
             .as_ref()
             .map(|phonenumber| {
@@ -1179,9 +1183,16 @@ impl<O: Observable> Storage<O> {
 
         if let Some(common) = common {
             // If there's a common recipient, and we three identical matches, we're done!
-            if match_count == 3 {
+            if match_count == criteria_count {
+                tracing::debug!("Found complete common recipient {}", common.id);
                 return Ok((Some(common.id), None, None, None, false));
             }
+            tracing::debug!(
+                "Found incomplete ({}/{}) common recipient {}",
+                match_count,
+                criteria_count,
+                common.id
+            );
 
             // This is a special case. The ACI passed in doesn't match the common record. We can't change ACIs, so we need to make a new record.
             if aci.is_some() && aci != common.uuid {
