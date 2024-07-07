@@ -1195,22 +1195,72 @@ impl<O: Observable> Storage<O> {
             );
 
             // This is a special case. The ACI passed in doesn't match the common record. We can't change ACIs, so we need to make a new record.
-            if aci.is_some() && aci != common.uuid {
-                unimplemented!("ACI mismatch handling");
+            if aci.is_some() && common.uuid.is_some() && aci != common.uuid {
+                tracing::warn!("ACI mismatch -- creating a new recipient");
+                if phonenumber != common.e164
+                // && (change_self || not_self)
+                {
+                    tracing::debug!("Removing E164 and PNI from existing recipient");
+                    diesel::update(recipients::table)
+                        .set((
+                            recipients::e164.eq::<Option<String>>(None),
+                            recipients::pni.eq::<Option<String>>(None),
+                        ))
+                        .filter(recipients::id.eq(common.id))
+                        .execute(db)
+                        .expect("remove e164 and pni");
+                } else if pni != common.pni {
+                    tracing::debug!("Removing PNI from existing recipient");
+                    diesel::update(recipients::table)
+                        .set((
+                            recipients::pni.eq::<Option<String>>(None),
+                        ))
+                        .filter(recipients::id.eq(common.id))
+                        .execute(db)
+                        .expect("remove pni");
+                }
+
+                // XXX (change_self || not_self)
+
+                tracing::debug!("Creating new recipient with E164({}) and PNI({})", phonenumber.is_some(), pni.is_some());
+                diesel::insert_into(recipients::table)
+                    .values((
+                        recipients::e164.eq(phonenumber.as_ref().map(PhoneNumber::to_string)),
+                        recipients::pni.eq(pni.as_ref().map(Uuid::to_string)),
+                    ))
+                    .execute(db)
+                    .expect("insert new recipient");
+
+                if pni.is_some() {
+                    return Ok((None, None, pni, None, true));
+                } else if phonenumber.is_some() {
+                    return Ok((None, None, None, phonenumber, true));
+                } else {
+                    unreachable!("ACI mismatch handle without neither E.164 nor PNI");
+                }
             }
 
-            if phonenumber.is_some() && phonenumber != common.e164 && trust_level == TrustLevel::Certain {
+            if phonenumber.is_some()
+                && phonenumber != common.e164
+                && trust_level == TrustLevel::Certain
+            {
+                tracing::debug!("Updating E164 in existing recipient");
                 diesel::update(recipients::table)
                     .set((recipients::e164.eq(phonenumber.as_ref().unwrap().to_string()),))
                     .filter(recipients::id.eq(common.id))
                     .execute(db)
                     .expect("update recipient e164");
                 if common.e164.is_some() {
-                    tracing::warn!("TODO: Phone number change from {:?} to {:?}", common.e164.as_ref().unwrap().to_string(), phonenumber);
+                    tracing::warn!(
+                        "TODO: Phone number change from {:?} to {:?}",
+                        common.e164.as_ref().unwrap().to_string(),
+                        phonenumber
+                    );
                 }
             }
 
             if pni.is_some() && pni != common.pni {
+                tracing::debug!("Updating PNI in existing recipient");
                 diesel::update(recipients::table)
                     .set((recipients::pni.eq(pni.as_ref().unwrap().to_string()),))
                     .filter(recipients::id.eq(common.id))
@@ -1218,7 +1268,8 @@ impl<O: Observable> Storage<O> {
                     .expect("update recipient pni");
             }
 
-            if aci.is_some() && aci != common.uuid {
+            if aci.is_some() && common.uuid.is_none() {
+                tracing::debug!("Setting UUID in existing recipient");
                 diesel::update(recipients::table)
                     .set((recipients::uuid.eq(aci.as_ref().unwrap().to_string()),))
                     .filter(recipients::id.eq(common.id))
@@ -1226,11 +1277,19 @@ impl<O: Observable> Storage<O> {
                     .expect("update recipient uuid");
             }
 
-            let old_service_id = if common.uuid.is_some() { common.uuid } else { common.pni };
-            let new_service_id = if aci.is_some() { aci } else if pni.is_some() { pni } else { old_service_id };
+            let old_service_id = common.uuid.or(common.pni);
+            let new_service_id = aci.or(pni.or(old_service_id));
 
-            if old_service_id.is_some() && old_service_id != new_service_id && trust_level == TrustLevel::Certain /* && has_session(old_service_id) */{
-                tracing::warn!("TODO: Session switchover event change from {:?} to {:?}", old_service_id, new_service_id);
+            if old_service_id.is_some()
+                && old_service_id != new_service_id
+                && trust_level == TrustLevel::Certain
+            /* && has_session(old_service_id) */
+            {
+                tracing::warn!(
+                    "TODO: Session switchover event change from {:?} to {:?}",
+                    old_service_id,
+                    new_service_id
+                );
             }
 
             return Ok((Some(common.id), None, None, None, true));
