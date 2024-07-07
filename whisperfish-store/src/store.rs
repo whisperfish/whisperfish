@@ -1170,58 +1170,43 @@ impl<O: Observable> Storage<O> {
             .transpose()?
             .flatten();
 
+        // Get the common recipient, if one exists
+        let mut by_all: Vec<&orm::Recipient> = [&by_aci, &by_pni, &by_e164]
+            .iter()
+            .filter_map(|r| r.as_ref())
+            .collect();
+        let match_count = by_all.len();
+        by_all.sort_by(|a, b| b.id.cmp(&a.id));
+        by_all.dedup_by(|a, b| a.id == b.id);
+        let common = if by_all.len() == 1 {
+            Some(by_all[0])
+        } else {
+            None
+        };
+
+        if let Some(common) = common {
+            // If there's a common recipient, and we three identical matches, we're done!
+            if match_count == 3 {
+                return Ok((Some(common.id), None, None, None, false));
+            }
+        }
+
+        if by_all.is_empty() {
+            let insert_e164 = (trust_level == TrustLevel::Certain) || aci.is_none();
+            let insert_phonenumber = if insert_e164 { phonenumber } else { None };
+            diesel::insert_into(recipients::table)
+                .values((
+                    recipients::e164.eq(insert_phonenumber.as_ref().map(PhoneNumber::to_string)),
+                    recipients::uuid.eq(aci.as_ref().map(Uuid::to_string)),
+                    recipients::pni.eq(pni.as_ref().map(Uuid::to_string)),
+                ))
+                .execute(db)
+                .expect("insert new recipient");
+
+            return Ok((None, aci, None, insert_phonenumber, true));
+        }
+
         match (&by_e164, &by_aci, &by_pni) {
-            // Three identical matches - we're done
-            (Some(by_e164), Some(by_aci), Some(by_pni))
-                if by_e164.id == by_aci.id && by_aci.id == by_pni.id =>
-            {
-                Ok((Some(by_e164.id), None, None, None, false))
-            }
-
-            // Two identical matches only
-            (None, Some(by_aci), Some(by_pni)) if by_aci.id == by_pni.id => {
-                if trust_level == TrustLevel::Certain
-                    && phonenumber.is_some()
-                    && by_aci.e164.is_none()
-                    && by_pni.e164.is_none()
-                {
-                    tracing::trace!("Matching ACI and PNI, setting missing E.164");
-                    diesel::update(recipients::table)
-                        .set(recipients::e164.eq(phonenumber.unwrap().to_string()))
-                        .filter(recipients::id.eq(by_aci.id))
-                        .execute(db)?;
-                };
-                Ok((Some(by_aci.id), None, None, None, false))
-            }
-            (Some(by_e164), None, Some(by_pni)) if by_e164.id == by_pni.id => {
-                if trust_level == TrustLevel::Certain
-                    && aci.is_some()
-                    && by_e164.uuid.is_none()
-                    && by_pni.e164.is_none()
-                {
-                    tracing::trace!("Matching E.164 and PNI, setting missing ACI");
-                    diesel::update(recipients::table)
-                        .set(recipients::uuid.eq(aci.unwrap().to_string()))
-                        .filter(recipients::id.eq(by_pni.id))
-                        .execute(db)?;
-                };
-                Ok((Some(by_e164.id), None, None, None, false))
-            }
-            (Some(by_e164), Some(by_aci), None) if by_e164.id == by_aci.id => {
-                if trust_level == TrustLevel::Certain
-                    && pni.is_some()
-                    && by_e164.pni.is_none()
-                    && by_aci.e164.is_none()
-                {
-                    tracing::trace!("Matching E.164 and ACI, setting missing PNI");
-                    diesel::update(recipients::table)
-                        .set(recipients::pni.eq(pni.unwrap().to_string()))
-                        .filter(recipients::id.eq(by_aci.id))
-                        .execute(db)?;
-                };
-                Ok((Some(by_aci.id), None, None, None, false))
-            }
-
             // Two different matches and a miss
             (Some(by_e164), Some(by_aci), None) => {
                 tracing::warn!(
@@ -1465,24 +1450,6 @@ impl<O: Observable> Storage<O> {
                 }
             }
 
-            // No matches whatsoever -- insert a new Recipient
-            (None, None, None) => {
-                let insert_e164 = (trust_level == TrustLevel::Certain) || aci.is_none();
-                let insert_phonenumber = if insert_e164 { phonenumber } else { None };
-                diesel::insert_into(recipients::table)
-                    .values((
-                        recipients::e164
-                            .eq(insert_phonenumber.as_ref().map(PhoneNumber::to_string)),
-                        recipients::uuid.eq(aci.as_ref().map(Uuid::to_string)),
-                    ))
-                    .execute(db)
-                    .expect("insert new recipient");
-
-                Ok((None, aci, None, insert_phonenumber, true))
-            }
-
-            // XXX
-            // (Some(by_e164), Some(by_pni), Some(by_uuid)) -- three results with two or no matches
             _ => {
                 tracing::error!(
                     "Could not merge recipients by (E.164:{}, ACI:{}, PNI:{})",
