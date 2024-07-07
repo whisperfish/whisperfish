@@ -1060,13 +1060,6 @@ impl<O: Observable> Storage<O> {
     /// Equivalent of Androids `RecipientDatabase::getAndPossiblyMerge`.
     ///
     /// XXX: This does *not* trigger observations for removed recipients.
-    #[tracing::instrument(
-        skip(self, phonenumber),
-        fields(
-            phonenumber = phonenumber
-                .as_ref()
-                .map(|p| p.to_string()).as_deref(),
-        ))]
     pub fn merge_and_fetch_recipient(
         &self,
         phonenumber: Option<PhoneNumber>,
@@ -1115,9 +1108,9 @@ impl<O: Observable> Storage<O> {
     #[tracing::instrument(
         skip(db, phonenumber),
         fields(
-            phonenumber = phonenumber
-                .as_ref()
-                .map(|p| p.to_string()).as_deref(),
+            aci = aci.as_ref().map_or("None".into(), |u| u.to_string()),
+            pni = pni.as_ref().map_or("None".into(), |u| u.to_string()),
+            phonenumber = phonenumber.as_ref().map_or("None".into(), |u| u.to_string()),
         ))]
     // XXX this should get implemented with an Either or custom enum instead
     fn merge_and_fetch_recipient_inner(
