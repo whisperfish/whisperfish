@@ -1281,10 +1281,10 @@ impl<O: Observable> Storage<O> {
                 );
                 ops.push(RecipientOperation::Create(None, pni, e164.clone()));
 
-                if pni.is_some() {
-                    return Ok((None, None, pni, None, true));
-                } else if e164.is_some() {
-                    return Ok((None, None, None, e164, true));
+                if e164.is_some() {
+                    to_return = Some((None, None, None, e164.clone(), true));
+                } else if pni.is_some() {
+                    to_return = Some((None, None, pni, None, true));
                 } else {
                     unreachable!("ACI mismatch handle without neither E.164 nor PNI");
                 }
