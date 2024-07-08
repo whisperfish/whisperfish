@@ -2252,11 +2252,11 @@ impl Handler<RefreshProfile> for ClientActor {
                 }
             },
         };
-        if let Some(addr) = recipient.to_service_address() {
-            storage.mark_profile_outdated(&addr);
+        if let Some(addr) = recipient.to_aci_service_address() {
+            storage.mark_profile_outdated(addr.uuid);
         } else {
             tracing::error!(
-                "Recipient without uuid; not refreshing profile: {:?}",
+                "Recipient without ACI; not refreshing profile: {:?}",
                 recipient
             );
         }

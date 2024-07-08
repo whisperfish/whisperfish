@@ -936,23 +936,16 @@ impl<O: Observable> Storage<O> {
         affected > 0
     }
 
-    #[tracing::instrument(skip(self, addr))]
-    pub fn mark_profile_outdated(&self, addr: &ServiceAddress) -> Option<orm::Recipient> {
+    #[tracing::instrument(skip(self, recipient_uuid), fields(recipient_uuid = recipient_uuid.to_string()))]
+    pub fn mark_profile_outdated(&self, recipient_uuid: Uuid) -> Option<orm::Recipient> {
         use crate::schema::recipients::dsl::*;
-        match addr.identity {
-            ServiceIdType::AccountIdentity => diesel::update(recipients)
-                .set(last_profile_fetch.eq(Option::<NaiveDateTime>::None))
-                .filter(uuid.eq(addr.uuid.to_string()))
-                .execute(&mut *self.db())
-                .expect("existing record updated"),
-            ServiceIdType::PhoneNumberIdentity => diesel::update(recipients)
-                .set(last_profile_fetch.eq(Option::<NaiveDateTime>::None))
-                .filter(pni.eq(addr.uuid.to_string()))
-                .execute(&mut *self.db())
-                .expect("existing record updated"),
-        };
-
-        let recipient = self.fetch_recipient_by_service_address(addr);
+        diesel::update(recipients)
+            .set(last_profile_fetch.eq(Option::<NaiveDateTime>::None))
+            .filter(uuid.eq(recipient_uuid.to_string()))
+            .execute(&mut *self.db())
+            .expect("existing record updated");
+        let recipient =
+            self.fetch_recipient_by_service_address(&ServiceAddress::new_aci(recipient_uuid));
         if let Some(recipient) = &recipient {
             self.observe_update(recipients, recipient.id);
         }
@@ -962,7 +955,7 @@ impl<O: Observable> Storage<O> {
     #[tracing::instrument(skip(self))]
     pub fn update_profile_details(
         &self,
-        addr: &ServiceAddress,
+        profile_uuid: &Uuid,
         new_given_name: &Option<String>,
         new_family_name: &Option<String>,
         new_about: &Option<String>,
@@ -975,7 +968,9 @@ impl<O: Observable> Storage<O> {
             _ => None,
         };
 
-        let recipient = self.fetch_recipient_by_service_address(addr).unwrap();
+        let recipient = self
+            .fetch_recipient_by_service_address(&ServiceAddress::new_aci(*profile_uuid))
+            .unwrap();
         use crate::schema::recipients::dsl::*;
         let affected_rows = diesel::update(recipients)
             .set((

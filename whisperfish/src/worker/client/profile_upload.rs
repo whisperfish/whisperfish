@@ -103,7 +103,7 @@ impl Handler<RefreshOwnProfile> for ClientActor {
         let mut service = self.authenticated_service();
         let client = ctx.address();
         let config = self.config.clone();
-        let addr = config.get_addr().expect("valid uuid at this point");
+        let uuid = config.get_aci().expect("valid uuid at this point");
 
         Box::pin(
             async move {
@@ -133,7 +133,7 @@ impl Handler<RefreshOwnProfile> for ClientActor {
                 }
 
                 let online = service
-                    .retrieve_profile_by_id(addr, Some(profile_key))
+                    .retrieve_profile_by_id(ServiceAddress::new_aci(uuid), Some(profile_key))
                     .await;
 
                 let outdated = match online {
@@ -141,7 +141,7 @@ impl Handler<RefreshOwnProfile> for ClientActor {
                         let unidentified_access_enabled = profile.unidentified_access.is_some();
                         let capabilities = profile.capabilities.clone();
                         client
-                            .send(ProfileFetched(addr, Some(profile)))
+                            .send(ProfileFetched(uuid, Some(profile)))
                             .await
                             .unwrap();
 
@@ -178,15 +178,13 @@ impl Handler<UpdateProfile> for ClientActor {
         let storage = self.storage.clone().unwrap();
         let client = ctx.address();
         let config = self.config.clone();
-        let addr = config
-            .get_addr()
-            .expect("valid ServiceAddress at this point");
+        let uuid = config.get_aci().expect("valid uuid at this point");
 
         // XXX: Validate emoji character somehow
         Box::pin(
             async move {
                 storage.update_profile_details(
-                    &addr,
+                    &uuid,
                     &Some(new_profile.given_name),
                     &Some(new_profile.family_name),
                     &Some(new_profile.about),

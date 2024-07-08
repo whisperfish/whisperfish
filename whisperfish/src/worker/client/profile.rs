@@ -8,11 +8,8 @@ use tokio::io::AsyncWriteExt;
 use whisperfish_store::StoreProfile;
 
 impl StreamHandler<OutdatedProfile> for ClientActor {
-    fn handle(&mut self, OutdatedProfile(addr, key): OutdatedProfile, ctx: &mut Self::Context) {
-        tracing::trace!(
-            "Received OutdatedProfile({}, [..]), fetching.",
-            addr.to_service_id()
-        );
+    fn handle(&mut self, OutdatedProfile(uuid, key): OutdatedProfile, ctx: &mut Self::Context) {
+        tracing::trace!("Received OutdatedProfile({}, [..]), fetching.", uuid);
         let mut service = if let Some(ws) = self.ws.clone() {
             ProfileService::from_socket(ws)
         } else {
@@ -21,44 +18,51 @@ impl StreamHandler<OutdatedProfile> for ClientActor {
         };
 
         // If our own Profile is outdated, schedule a profile refresh
-        if self.config.get_addr() == Some(addr) {
+        if self.config.get_aci() == Some(uuid) {
             tracing::trace!("Scheduling a refresh for our own profile");
             ctx.notify(RefreshOwnProfile { force: false });
             return;
         }
 
         ctx.spawn(
-            async move { (addr, service.retrieve_profile_by_id(addr, key).await) }
-                .into_actor(self)
-                .map(|(addr, profile), _act, ctx| {
-                    match profile {
-                        Ok(profile) => ctx.notify(ProfileFetched(addr, Some(profile))),
-                        Err(e) => {
-                            if let ServiceError::NotFoundError = e {
-                                ctx.notify(ProfileFetched(addr, None))
-                            } else {
-                                tracing::error!("Error refreshing outdated profile: {}", e);
-                            }
+            async move {
+                (
+                    uuid,
+                    service
+                        .retrieve_profile_by_id(ServiceAddress::new_aci(uuid), key)
+                        .await,
+                )
+            }
+            .into_actor(self)
+            .map(|(recipient_uuid, profile), _act, ctx| {
+                match profile {
+                    Ok(profile) => ctx.notify(ProfileFetched(recipient_uuid, Some(profile))),
+                    Err(e) => {
+                        if let ServiceError::NotFoundError = e {
+                            ctx.notify(ProfileFetched(recipient_uuid, None))
+                        } else {
+                            tracing::error!("Error refreshing outdated profile: {}", e);
                         }
-                    };
-                }),
+                    }
+                };
+            }),
         );
     }
 }
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
-pub(super) struct ProfileFetched(pub ServiceAddress, pub Option<SignalServiceProfile>);
+pub(super) struct ProfileFetched(pub uuid::Uuid, pub Option<SignalServiceProfile>);
 
 impl Handler<ProfileFetched> for ClientActor {
     type Result = ();
 
     fn handle(
         &mut self,
-        ProfileFetched(addr, profile): ProfileFetched,
+        ProfileFetched(uuid, profile): ProfileFetched,
         ctx: &mut Self::Context,
     ) -> Self::Result {
-        match self.handle_profile_fetched(ctx, &addr, profile) {
+        match self.handle_profile_fetched(ctx, uuid, profile) {
             Ok(()) => {}
             Err(e) => {
                 tracing::warn!("Error with fetched profile: {}", e);
@@ -89,12 +93,12 @@ impl ClientActor {
     fn handle_profile_fetched(
         &mut self,
         ctx: &mut <Self as Actor>::Context,
-        recipient_addr: &ServiceAddress,
+        recipient_uuid: Uuid,
         profile: Option<SignalServiceProfile>,
     ) -> anyhow::Result<()> {
         let storage = self.storage.clone().unwrap();
         let recipient = storage
-            .fetch_recipient_by_service_address(recipient_addr)
+            .fetch_recipient_by_service_address(&ServiceAddress::new_aci(recipient_uuid))
             .ok_or_else(|| {
                 anyhow::anyhow!("could not find recipient for which we fetched a profile")
             })?;
@@ -151,22 +155,11 @@ impl ClientActor {
             use diesel::prelude::*;
             use whisperfish_store::schema::recipients::dsl::*;
 
-            match recipient_addr.identity {
-                ServiceIdType::AccountIdentity => {
-                    diesel::update(recipients)
-                        .set((last_profile_fetch.eq(Utc::now().naive_utc()),))
-                        .filter(uuid.nullable().eq(&recipient_addr.uuid.to_string()))
-                        .execute(&mut *db)
-                        .expect("db");
-                }
-                ServiceIdType::PhoneNumberIdentity => {
-                    diesel::update(recipients)
-                        .set((last_profile_fetch.eq(Utc::now().naive_utc()),))
-                        .filter(pni.nullable().eq(&recipient_addr.uuid.to_string()))
-                        .execute(&mut *db)
-                        .expect("db");
-                }
-            }
+            diesel::update(recipients)
+                .set((last_profile_fetch.eq(Utc::now().naive_utc()),))
+                .filter(uuid.nullable().eq(&recipient_uuid.to_string()))
+                .execute(&mut *db)
+                .expect("db");
         }
 
         Ok(())
