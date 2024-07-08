@@ -776,15 +776,15 @@ impl<O: Observable> Storage<O> {
         Some(self.merge_and_fetch_recipient_by_address(e164, addr.unwrap(), TrustLevel::Certain))
     }
 
-    #[tracing::instrument(skip(self, phonenumber), fields(phonenumber = %phonenumber))]
+    #[tracing::instrument(skip(self, rcpt_e164), fields(rcpt_e164 = %rcpt_e164))]
     pub fn fetch_recipient_by_phonenumber(
         &self,
-        phonenumber: &PhoneNumber,
+        rcpt_e164: &PhoneNumber,
     ) -> Option<orm::Recipient> {
         use crate::schema::recipients::dsl::*;
 
         recipients
-            .filter(e164.eq(phonenumber.to_string()))
+            .filter(e164.eq(rcpt_e164.to_string()))
             .first(&mut *self.db())
             .ok()
     }
@@ -939,22 +939,22 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(
-        skip(self, phonenumber, new_profile_key),
+        skip(self, rcpt_e164, new_profile_key),
         fields(
-            phonenumber = phonenumber
+            rcpt_e164 = rcpt_e164
                 .as_ref()
                 .map(|p| p.to_string()).as_deref(),
         ))]
 
     pub fn update_profile_key(
         &self,
-        phonenumber: Option<PhoneNumber>,
+        rcpt_e164: Option<PhoneNumber>,
         addr: Option<ServiceAddress>,
         new_profile_key: &[u8],
         trust_level: TrustLevel,
     ) -> (orm::Recipient, bool) {
         let recipient =
-            self.merge_and_fetch_recipient_by_address(phonenumber, addr.unwrap(), trust_level);
+            self.merge_and_fetch_recipient_by_address(rcpt_e164, addr.unwrap(), trust_level);
 
         if new_profile_key.len() != PROFILE_KEY_LEN {
             tracing::error!(
@@ -1043,16 +1043,16 @@ impl<O: Observable> Storage<O> {
     /// XXX: This does *not* trigger observations for removed recipients.
     pub fn merge_and_fetch_recipient_by_address(
         &self,
-        phonenumber: Option<PhoneNumber>,
+        e164: Option<PhoneNumber>,
         addr: ServiceAddress,
         trust_level: TrustLevel,
     ) -> orm::Recipient {
         match addr.identity {
             ServiceIdType::AccountIdentity => {
-                self.merge_and_fetch_recipient(phonenumber, Some(addr), None, trust_level)
+                self.merge_and_fetch_recipient(e164, Some(addr), None, trust_level)
             }
             ServiceIdType::PhoneNumberIdentity => {
-                self.merge_and_fetch_recipient(phonenumber, None, Some(addr), trust_level)
+                self.merge_and_fetch_recipient(e164, None, Some(addr), trust_level)
             }
         }
     }
@@ -1062,7 +1062,7 @@ impl<O: Observable> Storage<O> {
     /// XXX: This does *not* trigger observations for removed recipients.
     pub fn merge_and_fetch_recipient(
         &self,
-        phonenumber: Option<PhoneNumber>,
+        e164: Option<PhoneNumber>,
         aci: Option<ServiceAddress>,
         pni: Option<ServiceAddress>,
         trust_level: TrustLevel,
@@ -1072,7 +1072,7 @@ impl<O: Observable> Storage<O> {
             .transaction::<_, Error, _>(|db| {
                 Self::merge_and_fetch_recipient_inner(
                     db,
-                    phonenumber,
+                    e164,
                     aci.map(|u| u.uuid),
                     pni.map(|u| u.uuid),
                     trust_level,
@@ -1106,16 +1106,16 @@ impl<O: Observable> Storage<O> {
     // Inner method because the coverage report is then sensible.
     #[allow(clippy::type_complexity)]
     #[tracing::instrument(
-        skip(db, phonenumber),
+        skip(db, e164),
         fields(
             aci = aci.as_ref().map_or("None".into(), |u| u.to_string()),
             pni = pni.as_ref().map_or("None".into(), |u| u.to_string()),
-            phonenumber = phonenumber.as_ref().map_or("None".into(), |u| u.to_string()),
+            e164 = e164.as_ref().map_or("None".into(), |u| u.to_string()),
         ))]
     // XXX this should get implemented with an Either or custom enum instead
     fn merge_and_fetch_recipient_inner(
         db: &mut SqliteConnection,
-        phonenumber: Option<PhoneNumber>,
+        e164: Option<PhoneNumber>,
         aci: Option<Uuid>,
         pni: Option<Uuid>,
         trust_level: TrustLevel,
@@ -1129,16 +1129,16 @@ impl<O: Observable> Storage<O> {
         ),
         Error,
     > {
-        if phonenumber.is_none() && aci.is_none() && pni.is_none() {
+        if e164.is_none() && aci.is_none() && pni.is_none() {
             panic!("merge_and_fetch_recipient requires at least one of e164 or uuid");
         }
 
         use schema::recipients;
-        let criteria_count = [phonenumber.is_some(), aci.is_some(), pni.is_some()]
+        let criteria_count = [e164.is_some(), aci.is_some(), pni.is_some()]
             .iter()
             .filter(|c| **c)
             .count();
-        let by_e164: Option<orm::Recipient> = phonenumber
+        let by_e164: Option<orm::Recipient> = e164
             .as_ref()
             .map(|phonenumber| {
                 recipients::table
@@ -1197,8 +1197,8 @@ impl<O: Observable> Storage<O> {
             // This is a special case. The ACI passed in doesn't match the common record. We can't change ACIs, so we need to make a new record.
             if aci.is_some() && common.uuid.is_some() && aci != common.uuid {
                 tracing::warn!("ACI mismatch -- creating a new recipient");
-                if phonenumber != common.e164
-                // && (change_self || not_self)
+                if e164 != common.e164
+                // XXX && (change_self || not_self)
                 {
                     tracing::debug!("Removing E164 and PNI from existing recipient");
                     diesel::update(recipients::table)
@@ -1222,12 +1222,12 @@ impl<O: Observable> Storage<O> {
 
                 tracing::debug!(
                     "Creating new recipient with E164({}) and PNI({})",
-                    phonenumber.is_some(),
+                    e164.is_some(),
                     pni.is_some()
                 );
                 diesel::insert_into(recipients::table)
                     .values((
-                        recipients::e164.eq(phonenumber.as_ref().map(PhoneNumber::to_string)),
+                        recipients::e164.eq(e164.as_ref().map(PhoneNumber::to_string)),
                         recipients::pni.eq(pni.as_ref().map(Uuid::to_string)),
                     ))
                     .execute(db)
@@ -1235,20 +1235,20 @@ impl<O: Observable> Storage<O> {
 
                 if pni.is_some() {
                     return Ok((None, None, pni, None, true));
-                } else if phonenumber.is_some() {
-                    return Ok((None, None, None, phonenumber, true));
+                } else if e164.is_some() {
+                    return Ok((None, None, None, e164, true));
                 } else {
                     unreachable!("ACI mismatch handle without neither E.164 nor PNI");
                 }
             }
 
-            if phonenumber.is_some()
-                && phonenumber != common.e164
+            if e164.is_some()
+                && e164 != common.e164
                 && trust_level == TrustLevel::Certain
             {
                 tracing::debug!("Updating E164 in existing recipient");
                 diesel::update(recipients::table)
-                    .set((recipients::e164.eq(phonenumber.as_ref().unwrap().to_string()),))
+                    .set((recipients::e164.eq(e164.as_ref().unwrap().to_string()),))
                     .filter(recipients::id.eq(common.id))
                     .execute(db)
                     .expect("update recipient e164");
@@ -1256,7 +1256,7 @@ impl<O: Observable> Storage<O> {
                     tracing::warn!(
                         "TODO: Phone number change from {:?} to {:?}",
                         common.e164.as_ref().unwrap().to_string(),
-                        phonenumber
+                        e164
                     );
                 }
             }
@@ -1299,7 +1299,7 @@ impl<O: Observable> Storage<O> {
 
         if by_all.is_empty() {
             let insert_e164 = (trust_level == TrustLevel::Certain) || aci.is_none();
-            let insert_phonenumber = if insert_e164 { phonenumber } else { None };
+            let insert_phonenumber = if insert_e164 { e164 } else { None };
             diesel::insert_into(recipients::table)
                 .values((
                     recipients::e164.eq(insert_phonenumber.as_ref().map(PhoneNumber::to_string)),
@@ -1331,8 +1331,7 @@ impl<O: Observable> Storage<O> {
                         // Set the new one
                         diesel::update(recipients::table)
                             .set((
-                                recipients::e164
-                                    .eq(phonenumber.as_ref().map(PhoneNumber::to_string)),
+                                recipients::e164.eq(e164.as_ref().map(PhoneNumber::to_string)),
                                 recipients::pni.eq(pni.as_ref().map(Uuid::to_string)),
                             ))
                             .filter(recipients::id.eq(by_aci.id))
@@ -1351,10 +1350,7 @@ impl<O: Observable> Storage<O> {
                         let merged = Self::merge_recipients_inner(db, by_e164.id, by_aci.id)?;
                         // XXX probably more recipient identifiers should be moved
                         diesel::update(recipients::table)
-                            .set(
-                                recipients::e164
-                                    .eq(phonenumber.as_ref().map(PhoneNumber::to_string)),
-                            )
+                            .set(recipients::e164.eq(e164.as_ref().map(PhoneNumber::to_string)))
                             .filter(recipients::id.eq(merged))
                             .execute(db)?;
 
@@ -1405,10 +1401,7 @@ impl<O: Observable> Storage<O> {
                         let merged = Self::merge_recipients_inner(db, by_pni.id, by_e164.id)?;
                         // XXX probably more recipient identifiers should be moved
                         diesel::update(recipients::table)
-                            .set(
-                                recipients::e164
-                                    .eq(phonenumber.as_ref().map(PhoneNumber::to_string)),
-                            )
+                            .set(recipients::e164.eq(e164.as_ref().map(PhoneNumber::to_string)))
                             .filter(recipients::id.eq(merged))
                             .execute(db)?;
 
@@ -1440,8 +1433,7 @@ impl<O: Observable> Storage<O> {
                         diesel::update(recipients::table)
                             .set((
                                 recipients::pni.eq(aci_pni.to_string()),
-                                recipients::e164
-                                    .eq(phonenumber.as_ref().map(PhoneNumber::to_string)),
+                                recipients::e164.eq(e164.as_ref().map(PhoneNumber::to_string)),
                             ))
                             .filter(recipients::id.eq(by_aci.id))
                             .execute(db)?;
@@ -1475,22 +1467,22 @@ impl<O: Observable> Storage<O> {
 
             // One match only
             (None, None, Some(by_pni)) => {
-                if let Some(phonenumber) = phonenumber {
+                if let Some(e164) = e164 {
                     match trust_level {
                         TrustLevel::Certain => {
                             tracing::info!(
                                 "Found phone number {} for contact {}. High trust, so updating.",
-                                phonenumber,
+                                e164,
                                 by_pni.uuid.as_ref().unwrap()
                             );
                             diesel::update(recipients::table)
-                                .set(recipients::e164.eq(phonenumber.to_string()))
+                                .set(recipients::e164.eq(e164.to_string()))
                                 .filter(recipients::id.eq(by_pni.id))
                                 .execute(db)?;
                             Ok((Some(by_pni.id), None, None, None, true))
                         }
                         TrustLevel::Uncertain => {
-                            tracing::info!("Found phone number {} for contact {}. Low trust, so doing nothing. Sorry again.", phonenumber, by_pni.uuid.as_ref().unwrap());
+                            tracing::info!("Found phone number {} for contact {}. Low trust, so doing nothing. Sorry again.", e164, by_pni.uuid.as_ref().unwrap());
                             Ok((Some(by_pni.id), None, None, None, false))
                         }
                     }
@@ -1499,7 +1491,7 @@ impl<O: Observable> Storage<O> {
                 }
             }
             (None, Some(by_uuid), None) => {
-                if let Some(phonenumber) = phonenumber {
+                if let Some(phonenumber) = e164 {
                     match trust_level {
                         TrustLevel::Certain => {
                             tracing::info!(
@@ -1559,7 +1551,7 @@ impl<O: Observable> Storage<O> {
             _ => {
                 tracing::error!(
                     "Could not merge recipients by (E.164:{}, ACI:{}, PNI:{})",
-                    phonenumber.map_or("N/A".into(), |r| format!("{}", r)),
+                    e164.map_or("N/A".into(), |r| format!("{}", r)),
                     aci.map_or("N/A".into(), |r| format!("{}", r)),
                     pni.map_or("N/A".into(), |r| format!("{}", r)),
                 );
@@ -1764,11 +1756,11 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn fetch_recipient_by_e164(&self, phonenumber: &PhoneNumber) -> Option<orm::Recipient> {
+    pub fn fetch_recipient_by_e164(&self, rcpt_e164: &PhoneNumber) -> Option<orm::Recipient> {
         use crate::schema::recipients::dsl::*;
 
         if let Ok(recipient) = recipients
-            .filter(e164.eq(phonenumber.to_string()))
+            .filter(e164.eq(rcpt_e164.to_string()))
             .first(&mut *self.db())
         {
             Some(recipient)
@@ -1832,23 +1824,20 @@ impl<O: Observable> Storage<O> {
         recipient
     }
 
-    #[tracing::instrument(skip(self, phonenumber), fields(phonenumber = %phonenumber))]
+    #[tracing::instrument(skip(self, rcpt_e164), fields(rcpt_e164 = %rcpt_e164))]
     pub fn fetch_or_insert_recipient_by_phonenumber(
         &self,
-        phonenumber: &PhoneNumber,
+        rcpt_e164: &PhoneNumber,
     ) -> orm::Recipient {
         use crate::schema::recipients::dsl::*;
 
         let mut db = self.db();
         let db = &mut *db;
-        if let Ok(recipient) = recipients
-            .filter(e164.eq(phonenumber.to_string()))
-            .first(db)
-        {
+        if let Ok(recipient) = recipients.filter(e164.eq(rcpt_e164.to_string())).first(db) {
             recipient
         } else {
             let recipient: orm::Recipient = diesel::insert_into(recipients)
-                .values(e164.eq(phonenumber.to_string()))
+                .values(e164.eq(rcpt_e164.to_string()))
                 .get_result(db)
                 .expect("insert new recipient");
             self.observe_insert(recipients, recipient.id);
@@ -2061,10 +2050,10 @@ impl<O: Observable> Storage<O> {
         })
     }
 
-    #[tracing::instrument(skip(self, phonenumber), fields(phonenumber = %phonenumber))]
-    pub fn fetch_session_by_phonenumber(&self, phonenumber: &PhoneNumber) -> Option<orm::Session> {
+    #[tracing::instrument(skip(self, rcpt_e164), fields(rcpt_e164 = %rcpt_e164))]
+    pub fn fetch_session_by_phonenumber(&self, rcpt_e164: &PhoneNumber) -> Option<orm::Session> {
         fetch_session!(self.db(), |query| {
-            query.filter(schema::recipients::e164.eq(phonenumber.to_string()))
+            query.filter(schema::recipients::e164.eq(rcpt_e164.to_string()))
         })
     }
 
@@ -2202,16 +2191,13 @@ impl<O: Observable> Storage<O> {
             .unwrap()
     }
 
-    #[tracing::instrument(skip(self, phonenumber), fields(phonenumber = %phonenumber))]
-    pub fn fetch_or_insert_session_by_phonenumber(
-        &self,
-        phonenumber: &PhoneNumber,
-    ) -> orm::Session {
-        if let Some(session) = self.fetch_session_by_phonenumber(phonenumber) {
+    #[tracing::instrument(skip(self, e164), fields(e164 = %e164))]
+    pub fn fetch_or_insert_session_by_phonenumber(&self, e164: &PhoneNumber) -> orm::Session {
+        if let Some(session) = self.fetch_session_by_phonenumber(e164) {
             return session;
         }
 
-        let recipient = self.fetch_or_insert_recipient_by_phonenumber(phonenumber);
+        let recipient = self.fetch_or_insert_recipient_by_phonenumber(e164);
 
         use schema::sessions::dsl::*;
         let session_id = diesel::insert_into(sessions)
