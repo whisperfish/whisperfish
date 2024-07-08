@@ -254,21 +254,20 @@ mod merge_and_fetch_conflicting_recipients {
         assert_ne!(r1.id, r2.id);
         assert_eq!(storage.fetch_recipients().len(), 2);
 
-        // If we now fetch the recipient based on both e164 and uuid, with certainty of their
-        // relation,
-        // we trigger their merger.
+        // If we now fetch the recipient based on both e164 and uuid,
+        // we trigger their merger even without certainty of their relation,
+        // because there is no conflicting data or PNI/ACI set.
         let recipient = storage.merge_and_fetch_recipient(
             Some(phonenumber.clone()),
             Some(ServiceAddress::new_aci(UUID)),
             None,
             TrustLevel::Uncertain,
         );
-        assert_eq!(recipient.e164.as_ref(), None);
+        assert_eq!(recipient.e164, Some(phonenumber));
         assert_eq!(recipient.id, r2.id);
         assert_eq!(recipient.uuid, Some(UUID));
 
-        // Now check that the e164 exists separately.
-        assert_eq!(storage.fetch_recipients().len(), 2);
+        assert_eq!(storage.fetch_recipients().len(), 1);
     }
 
     #[rstest]
