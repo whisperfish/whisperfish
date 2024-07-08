@@ -184,6 +184,30 @@ pub struct StoreProfile {
     pub r_key: Option<Vec<u8>>,
 }
 
+enum RecipientOperation {
+    SetPni(i32, Option<Uuid>),
+    SetAci(i32, Option<Uuid>),
+    SetE164(i32, Option<PhoneNumber>),
+    Merge(i32, i32),
+    /// ACI, PNI, E.164
+    Create(Option<Uuid>, Option<Uuid>, Option<PhoneNumber>),
+}
+
+impl Debug for RecipientOperation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "RecipientOperation::")?;
+        match self {
+            RecipientOperation::SetPni(id, pni) => write!(f, "SetPni({}, {:?})", id, pni),
+            RecipientOperation::SetAci(id, aci) => write!(f, "SetAci({}, {:?})", id, aci),
+            RecipientOperation::SetE164(id, e164) => write!(f, "SetE164({}, {:?})", id, e164),
+            RecipientOperation::Merge(src, tgt) => write!(f, "Merge({}, {})", src, tgt),
+            RecipientOperation::Create(aci, pni, e164) => {
+                write!(f, "Create(ACI:{:?}, PNI:{:?}, E164:{:?})", aci, pni, e164,)
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 #[allow(clippy::large_enum_variant)]
 pub enum GroupContext {
@@ -847,6 +871,53 @@ impl<O: Observable> Storage<O> {
         query.first(&mut *self.db()).optional().expect("db")
     }
 
+    #[allow(clippy::type_complexity)]
+    fn fetch_separate_recipients(
+        db: &mut SqliteConnection,
+        aci: Option<&Uuid>,
+        pni: Option<&Uuid>,
+        e164: Option<&PhoneNumber>,
+    ) -> Result<
+        (
+            Option<orm::Recipient>,
+            Option<orm::Recipient>,
+            Option<orm::Recipient>,
+        ),
+        diesel::result::Error,
+    > {
+        use crate::schema::recipients;
+        let by_aci: Option<orm::Recipient> = aci
+            .map(|u| {
+                recipients::table
+                    .filter(recipients::uuid.eq(u.to_string()))
+                    .first(db)
+                    .optional()
+            })
+            .transpose()?
+            .flatten();
+        let by_pni: Option<orm::Recipient> = pni
+            .map(|u| {
+                recipients::table
+                    .filter(recipients::pni.eq(u.to_string()))
+                    .first(db)
+                    .optional()
+            })
+            .transpose()?
+            .flatten();
+        let by_e164: Option<orm::Recipient> = e164
+            .as_ref()
+            .map(|phonenumber| {
+                recipients::table
+                    .filter(recipients::e164.eq(phonenumber.to_string()))
+                    .first(db)
+                    .optional()
+            })
+            .transpose()?
+            .flatten();
+
+        Ok((by_aci, by_pni, by_e164))
+    }
+
     #[tracing::instrument(skip(self))]
     pub fn set_recipient_unidentified(
         &self,
@@ -1138,34 +1209,8 @@ impl<O: Observable> Storage<O> {
             .iter()
             .filter(|c| **c)
             .count();
-        let by_e164: Option<orm::Recipient> = e164
-            .as_ref()
-            .map(|phonenumber| {
-                recipients::table
-                    .filter(recipients::e164.eq(phonenumber.to_string()))
-                    .first(db)
-                    .optional()
-            })
-            .transpose()?
-            .flatten();
-        let by_aci: Option<orm::Recipient> = aci
-            .map(|u| {
-                recipients::table
-                    .filter(recipients::uuid.eq(u.to_string()))
-                    .first(db)
-                    .optional()
-            })
-            .transpose()?
-            .flatten();
-        let by_pni: Option<orm::Recipient> = pni
-            .map(|u| {
-                recipients::table
-                    .filter(recipients::pni.eq(u.to_string()))
-                    .first(db)
-                    .optional()
-            })
-            .transpose()?
-            .flatten();
+        let (by_aci, by_pni, by_e164) =
+            Self::fetch_separate_recipients(db, aci.as_ref(), pni.as_ref(), e164.as_ref())?;
 
         // Get the common recipient, if one exists
         let mut by_all: Vec<&orm::Recipient> = [&by_aci, &by_pni, &by_e164]
@@ -1753,6 +1798,96 @@ impl<O: Observable> Storage<O> {
         tracing::trace!("Deleted {} recipient", deleted);
         assert_eq!(deleted, 1, "delete only one recipient");
         Ok(dest_id)
+    }
+
+    fn set_pni_inner(
+        db: &mut SqliteConnection,
+        rcpt_id: i32,
+        rcpt_pni: Option<&Uuid>,
+    ) -> Result<i32, diesel::result::Error> {
+        tracing::debug!(
+            "Setting PNI of {} to {:?}",
+            rcpt_id,
+            rcpt_pni.map(Uuid::to_string)
+        );
+        use crate::schema::recipients;
+        match diesel::update(recipients::table)
+            .filter(recipients::id.eq(rcpt_id))
+            .set(recipients::pni.eq(rcpt_pni.map(Uuid::to_string)))
+            .execute(db)
+        {
+            Ok(_) => Ok(rcpt_id),
+            Err(e) => Err(e),
+        }
+    }
+
+    fn set_aci_inner(
+        db: &mut SqliteConnection,
+        rcpt_id: i32,
+        rcpt_aci: Option<&Uuid>,
+    ) -> Result<i32, diesel::result::Error> {
+        tracing::debug!(
+            "Setting ACI of {} to {:?}",
+            rcpt_id,
+            rcpt_aci.map(Uuid::to_string)
+        );
+        use crate::schema::recipients;
+        match diesel::update(recipients::table)
+            .filter(recipients::id.eq(rcpt_id))
+            .set(recipients::uuid.eq(rcpt_aci.map(Uuid::to_string)))
+            .execute(db)
+        {
+            Ok(_) => Ok(rcpt_id),
+            Err(e) => Err(e),
+        }
+    }
+
+    fn set_e164_inner(
+        db: &mut SqliteConnection,
+        rcpt_id: i32,
+        rcpt_e164: Option<&PhoneNumber>,
+    ) -> Result<i32, diesel::result::Error> {
+        tracing::debug!(
+            "Setting E.164 of {} to {:?}",
+            rcpt_id,
+            rcpt_e164.map(PhoneNumber::to_string)
+        );
+        use crate::schema::recipients;
+        match diesel::update(recipients::table)
+            .filter(recipients::id.eq(rcpt_id))
+            .set(recipients::e164.eq(rcpt_e164.map(PhoneNumber::to_string)))
+            .execute(db)
+        {
+            Ok(_) => Ok(rcpt_id),
+            Err(e) => Err(e),
+        }
+    }
+
+    fn insert_recipient_inner(
+        db: &mut SqliteConnection,
+        rcpt_aci: Option<&Uuid>,
+        rcpt_pni: Option<&Uuid>,
+        rcpt_e164: Option<&PhoneNumber>,
+    ) -> Result<i32, diesel::result::Error> {
+        tracing::debug!(
+            "Inserting new recipient with ACI:{:?}, PNI:{:?}, E164:{:?}",
+            rcpt_aci.map(Uuid::to_string),
+            rcpt_pni.map(Uuid::to_string),
+            rcpt_e164.map(PhoneNumber::to_string)
+        );
+        use crate::schema::recipients;
+        match diesel::insert_into(recipients::table)
+            .values((
+                recipients::uuid.eq(rcpt_aci.map(Uuid::to_string)),
+                recipients::pni.eq(rcpt_pni.map(Uuid::to_string)),
+                recipients::e164.eq(rcpt_e164.map(PhoneNumber::to_string)),
+            ))
+            .returning(recipients::id)
+            .get_result(db)
+        {
+            Ok(id) => Ok(id),
+            Err(e) => Err(e),
+        }
     }
 
     #[tracing::instrument(skip(self))]
