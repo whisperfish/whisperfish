@@ -27,7 +27,7 @@ addEventListener("DOMContentLoaded", function () {
     "        token = grecaptcha.enterprise.getResponse();\n" +
     "    } else if (document.querySelector('iframe[data-hcaptcha-response]') !== null) {\n" +
     "        scheme = 'signal-hcaptcha';\n" +
-    "        sitekey = '30b01b46-d8c9-4c30-bbd7-9719acfe0c10';\n" +
+    "        sitekey = '5fad97ac-7d06-4e44-b18a-b950b20148ff';\n" +
     "        token = document.querySelector('iframe[data-hcaptcha-response]').getAttribute('data-hcaptcha-response');\n" +
     "    }\n" +
     "    if (token == '') {\n" +
