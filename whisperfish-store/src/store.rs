@@ -1226,6 +1226,26 @@ impl<O: Observable> Storage<O> {
             None
         };
 
+        // Things can get quite cumbersome later on, so let's just use the operations queue for everything.
+        let mut ops: Vec<RecipientOperation> = Vec::new();
+        let mut to_return: Option<(
+            Option<i32>,
+            Option<Uuid>,
+            Option<Uuid>,
+            Option<PhoneNumber>,
+            bool,
+        )> = None;
+
+        // If nothing matches, create a new recipient
+        if by_all.is_empty() {
+            tracing::debug!("No matches at all - creating a new recipient");
+            let insert_e164 = (trust_level == TrustLevel::Certain) || aci.is_none();
+            let new_e164 = if insert_e164 { e164.clone() } else { None };
+
+            ops.push(RecipientOperation::Create(aci.clone(), pni.clone(), new_e164.clone()));
+            to_return = Some((None, aci, pni, new_e164, true));
+        }
+
         if let Some(common) = common {
             // If there's a common recipient, and we three identical matches, we're done!
             if match_count == criteria_count {
@@ -1338,23 +1358,171 @@ impl<O: Observable> Storage<O> {
                     new_service_id
                 );
             }
-
-            return Ok((Some(common.id), None, None, None, true));
         }
 
-        if by_all.is_empty() {
-            let insert_e164 = (trust_level == TrustLevel::Certain) || aci.is_none();
-            let insert_phonenumber = if insert_e164 { e164 } else { None };
-            diesel::insert_into(recipients::table)
-                .values((
-                    recipients::e164.eq(insert_phonenumber.as_ref().map(PhoneNumber::to_string)),
-                    recipients::uuid.eq(aci.as_ref().map(Uuid::to_string)),
-                    recipients::pni.eq(pni.as_ref().map(Uuid::to_string)),
-                ))
-                .execute(db)
-                .expect("insert new recipient");
+        // At this point, there is two or more different search results. We need to merge something.
+        // Since we may have to do a plenty of things, we need an operation queue to handle it.
 
-            return Ok((None, aci, None, insert_phonenumber, true));
+        // Merge PNI into E.164
+        // XXX && (change_self || not_self)
+        if e164.is_some()
+            && pni.is_some()
+            && by_e164.is_some()
+            && by_pni.is_some()
+            && by_e164.as_ref().unwrap().id != by_pni.as_ref().unwrap().id
+        {
+            let by_pni = by_pni.as_ref().unwrap();
+            let by_e164 = by_e164.as_ref().unwrap();
+            tracing::info!(
+                "Merging contact {} (by E.164) into {} (by PNI)",
+                by_pni.id,
+                by_e164.id
+            );
+
+            if by_pni.uuid.is_none() && by_pni.e164.is_none() {
+                ops.push(RecipientOperation::SetPni(by_e164.id, None));
+                ops.push(RecipientOperation::Merge(by_pni.id, by_e164.id));
+            } else {
+                ops.push(RecipientOperation::SetPni(by_pni.id, None));
+                ops.push(RecipientOperation::SetPni(by_e164.id, pni));
+                // XXX session switchover event?
+            }
+            to_return = Some((Some(by_e164.id), None, None, None, true));
+        }
+
+        // Merge PNI into ACI
+        // NB! We must never merge/move ACI!
+        // XXX && (change_self || not_self)
+        if aci.is_some()
+            && pni.is_some()
+            && by_aci.is_some()
+            && by_pni.is_some()
+            && by_aci.as_ref().unwrap().id != by_pni.as_ref().unwrap().id
+        {
+            let by_pni = by_pni.as_ref().unwrap();
+            let by_aci = by_aci.as_ref().unwrap();
+            tracing::info!(
+                "Merging contact {} (by PNI) into {} (by ACI)",
+                by_pni.id,
+                by_aci.id
+            );
+
+            if by_pni.uuid.is_none() && by_pni.e164.is_none() {
+                ops.push(RecipientOperation::SetPni(by_aci.id, None));
+                ops.push(RecipientOperation::Merge(by_pni.id, by_aci.id));
+            } else if by_pni.uuid.is_none() && (e164.is_none() || by_pni.e164 != e164) {
+                ops.push(RecipientOperation::SetPni(by_aci.id, None));
+                let new_e164 = by_pni.e164.as_ref().or(e164.as_ref()).cloned();
+                if new_e164.is_some() && by_aci.e164.is_none() && by_aci.e164 != new_e164 {
+                    ops.push(RecipientOperation::SetE164(by_aci.id, None));
+                }
+                ops.push(RecipientOperation::Merge(by_pni.id, by_aci.id));
+            } else {
+                ops.push(RecipientOperation::SetPni(by_pni.id, None));
+                ops.push(RecipientOperation::SetPni(by_aci.id, pni));
+                if e164.is_some() && by_aci.e164 != e164 {
+                    if by_pni.e164 == e164 {
+                        ops.push(RecipientOperation::SetE164(by_pni.id, None));
+                    }
+                    if e164.is_some() && by_aci.e164 != e164 {
+                        // XXX Phone number change event
+                    }
+                    ops.push(RecipientOperation::SetE164(by_aci.id, e164.clone()));
+                }
+            }
+            to_return = Some((Some(by_aci.id), None, None, None, true));
+        }
+
+        // Merge E.164 into ACI
+        // XXX && (change_self || not_self)
+        if e164.is_some()
+            && aci.is_some()
+            && by_e164.is_some()
+            && by_aci.is_some()
+            && by_e164.as_ref().unwrap().id != by_aci.as_ref().unwrap().id
+        {
+            let by_e164 = by_e164.as_ref().unwrap();
+            let by_aci = by_aci.as_ref().unwrap();
+            let e164 = e164.as_ref().unwrap();
+            tracing::info!(
+                "Merging contact {} (by E.164) into {} (by ACI)",
+                by_e164.id,
+                by_aci.id
+            );
+
+            if by_e164.uuid.is_none() && by_e164.pni.is_none() {
+                if by_aci.e164.is_some() {
+                    ops.push(RecipientOperation::SetE164(by_aci.id, None));
+                }
+                ops.push(RecipientOperation::SetE164(by_e164.id, None));
+                ops.push(RecipientOperation::SetE164(by_aci.id, Some(e164.clone()))); // XXX This should be handled in merge func
+                ops.push(RecipientOperation::Merge(by_e164.id, by_aci.id));
+                if by_aci.e164.is_some() && by_aci.e164.as_ref().unwrap() != e164 { // XXX && (change_self || not_self) && !by_aci.blocked
+                     // XXX Phone number change event
+                }
+            } else if pni.is_some() && by_e164.pni != pni {
+                if by_aci.pni.is_some() {
+                    ops.push(RecipientOperation::SetPni(by_aci.id, None));
+                }
+                if by_aci.e164.as_ref().unwrap() != e164 {
+                    ops.push(RecipientOperation::SetE164(by_aci.id, None));
+                }
+                ops.push(RecipientOperation::Merge(by_e164.id, by_aci.id));
+                // - if byAci.e164 changed, not self, not blocked
+                if by_aci.e164.is_some() && by_aci.e164.as_ref().unwrap() != e164 { // XXX && (change_self || not_self) && !by_aci.blocked
+                     // XXX Phone number change event
+                }
+            } else if pni.is_some() && by_e164.pni != pni || trust_level == TrustLevel::Certain {
+                ops.push(RecipientOperation::SetE164(by_e164.id, None));
+                ops.push(RecipientOperation::SetE164(by_aci.id, Some(e164.clone()))); // XXX This should be handled in merge func
+                if by_aci.e164.is_some() && by_aci.e164.as_ref().unwrap() != e164 { // XXX && (change_self || not_self) && !by_aci.blocked
+                     // XXX Phone number change event
+                }
+            }
+            to_return = Some((Some(by_aci.id), None, None, None, true));
+        }
+
+        if !ops.is_empty() {
+            tracing::trace!("Queue: {:?}", ops);
+        }
+
+        for op in ops {
+            match op {
+                RecipientOperation::Merge(id, into_id) => Self::merge_recipients_inner(db, id, into_id),
+                RecipientOperation::SetPni(id, pni) => Self::set_pni_inner(db, id, pni.as_ref()),
+                RecipientOperation::SetE164(id, e164) => Self::set_e164_inner(db, id, e164.as_ref()),
+                RecipientOperation::Create(aci, pni, e164) => {
+                    Self::insert_recipient_inner(db, aci.as_ref(), pni.as_ref(), e164.as_ref())
+                }
+            }?;
+        }
+
+        if to_return.is_some() {
+            return Ok(to_return.unwrap());
+        }
+
+        // At this point we must have a single match.
+        // If not, something's gone wrong.
+        let (by_aci, by_pni, by_e164) =
+            Self::fetch_separate_recipients(db, aci.as_ref(), pni.as_ref(), e164.as_ref())?;
+
+        // Get the common recipient, if one exists
+        let mut by_all: Vec<&orm::Recipient> = [&by_aci, &by_pni, &by_e164]
+            .iter()
+            .filter_map(|r| r.as_ref())
+            .collect();
+        by_all.sort_by(|a, b| b.id.cmp(&a.id));
+        by_all.dedup_by(|a, b| a.id == b.id);
+        let common = if by_all.len() == 1 {
+            Some(by_all[0])
+        } else {
+            None
+        };
+
+        if let Some(r) = common {
+            return Ok((Some(r.id), None, None, None, true));
+        } else {
+            return Ok((None, None, None, None, false));
         }
 
         match (&by_e164, &by_aci, &by_pni) {
