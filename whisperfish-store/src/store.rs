@@ -1242,7 +1242,7 @@ impl<O: Observable> Storage<O> {
             let insert_e164 = (trust_level == TrustLevel::Certain) || aci.is_none();
             let new_e164 = if insert_e164 { e164.clone() } else { None };
 
-            ops.push(RecipientOperation::Create(aci.clone(), pni.clone(), new_e164.clone()));
+            ops.push(RecipientOperation::Create(aci, pni, new_e164.clone()));
             to_return = Some((None, aci, pni, new_e164, true));
         }
 
@@ -1265,22 +1265,11 @@ impl<O: Observable> Storage<O> {
                 if e164 != common.e164
                 // XXX && (change_self || not_self)
                 {
-                    tracing::debug!("Removing E164 and PNI from existing recipient");
-                    diesel::update(recipients::table)
-                        .set((
-                            recipients::e164.eq::<Option<String>>(None),
-                            recipients::pni.eq::<Option<String>>(None),
-                        ))
-                        .filter(recipients::id.eq(common.id))
-                        .execute(db)
-                        .expect("remove e164 and pni");
+                    ops.push(RecipientOperation::SetE164(common.id, None));
+                    ops.push(RecipientOperation::SetPni(common.id, None));
                 } else if pni != common.pni {
                     tracing::debug!("Removing PNI from existing recipient");
-                    diesel::update(recipients::table)
-                        .set((recipients::pni.eq::<Option<String>>(None),))
-                        .filter(recipients::id.eq(common.id))
-                        .execute(db)
-                        .expect("remove pni");
+                    ops.push(RecipientOperation::SetPni(common.id, None));
                 }
 
                 // XXX (change_self || not_self)
@@ -1290,13 +1279,7 @@ impl<O: Observable> Storage<O> {
                     e164.is_some(),
                     pni.is_some()
                 );
-                diesel::insert_into(recipients::table)
-                    .values((
-                        recipients::e164.eq(e164.as_ref().map(PhoneNumber::to_string)),
-                        recipients::pni.eq(pni.as_ref().map(Uuid::to_string)),
-                    ))
-                    .execute(db)
-                    .expect("insert new recipient");
+                ops.push(RecipientOperation::Create(None, pni, e164.clone()));
 
                 if pni.is_some() {
                     return Ok((None, None, pni, None, true));
@@ -1307,16 +1290,9 @@ impl<O: Observable> Storage<O> {
                 }
             }
 
-            if e164.is_some()
-                && e164 != common.e164
-                && trust_level == TrustLevel::Certain
-            {
+            if e164.is_some() && e164 != common.e164 && trust_level == TrustLevel::Certain {
                 tracing::debug!("Updating E164 in existing recipient");
-                diesel::update(recipients::table)
-                    .set((recipients::e164.eq(e164.as_ref().unwrap().to_string()),))
-                    .filter(recipients::id.eq(common.id))
-                    .execute(db)
-                    .expect("update recipient e164");
+                ops.push(RecipientOperation::SetE164(common.id, e164.clone()));
                 if common.e164.is_some() {
                     tracing::warn!(
                         "TODO: Phone number change from {:?} to {:?}",
@@ -1328,20 +1304,12 @@ impl<O: Observable> Storage<O> {
 
             if pni.is_some() && pni != common.pni {
                 tracing::debug!("Updating PNI in existing recipient");
-                diesel::update(recipients::table)
-                    .set((recipients::pni.eq(pni.as_ref().unwrap().to_string()),))
-                    .filter(recipients::id.eq(common.id))
-                    .execute(db)
-                    .expect("update recipient pni");
+                ops.push(RecipientOperation::SetPni(common.id, pni));
             }
 
             if aci.is_some() && common.uuid.is_none() {
                 tracing::debug!("Setting UUID in existing recipient");
-                diesel::update(recipients::table)
-                    .set((recipients::uuid.eq(aci.as_ref().unwrap().to_string()),))
-                    .filter(recipients::id.eq(common.id))
-                    .execute(db)
-                    .expect("update recipient uuid");
+                ops.push(RecipientOperation::SetAci(common.id, aci));
             }
 
             let old_service_id = common.uuid.or(common.pni);
@@ -1488,9 +1456,14 @@ impl<O: Observable> Storage<O> {
 
         for op in ops {
             match op {
-                RecipientOperation::Merge(id, into_id) => Self::merge_recipients_inner(db, id, into_id),
+                RecipientOperation::Merge(id, into_id) => {
+                    Self::merge_recipients_inner(db, id, into_id)
+                }
                 RecipientOperation::SetPni(id, pni) => Self::set_pni_inner(db, id, pni.as_ref()),
-                RecipientOperation::SetE164(id, e164) => Self::set_e164_inner(db, id, e164.as_ref()),
+                RecipientOperation::SetAci(id, aci) => Self::set_aci_inner(db, id, aci.as_ref()),
+                RecipientOperation::SetE164(id, e164) => {
+                    Self::set_e164_inner(db, id, e164.as_ref())
+                }
                 RecipientOperation::Create(aci, pni, e164) => {
                     Self::insert_recipient_inner(db, aci.as_ref(), pni.as_ref(), e164.as_ref())
                 }
