@@ -29,12 +29,12 @@ WebViewPage {
         key: "/apps/harbour-whisperfish/captchaType"
         Component.onCompleted: {
             if(value === "registration") {
-                webView.url = "https://signalcaptchas.org/registration/generate.html"
+                webView.url = "https://signalcaptchas.org/registration/generate"
             } else if(value === "challenge") {
-                webView.url = "https://signalcaptchas.org/challenge/generate.html"
+                webView.url = "https://signalcaptchas.org/challenge/generate"
             } else {
                 console.warn("Invalid captcha type - defaulting to challenge")
-                webView.url = "https://signalcaptchas.org/challenge/generate.html"
+                webView.url = "https://signalcaptchas.org/challenge/generate"
             }
         }
     }
