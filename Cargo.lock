@@ -365,8 +365,9 @@ dependencies = [
 
 [[package]]
 name = "blurhash"
-version = "0.2.1"
-source = "git+https://github.com/whisperfish/blurhash-rs.git?branch=main#53c0bbe5ec7d2fe539b84d2cd86af5cbd11e8fd1"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2415c16381be1178c8a3b9d9d67d364406c8c097894d8ae27202a00a7accedb3"
 
 [[package]]
 name = "bumpalo"
