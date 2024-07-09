@@ -1016,9 +1016,9 @@ checksum = "56ce8c6da7551ec6c462cbaf3bfbc75131ebbfa1c944aeaa9dab51ca1c5f0c3b"
 
 [[package]]
 name = "either"
-version = "1.10.0"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11157ac094ffbdde99aa67b23417ebdd801842852b500e395a45a9c0aac03e4a"
+checksum = "60b1af1c220855b6ceac025d3f6ecdd2b7c4894bfe9cd9bda4fbb4bc7c0d4cf0"
 
 [[package]]
 name = "encoding_rs"
@@ -2513,14 +2513,14 @@ dependencies = [
 
 [[package]]
 name = "phonenumber"
-version = "0.3.3+8.13.9"
+version = "0.3.6+8.13.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "635f3e6288e4f01c049d89332a031bd74f25d64b6fb94703ca966e819488cd06"
+checksum = "11756237b57b8cc5e97dc8b1e70ea436324d30e7075de63b14fd15073a8f692a"
 dependencies = [
  "bincode",
  "either",
  "fnv",
- "itertools 0.11.0",
+ "itertools 0.10.5",
  "lazy_static",
  "nom",
  "quick-xml",
@@ -2763,7 +2763,7 @@ checksum = "c55e02e35260070b6f716a2423c2ff1c3bb1642ddca6f99e1f26d06268a0e2d2"
 dependencies = [
  "bytes",
  "heck 0.4.1",
- "itertools 0.11.0",
+ "itertools 0.10.5",
  "log",
  "multimap",
  "once_cell",
@@ -2784,7 +2784,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "efb6c9a1dd1def8e2124d17e83a20af56f1570d6c2d2bd9e266ccb768df3840e"
 dependencies = [
  "anyhow",
- "itertools 0.11.0",
+ "itertools 0.10.5",
  "proc-macro2",
  "quote",
  "syn 2.0.52",
