@@ -1166,6 +1166,8 @@ impl<O: Observable> Storage<O> {
             self.observe_update(crate::schema::recipients::table, recipient.id);
         }
 
+        tracing::trace!("Fetched recipient: {}", recipient);
+
         recipient
     }
 
@@ -1222,13 +1224,6 @@ impl<O: Observable> Storage<O> {
 
         // Things can get quite cumbersome later on, so let's just use the operations queue for everything.
         let mut ops: Vec<RecipientOperation> = Vec::new();
-        let mut to_return: Option<(
-            Option<i32>,
-            Option<Uuid>,
-            Option<Uuid>,
-            Option<PhoneNumber>,
-            bool,
-        )> = None;
 
         // If nothing matches, create a new recipient
         if by_all.is_empty() {
@@ -1237,13 +1232,11 @@ impl<O: Observable> Storage<O> {
             let new_e164 = if insert_e164 { e164.clone() } else { None };
 
             ops.push(RecipientOperation::Create(aci, pni, new_e164.clone()));
-            to_return = Some((None, aci, pni, new_e164, true));
         }
 
         if let Some(common) = common {
-            // If there's a common recipient, and we three identical matches, we're done!
+            // If there's a common recipient, and every criteria given matches, we're done!
             if match_count == criteria_count {
-                tracing::debug!("Found complete common recipient {}", common.id);
                 return Ok((Some(common.id), None, None, None, false));
             }
             tracing::debug!(
@@ -1274,14 +1267,6 @@ impl<O: Observable> Storage<O> {
                     pni.is_some()
                 );
                 ops.push(RecipientOperation::Create(None, pni, e164.clone()));
-
-                if e164.is_some() {
-                    to_return = Some((None, None, None, e164.clone(), true));
-                } else if pni.is_some() {
-                    to_return = Some((None, None, pni, None, true));
-                } else {
-                    unreachable!("ACI mismatch handle without neither E.164 nor PNI");
-                }
             }
 
             if e164.is_some() && e164 != common.e164 && trust_level == TrustLevel::Certain {
@@ -1349,7 +1334,6 @@ impl<O: Observable> Storage<O> {
                 ops.push(RecipientOperation::SetPni(by_e164.id, pni));
                 // XXX session switchover event?
             }
-            to_return = Some((Some(by_e164.id), None, None, None, true));
         }
 
         // Merge PNI into ACI
@@ -1392,7 +1376,6 @@ impl<O: Observable> Storage<O> {
                     ops.push(RecipientOperation::SetE164(by_aci.id, e164.clone()));
                 }
             }
-            to_return = Some((Some(by_aci.id), None, None, None, true));
         }
 
         // Merge E.164 into ACI
@@ -1441,56 +1424,71 @@ impl<O: Observable> Storage<O> {
                      // XXX Phone number change event
                 }
             }
-            to_return = Some((Some(by_aci.id), None, None, None, true));
         }
 
         if !ops.is_empty() {
             tracing::trace!("Queue: {:?}", ops);
         }
 
-        for op in ops {
+        for op in ops.into_iter() {
+            #[rustfmt::skip]
             match op {
-                RecipientOperation::Merge(id, into_id) => {
-                    Self::merge_recipients_inner(db, id, into_id)
-                }
+                RecipientOperation::Merge(id, into_id) => Self::merge_recipients_inner(db, id, into_id),
                 RecipientOperation::SetPni(id, pni) => Self::set_pni_inner(db, id, pni.as_ref()),
                 RecipientOperation::SetAci(id, aci) => Self::set_aci_inner(db, id, aci.as_ref()),
-                RecipientOperation::SetE164(id, e164) => {
-                    Self::set_e164_inner(db, id, e164.as_ref())
-                }
-                RecipientOperation::Create(aci, pni, e164) => {
-                    Self::insert_recipient_inner(db, aci.as_ref(), pni.as_ref(), e164.as_ref())
-                }
+                RecipientOperation::SetE164(id, e164) => Self::set_e164_inner(db, id, e164.as_ref()),
+                RecipientOperation::Create(aci, pni, e164) => Self::insert_recipient_inner(db, aci.as_ref(), pni.as_ref(), e164.as_ref()),
             }?;
         }
 
-        if to_return.is_some() {
-            return Ok(to_return.unwrap());
-        }
-
-        // At this point we must have a single match.
-        // If not, something's gone wrong.
-        let (by_aci, by_pni, by_e164) =
+        // Fetch new results after migration
+        let (new_by_aci, new_by_pni, new_by_e164) =
             Self::fetch_separate_recipients(db, aci.as_ref(), pni.as_ref(), e164.as_ref())?;
 
-        // Get the common recipient, if one exists
-        let mut by_all: Vec<&orm::Recipient> = [&by_aci, &by_pni, &by_e164]
+        // NB! The order matters here! ACI > E.164 > PNI
+        let by_all: Vec<&orm::Recipient> = [&new_by_aci, &new_by_e164, &new_by_pni]
             .iter()
             .filter_map(|r| r.as_ref())
             .collect();
-        by_all.sort_by(|a, b| b.id.cmp(&a.id));
-        by_all.dedup_by(|a, b| a.id == b.id);
-        let common = if by_all.len() == 1 {
-            Some(by_all[0])
-        } else {
-            None
-        };
 
-        if let Some(r) = common {
-            return Ok((Some(r.id), None, None, None, true));
-        } else {
+        if by_all.is_empty() {
+            tracing::error!("Recipient merge should have resulted in at least one match!");
+            tracing::error!(
+                "Searched with: ACI:{:?}, PNI:{:?}, E164:{:?}",
+                aci.as_ref().map_or("None".into(), Uuid::to_string),
+                pni.as_ref().map_or("None".into(), Uuid::to_string),
+                e164.as_ref().map_or("None".into(), PhoneNumber::to_string)
+            );
             return Ok((None, None, None, None, false));
         }
+
+        // This is why the order matters - we return the first match.
+        let rcpt = by_all[0];
+
+        if aci.is_some() && new_by_aci.is_none() {
+            // XXX && (change_self || not_self)
+            Self::set_aci_inner(db, rcpt.id, aci.as_ref())?;
+            // XXX session switchover event?
+        }
+
+        if e164.is_some() && new_by_e164.is_none() {
+            // XXX && (change_self || not_self)
+            Self::set_e164_inner(db, rcpt.id, e164.as_ref())?;
+        }
+
+        if pni.is_some() && new_by_pni.is_none() {
+            Self::set_pni_inner(db, rcpt.id, pni.as_ref())?;
+        }
+
+        if new_by_pni.is_some() && pni != new_by_pni.as_ref().unwrap().pni {
+            // XXX session switchover event
+        }
+
+        if new_by_aci.is_some() && aci != new_by_aci.as_ref().unwrap().uuid {
+            // XXX session switchover event
+        }
+
+        return Ok((Some(rcpt.id), None, None, None, true));
     }
 
     /// Merge source_id into dest_id.
