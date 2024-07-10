@@ -127,13 +127,13 @@
         <translation>Échec de configuration du stockage des données</translation>
     </message>
     <message id="permission-la-data">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="496"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="485"/>
         <source>Whisperfish data storage</source>
         <extracomment>Permission for Whisperfish data storage</extracomment>
         <translation>Stockage des données de Whisperfish</translation>
     </message>
     <message id="permission-la-data_description">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="500"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="489"/>
         <source>Store configuration and messages</source>
         <extracomment>Permission description for Whisperfish data storage</extracomment>
         <translation>Stocker la configuration et les messages</translation>
