@@ -107,7 +107,9 @@ mod merge_and_fetch {
             ServiceAddress::new_aci(UUID),
             TrustLevel::Uncertain,
         );
-        assert_eq!(recipient.e164, None);
+
+        // When there's no E.164 match, we can save the uncertain-E.164 value too.
+        assert_eq!(recipient.e164.as_ref(), Some(&phonenumber));
         assert_eq!(recipient.uuid, Some(UUID));
     }
 
@@ -196,11 +198,14 @@ mod merge_and_fetch {
             None,
             TrustLevel::Uncertain,
         );
-        assert_eq!(recipient.e164.as_ref(), None);
+
+        // Since there were no E.164 match, the phone number was merged
+        // despite TrustLevel::Uncertain.
+        assert_eq!(recipient.e164.as_ref(), Some(&phonenumber));
         assert_eq!(recipient.uuid, Some(UUID));
 
         // Now check that the e164 does not exist separately.
-        assert!(storage.fetch_recipient_by_e164(&phonenumber).is_none());
+        assert!(storage.fetch_recipient_by_e164(&phonenumber).is_some());
 
         assert_eq!(storage.fetch_recipients().len(), 1);
     }
