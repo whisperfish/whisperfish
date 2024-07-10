@@ -492,4 +492,310 @@ mod merge_and_fetch_conflicting_recipients {
         assert_eq!(r.e164, Some(phonenumber));
         assert_eq!(r.pni, Some(pni.uuid));
     }
+
+    // allSimpleTests()
+
+    #[rstest]
+    #[tokio::test]
+    async fn no_match_e164_only(
+        storage: impl Future<Output = InMemoryDb>,
+        phonenumber: PhoneNumber,
+    ) {
+        let (storage, _temp_dir) = storage.await;
+
+        let r1 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            None,
+            None,
+            TrustLevel::Uncertain,
+        );
+        assert!(r1.id > 0);
+        assert_eq!(r1.uuid, None);
+        assert_eq!(r1.e164, Some(phonenumber.clone()));
+        assert_eq!(r1.pni, None);
+
+        let r2 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            None,
+            None,
+            TrustLevel::Uncertain,
+        );
+        assert_eq!(r2.id, r1.id);
+        assert_eq!(r2.uuid, None);
+        assert_eq!(r2.e164, Some(phonenumber.clone()));
+        assert_eq!(r2.pni, None);
+    }
+
+    #[rstest]
+    #[tokio::test]
+    async fn no_match_pni_only(storage: impl Future<Output = InMemoryDb>, pni: ServiceAddress) {
+        let (storage, _temp_dir) = storage.await;
+
+        let r1 = storage.merge_and_fetch_recipient(None, None, Some(pni), TrustLevel::Uncertain);
+        assert!(r1.id > 0);
+        assert_eq!(r1.uuid, None);
+        assert_eq!(r1.e164, None);
+        assert_eq!(r1.pni, Some(pni.uuid));
+
+        let r2 = storage.merge_and_fetch_recipient(None, None, Some(pni), TrustLevel::Uncertain);
+        assert_eq!(r2.id, r1.id);
+        assert_eq!(r2.uuid, None);
+        assert_eq!(r2.e164, None);
+        assert_eq!(r2.pni, Some(pni.uuid));
+    }
+
+    #[rstest]
+    #[tokio::test]
+    async fn no_match_aci_only(storage: impl Future<Output = InMemoryDb>, aci: ServiceAddress) {
+        let (storage, _temp_dir) = storage.await;
+
+        let r1 = storage.merge_and_fetch_recipient(None, Some(aci), None, TrustLevel::Uncertain);
+        assert!(r1.id > 0);
+        assert_eq!(r1.uuid, Some(aci.uuid));
+        assert_eq!(r1.e164, None);
+        assert_eq!(r1.pni, None);
+
+        let r2 = storage.merge_and_fetch_recipient(None, Some(aci), None, TrustLevel::Uncertain);
+        assert_eq!(r2.id, r1.id);
+        assert_eq!(r2.uuid, Some(aci.uuid));
+        assert_eq!(r2.e164, None);
+        assert_eq!(r2.pni, None);
+    }
+
+    #[rstest]
+    #[tokio::test]
+    async fn no_match_e164_and_pni(
+        storage: impl Future<Output = InMemoryDb>,
+        phonenumber: PhoneNumber,
+        pni: ServiceAddress,
+    ) {
+        let (storage, _temp_dir) = storage.await;
+
+        let r1 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            None,
+            Some(pni),
+            TrustLevel::Uncertain,
+        );
+        assert!(r1.id > 0);
+        assert_eq!(r1.uuid, None);
+        assert_eq!(r1.e164, Some(phonenumber.clone()));
+        assert_eq!(r1.pni, Some(pni.uuid));
+
+        let r2 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            None,
+            Some(pni),
+            TrustLevel::Uncertain,
+        );
+        assert_eq!(r2.id, r1.id);
+        assert_eq!(r2.uuid, None);
+        assert_eq!(r2.e164, Some(phonenumber));
+        assert_eq!(r2.pni, Some(pni.uuid));
+    }
+
+    #[rstest]
+    #[tokio::test]
+    async fn no_match_e164_and_aci(
+        storage: impl Future<Output = InMemoryDb>,
+        phonenumber: PhoneNumber,
+        aci: ServiceAddress,
+    ) {
+        let (storage, _temp_dir) = storage.await;
+
+        let r1 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            Some(aci),
+            None,
+            TrustLevel::Uncertain,
+        );
+        assert!(r1.id > 0);
+        assert_eq!(r1.uuid, Some(aci.uuid));
+        assert_eq!(r1.e164, Some(phonenumber.clone()));
+        assert_eq!(r1.pni, None);
+
+        let r2 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            Some(aci),
+            None,
+            TrustLevel::Uncertain,
+        );
+        assert_eq!(r2.id, r1.id);
+        assert_eq!(r2.uuid, Some(aci.uuid));
+        assert_eq!(r2.e164, Some(phonenumber));
+        assert_eq!(r2.pni, None);
+    }
+
+    #[rstest]
+    #[tokio::test]
+    #[should_panic]
+    async fn no_data_no_match(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        storage.merge_and_fetch_recipient(None, None, None, TrustLevel::Uncertain);
+    }
+
+    #[rstest]
+    #[tokio::test]
+    async fn pni_matches_pni_plus_aci_provided_no_pni_session(
+        storage: impl Future<Output = InMemoryDb>,
+        phonenumber: PhoneNumber,
+        aci: ServiceAddress,
+        pni: ServiceAddress,
+    ) {
+        let (storage, _temp_dir) = storage.await;
+
+        let r1 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            Some(aci),
+            None,
+            TrustLevel::Uncertain,
+        );
+        assert!(r1.id > 0);
+        assert_eq!(r1.uuid, Some(aci.uuid));
+        assert_eq!(r1.e164, Some(phonenumber.clone()));
+        assert_eq!(r1.pni, None);
+
+        let r2 =
+            storage.merge_and_fetch_recipient(None, Some(aci), Some(pni), TrustLevel::Uncertain);
+        assert_eq!(r2.id, r1.id);
+        assert_eq!(r2.uuid, Some(aci.uuid));
+        assert_eq!(r2.e164, Some(phonenumber));
+        assert_eq!(r2.pni, Some(pni.uuid));
+
+        // TODO: pni_matches_pni_plus_aci_provided_pni_session?
+        // TODO: pni_matches_pni_plus_aci_provided_pni_session_pni_verified?
+    }
+
+    #[rstest]
+    #[tokio::test]
+    async fn no_match_all_fields(
+        storage: impl Future<Output = InMemoryDb>,
+        phonenumber: PhoneNumber,
+        aci: ServiceAddress,
+        pni: ServiceAddress,
+    ) {
+        let (storage, _temp_dir) = storage.await;
+
+        let r1 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            Some(aci),
+            Some(pni),
+            TrustLevel::Uncertain,
+        );
+        assert!(r1.id > 0);
+        assert_eq!(r1.uuid, Some(aci.uuid));
+        assert_eq!(r1.e164, Some(phonenumber.clone()));
+        assert_eq!(r1.pni, Some(pni.uuid));
+
+        let r2 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            Some(aci),
+            Some(pni),
+            TrustLevel::Uncertain,
+        );
+        assert_eq!(r1.id, r2.id);
+        assert_eq!(r1.uuid, Some(aci.uuid));
+        assert_eq!(r1.e164, Some(phonenumber.clone()));
+        assert_eq!(r1.pni, Some(pni.uuid));
+
+        // TODO: full_match?
+    }
+
+    #[rstest]
+    #[tokio::test]
+    async fn e164_matches_all_fields_provided(
+        storage: impl Future<Output = InMemoryDb>,
+        phonenumber: PhoneNumber,
+        aci: ServiceAddress,
+        pni: ServiceAddress,
+    ) {
+        let (storage, _temp_dir) = storage.await;
+
+        let r1 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            None,
+            None,
+            TrustLevel::Uncertain,
+        );
+        assert!(r1.id > 0);
+        assert_eq!(r1.uuid, None);
+        assert_eq!(r1.e164, Some(phonenumber.clone()));
+        assert_eq!(r1.pni, None);
+
+        let r2 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            Some(aci),
+            Some(pni),
+            TrustLevel::Uncertain,
+        );
+        assert_eq!(r2.id, r1.id);
+        assert_eq!(r2.uuid, Some(aci.uuid));
+        assert_eq!(r2.e164, Some(phonenumber.clone()));
+        assert_eq!(r2.pni, Some(pni.uuid));
+    }
+
+    #[rstest]
+    #[tokio::test]
+    async fn e164_matches_e164_and_aci_provided(
+        storage: impl Future<Output = InMemoryDb>,
+        phonenumber: PhoneNumber,
+        aci: ServiceAddress,
+    ) {
+        let (storage, _temp_dir) = storage.await;
+
+        let r1 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            None,
+            None,
+            TrustLevel::Uncertain,
+        );
+        assert!(r1.id > 0);
+        assert_eq!(r1.uuid, None);
+        assert_eq!(r1.e164, Some(phonenumber.clone()));
+        assert_eq!(r1.pni, None);
+
+        let r2 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            Some(aci),
+            None,
+            TrustLevel::Uncertain,
+        );
+        assert_eq!(r2.id, r1.id);
+        assert_eq!(r2.uuid, Some(aci.uuid));
+        assert_eq!(r2.e164, Some(phonenumber));
+        assert_eq!(r2.pni, None);
+    }
+
+    #[rstest]
+    #[tokio::test]
+    async fn e164_matches_e164_and_pni_provided(
+        storage: impl Future<Output = InMemoryDb>,
+        phonenumber: PhoneNumber,
+        aci: ServiceAddress,
+    ) {
+        let (storage, _temp_dir) = storage.await;
+
+        let r1 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            None,
+            None,
+            TrustLevel::Uncertain,
+        );
+        assert!(r1.id > 0);
+        assert_eq!(r1.uuid, None);
+        assert_eq!(r1.e164, Some(phonenumber.clone()));
+        assert_eq!(r1.pni, None);
+
+        let r2 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            Some(aci),
+            None,
+            TrustLevel::Uncertain,
+        );
+        assert_eq!(r2.id, r1.id);
+        assert_eq!(r2.uuid, Some(aci.uuid));
+        assert_eq!(r2.e164, Some(phonenumber));
+        assert_eq!(r2.pni, None);
+    }
 }
