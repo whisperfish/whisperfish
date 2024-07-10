@@ -1555,5 +1555,64 @@ mod merge_and_fetch_conflicting_recipients {
         assert_eq!(r4.uuid, None);
         assert_eq!(r4.e164, Some(e164_2.clone()));
         assert_eq!(r4.pni, None);
+        // TODO: steal_e164_and_pni_matches_e164_and_pni_provided_existing_pni_session
+    }
+
+    #[rstest]
+    #[tokio::test]
+    async fn steal_e164_plus_pni_and_aci_but_e164_record_has_separate_e164(
+        storage: impl Future<Output = InMemoryDb>,
+        aci: ServiceAddress,
+        pni: ServiceAddress,
+    ) {
+        let (storage, _temp_dir) = storage.await;
+
+        tracing_subscriber::fmt::fmt()
+            .with_env_filter("whisperfish=trace")
+            .init();
+
+        let e164_1 = phonenumber();
+        let e164_2 = phonenumber();
+        assert_ne!(e164_1, e164_2);
+
+        let r1 = storage.merge_and_fetch_recipient(
+            Some(e164_2.clone()),
+            None,
+            Some(pni),
+            TrustLevel::Uncertain,
+        );
+        assert!(r1.id > 0);
+        assert_eq!(r1.uuid, None);
+        assert_eq!(r1.e164, Some(e164_2.clone()));
+        assert_eq!(r1.pni, Some(pni.uuid));
+
+        let r2 = storage.merge_and_fetch_recipient(
+            None,
+            Some(aci),
+            None,
+            TrustLevel::Uncertain,
+        );
+        assert!(r2.id > 0);
+        assert_ne!(r2.id, r1.id);
+        assert_eq!(r2.uuid, Some(aci.uuid));
+        assert_eq!(r2.e164, None);
+        assert_eq!(r2.pni, None);
+
+        let r3 = storage.merge_and_fetch_recipient(
+            Some(e164_1.clone()),
+            Some(aci),
+            Some(pni),
+            TrustLevel::Uncertain,
+        );
+        assert_eq!(r3.id, r2.id);
+        assert_eq!(r3.uuid, Some(aci.uuid));
+        assert_eq!(r3.e164, Some(e164_1.clone()));
+        assert_eq!(r3.pni, Some(pni.uuid));
+
+        let r4 = storage.fetch_recipient_by_e164(&e164_2).unwrap();
+        assert_eq!(r4.id, r1.id);
+        assert_eq!(r4.uuid, None);
+        assert_eq!(r4.e164, Some(e164_2.clone()));
+        assert_eq!(r4.pni, None);
     }
 }

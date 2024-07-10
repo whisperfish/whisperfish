@@ -1358,9 +1358,11 @@ impl<O: Observable> Storage<O> {
             );
 
             if by_pni.uuid.is_none() && by_pni.e164.is_none() {
-                ops.push(RecipientOperation::SetPni(by_aci.id, None));
+                if by_aci.pni.is_some() {
+                    ops.push(RecipientOperation::SetPni(by_aci.id, None));
+                }
                 ops.push(RecipientOperation::Merge(by_pni.id, by_aci.id));
-            } else if by_pni.uuid.is_none() && (e164.is_none() || by_pni.e164 != e164) {
+            } else if by_pni.uuid.is_none() && (e164.is_none() || by_pni.e164 == e164) {
                 ops.push(RecipientOperation::SetPni(by_aci.id, None));
                 let new_e164 = by_pni.e164.as_ref().or(e164.as_ref()).cloned();
                 if new_e164.is_some() && by_aci.e164.is_none() && by_aci.e164 != new_e164 {
@@ -1677,11 +1679,19 @@ impl<O: Observable> Storage<O> {
             .execute(db)?;
         tracing::trace!("Updated {} receipts", updated_receipts);
 
-        let deleted = diesel::delete(recipients::table)
+        // 6. Delete the source recipient iff it's empty.
+        let src: orm::Recipient = recipients::table
             .filter(recipients::id.eq(source_id))
-            .execute(db)?;
-        tracing::trace!("Deleted {} recipient", deleted);
-        assert_eq!(deleted, 1, "delete only one recipient");
+            .first(db)?;
+        if src.uuid.is_none() && src.e164.is_none() && src.pni.is_none() {
+            let deleted = diesel::delete(recipients::table)
+                .filter(recipients::id.eq(source_id))
+                .execute(db)?;
+            tracing::trace!("Deleted {} recipient", deleted);
+            assert_eq!(deleted, 1, "delete only one recipient");
+        } else {
+            tracing::trace!("Source recipient is non-empty, not removing.");
+        }
         Ok(dest_id)
     }
 
