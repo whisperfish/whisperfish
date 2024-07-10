@@ -24,7 +24,7 @@ tracing-subscriber = "0.3"
 futures = "0.3"
 fs2 = "0.4.3"
 
-blurhash = { git = "https://github.com/whisperfish/blurhash-rs.git", branch = "main" }
+blurhash = "0.2.2"
 percent-encoding = "2.2"
 
 libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features = [
@@ -58,7 +58,7 @@ anyhow = "1.0"
 thiserror = "1"
 hex = "0.4"
 phonenumber = "0.3.1"
-itertools = "0.11"
+itertools = "0.12"
 qrencode = "0.14"
 image = { version = "0.24", default-features = false, features = ["png"] }
 
