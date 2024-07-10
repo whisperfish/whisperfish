@@ -798,4 +798,55 @@ mod merge_and_fetch_conflicting_recipients {
         assert_eq!(r2.e164, Some(phonenumber));
         assert_eq!(r2.pni, None);
     }
+
+    #[rstest]
+    #[tokio::test]
+    async fn e164_matches_all_provided_different_aci(
+        storage: impl Future<Output = InMemoryDb>,
+        phonenumber: PhoneNumber,
+        aci: ServiceAddress,
+        pni: ServiceAddress,
+    ) {
+        let (storage, _temp_dir) = storage.await;
+
+        let aci_2 = ServiceAddress::new_aci(Uuid::new_v4());
+        assert_ne!(aci, aci_2);
+
+        let r1 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            Some(aci_2),
+            None,
+            TrustLevel::Uncertain,
+        );
+        assert!(r1.id > 0);
+        assert_eq!(r1.uuid, Some(aci_2.uuid));
+        assert_eq!(r1.e164, Some(phonenumber.clone()));
+        assert_eq!(r1.pni, None);
+
+        let r2 = storage.merge_and_fetch_recipient(
+            Some(phonenumber.clone()),
+            Some(aci),
+            Some(pni),
+            TrustLevel::Uncertain,
+        );
+        assert!(r2.id > 0);
+        assert_eq!(r2.uuid, Some(aci.uuid));
+        assert_eq!(r2.e164, Some(phonenumber.clone()));
+        assert_eq!(r2.pni, Some(pni.uuid));
+
+        let r1 = storage.fetch_recipient_by_service_address(&aci_2).unwrap();
+        let r2 = storage.fetch_recipient_by_service_address(&aci).unwrap();
+
+        assert!(r1.id > 0);
+        assert!(r2.id > 0);
+        assert_ne!(r1.id, r2.id);
+
+        assert_eq!(r1.uuid, Some(aci_2.uuid));
+        assert_eq!(r1.e164, None);
+        assert_eq!(r1.pni, None);
+
+        assert_eq!(r2.uuid, Some(aci.uuid));
+        assert_eq!(r2.e164, Some(phonenumber));
+        assert_eq!(r2.pni, Some(pni.uuid));
+    }
 }

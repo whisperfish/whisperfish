@@ -1234,6 +1234,7 @@ impl<O: Observable> Storage<O> {
             ops.push(RecipientOperation::Create(aci, pni, new_e164.clone()));
         }
 
+        // This block mimics processNonMergePnpUpdate()
         if let Some(common) = common {
             // If there's a common recipient, and every criteria given matches, we're done!
             if match_count == criteria_count {
@@ -1249,12 +1250,13 @@ impl<O: Observable> Storage<O> {
             // This is a special case. The ACI passed in doesn't match the common record. We can't change ACIs, so we need to make a new record.
             if aci.is_some() && common.uuid.is_some() && aci != common.uuid {
                 tracing::warn!("ACI mismatch -- creating a new recipient");
-                if e164 != common.e164
+                if e164.is_some() && e164 == common.e164
                 // XXX && (change_self || not_self)
                 {
+                    tracing::debug!("Removing E164 and PNI from existing recipient");
                     ops.push(RecipientOperation::SetE164(common.id, None));
                     ops.push(RecipientOperation::SetPni(common.id, None));
-                } else if pni != common.pni {
+                } else if pni.is_some() && pni == common.pni {
                     tracing::debug!("Removing PNI from existing recipient");
                     ops.push(RecipientOperation::SetPni(common.id, None));
                 }
@@ -1267,43 +1269,43 @@ impl<O: Observable> Storage<O> {
                     pni.is_some()
                 );
                 ops.push(RecipientOperation::Create(None, pni, e164.clone()));
-            }
+            } else {
+                if e164.is_some() && e164 != common.e164 && trust_level == TrustLevel::Certain {
+                    tracing::debug!("Updating E164 in existing recipient");
+                    ops.push(RecipientOperation::SetE164(common.id, e164.clone()));
+                    if common.e164.is_some() {
+                        tracing::warn!(
+                            "TODO: Phone number change from {:?} to {:?}",
+                            common.e164.as_ref().unwrap().to_string(),
+                            e164
+                        );
+                    }
+                }
 
-            if e164.is_some() && e164 != common.e164 && trust_level == TrustLevel::Certain {
-                tracing::debug!("Updating E164 in existing recipient");
-                ops.push(RecipientOperation::SetE164(common.id, e164.clone()));
-                if common.e164.is_some() {
+                if pni.is_some() && pni != common.pni {
+                    tracing::debug!("Updating PNI in existing recipient");
+                    ops.push(RecipientOperation::SetPni(common.id, pni));
+                }
+
+                if aci.is_some() && common.uuid.is_none() {
+                    tracing::debug!("Setting UUID in existing recipient");
+                    ops.push(RecipientOperation::SetAci(common.id, aci));
+                }
+
+                let old_service_id = common.uuid.or(common.pni);
+                let new_service_id = aci.or(pni.or(old_service_id));
+
+                if old_service_id.is_some()
+                    && old_service_id != new_service_id
+                    && trust_level == TrustLevel::Certain
+                /* && has_session(old_service_id) */
+                {
                     tracing::warn!(
-                        "TODO: Phone number change from {:?} to {:?}",
-                        common.e164.as_ref().unwrap().to_string(),
-                        e164
+                        "TODO: Session switchover event change from {:?} to {:?}",
+                        old_service_id,
+                        new_service_id
                     );
                 }
-            }
-
-            if pni.is_some() && pni != common.pni {
-                tracing::debug!("Updating PNI in existing recipient");
-                ops.push(RecipientOperation::SetPni(common.id, pni));
-            }
-
-            if aci.is_some() && common.uuid.is_none() {
-                tracing::debug!("Setting UUID in existing recipient");
-                ops.push(RecipientOperation::SetAci(common.id, aci));
-            }
-
-            let old_service_id = common.uuid.or(common.pni);
-            let new_service_id = aci.or(pni.or(old_service_id));
-
-            if old_service_id.is_some()
-                && old_service_id != new_service_id
-                && trust_level == TrustLevel::Certain
-            /* && has_session(old_service_id) */
-            {
-                tracing::warn!(
-                    "TODO: Session switchover event change from {:?} to {:?}",
-                    old_service_id,
-                    new_service_id
-                );
             }
         }
 
@@ -1311,6 +1313,7 @@ impl<O: Observable> Storage<O> {
         // Since we may have to do a plenty of things, we need an operation queue to handle it.
 
         // Merge PNI into E.164
+        // This block resembles processPossibleE164PniMerge()
         // XXX && (change_self || not_self)
         if e164.is_some()
             && pni.is_some()
@@ -1338,6 +1341,7 @@ impl<O: Observable> Storage<O> {
 
         // Merge PNI into ACI
         // NB! We must never merge/move ACI!
+        // This block resembles processPossiblePniAciMerge()
         // XXX && (change_self || not_self)
         if aci.is_some()
             && pni.is_some()
@@ -1380,6 +1384,7 @@ impl<O: Observable> Storage<O> {
 
         // Merge E.164 into ACI
         // XXX && (change_self || not_self)
+        // This block resembles processPossibleE164AciMerge()
         if e164.is_some()
             && aci.is_some()
             && by_e164.is_some()
