@@ -4602,7 +4602,7 @@ dependencies = [
  "futures",
  "hex",
  "hmac",
- "itertools 0.11.0",
+ "itertools 0.12.1",
  "libsignal-service",
  "libsqlite3-sys",
  "linkify",
