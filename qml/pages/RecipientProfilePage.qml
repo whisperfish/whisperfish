@@ -11,6 +11,8 @@ Page {
     property var session: null
     property var recipient: null
 
+    Component.onCompleted: recipient.fingerprintNeeded = true
+
     // If entering from a group setting, don't expose direct message controls
     property bool groupContext: false
 
