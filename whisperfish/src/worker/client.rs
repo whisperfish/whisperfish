@@ -1463,7 +1463,7 @@ impl Handler<SendMessage> for ClientActor {
     fn handle(&mut self, SendMessage(mid): SendMessage, ctx: &mut Self::Context) -> Self::Result {
         let _span = tracing::info_span!("ClientActor::SendMessage", message_id = mid).entered();
         let sender = self.message_sender();
-        let storage = self.storage.as_mut().unwrap();
+        let storage = self.storage.as_mut().unwrap().clone();
         let msg = storage.fetch_augmented_message(mid).unwrap();
         let session = storage.fetch_session_by_id(msg.session_id).unwrap();
         let session_id = session.id;
@@ -1473,11 +1473,9 @@ impl Handler<SendMessage> for ClientActor {
             return Box::pin(async {}.into_actor(self).map(|_, _, _| ()));
         }
 
-        let self_recipient = storage.fetch_self_recipient();
         tracing::trace!("Sending for session: {}", session);
         tracing::trace!("Sending message: {}", msg.inner);
 
-        let storage = storage.clone();
         let addr = ctx.address();
         let self_uuid = self.self_aci.unwrap().uuid;
         Box::pin(
@@ -1527,7 +1525,7 @@ impl Handler<SendMessage> for ClientActor {
                     required_protocol_version: Some(0),
                     group_v2,
 
-                    profile_key: self_recipient.and_then(|r| r.profile_key),
+                    profile_key: storage.fetch_self_recipient_profile_key(),
                     quote,
                     expire_timer: msg.expires_in.map(|x| x as u32),
                     body_ranges: crate::store::body_ranges::to_vec(msg.message_ranges.as_ref()),
@@ -3022,10 +3020,7 @@ impl Handler<ProofResponse> for ClientActor {
         let span = tracing::trace_span!("handle ProofResponse");
 
         let storage = self.storage.clone().unwrap();
-        let self_recipient = storage
-            .fetch_self_recipient()
-            .expect("self recipient in handle(ProofResponse)");
-        let profile_key = self_recipient.profile_key.map(|bytes| {
+        let profile_key = storage.fetch_self_recipient_profile_key().map(|bytes| {
             let mut key = [0u8; 32];
             key.copy_from_slice(&bytes);
             ProfileKey::create(key)
@@ -3104,7 +3099,7 @@ impl Handler<DeleteMessageForAll> for ClientActor {
         self.clear_transient_timstamps();
 
         let storage = self.storage.as_mut().unwrap();
-        let self_recipient = storage.fetch_self_recipient().expect("self recipient");
+        let profile_key = storage.fetch_self_recipient_profile_key();
 
         let message = storage
             .fetch_message_by_id(id)
@@ -3119,7 +3114,7 @@ impl Handler<DeleteMessageForAll> for ClientActor {
         let delete_message = DeliverMessage {
             content: DataMessage {
                 group_v2: session.group_context_v2(),
-                profile_key: self_recipient.profile_key,
+                profile_key,
                 timestamp: Some(now),
                 delete: Some(Delete {
                     target_sent_timestamp: Some(message.server_timestamp.timestamp_millis() as u64),

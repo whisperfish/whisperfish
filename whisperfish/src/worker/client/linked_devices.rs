@@ -101,9 +101,8 @@ impl Handler<LinkDevice> for ClientActor {
         let credentials = self.credentials.clone().unwrap();
         let store = self.storage.clone().unwrap();
         let profile_key: Option<[u8; 32]> = store
-            .fetch_self_recipient()
-            .and_then(|r| r.profile_key)
-            .and_then(|r| r.try_into().ok());
+            .fetch_self_recipient_profile_key()
+            .and_then(|key| key.try_into().ok());
         let mut account_manager = AccountManager::new(service, profile_key.map(ProfileKey::create));
 
         Box::pin(

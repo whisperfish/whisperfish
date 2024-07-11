@@ -215,10 +215,7 @@ impl RecipientImpl {
             let id = r.id;
             if let Some(recipient_svc) = r.to_service_address() {
                 let compute_fingerprint = async move {
-                    let local = storage
-                        .fetch_self_recipient()
-                        .expect("self recipient present in db");
-                    let local_svc = local.to_service_address().expect("self-recipient has UUID");
+                    let local_svc = storage.fetch_self_service_address_aci().expect("self ACI");
                     let fingerprint = storage
                         .aci_storage()
                         .compute_safety_number(&local_svc, &recipient_svc)

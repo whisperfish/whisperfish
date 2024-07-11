@@ -292,12 +292,10 @@ impl Handler<RefreshProfileAttributes> for ClientActor {
                     .unwrap();
                 let self_recipient = storage.fetch_self_recipient().expect("self set by now");
 
-                let profile_key = self_recipient.profile_key();
-                let mut am = AccountManager::new(service, profile_key.map(ProfileKey::create));
-                let unidentified_access_key = profile_key
-                    .map(ProfileKey::create)
-                    .as_ref()
-                    .map(ProfileKey::derive_access_key);
+                let profile_key = self_recipient.profile_key().map(ProfileKey::create);
+                let mut am = AccountManager::new(service, profile_key);
+                let unidentified_access_key =
+                    profile_key.as_ref().map(ProfileKey::derive_access_key);
 
                 let account_attributes = AccountAttributes {
                     signaling_key: None,

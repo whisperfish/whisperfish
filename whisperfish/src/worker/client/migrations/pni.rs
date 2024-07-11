@@ -45,15 +45,16 @@ impl Handler<InitializePni> for ClientActor {
                 }
                 tracing::info!("PNI identity key pair is not set. Initializing PNI. Hold my beer.");
 
-                let self_recipient = storage.fetch_self_recipient().expect("self recipient");
-                let mut am = AccountManager::new(
-                    service.clone(),
-                    self_recipient.profile_key.as_ref().map(|bytes| {
-                        let mut key = [0u8; 32];
-                        key.copy_from_slice(bytes);
-                        ProfileKey::create(key)
-                    }),
-                );
+                let profile_key =
+                    storage
+                        .fetch_self_recipient_profile_key()
+                        .as_ref()
+                        .map(|bytes| {
+                            let mut key = [0u8; 32];
+                            key.copy_from_slice(bytes);
+                            ProfileKey::create(key)
+                        });
+                let mut am = AccountManager::new(service.clone(), profile_key);
 
                 let identity_key_pair =
                     protocol::IdentityKeyPair::generate(&mut rand::thread_rng());

@@ -829,6 +829,21 @@ impl<O: Observable> Storage<O> {
         }
     }
 
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_self_recipient_profile_key(&self) -> Option<Vec<u8>> {
+        let read_lock = self.self_recipient.read();
+        if read_lock.is_ok() {
+            if let Some(recipient) = (*read_lock.unwrap()).as_ref() {
+                return recipient.profile_key.clone();
+            }
+        }
+
+        let recipient = self
+            .fetch_self_recipient()
+            .expect("no self recipient to retreive profile key from");
+        return recipient.profile_key;
+    }
+
     #[tracing::instrument(skip(self, rcpt_e164), fields(rcpt_e164 = %rcpt_e164))]
     pub fn fetch_recipient_by_phonenumber(
         &self,
