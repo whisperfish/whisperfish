@@ -704,19 +704,19 @@ async fn test_recipient_actions() {
         recip.unidentified_access_mode,
         UnidentifiedAccessMode::Unknown
     );
-    storage.set_recipient_unidentified(recip.id, UnidentifiedAccessMode::Disabled);
+    storage.set_recipient_unidentified(&recip, UnidentifiedAccessMode::Disabled);
     let recip = storage.fetch_or_insert_recipient_by_address(&addr1);
     assert_eq!(
         recip.unidentified_access_mode,
         UnidentifiedAccessMode::Disabled
     );
-    storage.set_recipient_unidentified(recip.id, UnidentifiedAccessMode::Enabled);
+    storage.set_recipient_unidentified(&recip, UnidentifiedAccessMode::Enabled);
     let recip = storage.fetch_or_insert_recipient_by_address(&addr1);
     assert_eq!(
         recip.unidentified_access_mode,
         UnidentifiedAccessMode::Enabled
     );
-    storage.set_recipient_unidentified(recip.id, UnidentifiedAccessMode::Unrestricted);
+    storage.set_recipient_unidentified(&recip, UnidentifiedAccessMode::Unrestricted);
     let recip = storage.fetch_or_insert_recipient_by_address(&addr1);
     assert_eq!(
         recip.unidentified_access_mode,

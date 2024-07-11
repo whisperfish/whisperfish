@@ -821,6 +821,14 @@ impl<O: Observable> Storage<O> {
         self_rcpt
     }
 
+    #[tracing::instrument(skip(self))]
+    pub fn invalidate_self_recipient(&self) {
+        let write_lock = self.self_recipient.write();
+        if write_lock.is_ok() {
+            *write_lock.unwrap() = None;
+        }
+    }
+
     #[tracing::instrument(skip(self, rcpt_e164), fields(rcpt_e164 = %rcpt_e164))]
     pub fn fetch_recipient_by_phonenumber(
         &self,
@@ -835,18 +843,27 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn mark_recipient_needs_pni_signature(&self, rid: i32, val: bool) {
+    pub fn mark_recipient_needs_pni_signature(&self, recipient: &orm::Recipient, val: bool) {
         use crate::schema::recipients::dsl::*;
 
         let affected = diesel::update(recipients)
             .set(needs_pni_signature.eq(val))
-            .filter(id.eq(rid))
+            .filter(id.eq(recipient.id))
             .execute(&mut *self.db())
             .expect("db");
 
+        // If updating self, invalidate the cache
+        if recipient.uuid == self.config.get_aci() {
+            self.invalidate_self_recipient();
+        }
+
         if affected > 0 {
-            self.observe_update(recipients, rid);
-            tracing::trace!("Recipient {} marked as needing PNI signature: {}", rid, val);
+            self.observe_update(recipients, recipient.id);
+            tracing::trace!(
+                "Recipient {} marked as needing PNI signature: {}",
+                recipient.id,
+                val
+            );
         }
     }
 
@@ -942,35 +959,50 @@ impl<O: Observable> Storage<O> {
     #[tracing::instrument(skip(self))]
     pub fn set_recipient_unidentified(
         &self,
-        recipient_id: i32,
+        recipient: &orm::Recipient,
         mode: UnidentifiedAccessMode,
     ) -> bool {
         use crate::schema::recipients::dsl::*;
         let affected = diesel::update(recipients)
             .set(unidentified_access_mode.eq(mode))
-            .filter(id.eq(recipient_id))
+            .filter(id.eq(recipient.id))
             .execute(&mut *self.db())
             .expect("existing record updated");
         if affected > 0 {
-            self.observe_update(recipients, recipient_id);
+            self.observe_update(recipients, recipient.id);
+        }
+        // If updating self, invalidate the cache
+        if recipient.uuid == self.config.get_aci() {
+            self.invalidate_self_recipient();
         }
         affected > 0
     }
 
-    #[tracing::instrument(skip(self, recipient_uuid), fields(recipient_uuid = recipient_uuid.to_string()))]
-    pub fn mark_profile_outdated(&self, recipient_uuid: Uuid) -> Option<orm::Recipient> {
+    #[tracing::instrument(skip(self, recipient), fields(recipient_uuid = recipient.uuid.as_ref().map(Uuid::to_string)))]
+    pub fn mark_profile_outdated(&self, recipient: &orm::Recipient) -> Option<orm::Recipient> {
         use crate::schema::recipients::dsl::*;
-        diesel::update(recipients)
-            .set(last_profile_fetch.eq(Option::<NaiveDateTime>::None))
-            .filter(uuid.eq(recipient_uuid.to_string()))
-            .execute(&mut *self.db())
-            .expect("existing record updated");
-        let recipient =
-            self.fetch_recipient_by_service_address(&ServiceAddress::new_aci(recipient_uuid));
-        if let Some(recipient) = &recipient {
-            self.observe_update(recipients, recipient.id);
+        if let Some(aci) = recipient.uuid {
+            diesel::update(recipients)
+                .set(last_profile_fetch.eq(Option::<NaiveDateTime>::None))
+                .filter(uuid.eq(aci.to_string()))
+                .execute(&mut *self.db())
+                .expect("existing record updated");
+            // If updating self, invalidate the cache
+            if recipient.uuid == self.config.get_aci() {
+                self.invalidate_self_recipient();
+            }
+            let recipient = self.fetch_recipient_by_service_address(&ServiceAddress::new_aci(aci));
+            if let Some(recipient) = &recipient {
+                self.observe_update(recipients, recipient.id);
+            }
+            recipient
+        } else {
+            tracing::error!(
+                "Recipient without ACI; can't mark outdated: {:?}",
+                recipient
+            );
+            None
         }
-        recipient
     }
 
     #[tracing::instrument(skip(self))]
@@ -1004,7 +1036,10 @@ impl<O: Observable> Storage<O> {
             .filter(id.eq(recipient.id))
             .execute(&mut *self.db())
             .expect("existing record updated");
-
+        // If updating self, invalidate the cache
+        if recipient.uuid == self.config.get_aci() {
+            self.invalidate_self_recipient();
+        }
         if affected_rows > 0 {
             self.observe_update(recipients, recipient.id);
         }
@@ -1074,6 +1109,10 @@ impl<O: Observable> Storage<O> {
                         .execute(&mut *self.db())
                         .expect("existing record updated");
                 }
+                // If updating self, invalidate the cache
+                if recipient.uuid == self.config.get_aci() {
+                    self.invalidate_self_recipient();
+                }
                 return (recipient, false);
             }
 
@@ -1087,6 +1126,11 @@ impl<O: Observable> Storage<O> {
                 .execute(&mut *self.db())
                 .expect("existing record updated");
             tracing::info!("Updated profile key for {}", recipient.e164_or_address());
+
+            // If updating self, invalidate the cache
+            if recipient.uuid == self.config.get_aci() {
+                self.invalidate_self_recipient();
+            }
 
             if affected_rows > 0 {
                 self.observe_update(recipients, recipient.id);
@@ -1120,6 +1164,11 @@ impl<O: Observable> Storage<O> {
             .filter(uuid.nullable().eq(&profile.r_uuid.to_string()))
             .execute(&mut *self.db())
             .expect("db");
+
+        // If updating self, invalidate the cache
+        if Some(profile.r_uuid) == self.config.get_aci() {
+            self.invalidate_self_recipient();
+        }
 
         tracing::trace!("Profile saved to database");
 
@@ -3634,6 +3683,11 @@ impl<O: Observable> Storage<O> {
             .filter(id.eq(rcpt_id))
             .execute(&mut *self.db())
             .expect("db");
+
+        // If updating self, invalidate the cache
+        if rcpt_id == self.fetch_self_recipient_id() {
+            self.invalidate_self_recipient();
+        }
 
         if affected > 0 {
             tracing::debug!("Recipient {} external ID changed to {:?}", rcpt_id, ext_id);

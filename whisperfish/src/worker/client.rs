@@ -1645,7 +1645,7 @@ impl Handler<SendMessage> for ClientActor {
                                     recipient.unidentified_access_mode,
                                     target_state
                                 );
-                                storage.set_recipient_unidentified(recipient.id, target_state);
+                                storage.set_recipient_unidentified(&recipient, target_state);
                             }
                         }
 
@@ -2252,14 +2252,7 @@ impl Handler<RefreshProfile> for ClientActor {
                 }
             },
         };
-        if let Some(addr) = recipient.to_aci_service_address() {
-            storage.mark_profile_outdated(addr.uuid);
-        } else {
-            tracing::error!(
-                "Recipient without ACI; not refreshing profile: {:?}",
-                recipient
-            );
-        }
+        storage.mark_profile_outdated(&recipient);
         // Polling the actor will poll the OutdatedProfileStream, which should immediately fire the
         // necessary events.  This is hacky (XXX), we should in fact wake the stream somehow to ensure
         // correct behaviour.
@@ -2331,7 +2324,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             tracing::warn!("Untrusted identity for {}; replacing identity and inserting a warning.", dest_protocol_address);
                             let recipient = storage.fetch_or_insert_recipient_by_address(&dest_address);
                             if dest_address.identity == ServiceIdType::PhoneNumberIdentity {
-                                storage.mark_recipient_needs_pni_signature(recipient.id, true);
+                                storage.mark_recipient_needs_pni_signature(&recipient, true);
                             }
                             let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
                             let msg = crate::store::NewMessage {

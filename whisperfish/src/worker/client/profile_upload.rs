@@ -326,7 +326,7 @@ impl Handler<RefreshProfileAttributes> for ClientActor {
                 } else {
                     if self_recipient.unidentified_access_mode != UnidentifiedAccessMode::Enabled {
                         storage.set_recipient_unidentified(
-                            self_recipient.id,
+                            &self_recipient,
                             UnidentifiedAccessMode::Enabled,
                         );
                     }

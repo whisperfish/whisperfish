@@ -160,6 +160,11 @@ impl ClientActor {
                 .filter(uuid.nullable().eq(&recipient_uuid.to_string()))
                 .execute(&mut *db)
                 .expect("db");
+
+            // If updating self, invalidate the cache
+            if Some(recipient_uuid) == self.config.get_aci() {
+                storage.invalidate_self_recipient();
+            }
         }
 
         Ok(())
