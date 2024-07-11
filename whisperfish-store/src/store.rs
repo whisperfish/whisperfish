@@ -789,15 +789,19 @@ impl<O: Observable> Storage<O> {
     #[tracing::instrument(skip(self))]
     pub fn fetch_self_recipient(&self) -> Option<orm::Recipient> {
         let e164 = self.config.get_tel();
-        let addr = self.config.get_addr();
+        let aci = self.config.get_aci().map(ServiceAddress::new_aci);
+        let pni = self.config.get_pni().map(ServiceAddress::new_pni);
         if e164.is_none() {
-            tracing::warn!("No e164 set, cannot fetch self.");
+            tracing::warn!("No E.164 set, cannot fetch self.");
             return None;
         }
-        if addr.is_none() {
-            tracing::warn!("No uuid set. Continuing with only e164");
+        if aci.is_none() {
+            tracing::warn!(
+                "No ACI set. Continuing with E.164 {}",
+                if pni.is_some() { "and PNI" } else { "only" }
+            );
         }
-        Some(self.merge_and_fetch_recipient_by_address(e164, addr.unwrap(), TrustLevel::Certain))
+        Some(self.merge_and_fetch_recipient(e164, aci, pni, TrustLevel::Certain))
     }
 
     #[tracing::instrument(skip(self, rcpt_e164), fields(rcpt_e164 = %rcpt_e164))]
