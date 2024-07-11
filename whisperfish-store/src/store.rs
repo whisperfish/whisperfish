@@ -801,7 +801,7 @@ impl<O: Observable> Storage<O> {
                 if pni.is_some() { "and PNI" } else { "only" }
             );
         }
-        Some(self.merge_and_fetch_recipient(e164, aci, pni, TrustLevel::Certain))
+        self.merge_and_fetch_self_recipient(e164, aci, pni)
     }
 
     #[tracing::instrument(skip(self, rcpt_e164), fields(rcpt_e164 = %rcpt_e164))]
@@ -1127,7 +1127,55 @@ impl<O: Observable> Storage<O> {
         }
     }
 
+    /// Equivalent of Androids `RecipientDatabase::getAndPossiblyMerge` with `change_self` set to `true.
+    /// Assumes ACI, PNI and E164 to be self-recipient as well.
+    pub fn merge_and_fetch_self_recipient(
+        &self,
+        e164: Option<PhoneNumber>,
+        aci: Option<ServiceAddress>,
+        pni: Option<ServiceAddress>,
+    ) -> orm::Recipient {
+        let (id, aci_uuid, pni_uuid, phonenumber, changed) = self
+            .db()
+            .transaction::<_, Error, _>(|db| {
+                Self::merge_and_fetch_recipient_inner(
+                    db,
+                    e164,
+                    aci.map(|u| u.uuid),
+                    pni.map(|u| u.uuid),
+                    TrustLevel::Certain,
+                    true,
+                )
+            })
+            .expect("database");
+        let recipient = match (id, aci_uuid, pni_uuid, phonenumber) {
+            (Some(id), _, _, _) => self
+                .fetch_recipient_by_id(id)
+                .expect("existing updated recipient"),
+            (_, Some(_), _, _) => self
+                .fetch_recipient_by_service_address(&aci.unwrap())
+                .expect("existing updated recipient by aci"),
+            (_, _, Some(_), _) => self
+                .fetch_recipient_by_service_address(&pni.unwrap())
+                .expect("existing updated recipient by pni"),
+            (_, _, _, Some(e164)) => self
+                .fetch_recipient_by_phonenumber(&e164)
+                .expect("existing updated recipient"),
+            (None, None, None, None) => {
+                unreachable!("this should get implemented with an Either or custom enum instead")
+            }
+        };
+        if changed {
+            self.observe_update(crate::schema::recipients::table, recipient.id);
+        }
+
+        tracing::trace!("Fetched recipient: {}", recipient);
+
+        recipient
+    }
+
     /// Equivalent of Androids `RecipientDatabase::getAndPossiblyMerge`.
+    /// Always sets `change_self` to `false`.
     ///
     /// XXX: This does *not* trigger observations for removed recipients.
     pub fn merge_and_fetch_recipient(
@@ -1146,13 +1194,14 @@ impl<O: Observable> Storage<O> {
                     aci.map(|u| u.uuid),
                     pni.map(|u| u.uuid),
                     trust_level,
+                    false,
                 )
             })
             .expect("database");
         let recipient = match (id, aci_uuid, pni_uuid, &phonenumber) {
             (Some(id), _, _, _) => self
                 .fetch_recipient_by_id(id)
-                .expect("existing updated recipient"),
+                .expect("existing updated recipient by id"),
             (_, Some(_), _, _) => self
                 .fetch_recipient_by_service_address(&aci.unwrap())
                 .expect("existing updated recipient by aci"),
@@ -1161,7 +1210,7 @@ impl<O: Observable> Storage<O> {
                 .expect("existing updated recipient by pni"),
             (_, _, _, Some(e164)) => self
                 .fetch_recipient_by_phonenumber(e164)
-                .expect("existing updated recipient"),
+                .expect("existing updated recipient by e164"),
             (None, None, None, None) => {
                 unreachable!("this should get implemented with an Either or custom enum instead")
             }
@@ -1191,6 +1240,7 @@ impl<O: Observable> Storage<O> {
         aci: Option<Uuid>,
         pni: Option<Uuid>,
         trust_level: TrustLevel,
+        change_self: bool,
     ) -> Result<
         (
             Option<i32>,
