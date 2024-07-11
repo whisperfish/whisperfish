@@ -859,6 +859,11 @@ impl<O: Observable> Storage<O> {
         return recipient.id;
     }
 
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_self_service_address_aci(&self) -> Option<ServiceAddress> {
+        self.config.get_aci().map(ServiceAddress::new_aci)
+    }
+
     #[tracing::instrument(skip(self, rcpt_e164), fields(rcpt_e164 = %rcpt_e164))]
     pub fn fetch_recipient_by_phonenumber(
         &self,

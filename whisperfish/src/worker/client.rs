@@ -1376,9 +1376,6 @@ impl Handler<QueueMessage> for ClientActor {
         let _span = tracing::trace_span!("QueueMessage", %msg).entered();
         let storage = self.storage.as_mut().unwrap();
 
-        let self_recipient = storage
-            .fetch_self_recipient()
-            .expect("self recipient set when sending");
         let session = storage
             .fetch_session_by_id(msg.session_id)
             .expect("existing session when sending");
@@ -1395,7 +1392,7 @@ impl Handler<QueueMessage> for ClientActor {
 
         let inserted_msg = storage.create_message(&crate::store::NewMessage {
             session_id: msg.session_id,
-            source_addr: self_recipient.to_service_address(),
+            source_addr: storage.fetch_self_service_address_aci(),
             text: msg.message,
             timestamp: chrono::Utc::now().naive_utc(),
             quote_timestamp: quote.map(|msg| msg.server_timestamp.timestamp_millis() as u64),
@@ -1431,16 +1428,13 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
         );
         let storage = self.storage.as_mut().unwrap();
 
-        let self_recipient = storage
-            .fetch_self_recipient()
-            .expect("self recipient set when sending");
         let session = storage
             .fetch_session_by_id(msg.session_id)
             .expect("existing session when sending");
 
         let msg = storage.create_message(&crate::store::NewMessage {
             session_id: session.id,
-            source_addr: self_recipient.to_service_address(),
+            source_addr: storage.fetch_self_service_address_aci(),
             expires_in: msg.expires_in,
             flags: DataMessageFlags::ExpirationTimerUpdate as i32,
             message_type: Some(MessageType::ExpirationTimerUpdate),
