@@ -88,6 +88,7 @@ pub struct SignalConfig {
     #[serde(skip)]
     pub autostart: bool,
 
+    #[serde(skip)]
     pub override_captcha: Option<String>,
 }
 
