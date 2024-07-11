@@ -335,6 +335,7 @@ pub struct Storage<O: Observable> {
     path: PathBuf,
     aci_identity_key_pair: Arc<tokio::sync::RwLock<Option<IdentityKeyPair>>>,
     pni_identity_key_pair: Arc<tokio::sync::RwLock<Option<IdentityKeyPair>>>,
+    self_recipient: Arc<std::sync::RwLock<Option<orm::Recipient>>>,
 }
 
 impl<O: Observable> Debug for Storage<O> {
@@ -471,6 +472,7 @@ impl<O: Observable + Default> Storage<O> {
             path: path.to_path_buf(),
             aci_identity_key_pair: Arc::new(tokio::sync::RwLock::new(Some(aci_identity_key_pair))),
             pni_identity_key_pair: Arc::new(tokio::sync::RwLock::new(Some(pni_identity_key_pair))),
+            self_recipient: Arc::new(std::sync::RwLock::new(None)),
         })
     }
 
@@ -514,6 +516,7 @@ impl<O: Observable + Default> Storage<O> {
             // XXX load them from storage already?
             aci_identity_key_pair: Arc::new(tokio::sync::RwLock::new(None)),
             pni_identity_key_pair: Arc::new(tokio::sync::RwLock::new(None)),
+            self_recipient: Arc::new(std::sync::RwLock::new(None)),
         };
 
         Ok(storage)
@@ -788,6 +791,13 @@ impl<O: Observable> Storage<O> {
 
     #[tracing::instrument(skip(self))]
     pub fn fetch_self_recipient(&self) -> Option<orm::Recipient> {
+        let read_lock = self.self_recipient.read();
+        if read_lock.is_ok() {
+            if let Some(recipient) = (*read_lock.unwrap()).as_ref() {
+                return Some(recipient.to_owned());
+            }
+        }
+
         let e164 = self.config.get_tel();
         let aci = self.config.get_aci().map(ServiceAddress::new_aci);
         let pni = self.config.get_pni().map(ServiceAddress::new_pni);
@@ -801,7 +811,14 @@ impl<O: Observable> Storage<O> {
                 if pni.is_some() { "and PNI" } else { "only" }
             );
         }
-        self.merge_and_fetch_self_recipient(e164, aci, pni)
+        let self_rcpt = Some(self.merge_and_fetch_self_recipient(e164, aci, pni));
+
+        let write_lock = self.self_recipient.write();
+        if write_lock.is_ok() {
+            *write_lock.unwrap() = self_rcpt.clone();
+        }
+
+        self_rcpt
     }
 
     #[tracing::instrument(skip(self, rcpt_e164), fields(rcpt_e164 = %rcpt_e164))]
