@@ -21,12 +21,16 @@ pub struct RecipientImpl {
     // XXX What about PNI?
     recipient_uuid: Option<Uuid>,
     recipient: Option<RecipientWithAnalyzedSession>,
+    fingerprint_needed: bool,
+
+    force_init: bool,
 }
 
 crate::observing_model! {
     pub struct Recipient(RecipientImpl) {
         recipientId: i32; READ get_recipient_id WRITE set_recipient_id,
         recipientUuid: String; READ get_recipient_uuid WRITE set_recipient_uuid,
+        fingerprintNeeded: bool; READ get_fingerprint_needed WRITE set_fingerprint_needed,
         valid: bool; READ get_valid,
     } WITH OPTIONAL PROPERTIES FROM recipient WITH ROLE RecipientWithAnalyzedSessionRoles {
         id Id,
@@ -62,8 +66,9 @@ impl EventObserving for RecipientImpl {
     type Context = ModelContext<Self>;
 
     fn observe(&mut self, ctx: Self::Context, _event: crate::store::observer::Event) {
-        if self.recipient_id.is_some() {
-            tracing::trace!("initializing Recipient");
+        if self.recipient_id.is_some() || self.recipient_uuid.is_some() {
+            tracing::trace!("Observer recipient re-init");
+            self.force_init = true;
             self.init(ctx);
         }
     }
@@ -101,9 +106,7 @@ impl Handler<SessionAnalyzed> for ObservingModelActor<RecipientImpl> {
                 let model = model.pinned();
                 let mut model = model.borrow_mut();
                 if let Some(recipient) = &mut model.recipient {
-                    if recipient.id != recipient_id {
-                        tracing::trace!("Different recipient_id requested, dropping fingerprint");
-                    } else {
+                    if recipient.id == recipient_id {
                         recipient.fingerprint = Some(fingerprint);
                         recipient.versions = versions;
                         // TODO: trigger something changed
@@ -140,6 +143,9 @@ impl RecipientImpl {
     #[with_executor]
     #[tracing::instrument(skip(self, ctx))]
     fn set_recipient_id(&mut self, ctx: Option<ModelContext<Self>>, id: i32) {
+        if self.recipient_id == Some(id) {
+            return;
+        }
         self.recipient_id = Some(id);
         self.recipient_uuid = None; // Set in init()
         if let Some(ctx) = ctx {
@@ -150,6 +156,9 @@ impl RecipientImpl {
     #[with_executor]
     #[tracing::instrument(skip(self, ctx))]
     fn set_recipient_uuid(&mut self, ctx: Option<ModelContext<Self>>, uuid: String) {
+        if self.recipient_uuid.map(|u| u.to_string()).as_ref() == Some(&uuid) {
+            return;
+        }
         self.recipient_id = None; // Set in init()
         if let Ok(uuid) = Uuid::parse_str(&uuid) {
             self.recipient_uuid = Some(uuid);
@@ -162,93 +171,125 @@ impl RecipientImpl {
         }
     }
 
+    #[with_executor]
+    #[tracing::instrument(skip(self, ctx))]
+    fn set_fingerprint_needed(&mut self, ctx: Option<ModelContext<Self>>, needed: bool) {
+        self.fingerprint_needed = needed;
+        if let Some(ctx) = ctx {
+            self.compute_fingerprint(ctx);
+        }
+    }
+
+    fn get_fingerprint_needed(&self) -> bool {
+        self.fingerprint_needed
+    }
+
     fn init(&mut self, ctx: ModelContext<Self>) {
-        let storage = ctx.storage();
-        let recipient = if let Some(uuid) = self.recipient_uuid {
-            storage
-                .fetch_recipient_by_service_address(&ServiceAddress::new_aci(uuid))
-                .map(|inner| {
-                    let direct_message_recipient_id = storage
-                        .fetch_session_by_recipient_id(inner.id)
-                        .map(|session| session.id)
-                        .unwrap_or(-1);
-                    self.recipient_id = Some(inner.id);
-                    // XXX trigger Qt signal for this?
-                    RecipientWithAnalyzedSession {
-                        inner,
-                        direct_message_recipient_id,
-                        fingerprint: None,
-                        versions: Vec::new(),
-                    }
-                })
-        } else if let Some(id) = self.recipient_id {
-            if id >= 0 {
-                storage.fetch_recipient_by_id(id).map(|inner| {
-                    let direct_message_recipient_id = storage
-                        .fetch_session_by_recipient_id(inner.id)
-                        .map(|session| session.id)
-                        .unwrap_or(-1);
-                    // XXX Clean this up after #532
-                    self.recipient_uuid = Some(inner.uuid.unwrap_or(Uuid::nil()));
-                    // XXX trigger Qt signal for this?
-                    RecipientWithAnalyzedSession {
-                        inner,
-                        direct_message_recipient_id,
-                        fingerprint: None,
-                        versions: Vec::new(),
-                    }
-                })
+        if self.recipient.is_none() || self.force_init {
+            let storage = ctx.storage();
+            let recipient = if let Some(uuid) = self.recipient_uuid {
+                storage
+                    .fetch_recipient_by_service_address(&ServiceAddress::new_aci(uuid))
+                    .map(|inner| {
+                        let direct_message_recipient_id = storage
+                            .fetch_session_by_recipient_id(inner.id)
+                            .map(|session| session.id)
+                            .unwrap_or(-1);
+                        self.recipient_id = Some(inner.id);
+                        // XXX trigger Qt signal for this?
+                        RecipientWithAnalyzedSession {
+                            inner,
+                            direct_message_recipient_id,
+                            fingerprint: None,
+                            versions: Vec::new(),
+                        }
+                    })
+            } else if let Some(id) = self.recipient_id {
+                if id >= 0 {
+                    storage.fetch_recipient_by_id(id).map(|inner| {
+                        let direct_message_recipient_id = storage
+                            .fetch_session_by_recipient_id(inner.id)
+                            .map(|session| session.id)
+                            .unwrap_or(-1);
+                        // XXX Clean this up after #532
+                        self.recipient_uuid = inner.uuid.or(Some(Uuid::nil()));
+                        // XXX trigger Qt signal for this?
+                        RecipientWithAnalyzedSession {
+                            inner,
+                            direct_message_recipient_id,
+                            fingerprint: None,
+                            versions: Vec::new(),
+                        }
+                    })
+                } else {
+                    None
+                }
             } else {
                 None
+            };
+
+            // XXX trigger Qt signal for this?
+            self.recipient = recipient;
+        }
+
+        if self.force_init {
+            self.force_init = false;
+            if let Some(recipient) = self.recipient.as_mut() {
+                recipient.fingerprint = None;
             }
-        } else {
-            None
-        };
+        }
 
-        // XXX trigger Qt signal for this?
-        self.recipient = recipient;
+        if self.fingerprint_needed {
+            self.compute_fingerprint(ctx);
+        }
+    }
 
-        // If a recipient was found, attempt to compute the fingerprint
-        // XXX: we're only computing fingerprints for ACI recipients, figure out what to do for
-        // PNI identities.
-        if let Some(r) = &self.recipient {
-            let id = r.id;
-            if let Some(recipient_svc) = r.to_service_address() {
-                let compute_fingerprint = async move {
-                    let local_svc = storage.fetch_self_service_address_aci().expect("self ACI");
-                    let fingerprint = storage
+    fn compute_fingerprint(&mut self, ctx: ModelContext<Self>) {
+        if self.recipient.is_none() || self.recipient.as_ref().unwrap().fingerprint.is_some() {
+            tracing::trace!("Not computing fingerprint");
+            return;
+        }
+
+        tracing::trace!("Computing fingerprint");
+        // If an ACI recipient was found, attempt to compute the fingerprint
+        let recipient = self.recipient.as_ref().unwrap();
+        if let Some(recipient_svc) = recipient.to_aci_service_address() {
+            let storage = ctx.storage();
+            let recipient_id = recipient.id;
+            let compute = async move {
+                let local_svc = storage.fetch_self_service_address_aci().expect("self ACI");
+                let fingerprint = storage
+                    .aci_storage()
+                    .compute_safety_number(&local_svc, &recipient_svc)
+                    .await?;
+                let sessions = storage
+                    .aci_storage()
+                    .get_sub_device_sessions(&recipient_svc)
+                    .await?;
+                let mut versions = Vec::new();
+                for device_id in sessions {
+                    let session = storage
                         .aci_storage()
-                        .compute_safety_number(&local_svc, &recipient_svc)
+                        .load_session(&recipient_svc.to_protocol_address(device_id))
                         .await?;
-                    let sessions = storage
-                        .aci_storage()
-                        .get_sub_device_sessions(&recipient_svc)
-                        .await?;
-                    let mut versions = Vec::new();
-                    for device_id in sessions {
-                        let session = storage
-                            .aci_storage()
-                            .load_session(&recipient_svc.to_protocol_address(device_id))
-                            .await?;
-                        let version = session
-                            .map(|x| x.session_version())
-                            .transpose()?
-                            .unwrap_or(0);
-                        versions.push((device_id, version));
-                    }
-                    ctx.addr()
-                        .send(SessionAnalyzed {
-                            recipient_id: id,
-                            fingerprint,
-                            versions,
-                        })
-                        .await?;
-
-                    Result::<_, anyhow::Error>::Ok(())
+                    let version = session
+                        .map(|x| x.session_version())
+                        .transpose()?
+                        .unwrap_or(0);
+                    versions.push((device_id, version));
                 }
-                .map_ok_or_else(|e| tracing::error!("Computing fingerprint: {}", e), |_| ());
-                actix::spawn(compute_fingerprint);
+                ctx.addr()
+                    .send(SessionAnalyzed {
+                        recipient_id,
+                        fingerprint,
+                        versions,
+                    })
+                    .await?;
+
+                Result::<_, anyhow::Error>::Ok(())
             }
+            .map_ok_or_else(|e| tracing::error!("Computing fingerprint: {}", e), |_| ());
+            actix::spawn(compute);
         }
     }
 }
