@@ -612,10 +612,7 @@ impl ClientActor {
             );
             let db_message = storage.fetch_message_by_timestamp(target_sent_timestamp);
             if let Some(db_message) = db_message {
-                let own_id = storage
-                    .fetch_self_recipient()
-                    .expect("self recipient in db")
-                    .id;
+                let own_id = storage.fetch_self_recipient_id();
                 // Missing sender_recipient_id => we are the sender
                 let sender_id = db_message.sender_recipient_id.unwrap_or(own_id);
                 if sender_id != sender_recipient.as_ref().unwrap().id {
@@ -1861,27 +1858,27 @@ impl Handler<SendReaction> for ClientActor {
         );
 
         let storage = self.storage.as_mut().unwrap();
-        let self_recipient = storage.fetch_self_recipient().unwrap();
+        let own_id = storage.fetch_self_recipient_id();
         let message = storage.fetch_message_by_id(message_id).unwrap();
 
         // Outgoing messages should not have sender_recipient_id set
-        let (sender_id, emoji) = if sender_id > 0 && sender_id != self_recipient.id {
+        let (sender_id, emoji) = if sender_id > 0 && sender_id != own_id {
             (sender_id, emoji)
         } else {
             if !message.is_outbound {
                 panic!("Inbound message {} has no sender recipient ID", message_id);
             }
             if remove {
-                let reaction = storage.fetch_reaction(message_id, self_recipient.id);
+                let reaction = storage.fetch_reaction(message_id, own_id);
                 if let Some(r) = reaction {
-                    (self_recipient.id, r.emoji)
+                    (own_id, r.emoji)
                 } else {
                     // XXX: Don't continue - we should remove the same emoji
                     tracing::error!("Message {} doesn't have our own reaction!", message_id);
-                    (self_recipient.id, emoji)
+                    (own_id, emoji)
                 }
             } else {
-                (self_recipient.id, emoji)
+                (own_id, emoji)
             }
         };
 
@@ -1925,7 +1922,7 @@ impl Handler<SendReaction> for ClientActor {
                     for_story: false,
                 })
                 .await?
-                .map(|_| (emoji, now, self_recipient.id))
+                .map(|_| (emoji, now, own_id))
             }
             .into_actor(self)
             .map(move |res, _act, ctx| {

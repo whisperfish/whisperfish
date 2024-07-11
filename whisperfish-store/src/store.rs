@@ -844,6 +844,21 @@ impl<O: Observable> Storage<O> {
         return recipient.profile_key;
     }
 
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_self_recipient_id(&self) -> i32 {
+        let read_lock = self.self_recipient.read();
+        if read_lock.is_ok() {
+            if let Some(recipient) = (*read_lock.unwrap()).as_ref() {
+                return recipient.id;
+            }
+        }
+
+        let recipient = self
+            .fetch_self_recipient()
+            .expect("no self recipient to retreive db id from");
+        return recipient.id;
+    }
+
     #[tracing::instrument(skip(self, rcpt_e164), fields(rcpt_e164 = %rcpt_e164))]
     pub fn fetch_recipient_by_phonenumber(
         &self,
