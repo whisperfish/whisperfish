@@ -1810,15 +1810,6 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba291022dbbd398a455acf126c1e341954079855bc60dfdda641363bd6922569"
@@ -1945,7 +1936,7 @@ dependencies = [
 [[package]]
 name = "libsignal-service"
 version = "0.1.0"
-source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=handle-pni-uuid#c5e285baf2847250d537afde7dc24faa84a308f4"
+source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=main#8cd92cdf5ed72dad0384e9785f28eef0d312e717"
 dependencies = [
  "aes",
  "aes-gcm",
@@ -1980,7 +1971,7 @@ dependencies = [
 [[package]]
 name = "libsignal-service-hyper"
 version = "0.1.0"
-source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=handle-pni-uuid#c5e285baf2847250d537afde7dc24faa84a308f4"
+source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=main#8cd92cdf5ed72dad0384e9785f28eef0d312e717"
 dependencies = [
  "async-trait",
  "async-tungstenite",
@@ -2756,7 +2747,7 @@ checksum = "c55e02e35260070b6f716a2423c2ff1c3bb1642ddca6f99e1f26d06268a0e2d2"
 dependencies = [
  "bytes",
  "heck 0.4.1",
- "itertools 0.11.0",
+ "itertools 0.10.5",
  "log",
  "multimap",
  "once_cell",

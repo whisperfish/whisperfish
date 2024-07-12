@@ -610,24 +610,6 @@ impl<T: Identity<O>, O: Observable> PreKeysStore for IdentityStorage<T, O> {
         Ok((kyber_max.unwrap_or(-1) + 1) as u32)
     }
 
-    #[tracing::instrument(level = "trace", skip(self))]
-    async fn set_next_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
-        assert_eq!(self.next_pre_key_id().await?, id);
-        Ok(())
-    }
-
-    #[tracing::instrument(level = "trace", skip(self))]
-    async fn set_next_signed_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
-        assert_eq!(self.next_signed_pre_key_id().await?, id);
-        Ok(())
-    }
-
-    #[tracing::instrument(level = "trace", skip(self))]
-    async fn set_next_pq_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
-        assert_eq!(self.next_pq_pre_key_id().await?, id);
-        Ok(())
-    }
-
     async fn signed_pre_keys_count(&self) -> Result<usize, SignalProtocolError> {
         use diesel::prelude::*;
 
