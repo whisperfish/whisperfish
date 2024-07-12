@@ -569,7 +569,7 @@ deploy:openrepos:wf-shareplugin_v1:
     <<: *openrepos-vars
     OPENREPOS_UPLOAD_RPM_APPNAME: "Whisperfish shareplugin (SailfishOS 4.2 or below)"
   environment:
-      name: "OpenRepos shareplugin 4.3"
+      name: "OpenRepos shareplugin 4.2"
       url: https://openrepos.net/content/rubdos/whisperfish-shareplugin-sailfishos-42-or-below
   needs:
     - build:sf:latest:shareplugin_v1:armv7hl
