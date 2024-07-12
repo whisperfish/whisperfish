@@ -537,6 +537,7 @@ pages:
   stage: deploy
   extends: .openrepos-upload-rpm
   variables: &openrepos-vars
+    OPENREPOS_WEBCLIENT_INSTALL_SOURCE: "git+https://gitlab.com/nobodyinperson/python3-openrepos-webclient"
     OPENREPOS_UPLOAD_RPM_PLATFORM: SailfishOS
     OPENREPOS_UPLOAD_RPM_CATEGORY: Applications
   only:
