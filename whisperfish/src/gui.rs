@@ -26,6 +26,12 @@ pub struct AppState {
     isClosed: qt_method!(fn(&self) -> bool),
     activate: qt_signal!(),
 
+    gstreamer_version: qt_property!(QString; READ gstreamer_version CONST),
+    gstreamer_version_major: qt_property!(u32; READ gstreamer_version_major CONST),
+    gstreamer_version_minor: qt_property!(u32; READ gstreamer_version_minor CONST),
+    gstreamer_version_micro: qt_property!(u32; READ gstreamer_version_micro CONST),
+    gstreamer_version_nano: qt_property!(u32; READ gstreamer_version_nano CONST),
+
     may_exit: MayExit,
     setMayExit: qt_method!(fn(&self, value: bool)),
     mayExit: qt_method!(fn(&self) -> bool),
@@ -44,6 +50,27 @@ pub struct AppState {
 }
 
 impl AppState {
+    fn gstreamer_version(&self) -> QString {
+        let (major, minor, micro, nano) = gstreamer::version();
+        QString::from(format!("{}.{}.{}.{}", major, minor, micro, nano))
+    }
+
+    fn gstreamer_version_major(&self) -> u32 {
+        gstreamer::version().0
+    }
+
+    fn gstreamer_version_minor(&self) -> u32 {
+        gstreamer::version().1
+    }
+
+    fn gstreamer_version_micro(&self) -> u32 {
+        gstreamer::version().2
+    }
+
+    fn gstreamer_version_nano(&self) -> u32 {
+        gstreamer::version().3
+    }
+
     #[allow(non_snake_case)]
     #[with_executor]
     fn setActive(&mut self) {
@@ -122,6 +149,12 @@ impl AppState {
     #[with_executor]
     fn new() -> Self {
         Self {
+            gstreamer_version: Default::default(),
+            gstreamer_version_major: Default::default(),
+            gstreamer_version_minor: Default::default(),
+            gstreamer_version_micro: Default::default(),
+            gstreamer_version_nano: Default::default(),
+
             base: Default::default(),
             closed: false,
             may_exit: MayExit::default(),
@@ -228,6 +261,9 @@ macro_rules! cstr {
 
 pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
     qmeta_async::run(|| {
+        // For audio recording
+        gstreamer::init().expect("gstreamer initialization");
+
         let (app, _whisperfish) = with_executor(|| -> anyhow::Result<_> {
             // XXX this arc thing should be removed in the future and refactored
             let config = std::sync::Arc::new(config);
@@ -236,6 +272,12 @@ pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
             {
                 let uri = cstr!("be.rubdos.whisperfish");
                 qml_register_type::<model::RustleGraph>(uri, 1, 0, cstr!("RustleGraph"));
+                qml_register_type::<model::VoiceNoteRecorder>(
+                    uri,
+                    1,
+                    0,
+                    cstr!("VoiceNoteRecorder"),
+                );
 
                 qml_register_type::<model::Sessions>(uri, 1, 0, cstr!("Sessions"));
                 qml_register_type::<model::Session>(uri, 1, 0, cstr!("Session"));

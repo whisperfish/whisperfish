@@ -339,6 +339,43 @@ ApplicationWindow
         }
     }
 
+    DBusInterface {
+        id: dbusSpeechInterface
+
+        // https://github.com/mkiol/dsnote/blob/main/dbus/org.mkiol.Speech.xml
+        service: 'org.mkiol.Speech'
+        path: '/'
+        iface: 'org.mkiol.Speech'
+
+        // XXX: these are undocumented
+        watchServiceStatus: true
+        signalsEnabled: true
+        propertiesEnabled: true
+
+        // 3 == Idle
+        property bool available: installed && _state === 3 && _englishSTTAvailable
+        property bool installed: status == DBusInterface.Available
+
+        property var _state
+        property bool _englishSTTAvailable: false
+
+        Component.onCompleted: {
+            // We need to read e.g. State once to trigger updates
+            _state = getProperty("State");
+        }
+
+        function statePropertyChanged(state) {
+            console.log("statePropertyChanged:", state)
+            _state = state
+        }
+
+        function sttLangsPropertyChanged(langs) {
+            console.log("sttLangsPropertyChanged:", JSON.stringify(langs))
+            _englishSTTAvailable = "en" in langs;
+            console.log("English available:", _englishSTTAvailable);
+        }
+    }
+
     DBusAdaptor {
         service: "be.rubdos.whisperfish"
         path: "/be/rubdos/whisperfish/app"

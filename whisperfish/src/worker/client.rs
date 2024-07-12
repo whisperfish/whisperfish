@@ -7,6 +7,7 @@ mod message_expiry;
 mod profile;
 mod profile_upload;
 mod unidentified;
+mod voice_note_transcription;
 
 pub use self::groupv2::*;
 pub use self::linked_devices::*;
@@ -99,17 +100,19 @@ pub struct QueueMessage {
     pub message: String,
     pub attachments: Vec<NewAttachment>,
     pub quote: i32,
+    pub is_voice_note: bool,
 }
 
 impl Display for QueueMessage {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(
             f,
-            "QueueMessage {{ session_id: {}, message: \"{}\", quote: {}, attachments: \"{:?}\" }}",
+            "QueueMessage {{ session_id: {}, message: \"{}\", quote: {}, attachments: \"{:?}\", is_voice_note: {} }}",
             &self.session_id,
             shorten(&self.message, 9),
             &self.quote,
             &self.attachments,
+            &self.is_voice_note,
         )
     }
 }
@@ -217,6 +220,8 @@ pub struct ClientWorker {
     send_typing_notification: qt_method!(fn(&self, id: i32, is_start: bool)),
     submit_proof_captcha: qt_method!(fn(&self, token: String, response: String)),
 
+    transcribeVoiceNote: qt_method!(fn(&self, message_id: i32)),
+
     connected: qt_property!(bool; NOTIFY connectedChanged),
     connectedChanged: qt_signal!(),
 
@@ -261,6 +266,8 @@ pub struct ClientActor {
     config: std::sync::Arc<crate::config::SignalConfig>,
 
     transient_timestamps: HashSet<u64>,
+
+    voice_note_transcription_queue: voice_note_transcription::VoiceNoteTranscriptionQueue,
 
     start_time: DateTime<Local>,
 
@@ -312,6 +319,9 @@ impl ClientActor {
             config,
 
             transient_timestamps,
+
+            voice_note_transcription_queue:
+                voice_note_transcription::VoiceNoteTranscriptionQueue::default(),
 
             start_time: Local::now(),
 
@@ -412,7 +422,7 @@ impl ClientActor {
     }
 
     pub fn clear_transient_timstamps(&mut self) {
-        if self.transient_timestamps.len() > (TM_CACHE_CAPACITY * TM_MAX_RATE) as _ {
+        if self.transient_timestamps.len() > (TM_CACHE_CAPACITY * TM_MAX_RATE) as usize {
             // slots / slots_per_minute = minutes
             const DURATION: u64 = (TM_CACHE_TRESHOLD * 60.0 * 1000.0) as _;
             let limit = (Utc::now().timestamp_millis() as u64) - DURATION;
@@ -1342,6 +1352,18 @@ impl Handler<FetchAttachment> for ClientActor {
                         message_id,
                     })
                     .await?;
+
+                if attachment.is_voice_note {
+                    // If the attachment is a voice note, and we enabled automatic transcription,
+                    // trigger the transcription
+                    let settings = crate::config::SettingsBridge::default();
+                    if settings.get_transcribe_voice_notes() {
+                        client_addr
+                            .send(voice_note_transcription::TranscribeVoiceNote { message_id })
+                            .await?;
+                    }
+                }
+
                 Ok(())
             }
             .instrument(tracing::trace_span!(
@@ -1405,7 +1427,19 @@ impl Handler<QueueMessage> for ClientActor {
                 inserted_msg.id,
                 Some(attachment.mime_type.as_str()),
                 attachment.path.clone(),
+                msg.is_voice_note,
             );
+        }
+
+        if msg.is_voice_note {
+            // If the attachment is a voice note, and we enabled automatic transcription,
+            // trigger the transcription
+            let settings = crate::config::SettingsBridge::default();
+            if settings.get_transcribe_voice_notes() {
+                ctx.notify(voice_note_transcription::TranscribeVoiceNote {
+                    message_id: inserted_msg.id,
+                });
+            }
         }
 
         if let Some(h) = self.message_expiry_notification_handle.as_ref() {
@@ -3281,8 +3315,9 @@ mod tests {
             session_id: 8,
             message: "Lorem ipsum dolor sit amet".into(),
             quote: 12,
+            is_voice_note: false,
         };
-        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[]\" }");
+        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[]\", is_voice_note: false }");
     }
 
     #[test]
@@ -3296,8 +3331,9 @@ mod tests {
             session_id: 8,
             message: "Lorem ipsum dolor sit amet".into(),
             quote: 12,
+            is_voice_note: false,
         };
-        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }]\" }");
+        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }]\", is_voice_note: false }");
     }
 
     #[test]
@@ -3317,7 +3353,8 @@ mod tests {
             session_id: 8,
             message: "Lorem ipsum dolor sit amet".into(),
             quote: 12,
+            is_voice_note: false,
         };
-        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }, NewAttachment { path: \"/path/to/audio.mp3\", mime_type: \"audio/mpeg\" }]\" }");
+        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }, NewAttachment { path: \"/path/to/audio.mp3\", mime_type: \"audio/mpeg\" }]\", is_voice_note: false }");
     }
 }

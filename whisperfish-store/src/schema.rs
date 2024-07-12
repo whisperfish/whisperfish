@@ -35,6 +35,7 @@ diesel::table! {
         cdn_number -> Nullable<Integer>,
         caption -> Nullable<Text>,
         pointer -> Nullable<Binary>,
+        transcription -> Nullable<Text>,
     }
 }
 

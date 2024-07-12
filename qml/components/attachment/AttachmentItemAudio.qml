@@ -99,9 +99,11 @@ AttachmentItemBase {
             IconButton {
                 width: item.height
                 height: item.height
+                icon.width: item.height * 0.6
+                icon.height: item.height * 0.6
                 icon.source: audioMessage.playbackState === MediaPlayer.PlayingState
-                        ? "image://theme/icon-m-simple-pause"
-                        : "image://theme/icon-m-simple-play"
+                        ? "../../../icons/pause.png"
+                        : "../../../icons/play.png"
                 onClicked: audioMessage.playbackState === MediaPlayer.PlayingState
                            ? audioMessage.pause()
                            : audioMessage.play()

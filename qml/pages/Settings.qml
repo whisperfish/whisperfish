@@ -212,6 +212,32 @@ Page {
                     }
                 }
             }
+            IconTextSwitch {
+                id: autoTranscribeVoiceNotes
+                anchors.horizontalCenter: parent.horizontalCenter
+                //: Settings page auto transcribe voice notes
+                //% "Transcribe voice notes"
+                text: qsTrId("whisperfish-transcribe-voice-notes-label")
+                description: dbusSpeechInterface.available ?
+                    //: Auto transcribe voice notes description, Speech Note installed
+                    //% "Automatically transcribe voice notes to text upon reception using Speech Note."
+                    qsTrId("whisperfish-transcribe-voice-notes-description-available") : (dbusSpeechInterface.installed ?
+                    //: Auto transcribe voice notes description (always English), Speech Note installed but not configured.
+                    //% "Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature."
+                    qsTrId("whisperfish-transcribe-voice-notes-description-unavailable") :
+                    //: Auto transcribe voice notes description (always English), Speech Note not installed
+                    //% "Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature."
+                    qsTrId("whisperfish-transcribe-voice-notes-description-uninstalled")
+                )
+                checked: SettingsBridge.transcribe_voice_notes
+                enabled: dbusSpeechInterface.available
+                icon.source: "image://theme/icon-m-file-note-dark"
+                onCheckedChanged: {
+                    if(checked != SettingsBridge.transcribe_voice_notes) {
+                        SettingsBridge.transcribe_voice_notes = checked
+                    }
+                }
+            }
             // ------ END GENERAL SETTINGS ------
 
             // ------ BEGIN PRIVACY SETTINGS ------
@@ -575,6 +601,12 @@ Page {
                 //% "Signal Contacts"
                 label: qsTrId("whisperfish-settings-total-contacts")
                 value: AppState.recipientCount()
+            }
+            DetailItem {
+                //: GStreamer version indication in settings
+                //% "GStreamer version"
+                label: qsTrId("whisperfish-settings-gstreamer-version")
+                value: AppState.gstreamer_version
             }
             DetailItem {
                 //: Settings page encrypted database

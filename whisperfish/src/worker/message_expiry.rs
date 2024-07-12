@@ -24,7 +24,7 @@ impl ExpiredMessagesStream {
         }
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, cx))]
     fn update_next_wake(&mut self, cx: &mut Context<'_>) {
         if let Some((message_id, time)) = self.storage.fetch_next_expiring_message_id() {
             tracing::info!(

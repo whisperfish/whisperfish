@@ -3129,12 +3129,33 @@ impl<O: Observable> Storage<O> {
         latest_message
     }
 
+    #[tracing::instrument(skip(self))]
+    pub fn update_transcription(&mut self, attachment_id: i32, new_transcription: &str) {
+        use schema::attachments::dsl::*;
+
+        let count = diesel::update(attachments.filter(id.eq(attachment_id)))
+            .set(transcription.eq(new_transcription))
+            .execute(&mut *self.db())
+            .expect("update transcription");
+
+        if count == 1 {
+            tracing::trace!("Transcription updated for attachment id {}", attachment_id);
+            self.observe_update(schema::attachments::table, attachment_id);
+        } else {
+            tracing::error!(
+                "Could not update transcription for attachment {}",
+                attachment_id
+            );
+        };
+    }
+
     #[tracing::instrument(skip(self, path), fields(path = %path.as_ref().display()))]
     pub fn insert_local_attachment(
         &self,
         attachment_message_id: i32,
         mime_type: Option<&str>,
         path: impl AsRef<Path>,
+        voice_note: bool,
     ) -> i32 {
         let path = path.as_ref();
         let att_file = File::open(path).expect("");
@@ -3164,7 +3185,7 @@ impl<O: Observable> Storage<O> {
                     attachment_path.eq(path.as_os_str().to_str().expect("path UTF-8 compliant")),
                     size.eq(att_size),
                     file_name.eq(filename),
-                    is_voice_note.eq(false),
+                    is_voice_note.eq(voice_note),
                     is_borderless.eq(false),
                     is_quote.eq(false),
                 ))

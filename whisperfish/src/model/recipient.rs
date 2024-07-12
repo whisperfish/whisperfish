@@ -66,11 +66,9 @@ impl EventObserving for RecipientImpl {
     type Context = ModelContext<Self>;
 
     fn observe(&mut self, ctx: Self::Context, _event: crate::store::observer::Event) {
-        if self.recipient_id.is_some() || self.recipient_uuid.is_some() {
-            tracing::trace!("Observer recipient re-init");
-            self.force_init = true;
-            self.init(ctx);
-        }
+        tracing::trace!("Observer recipient re-init");
+        self.force_init = true;
+        self.init(ctx);
     }
 
     fn interests(&self) -> Vec<Interest> {

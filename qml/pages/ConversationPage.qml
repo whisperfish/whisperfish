@@ -104,7 +104,8 @@ Page {
     //   visible when the view is at the bottom (latest message) and
     //   hidden while scrolling, becomes visible when scrolling down a
     //   little bit, always visible while the keyboard is open, not
-    //   visible during the quick scroll animation
+    //   visible during the quick scroll animation,
+    //   open while recording a voice note.
     //
     // Implementation:
     // The message view is anchored below the page header and extends
@@ -141,7 +142,7 @@ Page {
         onMenuOpenChanged: panel.open = !messages.menuOpen
         onVerticalVelocityChanged: {
             if (panel.moving) return
-            else if (verticalVelocity < 0) panel.hide()
+            else if (verticalVelocity < 0 && !textInput.isVoiceNote) panel.hide()
             else if (verticalVelocity > 0) panel.show()
         }
         onReplyTriggered: {
@@ -285,7 +286,7 @@ Page {
             }
             onSendMessage: {
                 console.log(JSON.stringify(attachments))
-                MessageModel.createMessage(sessionId, text, attachments, replyTo, true)
+                MessageModel.createMessage(sessionId, text, attachments, replyTo, true, isVoiceNote)
             }
             onSendTypingNotification: {
                 ClientWorker.send_typing_notification(sessionId, true)
@@ -304,7 +305,7 @@ Page {
         height: actionsColumn.height + 2*Theme.horizontalPageMargin
         open: false
         dock: Dock.Bottom
-        onOpenChanged: if (open) panel.hide()
+        onOpenChanged: if (open && !textInput.isVoiceNote) panel.hide()
 
         Behavior on opacity { FadeAnimator { duration: 80 } }
 
@@ -338,6 +339,7 @@ Page {
         // 4. delete for me
         // 5. delete for all
         // 6* resend        [if at least one failed]
+        // 7* transcribe
 
         Column {
             id: actionsColumn
@@ -462,6 +464,17 @@ Page {
                     visible: false // TODO show if at least one message is failed
                                    // NOTE this action should be *hidden* if it is not applicable
                     onClicked: messages.messageAction(messages.resendSelected)
+                }
+
+                IconButton {
+                    width: visible ? Theme.itemSizeSmall : 0; height: width
+                    icon.source: "image://theme/icon-m-file-note-dark"
+                    //: Message action description
+                    //% "Transcribe %n message(s)"
+                    onPressedChanged: infoLabel.toggleHint(
+                                          qsTrId("whisperfish-message-action-resend", _selectedCount))
+                    visible: dbusSpeechInterface.available
+                    onClicked: messages.messageAction(messages.transcribeSelected)
                 }
             }
         }

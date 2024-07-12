@@ -677,6 +677,8 @@ pub struct Attachment {
     pub cdn_number: Option<i32>,
     pub caption: Option<String>,
     pub pointer: Option<Vec<u8>>,
+
+    pub transcription: Option<String>,
 }
 
 impl Display for Attachment {
@@ -1517,6 +1519,7 @@ mod tests {
             cdn_number: None,
             caption: Some("Funny cat!".into()),
             pointer: None,
+            transcription: None,
         }
     }
 

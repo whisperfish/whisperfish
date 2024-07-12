@@ -38,7 +38,8 @@ ListItem {
 
     property string fullMessageText: ""
 
-    readonly property string _message: fullMessageText !== "" ? fullMessageText : (hasData ? modelData.styledMessage.trim() : '')
+    readonly property string _message: fullMessageText !== "" ? fullMessageText : (hasData ? (modelData.styledMessage.trim() !== "" ? modelData.styledMessage.trim() : (isAudioTranscription ? ("🎤 <i>" + attachmentsLoader.audioTranscription + "</i>") : "") ) : '')
+    readonly property bool isAudioTranscription: attachmentsLoader.audioTranscription !== "" && hasData && modelData.styledMessage.trim() === ""
     // TODO implement shared locations (show a map etc.; is probably not an attachment)
 
     Loader {
@@ -238,6 +239,7 @@ ListItem {
         Item { width: 1; height: quoteItem.shown ? Theme.paddingSmall : 0 }
 
         AttachmentsLoader {
+            id: attachmentsLoader
             asynchronous: true
             enabled: hasAttachments && !isRemoteDeleted
             visible: enabled

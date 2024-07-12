@@ -30,7 +30,7 @@ stages:
       - cargo/git/db/
   before_script:
     - apt-get update
-    - apt-get install -y --no-install-recommends libsqlcipher-dev qtbase5-dev qtbase5-private-dev qt5-qmake cmake qtdeclarative5-dev qtbase5-dev-tools qttools5-dev-tools protobuf-compiler libdbus-1-dev libqt5opengl5-dev libssl-dev
+    - apt-get install -y --no-install-recommends libsqlcipher-dev qtbase5-dev qtbase5-private-dev qt5-qmake cmake qtdeclarative5-dev qtbase5-dev-tools qttools5-dev-tools protobuf-compiler libdbus-1-dev libqt5opengl5-dev libssl-dev libgstreamer1.0-dev
     - cargo --version
     - rustc --version
 
