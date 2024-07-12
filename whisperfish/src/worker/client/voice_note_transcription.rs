@@ -258,6 +258,7 @@ impl TranscriptionTask {
                 _ = interval.fuse() => {
                     // Call KeepAliveTask(task_id)
                     tracing::trace!("Sending keep-alive for task {}", self.task_id);
+                    #[allow(clippy::let_unit_value)]
                     let _: () = proxy.method_call("org.mkiol.Speech", "KeepAliveTask", (self.task_id,)).await?;
                 }
                 signal = decoded.next().fuse() => {

@@ -815,7 +815,7 @@ impl<O: Observable> Storage<O> {
 
         let write_lock = self.self_recipient.write();
         if write_lock.is_ok() {
-            *write_lock.unwrap() = self_rcpt.clone();
+            write_lock.unwrap().clone_from(&self_rcpt);
         }
 
         self_rcpt
