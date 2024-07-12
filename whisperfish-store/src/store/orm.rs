@@ -225,7 +225,7 @@ impl Default for Message {
             sender_recipient_id: Default::default(),
             received_timestamp: Default::default(),
             sent_timestamp: Default::default(),
-            server_timestamp: NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+            server_timestamp: Default::default(),
             is_read: Default::default(),
             is_outbound: Default::default(),
             flags: Default::default(),

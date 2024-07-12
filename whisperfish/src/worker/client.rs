@@ -24,6 +24,7 @@ use libsignal_service::sender::SendMessageResult;
 use tracing_futures::Instrument;
 use uuid::Uuid;
 use whisperfish_store::millis_to_naive_chrono;
+use whisperfish_store::naive_chrono_to_millis;
 use whisperfish_store::orm;
 use whisperfish_store::orm::shorten;
 use whisperfish_store::orm::MessageType;
@@ -637,7 +638,7 @@ impl ClientActor {
             } else {
                 tracing::warn!(
                     "Message {} not found for deletion!",
-                    target_sent_timestamp.timestamp_millis()
+                    naive_chrono_to_millis(target_sent_timestamp)
                 );
             }
         }
@@ -1416,8 +1417,7 @@ impl Handler<QueueMessage> for ClientActor {
             session_id: msg.session_id,
             source_addr: storage.fetch_self_service_address_aci(),
             text: msg.message,
-            timestamp: chrono::Utc::now().naive_utc(),
-            quote_timestamp: quote.map(|msg| msg.server_timestamp.timestamp_millis() as u64),
+            quote_timestamp: quote.map(|msg| naive_chrono_to_millis(msg.server_timestamp)),
             expires_in: session.expiring_message_timeout,
             ..crate::store::NewMessage::new_outgoing()
         });
@@ -1512,7 +1512,7 @@ impl Handler<SendMessage> for ClientActor {
                 }
                 let group_v2 = session.group_context_v2();
 
-                let timestamp = msg.server_timestamp.timestamp_millis() as u64;
+                let timestamp = naive_chrono_to_millis(msg.server_timestamp);
 
                 let quote = msg
                     .quote_id
@@ -1526,7 +1526,7 @@ impl Handler<SendMessage> for ClientActor {
                             .and_then(|x| storage.fetch_recipient_by_id(x));
 
                         Quote {
-                            id: Some(quoted_message.server_timestamp.timestamp_millis() as u64),
+                            id: Some(naive_chrono_to_millis(quoted_message.server_timestamp)),
                             author_aci: quote_sender.as_ref().and_then(|r| r.uuid.as_ref().map(Uuid::to_string)),
                             text: quoted_message.text.clone(),
 
@@ -1935,9 +1935,9 @@ impl Handler<SendReaction> for ClientActor {
                         emoji: Some(emoji.clone()),
                         remove: Some(remove),
                         target_author_aci: sender_recipient.uuid.map(|u| u.to_string()),
-                        target_sent_timestamp: Some(
-                            message.server_timestamp.timestamp_millis() as u64
-                        ),
+                        target_sent_timestamp: Some(naive_chrono_to_millis(
+                            message.server_timestamp,
+                        )),
                     }),
                     ..Default::default()
                 };
@@ -3142,7 +3142,7 @@ impl Handler<DeleteMessageForAll> for ClientActor {
                 profile_key,
                 timestamp: Some(now),
                 delete: Some(Delete {
-                    target_sent_timestamp: Some(message.server_timestamp.timestamp_millis() as u64),
+                    target_sent_timestamp: Some(naive_chrono_to_millis(message.server_timestamp)),
                 }),
                 required_protocol_version: Some(4),
                 ..Default::default()

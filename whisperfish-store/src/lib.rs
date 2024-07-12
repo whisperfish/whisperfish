@@ -12,10 +12,26 @@ pub mod store;
 
 pub use self::store::*;
 
+use chrono::Timelike;
 use diesel::connection::SimpleConnection;
 
+/// Convert milliseconds timestamp to a NaiveDateTime.
 pub fn millis_to_naive_chrono(ts: u64) -> chrono::NaiveDateTime {
-    chrono::NaiveDateTime::from_timestamp_opt((ts / 1000) as i64, ((ts % 1000) * 1_000_000) as u32)
+    chrono::DateTime::from_timestamp_millis(ts as i64)
+        .unwrap()
+        .naive_utc()
+}
+
+/// Converts a NaiveDateTime to a milliseconds timestamp.
+pub fn naive_chrono_to_millis(naive: chrono::NaiveDateTime) -> u64 {
+    naive.and_utc().timestamp_millis() as u64
+}
+
+/// Round down the NaiveDateTime to its current millisecond.
+/// Or, zero out the microseconds and the nanoseconds.
+pub fn naive_chrono_rounded_down(naive: chrono::NaiveDateTime) -> chrono::NaiveDateTime {
+    naive
+        .with_nanosecond(naive.nanosecond() - naive.nanosecond() % 1_000_000)
         .unwrap()
 }
 

@@ -14,9 +14,9 @@ use self::orm::{AugmentedMessage, MessageType, StoryType, UnidentifiedAccessMode
 use crate::body_ranges::AssociatedValue;
 use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
-use crate::schema;
 use crate::store::observer::{Observable, PrimaryKey};
 use crate::{config::SignalConfig, millis_to_naive_chrono};
+use crate::{naive_chrono_rounded_down, schema};
 use anyhow::Context;
 use chrono::prelude::*;
 use diesel::dsl::sql;
@@ -3022,9 +3022,8 @@ impl<O: Observable> Storage<O> {
             })
             .map(|message| message.id);
 
-        // The server time needs to be the rounded-down version;
-        // chrono does nanoseconds.
-        let server_time = millis_to_naive_chrono(new_message.timestamp.timestamp_millis() as u64);
+        // The server time needs to be the rounded-down version; chrono does nanoseconds.
+        let server_time = naive_chrono_rounded_down(new_message.timestamp);
         tracing::trace!("Creating message for timestamp {}", server_time);
 
         let edit_id = new_message.edit.as_ref().map(|x| x.id);

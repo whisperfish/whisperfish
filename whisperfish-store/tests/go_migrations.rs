@@ -19,6 +19,15 @@ use whisperfish_store::schema::migrations as schemas;
 
 type MigrationList = Vec<Box<dyn Migration<Sqlite> + 'static>>;
 
+fn milliseconds_at(yr: i32, mo: u32, day: u32, h: u32, m: u32, s: u32, ms: u32) -> i64 {
+    NaiveDate::from_ymd_opt(yr, mo, day)
+        .unwrap()
+        .and_hms_milli_opt(h, m, s, ms)
+        .unwrap()
+        .and_utc()
+        .timestamp_millis()
+}
+
 mod original_data {
     use super::*;
 
@@ -29,11 +38,7 @@ mod original_data {
         NewSession {
             source: "+32475000000".into(),
             message: "Hoh.".into(),
-            timestamp: NaiveDate::from_ymd_opt(2016, 7, 9)
-                .unwrap()
-                .and_hms_milli_opt(9, 10, 11, 325)
-                .unwrap()
-                .timestamp_millis(),
+            timestamp: milliseconds_at(2016, 7, 9, 9, 10, 11, 325),
             sent: true,
             received: true,
             unread: true,
@@ -50,11 +55,7 @@ mod original_data {
         NewSession {
             source: "+32474000000".into(),
             message: "Heh.".into(),
-            timestamp: NaiveDate::from_ymd_opt(2016, 7, 8)
-                .unwrap()
-                .and_hms_milli_opt(9, 10, 11, 325)
-                .unwrap()
-                .timestamp_millis(),
+            timestamp: milliseconds_at(2016, 7, 8, 9, 10, 11, 325),
             sent: true,
             received: true,
             unread: true,
@@ -71,11 +72,7 @@ mod original_data {
         NewSession {
             source: "".into(),
             message: "Heh.".into(),
-            timestamp: NaiveDate::from_ymd_opt(2016, 7, 8)
-                .unwrap()
-                .and_hms_milli_opt(9, 10, 11, 325)
-                .unwrap()
-                .timestamp_millis(),
+            timestamp: milliseconds_at(2016, 7, 8, 9, 10, 11, 325),
             sent: true,
             received: true,
             unread: true,
@@ -92,11 +89,7 @@ mod original_data {
         NewSession {
             source: "".into(),
             message: "Heh.".into(),
-            timestamp: NaiveDate::from_ymd_opt(2016, 7, 8)
-                .unwrap()
-                .and_hms_milli_opt(9, 10, 11, 325)
-                .unwrap()
-                .timestamp_millis(),
+            timestamp: milliseconds_at(2016, 7, 8, 9, 10, 11, 325),
             sent: true,
             received: true,
             unread: true,
@@ -466,11 +459,7 @@ fn direct_session_with_messages(original_go_db: SqliteConnection) {
             session_id: Some(ids[0]),
             source: "+32475000000".into(),
             text: "Hoh.".into(),
-            timestamp: NaiveDate::from_ymd_opt(2016, 7, 9)
-                .unwrap()
-                .and_hms_milli_opt(9, 10, 11, 325)
-                .unwrap()
-                .timestamp_millis(),
+            timestamp: milliseconds_at(2016, 7, 9, 9, 10, 11, 325),
             sent: true,
             received: false,
             flags: 0,
@@ -484,11 +473,7 @@ fn direct_session_with_messages(original_go_db: SqliteConnection) {
             session_id: Some(ids[0]),
             source: "+32475000000".into(),
             text: "Hoh.".into(),
-            timestamp: NaiveDate::from_ymd_opt(2016, 7, 9)
-                .unwrap()
-                .and_hms_milli_opt(9, 10, 11, 325)
-                .unwrap()
-                .timestamp_millis(),
+            timestamp: milliseconds_at(2016, 7, 9, 9, 10, 11, 325),
             sent: true,
             received: true,
             flags: 0,
@@ -502,11 +487,7 @@ fn direct_session_with_messages(original_go_db: SqliteConnection) {
             session_id: Some(ids[0]),
             source: "+32475000000".into(),
             text: "Hoh. Attachment!".into(),
-            timestamp: NaiveDate::from_ymd_opt(2016, 7, 9)
-                .unwrap()
-                .and_hms_milli_opt(9, 10, 11, 326)
-                .unwrap()
-                .timestamp_millis(),
+            timestamp: milliseconds_at(2016, 7, 9, 9, 10, 11, 326),
             sent: true,
             received: true,
             flags: 0,
@@ -610,11 +591,7 @@ fn group_sessions_with_messages(original_go_db: SqliteConnection) {
             session_id: Some(ids[0]),
             source: "+32475000000".into(),
             text: "Hoh.".into(),
-            timestamp: NaiveDate::from_ymd_opt(2016, 7, 9)
-                .unwrap()
-                .and_hms_milli_opt(9, 10, 11, 325)
-                .unwrap()
-                .timestamp_millis(),
+            timestamp: milliseconds_at(2016, 7, 9, 9, 10, 11, 325),
             sent: true,
             received: false,
             flags: 0,
@@ -628,11 +605,7 @@ fn group_sessions_with_messages(original_go_db: SqliteConnection) {
             session_id: Some(ids[1]),
             source: "+32475000000".into(),
             text: "Hoh.".into(),
-            timestamp: NaiveDate::from_ymd_opt(2016, 7, 9)
-                .unwrap()
-                .and_hms_milli_opt(9, 10, 11, 325)
-                .unwrap()
-                .timestamp_millis(),
+            timestamp: milliseconds_at(2016, 7, 9, 9, 10, 11, 325),
             sent: true,
             received: true,
             flags: 0,
@@ -686,11 +659,7 @@ fn group_message_without_sender_nor_recipient(original_go_db: SqliteConnection) 
         session_id: Some(ids[0]),
         source: "".into(),
         text: "Hoh.".into(),
-        timestamp: NaiveDate::from_ymd_opt(2016, 7, 9)
-            .unwrap()
-            .and_hms_milli_opt(9, 10, 11, 325)
-            .unwrap()
-            .timestamp_millis(),
+        timestamp: milliseconds_at(2016, 7, 9, 9, 10, 11, 325),
         sent: false,
         received: true,
         flags: 0,
@@ -750,11 +719,7 @@ fn timestamp_conversion(original_go_db: SqliteConnection) {
         session_id,
         source: "+32475".into(),
         text: "Hoh.".into(),
-        timestamp: NaiveDate::from_ymd_opt(2016, 7, 9)
-            .unwrap()
-            .and_hms_milli_opt(9, 10, 11, 325)
-            .unwrap()
-            .timestamp_millis(),
+        timestamp: milliseconds_at(2016, 7, 9, 9, 10, 11, 325),
         sent: true,
         received: false,
         flags: 0,

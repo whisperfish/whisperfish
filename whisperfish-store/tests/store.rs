@@ -11,7 +11,7 @@ use std::future::Future;
 use std::sync::Arc;
 use whisperfish_store::config::SignalConfig;
 use whisperfish_store::orm::{StoryType, UnidentifiedAccessMode};
-use whisperfish_store::{GroupV1, NewMessage};
+use whisperfish_store::{naive_chrono_to_millis, GroupV1, NewMessage};
 
 #[rstest]
 #[tokio::test]
@@ -762,7 +762,7 @@ async fn test_recipient_actions() {
         emoji: Some("❤".into()),
         remove: Some(false),
         target_author_aci: Some(recip.uuid.unwrap().to_string()),
-        target_sent_timestamp: Some(msg.server_timestamp.timestamp_millis() as _),
+        target_sent_timestamp: Some(naive_chrono_to_millis(msg.server_timestamp)),
     };
     let data_msg = DataMessage {
         body: None,
@@ -771,7 +771,7 @@ async fn test_recipient_actions() {
         flags: None,
         expire_timer: None,
         profile_key: Some([0].to_vec()),
-        timestamp: Some(msg.server_timestamp.timestamp_millis() as _),
+        timestamp: Some(naive_chrono_to_millis(msg.server_timestamp)),
         quote: None,
         contact: [].to_vec(),
         preview: [].to_vec(),
