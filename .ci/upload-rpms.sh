@@ -18,11 +18,12 @@ if [ -n "$CI_COMMIT_TAG" ] || [[ "$CI_COMMIT_BRANCH" == "main" ]]; then
         RPM_PATH="${RPM_PATH[0]}"
         RPM=$(basename $RPM_PATH)
 
-        URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/harbour-whisperfish/$VERSION/$RPM"
+        URL="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/harbour-whisperfish/$VERSION/$RPM"
         echo Posting to $URL
 
         # Upload to Gitlab
-        curl --header "PRIVATE-TOKEN: $PRIVATE_TOKEN" \
+        curl --fail-with-body \
+             --header "JOB-TOKEN: $CI_JOB_TOKEN" \
              --upload-file "$RPM_PATH" \
              $URL
     done
