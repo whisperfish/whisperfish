@@ -336,8 +336,7 @@ test:stable:diesel-schema:
     # Diesel is not running a long time/often. We don't need the release
     # version here and the debug version is enough. We save a lot of
     # compilation time for small overhead when running the binary.
-    # XXX Rust 1.78
-    - cargo install -f --debug diesel_cli --version =2.1 --features "sqlite-bundled"
+    - cargo install -f --debug diesel_cli --version "^2.2" --features "sqlite-bundled"
     - export PATH="$CARGO_HOME/bin:$PATH"
     - export DATABASE_URL=test_whisperfish.db
     - diesel setup
