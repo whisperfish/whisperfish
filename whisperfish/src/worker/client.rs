@@ -19,6 +19,7 @@ use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
 use libsignal_service::proto::sync_message::Configuration;
+use libsignal_service::proto::sync_message::Keys;
 use libsignal_service::proto::sync_message::Sent;
 use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::push_service::ServiceIdType;
@@ -921,8 +922,12 @@ impl ClientActor {
                 RequestType::Configuration => {
                     sender.send_configuration(&local_addr, configuration).await?;
                 },
+                RequestType::Keys => {
+                    let master = storage.fetch_or_create_master_key().inner;
+                    let storage_service = storage.fetch_storage_service_key().inner;
+                    sender.send_keys(&local_addr, Keys { master: Some(master.into()), storage_service: Some(storage_service.into()) }).await?;
+                }
                 // Type::Blocked
-                // Type::Keys
                 // Type::PniIdentity
                 _ => {
                     tracing::trace!("Unimplemented sync request: {:#?}", req);
