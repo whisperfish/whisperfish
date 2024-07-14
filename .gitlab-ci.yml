@@ -332,18 +332,20 @@ test:stable:diesel-schema:
   needs:
     - build:host:stable
   script:
+    - rustup override set 1.78.0
     - rustup component add rustfmt
     # Diesel is not running a long time/often. We don't need the release
     # version here and the debug version is enough. We save a lot of
     # compilation time for small overhead when running the binary.
-    # XXX Rust 1.78
-    - cargo install -f --debug diesel_cli --version =2.1 --features "sqlite-bundled"
+    - cargo install -f --debug diesel_cli --version "^2.2" --features "sqlite-bundled"
     - export PATH="$CARGO_HOME/bin:$PATH"
     - export DATABASE_URL=test_whisperfish.db
     - diesel setup
     - diesel migration run
     - diesel print-schema > whisperfish-store/src/schema.rs
+    - diesel print-schema --schema-key protocol > whisperfish-store/src/schema/protocol.rs
     - cargo fmt -- --check whisperfish-store/src/schema.rs
+    - cargo fmt -- --check whisperfish-store/src/schema/protocol.rs
   # Diesel does not need to access build artifacts of other stages.
   cache: {}
   rules:

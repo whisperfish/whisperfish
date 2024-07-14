@@ -5,3 +5,24 @@
 file = "whisperfish-store/src/schema.rs"
 patch_file = "whisperfish-store/src/schema.patch"
 custom_type_derives = ["diesel::query_builder::QueryId"]
+filter.except_tables = [
+    "identity_records",
+    "kyber_prekeys",
+    "prekeys",
+    "sender_key_records",
+    "session_records",
+    "signed_prekeys",
+]
+
+[print_schema.protocol]
+file = "whisperfish-store/src/schema/protocol.rs"
+patch_file = "whisperfish-store/src/schema/protocol.patch"
+custom_type_derives = ["diesel::query_builder::QueryId"]
+filter.only_tables = [
+    "identity_records",
+    "kyber_prekeys",
+    "prekeys",
+    "sender_key_records",
+    "session_records",
+    "signed_prekeys",
+]

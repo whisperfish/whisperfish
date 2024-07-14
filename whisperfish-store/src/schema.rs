@@ -1,5 +1,7 @@
 // @generated automatically by Diesel CLI.
 pub mod migrations;
+pub mod protocol;
+pub use protocol::*;
 
 diesel::table! {
     attachments (id) {
@@ -102,29 +104,6 @@ diesel::table! {
 
 diesel::table! {
     use diesel::sql_types::*;
-    use crate::store::orm::IdentityMapping;
-
-    identity_records (address) {
-        address -> Text,
-        record -> Binary,
-        identity -> IdentityMapping,
-    }
-}
-
-diesel::table! {
-    use diesel::sql_types::*;
-    use crate::store::orm::IdentityMapping;
-
-    kyber_prekeys (id) {
-        id -> Integer,
-        record -> Binary,
-        identity -> IdentityMapping,
-        is_last_resort -> Bool,
-    }
-}
-
-diesel::table! {
-    use diesel::sql_types::*;
     use crate::store::orm::MessageTypeMapping;
 
     messages (id) {
@@ -153,17 +132,6 @@ diesel::table! {
         original_message_id -> Nullable<Integer>,
         revision_number -> Integer,
         message_type -> Nullable<MessageTypeMapping>,
-    }
-}
-
-diesel::table! {
-    use diesel::sql_types::*;
-    use crate::store::orm::IdentityMapping;
-
-    prekeys (id) {
-        id -> Integer,
-        record -> Binary,
-        identity -> IdentityMapping,
     }
 }
 
@@ -220,32 +188,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    use diesel::sql_types::*;
-    use crate::store::orm::IdentityMapping;
-
-    sender_key_records (address, device, distribution_id) {
-        address -> Text,
-        device -> Integer,
-        distribution_id -> Text,
-        record -> Binary,
-        created_at -> Timestamp,
-        identity -> IdentityMapping,
-    }
-}
-
-diesel::table! {
-    use diesel::sql_types::*;
-    use crate::store::orm::IdentityMapping;
-
-    session_records (address, device_id) {
-        address -> Text,
-        device_id -> Integer,
-        record -> Binary,
-        identity -> IdentityMapping,
-    }
-}
-
-diesel::table! {
     sessions (id) {
         id -> Integer,
         direct_message_recipient_id -> Nullable<Integer>,
@@ -257,17 +199,6 @@ diesel::table! {
         is_muted -> Bool,
         draft -> Nullable<Text>,
         expiring_message_timeout -> Nullable<Integer>,
-    }
-}
-
-diesel::table! {
-    use diesel::sql_types::*;
-    use crate::store::orm::IdentityMapping;
-
-    signed_prekeys (id) {
-        id -> Integer,
-        record -> Binary,
-        identity -> IdentityMapping,
     }
 }
 
@@ -329,17 +260,11 @@ diesel::allow_tables_to_appear_in_same_query!(
     group_v1s,
     group_v2_members,
     group_v2s,
-    identity_records,
-    kyber_prekeys,
     messages,
-    prekeys,
     reactions,
     receipts,
     recipients,
-    sender_key_records,
-    session_records,
     sessions,
-    signed_prekeys,
     stickers,
     story_sends,
 );
