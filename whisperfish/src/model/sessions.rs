@@ -55,36 +55,10 @@ impl EventObserving for SessionsImpl {
 
     fn observe(&mut self, ctx: Self::Context, event: Event) {
         let storage = ctx.storage();
-        // Find the correct session and update the latest message
-        let session_id = event
-            .relation_key_for(schema::sessions::table)
-            .and_then(|x| x.as_i32());
-        let message_id = event
-            .relation_key_for(schema::messages::table)
-            .and_then(|x| x.as_i32());
-        let attachment_id = event
-            .relation_key_for(schema::attachments::table)
-            .and_then(|x| x.as_i32());
-        let recipient_id = event
-            .relation_key_for(schema::recipients::table)
-            .and_then(|x| x.as_i32());
-        if session_id.is_some()
-            || message_id.is_some()
-            || attachment_id.is_some()
-            || recipient_id.is_some()
-        {
-            self.session_list
-                .pinned()
-                .borrow_mut()
-                .observe(&storage, event);
-            return;
-        }
-
-        tracing::trace!(
-            "Falling back to reloading the whole Sessions model for event {:?}",
-            event
-        );
-        self.session_list.pinned().borrow_mut().load_all(storage)
+        self.session_list
+            .pinned()
+            .borrow_mut()
+            .observe(storage, event);
     }
 
     fn interests(&self) -> Vec<crate::store::observer::Interest> {
@@ -124,7 +98,8 @@ impl SessionListModel {
     }
 
     #[tracing::instrument(level = "trace", skip(self))]
-    fn observe(&mut self, storage: &Storage, event: Event) {
+    fn observe(&mut self, storage: Storage, event: Event) {
+        // Find the correct session and update the latest message
         let session_id = event
             .relation_key_for(schema::sessions::table)
             .and_then(|x| x.as_i32());
@@ -137,6 +112,18 @@ impl SessionListModel {
         let recipient_id = event
             .relation_key_for(schema::recipients::table)
             .and_then(|x| x.as_i32());
+        if session_id.is_none()
+            && message_id.is_none()
+            && attachment_id.is_none()
+            && recipient_id.is_none()
+        {
+            tracing::trace!(
+                "Falling back to reloading the whole Sessions model for event {:?}",
+                event
+            );
+            self.load_all(storage);
+            return;
+        }
 
         if let Some(recipient_id) = recipient_id {
             if let Some(new_recipient) = storage.fetch_recipient_by_id(recipient_id) {
