@@ -62,8 +62,8 @@ impl Settings {
     pub const HTTP_PASSWORD: &'static str = "http_password";
     pub const HTTP_SIGNALING_KEY: &'static str = "http_signaling_key";
 
-    pub const MASTER_KEY: &str = "master_key";
-    pub const STORAGE_SERVICE_KEY: &str = "storage_service_key";
+    pub const MASTER_KEY: &'static str = "master_key";
+    pub const STORAGE_SERVICE_KEY: &'static str = "storage_service_key";
 
     pub const VERBOSE: &'static str = "verbose";
     pub const LOGFILE: &'static str = "logfile";
@@ -1695,6 +1695,65 @@ impl<O: Observable> Storage<O> {
         }
 
         pointers
+    }
+
+    /// Fetch the master key from database.
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_or_create_master_key(&self) -> MasterKey {
+        use crate::schema::settings;
+        use base64::prelude::*;
+
+        let row: Option<String> = settings::table
+            .select(settings::value)
+            .filter(settings::key.eq(Settings::MASTER_KEY))
+            .first(&mut *self.db())
+            .optional()
+            .expect("db");
+        if let Some(key) = row {
+            let key = BASE64_STANDARD.decode(key).unwrap();
+            MasterKey::from_slice(&key).unwrap()
+        } else {
+            tracing::info!("Creating master key");
+            let key = MasterKey::generate();
+            let key_base64 = BASE64_STANDARD.encode(key.inner);
+            diesel::update(settings::table.filter(settings::key.eq(Settings::MASTER_KEY)))
+                .set(settings::value.eq(key_base64))
+                .execute(&mut *self.db())
+                .expect("db");
+            key
+        }
+    }
+
+    /// Fetches the storage service key.
+    ///
+    /// Note: This will create the master key if it doesn't exist.
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_storage_service_key(&self) -> StorageServiceKey {
+        use crate::schema::settings;
+        use base64::prelude::*;
+
+        let row: Option<String> = settings::table
+            .select(settings::value)
+            .filter(settings::key.eq(Settings::STORAGE_SERVICE_KEY))
+            .first(&mut *self.db())
+            .optional()
+            .expect("db");
+        if let Some(key) = row {
+            let key = BASE64_STANDARD.decode(key).unwrap();
+            return StorageServiceKey::from_slice(&key).unwrap();
+        }
+
+        tracing::info!("Creating storage service key");
+
+        let master_key = self.fetch_or_create_master_key();
+        let key = StorageServiceKey::from_master_key(&master_key);
+
+        let key_base64 = BASE64_STANDARD.encode(key.inner);
+        diesel::update(settings::table.filter(settings::key.eq(Settings::STORAGE_SERVICE_KEY)))
+            .set(settings::value.eq(key_base64))
+            .execute(&mut *self.db())
+            .expect("db");
+        key
     }
 
     /// Get all sessions in no particular order.

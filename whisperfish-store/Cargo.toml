@@ -14,6 +14,7 @@ harness = false
 aes = "0.8"
 anyhow = "1.0"
 async-trait = "0.1"
+base64 = "0.21"
 bincode = "1.2.1"
 cbc = "0.1"
 cipher = "0.4"
