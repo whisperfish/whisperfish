@@ -342,7 +342,9 @@ test:stable:diesel-schema:
     - diesel setup
     - diesel migration run
     - diesel print-schema > whisperfish-store/src/schema.rs
+    - diesel print-schema --schema-key protocol > whisperfish-store/src/schema/protocol.rs
     - cargo fmt -- --check whisperfish-store/src/schema.rs
+    - cargo fmt -- --check whisperfish-store/src/schema/protocol.rs
   # Diesel does not need to access build artifacts of other stages.
   cache: {}
   rules:
