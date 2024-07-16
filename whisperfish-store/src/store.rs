@@ -911,7 +911,7 @@ impl<O: Observable> Storage<O> {
 
     #[tracing::instrument(
         skip(self, addr),
-        fields(addr = addr.to_service_id())
+        fields(address = addr.to_service_id())
     )]
     pub fn fetch_recipient(&self, addr: ServiceAddress) -> Option<orm::Recipient> {
         use crate::schema::recipients::dsl::*;
