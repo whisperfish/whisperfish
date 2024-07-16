@@ -581,16 +581,15 @@ impl Recipient {
     }
 
     pub fn e164_or_address(&self) -> String {
-        self.e164
-            .as_ref()
-            .map(PhoneNumber::to_string)
-            .or_else(|| self.uuid.as_ref().map(Uuid::to_string))
-            .or_else(|| {
-                self.pni
-                    .as_ref()
-                    .map(|u| "PNI:".to_string() + u.to_string().as_str())
-            })
-            .expect("either e164, aci or pni")
+        if let Some(e164) = &self.e164 {
+            e164.to_string()
+        } else if let Some(uuid) = &self.uuid {
+            uuid.to_string()
+        } else if let Some(pni) = &self.pni {
+            "PNI:".to_string() + pni.to_string().as_str()
+        } else {
+            panic!("either e164, aci or pni");
+        }
     }
 
     pub fn name(&self) -> Cow<'_, str> {
