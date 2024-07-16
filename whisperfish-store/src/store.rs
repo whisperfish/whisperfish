@@ -867,16 +867,17 @@ impl<O: Observable> Storage<O> {
     pub fn mark_recipient_needs_pni_signature(&self, recipient: &orm::Recipient, val: bool) {
         use crate::schema::recipients::dsl::*;
 
+        // If updating self, invalidate the cache
+        if recipient.uuid == self.config.get_aci() {
+            tracing::warn!("Not marking self as needing PNI signature");
+            return;
+        }
+
         let affected = diesel::update(recipients)
             .set(needs_pni_signature.eq(val))
             .filter(id.eq(recipient.id))
             .execute(&mut *self.db())
             .expect("db");
-
-        // If updating self, invalidate the cache
-        if recipient.uuid == self.config.get_aci() {
-            self.invalidate_self_recipient();
-        }
 
         if affected > 0 {
             self.observe_update(recipients, recipient.id);
