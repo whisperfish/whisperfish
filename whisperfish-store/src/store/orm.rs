@@ -444,7 +444,7 @@ impl From<&str> for Identity {
         match kind {
             "aci" => Identity::Aci,
             "pni" => Identity::Pni,
-            _ => unreachable!(),
+            _ => panic!("Identity must be \"aci\" or \"pni\""),
         }
     }
 }
