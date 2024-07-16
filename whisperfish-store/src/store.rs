@@ -1343,8 +1343,8 @@ impl<O: Observable> Storage<O> {
         }
 
         let criteria_count = [e164.is_some(), aci.is_some(), pni.is_some()]
-            .iter()
-            .filter(|c| **c)
+            .into_iter()
+            .filter(|c| *c)
             .count();
         let (by_aci, by_pni, by_e164) =
             Self::fetch_separate_recipients(db, aci.as_ref(), pni.as_ref(), e164.as_ref())?;
