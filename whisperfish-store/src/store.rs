@@ -2376,12 +2376,13 @@ impl<O: Observable> Storage<O> {
             // We'd love to retrieve the whole session, but the Session object is a joined object.
             .returning(id)
             .get_result::<i32>(&mut *self.db())
-            .unwrap();
+            .expect("insert session by e164");
 
         self.observe_insert(sessions, session_id)
             .with_relation(schema::recipients::table, recipient.id);
 
-        self.fetch_session_by_id(session_id).unwrap()
+        self.fetch_session_by_id(session_id)
+            .expect("session by id (via e164 insert)")
     }
 
     #[tracing::instrument(skip(self, addr))]
@@ -2398,12 +2399,13 @@ impl<O: Observable> Storage<O> {
             // We'd love to retrieve the whole session, but the Session object is a joined object.
             .returning(id)
             .get_result::<i32>(&mut *self.db())
-            .unwrap();
+            .expect("insert session by service address");
 
         self.observe_insert(sessions, session_id)
             .with_relation(schema::recipients::table, recipient.id);
 
-        self.fetch_session_by_id(session_id).unwrap()
+        self.fetch_session_by_id(session_id)
+            .expect("session by id (via service address insert)")
     }
 
     /// Fetches recipient's DM session, or creates the session.
@@ -2418,13 +2420,13 @@ impl<O: Observable> Storage<O> {
             .values((direct_message_recipient_id.eq(recipient_id),))
             .returning(id)
             .get_result::<i32>(&mut *self.db())
-            .unwrap();
+            .expect("insert session by id");
 
         self.observe_insert(sessions, session_id)
             .with_relation(schema::recipients::table, recipient_id);
 
         self.fetch_session_by_id(session_id)
-            .expect("a session has been inserted")
+            .expect("session by id (via recipient id insert)")
     }
 
     pub fn fetch_or_insert_session_by_group_v1(&self, group: &GroupV1) -> orm::Session {
