@@ -1846,14 +1846,11 @@ impl<O: Observable> Storage<O> {
             rcpt_pni.map(Uuid::to_string)
         );
         use crate::schema::recipients;
-        match diesel::update(recipients::table)
+        diesel::update(recipients::table)
             .filter(recipients::id.eq(rcpt_id))
             .set(recipients::pni.eq(rcpt_pni.map(Uuid::to_string)))
-            .execute(db)
-        {
-            Ok(_) => Ok(rcpt_id),
-            Err(e) => Err(e),
-        }
+            .returning(recipients::id)
+            .get_result(db)
     }
 
     fn set_aci_inner(
@@ -1867,14 +1864,11 @@ impl<O: Observable> Storage<O> {
             rcpt_aci.map(Uuid::to_string)
         );
         use crate::schema::recipients;
-        match diesel::update(recipients::table)
+        diesel::update(recipients::table)
             .filter(recipients::id.eq(rcpt_id))
             .set(recipients::uuid.eq(rcpt_aci.map(Uuid::to_string)))
-            .execute(db)
-        {
-            Ok(_) => Ok(rcpt_id),
-            Err(e) => Err(e),
-        }
+            .returning(recipients::id)
+            .get_result(db)
     }
 
     fn set_e164_inner(
@@ -1888,14 +1882,11 @@ impl<O: Observable> Storage<O> {
             rcpt_e164.map(PhoneNumber::to_string)
         );
         use crate::schema::recipients;
-        match diesel::update(recipients::table)
+        diesel::update(recipients::table)
             .filter(recipients::id.eq(rcpt_id))
             .set(recipients::e164.eq(rcpt_e164.map(PhoneNumber::to_string)))
-            .execute(db)
-        {
-            Ok(_) => Ok(rcpt_id),
-            Err(e) => Err(e),
-        }
+            .returning(recipients::id)
+            .get_result(db)
     }
 
     fn insert_recipient_inner(
@@ -1911,7 +1902,7 @@ impl<O: Observable> Storage<O> {
             rcpt_e164.map(PhoneNumber::to_string)
         );
         use crate::schema::recipients;
-        match diesel::insert_into(recipients::table)
+        diesel::insert_into(recipients::table)
             .values((
                 recipients::uuid.eq(rcpt_aci.map(Uuid::to_string)),
                 recipients::pni.eq(rcpt_pni.map(Uuid::to_string)),
@@ -1919,10 +1910,6 @@ impl<O: Observable> Storage<O> {
             ))
             .returning(recipients::id)
             .get_result(db)
-        {
-            Ok(id) => Ok(id),
-            Err(e) => Err(e),
-        }
     }
 
     #[tracing::instrument(skip(self))]
