@@ -1,5 +1,6 @@
 use crate::diesel::connection::SimpleConnection;
 use crate::orm;
+use crate::orm::Recipient;
 use crate::schema;
 use crate::TrustLevel;
 use diesel::prelude::*;
@@ -18,20 +19,27 @@ enum RecipientOperation {
     Create(Option<Uuid>, Option<Uuid>, Option<PhoneNumber>),
 }
 
-#[allow(clippy::type_complexity)]
+struct MergeRecipients {
+    pub by_aci: Option<Recipient>,
+    pub by_e164: Option<Recipient>,
+    pub by_pni: Option<Recipient>,
+}
+
+#[derive(Default)]
+pub struct RecipientResults {
+    pub id: Option<i32>,
+    pub aci: Option<Uuid>,
+    pub pni: Option<Uuid>,
+    pub e164: Option<PhoneNumber>,
+    pub changed: bool,
+}
+
 fn fetch_separate_recipients(
     db: &mut SqliteConnection,
     aci: Option<&Uuid>,
     pni: Option<&Uuid>,
     e164: Option<&PhoneNumber>,
-) -> Result<
-    (
-        Option<orm::Recipient>,
-        Option<orm::Recipient>,
-        Option<orm::Recipient>,
-    ),
-    diesel::result::Error,
-> {
+) -> Result<MergeRecipients, diesel::result::Error> {
     use crate::schema::recipients;
     let by_aci: Option<orm::Recipient> = aci
         .map(|u| {
@@ -62,10 +70,13 @@ fn fetch_separate_recipients(
         .transpose()?
         .flatten();
 
-    Ok((by_aci, by_pni, by_e164))
+    Ok(MergeRecipients {
+        by_aci,
+        by_pni,
+        by_e164,
+    })
 }
 
-#[allow(clippy::type_complexity)]
 #[tracing::instrument(
     skip(db, e164),
     fields(
@@ -80,16 +91,7 @@ pub fn merge_and_fetch_recipient_inner(
     pni: Option<Uuid>,
     trust_level: TrustLevel,
     change_self: bool,
-) -> Result<
-    (
-        Option<i32>,
-        Option<Uuid>, // ACI
-        Option<Uuid>, // PNI
-        Option<PhoneNumber>,
-        bool,
-    ),
-    diesel::result::Error,
-> {
+) -> Result<RecipientResults, diesel::result::Error> {
     if e164.is_none() && aci.is_none() && pni.is_none() {
         panic!("merge_and_fetch_recipient requires at least one of e164 or uuid");
     }
@@ -98,8 +100,8 @@ pub fn merge_and_fetch_recipient_inner(
         .into_iter()
         .filter(|c| *c)
         .count();
-    let (by_aci, by_pni, by_e164) =
-        fetch_separate_recipients(db, aci.as_ref(), pni.as_ref(), e164.as_ref())?;
+    let merge = fetch_separate_recipients(db, aci.as_ref(), pni.as_ref(), e164.as_ref())?;
+    let (by_aci, by_pni, by_e164) = (merge.by_aci, merge.by_pni, merge.by_e164);
 
     // Get the common recipient, if one exists
     let mut by_all: Vec<&orm::Recipient> = [&by_aci, &by_pni, &by_e164]
@@ -131,7 +133,10 @@ pub fn merge_and_fetch_recipient_inner(
     if let Some(common) = common {
         // If there's a common recipient, and every criteria given matches, we're done!
         if match_count == criteria_count {
-            return Ok((Some(common.id), None, None, None, false));
+            return Ok(RecipientResults {
+                id: Some(common.id),
+                ..Default::default()
+            });
         }
         tracing::debug!(
             "Found incomplete ({}/{}) common recipient {}",
@@ -342,8 +347,8 @@ pub fn merge_and_fetch_recipient_inner(
     }
 
     // Fetch new results after migration
-    let (new_by_aci, new_by_pni, new_by_e164) =
-        fetch_separate_recipients(db, aci.as_ref(), pni.as_ref(), e164.as_ref())?;
+    let merge = fetch_separate_recipients(db, aci.as_ref(), pni.as_ref(), e164.as_ref())?;
+    let (new_by_aci, new_by_pni, new_by_e164) = (merge.by_aci, merge.by_pni, merge.by_e164);
 
     // NB! The order matters here! ACI > E.164 > PNI
     let by_all: Vec<&orm::Recipient> = [&new_by_aci, &new_by_e164, &new_by_pni]
@@ -359,7 +364,7 @@ pub fn merge_and_fetch_recipient_inner(
             pni.as_ref().map_or("None".into(), Uuid::to_string),
             e164.as_ref().map_or("None".into(), PhoneNumber::to_string)
         );
-        return Ok((None, None, None, None, false));
+        return Ok(RecipientResults::default());
     }
 
     // This is why the order matters - we return the first match.
@@ -388,7 +393,10 @@ pub fn merge_and_fetch_recipient_inner(
         // XXX session switchover event
     }
 
-    return Ok((Some(rcpt.id), None, None, None, true));
+    return Ok(RecipientResults {
+        id: Some(rcpt.id),
+        ..Default::default()
+    });
 }
 
 // Inner method because the coverage report is then sensible.

@@ -1190,7 +1190,7 @@ impl<O: Observable> Storage<O> {
         aci: Option<ServiceAddress>,
         pni: Option<ServiceAddress>,
     ) -> orm::Recipient {
-        let (id, aci_uuid, pni_uuid, phonenumber, changed) = self
+        let merged = self
             .db()
             .transaction::<_, diesel::result::Error, _>(|db| {
                 merge_and_fetch_recipient_inner(
@@ -1203,7 +1203,7 @@ impl<O: Observable> Storage<O> {
                 )
             })
             .expect("database");
-        let recipient = match (id, aci_uuid, pni_uuid, phonenumber) {
+        let recipient = match (merged.id, merged.aci, merged.pni, merged.e164) {
             (Some(id), _, _, _) => self
                 .fetch_recipient_by_id(id)
                 .expect("existing updated recipient"),
@@ -1220,7 +1220,7 @@ impl<O: Observable> Storage<O> {
                 unreachable!("this should get implemented with an Either or custom enum instead")
             }
         };
-        if changed {
+        if merged.changed {
             self.observe_update(crate::schema::recipients::table, recipient.id);
         }
 
@@ -1240,7 +1240,7 @@ impl<O: Observable> Storage<O> {
         pni: Option<ServiceAddress>,
         trust_level: TrustLevel,
     ) -> orm::Recipient {
-        let (id, aci_uuid, pni_uuid, phonenumber, changed) = self
+        let merged = self
             .db()
             .transaction::<_, Error, _>(|db| {
                 merge_and_fetch_recipient_inner(
@@ -1253,7 +1253,7 @@ impl<O: Observable> Storage<O> {
                 )
             })
             .expect("database");
-        let recipient = match (id, aci_uuid, pni_uuid, &phonenumber) {
+        let recipient = match (merged.id, merged.aci, merged.pni, merged.e164) {
             (Some(id), _, _, _) => self
                 .fetch_recipient_by_id(id)
                 .expect("existing updated recipient by id"),
@@ -1264,13 +1264,13 @@ impl<O: Observable> Storage<O> {
                 .fetch_recipient(&pni.unwrap())
                 .expect("existing updated recipient by pni"),
             (_, _, _, Some(e164)) => self
-                .fetch_recipient_by_e164(e164)
+                .fetch_recipient_by_e164(&e164)
                 .expect("existing updated recipient by e164"),
             (None, None, None, None) => {
                 unreachable!("this should get implemented with an Either or custom enum instead")
             }
         };
-        if changed {
+        if merged.changed {
             self.observe_update(crate::schema::recipients::table, recipient.id);
         }
 
