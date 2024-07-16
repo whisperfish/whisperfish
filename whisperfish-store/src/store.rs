@@ -1320,7 +1320,6 @@ impl<O: Observable> Storage<O> {
             pni = pni.as_ref().map_or("None".into(), |u| u.to_string()),
             e164 = e164.as_ref().map_or("None".into(), |u| u.to_string()),
         ))]
-    // XXX this should get implemented with an Either or custom enum instead
     fn merge_and_fetch_recipient_inner(
         db: &mut SqliteConnection,
         e164: Option<PhoneNumber>,
