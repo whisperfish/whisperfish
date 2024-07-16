@@ -98,7 +98,7 @@ impl ClientActor {
     ) -> anyhow::Result<()> {
         let storage = self.storage.clone().unwrap();
         let recipient = storage
-            .fetch_recipient_by_service_address(&ServiceAddress::new_aci(recipient_uuid))
+            .fetch_recipient(&ServiceAddress::new_aci(recipient_uuid))
             .ok_or_else(|| {
                 anyhow::anyhow!("could not find recipient for which we fetched a profile")
             })?;

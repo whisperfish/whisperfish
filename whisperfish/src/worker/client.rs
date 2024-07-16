@@ -454,7 +454,7 @@ impl ClientActor {
 
         let session_type = orm::SessionType::DirectMessage(
             storage
-                .fetch_recipient_by_service_address(&metadata.sender)
+                .fetch_recipient(&metadata.sender)
                 .expect("needs-receipt sender recipient"),
         );
 
@@ -1638,7 +1638,7 @@ impl Handler<SendMessage> for ClientActor {
                         for result in results.iter().filter_map(|res| res.as_ref().ok()) {
                             // Look up recipient to check the current state
                             let recipient = storage
-                                .fetch_recipient_by_service_address(&result.recipient)
+                                .fetch_recipient(&result.recipient)
                                 .expect("sent recipient in db");
                             let target_state = if result.unidentified {
                                 // Unrestricted and success; keep unrestricted

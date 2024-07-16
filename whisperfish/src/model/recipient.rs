@@ -187,7 +187,7 @@ impl RecipientImpl {
             let storage = ctx.storage();
             let recipient = if let Some(uuid) = self.recipient_uuid {
                 storage
-                    .fetch_recipient_by_service_address(&ServiceAddress::new_aci(uuid))
+                    .fetch_recipient(&ServiceAddress::new_aci(uuid))
                     .map(|inner| {
                         let direct_message_recipient_id = storage
                             .fetch_session_by_recipient_id(inner.id)

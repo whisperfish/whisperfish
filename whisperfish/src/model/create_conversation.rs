@@ -67,9 +67,9 @@ impl CreateConversationImpl {
 
     fn fetch(&mut self, storage: Storage) {
         let recipient = if let Some(aci) = self.uuid {
-            storage.fetch_recipient_by_service_address(&ServiceAddress::new_aci(aci))
+            storage.fetch_recipient(&ServiceAddress::new_aci(aci))
         } else if let Some(e164) = &self.e164 {
-            storage.fetch_recipient_by_phonenumber(e164)
+            storage.fetch_recipient_by_e164(e164)
         } else {
             tracing::trace!("Neither e164 nor uuid set; not fetching.");
             return;

@@ -169,7 +169,7 @@ mod merge_and_fetch {
         assert_eq!(storage.fetch_recipients().len(), 1);
 
         let recipient_uuid = storage
-            .fetch_recipient_by_service_address(&ServiceAddress::new_aci(UUID))
+            .fetch_recipient(&ServiceAddress::new_aci(UUID))
             .expect("uuid still in db");
         assert_eq!(recipient.id, recipient_uuid.id);
     }
@@ -834,8 +834,8 @@ mod merge_and_fetch_conflicting_recipients {
         assert_eq!(r2.e164, Some(phonenumber.clone()));
         assert_eq!(r2.pni, Some(pni.uuid));
 
-        let r1 = storage.fetch_recipient_by_service_address(&aci_2).unwrap();
-        let r2 = storage.fetch_recipient_by_service_address(&aci).unwrap();
+        let r1 = storage.fetch_recipient(&aci_2).unwrap();
+        let r2 = storage.fetch_recipient(&aci).unwrap();
 
         assert!(r1.id > 0);
         assert!(r2.id > 0);
@@ -884,7 +884,7 @@ mod merge_and_fetch_conflicting_recipients {
         assert_eq!(r2.e164, Some(phonenumber.clone()));
         assert_eq!(r2.pni, None);
 
-        let r1 = storage.fetch_recipient_by_service_address(&aci).unwrap();
+        let r1 = storage.fetch_recipient(&aci).unwrap();
         assert!(r1.id > 0);
         assert_ne!(r1.id, r2.id);
 
@@ -1704,7 +1704,7 @@ mod merge_and_fetch_conflicting_recipients {
         assert_eq!(r3.e164, Some(e164_1.clone()));
         assert_eq!(r3.pni, None);
 
-        let r4 = storage.fetch_recipient_by_service_address(&aci_2).unwrap();
+        let r4 = storage.fetch_recipient(&aci_2).unwrap();
         assert_eq!(r4.id, r2.id);
         assert_eq!(r4.uuid, Some(aci_2.uuid));
         assert_eq!(r4.e164, None);
