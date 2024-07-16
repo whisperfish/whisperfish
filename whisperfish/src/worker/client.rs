@@ -651,12 +651,9 @@ impl ClientActor {
             return None;
         };
 
-        let is_unidentified = if sync_sent.is_some() && source_addr.is_some() {
-            let source_service_id = source_addr.as_ref().unwrap().to_service_id();
-            sync_sent
-                .as_ref()
-                .unwrap()
-                .unidentified_status
+        let is_unidentified = if let (Some(sent), Some(source_addr)) = (&sync_sent, &source_addr) {
+            let source_service_id = source_addr.to_service_id();
+            sent.unidentified_status
                 .iter()
                 .any(|x| x.unidentified() && x.destination_service_id() == source_service_id)
         } else {
