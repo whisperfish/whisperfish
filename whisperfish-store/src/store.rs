@@ -184,6 +184,7 @@ pub struct StoreProfile {
     pub r_key: Option<Vec<u8>>,
 }
 
+#[derive(Debug)]
 enum RecipientOperation {
     SetPni(i32, Option<Uuid>),
     SetAci(i32, Option<Uuid>),
@@ -191,21 +192,6 @@ enum RecipientOperation {
     Merge(i32, i32),
     /// ACI, PNI, E.164
     Create(Option<Uuid>, Option<Uuid>, Option<PhoneNumber>),
-}
-
-impl Debug for RecipientOperation {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "RecipientOperation::")?;
-        match self {
-            RecipientOperation::SetPni(id, pni) => write!(f, "SetPni({}, {:?})", id, pni),
-            RecipientOperation::SetAci(id, aci) => write!(f, "SetAci({}, {:?})", id, aci),
-            RecipientOperation::SetE164(id, e164) => write!(f, "SetE164({}, {:?})", id, e164),
-            RecipientOperation::Merge(src, tgt) => write!(f, "Merge({}, {})", src, tgt),
-            RecipientOperation::Create(aci, pni, e164) => {
-                write!(f, "Create(ACI:{:?}, PNI:{:?}, E164:{:?})", aci, pni, e164,)
-            }
-        }
-    }
 }
 
 #[derive(Clone, Debug)]
