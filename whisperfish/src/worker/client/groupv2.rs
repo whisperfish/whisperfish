@@ -194,9 +194,9 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         // XXX What about PNI?
                         let recipient =
                             storage.fetch_or_insert_recipient_by_address(&ServiceAddress::new_aci(member.uuid));
-                        tracing::trace!(
-                            "Asserting {} as a member of the group",
-                            recipient.e164_or_address()
+                        let _span = tracing::trace_span!(
+                            "Asserting member of the group",
+                            %recipient
                         );
 
                         // Upsert in Diesel 2.0... Manually for now.
@@ -209,11 +209,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                             .first(&mut *storage.db())
                             .optional()?;
                         if let Some(membership) = membership {
-                            tracing::trace!(
-                                "  Member {} already in db. Updating membership.",
-                                recipient.e164_or_address()
-                            );
-                            tracing::info!("Existing membership {:?}; updating", membership);
+                            tracing::info!(%membership, "Member already in db. Updating membership.");
                             diesel::update(group_v2_members::table)
                                 .set((group_v2_members::role.eq(member.role as i32),))
                                 .filter(
@@ -226,7 +222,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                                 .with_relation(group_v2s::table, group_id_hex.clone())
                                 .with_relation(recipients::table, recipient.id);
                         } else {
-                            tracing::info!("  Member is new, inserting.");
+                            tracing::info!("Member is new, inserting.");
                             diesel::insert_into(group_v2_members::table)
                                 .values((
                                     group_v2_members::group_v2_id.eq(&group_id_hex.clone()),
