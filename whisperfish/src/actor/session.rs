@@ -200,18 +200,16 @@ impl Handler<RemoveIdentities> for SessionActor {
         RemoveIdentities { recipient_id }: RemoveIdentities,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
+        let _span =
+            tracing::debug_span!("Removing identities for recipient ID {}", recipient_id).entered();
+
         let storage = self.storage.as_ref().unwrap();
         let recipient = if let Some(r) = storage.fetch_recipient_by_id(recipient_id) {
             r
         } else {
-            tracing::warn!(
-                "Requested removal of identities for recipient {}, but recipient not found.",
-                recipient_id
-            );
+            tracing::warn!("recipient not found");
             return;
         };
-
-        tracing::debug!("Removing identities for recipient ID {}", recipient.id);
 
         let mut success = false;
 
@@ -237,8 +235,7 @@ impl Handler<RemoveIdentities> for SessionActor {
 
         if !success {
             tracing::warn!(
-                "Could not find and remove any identities for recipient {}. Please file a bug.",
-                recipient_id
+                "Could not find and remove any identities for recipient. Please file a bug."
             );
         }
     }
