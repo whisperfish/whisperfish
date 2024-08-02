@@ -881,7 +881,7 @@ impl<T: Identity<O>, O: Observable> SessionStoreExt for IdentityStorage<T, O> {
             .select(device_id)
             .filter(
                 address
-                    .eq(addr.uuid.to_string())
+                    .eq(addr.to_service_id())
                     .and(device_id.ne(libsignal_service::push_service::DEFAULT_DEVICE_ID as i32))
                     .and(identity.eq(self.1.identity())),
             )
@@ -925,7 +925,7 @@ impl<T: Identity<O>, O: Observable> SessionStoreExt for IdentityStorage<T, O> {
         let num = diesel::delete(session_records)
             .filter(
                 address
-                    .eq(addr.uuid.to_string())
+                    .eq(addr.to_service_id())
                     .and(identity.eq(self.1.identity())),
             )
             .execute(&mut *self.0.db())
