@@ -488,6 +488,7 @@ impl ClientActor {
         edit: Option<NaiveDateTime>,
     ) -> Option<i32> {
         let timestamp = metadata.timestamp;
+        let dest_identity = metadata.destination.identity;
         let settings = crate::config::SettingsBridge::default();
         let is_sync_sent = sync_sent.is_some();
 
@@ -516,7 +517,7 @@ impl ClientActor {
                 .and_then(|r| r.to_service_address())
             {
                 actix::spawn(async move {
-                    if let Err(e) = match svc_addr.identity {
+                    if let Err(e) = match dest_identity {
                         ServiceIdType::AccountIdentity => {
                             storage.aci_storage().delete_all_sessions(&svc_addr).await
                         }
@@ -1499,7 +1500,8 @@ impl Handler<SendMessage> for ClientActor {
         tracing::trace!("Sending message: {}", msg.inner);
 
         let addr = ctx.address();
-        let self_uuid = self.self_aci.unwrap().uuid;
+        // XXX What about PNI? When should we use it?
+        let self_addr = self.self_aci.unwrap();
         Box::pin(
             async move {
                 let mut sender = sender.await?;
@@ -1630,7 +1632,7 @@ impl Handler<SendMessage> for ClientActor {
                     Ok(results) => {
                         let unidentified = results.iter().all(|res| match res {
                             // XXX: We should be able to send unidentified messages to our own devices too.
-                            Ok(message) => message.unidentified || (message.recipient.uuid == self_uuid),
+                            Ok(message) => message.unidentified || (message.recipient.uuid == self_addr.uuid),
                             _ => false,
                         });
 
@@ -1698,7 +1700,7 @@ impl Handler<SendMessage> for ClientActor {
                                     },
                                     MessageSenderError::NotFound { addr } => {
                                         tracing::warn!("Recipient not found, removing device sessions {:?}", addr);
-                                        let num = match addr.identity {
+                                        let num = match self_addr.identity {
                                             ServiceIdType::AccountIdentity =>
                                                 storage.aci_storage().delete_all_sessions(&addr).await?,
                                             ServiceIdType::PhoneNumberIdentity =>
@@ -2011,6 +2013,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
 
         let storage = self.storage.clone().unwrap();
         let sender = self.message_sender();
+        // XXX What about PNI? When should we use it?
         let local_addr = self.self_aci.unwrap();
         let settings = crate::config::SettingsBridge::default();
         let cert_type = if settings.get_share_phone_number() {
