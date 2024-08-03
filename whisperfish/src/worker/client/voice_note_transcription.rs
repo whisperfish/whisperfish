@@ -193,8 +193,8 @@ impl TranscriptionTask {
 
         // Prepare the arguments
         let file_path = attachment.attachment_path.expect("valid attachment path");
-        let lang = "en";
-        let out_lang = "en";
+        let lang = "auto";
+        let out_lang = "auto";
         let options: std::collections::HashMap<
             &str,
             dbus::arg::Variant<Box<dyn dbus::arg::RefArg>>,
