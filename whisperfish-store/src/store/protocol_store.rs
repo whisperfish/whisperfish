@@ -409,9 +409,8 @@ impl<T: Identity<O>, O: Observable> protocol::IdentityKeyStore for IdentityStora
         addr: &ProtocolAddress,
     ) -> Result<Option<IdentityKey>, SignalProtocolError> {
         use crate::schema::identity_records::dsl::*;
-        let addr = addr.name();
         Ok(identity_records
-            .filter(address.eq(addr).and(identity.eq(self.1.identity())))
+            .filter(address.eq(addr.name()).and(identity.eq(self.1.identity())))
             .first(&mut *self.0.db())
             .optional()
             .expect("db")
@@ -850,7 +849,7 @@ impl<O: Observable> Storage<O> {
         let removed = diesel::delete(identity_records)
             .filter(
                 address
-                    .eq(addr.uuid.to_string())
+                    .eq(addr.to_service_id())
                     .and(identity.eq(orm::Identity::from(addr.identity.to_string().as_str()))),
             )
             .execute(&mut *self.db())
