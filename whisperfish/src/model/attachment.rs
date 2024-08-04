@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use qttypes::QVariantMap;
 use whisperfish_store::observer::{Event, EventObserving, Interest};
 use whisperfish_store::orm;
 
@@ -94,8 +95,8 @@ pub struct AttachmentListModel {
 
     count: qt_property!(i32; NOTIFY rowCountChanged READ row_count),
 
-    /// Gets the nth item of the model, serialized as byte array
-    get: qt_method!(fn(&self, idx: i32) -> QByteArray),
+    /// Gets the nth item of the model
+    get: qt_method!(fn(&self, idx: i32) -> QVariantMap),
 
     open: qt_method!(fn(&self, idx: i32)),
 
@@ -137,19 +138,14 @@ impl AttachmentListModel {
         }
     }
 
-    // XXX When we're able to run Rust 1.a-bit-more, with qmetaobject 0.2.7+, we have QVariantMap.
-    fn get(&self, idx: i32) -> QByteArray {
-        let mut map = qmetaobject::QJsonObject::default();
+    fn get(&self, idx: i32) -> QVariantMap {
+        let mut map = QVariantMap::default();
+        let idx = self.row_index(idx);
 
         for (k, v) in self.role_names() {
-            let idx = self.row_index(idx);
-            map.insert(
-                v.to_str().expect("only utf8 role names"),
-                self.data(idx, k).into(),
-            );
+            map.insert(QString::from(v.to_string()), self.data(idx, k));
         }
-
-        map.to_json()
+        map
     }
 
     fn open(&mut self, idx: i32) {

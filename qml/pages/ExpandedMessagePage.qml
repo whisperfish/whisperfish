@@ -18,7 +18,7 @@ Page {
         var textFound = false
         var attachment = null
         for (var i = 0; i < detailAttachmentCount; i++) {
-            attachment = JSON.parse(detailAttachments.get(i))
+            attachment = detailAttachments.get(i)
             if (attachment.type == "text/x-signal-plain") {
                 textFound = true
                 break

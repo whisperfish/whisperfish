@@ -173,7 +173,7 @@ BackgroundItem {
         }
         width: attach === null ? 0 : Theme.itemSizeMedium
         height: width
-        attach: hasAttachments ? JSON.parse(quotedMessage.thumbsAttachments.get(0)) : null
+        attach: hasAttachments ? quotedMessage.thumbsAttachments.get(0) : null
         enabled: hasAttachments
         layer.enabled: true
         layer.smooth: true
