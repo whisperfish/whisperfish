@@ -31,7 +31,7 @@ Loader {
     property bool cornersOutbound: false
     property bool cornersQuoted: false
 
-    property string audioTranscription: detailAttachmentCount > 0 ? detailAttachments.get(0).transcription : ""
+    property string audioTranscription: detailAttachmentCount > 0 ? valueOrEmptyString(detailAttachments.get(0).transcription) : ""
 
     readonly property int maxDetails: 2
     readonly property int maxThumbs: 5

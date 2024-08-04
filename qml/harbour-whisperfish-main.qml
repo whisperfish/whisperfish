@@ -77,6 +77,14 @@ ApplicationWindow
         }
     }
 
+    /// Helper function to mimic "??" operator for easier assignment of maybe undefined/null JS strings
+    function valueOrEmptyString(value) {
+        if (value != null)
+            return value
+        else
+            return ""
+    }
+
     function getGroupAvatar(groupId) {
         if(!groupId || groupId === '') {
             return ''

@@ -54,7 +54,7 @@ MouseArea {
             Thumbnail {
                 id: thumb
                 anchors.fill: parent
-                source: (icon === '' && _hasAttach) ? attach.data : ''
+                source: (icon === '' && _hasAttach) ? valueOrEmptyString(attach.data) : ''
                 sourceSize { width: width; height: height }
             }
             HighlightImage {
