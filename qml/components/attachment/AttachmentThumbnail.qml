@@ -8,7 +8,7 @@ import be.rubdos.whisperfish 1.0
 MouseArea {
     id: root
     property int index: 0
-    property var attach: JSON.parse(thumbsAttachments.get(index))
+    property var attach: thumbsAttachments.get(index)
     property var attachments: null
     property var message: null
     property bool highlighted: containsPress
@@ -30,7 +30,7 @@ MouseArea {
             if (i != index) {
                 return;
             }
-            attach = JSON.parse(thumbsAttachments.get(i));
+            attach = thumbsAttachments.get(i);
         }
     }
 

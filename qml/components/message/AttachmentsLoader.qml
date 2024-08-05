@@ -31,7 +31,7 @@ Loader {
     property bool cornersOutbound: false
     property bool cornersQuoted: false
 
-    property string audioTranscription: detailAttachmentCount > 0 ? JSON.parse(detailAttachments.get(0)).transcription : ""
+    property string audioTranscription: detailAttachmentCount > 0 ? valueOrEmptyString(detailAttachments.get(0).transcription) : ""
 
     readonly property int maxDetails: 2
     readonly property int maxThumbs: 5
@@ -292,9 +292,8 @@ Loader {
                 asynchronous: true
                 width: parent.width
                 height: parent.height/Math.min(maxDetails, detailAttachmentCount)
-                // XXX When we're able to run Rust 1.a-bit-more, with qmetaobject 0.2.7+, we have QVariantMap.
                 sourceComponent: detailAttachmentCount >= 1
-                                ? parent.componentForMime(JSON.parse(detailAttachments.get(currentAttachmentIndex)))
+                                ? parent.componentForMime(detailAttachments.get(currentAttachmentIndex))
                                 : null
             }
 
@@ -308,9 +307,8 @@ Loader {
                     anchors.fill: parent
                     property int currentAttachmentIndex: 1
                     opacity: detailOverlay.visible ? Theme.opacityFaint : 1.0
-                    // XXX When we're able to run Rust 1.a-bit-more, with qmetaobject 0.2.7+, we have QVariantMap.
                     sourceComponent: detailAttachmentCount >= maxDetails
-                                    ? detailColumn.componentForMime(JSON.parse(detailAttachments.get(currentAttachmentIndex)))
+                                    ? detailColumn.componentForMime(detailAttachments.get(currentAttachmentIndex))
                                     : null
                 }
 
@@ -348,8 +346,7 @@ Loader {
     Component {
         id: detail_contactComponent
         AttachmentItemContact {
-            // XXX When we're able to run Rust 1.a-bit-more, with qmetaobject 0.2.7+, we have QVariantMap.
-            attach: JSON.parse(detailAttachments.get(currentAttachmentIndex))
+            attach: detailAttachments.get(currentAttachmentIndex)
             onPressAndHold: root.pressAndHold(mouse)
         }
     }
@@ -357,8 +354,7 @@ Loader {
     Component {
         id: detail_audioComponent
         AttachmentItemAudio {
-            // XXX When we're able to run Rust 1.a-bit-more, with qmetaobject 0.2.7+, we have QVariantMap.
-            attach: JSON.parse(detailAttachments.get(currentAttachmentIndex))
+            attach: detailAttachments.get(currentAttachmentIndex)
             recipientId: message.senderRecipientId
             onPressAndHold: root.pressAndHold(mouse)
         }
@@ -367,8 +363,7 @@ Loader {
     Component {
         id: detail_fileComponent
         AttachmentItemFile {
-            // XXX When we're able to run Rust 1.a-bit-more, with qmetaobject 0.2.7+, we have QVariantMap.
-            attach: JSON.parse(detailAttachments.get(currentAttachmentIndex))
+            attach: detailAttachments.get(currentAttachmentIndex)
             recipientId: message.senderRecipientId
             onPressAndHold: root.pressAndHold(mouse)
         }
