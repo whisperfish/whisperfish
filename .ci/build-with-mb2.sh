@@ -59,6 +59,11 @@ EOF
 
 MAJOR_VERSION=$(echo $TARGET_VERSION | awk -F. '{print $1 FS $2}')
 
+# on armv7hl, we need bindgen-cli
+if [ "$MER_ARCH" = "armv7hl" ]; then
+    cargo install --force --locked bindgen-cli
+fi
+
 mb2 -t SailfishOS-$TARGET_VERSION-$MER_ARCH build \
     --enable-debug \
     --no-check \
