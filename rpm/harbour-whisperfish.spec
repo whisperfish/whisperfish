@@ -54,9 +54,6 @@ Recommends:   sailjail
 Recommends:   sailjail-permissions
 Recommends:   harbour-whisperfish-shareplugin
 
-# AWS-LC requires bindgen, which requires clang
-BuildRequires:   clang-libs
-
 # This comment lists SailfishOS-version specific code,
 # for future reference, to track the reasoning behind the minimum SailfishOS version.
 # We're aiming to support 3.4 as long as possible, since Jolla 1 will be stuck on that.

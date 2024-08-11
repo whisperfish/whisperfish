@@ -26,13 +26,9 @@ tracing-tracy = { version = "0.10", optional = true }
 tracing-coz = { version = "0.1.1", optional = true }
 tracing-flame = { version = "0.2", optional = true }
 
-# Specify AWS-LC.
-# Enable this on the sailfish feature for armv7hl support, and add the bindgen feature.
-aws-lc-rs = { version = "1", optional = true }
-
 [features]
 bundled-sqlcipher = ["whisperfish/bundled-sqlcipher"]
-sailfish = ["whisperfish/sailfish", "dep:aws-lc-rs", "aws-lc-rs/bindgen"]
+sailfish = ["whisperfish/sailfish"]
 harbour = ["whisperfish/harbour"]
 console-subscriber = ["dep:console-subscriber"]
 tracy = ["dep:tracing-tracy"]

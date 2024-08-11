@@ -6,13 +6,11 @@ echo "Building for $SFOS_VERSION"
 
 sudo zypper install -y \
     zlib-devel \
-    clang \
 
 # Tooling-side dependencies used in build.rs
 sdk-manage tooling maintain SailfishOS-$SFOS_VERSION \
     zypper install -y \
         zlib-devel \
-        clang \
 
 echo adding $PWD as safe directory in git
 git config --global --add safe.directory $PWD
