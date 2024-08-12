@@ -601,7 +601,7 @@
         <location filename="../qml/components/MessagesView.qml" line="480"/>
         <source>Transcribe</source>
         <extracomment>Transcribe message menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transkribieren</translation>
     </message>
     <message id="whisperfish-select-or-options-message-menu">
         <location filename="../qml/components/MessagesView.qml" line="487"/>
@@ -772,13 +772,13 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="81"/>
         <source>Unlink contact</source>
         <extracomment>Menu action to unlink a Signal contact from a Sailfish OS contact</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kontakt trennen</translation>
     </message>
     <message id="whisperfish-recipient-link">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="88"/>
         <source>Link contact</source>
         <extracomment>Menu action to pick a Sailfish OS contact to link the Signal user to</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kontakt verlinken</translation>
     </message>
     <message id="whisperfish-profile-uuid-invalid-warning">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="174"/>
@@ -1293,25 +1293,25 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="220"/>
         <source>Transcribe voice notes</source>
         <extracomment>Settings page auto transcribe voice notes</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sprachnotizen transkribieren</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-available">
         <location filename="../qml/pages/Settings.qml" line="224"/>
         <source>Automatically transcribe voice notes to text upon reception using Speech Note.</source>
         <extracomment>Auto transcribe voice notes description, Speech Note installed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mit Speech Note können Sie Sprachnotizen beim Empfang automatisch in Text umwandeln.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-unavailable">
         <location filename="../qml/pages/Settings.qml" line="227"/>
         <source>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</source>
         <extracomment>Auto transcribe voice notes description (always English), Speech Note installed but not configured.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Automatisches Transkribieren von Sprachnotizen in Text beim Empfang. Konfigurieren Sie das englische Modell in Speech Note, um diese Funktion zu verwenden.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-uninstalled">
         <location filename="../qml/pages/Settings.qml" line="230"/>
         <source>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</source>
         <extracomment>Auto transcribe voice notes description (always English), Speech Note not installed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Automatisches Transkribieren von Sprachnotizen in Text beim Empfang. Installieren und konfigurieren Sie das englische Modell in Speech Note, um diese Funktion zu nutzen.</translation>
     </message>
     <message id="whisperfish-settings-privacy-section">
         <location filename="../qml/pages/Settings.qml" line="247"/>
@@ -1379,7 +1379,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="608"/>
         <source>GStreamer version</source>
         <extracomment>GStreamer version indication in settings</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>GStreamer Version</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
         <location filename="../qml/pages/Settings.qml" line="433"/>
@@ -1874,7 +1874,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ChatTextInput.qml" line="287"/>
         <source>Incompatible with Signal iOS</source>
         <extracomment>Short warning note that the voice note is being recorded in Vorbis format</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nicht kompatibel mit Signal iOS</translation>
     </message>
     <message id="whisperfish-chat-input-attachment-label" numerus="yes">
         <location filename="../qml/components/ChatTextInput.qml" line="317"/>
@@ -2049,21 +2049,21 @@ Settings page share contacts</extracomment>
         <source>%1 had a voice call with you.</source>
         <oldsource>%1 called you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">%1 hat dich angerufen.</translation>
+        <translation>%1 hat angerufen.</translation>
     </message>
     <message id="whisperfish-service-message-call-video-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="164"/>
         <source>%1 had a video call with you.</source>
         <oldsource>%1 started a video call with you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">%1 hat einen Videoanruf mit dir gestartet.</translation>
+        <translation>%1 hat einen Videoanruf mit Ihnen gestartet.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-weeks" numerus="yes">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="51"/>
         <source>%n week(s)</source>
         <oldsource>%1 week(s)</oldsource>
         <extracomment>Expiring message timeout in weeks. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n Woche</numerusform>
             <numerusform>%n Wochen</numerusform>
         </translation>
@@ -2073,7 +2073,7 @@ Settings page share contacts</extracomment>
         <source>%n day(s)</source>
         <oldsource>%1 day(s)</oldsource>
         <extracomment>Expiring message timeout in days. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n Tag</numerusform>
             <numerusform>%n Tage</numerusform>
         </translation>
@@ -2083,7 +2083,7 @@ Settings page share contacts</extracomment>
         <source>%n hour(s)</source>
         <oldsource>%1 hour(s)</oldsource>
         <extracomment>Expiring message timeout in hours. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n Stunde</numerusform>
             <numerusform>%n Stunden</numerusform>
         </translation>
@@ -2093,7 +2093,7 @@ Settings page share contacts</extracomment>
         <source>%n minute(s)</source>
         <oldsource>%1 minute(s)</oldsource>
         <extracomment>Expiring message timeout in minutes. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n Minute</numerusform>
             <numerusform>%n Minuten</numerusform>
         </translation>
@@ -2103,7 +2103,7 @@ Settings page share contacts</extracomment>
         <source>%n second(s)</source>
         <oldsource>%1 second(s)</oldsource>
         <extracomment>Expiring message timeout in seconds. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n Sekunde</numerusform>
             <numerusform>%n Sekunden</numerusform>
         </translation>
@@ -2167,13 +2167,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="124"/>
         <source>The group was updated.</source>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished">Die Gruppe wurde aktualisiert.</translation>
+        <translation>Die Gruppe wurde aktualisiert.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="145"/>
         <source>You missed a voice call from %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">Du hast einen Anruf von %1 verpasst.</translation>
+        <translation>Du hast einen Anruf von %1 verpasst.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="148"/>
@@ -2185,7 +2185,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="153"/>
         <source>You missed a video call from %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">Du hast einen Videoanruf von %1 verpasst.</translation>
+        <translation>Du hast einen Videoanruf von %1 verpasst.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-video-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="156"/>
@@ -2204,20 +2204,20 @@ Settings page share contacts</extracomment>
         <source>You reset the secure session with %1.</source>
         <oldsource>You have reset the secure session with %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">Du hast die sichere Sitzung mit %1 zurückgesetzt.</translation>
+        <translation>Du hast die sichere Sitzung mit %1 zurückgesetzt.</translation>
     </message>
     <message id="whisperfish-service-message-session-reset-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="185"/>
         <source>%1 reset the secure session with you.</source>
         <oldsource>%1 has reset the secure session with you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">%1 hat die sichere Sitzung mit dir zurückgesetzt.</translation>
+        <translation>%1 hat die sichere Sitzung mit dir zurückgesetzt.</translation>
     </message>
     <message id="whisperfish-service-message-not-supported">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="191"/>
         <source>This service message of is not yet supported by Whisperfish. Please file a bug report. (Flags: %1, Type: %2, Contents: &quot;%3&quot;)</source>
         <oldsource>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: %1)</oldsource>
-        <translation type="unfinished">Diese Servicemeldung wird von Whisperfish noch nicht unterstützt. Bitte reiche einen Fehlerbericht ein. (Typ: „%1“.)</translation>
+        <translation>Diese Servicemeldung wird von Whisperfish noch nicht unterstützt. Bitte reiche einen Fehlerbericht ein. (Flaggen: %1, Typ: %2, Inhalte: &quot;%3&quot;)</translation>
     </message>
     <message id="whisperfish-service-message-more-info">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="247"/>
@@ -2616,7 +2616,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/LinkContactPage.qml" line="10"/>
         <source>Select contact</source>
         <extracomment>Link Signal user to Sailfish OS contact page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kontakt auswählen</translation>
     </message>
 </context>
 </TS>
