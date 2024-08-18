@@ -619,6 +619,10 @@ impl ClientActor {
             message_type = Some(MessageType::ProfileKeyUpdate);
         }
 
+        if !msg.preview.is_empty() {
+            tracing::warn!("Message contains preview data, which is not yet saved nor displayed. Please upvote issue #695");
+        }
+
         let expiration_timer_update = flags & DataMessageFlags::ExpirationTimerUpdate as i32 != 0;
         let alt_body = if let Some(reaction) = &msg.reaction {
             if let Some((message, session)) = storage.process_reaction(
