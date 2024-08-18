@@ -939,7 +939,7 @@ impl ClientActor {
             unidentified_delivery_indicators: None,
             typing_indicators: Some(settings.get_enable_typing_indicators()),
             provisioning_version: None,
-            link_previews: None,
+            link_previews: Some(settings.get_enable_link_previews()),
         }
     }
 

@@ -22,6 +22,7 @@ pub struct SettingsBridge {
     debug_mode: qt_property!(bool; READ get_debug_mode WRITE set_debug_mode NOTIFY debug_mode_changed),
     enable_typing_indicators: qt_property!(bool; READ get_enable_typing_indicators WRITE set_enable_typing_indicators NOTIFY enable_typing_indicators_changed),
     enable_read_receipts: qt_property!(bool; READ get_enable_read_receipts WRITE set_enable_read_receipts NOTIFY enable_read_receipts_changed),
+    enable_link_previews: qt_property!(bool; READ get_enable_link_previews WRITE set_enable_link_previews NOTIFY enable_link_previews_changed),
     notification_privacy: qt_property!(String; READ get_notification_privacy WRITE set_notification_privacy NOTIFY notification_privacy_changed),
     prefer_device_contacts: qt_property!(bool; READ get_prefer_device_contacts WRITE set_prefer_device_contacts NOTIFY prefer_device_contacts_changed),
     minimise_notify: qt_property!(bool; READ get_minimise_notify WRITE set_minimise_notify NOTIFY minimise_notify_changed),
@@ -49,6 +50,7 @@ pub struct SettingsBridge {
     debug_mode_changed: qt_signal!(value: bool),
     enable_typing_indicators_changed: qt_signal!(value: bool),
     enable_read_receipts_changed: qt_signal!(value: bool),
+    enable_link_previews_changed: qt_signal!(value: bool),
     notification_privacy_changed: qt_signal!(value: String),
     prefer_device_contacts_changed: qt_signal!(value: bool),
     minimise_notify_changed: qt_signal!(value: bool),
@@ -95,6 +97,7 @@ impl Default for SettingsBridge {
             debug_mode: false,
             enable_typing_indicators: false,
             enable_read_receipts: false,
+            enable_link_previews: false,
             notification_privacy: "complete".into(),
             prefer_device_contacts: false,
             minimise_notify: false,
@@ -121,6 +124,7 @@ impl Default for SettingsBridge {
             debug_mode_changed: Default::default(),
             enable_typing_indicators_changed: Default::default(),
             enable_read_receipts_changed: Default::default(),
+            enable_link_previews_changed: Default::default(),
             notification_privacy_changed: Default::default(),
             prefer_device_contacts_changed: Default::default(),
             minimise_notify_changed: Default::default(),
@@ -225,6 +229,10 @@ impl SettingsBridge {
         self.get_bool("enable_read_receipts")
     }
 
+    pub fn get_enable_link_previews(&self) -> bool {
+        self.get_bool("enable_link_previews")
+    }
+
     pub fn get_prefer_device_contacts(&self) -> bool {
         self.get_bool("prefer_device_contacts")
     }
@@ -319,6 +327,11 @@ impl SettingsBridge {
     pub fn set_enable_read_receipts(&mut self, value: bool) {
         self.set_bool("enable_read_receipts", value);
         self.enable_read_receipts_changed(value);
+    }
+
+    pub fn set_enable_link_previews(&mut self, value: bool) {
+        self.set_bool("enable_link_previews", value);
+        self.enable_link_previews_changed(value);
     }
 
     pub fn set_prefer_device_contacts(&mut self, value: bool) {
@@ -442,6 +455,7 @@ impl SettingsBridge {
         self.set_bool_if_unset("enable_notify", true);
         self.set_bool_if_unset("enable_typing_indicators", false);
         self.set_bool_if_unset("enable_read_receipts", false);
+        self.set_bool_if_unset("enable_link_previews", false);
         self.set_bool_if_unset("show_notify_message", false);
         self.set_bool_if_unset("prefer_device_contacts", false);
         self.set_bool_if_unset("minimise_notify", false);

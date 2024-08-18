@@ -20,16 +20,19 @@ Page {
     // Triggers to send Syng Type::Configuration after closing the page
     property bool _typingIndicators: false
     property bool _readReceipts: false
+    property bool _linkPreviews: false
 
     Component.onCompleted: {
         _typingIndicators = SettingsBridge.enable_typing_indicators
         _readReceipts = SettingsBridge.enable_read_receipts
+        _linkPreviews = SettingsBridge.enable_link_previews
     }
 
     Component.onDestruction: {
         if (
             _typingIndicators != SettingsBridge.enable_typing_indicators ||
-            _readReceipts != SettingsBridge.enable_read_receipts
+            _readReceipts != SettingsBridge.enable_read_receipts ||
+            _linkPreviews != SettingsBridge.enable_link_previews
          ) {
             console.log("Configuration sync needed")
             ClientWorker.sendConfiguration()
@@ -136,6 +139,23 @@ Page {
                 onCheckedChanged: {
                     if(checked != SettingsBridge.enable_read_receipts) {
                         SettingsBridge.enable_read_receipts = checked
+                    }
+                }
+            }
+            IconTextSwitch {
+                enabled: isPrimaryDevice
+                anchors.horizontalCenter: parent.horizontalCenter
+                //: Settings page enable link previews
+                //% "Link previews"
+                text: qsTrId("whisperfish-settings-enable-link-previews")
+                //: Settings page enable link previews description
+                //% "Create and send previews of the links you send in messages. Note: Feature not yet implemented in Whisperfish."
+                description: qsTrId("whisperfish-settings-enable-link-previews-description")
+                checked: SettingsBridge.enable_link_previews
+                icon.source: "image://theme/icon-m-website"
+                onCheckedChanged: {
+                    if(checked != SettingsBridge.enable_link_previews) {
+                        SettingsBridge.enable_link_previews = checked
                     }
                 }
             }
