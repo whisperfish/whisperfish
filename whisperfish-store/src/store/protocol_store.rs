@@ -1,5 +1,5 @@
 use super::*;
-use libsignal_service::pre_keys::{PreKeysStore, ServiceKyberPreKeyStore};
+use libsignal_service::pre_keys::{KyberPreKeyStoreExt, PreKeysStore};
 use libsignal_service::protocol::{
     self, GenericSignedPreKey, IdentityKeyPair, SignalProtocolError,
 };
@@ -81,10 +81,6 @@ impl ProtocolStore {
 }
 
 impl<O: Observable> Storage<O> {
-    pub async fn delete_identity(&self, addr: &ProtocolAddress) -> Result<(), SignalProtocolError> {
-        self.delete_identity_key(addr);
-        Ok(())
-    }
     pub fn pni_storage(&self) -> PniStorage<O> {
         PniStorage::new(self.clone())
     }
@@ -413,9 +409,8 @@ impl<T: Identity<O>, O: Observable> protocol::IdentityKeyStore for IdentityStora
         addr: &ProtocolAddress,
     ) -> Result<Option<IdentityKey>, SignalProtocolError> {
         use crate::schema::identity_records::dsl::*;
-        let addr = addr.name();
         Ok(identity_records
-            .filter(address.eq(addr).and(identity.eq(self.1.identity())))
+            .filter(address.eq(addr.name()).and(identity.eq(self.1.identity())))
             .first(&mut *self.0.db())
             .optional()
             .expect("db")
@@ -489,7 +484,7 @@ impl<T: Identity<O>, O: Observable> protocol::SessionStore for IdentityStorage<T
 }
 
 #[async_trait::async_trait(?Send)]
-impl<T: Identity<O>, O: Observable> ServiceKyberPreKeyStore for IdentityStorage<T, O> {
+impl<T: Identity<O>, O: Observable> KyberPreKeyStoreExt for IdentityStorage<T, O> {
     #[tracing::instrument(level = "trace", skip(self, body))]
     async fn store_last_resort_kyber_pre_key(
         &mut self,
@@ -614,22 +609,36 @@ impl<T: Identity<O>, O: Observable> PreKeysStore for IdentityStorage<T, O> {
         Ok((kyber_max.unwrap_or(-1) + 1) as u32)
     }
 
-    #[tracing::instrument(level = "trace", skip(self))]
-    async fn set_next_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
-        assert_eq!(self.next_pre_key_id().await?, id);
-        Ok(())
+    async fn signed_pre_keys_count(&self) -> Result<usize, SignalProtocolError> {
+        use diesel::prelude::*;
+
+        let signed_prekey_count: i64 = {
+            use crate::schema::signed_prekeys::dsl::*;
+
+            signed_prekeys
+                .select(diesel::dsl::count_star())
+                .filter(identity.eq(self.1.identity()))
+                .first(&mut *self.0.db())
+                .expect("db")
+        };
+
+        Ok(signed_prekey_count as usize)
     }
 
-    #[tracing::instrument(level = "trace", skip(self))]
-    async fn set_next_signed_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
-        assert_eq!(self.next_signed_pre_key_id().await?, id);
-        Ok(())
-    }
+    async fn kyber_pre_keys_count(&self, _last_resort: bool) -> Result<usize, SignalProtocolError> {
+        use diesel::prelude::*;
 
-    #[tracing::instrument(level = "trace", skip(self))]
-    async fn set_next_pq_pre_key_id(&mut self, id: u32) -> Result<(), SignalProtocolError> {
-        assert_eq!(self.next_pq_pre_key_id().await?, id);
-        Ok(())
+        let kyber_prekey_count: i64 = {
+            use crate::schema::kyber_prekeys::dsl::*;
+
+            kyber_prekeys
+                .select(diesel::dsl::count_star())
+                .filter(identity.eq(self.1.identity()))
+                .first(&mut *self.0.db())
+                .expect("db")
+        };
+
+        Ok(kyber_prekey_count as usize)
     }
 }
 
@@ -831,19 +840,29 @@ impl<T: Identity<O>, O: Observable> IdentityStorage<T, O> {
 
 // BEGIN identity key block
 impl<O: Observable> Storage<O> {
-    /// Removes the identity matching `addr` from the database, independent of PNI or ACI.
+    /// Removes the identity matching ServiceAddress (ACI or PNI) from the database.
     ///
     /// Does not lock the protocol storage.
     #[tracing::instrument(level = "warn", skip(self))]
-    pub fn delete_identity_key(&self, addr: &ProtocolAddress) -> bool {
+    pub fn delete_identity_key(&self, addr: &ServiceAddress) -> bool {
         use crate::schema::identity_records::dsl::*;
-        let addr = addr.name();
-        let amount = diesel::delete(identity_records)
-            .filter(address.eq(addr))
+        let removed = diesel::delete(identity_records)
+            .filter(
+                address
+                    .eq(addr.to_service_id())
+                    .and(identity.eq(orm::Identity::from(addr.identity.to_string().as_str()))),
+            )
             .execute(&mut *self.db())
-            .expect("db");
+            .expect("db")
+            >= 1;
 
-        amount == 1
+        if removed {
+            tracing::trace!("Identity removed: {:?}", addr)
+        } else {
+            tracing::trace!("Identity not found: {:?}", addr)
+        };
+
+        removed
     }
 }
 // END identity key
@@ -861,7 +880,7 @@ impl<T: Identity<O>, O: Observable> SessionStoreExt for IdentityStorage<T, O> {
             .select(device_id)
             .filter(
                 address
-                    .eq(addr.uuid.to_string())
+                    .eq(addr.to_service_id())
                     .and(device_id.ne(libsignal_service::push_service::DEFAULT_DEVICE_ID as i32))
                     .and(identity.eq(self.1.identity())),
             )
@@ -905,7 +924,7 @@ impl<T: Identity<O>, O: Observable> SessionStoreExt for IdentityStorage<T, O> {
         let num = diesel::delete(session_records)
             .filter(
                 address
-                    .eq(addr.uuid.to_string())
+                    .eq(addr.to_service_id())
                     .and(identity.eq(self.1.identity())),
             )
             .execute(&mut *self.0.db())

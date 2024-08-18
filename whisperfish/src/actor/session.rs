@@ -4,6 +4,7 @@ pub use self::typing_notifications::*;
 
 mod methods;
 use methods::*;
+
 use whisperfish_store::orm;
 use whisperfish_store::orm::MessageType;
 use whisperfish_store::NewMessage;
@@ -11,7 +12,7 @@ use whisperfish_store::NewMessage;
 use crate::platform::QmlApp;
 use crate::{gui::StorageReady, store::Storage};
 use actix::prelude::*;
-use libsignal_service::protocol::{DeviceId, ProtocolAddress};
+
 use qmetaobject::prelude::*;
 use std::collections::{HashMap, VecDeque};
 
@@ -199,37 +200,28 @@ impl Handler<RemoveIdentities> for SessionActor {
         RemoveIdentities { recipient_id }: RemoveIdentities,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
+        let _span =
+            tracing::debug_span!("Removing identities for recipient ID {}", recipient_id).entered();
+
         let storage = self.storage.as_ref().unwrap();
         let recipient = if let Some(r) = storage.fetch_recipient_by_id(recipient_id) {
             r
         } else {
-            tracing::warn!(
-                "Requested removal of identities for recipient {}, but recipient not found.",
-                recipient_id
-            );
+            tracing::warn!("recipient not found");
             return;
         };
 
-        let identities = match (recipient.e164, recipient.uuid) {
-            (None, None) => {
-                tracing::debug!("No identities to remove");
-                return;
-            }
-            (None, Some(uuid)) => vec![uuid.to_string()],
-            (Some(e164), None) => vec![e164.to_string()],
-            (Some(e164), Some(uuid)) => vec![e164.to_string(), uuid.to_string()],
-        };
+        let mut success = false;
 
-        let mut successes = 0;
-        for identity in identities {
-            tracing::debug!("Removing identity {}", identity);
-            let addr = ProtocolAddress::new(identity.clone(), DeviceId::from(1));
-            if !storage.delete_identity_key(&addr) {
-                tracing::trace!("Could not remove identity {}.", identity);
-            } else {
-                successes += 1;
-            }
-        }
+        success |= recipient
+            .to_aci_service_address()
+            .map(|aci| storage.delete_identity_key(&aci))
+            .unwrap_or(false);
+
+        success |= recipient
+            .to_pni_service_address()
+            .map(|pni| storage.delete_identity_key(&pni))
+            .unwrap_or(false);
 
         let session = storage.fetch_session_by_recipient_id(recipient_id).unwrap();
 
@@ -241,8 +233,10 @@ impl Handler<RemoveIdentities> for SessionActor {
             ..NewMessage::new_outgoing()
         });
 
-        if successes == 0 {
-            tracing::warn!("Could not successfully remove any identity keys.  Please file a bug.");
+        if !success {
+            tracing::warn!(
+                "Could not find and remove any identities for recipient. Please file a bug."
+            );
         }
     }
 }

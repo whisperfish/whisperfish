@@ -133,7 +133,7 @@ impl Handler<RefreshOwnProfile> for ClientActor {
                 }
 
                 let online = service
-                    .retrieve_profile_by_id(ServiceAddress::from(uuid), Some(profile_key))
+                    .retrieve_profile_by_id(ServiceAddress::new_aci(uuid), Some(profile_key))
                     .await;
 
                 let outdated = match online {
@@ -209,7 +209,7 @@ impl Handler<UploadProfile> for ClientActor {
         let service = self.authenticated_service();
         let client = ctx.address();
         let config = self.config.clone();
-        let uuid = config.get_aci().expect("valid uuid at this point");
+        let addr = ServiceAddress::new_aci(config.get_aci().expect("valid uuid at this point"));
 
         Box::pin(
             async move {
@@ -235,7 +235,7 @@ impl Handler<UploadProfile> for ClientActor {
                 let mut am = AccountManager::new(service, Some(profile_key));
                 if let Err(e) = am
                     .upload_versioned_profile_without_avatar(
-                        uuid.into(),
+                        addr.uuid.into(),
                         name,
                         self_recipient.about,
                         self_recipient.about_emoji,
@@ -258,8 +258,7 @@ impl Handler<UploadProfile> for ClientActor {
                 // Now also set the database
                 storage.update_profile_key(
                     None,
-                    Some(uuid),
-                    None,
+                    Some(addr),
                     &profile_key.get_bytes(),
                     TrustLevel::Certain,
                 );
@@ -293,12 +292,10 @@ impl Handler<RefreshProfileAttributes> for ClientActor {
                     .unwrap();
                 let self_recipient = storage.fetch_self_recipient().expect("self set by now");
 
-                let profile_key = self_recipient.profile_key();
-                let mut am = AccountManager::new(service, profile_key.map(ProfileKey::create));
-                let unidentified_access_key = profile_key
-                    .map(ProfileKey::create)
-                    .as_ref()
-                    .map(ProfileKey::derive_access_key);
+                let profile_key = self_recipient.profile_key().map(ProfileKey::create);
+                let mut am = AccountManager::new(service, profile_key);
+                let unidentified_access_key =
+                    profile_key.as_ref().map(ProfileKey::derive_access_key);
 
                 let account_attributes = AccountAttributes {
                     signaling_key: None,
@@ -327,7 +324,7 @@ impl Handler<RefreshProfileAttributes> for ClientActor {
                 } else {
                     if self_recipient.unidentified_access_mode != UnidentifiedAccessMode::Enabled {
                         storage.set_recipient_unidentified(
-                            self_recipient.id,
+                            &self_recipient,
                             UnidentifiedAccessMode::Enabled,
                         );
                     }

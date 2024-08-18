@@ -4,13 +4,14 @@ use self::common::*;
 use chrono::prelude::*;
 use libsignal_service::content::Reaction;
 use libsignal_service::proto::DataMessage;
+use libsignal_service::{ServiceAddress, ServiceIdType};
 use phonenumber::PhoneNumber;
 use rstest::rstest;
 use std::future::Future;
 use std::sync::Arc;
 use whisperfish_store::config::SignalConfig;
 use whisperfish_store::orm::{StoryType, UnidentifiedAccessMode};
-use whisperfish_store::{GroupV1, NewMessage};
+use whisperfish_store::{naive_chrono_to_millis, GroupV1, NewMessage};
 
 #[rstest]
 #[tokio::test]
@@ -111,16 +112,15 @@ async fn fetch_messages_without_session(storage: impl Future<Output = InMemoryDb
 async fn process_message_exists_session_source(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
-    let pn1 = phonenumber::parse(None, "+358501234567").unwrap();
-    let sess1 = storage.fetch_or_insert_session_by_phonenumber(&pn1);
+    let addr1 = ServiceAddress::new_aci(uuid::Uuid::new_v4());
+    let sess1 = storage.fetch_or_insert_session_by_address(&addr1);
 
     for second in 1..11 {
         let timestamp = Utc.timestamp_opt(second, 0).unwrap().naive_utc();
 
         let new_message = NewMessage {
             session_id: sess1.id,
-            source_e164: Some(pn1.clone()),
-            source_uuid: None,
+            source_addr: Some(addr1),
             text: String::from("nyt joni ne velat!"),
             timestamp,
             sent: false,
@@ -155,15 +155,14 @@ async fn process_message_exists_session_source(storage: impl Future<Output = InM
 async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
-    let pn1 = phonenumber::parse(None, "+358501234567").unwrap();
-    let sess1 = storage.fetch_or_insert_session_by_phonenumber(&pn1);
+    let addr1 = ServiceAddress::new_aci(uuid::Uuid::new_v4());
+    let sess1 = storage.fetch_or_insert_session_by_address(&addr1);
 
     let timestamp = Utc.timestamp_opt(1, 0).unwrap().naive_utc();
 
     let new_message = NewMessage {
         session_id: sess1.id,
-        source_e164: Some(pn1.clone()),
-        source_uuid: None,
+        source_addr: Some(addr1),
         text: String::from("nyt joni ne velat! Woops this is a typo!"),
         timestamp,
         sent: false,
@@ -195,8 +194,7 @@ async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
     let timestamp = Utc.timestamp_opt(2, 0).unwrap().naive_utc();
     let newer_message = NewMessage {
         session_id: sess1.id,
-        source_e164: Some(pn1.clone()),
-        source_uuid: None,
+        source_addr: Some(addr1),
         text: String::from("nyt joni ne velat!"),
         timestamp,
         sent: false,
@@ -221,8 +219,7 @@ async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
     let timestamp = Utc.timestamp_opt(3, 0).unwrap().naive_utc();
     let newerer_message = NewMessage {
         session_id: sess1.id,
-        source_e164: Some(pn1.clone()),
-        source_uuid: None,
+        source_addr: Some(addr1),
         text: String::from("nyt joni ne velat!"),
         timestamp,
         sent: false,
@@ -265,15 +262,14 @@ async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
 async fn dev_message_update(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
-    let pn1 = phonenumber::parse(None, "+358501234567").unwrap();
-    let session = storage.fetch_or_insert_session_by_phonenumber(&pn1);
+    let addr1 = ServiceAddress::new_aci(uuid::Uuid::new_v4());
+    let session = storage.fetch_or_insert_session_by_address(&addr1);
 
     let timestamp = Utc::now().naive_utc();
     // Receive basic message
     let new_message = NewMessage {
         session_id: session.id,
-        source_e164: Some(pn1.clone()),
-        source_uuid: None,
+        source_addr: Some(addr1),
         text: String::from("nyt joni ne velat!"),
         timestamp,
         sent: false,
@@ -302,8 +298,7 @@ async fn dev_message_update(storage: impl Future<Output = InMemoryDb>) {
     // which the Go worker would do before `process_message`
     let other_message = NewMessage {
         session_id: session.id,
-        source_e164: Some(pn1),
-        source_uuid: None,
+        source_addr: Some(addr1),
         text: String::from("nyt joni ne velat!"),
         timestamp,
         sent: false,
@@ -355,8 +350,7 @@ async fn process_inbound_group_message_without_sender(storage: impl Future<Outpu
 
     let new_message = NewMessage {
         session_id: session.id,
-        source_e164: None,
-        source_uuid: None,
+        source_addr: None,
         text: String::from("MSG 1"),
         timestamp: Utc::now().naive_utc(),
         sent: false,
@@ -405,8 +399,7 @@ async fn process_outbound_group_message_without_sender(storage: impl Future<Outp
 
     let new_message = NewMessage {
         session_id: session.id,
-        source_e164: None,
-        source_uuid: None,
+        source_addr: None,
         text: String::from("MSG 1"),
         timestamp: Utc::now().naive_utc(),
         sent: false,
@@ -439,6 +432,19 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
     let pn2 = phonenumber::parse(None, "+358501234568").unwrap();
     let pn3 = phonenumber::parse(None, "+358501234569").unwrap();
 
+    // Give the recipients ACI
+    for pn in [&pn1, &pn2, &pn3] {
+        let uuid1 = uuid::Uuid::new_v4();
+        let r1 = storage.fetch_or_insert_recipient_by_phonenumber(pn);
+        let r2 = storage.merge_and_fetch_recipient(
+            Some(pn.clone()),
+            Some(ServiceAddress::new_aci(uuid1)),
+            None,
+            whisperfish_store::TrustLevel::Certain,
+        );
+        assert!(r1.id == r2.id);
+    }
+
     // Here the client worker will have resolved a group exists
     let group_id = vec![42u8, 126u8, 71u8, 75u8];
     let group = GroupV1 {
@@ -449,6 +455,12 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
 
     let session = storage.fetch_or_insert_session_by_group_v1(&group);
 
+    let addr1 = storage
+        .fetch_recipient_by_e164(&pn1)
+        .unwrap()
+        .to_service_address();
+    assert!(addr1.is_some());
+
     // Test a session was created
     let group = session.unwrap_group_v1();
     assert_eq!(&group.name, ("Spurdospärde"));
@@ -456,8 +468,7 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
 
     let new_message = NewMessage {
         session_id: session.id,
-        source_e164: Some(pn1),
-        source_uuid: None,
+        source_addr: addr1,
         text: String::from("MSG 1"),
         timestamp: Utc::now().naive_utc(),
         sent: false,
@@ -682,27 +693,31 @@ async fn test_recipient_actions() {
         .unwrap();
 
     let uuid1 = uuid::Uuid::new_v4();
+    let addr1 = ServiceAddress {
+        uuid: uuid1,
+        identity: ServiceIdType::AccountIdentity,
+    };
 
-    let recip = storage.fetch_or_insert_recipient_by_uuid(uuid1);
+    let recip = storage.fetch_or_insert_recipient_by_address(&addr1);
 
     assert_eq!(
         recip.unidentified_access_mode,
         UnidentifiedAccessMode::Unknown
     );
-    storage.set_recipient_unidentified(recip.id, UnidentifiedAccessMode::Disabled);
-    let recip = storage.fetch_or_insert_recipient_by_uuid(uuid1);
+    storage.set_recipient_unidentified(&recip, UnidentifiedAccessMode::Disabled);
+    let recip = storage.fetch_or_insert_recipient_by_address(&addr1);
     assert_eq!(
         recip.unidentified_access_mode,
         UnidentifiedAccessMode::Disabled
     );
-    storage.set_recipient_unidentified(recip.id, UnidentifiedAccessMode::Enabled);
-    let recip = storage.fetch_or_insert_recipient_by_uuid(uuid1);
+    storage.set_recipient_unidentified(&recip, UnidentifiedAccessMode::Enabled);
+    let recip = storage.fetch_or_insert_recipient_by_address(&addr1);
     assert_eq!(
         recip.unidentified_access_mode,
         UnidentifiedAccessMode::Enabled
     );
-    storage.set_recipient_unidentified(recip.id, UnidentifiedAccessMode::Unrestricted);
-    let recip = storage.fetch_or_insert_recipient_by_uuid(uuid1);
+    storage.set_recipient_unidentified(&recip, UnidentifiedAccessMode::Unrestricted);
+    let recip = storage.fetch_or_insert_recipient_by_address(&addr1);
     assert_eq!(
         recip.unidentified_access_mode,
         UnidentifiedAccessMode::Unrestricted
@@ -717,8 +732,7 @@ async fn test_recipient_actions() {
         received: true,
         flags: 0,
         outgoing: true,
-        source_e164: recip.e164.clone(),
-        source_uuid: None,
+        source_addr: Some(addr1),
         text: "Hi!".into(),
         is_read: false,
         is_unidentified: false,
@@ -741,14 +755,14 @@ async fn test_recipient_actions() {
     assert!(msg.is_read);
 
     assert!(storage.fetch_message_receipts(msg.id).is_empty());
-    storage.mark_message_received(uuid1, msg.server_timestamp, None);
+    storage.mark_message_received(ServiceAddress::new_aci(uuid1), msg.server_timestamp, None);
     assert!(!storage.fetch_message_receipts(msg.id).is_empty());
 
     let reaction = Reaction {
         emoji: Some("❤".into()),
         remove: Some(false),
         target_author_aci: Some(recip.uuid.unwrap().to_string()),
-        target_sent_timestamp: Some(msg.server_timestamp.timestamp_millis() as _),
+        target_sent_timestamp: Some(naive_chrono_to_millis(msg.server_timestamp)),
     };
     let data_msg = DataMessage {
         body: None,
@@ -757,7 +771,7 @@ async fn test_recipient_actions() {
         flags: None,
         expire_timer: None,
         profile_key: Some([0].to_vec()),
-        timestamp: Some(msg.server_timestamp.timestamp_millis() as _),
+        timestamp: Some(naive_chrono_to_millis(msg.server_timestamp)),
         quote: None,
         contact: [].to_vec(),
         preview: [].to_vec(),

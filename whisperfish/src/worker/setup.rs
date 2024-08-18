@@ -4,6 +4,7 @@ use crate::store::TrustLevel;
 use anyhow::Context;
 use libsignal_service::protocol;
 use libsignal_service::push_service::{ServiceIds, VerificationTransport, DEFAULT_DEVICE_ID};
+use libsignal_service::ServiceAddress;
 use phonenumber::PhoneNumber;
 use qmetaobject::prelude::*;
 use std::rc::Rc;
@@ -82,11 +83,20 @@ impl SetupWorker {
             }
             this.borrow_mut().registered = true;
             this.borrow().setupChanged();
-            // write changed config to file here
-            // XXX handle return value here appropriately !!!
-            config.write_to_file().expect("cannot write to config file");
-        } else if let Err(e) = SetupWorker::setup_storage(app.clone(), config).await {
+
+            if let Err(e) = config.write_to_file() {
+                tracing::error!("Error writing config file: {}", e);
+                this.borrow().clientFailed();
+                return;
+            }
+        } else if let Err(e) = SetupWorker::setup_storage(app.clone(), config.clone()).await {
             tracing::error!("Error setting up storage: {}", e);
+            this.borrow().clientFailed();
+            return;
+        }
+
+        if config.get_aci().is_none() {
+            tracing::error!("ACI UUID not set after registration or opening storage!");
             this.borrow().clientFailed();
             return;
         }
@@ -206,8 +216,6 @@ impl SetupWorker {
             .take(24)
             .map(char::from)
             .collect();
-        // XXX in rand 0.8, this needs to be a Vec<u8> and be converted afterwards.
-        // let password = std::str::from_utf8(&password)?.to_string();
 
         let reg = if is_primary {
             SetupWorker::register_as_primary(app.clone(), &config, password, storage_password)
@@ -222,6 +230,7 @@ impl SetupWorker {
 
         this.phoneNumberInner = Some(reg.phonenumber.clone());
         this.uuidInner = Some(reg.service_ids.aci);
+        this.pniInner = Some(reg.service_ids.pni);
         this.deviceId = reg.device_id.into();
 
         config.set_tel(reg.phonenumber.clone());
@@ -232,8 +241,7 @@ impl SetupWorker {
         if let Some(profile_key) = reg.profile_key {
             storage.update_profile_key(
                 Some(reg.phonenumber),
-                Some(reg.service_ids.aci),
-                Some(reg.service_ids.pni),
+                Some(ServiceAddress::new_aci(reg.service_ids.aci)),
                 &profile_key,
                 TrustLevel::Certain,
             );
@@ -335,7 +343,7 @@ impl SetupWorker {
             storage,
             phonenumber: number,
             service_ids: ServiceIds {
-                aci: res.uuid,
+                aci: res.aci,
                 pni: res.pni,
             },
             device_id: protocol::DeviceId::from(DEFAULT_DEVICE_ID),

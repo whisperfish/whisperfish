@@ -126,7 +126,7 @@ impl SessionMethods {
                 } else if let Some(name) = r.profile_given_name.as_ref() {
                     QVariant::from(QString::from(name.as_str()))
                 } else {
-                    QVariant::from(QString::from(r.e164_or_uuid().as_str()))
+                    QVariant::from(QString::from(r.e164_or_address().as_str()))
                 })
             }
             let mut item = QVariantMap::default();

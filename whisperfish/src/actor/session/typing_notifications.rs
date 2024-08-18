@@ -102,7 +102,7 @@ impl Handler<UpdateTypingNotifications> for SessionActor {
         let fetch_sessions = async move {
             let mut map: HashMap<i32, Vec<orm::Recipient>> = HashMap::new();
             for typing in &typings {
-                let sender_recipient = storage.fetch_recipient_by_uuid(typing.sender.uuid);
+                let sender_recipient = storage.fetch_recipient(&typing.sender);
                 if sender_recipient.is_none() {
                     continue;
                 }

@@ -29,7 +29,7 @@ impl StreamHandler<OutdatedProfile> for ClientActor {
                 (
                     uuid,
                     service
-                        .retrieve_profile_by_id(ServiceAddress::from(uuid), key)
+                        .retrieve_profile_by_id(ServiceAddress::new_aci(uuid), key)
                         .await,
                 )
             }
@@ -98,7 +98,7 @@ impl ClientActor {
     ) -> anyhow::Result<()> {
         let storage = self.storage.clone().unwrap();
         let recipient = storage
-            .fetch_recipient_by_uuid(recipient_uuid)
+            .fetch_recipient(&ServiceAddress::new_aci(recipient_uuid))
             .ok_or_else(|| {
                 anyhow::anyhow!("could not find recipient for which we fetched a profile")
             })?;
@@ -148,7 +148,7 @@ impl ClientActor {
             // XXX: We came here through 404 error, can that mean unregistered user?
             tracing::trace!(
                 "Recipient {} doesn't have a profile on the server",
-                recipient.uuid()
+                recipient.e164_or_address()
             );
             let mut db = storage.db();
 
@@ -160,6 +160,11 @@ impl ClientActor {
                 .filter(uuid.nullable().eq(&recipient_uuid.to_string()))
                 .execute(&mut *db)
                 .expect("db");
+
+            // If updating self, invalidate the cache
+            if Some(recipient_uuid) == self.config.get_aci() {
+                storage.invalidate_self_recipient();
+            }
         }
 
         Ok(())

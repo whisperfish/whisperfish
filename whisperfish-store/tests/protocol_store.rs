@@ -62,7 +62,7 @@ mod tests {
         let user_id = uuid::Uuid::new_v4();
         let device_id = rng.gen_range(2..=20);
 
-        let svc = ServiceAddress::from(user_id);
+        let svc = ServiceAddress::new_aci(user_id);
         let prot = ProtocolAddress::new(user_id.to_string(), DeviceId::from(device_id));
         (svc, prot)
     }
@@ -91,7 +91,7 @@ mod tests {
 
         let key_pair = KeyPair::generate(&mut rng);
         let id: u32 = rng.gen();
-        let timestamp: u64 = rng.gen();
+        let timestamp = Timestamp::from_epoch_millis(rng.gen::<u64>());
         let signature = vec![0; 3];
 
         SignedPreKeyRecord::new(SignedPreKeyId::from(id), timestamp, &key_pair, &signature)
@@ -156,7 +156,7 @@ mod tests {
 
         // We need two identity keys and two addresses
         let (_svc1, addr1) = create_random_protocol_address();
-        let (_svc2, addr2) = create_random_protocol_address();
+        let (svc2, addr2) = create_random_protocol_address();
         let key1 = create_random_identity_key();
         let key2 = create_random_identity_key();
 
@@ -177,7 +177,7 @@ mod tests {
         assert_eq!(aci_storage.get_identity(&addr2).await.unwrap(), Some(key2));
 
         // After removing key2, it shouldn't be there
-        storage.delete_identity(&addr2).await.unwrap();
+        storage.delete_identity_key(&svc2);
         // XXX Doesn't implement equality *arg*
         assert_eq!(aci_storage.get_identity(&addr2).await.unwrap(), None);
 

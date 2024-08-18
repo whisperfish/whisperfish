@@ -7,6 +7,7 @@ use actix::{ActorContext, Handler};
 use futures::TryFutureExt;
 use libsignal_service::protocol::SessionStore;
 use libsignal_service::session_store::SessionStoreExt;
+use libsignal_service::ServiceAddress;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
 use std::collections::HashMap;
@@ -185,20 +186,22 @@ impl RecipientImpl {
         if self.recipient.is_none() || self.force_init {
             let storage = ctx.storage();
             let recipient = if let Some(uuid) = self.recipient_uuid {
-                storage.fetch_recipient_by_uuid(uuid).map(|inner| {
-                    let direct_message_recipient_id = storage
-                        .fetch_session_by_recipient_id(inner.id)
-                        .map(|session| session.id)
-                        .unwrap_or(-1);
-                    self.recipient_id = Some(inner.id);
-                    // XXX trigger Qt signal for this?
-                    RecipientWithAnalyzedSession {
-                        inner,
-                        direct_message_recipient_id,
-                        fingerprint: None,
-                        versions: Vec::new(),
-                    }
-                })
+                storage
+                    .fetch_recipient(&ServiceAddress::new_aci(uuid))
+                    .map(|inner| {
+                        let direct_message_recipient_id = storage
+                            .fetch_session_by_recipient_id(inner.id)
+                            .map(|session| session.id)
+                            .unwrap_or(-1);
+                        self.recipient_id = Some(inner.id);
+                        // XXX trigger Qt signal for this?
+                        RecipientWithAnalyzedSession {
+                            inner,
+                            direct_message_recipient_id,
+                            fingerprint: None,
+                            versions: Vec::new(),
+                        }
+                    })
             } else if let Some(id) = self.recipient_id {
                 if id >= 0 {
                     storage.fetch_recipient_by_id(id).map(|inner| {
@@ -248,14 +251,11 @@ impl RecipientImpl {
         tracing::trace!("Computing fingerprint");
         // If an ACI recipient was found, attempt to compute the fingerprint
         let recipient = self.recipient.as_ref().unwrap();
-        if let Some(recipient_svc) = recipient.to_service_address() {
+        if let Some(recipient_svc) = recipient.to_aci_service_address() {
             let storage = ctx.storage();
             let recipient_id = recipient.id;
             let compute = async move {
-                let local = storage
-                    .fetch_self_recipient()
-                    .expect("self recipient present in db");
-                let local_svc = local.to_service_address().expect("self-recipient has UUID");
+                let local_svc = storage.fetch_self_service_address_aci().expect("self ACI");
                 let fingerprint = storage
                     .aci_storage()
                     .compute_safety_number(&local_svc, &recipient_svc)

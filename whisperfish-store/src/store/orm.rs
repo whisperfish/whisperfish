@@ -225,7 +225,7 @@ impl Default for Message {
             sender_recipient_id: Default::default(),
             received_timestamp: Default::default(),
             sent_timestamp: Default::default(),
-            server_timestamp: NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+            server_timestamp: Default::default(),
             is_read: Default::default(),
             is_outbound: Default::default(),
             flags: Default::default(),
@@ -439,6 +439,16 @@ impl Display for Identity {
     }
 }
 
+impl From<&str> for Identity {
+    fn from(kind: &str) -> Self {
+        match kind {
+            "aci" => Identity::Aci,
+            "pni" => Identity::Pni,
+            _ => panic!("Identity must be \"aci\" or \"pni\""),
+        }
+    }
+}
+
 #[derive(Queryable, Identifiable, Insertable, Debug, Clone)]
 pub struct SignedPrekey {
     pub id: i32,
@@ -539,14 +549,28 @@ impl Recipient {
         }
     }
 
+    /// Create a `ServiceAddress` from the `Recipient` if possible. Prefers ACI over PNI.
     pub fn to_service_address(&self) -> Option<libsignal_service::ServiceAddress> {
-        // XXX what about PNI?
-        self.uuid
-            .map(|uuid| libsignal_service::ServiceAddress { uuid })
+        self.to_aci_service_address()
+            .or_else(|| self.to_pni_service_address())
     }
 
-    pub fn uuid(&self) -> String {
+    /// Create an ACI `ServiceAddress` of the `Recipient` if possible.
+    pub fn to_aci_service_address(&self) -> Option<ServiceAddress> {
+        self.uuid.map(ServiceAddress::new_aci)
+    }
+
+    /// Create an PNI `ServiceAddress` of the `Recipient` if possible.
+    pub fn to_pni_service_address(&self) -> Option<ServiceAddress> {
+        self.pni.map(ServiceAddress::new_pni)
+    }
+
+    pub fn aci(&self) -> String {
         self.uuid.as_ref().map(Uuid::to_string).unwrap_or_default()
+    }
+
+    pub fn pni(&self) -> String {
+        self.pni.as_ref().map(Uuid::to_string).unwrap_or_default()
     }
 
     pub fn e164(&self) -> String {
@@ -556,19 +580,23 @@ impl Recipient {
             .unwrap_or_default()
     }
 
-    pub fn e164_or_uuid(&self) -> String {
-        self.e164
-            .as_ref()
-            .map(PhoneNumber::to_string)
-            .or_else(|| self.uuid.as_ref().map(Uuid::to_string))
-            .expect("either uuid or e164")
+    pub fn e164_or_address(&self) -> String {
+        if let Some(e164) = &self.e164 {
+            e164.to_string()
+        } else if let Some(uuid) = &self.uuid {
+            uuid.to_string()
+        } else if let Some(pni) = &self.pni {
+            "PNI:".to_string() + pni.to_string().as_str()
+        } else {
+            panic!("either e164, aci or pni");
+        }
     }
 
     pub fn name(&self) -> Cow<'_, str> {
         self.profile_joined_name
             .as_deref()
             .map(Cow::Borrowed)
-            .unwrap_or_else(|| Cow::Owned(self.e164_or_uuid()))
+            .unwrap_or_else(|| Cow::Owned(self.e164_or_address()))
     }
 }
 
@@ -1797,10 +1825,11 @@ mod tests {
             r.to_service_address(),
             Some(libsignal_service::ServiceAddress {
                 uuid: uuid::Uuid::parse_str("bff93979-a0fa-41f5-8ccf-e319135384d8").unwrap(),
+                identity: libsignal_service::push_service::ServiceIdType::AccountIdentity,
             })
         );
-        assert_eq!(r.uuid(), "bff93979-a0fa-41f5-8ccf-e319135384d8");
-        assert_eq!(r.e164_or_uuid(), "+358401010101");
+        assert_eq!(r.aci(), "bff93979-a0fa-41f5-8ccf-e319135384d8");
+        assert_eq!(r.e164_or_address(), "+358401010101");
         assert_eq!(r.name(), "Nick Name");
     }
 

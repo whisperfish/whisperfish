@@ -24,6 +24,7 @@ use libsignal_service::sender::SendMessageResult;
 use tracing_futures::Instrument;
 use uuid::Uuid;
 use whisperfish_store::millis_to_naive_chrono;
+use whisperfish_store::naive_chrono_to_millis;
 use whisperfish_store::orm;
 use whisperfish_store::orm::shorten;
 use whisperfish_store::orm::MessageType;
@@ -72,6 +73,7 @@ use qmetaobject::prelude::*;
 use qttypes::QVariantList;
 use std::borrow::Cow;
 use std::collections::HashSet;
+use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::fmt::{Display, Error, Formatter};
 use std::fs::remove_file;
@@ -452,7 +454,7 @@ impl ClientActor {
 
         let session_type = orm::SessionType::DirectMessage(
             storage
-                .fetch_recipient_by_uuid(metadata.sender.uuid)
+                .fetch_recipient(&metadata.sender)
                 .expect("needs-receipt sender recipient"),
         );
 
@@ -479,21 +481,22 @@ impl ClientActor {
         ctx: &mut <Self as Actor>::Context,
         // XXX: remove this argument
         source_phonenumber: Option<PhoneNumber>,
-        source_uuid: Option<Uuid>,
+        source_addr: Option<ServiceAddress>,
         msg: &DataMessage,
         sync_sent: Option<Sent>,
         metadata: &Metadata,
         edit: Option<NaiveDateTime>,
     ) -> Option<i32> {
         let timestamp = metadata.timestamp;
+        let dest_identity = metadata.destination.identity;
         let settings = crate::config::SettingsBridge::default();
         let is_sync_sent = sync_sent.is_some();
 
         let mut storage = self.storage.clone().expect("storage");
-        let sender_recipient = if source_phonenumber.is_some() || source_uuid.is_some() {
+        let sender_recipient = if source_phonenumber.is_some() || source_addr.is_some() {
             Some(storage.merge_and_fetch_recipient(
                 source_phonenumber.clone(),
-                source_uuid,
+                source_addr,
                 None,
                 crate::store::TrustLevel::Certain,
             ))
@@ -509,18 +512,25 @@ impl ClientActor {
 
         if flags & DataMessageFlags::EndSession as i32 != 0 {
             let storage = storage.clone();
-            if let Some(svc) = sender_recipient
+            if let Some(svc_addr) = sender_recipient
                 .as_ref()
                 .and_then(|r| r.to_service_address())
             {
                 actix::spawn(async move {
-                    // XXX What about PNI sessions?
-                    if let Err(e) = storage.aci_storage().delete_all_sessions(&svc).await {
+                    if let Err(e) = match dest_identity {
+                        ServiceIdType::AccountIdentity => {
+                            storage.aci_storage().delete_all_sessions(&svc_addr).await
+                        }
+                        ServiceIdType::PhoneNumberIdentity => {
+                            storage.pni_storage().delete_all_sessions(&svc_addr).await
+                        }
+                    } {
                         tracing::error!(
-                            "End session requested, but could not end session: {:?}",
+                            "End session requested for {}, but could not end session: {:?}",
+                            &svc_addr.to_service_id(),
                             e
                         );
-                    }
+                    };
                 });
             } else {
                 tracing::error!("Requested session reset but no service address associated");
@@ -528,12 +538,11 @@ impl ClientActor {
             message_type = Some(MessageType::EndSession);
         }
 
-        if (source_phonenumber.is_some() || source_uuid.is_some()) && !is_sync_sent {
+        if (source_phonenumber.is_some() || source_addr.is_some()) && !is_sync_sent {
             if let Some(key) = msg.profile_key.as_deref() {
                 let (recipient, was_updated) = storage.update_profile_key(
                     source_phonenumber.clone(),
-                    source_uuid,
-                    None,
+                    source_addr,
                     key,
                     crate::store::TrustLevel::Certain,
                 );
@@ -615,10 +624,7 @@ impl ClientActor {
             );
             let db_message = storage.fetch_message_by_timestamp(target_sent_timestamp);
             if let Some(db_message) = db_message {
-                let own_id = storage
-                    .fetch_self_recipient()
-                    .expect("self recipient in db")
-                    .id;
+                let own_id = storage.fetch_self_recipient_id();
                 // Missing sender_recipient_id => we are the sender
                 let sender_id = db_message.sender_recipient_id.unwrap_or(own_id);
                 if sender_id != sender_recipient.as_ref().unwrap().id {
@@ -633,7 +639,7 @@ impl ClientActor {
             } else {
                 tracing::warn!(
                     "Message {} not found for deletion!",
-                    target_sent_timestamp.timestamp_millis()
+                    naive_chrono_to_millis(target_sent_timestamp)
                 );
             }
         }
@@ -646,12 +652,11 @@ impl ClientActor {
             return None;
         };
 
-        let is_unidentified = if let Some(sent) = &sync_sent {
-            sent.unidentified_status.iter().any(|x| {
-                Some(x.destination_service_id())
-                    == source_uuid.as_ref().map(Uuid::to_string).as_deref()
-                    && x.unidentified()
-            })
+        let is_unidentified = if let (Some(sent), Some(source_addr)) = (&sync_sent, &source_addr) {
+            let source_service_id = source_addr.to_service_id();
+            sent.unidentified_status
+                .iter()
+                .any(|x| x.unidentified() && x.destination_service_id() == source_service_id)
         } else {
             metadata.unidentified_sender
         };
@@ -700,7 +705,7 @@ impl ClientActor {
         let session = group.unwrap_or_else(|| {
             let recipient = storage.merge_and_fetch_recipient(
                 source_phonenumber.clone(),
-                source_uuid,
+                source_addr,
                 None,
                 TrustLevel::Certain,
             );
@@ -712,8 +717,7 @@ impl ClientActor {
         let expires_in = session.expiring_message_timeout;
 
         let new_message = crate::store::NewMessage {
-            source_e164: source_phonenumber,
-            source_uuid,
+            source_addr,
             text,
             flags,
             outgoing: is_sync_sent,
@@ -789,10 +793,10 @@ impl ClientActor {
                     .unwrap_or_else(|| "".into()),
                 sender_recipient
                     .as_ref()
-                    .map(|x| x.e164_or_uuid().into())
+                    .map(|x| x.e164_or_address().into())
                     .unwrap_or_else(|| "".into()),
                 sender_recipient
-                    .map(|x| x.uuid().into())
+                    .map(|x| x.aci().into())
                     .unwrap_or_else(|| "".into()),
                 message.text.as_deref().unwrap_or("").into(),
                 session.is_group(),
@@ -884,7 +888,7 @@ impl ClientActor {
             timestamp,
             millis
         );
-        if let Some(updated) = storage.mark_message_received(source.uuid, timestamp, None) {
+        if let Some(updated) = storage.mark_message_received(source, timestamp, None) {
             self.inner
                 .pinned()
                 .borrow_mut()
@@ -917,9 +921,15 @@ impl ClientActor {
                 tracing::trace!("Ignoring NullMessage");
             }
             ContentBody::DataMessage(message) => {
-                let uuid = metadata.sender.uuid;
-                let message_id =
-                    self.handle_message(ctx, None, Some(uuid), &message, None, &metadata, None);
+                let message_id = self.handle_message(
+                    ctx,
+                    None,
+                    Some(metadata.sender),
+                    &message,
+                    None,
+                    &metadata,
+                    None,
+                );
                 if metadata.needs_receipt {
                     // XXX Is this guard correct? If the recipient requests a delivery receipt,
                     //     we may have to send it even if we don't have a message_id.
@@ -938,11 +948,10 @@ impl ClientActor {
                     .data_message
                     .as_ref()
                     .expect("edit message contains data");
-                let uuid = metadata.sender.uuid;
                 let message_id = self.handle_message(
                     ctx,
                     None,
-                    Some(uuid),
+                    Some(metadata.sender),
                     message,
                     None,
                     &metadata,
@@ -968,13 +977,16 @@ impl ClientActor {
                     handled = true;
                     tracing::trace!("Sync sent message");
                     // These are messages sent through a paired device.
-                    let uuid = sent
+                    let address = sent
                         .destination_service_id
                         .as_deref()
-                        .map(Uuid::parse_str)
+                        .map(ServiceAddress::try_from)
                         .transpose()
                         .map_err(|_| {
-                            tracing::warn!("Unparsable UUID {}", sent.destination_service_id())
+                            tracing::warn!(
+                                "Unparsable ServiceAddress {}",
+                                sent.destination_service_id()
+                            )
                         })
                         .ok()
                         .flatten();
@@ -995,7 +1007,7 @@ impl ClientActor {
                             // Empty string mainly when groups,
                             // but maybe needs a check. TODO
                             phonenumber,
-                            uuid,
+                            address,
                             message,
                             Some(sent.clone()),
                             &metadata,
@@ -1010,7 +1022,7 @@ impl ClientActor {
                             // Empty string mainly when groups,
                             // but maybe needs a check. TODO
                             phonenumber,
-                            uuid,
+                            address,
                             message,
                             Some(sent.clone()),
                             &metadata,
@@ -1112,7 +1124,7 @@ impl ClientActor {
                 for &ts in &receipt.timestamp {
                     // Signal uses timestamps in milliseconds, chrono has nanoseconds
                     if let Some(updated) = storage.mark_message_received(
-                        metadata.sender.uuid,
+                        metadata.sender,
                         millis_to_naive_chrono(ts),
                         None,
                     ) {
@@ -1385,9 +1397,6 @@ impl Handler<QueueMessage> for ClientActor {
         let _span = tracing::trace_span!("QueueMessage", %msg).entered();
         let storage = self.storage.as_mut().unwrap();
 
-        let self_recipient = storage
-            .fetch_self_recipient()
-            .expect("self recipient set when sending");
         let session = storage
             .fetch_session_by_id(msg.session_id)
             .expect("existing session when sending");
@@ -1404,11 +1413,9 @@ impl Handler<QueueMessage> for ClientActor {
 
         let inserted_msg = storage.create_message(&crate::store::NewMessage {
             session_id: msg.session_id,
-            source_e164: self_recipient.e164,
-            source_uuid: self_recipient.uuid,
+            source_addr: storage.fetch_self_service_address_aci(),
             text: msg.message,
-            timestamp: chrono::Utc::now().naive_utc(),
-            quote_timestamp: quote.map(|msg| msg.server_timestamp.timestamp_millis() as u64),
+            quote_timestamp: quote.map(|msg| naive_chrono_to_millis(msg.server_timestamp)),
             expires_in: session.expiring_message_timeout,
             ..crate::store::NewMessage::new_outgoing()
         });
@@ -1453,17 +1460,13 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
         );
         let storage = self.storage.as_mut().unwrap();
 
-        let self_recipient = storage
-            .fetch_self_recipient()
-            .expect("self recipient set when sending");
         let session = storage
             .fetch_session_by_id(msg.session_id)
             .expect("existing session when sending");
 
         let msg = storage.create_message(&crate::store::NewMessage {
             session_id: session.id,
-            source_e164: self_recipient.e164,
-            source_uuid: self_recipient.uuid,
+            source_addr: storage.fetch_self_service_address_aci(),
             expires_in: msg.expires_in,
             flags: DataMessageFlags::ExpirationTimerUpdate as i32,
             message_type: Some(MessageType::ExpirationTimerUpdate),
@@ -1483,7 +1486,7 @@ impl Handler<SendMessage> for ClientActor {
     fn handle(&mut self, SendMessage(mid): SendMessage, ctx: &mut Self::Context) -> Self::Result {
         let _span = tracing::info_span!("ClientActor::SendMessage", message_id = mid).entered();
         let sender = self.message_sender();
-        let storage = self.storage.as_mut().unwrap();
+        let storage = self.storage.as_mut().unwrap().clone();
         let msg = storage.fetch_augmented_message(mid).unwrap();
         let session = storage.fetch_session_by_id(msg.session_id).unwrap();
         let session_id = session.id;
@@ -1493,13 +1496,12 @@ impl Handler<SendMessage> for ClientActor {
             return Box::pin(async {}.into_actor(self).map(|_, _, _| ()));
         }
 
-        let self_recipient = storage.fetch_self_recipient();
         tracing::trace!("Sending for session: {}", session);
         tracing::trace!("Sending message: {}", msg.inner);
 
-        let storage = storage.clone();
         let addr = ctx.address();
-        let self_uuid = self.self_aci.unwrap().uuid;
+        // XXX What about PNI? When should we use it?
+        let self_addr = self.self_aci.unwrap();
         Box::pin(
             async move {
                 let mut sender = sender.await?;
@@ -1509,7 +1511,7 @@ impl Handler<SendMessage> for ClientActor {
                 }
                 let group_v2 = session.group_context_v2();
 
-                let timestamp = msg.server_timestamp.timestamp_millis() as u64;
+                let timestamp = naive_chrono_to_millis(msg.server_timestamp);
 
                 let quote = msg
                     .quote_id
@@ -1523,7 +1525,7 @@ impl Handler<SendMessage> for ClientActor {
                             .and_then(|x| storage.fetch_recipient_by_id(x));
 
                         Quote {
-                            id: Some(quoted_message.server_timestamp.timestamp_millis() as u64),
+                            id: Some(naive_chrono_to_millis(quoted_message.server_timestamp)),
                             author_aci: quote_sender.as_ref().and_then(|r| r.uuid.as_ref().map(Uuid::to_string)),
                             text: quoted_message.text.clone(),
 
@@ -1547,7 +1549,7 @@ impl Handler<SendMessage> for ClientActor {
                     required_protocol_version: Some(0),
                     group_v2,
 
-                    profile_key: self_recipient.and_then(|r| r.profile_key),
+                    profile_key: storage.fetch_self_recipient_profile_key(),
                     quote,
                     expire_timer: msg.expires_in.map(|x| x as u32),
                     body_ranges: crate::store::body_ranges::to_vec(msg.message_ranges.as_ref()),
@@ -1630,7 +1632,7 @@ impl Handler<SendMessage> for ClientActor {
                     Ok(results) => {
                         let unidentified = results.iter().all(|res| match res {
                             // XXX: We should be able to send unidentified messages to our own devices too.
-                            Ok(message) => message.unidentified || (message.recipient.uuid == self_uuid),
+                            Ok(message) => message.unidentified || (message.recipient.uuid == self_addr.uuid),
                             _ => false,
                         });
 
@@ -1638,7 +1640,7 @@ impl Handler<SendMessage> for ClientActor {
                         for result in results.iter().filter_map(|res| res.as_ref().ok()) {
                             // Look up recipient to check the current state
                             let recipient = storage
-                                .fetch_recipient_by_uuid(result.recipient.uuid)
+                                .fetch_recipient(&result.recipient)
                                 .expect("sent recipient in db");
                             let target_state = if result.unidentified {
                                 // Unrestricted and success; keep unrestricted
@@ -1665,7 +1667,7 @@ impl Handler<SendMessage> for ClientActor {
                                     recipient.unidentified_access_mode,
                                     target_state
                                 );
-                                storage.set_recipient_unidentified(recipient.id, target_state);
+                                storage.set_recipient_unidentified(&recipient, target_state);
                             }
                         }
 
@@ -1696,15 +1698,20 @@ impl Handler<SendMessage> for ClientActor {
                                             tracing::warn!("Rate limit proof requested, but type 'recaptcha' wasn't available!");
                                         }
                                     },
-                                    MessageSenderError::NotFound { uuid } => {
-                                        tracing::warn!("Recipient not found, removing device sessions {}", uuid);
-                                        // XXX what about PNI?
-                                        let num = storage.aci_storage().delete_all_sessions(&ServiceAddress { uuid }).await?;
+                                    MessageSenderError::NotFound { addr } => {
+                                        tracing::warn!("Recipient not found, removing device sessions {:?}", addr);
+                                        let num = match self_addr.identity {
+                                            ServiceIdType::AccountIdentity =>
+                                                storage.aci_storage().delete_all_sessions(&addr).await?,
+                                            ServiceIdType::PhoneNumberIdentity =>
+                                                storage.pni_storage().delete_all_sessions(&addr).await?,
+                                        };
+
                                         tracing::trace!("Removed {} device session(s)", num);
-                                        if storage.mark_recipient_registered(uuid, false) {
-                                            tracing::trace!("Marked recipient {uuid} as unregistered");
+                                        if storage.mark_recipient_registered(addr, false) {
+                                            tracing::trace!("Marked recipient {addr:?} as unregistered");
                                         } else {
-                                            tracing::warn!("Could not mark recipient as unregistered");
+                                            tracing::warn!("Could not mark recipient {addr:?} as unregistered");
                                         }
                                     },
                                     _ => {
@@ -1764,8 +1771,7 @@ impl Handler<EndSession> for ClientActor {
 
         let msg = storage.create_message(&crate::store::NewMessage {
             session_id: session.id,
-            source_e164: recipient.e164,
-            source_uuid: recipient.uuid,
+            source_addr: recipient.to_service_address(),
             timestamp: chrono::Utc::now().naive_utc(),
             flags: DataMessageFlags::EndSession.into(),
             message_type: Some(MessageType::EndSession),
@@ -1879,27 +1885,27 @@ impl Handler<SendReaction> for ClientActor {
         );
 
         let storage = self.storage.as_mut().unwrap();
-        let self_recipient = storage.fetch_self_recipient().unwrap();
+        let own_id = storage.fetch_self_recipient_id();
         let message = storage.fetch_message_by_id(message_id).unwrap();
 
         // Outgoing messages should not have sender_recipient_id set
-        let (sender_id, emoji) = if sender_id > 0 && sender_id != self_recipient.id {
+        let (sender_id, emoji) = if sender_id > 0 && sender_id != own_id {
             (sender_id, emoji)
         } else {
             if !message.is_outbound {
                 panic!("Inbound message {} has no sender recipient ID", message_id);
             }
             if remove {
-                let reaction = storage.fetch_reaction(message_id, self_recipient.id);
+                let reaction = storage.fetch_reaction(message_id, own_id);
                 if let Some(r) = reaction {
-                    (self_recipient.id, r.emoji)
+                    (own_id, r.emoji)
                 } else {
                     // XXX: Don't continue - we should remove the same emoji
                     tracing::error!("Message {} doesn't have our own reaction!", message_id);
-                    (self_recipient.id, emoji)
+                    (own_id, emoji)
                 }
             } else {
-                (self_recipient.id, emoji)
+                (own_id, emoji)
             }
         };
 
@@ -1928,9 +1934,9 @@ impl Handler<SendReaction> for ClientActor {
                         emoji: Some(emoji.clone()),
                         remove: Some(remove),
                         target_author_aci: sender_recipient.uuid.map(|u| u.to_string()),
-                        target_sent_timestamp: Some(
-                            message.server_timestamp.timestamp_millis() as u64
-                        ),
+                        target_sent_timestamp: Some(naive_chrono_to_millis(
+                            message.server_timestamp,
+                        )),
                     }),
                     ..Default::default()
                 };
@@ -1943,7 +1949,7 @@ impl Handler<SendReaction> for ClientActor {
                     for_story: false,
                 })
                 .await?
-                .map(|_| (emoji, now, self_recipient.id))
+                .map(|_| (emoji, now, own_id))
             }
             .into_actor(self)
             .map(move |res, _act, ctx| {
@@ -2007,6 +2013,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
 
         let storage = self.storage.clone().unwrap();
         let sender = self.message_sender();
+        // XXX What about PNI? When should we use it?
         let local_addr = self.self_aci.unwrap();
         let settings = crate::config::SettingsBridge::default();
         let cert_type = if settings.get_share_phone_number() {
@@ -2042,7 +2049,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                             } else {
                                 tracing::warn!(
                                     "No known UUID for {}; will not deliver this message.",
-                                    recipient.e164_or_uuid()
+                                    recipient.e164_or_address()
                                 );
                                 None
                             }
@@ -2104,9 +2111,13 @@ impl Handler<AttachmentDownloaded> for ClientActor {
 impl Handler<StorageReady> for ClientActor {
     type Result = ResponseActFuture<Self, ()>;
 
-    fn handle(&mut self, storageready: StorageReady, _ctx: &mut Self::Context) -> Self::Result {
-        self.storage = Some(storageready.storage.clone());
-        let phonenumber = self
+    fn handle(
+        &mut self,
+        StorageReady { storage }: StorageReady,
+        _ctx: &mut Self::Context,
+    ) -> Self::Result {
+        self.storage = Some(storage.clone());
+        let e164 = self
             .config
             .get_tel()
             .expect("phonenumber present after any registration");
@@ -2115,55 +2126,43 @@ impl Handler<StorageReady> for ClientActor {
         let pni = self.config.get_pni();
         let device_id = self.config.get_device_id();
 
-        storageready.storage.mark_pending_messages_failed();
+        tracing::info!("E.164: {e164}, ACI: {aci:?}, PNI: {pni:?}, DeviceId: {device_id}");
 
-        let storage_for_password = storageready.storage;
-        let request_password = async move {
-            tracing::info!(
-                "phonenumber: {phonenumber}, ACI: {aci:?}, PNI: {pni:?}, DeviceId: {device_id}"
-            );
+        storage.mark_pending_messages_failed();
 
-            let password = storage_for_password.signal_password().await.unwrap();
-            let signaling_key = storage_for_password.signaling_key().await.unwrap();
-
-            (aci, pni, phonenumber, device_id, password, signaling_key)
+        let credentials = async move {
+            ServiceCredentials {
+                aci,
+                pni,
+                phonenumber: e164,
+                password: Some(storage.signal_password().await.unwrap()),
+                signaling_key: storage.signaling_key().await.unwrap(),
+                device_id: Some(device_id.into()),
+            }
         }
         .instrument(tracing::span!(
             tracing::Level::INFO,
             "reading password and signaling key"
         ));
 
-        Box::pin(request_password.into_actor(self).map(
-            move |(aci, pni, phonenumber, device_id, password, signaling_key), act, ctx| {
-                let _span = tracing::trace_span!("whisperfish startup").entered();
-                // Store credentials
-                let credentials = ServiceCredentials {
-                    aci,
-                    pni,
-                    phonenumber,
-                    password: Some(password),
-                    signaling_key,
-                    device_id: Some(device_id.into()),
-                };
-                act.credentials = Some(credentials);
-                // end store credentials
+        Box::pin(
+            credentials
+                .into_actor(self)
+                .map(move |credentials, act, ctx| {
+                    let _span = tracing::trace_span!("whisperfish startup").entered();
 
-                // Signal service context
-                // XXX What about the whoami migration?
-                let aci = aci.expect("local uuid to initialize service cipher");
-                // end signal service context
-                act.self_aci = Some(ServiceAddress { uuid: aci });
-                if let Some(pni) = pni {
-                    act.self_pni = Some(ServiceAddress { uuid: pni });
-                }
+                    act.credentials = Some(credentials);
+                    let cred = act.credentials.as_ref().unwrap();
 
-                Self::queue_migrations(ctx);
+                    act.self_aci = cred.aci.map(ServiceAddress::new_aci);
+                    act.self_pni = cred.pni.map(ServiceAddress::new_pni);
 
-                ctx.notify(Restart);
+                    Self::queue_migrations(ctx);
 
-                ctx.notify(RefreshPreKeys);
-            },
-        ))
+                    ctx.notify(Restart);
+                    ctx.notify(RefreshPreKeys);
+                }),
+        )
     }
 }
 
@@ -2276,14 +2275,7 @@ impl Handler<RefreshProfile> for ClientActor {
                 }
             },
         };
-        if let Some(uuid) = recipient.uuid {
-            storage.mark_profile_outdated(uuid);
-        } else {
-            tracing::error!(
-                "Recipient without uuid; not refreshing profile: {:?}",
-                recipient
-            );
-        }
+        storage.mark_profile_outdated(&recipient);
         // Polling the actor will poll the OutdatedProfileStream, which should immediately fire the
         // necessary events.  This is hacky (XXX), we should in fact wake the stream somehow to ensure
         // correct behaviour.
@@ -2309,23 +2301,20 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             tracing::warn!("Message has no destination service id; ignoring");
             return;
         }
-        let destination = ServiceAddress {
-            uuid: Uuid::parse_str(msg.destination_service_id.as_deref().unwrap())
-                .expect("parse uuid"),
-        };
-        let service_id = if destination == self.self_aci.expect("local aci known") {
-            ServiceIdType::AccountIdentity
-        } else if destination == self.self_pni.expect("local pni known") {
-            ServiceIdType::PhoneNumberIdentity
-        } else {
+        let incoming_address =
+            ServiceAddress::try_from(msg.destination_service_id.as_deref().unwrap()).unwrap();
+        if ![self.self_aci, self.self_pni]
+            .iter()
+            .any(|self_dest| self_dest == &Some(incoming_address))
+        {
             tracing::warn!(
-                "Message for unknown destination: {:?}. Dropping",
-                destination
+                "Message destination {:?} doesn't match our ACI or PNI. Dropping.",
+                incoming_address
             );
             return;
-        };
+        }
 
-        let mut cipher = self.cipher(service_id);
+        let mut cipher = self.cipher(incoming_address.identity);
 
         if msg.is_receipt() {
             self.process_receipt(&msg);
@@ -2351,19 +2340,19 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             return None;
                         }
                         Err(ServiceError::SignalProtocolError(
-                            SignalProtocolError::UntrustedIdentity(addr),
+                            SignalProtocolError::UntrustedIdentity(dest_protocol_address),
                         )) => {
                             // This branch is the only one that loops, and it *should not* loop more than once.
-                            let source_uuid = Uuid::parse_str(addr.name()).expect("only uuid-based identities accessible in the database");
-                            tracing::warn!("Untrusted identity for {}; replacing identity and inserting a warning.", addr);
-                            let recipient = storage.fetch_or_insert_recipient_by_uuid(source_uuid);
-                            if service_id == ServiceIdType::PhoneNumberIdentity {
-                                storage.mark_recipient_needs_pni_signature(recipient.id, true);
+                            let dest_address = ServiceAddress::try_from(dest_protocol_address.name()).expect("valid ACI or PNI UUID in ProtocolAddress");
+                            tracing::warn!("Untrusted identity for {}; replacing identity and inserting a warning.", dest_protocol_address);
+                            let recipient = storage.fetch_or_insert_recipient_by_address(&dest_address);
+                            if dest_address.identity == ServiceIdType::PhoneNumberIdentity {
+                                storage.mark_recipient_needs_pni_signature(&recipient, true);
                             }
                             let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
                             let msg = crate::store::NewMessage {
                                 session_id: session.id,
-                                source_uuid: Some(source_uuid),
+                                source_addr: Some(dest_address),
                                 message_type: Some(MessageType::IdentityKeyChange),
                                 ..crate::store::NewMessage::new_incoming()
                             };
@@ -2371,12 +2360,11 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
 
                             if !recipient.is_registered {
                                 tracing::warn!("Recipient was marked as unregistered, marking as registered.");
-                                storage.mark_recipient_registered(source_uuid, true);
+                                storage.mark_recipient_registered(dest_address, true);
                             }
 
-                            let removed = storage.delete_identity_key(&addr);
-                            if ! removed {
-                                tracing::error!("Could not remove identity key for {}.  Please file a bug.", addr);
+                            if !storage.delete_identity_key(&dest_address) {
+                                tracing::error!("Could not remove identity key for {}.  Please file a bug.", dest_protocol_address);
                                 return None;
                             }
                         }
@@ -2390,7 +2378,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                 tracing::trace!(sender = ?content.metadata.sender, "opened envelope");
 
                 Some(content)
-            }.instrument(tracing::trace_span!("opening envelope", %service_id))
+            }.instrument(tracing::trace_span!("opening envelope", %incoming_address.identity))
             .into_actor(self)
             .map(|content, act, ctx| {
                 if let Some(content) = content {
@@ -2800,8 +2788,6 @@ impl Handler<RefreshPreKeys> for ClientActor {
             let mut aci = storage.aci_storage();
             let mut pni = storage.pni_storage();
 
-            let force_aci = aci.needs_pre_key_refresh().await;
-
             // It's tempting to run those two in parallel,
             // but I'm afraid the pre-key counts are going to be mixed up.
             am.update_pre_key_bundle(
@@ -2809,20 +2795,17 @@ impl Handler<RefreshPreKeys> for ClientActor {
                 ServiceIdType::AccountIdentity,
                 &mut rand::thread_rng(),
                 true,
-                force_aci,
             )
             .await
             .context("refreshing ACI pre keys")?;
 
             let _pni_distribution = pni_distribution.await;
 
-            let force_pni = pni.needs_pre_key_refresh().await;
             am.update_pre_key_bundle(
                 &mut pni,
                 ServiceIdType::PhoneNumberIdentity,
                 &mut rand::thread_rng(),
                 true,
-                force_pni,
             )
             .await
             .context("refreshing PNI pre keys")?;
@@ -3062,10 +3045,7 @@ impl Handler<ProofResponse> for ClientActor {
         let span = tracing::trace_span!("handle ProofResponse");
 
         let storage = self.storage.clone().unwrap();
-        let self_recipient = storage
-            .fetch_self_recipient()
-            .expect("self recipient in handle(ProofResponse)");
-        let profile_key = self_recipient.profile_key.map(|bytes| {
+        let profile_key = storage.fetch_self_recipient_profile_key().map(|bytes| {
             let mut key = [0u8; 32];
             key.copy_from_slice(&bytes);
             ProfileKey::create(key)
@@ -3144,7 +3124,7 @@ impl Handler<DeleteMessageForAll> for ClientActor {
         self.clear_transient_timstamps();
 
         let storage = self.storage.as_mut().unwrap();
-        let self_recipient = storage.fetch_self_recipient().expect("self recipient");
+        let profile_key = storage.fetch_self_recipient_profile_key();
 
         let message = storage
             .fetch_message_by_id(id)
@@ -3159,10 +3139,10 @@ impl Handler<DeleteMessageForAll> for ClientActor {
         let delete_message = DeliverMessage {
             content: DataMessage {
                 group_v2: session.group_context_v2(),
-                profile_key: self_recipient.profile_key,
+                profile_key,
                 timestamp: Some(now),
                 delete: Some(Delete {
-                    target_sent_timestamp: Some(message.server_timestamp.timestamp_millis() as u64),
+                    target_sent_timestamp: Some(naive_chrono_to_millis(message.server_timestamp)),
                 }),
                 required_protocol_version: Some(4),
                 ..Default::default()

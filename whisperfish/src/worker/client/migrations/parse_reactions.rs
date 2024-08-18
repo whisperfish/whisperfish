@@ -14,7 +14,7 @@ impl Handler<ParseOldReaction> for ClientActor {
     fn handle(&mut self, _: ParseOldReaction, _ctx: &mut Self::Context) -> Self::Result {
         let _span = tracing::info_span!("parsing old reactions").entered();
         let storage = self.storage.clone().unwrap();
-        let myself = storage.fetch_self_recipient().expect("myself in db");
+        let own_id = storage.fetch_self_recipient_id();
 
         let reaction_messages: Vec<orm::Message> = {
             use schema::messages::dsl::*;
@@ -64,7 +64,7 @@ impl Handler<ParseOldReaction> for ClientActor {
                     .optional()
                     .expect("db") {
                     Some(target_message) => {
-                        let author_id = reaction.sender_recipient_id.unwrap_or(myself.id);
+                        let author_id = reaction.sender_recipient_id.unwrap_or(own_id);
                         let reaction_sent_timestamp = reaction.sent_timestamp.unwrap_or(reaction.server_timestamp);
 
                         use schema::reactions::dsl::*;

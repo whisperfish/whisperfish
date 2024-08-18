@@ -3,6 +3,7 @@
 use crate::model::*;
 use crate::store::observer::{EventObserving, Interest};
 use crate::store::Storage;
+use libsignal_service::ServiceAddress;
 use phonenumber::PhoneNumber;
 use qmetaobject::prelude::*;
 use whisperfish_store::schema;
@@ -13,6 +14,7 @@ use whisperfish_store::schema;
 pub struct CreateConversationImpl {
     base: qt_base_class!(trait QObject),
     session_id: Option<i32>,
+    // XXX What about PNI?
     uuid: Option<uuid::Uuid>,
     e164: Option<phonenumber::PhoneNumber>,
     name: Option<String>,
@@ -64,10 +66,10 @@ impl CreateConversationImpl {
     }
 
     fn fetch(&mut self, storage: Storage) {
-        let recipient = if let Some(uuid) = self.uuid {
-            storage.fetch_recipient_by_uuid(uuid)
+        let recipient = if let Some(aci) = self.uuid {
+            storage.fetch_recipient(&ServiceAddress::new_aci(aci))
         } else if let Some(e164) = &self.e164 {
-            storage.fetch_recipient_by_phonenumber(e164)
+            storage.fetch_recipient_by_e164(e164)
         } else {
             tracing::trace!("Neither e164 nor uuid set; not fetching.");
             return;
