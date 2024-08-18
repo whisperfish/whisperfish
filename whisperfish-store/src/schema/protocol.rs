@@ -51,7 +51,7 @@ diesel::table! {
 diesel::table! {
     use diesel::sql_types::*;
     use crate::store::orm::IdentityMapping;
-    session_records (address, device_id) {
+    session_records (address, device_id, identity) {
         address -> Text,
         device_id -> Integer,
         record -> Binary,
