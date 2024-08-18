@@ -4,7 +4,7 @@ diesel::table! {
     use diesel::sql_types::*;
     use crate::store::orm::IdentityMapping;
 
-    identity_records (address) {
+    identity_records (address, identity) {
         address -> Text,
         record -> Binary,
         identity -> IdentityMapping,
