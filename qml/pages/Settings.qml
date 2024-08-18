@@ -39,7 +39,7 @@ Page {
     SilicaFlickable {
         anchors.fill: parent
         contentWidth: parent.width
-        contentHeight: col.height + Theme.paddingLarge
+        contentHeight: contentColumn.height + Theme.paddingLarge
 
         PullDownMenu {
             MenuItem {
@@ -71,7 +71,7 @@ Page {
         VerticalScrollDecorator {}
 
         Column {
-            id: col
+            id: contentColumn
             spacing: Theme.paddingLarge
             width: parent.width
             PageHeader {
@@ -106,7 +106,6 @@ Page {
                 text: qsTrId("whisperfish-settings-general-section")
             }
             IconTextSwitch {
-                id: useIsTypingMessages
                 enabled: isPrimaryDevice
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page use typing indicators
@@ -124,7 +123,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                id: useReadReceipts
                 enabled: isPrimaryDevice
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page use read receipts
@@ -200,7 +198,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                id: saveAttachments
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page save attachments
                 //% "Save Attachments"
@@ -220,7 +217,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                id: shareContacts
                 visible: false // XXX: Unimplemented
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page share contacts
@@ -254,7 +250,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                id: enableEnterSend
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page enable enter send
                 //% "Return key send"
@@ -271,7 +266,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                id: autoTranscribeVoiceNotes
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page auto transcribe voice notes
                 //% "Transcribe voice notes"
@@ -321,7 +315,6 @@ Page {
                 }
             }
             ComboBox {
-                id: notificationPrivacyCombo
                 property string _setting: SettingsBridge.notification_privacy
                 width: parent.width
                 //: Settings page notification privacy
@@ -400,7 +393,6 @@ Page {
 
             // ------ BEGIN BACKGROUND&STARTUP SETTINGS ------
             Column {
-                id: colStartup
                 spacing: Theme.paddingLarge
                 width: parent.width
                 visible: !AppState.isHarbour()
@@ -411,7 +403,6 @@ Page {
                     text: qsTrId("whisperfish-settings-startup-shutdown-section")
                 }
                 IconTextSwitch {
-                    id: enableAutostart
                     anchors.horizontalCenter: parent.horizontalCenter
                     //: Settings page enable autostart
                     //% "Autostart after boot"
@@ -445,7 +436,6 @@ Page {
                     text: SettingsBridge.plaintext_password
                 }
                 Button {
-                    id: savePasswordButton
                     visible: encryptedDatabase
                     enabled: passwordField.acceptableInput
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -460,7 +450,6 @@ Page {
                     onClicked: SettingsBridge.plaintext_password = passwordField.text
                 }
                 TextArea {
-                    id: passwordFieldInfo
                     visible: encryptedDatabase
                     anchors.horizontalCenter: parent.horizontalCenter
                     readOnly: true
@@ -472,7 +461,6 @@ Page {
                     text: qsTrId("whisperfish-settings-auto-unlock-password-info")
                 }
                 TextArea {
-                    id: autostartInfo
                     visible: !autostartService.serviceExists
                     anchors.horizontalCenter: parent.horizontalCenter
                     readOnly: true
@@ -503,7 +491,6 @@ Page {
                     }
                 }
                 Button {
-                    id: quitAppButton
                     anchors.horizontalCenter: parent.horizontalCenter
                     width: parent.width - 2*Theme.horizontalPageMargin
                     enabled: enableQuitOnUiClose.checked
@@ -524,7 +511,6 @@ Page {
                 text: qsTrId("whisperfish-settings-advanced-section")
             }
             IconTextSwitch {
-                id: scaleImageAttachments
                 visible: false // XXX: Unimplemented
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page scale image attachments
@@ -542,7 +528,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                id: showDebugInformation
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page: debug info toggle
                 //% "Debug mode"
@@ -559,7 +544,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                id: enableVerbose
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page enable verbose logging
                 //% "Verbose logging"
@@ -576,7 +560,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                id: enableLogfile
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page enable logging to a file
                 //% "Enable log file"
@@ -593,7 +576,6 @@ Page {
                 }
             }
             Button {
-                id: compressDb
                 visible: SettingsBridge.debug_mode
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: parent.width - 2*Theme.horizontalPageMargin
@@ -605,7 +587,6 @@ Page {
                 }
             }
             Button {
-                id: testCaptcha
                 visible: SettingsBridge.debug_mode
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: parent.width - 2*Theme.horizontalPageMargin
