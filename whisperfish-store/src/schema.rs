@@ -203,6 +203,13 @@ diesel::table! {
 }
 
 diesel::table! {
+    settings (key) {
+        key -> Text,
+        value -> Text,
+    }
+}
+
+diesel::table! {
     stickers (pack_id, sticker_id) {
         pack_id -> Nullable<Text>,
         sticker_id -> Integer,
@@ -265,6 +272,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     receipts,
     recipients,
     sessions,
+    settings,
     stickers,
     story_sends,
 );
