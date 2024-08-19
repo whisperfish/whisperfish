@@ -3118,4 +3118,35 @@ impl<O: Observable> Storage<O> {
         eprintln!("Storage folders migrated");
         Ok(())
     }
+
+    pub fn read_setting(&self, key_name: &str) -> Option<String> {
+        use crate::schema::settings::dsl::*;
+
+        schema::settings::table
+            .select(value)
+            .filter(key.eq(key_name))
+            .first(&mut *self.db())
+            .optional()
+            .expect("db")
+    }
+
+    pub fn write_setting(&self, key_name: &str, key_value: &str) {
+        use crate::schema::settings::dsl::*;
+
+        diesel::insert_into(settings)
+            .values((key.eq(key_name), value.eq(key_value)))
+            .on_conflict(key)
+            .do_update()
+            .set(value.eq(key_value))
+            .execute(&mut *self.db())
+            .expect("db");
+    }
+
+    pub fn delete_setting(&self, key_name: &str) {
+        use crate::schema::settings::dsl::*;
+
+        diesel::delete(settings.filter(key.eq(key_name)))
+            .execute(&mut *self.db())
+            .expect("db");
+    }
 }
