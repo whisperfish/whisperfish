@@ -46,6 +46,26 @@ use uuid::Uuid;
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 const DELETE_AFTER: &str = "DATETIME(expiry_started, '+' || expires_in || ' seconds')";
 
+pub struct Settings;
+impl Settings {
+    pub const ACI: &'static str = "aci";
+    pub const PNI: &'static str = "pni";
+    pub const PHONE_NUMBER: &'static str = "phone_number";
+    pub const DEVICE_ID: &'static str = "device_id";
+
+    pub const ACI_IDENTITY_KEY: &'static str = "aci_identity_key";
+    pub const PNI_IDENTITY_KEY: &'static str = "pni_identity_key";
+    pub const ACI_REGID: &'static str = "aci_regid";
+    pub const PNI_REGID: &'static str = "pni_regid";
+
+    pub const HTTP_USERNAME: &'static str = "http_username";
+    pub const HTTP_PASSWORD: &'static str = "http_password";
+    pub const HTTP_SIGNALING_KEY: &'static str = "http_signaling_key";
+
+    pub const VERBOSE: &'static str = "verbose";
+    pub const LOGFILE: &'static str = "logfile";
+}
+
 /// How much trust you put into the correctness of the data.
 #[derive(Clone, Copy, Eq, Debug, PartialEq)]
 pub enum TrustLevel {
