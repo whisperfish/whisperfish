@@ -644,6 +644,33 @@ impl ClientActor {
             }
         }
 
+        let group = if let Some(group) = msg.group_v2.as_ref() {
+            let mut key_stack = [0u8; zkgroup::GROUP_MASTER_KEY_LEN];
+            key_stack.clone_from_slice(group.master_key.as_ref().expect("group message with key"));
+            let key = GroupMasterKey::new(key_stack);
+            let secret = GroupSecretParams::derive_from_master_key(key);
+
+            let store_v2 = crate::store::GroupV2 {
+                secret,
+                revision: group.revision(),
+            };
+
+            // XXX handle group.group_change like a real client
+            if let Some(_change) = group.group_change.as_ref() {
+                tracing::warn!("We're not handling raw group changes yet. Let's trigger a group refresh for now.");
+                ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
+            } else if !storage.group_v2_exists(&store_v2) {
+                tracing::info!(
+                    "We don't know this group. We'll request it's structure from the server."
+                );
+                ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
+            }
+
+            Some(storage.fetch_or_insert_session_by_group_v2(&store_v2))
+        } else {
+            None
+        };
+
         let body = msg.body.clone().or(alt_body);
         let text = if let Some(body) = body {
             body
@@ -672,33 +699,6 @@ impl ClientActor {
                 tracing::warn!("Received an edit for a message that does not exist. Inserting as is and praying.  This is most probably a bug regarding out-of-order delivery.");
             }
         }
-
-        let group = if let Some(group) = msg.group_v2.as_ref() {
-            let mut key_stack = [0u8; zkgroup::GROUP_MASTER_KEY_LEN];
-            key_stack.clone_from_slice(group.master_key.as_ref().expect("group message with key"));
-            let key = GroupMasterKey::new(key_stack);
-            let secret = GroupSecretParams::derive_from_master_key(key);
-
-            let store_v2 = crate::store::GroupV2 {
-                secret,
-                revision: group.revision(),
-            };
-
-            // XXX handle group.group_change like a real client
-            if let Some(_change) = group.group_change.as_ref() {
-                tracing::warn!("We're not handling raw group changes yet. Let's trigger a group refresh for now.");
-                ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
-            } else if !storage.group_v2_exists(&store_v2) {
-                tracing::info!(
-                    "We don't know this group. We'll request it's structure from the server."
-                );
-                ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
-            }
-
-            Some(storage.fetch_or_insert_session_by_group_v2(&store_v2))
-        } else {
-            None
-        };
 
         let body_ranges = crate::store::body_ranges::serialize(&msg.body_ranges);
 
