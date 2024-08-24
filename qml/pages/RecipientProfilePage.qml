@@ -76,18 +76,16 @@ Page {
                 }
             }
             MenuItem {
-                //: Menu action to unlink a Signal contact from a Sailfish OS contact
-                //% "Unlink contact"
-                text: qsTrId("whisperfish-recipient-unlink")
-                visible: recipient.externalId != null
-                onClicked: ClientWorker.unlinkRecipient(recipient.recipientId)
-            }
-            MenuItem {
-                //: Menu action to pick a Sailfish OS contact to link the Signal user to
-                //% "Link contact"
-                text: qsTrId("whisperfish-recipient-link")
-                visible: recipient.externalId == null
-                onClicked: pageStack.push(Qt.resolvedUrl("LinkContactPage.qml"), { recipient: recipient })
+                text: recipient.externalId != null
+                    //: Menu action to unlink a Signal contact from a Sailfish OS contact
+                    //% "Unlink contact"
+                    ? qsTrId("whisperfish-recipient-unlink")
+                    //: Menu action to pick a Sailfish OS contact to link the Signal user to
+                    //% "Link contact"
+                    : qsTrId("whisperfish-recipient-link")
+                onClicked: recipient.externalId != null
+                    ? ClientWorker.unlinkRecipient(recipient.recipientId)
+                    : pageStack.push(Qt.resolvedUrl("LinkContactPage.qml"), { recipient: recipient })
             }
             MenuItem {
                 // Translation in ProfilePage.qml
