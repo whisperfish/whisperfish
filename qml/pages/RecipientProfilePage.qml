@@ -50,6 +50,24 @@ Page {
                 }
             }
             MenuItem {
+                // Don't show when message request is unanswered
+                visible: recipient.accepted || recipient.blocked
+                text: recipient.blocked
+                    //: Menu action to unblock a recipient
+                    //% "Unblock"
+                    ? qsTrId("whisperfish-recipient-unblock")
+                    //: Menu action to block a recipient
+                    //% "Block"
+                    : qsTrId("whisperfish-recipient-block")
+                onClicked: {
+                    recipient.blocked
+                        ? ClientWorker.handleMessageRequest(recipient.recipientUuid, "accept")
+                        : ClientWorker.handleMessageRequest(recipient.recipientUuid, "block")
+                    // XXX Workaround until recipient update propagates back
+                    recipient.recipientUuid = recipient.recipientUuid
+                }
+            }
+            MenuItem {
                 // Translation in ProfilePage.qml
                 text: qsTrId("whisperfish-refresh-profile-menu")
                 visible: SettingsBridge.debug_mode
@@ -182,7 +200,7 @@ Page {
                 }
                 font.pixelSize: Theme.fontSizeMedium
                 horizontalAlignment: Text.alignHCenter
-                wrapMode: Text.Wrap 
+                wrapMode: Text.Wrap
                 //: Warning about recipient UUID not existing or nil (all zeros)
                 //% "This user profile is broken and can't be used."
                 text: qsTrId("whisperfish-profile-uuid-invalid-warning")
