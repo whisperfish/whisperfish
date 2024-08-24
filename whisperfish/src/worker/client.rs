@@ -27,6 +27,7 @@ use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::push_service::ServiceIdType;
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 use libsignal_service::sender::SendMessageResult;
+use libsignal_service::sender::ThreadIdentifier;
 use tracing_futures::Instrument;
 use uuid::Uuid;
 use whisperfish_store::millis_to_naive_chrono;
@@ -264,6 +265,7 @@ pub struct ClientWorker {
     unlinkRecipient: qt_method!(fn(&self, recipient_id: i32)),
 
     sendConfiguration: qt_method!(fn(&self)),
+    handleMessageRequest: qt_method!(fn(&self, recipient_aci: String, action: String)),
 }
 
 /// ClientActor keeps track of the connection state.
@@ -3167,6 +3169,45 @@ impl ClientWorker {
                 .map(Result::unwrap),
         );
     }
+
+    #[with_executor]
+    #[allow(non_snake_case)]
+    fn handleMessageRequest(&self, recipient_aci: String, action: String) {
+        if let Ok(aci) = Uuid::parse_str(recipient_aci.as_str()) {
+            match action.as_str() {
+                "accept" => {
+                    actix::spawn(
+                        self.actor
+                            .as_ref()
+                            .unwrap()
+                            .send(MessageRequestAnswer {
+                                thread: ThreadIdentifier::Aci(aci),
+                                action: MessageRequestAction::Accept,
+                            })
+                            .map(Result::unwrap),
+                    );
+                }
+                "block" => {
+                    actix::spawn(
+                        self.actor
+                            .as_ref()
+                            .unwrap()
+                            .send(MessageRequestAnswer {
+                                thread: ThreadIdentifier::Aci(aci),
+                                action: MessageRequestAction::Block,
+                            })
+                            .map(Result::unwrap),
+                    );
+                }
+                _ => tracing::warn!(
+                    "Unrecognized recipient message request handle action: {}",
+                    action
+                ),
+            }
+        } else {
+            tracing::warn!("QML requested unparsable ACI for recipient accept/block");
+        }
+    }
 }
 
 impl Handler<CompactDb> for ClientActor {
@@ -3519,6 +3560,67 @@ impl Handler<SendConfiguration> for ClientActor {
                 .send_configuration(&local_addr, configuration)
                 .await
                 .expect("send configuration");
+        });
+    }
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+/// Set recipient into accepted or blocked state
+pub struct MessageRequestAnswer {
+    pub thread: ThreadIdentifier,
+    pub action: MessageRequestAction,
+}
+
+impl Handler<MessageRequestAnswer> for ClientActor {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        MessageRequestAnswer { thread, action }: MessageRequestAnswer,
+        _ctx: &mut Self::Context,
+    ) {
+        let storage = self.storage.as_mut().unwrap().clone();
+        match thread {
+            ThreadIdentifier::Aci(aci) => {
+                let address = ServiceAddress::new_aci(aci);
+                match action {
+                    MessageRequestAction::Accept => {
+                        storage.mark_recipient_accepted(&address);
+                    }
+                    MessageRequestAction::Block => {
+                        storage.mark_recipient_blocked(&address);
+                    }
+                    _ => {
+                        tracing::error!("Unimplemented message request action: {:?}", action);
+                        return;
+                    }
+                }
+            }
+            ThreadIdentifier::Group(_group) => {
+                tracing::warn!("Group message request responses are not yet implemented. Please upvote bug #327");
+                return;
+            }
+        }
+
+        let self_addr =
+            ServiceAddress::new_aci(self.config.get_aci().expect("valid uuid at this point"));
+        let sender = self.message_sender();
+        actix::spawn(async move {
+            let sender = sender.await;
+            if let Err(e) = sender {
+                tracing::error!("message sender failed: {}", e);
+                return;
+            }
+            let mut sender = sender.unwrap();
+
+            let result = sender
+                .send_message_request_response(&self_addr, &thread, action)
+                .await;
+
+            if let Err(e) = result {
+                tracing::error!("message request response failed: {}", e);
+            }
         });
     }
 }

@@ -16,10 +16,24 @@ Page {
     property string profilePicture: session.isGroup ? getGroupAvatar(session.groupId) : getRecipientAvatar(recipient.e164, recipient.uuid, recipient.externalId)
     property alias sessionId: session.sessionId
     property int expiringMessages: session.expiringMessageTimeout != -1
-    property DockedPanel activePanel: actionsPanel.open ? actionsPanel : panel
+    property DockedPanel activePanel: actionsPanel.open ? actionsPanel : (acceptPanel.open ? acceptPanel : panel)
 
     property int _selectedCount: messages.selectedCount // proxy to avoid some costly lookups
     property bool _showDeleteAll: false
+    // XXX handle group.group_change like a real client
+    property bool _accepted: session.isGroup ? true : recipient.accepted
+    property bool _blocked: session.isGroup ? false : recipient.blocked
+    property bool _showInputPanel: true
+    on_ShowInputPanelChanged: maybeShowPanel()
+
+    function maybeShowPanel() {
+        if (_accepted && _showInputPanel == true && actionsPanel.open == false && acceptPanel.open == false)
+            panel.show()
+        else
+            panel.hide()
+    }
+
+    Component.onCompleted: maybeShowPanel()
 
     Session {
         id: session
@@ -138,15 +152,12 @@ Page {
             Behavior on height { NumberAnimation { duration: 150 } }
         }
 
-        onAtYEndChanged: panel.show()
-        onMenuOpenChanged: panel.open = !messages.menuOpen
         onVerticalVelocityChanged: {
-            if (panel.moving) return
-            else if (verticalVelocity < 0 && !textInput.isVoiceNote) panel.hide()
-            else if (verticalVelocity > 0) panel.show()
+            if (verticalVelocity === 0) return
+            _showInputPanel = !(verticalVelocity < 0 && !textInput.isVoiceNote)
         }
         onReplyTriggered: {
-            panel.show()
+            _showInputPanel = true
             textInput.setQuote(index, modelData)
             textInput.forceEditorFocus(true)
         }
@@ -155,7 +166,7 @@ Page {
             jumpToMessage(quotedData.index)
         }
         onIsSelectingChanged: {
-            if (isSelecting && !selectionBlocked) actionsPanel.show()
+            if (isSelecting && !selectionBlocked) _showInputPanel = true
             else actionsPanel.hide()
         }
         onSelectedCountChanged: {
@@ -163,8 +174,8 @@ Page {
             else actionsPanel.hide()
         }
         onSelectionBlockedChanged: {
-            if (selectionBlocked) actionsPanel.hide()
-            else if (isSelecting) actionsPanel.show()
+            if (selectionBlocked) _showInputPanel = false
+            else if (isSelecting) _showInputPanel = true
         }
         onShouldShowDeleteAll: {
             _showDeleteAll = showDeleteAll
@@ -268,7 +279,7 @@ Page {
             placeholderContactName: conversationName
             editor.focus: root.editorFocus
             showSeparator: !messages.atYEnd || quotedMessageShown
-            editor.onFocusChanged: if (editor.focus) panel.show()
+            editor.onFocusChanged: if (editor.focus) _showInputPanel = true
             dockMoving: panel.moving
             recipientIsRegistered: session.isRegistered // true for any group
 
@@ -305,7 +316,7 @@ Page {
         height: actionsColumn.height + 2*Theme.horizontalPageMargin
         open: false
         dock: Dock.Bottom
-        onOpenChanged: if (open && !textInput.isVoiceNote) panel.hide()
+        onOpenChanged: if (open && !textInput.isVoiceNote) _showInputPanel = true
 
         Behavior on opacity { FadeAnimator { duration: 80 } }
 
@@ -314,8 +325,8 @@ Page {
             color: Theme.secondaryHighlightColor
             horizontalAlignment: Qt.AlignHCenter
             anchors {
-                left: parent.left; leftMargin: Theme.horizontalPageMargin
-                right: parent.right; rightMargin: Theme.horizontalPageMargin
+                left: parent.left
+                right: parent.right
                 top: parent.top
             }
             Behavior on opacity { FadeAnimator { } }
@@ -347,7 +358,10 @@ Page {
             height: childrenRect.height
             anchors {
                 verticalCenter: parent.verticalCenter
-                left: parent.left; right: parent.right
+                left: parent.left
+                right: parent.right
+                leftMargin: Theme.horizontalPageMargin
+                rightMargin: Theme.horizontalPageMargin
             }
 
             InfoHintLabel {
@@ -475,6 +489,99 @@ Page {
                                           qsTrId("whisperfish-message-action-resend", _selectedCount))
                     visible: dbusSpeechInterface.available
                     onClicked: messages.messageAction(messages.transcribeSelected)
+                }
+            }
+        }
+    }
+
+    DockedPanel {
+        id: acceptPanel
+        background: null
+        open: actionsPanel.open == false && (_blocked || !_accepted)
+        opacity: open ? 1.0 : 0.0
+        width: parent.width
+        height: acceptColumn.height + 2*Theme.horizontalPageMargin
+        dock: Dock.Bottom
+
+        Behavior on opacity { FadeAnimator { duration: 150 } }
+
+        Separator {
+            opacity: messages.atYEnd ? 0.0 : Theme.opacityHigh
+            color: Theme.secondaryHighlightColor
+            horizontalAlignment: Qt.AlignHCenter
+            anchors {
+                left: parent.left
+                right: parent.right
+                top: parent.top
+            }
+            Behavior on opacity { FadeAnimator { } }
+        }
+
+        Column {
+            id: acceptColumn
+            spacing: Theme.paddingLarge
+            height: childrenRect.height
+            anchors {
+                verticalCenter: parent.verticalCenter
+                left: parent.left
+                right: parent.right
+                leftMargin: Theme.horizontalPageMargin
+                rightMargin: Theme.horizontalPageMargin
+            }
+
+            InfoHintLabel {
+                id: acceptInfoLabel
+                defaultMessage: session.isGroup
+                    //: Information about a pending or blocked group
+                    //% "Let the group members message with you and let its members see your profile information?"
+                    ? qsTrId("whisperfish-group-request-information")
+                    //: Information about a pending or blocked recipient
+                    //% "Let the contact message with you and let them see your profile information?"
+                    : qsTrId("whisperfish-message-request-information")
+                fontSizeMode: Text.FixedSize
+                wrapMode: Text.Wrap
+            }
+
+            Row {
+                // Show the second row of buttons only in portrait mode.
+                enabled: root.isPortrait
+                visible: root.isPortrait
+                height: root.isPortrait ? firstRow.height : 0
+
+                spacing: Theme.paddingLarge
+                anchors.horizontalCenter: parent.horizontalCenter
+                IconButton {
+                    enabled: !_blocked
+                    width: Theme.itemSizeSmall
+                    height: width
+                    icon.source: "image://theme/icon-m-cancel"
+                    onClicked: {
+                        session.isGroup
+                            ? ClientWorker.handleGroupInvite(group.groupId, "block") // XXX
+                            : ClientWorker.handleMessageRequest(recipient.recipientUuid, "block")
+                            enabled: false
+                        // XXX Workaround until recipient update propagates back
+                        _blocked = true
+                        _accepted = false
+                        recipient.recipientUuid = recipient.recipientUuid
+                        maybeShowPanel()
+                    }
+                }
+                IconButton {
+                    width: Theme.itemSizeSmall
+                    height: width
+                    icon.source: "image://theme/icon-m-accept"
+                    onClicked: {
+                        session.isGroup
+                            ? ClientWorker.handleGroupInvite(group.groupId, "accept") // XXX
+                            : ClientWorker.handleMessageRequest(recipient.recipientUuid, "accept")
+                        acceptPanel.hide()
+                        // XXX Workaround until recipient update propagates back
+                        _blocked = false
+                        _accepted = true
+                        recipient.recipientUuid = recipient.recipientUuid
+                        maybeShowPanel()
+                    }
                 }
             }
         }
