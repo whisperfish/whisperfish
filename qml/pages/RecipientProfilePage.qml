@@ -134,6 +134,22 @@ Page {
                 text: qsTrId("whisperfish-profile-page-unregistered-profile")
             }
 
+            TextArea {
+                anchors.horizontalCenter: parent.horizontalCenter
+                horizontalAlignment: Qt.AlignHCenter
+                color: Theme.highlightColor
+                visible: recipient.isRegistered && (!recipient.accepted || recipient.blocked)
+                readOnly: true
+                width: parent.width
+                text: recipient.blocked
+                    //: Recipient profile page, blocked recipient into
+                    //% "You have blocked the recipient."
+                    ? qsTrId("whisperfish-profile-page-blocked-recipient")
+                    //: Recipient profile page, message request is pending
+                    //% "You can't communicate with the recipient until you accept their message request."
+                    : qsTrId("whisperfish-profile-page-message-request-pending")
+            }
+
             TextField {
                 id: profileFullName
                 readOnly: true
