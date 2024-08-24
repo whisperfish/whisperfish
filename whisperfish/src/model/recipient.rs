@@ -26,6 +26,7 @@ use uuid::Uuid;
         email Email,
 
         blocked Blocked,
+        accepted Accepted,
 
         name JoinedName,
         familyName FamilyName,
@@ -337,7 +338,8 @@ define_model_roles! {
         Email(email via qstring_from_option): "email",
         IsRegistered(is_registered): "isRegistered",
 
-        Blocked(blocked): "blocked",
+        Blocked(is_blocked): "blocked",
+        Accepted(is_accepted): "accepted",
 
         JoinedName(profile_joined_name via qstring_from_option): "name",
         FamilyName(profile_family_name via qstring_from_option): "familyName",
@@ -362,7 +364,8 @@ define_model_roles! {
         Username(username via qstring_from_option): "username",
         Email(email via qstring_from_option): "email",
 
-        Blocked(blocked): "blocked",
+        Blocked(is_blocked): "blocked",
+        Accepted(is_accepted): "accepted",
 
         JoinedName(profile_joined_name via qstring_from_option): "name",
         FamilyName(profile_family_name via qstring_from_option): "familyName",

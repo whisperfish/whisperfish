@@ -293,7 +293,7 @@ pub struct Recipient {
     pub uuid: Option<Uuid>,
     pub username: Option<String>,
     pub email: Option<String>,
-    pub blocked: bool,
+    pub is_blocked: bool,
 
     pub profile_key: Option<Vec<u8>>,
     pub profile_key_credential: Option<Vec<u8>>,
@@ -323,6 +323,7 @@ pub struct Recipient {
     pub pni: Option<Uuid>,
     pub needs_pni_signature: bool,
     pub external_id: Option<String>,
+    pub is_accepted: bool,
 }
 
 impl Display for Recipient {
@@ -1282,6 +1283,14 @@ impl AugmentedSession {
         }
     }
 
+    pub fn is_blocked(&self) -> bool {
+        match &self.inner.r#type {
+            SessionType::GroupV1(_group) => false,
+            SessionType::GroupV2(_group) => false,
+            SessionType::DirectMessage(recipient) => recipient.is_blocked,
+        }
+    }
+
     pub fn draft(&self) -> String {
         self.draft.clone().unwrap_or_default()
     }
@@ -1543,7 +1552,7 @@ mod tests {
             pni: None,
             username: Some("nick".into()),
             email: None,
-            blocked: false,
+            is_blocked: false,
             profile_key: None,
             profile_key_credential: None,
             profile_given_name: None,
@@ -1563,6 +1572,7 @@ mod tests {
             is_registered: true,
             needs_pni_signature: false,
             external_id: None,
+            is_accepted: true,
         }
     }
 

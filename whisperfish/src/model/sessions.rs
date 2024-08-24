@@ -305,9 +305,10 @@ define_model_roles! {
         RecipientId(fn recipient_id(&self)):                               "recipientId",
         RecipientUuid(fn recipient_uuid(&self) via qstring_from_cow):      "recipientUuid",
 
-        IsGroup(fn is_group(&self)):                                       "isGroup",
+        IsGroup(fn is_group(&self)):                                       "isGroup", // GroupV1 or GroupV2 actually
         IsGroupV2(fn is_group_v2(&self)):                                  "isGroupV2",
         IsRegistered(fn is_registered(&self)):                             "isRegistered",
+        IsBlocked(fn is_blocked(&self)):                                   "isBlocked",
         GroupId(fn group_id(&self) via qstring_from_option):               "groupId",
         GroupName(fn group_name(&self) via qstring_from_option):           "groupName",
         GroupDescription(fn group_description(&self) via qstring_from_option):
