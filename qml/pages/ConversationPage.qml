@@ -157,6 +157,9 @@ Page {
             _showInputPanel = !(verticalVelocity < 0 && !textInput.isVoiceNote)
         }
         onReplyTriggered: {
+            if (_blocked || !_accepted) {
+                return
+            }
             _showInputPanel = true
             textInput.setQuote(index, modelData)
             textInput.forceEditorFocus(true)
@@ -206,6 +209,9 @@ Page {
             interval: 200
             repeat: true
             onTriggered: {
+                if (_blocked || !_accepted) {
+                    return
+                }
                 if (!stillMoving) {
                     counter--
                     if (counter == 0) {
