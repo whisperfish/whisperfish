@@ -2376,6 +2376,38 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
+    pub fn mark_recipient_accepted(&self, service_address: &ServiceAddress) -> bool {
+        use schema::recipients::dsl::*;
+
+        let rcpt = self.fetch_or_insert_recipient_by_address(service_address);
+
+        let affected_rows = diesel::update(recipients.filter(id.eq(rcpt.id)))
+            .set((is_accepted.eq(true), is_blocked.eq(false)))
+            .execute(&mut *self.db())
+            .expect("mark recipient (un)accepted");
+        if affected_rows > 0 {
+            self.observe_update(schema::recipients::table, rcpt.id);
+        }
+        affected_rows > 0
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn mark_recipient_blocked(&self, service_address: &ServiceAddress) -> bool {
+        use schema::recipients::dsl::*;
+
+        let rcpt = self.fetch_or_insert_recipient_by_address(service_address);
+
+        let affected_rows = diesel::update(recipients.filter(id.eq(rcpt.id)))
+            .set((is_accepted.eq(false), is_blocked.eq(true)))
+            .execute(&mut *self.db())
+            .expect("mark recipient (un)blocked");
+        if affected_rows > 0 {
+            self.observe_update(schema::recipients::table, rcpt.id);
+        }
+        affected_rows > 0
+    }
+
+    #[tracing::instrument(skip(self))]
     pub fn register_attachment(&mut self, mid: i32, ptr: AttachmentPointer) -> i32 {
         use schema::attachments::dsl::*;
 

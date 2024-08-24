@@ -18,8 +18,10 @@ use image::GenericImageView;
 use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
+use libsignal_service::proto::sync_message::message_request_response::Type as MessageRequestAction;
 use libsignal_service::proto::sync_message::Configuration;
 use libsignal_service::proto::sync_message::Keys;
+use libsignal_service::proto::sync_message::MessageRequestResponse;
 use libsignal_service::proto::sync_message::Sent;
 use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::push_service::ServiceIdType;
@@ -973,6 +975,46 @@ impl ClientActor {
         );
     }
 
+    #[tracing::instrument(level = "debug", skip(self))]
+    fn handle_message_request_response(&mut self, response: &MessageRequestResponse) -> bool {
+        let storage = self.storage.clone().expect("storage initialized");
+        if let Some(aci) = &response.thread_aci {
+            let addr = ServiceAddress::try_from(aci.as_str())
+                .expect("valid aci uuid in MessageRequestResponse");
+            match response.r#type() {
+                MessageRequestAction::Accept => storage.mark_recipient_accepted(&addr),
+                MessageRequestAction::Block => storage.mark_recipient_blocked(&addr),
+                MessageRequestAction::BlockAndDelete => {
+                    // Is it a "thread delete" which we don't support yet either?
+                    storage.mark_recipient_blocked(&addr)
+                }
+                MessageRequestAction::BlockAndSpam => {
+                    tracing::warn!(
+                        "Reporting spam for groups is not yet implemented. Please upvote bug #392"
+                    );
+                    storage.mark_recipient_blocked(&addr)
+                }
+                _ => {
+                    tracing::warn!(
+                        "unhandled response type {:?} for ACI {}. Please upvote bug #324",
+                        response.r#type(),
+                        addr.uuid
+                    );
+                    false
+                }
+            }
+        } else if let Some(group_id) = &response.group_id {
+            tracing::warn!("Group message request responses are not yet implemented. {:?}. Please upvote bug #327", group_id);
+            false
+        } else {
+            tracing::warn!(
+                "Unhandle message request response: {:?}. Please upvote bug #324",
+                response
+            );
+            false
+        }
+    }
+
     #[tracing::instrument(level = "debug", skip(self, ctx, metadata))]
     fn process_envelope(
         &mut self,
@@ -1150,6 +1192,10 @@ impl ClientActor {
                             )
                         }
                     }
+                }
+                if let Some(response) = message.message_request_response {
+                    handled = true;
+                    self.handle_message_request_response(&response);
                 }
                 if let Some(keys) = message.keys {
                     handled = true;
