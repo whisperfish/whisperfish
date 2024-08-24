@@ -298,6 +298,7 @@ define_model_roles! {
         Id(id):                                                            "id",
         SessionId(id):                                                     "sessionId",
         RecipientId(fn recipient_id(&self)):                               "recipientId",
+        RecipientUuid(fn recipient_uuid(&self) via qstring_from_cow):      "recipientUuid",
 
         IsGroup(fn is_group(&self)):                                       "isGroup",
         IsGroupV2(fn is_group_v2(&self)):                                  "isGroupV2",
