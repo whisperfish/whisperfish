@@ -62,8 +62,62 @@ impl Settings {
     pub const HTTP_PASSWORD: &'static str = "http_password";
     pub const HTTP_SIGNALING_KEY: &'static str = "http_signaling_key";
 
+    pub const MASTER_KEY: &str = "master_key";
+    pub const STORAGE_SERVICE_KEY: &str = "storage_service_key";
+
     pub const VERBOSE: &'static str = "verbose";
     pub const LOGFILE: &'static str = "logfile";
+}
+
+// XXX Should this be in libsignal_service?
+const MASTER_KEY_LEN: usize = 32;
+pub struct MasterKey {
+    pub inner: [u8; MASTER_KEY_LEN],
+}
+
+impl StorageServiceKey {
+    pub fn from_master_key(master_key: &MasterKey) -> Self {
+        use hmac::{Hmac, Mac};
+        use sha2::Sha256;
+
+        type HmacSha256 = Hmac<Sha256>;
+        const KEY: &[u8] = b"Storage Service Encryption";
+
+        let mut mac = HmacSha256::new_from_slice(&master_key.inner).unwrap();
+        mac.update(KEY);
+        let result = mac.finalize();
+        let inner: [u8; STORAGE_KEY_LEN] = result.into_bytes().into();
+
+        Self { inner }
+    }
+
+    pub fn from_slice(slice: &Vec<u8>) -> Result<Self, std::array::TryFromSliceError> {
+        let inner = slice.as_slice().try_into()?;
+        Ok(Self { inner })
+    }
+}
+
+// XXX Should this be in libsignal_service?
+const STORAGE_KEY_LEN: usize = 32;
+pub struct StorageServiceKey {
+    pub inner: [u8; STORAGE_KEY_LEN],
+}
+
+impl MasterKey {
+    pub fn generate() -> Self {
+        use rand::Rng;
+
+        // Create random bytes
+        let mut rng = rand::thread_rng();
+        let mut inner = [0_u8; MASTER_KEY_LEN];
+        rng.fill(&mut inner);
+        Self { inner }
+    }
+
+    pub fn from_slice(slice: &Vec<u8>) -> Result<Self, std::array::TryFromSliceError> {
+        let inner = slice.as_slice().try_into()?;
+        Ok(Self { inner })
+    }
 }
 
 /// How much trust you put into the correctness of the data.
