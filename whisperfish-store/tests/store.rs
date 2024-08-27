@@ -1074,3 +1074,70 @@ fn test_remove_attachment_filenames() {
         );
     });
 }
+
+#[tokio::test]
+async fn settings_table() {
+    use rand::distributions::Alphanumeric;
+    use rand::Rng;
+
+    let location = whisperfish_store::temp();
+    let rng = rand::thread_rng();
+
+    // Signaling password for REST API
+    let password: String = rng
+        .sample_iter(&Alphanumeric)
+        .take(24)
+        .map(char::from)
+        .collect();
+
+    // Registration ID
+    let regid = 12345;
+    let pni_regid = 12345;
+
+    let storage = SimpleStorage::new(
+        Arc::new(SignalConfig::default()),
+        &location,
+        None,
+        regid,
+        pni_regid,
+        &password,
+        None,
+        None,
+    )
+    .await;
+    assert!(storage.is_ok(), "{}", storage.err().unwrap());
+    let storage = storage.unwrap();
+
+    let k1 = "key1";
+    let k2 = "key2";
+    let k3 = "key3";
+    let v1 = "value1".to_string();
+    let v2 = "value2".to_string();
+    let v3 = "value3".to_string();
+
+    // Read non-existing key
+    assert_eq!(storage.read_setting(k1), None);
+
+    // Write non-eximsting key
+    storage.write_setting(k1, &v1);
+
+    // Read existing key
+    assert_eq!(storage.read_setting(k1), Some(v1.to_owned()));
+
+    // Update existing key
+    storage.write_setting(k1, &v2);
+    assert_eq!(storage.read_setting(k1), Some(v2.to_owned()));
+
+    // Delete existing key
+    storage.delete_setting(k1);
+    assert_eq!(storage.read_setting(k1), None);
+
+    // Multiple keys
+    storage.write_setting(k1, &v1);
+    storage.write_setting(k2, &v2);
+    storage.write_setting(k3, &v3);
+
+    assert_eq!(storage.read_setting(k1), Some(v1));
+    assert_eq!(storage.read_setting(k2), Some(v2));
+    assert_eq!(storage.read_setting(k3), Some(v3));
+}
