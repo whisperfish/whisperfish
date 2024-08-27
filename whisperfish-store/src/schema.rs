@@ -42,15 +42,18 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use crate::store::orm::{CallTypeMapping, EventTypeMapping};
+
     calls (id) {
         id -> Integer,
         call_id -> Integer,
         message_id -> Nullable<Integer>,
         session_id -> Integer,
         #[sql_name = "type"]
-        type_ -> Text,
+        type_ -> CallTypeMapping,
         is_outbound -> Bool,
-        event -> Text,
+        event -> EventTypeMapping,
         timestamp -> Timestamp,
         ringer -> Integer,
         deletion_timestamp -> Nullable<Timestamp>,

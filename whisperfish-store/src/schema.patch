@@ -5,12 +5,33 @@
 +pub mod migrations;
 +pub mod protocol;
 +pub use protocol::*;
- 
+
  diesel::table! {
      attachments (id) {
-@@ -100,6 +103,9 @@
+@@ -39,15 +42,18 @@ diesel::table! {
  }
- 
+
+ diesel::table! {
++    use diesel::sql_types::*;
++    use crate::store::orm::{CallTypeMapping, EventTypeMapping};
++
+     calls (id) {
+         id -> Integer,
+         call_id -> Integer,
+         message_id -> Nullable<Integer>,
+         session_id -> Integer,
+         #[sql_name = "type"]
+-        type_ -> Text,
++        type_ -> CallTypeMapping,
+         is_outbound -> Bool,
+-        event -> Text,
++        event -> EventTypeMapping,
+         timestamp -> Timestamp,
+         ringer -> Integer,
+         deletion_timestamp -> Nullable<Timestamp>,
+@@ -119,6 +125,9 @@ diesel::table! {
+ }
+
  diesel::table! {
 +    use diesel::sql_types::*;
 +    use crate::store::orm::MessageTypeMapping;
@@ -18,7 +39,7 @@
      messages (id) {
          id -> Integer,
          session_id -> Integer,
-@@ -125,7 +131,7 @@
+@@ -144,7 +153,7 @@ diesel::table! {
          latest_revision_id -> Nullable<Integer>,
          original_message_id -> Nullable<Integer>,
          revision_number -> Integer,

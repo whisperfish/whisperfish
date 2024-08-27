@@ -99,6 +99,7 @@ impl Display for GroupV2Member {
 
 #[derive(diesel_derive_enum::DbEnum, Debug, Clone, PartialEq, Eq)]
 pub enum MessageType {
+    // XXX: add calls
     Unsupported,
     ProfileKeyUpdate,
     EndSession,
@@ -124,6 +125,27 @@ impl AsRef<str> for MessageType {
             MessageType::IdentityReset => "identity_reset",
         }
     }
+}
+
+#[derive(diesel_derive_enum::DbEnum, Debug, Clone, PartialEq, Eq)]
+pub enum CallType {
+    Audio,
+    Video,
+    Group,
+    AdHoc,
+}
+
+#[derive(diesel_derive_enum::DbEnum, Debug, Clone, PartialEq, Eq)]
+pub enum EventType {
+    Ongoing,
+    Accepted,
+    NotAccepted,
+    Missed,
+    GenericGroupCall,
+    Joined,
+    Ringing,
+    Declined,
+    OutgoingRing,
 }
 
 #[derive(Queryable, Identifiable, Debug, Clone, PartialEq, Eq)]
