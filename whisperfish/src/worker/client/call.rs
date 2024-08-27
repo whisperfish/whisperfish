@@ -17,6 +17,10 @@ impl super::ClientActor {
         // XXX is this unwrap_or correct?
         let destination_id = call.destination_device_id.unwrap_or(DEFAULT_DEVICE_ID);
 
+        if call.destination_device_id.is_none() {
+            tracing::warn!("CallMessage did not have a destination_device_id set. Defaulting.");
+        }
+
         let num_fields_set = [
             call.offer.is_some(),
             call.answer.is_some(),
