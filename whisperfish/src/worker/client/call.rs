@@ -8,7 +8,6 @@ use libsignal_service::{
 };
 
 impl super::ClientActor {
-    #[tracing::instrument(skip(self, ctx))]
     pub(super) fn handle_call_message(
         &mut self,
         ctx: &mut <Self as actix::Actor>::Context,
@@ -26,6 +25,9 @@ impl super::ClientActor {
         .iter()
         .filter(|&&x| x)
         .count();
+
+        let _span =
+            tracing::trace_span!("handle_call_message", sender = ?metadata.sender, destination_id, ?metadata, ?call).entered();
 
         if num_fields_set > 1 {
             tracing::warn!(
@@ -58,68 +60,68 @@ impl super::ClientActor {
         }
     }
 
-    #[tracing::instrument(skip(self, _ctx, metadata))]
+    #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
     fn handle_call_offer(
         &mut self,
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
-        destination_device_id: u32,
+        _destination_device_id: u32,
         offer: Offer,
     ) {
         tracing::info!("{:?} is calling.", metadata.sender);
         // XXX
     }
 
-    #[tracing::instrument(skip(self, _ctx, metadata))]
+    #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
     fn handle_call_answer(
         &mut self,
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
-        destination_device_id: u32,
+        _destination_device_id: u32,
         answer: Answer,
     ) {
         tracing::info!("{} answered.", metadata.sender.to_service_id());
     }
 
-    #[tracing::instrument(skip(self, _ctx, metadata))]
+    #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
     fn handle_call_ice(
         &mut self,
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
-        destination_device_id: u32,
+        _destination_device_id: u32,
         ice_update: Vec<IceUpdate>,
     ) {
         tracing::info!("{} is sending ICE update.", metadata.sender.to_service_id());
     }
 
-    #[tracing::instrument(skip(self, _ctx, metadata))]
+    #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
     fn handle_call_busy(
         &mut self,
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
-        destination_device_id: u32,
+        _destination_device_id: u32,
         busy: Busy,
     ) {
         tracing::info!("{} is busy.", metadata.sender.to_service_id());
     }
 
-    #[tracing::instrument(skip(self, _ctx, metadata))]
+    #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
     fn handle_call_hangup(
         &mut self,
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
-        destination_device_id: u32,
+        _destination_device_id: u32,
         hangup: Hangup,
     ) {
         tracing::info!("{} hung up.", metadata.sender.to_service_id());
     }
 
-    #[tracing::instrument(skip(self, _ctx, metadata))]
+    #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
     fn handle_call_opaque(
         &mut self,
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
-        destination_device_id: u32,
+        _destination_device_id: u32,
         opaque: Opaque,
     ) {
         tracing::info!(
