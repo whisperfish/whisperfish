@@ -6,8 +6,47 @@ use libsignal_service::{
     },
     push_service::DEFAULT_DEVICE_ID,
 };
+use ringrtc::common::CallId;
+use std::collections::HashMap;
+use whisperfish_store::store::orm::Recipient;
+
+#[derive(Debug, Default)]
+pub(super) struct CallState {
+    sub_state: CallSubState,
+
+    call_setup_states: HashMap<CallId, CallSetupState>,
+}
+
+#[derive(Debug, Default)]
+struct CallSetupState {
+    enable_video_on_create: bool,
+    remote_video_offer: bool,
+    accept_with_video: bool,
+    sent_joined_message: bool,
+    ring_group: bool,
+    ring_id: i64,
+    ringer_recipient: Option<Recipient>,
+    // This is for Telepathy integration
+    // wait_for_telecom_approval: bool,
+    // telecom_approved: bool,
+    ice_servers: Vec<()>,
+    always_turn_servers: bool,
+}
+
+#[derive(Debug, Default)]
+enum CallSubState {
+    #[default]
+    Idle,
+}
+
+impl CallState {
+    fn call_setup_state(&mut self, call_id: CallId) -> &mut CallSetupState {
+        self.call_setup_states.entry(call_id).or_default()
+    }
+}
 
 impl super::ClientActor {
+    /// Dispatch the CallMessage to the appropriate handlers.
     pub(super) fn handle_call_message(
         &mut self,
         ctx: &mut <Self as actix::Actor>::Context,
@@ -72,8 +111,19 @@ impl super::ClientActor {
         _destination_device_id: u32,
         offer: Offer,
     ) {
-        tracing::info!("{:?} is calling.", metadata.sender);
-        // XXX
+        tracing::info!("{} is calling.", metadata.sender.to_service_id());
+        // TODO: decline call if:
+        // - Call is not from a trusted contact
+        // - Phone is already in a call (from any other Telepathy client)
+        // - No opaque data is provided
+        // - Recipient is blocked through a notification profile
+        // Otherwise: ring!
+
+        let Some(call_id) = offer.id.map(CallId::from) else {
+            tracing::warn!("Call offer did not have a call ID. Ignoring.");
+            return;
+        };
+        let setup = self.call_state.call_setup_state(call_id);
     }
 
     #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]

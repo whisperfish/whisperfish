@@ -290,6 +290,8 @@ pub struct ClientActor {
     registration_session: Option<RegistrationSessionMetadataResponse>,
 
     settings: SettingsBridge,
+
+    call_state: call::CallState,
 }
 
 fn whisperfish_device_capabilities() -> DeviceCapabilities {
@@ -346,6 +348,8 @@ impl ClientActor {
             registration_session: None,
 
             settings: SettingsBridge::default(),
+
+            call_state: call::CallState::default(),
         })
     }
 

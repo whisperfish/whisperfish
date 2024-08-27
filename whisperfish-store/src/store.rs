@@ -1,6 +1,7 @@
 pub mod orm;
 
 pub mod body_ranges;
+mod calls;
 mod encryption;
 #[cfg(feature = "diesel-instrumentation")]
 mod instrumentation;
