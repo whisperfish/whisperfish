@@ -10,8 +10,17 @@ CREATE TABLE calls (
             'ad_hoc'
     )) NOT NULL,
     is_outbound BOOLEAN NOT NULL,
-    -- More events (enum class Event in CallTable)
-    event TEXT CHECK(type IN ('accepted', 'not_accepted', 'observed')) NOT NULL,
+    event TEXT CHECK(event IN (
+            'ongoing',
+            'accepted',
+            'not_accepted',
+            'missed',
+            'generic_group_call',
+            'joined',
+            'ringing',
+            'declined',
+            'outgoing_ring'
+    )) NOT NULL,
     timestamp TIMESTAMP NOT NULL,
     ringer INTEGER NOT NULL REFERENCES recipients(id) ON DELETE CASCADE,
     -- DELETEed calls exist in the database for some hours as to prevent out-of-order reappearance of calls
