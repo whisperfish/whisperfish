@@ -1,6 +1,7 @@
 // XXX maybe the session-to-db migration should move into the store module.
 pub mod migrations;
 
+mod call;
 mod groupv2;
 mod linked_devices;
 mod message_expiry;
@@ -1246,8 +1247,8 @@ impl ClientActor {
                     }
                 }
             }
-            ContentBody::CallMessage(_call) => {
-                tracing::info!("{:?} is calling.", metadata.sender.to_service_id());
+            ContentBody::CallMessage(call) => {
+                self.handle_call_message(ctx, metadata, call);
             }
             _ => {
                 tracing::info!("TODO")
