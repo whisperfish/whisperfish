@@ -123,7 +123,33 @@ impl super::ClientActor {
             tracing::warn!("Call offer did not have a call ID. Ignoring.");
             return;
         };
-        let setup = self.call_state.call_setup_state(call_id);
+        let _span = tracing::trace_span!("processing offer with id", call_id = ?call_id).entered();
+
+        if let Some(setup) = self.call_state.call_setup_states.remove(&call_id) {
+            tracing::warn!(?setup, "Call setup already exists. replacing.");
+        }
+
+        let setup = CallSetupState {
+            enable_video_on_create: false,
+            offer_type: offer.r#type(),
+            accept_with_video: false,
+            sent_joined_message: false,
+            ring_group: true,
+            ring_id: 0,
+            ringer_recipient: self
+                .storage
+                .as_ref()
+                .expect("initialized storage")
+                .fetch_or_insert_recipient_by_address(&metadata.sender),
+            ice_servers: Vec::new(),
+            always_turn_servers: false,
+        };
+
+        assert!(self
+            .call_state
+            .call_setup_states
+            .insert(call_id, setup)
+            .is_none());
     }
 
     #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
