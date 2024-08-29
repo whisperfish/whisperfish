@@ -186,6 +186,9 @@ the features setting in:
 	"settings": {
 		"rust-analyzer.cargo.features": [
 			"unsend-futures"
+		],
+		"rust-analyzer.linkedProjects": [
+			"/home/user/code/libsignal-service-rs/Cargo.toml"
 		]
 	}
 }
