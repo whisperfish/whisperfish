@@ -487,18 +487,21 @@ impl ClientActor {
         &mut self,
         ctx: &mut <Self as Actor>::Context,
         message_ids: Vec<i32>,
-    ) -> Option<()> {
+    ) {
         let storage = self.storage.as_ref().unwrap();
         let messages = storage.fetch_messages_by_ids(message_ids);
-        // let all_sessions = storage.fetch_all_sessions_augmented();
         let mut sessions: HashMap<i32, orm::Session> = HashMap::new();
 
         // Iterate over messages
 
         for message in messages.iter() {
             if let Vacant(slot) = sessions.entry(message.session_id) {
-                let session = storage.fetch_session_by_id(message.session_id)?;
-                slot.insert(session);
+                let session = storage.fetch_session_by_id(message.session_id);
+                if let Some(session) = session {
+                    slot.insert(session);
+                } else {
+                    tracing::error!("Could not find session with ID {}", message.session_id);
+                }
             }
         }
 
@@ -528,8 +531,6 @@ impl ClientActor {
                 for_story: false,
             });
         }
-
-        Some(())
     }
 
     /// Process incoming message from Signal
