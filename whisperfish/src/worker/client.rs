@@ -624,17 +624,16 @@ impl ClientActor {
             );
             let db_message = storage.fetch_message_by_timestamp(target_sent_timestamp);
             if let Some(db_message) = db_message {
-                let own_id = storage.fetch_self_recipient_id();
-                // Missing sender_recipient_id => we are the sender
-                let sender_id = db_message.sender_recipient_id.unwrap_or(own_id);
-                if sender_id != sender_recipient.as_ref().unwrap().id {
-                    tracing::warn!("Received a delete message from a different user, ignoring it.");
-                } else {
+                let db_sender_rcpt = db_message.sender_recipient_id;
+                let msg_sender_rcpt = sender_recipient.as_ref().map(|r| r.id);
+                if is_sync_sent || db_sender_rcpt == msg_sender_rcpt {
                     storage.delete_message(db_message.id);
                     self.inner
                         .pinned()
                         .borrow_mut()
                         .messageDeleted(db_message.session_id, db_message.id);
+                } else {
+                    tracing::warn!("Received a delete message from a different user, ignoring it.");
                 }
             } else {
                 tracing::warn!(
