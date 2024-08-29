@@ -1,14 +1,17 @@
+use chrono::Utc;
 use libsignal_service::{
     content::Metadata,
     proto::{
-        call_message::{Answer, Busy, Hangup, IceUpdate, Offer, Opaque},
+        call_message::{offer, Answer, Busy, Hangup, IceUpdate, Offer, Opaque},
         CallMessage,
     },
     push_service::DEFAULT_DEVICE_ID,
 };
 use ringrtc::common::CallId;
 use std::collections::HashMap;
-use whisperfish_store::store::orm::Recipient;
+use whisperfish_store::{millis_to_naive_chrono, store::orm::Recipient};
+
+mod call_manager;
 
 #[derive(Debug, Default)]
 pub(super) struct CallState {
@@ -17,15 +20,19 @@ pub(super) struct CallState {
     call_setup_states: HashMap<CallId, CallSetupState>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct CallSetupState {
     enable_video_on_create: bool,
-    remote_video_offer: bool,
+    // Note that we store Offer Type instead of a isRemoteVideoOffer flag
+    offer_type: offer::Type,
     accept_with_video: bool,
     sent_joined_message: bool,
+    #[allow(dead_code)]
     ring_group: bool,
     ring_id: i64,
-    ringer_recipient: Option<Recipient>,
+    // XXX: This doesn't support groups; we'd need a Session instead, but we don't handle GroupCall
+    //      yet anyway.
+    ringer_recipient: Recipient,
     // This is for Telepathy integration
     // wait_for_telecom_approval: bool,
     // telecom_approved: bool,
@@ -39,11 +46,7 @@ enum CallSubState {
     Idle,
 }
 
-impl CallState {
-    fn call_setup_state(&mut self, call_id: CallId) -> &mut CallSetupState {
-        self.call_setup_states.entry(call_id).or_default()
-    }
-}
+impl CallState {}
 
 impl super::ClientActor {
     /// Dispatch the CallMessage to the appropriate handlers.
@@ -144,6 +147,15 @@ impl super::ClientActor {
             ice_servers: Vec::new(),
             always_turn_servers: false,
         };
+
+        let sent_time = millis_to_naive_chrono(metadata.timestamp).and_utc();
+        let age = Utc::now() - sent_time;
+        let seconds = std::cmp::max(age.num_seconds(), 0);
+        tracing::debug!(
+            %sent_time,
+            ringer = %setup.ringer_recipient,
+            "Call offer is {seconds} seconds old.",
+        );
 
         assert!(self
             .call_state
