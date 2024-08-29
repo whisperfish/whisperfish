@@ -10,13 +10,25 @@ use ringrtc::{
         platform::PlatformItem,
         signaling,
     },
-    lite::sfu::{self, DemuxId, PeekInfo, PeekResult, UserId},
+    lite::{
+        http,
+        sfu::{self, DemuxId, PeekInfo, PeekResult, UserId},
+    },
     webrtc::{
         media::{MediaStream, VideoTrack},
         peer_connection::AudioLevel,
         peer_connection_observer::NetworkRoute,
     },
 };
+
+#[derive(Default, Debug)]
+pub struct WhisperfishRingRtcHttpClient {}
+
+impl http::Delegate for WhisperfishRingRtcHttpClient {
+    fn send_request(&self, request_id: u32, request: http::Request) {
+        todo!()
+    }
+}
 
 #[derive(Debug, Default)]
 pub struct WhisperfishIncomingMedia {}

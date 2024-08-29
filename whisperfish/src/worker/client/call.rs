@@ -7,17 +7,31 @@ use libsignal_service::{
     },
     push_service::DEFAULT_DEVICE_ID,
 };
-use ringrtc::common::CallId;
+use ringrtc::{common::CallId, core::call_manager::CallManager, lite::http::DelegatingClient};
 use std::collections::HashMap;
 use whisperfish_store::{millis_to_naive_chrono, store::orm::Recipient};
 
 mod call_manager;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub(super) struct CallState {
     sub_state: CallSubState,
 
     call_setup_states: HashMap<CallId, CallSetupState>,
+
+    manager: CallManager<call_manager::WhisperfishCallManager>,
+}
+
+impl Default for CallState {
+    fn default() -> Self {
+        let client = DelegatingClient::new(call_manager::WhisperfishRingRtcHttpClient::default());
+        Self {
+            sub_state: CallSubState::default(),
+            call_setup_states: HashMap::new(),
+            manager: CallManager::new(call_manager::WhisperfishCallManager::default(), client)
+                .expect("initialized call manager"),
+        }
+    }
 }
 
 #[derive(Debug)]
