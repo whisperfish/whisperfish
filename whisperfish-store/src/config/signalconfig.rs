@@ -3,8 +3,6 @@ use libsignal_service::{protocol::DeviceId, ServiceAddress};
 use phonenumber::PhoneNumber;
 use uuid::Uuid;
 
-use crate::orm::Recipient;
-
 mod phonenumber_serde_e164 {
     use std::{fmt, sync::Mutex};
 
@@ -92,9 +90,6 @@ pub struct SignalConfig {
 
     #[serde(skip)]
     pub override_captcha: Option<String>,
-
-    #[serde(skip)]
-    self_recipient: std::sync::Mutex<Option<Recipient>>,
 }
 
 impl Default for SignalConfig {
@@ -113,7 +108,6 @@ impl Default for SignalConfig {
             tracing: false,
             autostart: false,
             override_captcha: None,
-            self_recipient: std::sync::Mutex::new(None),
         }
     }
 }
@@ -264,13 +258,5 @@ impl SignalConfig {
 
     pub fn set_device_id(&self, id: u32) {
         *self.device_id.lock().unwrap() = id;
-    }
-
-    pub fn get_self_recipient(&self) -> Option<Recipient> {
-        self.self_recipient.lock().unwrap().clone()
-    }
-
-    pub fn set_self_recipient(&self, recipient: Option<Recipient>) {
-        *self.self_recipient.lock().unwrap() = recipient;
     }
 }
