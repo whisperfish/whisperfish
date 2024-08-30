@@ -3002,7 +3002,7 @@ impl ClientWorker {
     #[with_executor]
     #[tracing::instrument(skip(self))]
     fn send_typing_notification(&self, session_id: i32, is_start: bool) {
-        if session_id < 1 {
+        if session_id < 0 {
             tracing::warn!("Bad session ID {session_id}, ignoring.");
             return;
         };
