@@ -558,7 +558,6 @@ impl ClientActor {
     ) -> Option<i32> {
         let timestamp = metadata.timestamp;
         let dest_identity = metadata.destination.identity;
-        let settings = crate::config::SettingsBridge::default();
         let is_sync_sent = sync_sent.is_some();
 
         let mut storage = self.storage.clone().expect("storage");
@@ -820,7 +819,7 @@ impl ClientActor {
             h.send(()).expect("send message expiry notification");
         }
 
-        if settings.get_bool("attachment_log") && !msg.attachments.is_empty() {
+        if self.settings.get_bool("attachment_log") && !msg.attachments.is_empty() {
             tracing::trace!("Logging message to the attachment log");
             // XXX Sync code, but it's not the only sync code in here...
             let mut log = self.attachment_log();
@@ -838,7 +837,7 @@ impl ClientActor {
         for attachment in &msg.attachments {
             let attachment_id = storage.register_attachment(message.id, attachment.clone());
 
-            if settings.get_bool("save_attachments") {
+            if self.settings.get_bool("save_attachments") {
                 ctx.notify(FetchAttachment { attachment_id });
             }
         }
@@ -941,15 +940,12 @@ impl ClientActor {
     }
 
     fn get_configuration(&self) -> Configuration {
-        // TODO: Get SettingsBridge from WhisperfishApp instead of creating one
-        let settings = crate::config::SettingsBridge::default();
-
         Configuration {
-            read_receipts: Some(settings.get_enable_read_receipts()),
+            read_receipts: Some(self.settings.get_enable_read_receipts()),
             unidentified_delivery_indicators: None,
-            typing_indicators: Some(settings.get_enable_typing_indicators()),
+            typing_indicators: Some(self.settings.get_enable_typing_indicators()),
             provisioning_version: None,
-            link_previews: Some(settings.get_enable_link_previews()),
+            link_previews: Some(self.settings.get_enable_link_previews()),
         }
     }
 
@@ -1148,8 +1144,7 @@ impl ClientActor {
                 }
             }
             ContentBody::TypingMessage(typing) => {
-                let settings = crate::config::SettingsBridge::default();
-                if settings.get_enable_typing_indicators() {
+                if self.settings.get_enable_typing_indicators() {
                     tracing::info!("{:?} is typing.", metadata.sender.to_service_id());
                     let res = self
                         .inner
@@ -1199,8 +1194,7 @@ impl ClientActor {
                                 }
                             }
                             ReceiptType::Read => {
-                                let settings = crate::config::SettingsBridge::default();
-                                if settings.get_enable_read_receipts() {
+                                if self.settings.get_enable_read_receipts() {
                                     tracing::info!(
                                         "{:?} read a message.",
                                         metadata.sender.to_service_id()
@@ -1328,8 +1322,7 @@ impl Handler<FetchAttachment> for ClientActor {
         // in this method, as well as the generated path.
         // We have this function that returns a filesystem path, so we can
         // set it ourselves.
-        let settings = crate::config::SettingsBridge::default();
-        let dir = settings.get_string("attachment_dir");
+        let dir = self.settings.get_string("attachment_dir");
         let dest = PathBuf::from(dir);
 
         // Take the extension of the file_name string, if it exists
@@ -1363,6 +1356,7 @@ impl Handler<FetchAttachment> for ClientActor {
         let attachment_id = attachment.id;
         let session_id = session.id;
         let message_id = message.id;
+        let transcribe_voice_notes = self.settings.get_transcribe_voice_notes();
 
         Box::pin(
             async move {
@@ -1446,8 +1440,7 @@ impl Handler<FetchAttachment> for ClientActor {
                 if attachment.is_voice_note {
                     // If the attachment is a voice note, and we enabled automatic transcription,
                     // trigger the transcription
-                    let settings = crate::config::SettingsBridge::default();
-                    if settings.get_transcribe_voice_notes() {
+                    if transcribe_voice_notes {
                         client_addr
                             .send(voice_note_transcription::TranscribeVoiceNote { message_id })
                             .await?;
@@ -1523,8 +1516,7 @@ impl Handler<QueueMessage> for ClientActor {
         if msg.is_voice_note {
             // If the attachment is a voice note, and we enabled automatic transcription,
             // trigger the transcription
-            let settings = crate::config::SettingsBridge::default();
-            if settings.get_transcribe_voice_notes() {
+            if self.settings.get_transcribe_voice_notes() {
                 ctx.notify(voice_note_transcription::TranscribeVoiceNote {
                     message_id: inserted_msg.id,
                 });
@@ -2106,8 +2098,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
         let sender = self.message_sender();
         // XXX What about PNI? When should we use it?
         let local_addr = self.self_aci.unwrap();
-        let settings = crate::config::SettingsBridge::default();
-        let cert_type = if settings.get_share_phone_number() {
+        let cert_type = if self.settings.get_share_phone_number() {
             CertType::UuidOnly
         } else {
             CertType::Complete
