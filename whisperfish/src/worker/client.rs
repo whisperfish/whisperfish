@@ -79,7 +79,6 @@ use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
 use qttypes::QVariantList;
 use std::borrow::Cow;
-use std::collections::hash_map::Entry::Vacant;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::TryFrom;
@@ -500,14 +499,11 @@ impl ClientActor {
         // Iterate over messages
 
         for message in messages.iter() {
-            if let Vacant(slot) = sessions.entry(message.session_id) {
-                let session = storage.fetch_session_by_id(message.session_id);
-                if let Some(session) = session {
-                    slot.insert(session);
-                } else {
-                    tracing::error!("Could not find session with ID {}", message.session_id);
-                }
-            }
+            sessions.entry(message.session_id).or_insert_with(|| {
+                storage
+                    .fetch_session_by_id(message.session_id)
+                    .expect("existing session for message")
+            });
         }
 
         tracing::trace!(
