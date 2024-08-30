@@ -41,6 +41,7 @@ use super::message_expiry::ExpiredMessagesStream;
 use super::profile_refresh::OutdatedProfileStream;
 use crate::actor::SendReaction;
 use crate::actor::SessionActor;
+use crate::config::SettingsBridge;
 use crate::gui::StorageReady;
 use crate::model::DeviceModel;
 use crate::platform::QmlApp;
@@ -255,7 +256,7 @@ pub struct ClientWorker {
         fn(&self, given_name: String, family_name: String, about: String, emoji: String)
     ),
 
-    mark_messages_read: qt_method!(fn(&self, msg_id_list: QVariantList, send_read_receipts: bool)),
+    mark_messages_read: qt_method!(fn(&self, msg_id_list: QVariantList)),
 
     linkRecipient: qt_method!(fn(&self, recipient_id: i32, external_id: String)),
     unlinkRecipient: qt_method!(fn(&self, recipient_id: i32)),
@@ -287,6 +288,8 @@ pub struct ClientActor {
     message_expiry_notification_handle: Option<tokio::sync::mpsc::UnboundedSender<()>>,
 
     registration_session: Option<RegistrationSessionMetadataResponse>,
+
+    settings: SettingsBridge,
 }
 
 fn whisperfish_device_capabilities() -> DeviceCapabilities {
@@ -341,6 +344,8 @@ impl ClientActor {
             message_expiry_notification_handle: None,
 
             registration_session: None,
+
+            settings: SettingsBridge::default(),
         })
     }
 
@@ -2965,7 +2970,7 @@ impl ClientWorker {
     }
 
     #[with_executor]
-    pub fn mark_messages_read(&self, mut msg_id_list: QVariantList, send_read_receipts: bool) {
+    pub fn mark_messages_read(&self, mut msg_id_list: QVariantList) {
         let mut message_ids: Vec<i32> = vec![];
         while !msg_id_list.is_empty() {
             let msg_id_qvar = msg_id_list.remove(0);
@@ -2977,13 +2982,7 @@ impl ClientWorker {
 
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {
-            if let Err(e) = actor
-                .send(MarkMessagesRead {
-                    message_ids,
-                    send_read_receipts,
-                })
-                .await
-            {
+            if let Err(e) = actor.send(MarkMessagesRead { message_ids }).await {
                 tracing::error!("{:?}", e);
             }
         });
@@ -3089,7 +3088,6 @@ impl Handler<CompactDb> for ClientActor {
 #[rtype(result = "()")]
 pub struct MarkMessagesRead {
     pub message_ids: Vec<i32>,
-    pub send_read_receipts: bool,
 }
 
 impl Handler<MarkMessagesRead> for ClientActor {
@@ -3098,8 +3096,8 @@ impl Handler<MarkMessagesRead> for ClientActor {
     fn handle(&mut self, read: MarkMessagesRead, ctx: &mut Self::Context) -> Self::Result {
         let storage = self.storage.clone().unwrap();
         let handle = self.message_expiry_notification_handle.clone().unwrap();
-        tracing::trace!("Sending read receipts: {}", read.send_read_receipts);
-        if read.send_read_receipts {
+        if self.settings.get_enable_read_receipts() {
+            tracing::trace!("Sending read receipts");
             self.handle_needs_read_receipts(ctx, read.message_ids.clone());
         };
         Box::pin(
