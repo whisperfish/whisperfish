@@ -34,8 +34,8 @@ libsignal-service-hyper = { git = "https://github.com/whisperfish/libsignal-serv
     "unsend-futures",
 ] }
 
-libsignal-protocol = { git = "https://github.com/signalapp/libsignal", tag = "v0.51.1" }
-zkgroup = { git = "https://github.com/signalapp/libsignal", tag = "v0.51.1" }
+libsignal-protocol = { git = "https://github.com/signalapp/libsignal", tag = "v0.56.1" }
+zkgroup = { git = "https://github.com/signalapp/libsignal", tag = "v0.56.1" }
 
 proc-macro2 = "1.0"
 
@@ -70,7 +70,7 @@ serde = { version = "1.0", features = ["derive"] }
 
 serde_yaml = "0.9"
 
-base64 = "0.21"
+base64 = "0.22"
 
 tempfile = { version = "3.4.0", default-features = false }
 

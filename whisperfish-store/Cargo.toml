@@ -29,7 +29,7 @@ itertools = "0.12"
 libsqlite3-sys = { version = "0.27", features = ["sqlcipher"] }
 pbkdf2 = { version = "0.12", default-features = false }
 phonenumber = "0.3.1"
-prost = "0.12"
+prost = "0.13"
 rand = "0.8"
 regex = "1.7"
 scrypt = { version = "0.11.0", default-features = false, features = ["std"] }
@@ -54,7 +54,7 @@ libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs
 
 [build-dependencies]
 anyhow = "1.0"
-prost-build = "0.12"
+prost-build = "0.13"
 
 [dev-dependencies]
 # Git version for async tests. 0.6.5 will contain this feature,
