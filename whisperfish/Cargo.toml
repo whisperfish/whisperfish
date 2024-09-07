@@ -92,6 +92,8 @@ cmake = "0.1.48"
 cpp_build = "0.5"
 cc = "1.0"
 anyhow = "1.0"
+sha2 = { version = "0.10", features = ["force-soft"] }
+hex = "0.4"
 
 [dev-dependencies]
 actix-rt = "2.8.0"

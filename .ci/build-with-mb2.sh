@@ -30,6 +30,8 @@ fi
 git clone . ~/whisperfish-build
 pushd ~/whisperfish-build
 
+bash fetch-webrtc.sh
+
 # We also need to move the cache, and afterwards move it back.
 if [ -e "$CI_PROJECT_DIR/cargo" ]; then
     sudo mv $CI_PROJECT_DIR/cargo ~/cargo
