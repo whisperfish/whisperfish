@@ -31,6 +31,7 @@ whisperfish.wiki
 cobertura.xml
 tarpaulin-report.html
 *.profraw
+.tmp/
 
 # grcov / coverage.sh
 coverage/

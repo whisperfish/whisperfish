@@ -155,6 +155,47 @@ Then you can add this to your `.vscode/c_cpp_properties.json`:
       (...)
     }
 
+### Workspace with libsignal-service
+
+Since developing Whisperfish frequently requires developing `libsignal-service`,
+it's convenient to use a shared workspace so you don't have to keep two Visual
+Studio Code windows open. However, this requires telling rust-analyzer which
+side of libsignal-service we are using. This again requires that we have the
+same feature in Whisperfish too, since we can't tell rust-analyzer features
+per opened folder. That's why `whisperfish/Cargo.toml` now contains:
+
+```toml
+[features]
+unsend-futures = []
+```
+
+Without that rust-analyzer would be angry that there's no such feature in
+Whisperfish. With that in place, open workspace settings JSON and put
+the features setting in:
+
+```json
+{
+	"folders": [
+		{
+			"path": "/home/user/src/whisperfish"
+		},
+		{
+			"path": "/home/uesr/src/libsignal-service-rs"
+		}
+	],
+	"settings": {
+		"rust-analyzer.cargo.features": [
+			"unsend-futures"
+		],
+		"rust-analyzer.linkedProjects": [
+			"/home/user/code/libsignal-service-rs/Cargo.toml"
+		]
+	}
+}
+```
+
+Now go ahead and `F2` and `F12` your way across the projects!
+
 ## Keeping CI and Clippy happy, usually
 
 The CI in Whisperfish makes sure the Rust code is properly formatted
