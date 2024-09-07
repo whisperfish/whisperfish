@@ -45,7 +45,7 @@ Page {
                 : getRecipientAvatar(recipient.e164, recipient.uuid, recipient.externalId)
             ) : ''
             property string name: model.isGroup ? model.groupName : getRecipientName(recipient.e164, recipient.externalId, recipient.name, false)
-            property bool isNoteToSelf: false
+            property bool isNoteToSelf: SetupWorker.uuid === model.recipientUuid
             property bool selected: sessionList.recipients.hasOwnProperty("indexOf") ? (sessionList.recipients.indexOf(model.id) > -1) : false
 
             highlighted: down || selected

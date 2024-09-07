@@ -1190,6 +1190,14 @@ impl AugmentedSession {
         }
     }
 
+    pub fn recipient_uuid(&self) -> Cow<'_, str> {
+        match &self.inner.r#type {
+            SessionType::GroupV1(_group) => "".into(),
+            SessionType::GroupV2(_group) => "".into(),
+            SessionType::DirectMessage(recipient) => recipient.aci().into(),
+        }
+    }
+
     pub fn is_registered(&self) -> bool {
         match &self.inner.r#type {
             SessionType::GroupV1(_group) => true,
