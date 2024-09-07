@@ -117,7 +117,7 @@
         <location filename="../qml/harbour-whisperfish-main.qml" line="316"/>
         <source>Failed to setup Signal client</source>
         <extracomment>Failed to setup signal client error message</extracomment>
-        <translation>No se pudo configurar el cliente de Signal</translation>
+        <translation>Error al configurar el cliente Signal</translation>
     </message>
     <message id="whisperfish-fatal-error-invalid-datastore">
         <location filename="../qml/harbour-whisperfish-main.qml" line="321"/>
@@ -1365,25 +1365,25 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="133"/>
         <source>Enable read receipts</source>
         <extracomment>Settings page use read receipts</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Habilitar confirmaciones de lectura</translation>
     </message>
     <message id="whisperfish-settings-enable-read-receipts-description">
         <location filename="../qml/pages/Settings.qml" line="136"/>
         <source>See when others have read your messages, and let others see when you are have read theirs, if they also have this enabled.</source>
         <extracomment>Settings page scale read receipts description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ver cuándo otros han leído tus mensajes, y permitir que otros vean cuándo tú has leído los suyos, si ellos también lo tienen activado.</translation>
     </message>
     <message id="whisperfish-settings-enable-link-previews">
         <location filename="../qml/pages/Settings.qml" line="150"/>
         <source>Link previews</source>
         <extracomment>Settings page enable link previews</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Vista previa de los enlaces</translation>
     </message>
     <message id="whisperfish-settings-enable-link-previews-description">
         <location filename="../qml/pages/Settings.qml" line="153"/>
         <source>Create and send previews of the links you send in messages. Note: Feature not yet implemented in Whisperfish.</source>
         <extracomment>Settings page enable link previews description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Cree y envíe vistas previas de los enlaces que envía en los mensajes. Nota: Función aún no implementada en Whisperfish.</translation>
     </message>
     <message id="whisperfish-settings-country-code">
         <location filename="../qml/pages/Settings.qml" line="185"/>
@@ -1537,7 +1537,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="93"/>
         <source>Some setting can only be changed from the primary device.</source>
         <extracomment>Settings page, not a primary device note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Algunos ajustes solo pueden modificarse desde el dispositivo principal.</translation>
     </message>
     <message id="whisperfish-settings-enable-typing-indicators">
         <location filename="../qml/pages/Settings.qml" line="116"/>
@@ -2368,7 +2368,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="191"/>
         <source>This service message of is not yet supported by Whisperfish. Please file a bug report. (Flags: %1, Type: %2, Contents: &quot;%3&quot;)</source>
         <oldsource>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: %1)</oldsource>
-        <translation>Whisperfish aún no admite este mensaje de servicio. Por favor, presente un informe de error. (Banderas: %1, Tipo: %2, Contenido: &quot;%3&quot;)</translation>
+        <translation>Este mensaje de servicio aún no está soportado por Whisperfish. Por favor, envíe un informe de error. (Banderas: %1, Tipo: %2, Contenido: &quot;%3&quot;)</translation>
     </message>
     <message id="whisperfish-service-message-more-info">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="247"/>
@@ -2592,19 +2592,19 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/MessageInfoPage.qml" line="130"/>
         <source>Delivery receipts</source>
         <extracomment>Delivered receipts section header</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Confirmación de entrega</translation>
     </message>
     <message id="whisperfish-message-info-read-receipts">
         <location filename="../qml/pages/MessageInfoPage.qml" line="146"/>
         <source>Read receipts</source>
         <extracomment>Read receipts section header</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Confirmaciones de lectura</translation>
     </message>
     <message id="whisperfish-message-info-viewed-receipts">
         <location filename="../qml/pages/MessageInfoPage.qml" line="162"/>
         <source>Viewed receipts</source>
         <extracomment>Viewed receipts section header</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Confirmaciones de vistos</translation>
     </message>
     <message id="whisperfish-creating-conversation-title">
         <location filename="../qml/pages/CreateConversationPage.qml" line="46"/>
