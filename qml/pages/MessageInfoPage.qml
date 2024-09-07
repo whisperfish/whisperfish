@@ -12,6 +12,10 @@ Page {
 
     // Proxy some more used properties
     readonly property bool outgoing: message.outgoing
+    readonly property var debugMode: SettingsBridge.debug_mode
+    readonly property var deliveryReceipts: message.deliveredReceipts
+    readonly property var readReceipts: message.readReceipts
+    readonly property var viewedReceipts: message.viewedReceipts
 
     Reactions {
         id: reactions
@@ -77,47 +81,91 @@ Page {
                 }
             }
 
-            SectionHeader {
-                //: Details section header
-                //% "Details"
-                text: qsTrId("whisperfish-message-info-details")
-            }
             DetailItem {
+                visible: debugMode
                 //: Label for id of the message (in database)
                 //% "Message ID"
                 label: qsTrId("whisperfish-message-message-id")
                 value: message.id
             }
             DetailItem {
+                visible: debugMode
                 //: Label for session id of the message (in database)
                 //% "Session ID"
                 label: qsTrId("whisperfish-message-session-id")
                 value: message.sessionId
             }
+
+            // TIMESTAMP
+
             DetailItem {
-                //: Label for timestamp of the message
+                //: Label for the timestamp of the message
                 //% "Timestamp"
                 label: qsTrId("whisperfish-message-timestamp")
                 value: message.timestamp
             }
+
+            // REACTIONS
+
             SectionHeader {
                 visible: reactions.count
                 //: Reactions section header
                 //% "Reactions"
                 text: qsTrId("whisperfish-message-info-reactions")
             }
-            ListView {
-                id: emojiView
-                width: parent.width
-                height: childrenRect.height
+            Repeater {
                 model: reactions.reactions
-                delegate: ListItem {
-                    width: parent.width
-                    height: childrenRect.height
-                    DetailItem {
-                        label: model.name
-                        value: model.reaction
-                    }
+                DetailItem {
+                    label: model.name
+                    value: model.reaction
+                }
+            }
+
+            // DELIVERY RECEIPTS
+
+            SectionHeader {
+                visible: deliveryReceipts.length > 0
+                //: Delivered receipts section header
+                //% "Delivery receipts"
+                text: qsTrId("whisperfish-message-info-delivery-receipts")
+            }
+            Repeater {
+                model: deliveryReceipts
+                DetailItem {
+                    label: modelData.recipient
+                    value: modelData.timestamp
+                }
+            }
+
+            // READ RECEIPTS
+
+            SectionHeader {
+                visible: readReceipts.length > 0 > 0
+                //: Read receipts section header
+                //% "Read receipts"
+                text: qsTrId("whisperfish-message-info-read-receipts")
+            }
+            Repeater {
+                model: readReceipts
+                DetailItem {
+                    label: modelData.recipient
+                    value: modelData.timestamp
+                }
+            }
+
+            // VIEWED RECEIPTS
+
+            SectionHeader {
+                visible: viewedReceipts.length > 0
+                //: Viewed receipts section header
+                //% "Viewed receipts"
+                text: qsTrId("whisperfish-message-info-viewed-receipts")
+            }
+            Repeater {
+                model: viewedReceipts
+                DetailItem {
+                    label: modelData.recipient
+                    value: modelData.timestamp
                 }
             }
         }

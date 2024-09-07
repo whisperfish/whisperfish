@@ -10,7 +10,7 @@ use rstest::rstest;
 use std::future::Future;
 use std::sync::Arc;
 use whisperfish_store::config::SignalConfig;
-use whisperfish_store::orm::{StoryType, UnidentifiedAccessMode};
+use whisperfish_store::orm::{Receipt, Recipient, StoryType, UnidentifiedAccessMode};
 use whisperfish_store::{naive_chrono_to_millis, GroupV1, NewMessage};
 
 #[rstest]
@@ -754,9 +754,86 @@ async fn test_recipient_actions() {
     let msg = storage.fetch_message_by_id(pointer.message_id).unwrap();
     assert!(msg.is_read);
 
+    // START DELIVERY AND READ RECEIPTS
+
+    let now = chrono::Utc::now().naive_utc();
+    let delivered_1 = now.with_minute(1).unwrap();
+    let delivered_2 = now.with_minute(2).unwrap();
+    let read_1 = now.with_minute(3).unwrap();
+    let read_2 = now.with_minute(4).unwrap();
+
+    // First delivery receipt
+
     assert!(storage.fetch_message_receipts(msg.id).is_empty());
-    storage.mark_message_received(ServiceAddress::new_aci(uuid1), msg.server_timestamp, None);
-    assert!(!storage.fetch_message_receipts(msg.id).is_empty());
+    let num_delivered = storage
+        .mark_messages_delivered(
+            ServiceAddress::new_aci(uuid1),
+            vec![msg.server_timestamp],
+            delivered_1,
+        )
+        .len();
+    assert_eq!(num_delivered, 1);
+    let receipts = storage.fetch_message_receipts(msg.id);
+    assert_eq!(receipts.len(), 1);
+    assert_eq!(receipts[0].0.delivered, Some(delivered_1));
+
+    // Second, later, delivery receipt doesn't update the previous one
+
+    let num_delivered = storage
+        .mark_messages_delivered(
+            ServiceAddress::new_aci(uuid1),
+            vec![msg.server_timestamp],
+            delivered_2,
+        )
+        .len();
+    assert_eq!(num_delivered, 1);
+    let receipts = storage.fetch_message_receipts(msg.id);
+    assert_eq!(receipts.len(), 1);
+    assert_eq!(receipts[0].0.delivered, Some(delivered_1));
+
+    // First read receipt
+
+    let receipts: Vec<(Receipt, Recipient)> = storage
+        .fetch_message_receipts(msg.id)
+        .into_iter()
+        .filter(|(r, _)| r.read.is_some())
+        .collect();
+    assert!(receipts.is_empty());
+    let num_read = storage
+        .mark_messages_read(
+            ServiceAddress::new_aci(uuid1),
+            vec![msg.server_timestamp],
+            read_1,
+        )
+        .len();
+    assert_eq!(num_read, 1);
+    let receipts: Vec<(Receipt, Recipient)> = storage
+        .fetch_message_receipts(msg.id)
+        .into_iter()
+        .filter(|(r, _)| r.read.is_some())
+        .collect();
+    assert_eq!(receipts.len(), 1);
+    assert_eq!(receipts[0].0.read, Some(read_1));
+
+    // Second, later, read receipt doesn't update the previous one
+
+    let num_read = storage
+        .mark_messages_read(
+            ServiceAddress::new_aci(uuid1),
+            vec![msg.server_timestamp],
+            read_2,
+        )
+        .len();
+    assert_eq!(num_read, 1);
+    let receipts: Vec<(Receipt, Recipient)> = storage
+        .fetch_message_receipts(msg.id)
+        .into_iter()
+        .filter(|(r, _)| r.read.is_some())
+        .collect();
+    assert_eq!(receipts.len(), 1);
+    assert_eq!(receipts[0].0.read, Some(read_1));
+
+    // END DELIVERY AND READ RECEIPTS
 
     let reaction = Reaction {
         emoji: Some("❤".into()),
