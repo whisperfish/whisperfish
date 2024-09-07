@@ -88,7 +88,13 @@ fn main() {
         );
     }
 
-    let libs = ["dbus-1"];
+    let libs = [
+        // dbus for share plugins
+        "dbus-1",
+        // webrtc needs system ssl, and webrtc is not linked to it.
+        // Enforce the link order here.
+        "webrtc", "ssl", "crypto",
+    ];
     for lib in libs.iter() {
         println!("cargo:rustc-link-lib{}={}", macos_lib_search, lib);
     }

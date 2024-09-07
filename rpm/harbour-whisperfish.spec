@@ -76,6 +76,11 @@ BuildRequires:  perl-IPC-Cmd
 
 BuildRequires:  meego-rpm-config
 
+# We statically link to OpenSSL3 for the sqlcipher dependency,
+# and we dynamically link to openssl 1.1 for webrtc,
+# so we need both.  Yikes, and sorry.
+BuildRequires:  pkgconfig(openssl)
+
 # For vendored sqlcipher
 BuildRequires:  tcl
 BuildRequires:  automake
@@ -230,6 +235,9 @@ fi
 # Workaround a Scratchbox bug - /tmp/[...]/symbols.o not found
 export TMPDIR=${TMPDIR:-$(realpath ".tmp")}
 mkdir -p $TMPDIR
+
+# ringrtc requires an output directory for the WebRTC artifacts
+export OUTPUT_DIR=%{_sourcedir}/../ringrtc/${SB2_RUST_TARGET_TRIPLE}
 
 cargo build \
           -j 1 \
