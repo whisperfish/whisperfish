@@ -79,7 +79,7 @@ BuildRequires:  meego-rpm-config
 # We statically link to OpenSSL3 for the sqlcipher dependency,
 # and we dynamically link to openssl 1.1 for webrtc,
 # so we need both.  Yikes, and sorry.
-BuildRequires:  pkgconfig(openssl)
+BuildRequires:  pkgconfig(openssl) >= 1.1
 
 # For vendored sqlcipher
 BuildRequires:  tcl
