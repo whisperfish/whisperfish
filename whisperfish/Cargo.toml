@@ -76,7 +76,7 @@ regex = "1.7.3"
 gstreamer = "0.23"
 glib = "0.20"
 
-ringrtc = { git = "https://github.com/signalapp/ringrtc", tag = "v2.46.1", features = ["native"] }
+ringrtc = { git = "https://github.com/whisperfish/ringrtc", branch = "whisperfork", version = "2.46.2", features = ["native", "system_ssl"] }
 
 sailors = { git = "https://gitlab.com/whisperfish/sailo-rs.git", optional = true }
 whisperfish-store = { path = "../whisperfish-store" }

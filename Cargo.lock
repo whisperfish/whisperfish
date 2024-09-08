@@ -2245,8 +2245,8 @@ dependencies = [
 
 [[package]]
 name = "mrp"
-version = "2.46.1"
-source = "git+https://github.com/signalapp/ringrtc?tag=v2.46.1#bbf46969079c3c7ad72c9eb29fdb60d7b6433719"
+version = "2.46.2"
+source = "git+https://github.com/whisperfish/ringrtc?branch=whisperfork#6ff442bb4a7b84a20318ae8f6ad99c04101abebf"
 dependencies = [
  "anyhow",
  "log",
@@ -2865,8 +2865,8 @@ dependencies = [
 
 [[package]]
 name = "protobuf"
-version = "2.46.1"
-source = "git+https://github.com/signalapp/ringrtc?tag=v2.46.1#bbf46969079c3c7ad72c9eb29fdb60d7b6433719"
+version = "2.46.2"
+source = "git+https://github.com/whisperfish/ringrtc?branch=whisperfork#6ff442bb4a7b84a20318ae8f6ad99c04101abebf"
 dependencies = [
  "prost-build",
  "tonic-build",
@@ -3146,7 +3146,7 @@ dependencies = [
 [[package]]
 name = "regex-aot"
 version = "0.1.0"
-source = "git+https://github.com/signalapp/ringrtc?tag=v2.46.1#bbf46969079c3c7ad72c9eb29fdb60d7b6433719"
+source = "git+https://github.com/whisperfish/ringrtc?branch=whisperfork#6ff442bb4a7b84a20318ae8f6ad99c04101abebf"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3284,8 +3284,8 @@ dependencies = [
 
 [[package]]
 name = "ringrtc"
-version = "2.46.1"
-source = "git+https://github.com/signalapp/ringrtc?tag=v2.46.1#bbf46969079c3c7ad72c9eb29fdb60d7b6433719"
+version = "2.46.2"
+source = "git+https://github.com/whisperfish/ringrtc?branch=whisperfork#6ff442bb4a7b84a20318ae8f6ad99c04101abebf"
 dependencies = [
  "aes",
  "aes-gcm-siv",

@@ -87,16 +87,6 @@ fn configure_webrtc() -> anyhow::Result<()> {
         );
     }
 
-    // Link to webrtc
-    let libs = [
-        // webrtc needs system ssl, and webrtc is not linked to it.
-        // Enforce the link order here.
-        "webrtc", "ssl", "crypto",
-    ];
-    for lib in libs.iter() {
-        println!("cargo:rustc-link-lib={}", lib);
-    }
-
     Ok(())
 }
 
