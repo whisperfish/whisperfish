@@ -19,17 +19,17 @@ pub(super) struct CallState {
 
     call_setup_states: HashMap<CallId, CallSetupState>,
 
-    manager: CallManager<call_manager::WhisperfishCallManager>,
+    manager: CallManager<ringrtc::native::NativePlatform>,
 }
 
 impl Default for CallState {
     fn default() -> Self {
         let client = DelegatingClient::new(call_manager::WhisperfishRingRtcHttpClient::default());
+        let platform = call_manager::new_native_platform().unwrap();
         Self {
             sub_state: CallSubState::default(),
             call_setup_states: HashMap::new(),
-            manager: CallManager::new(call_manager::WhisperfishCallManager::default(), client)
-                .expect("initialized call manager"),
+            manager: CallManager::new(platform, client).expect("initialized call manager"),
         }
     }
 }
