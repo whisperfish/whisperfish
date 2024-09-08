@@ -2,6 +2,8 @@ variables: &variables
   SFOS_VERSION: 4.6.0.13
   GIT_FETCH_EXTRA_FLAGS: --tags
   RUST_BACKTRACE: full
+  # Output dir for the webrtc artifacts
+  OUTPUT_DIR: $CI_PROJECT_DIR/ringrtc/x86_64-unknown-linux-gnu/
 
 include:
   # Awesome OpenRepos script by @nobodyinperson/Yann Büchau
