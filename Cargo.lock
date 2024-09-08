@@ -4849,6 +4849,7 @@ dependencies = [
  "scrypt",
  "serde",
  "serde_yaml",
+ "sha2",
  "tempfile",
  "thiserror",
  "time",
