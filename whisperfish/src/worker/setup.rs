@@ -247,6 +247,14 @@ impl SetupWorker {
             );
         }
 
+        if is_primary {
+            storage.fetch_or_create_master_key();
+            storage.fetch_storage_service_key();
+        } else {
+            // XXX Trigger Keys sync request to primary device
+            // XXX Trigger Config sync request to primary device
+        }
+
         app.app_state.pinned().borrow().set_storage(storage);
 
         Ok(())
