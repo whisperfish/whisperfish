@@ -23,6 +23,7 @@ stages:
 .rust: &rust
   cache: &rust-cache
     paths:
+      - ringrtc/
       - target/
       - cargo/bin/
       - cargo/registry/index/
@@ -157,6 +158,7 @@ build:sf:latest:shareplugin_v2:aarch64:
       - target/*/release/harbour-whisperfish
   cache:
     paths:
+      - ringrtc/
       - cargo/bin/
       - cargo/registry/index/
       - cargo/registry/cache/
