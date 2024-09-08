@@ -2,6 +2,8 @@ use crate::gui::WhisperfishApp;
 use crate::store::Storage;
 use crate::store::TrustLevel;
 use anyhow::Context;
+use libsignal_service::prelude::MasterKey;
+use libsignal_service::prelude::StorageServiceKey;
 use libsignal_service::protocol;
 use libsignal_service::push_service::{ServiceIds, VerificationTransport, DEFAULT_DEVICE_ID};
 use libsignal_service::ServiceAddress;
@@ -248,8 +250,13 @@ impl SetupWorker {
         }
 
         if is_primary {
-            storage.fetch_or_create_master_key();
-            storage.fetch_storage_service_key();
+            use libsignal_service::prelude::MasterKeyStore;
+
+            let master_key = MasterKey::generate();
+            let storage_key = StorageServiceKey::from_master_key(&master_key);
+
+            storage.store_master_key(Some(&master_key));
+            storage.store_storage_service_key(Some(&storage_key));
         } else {
             // XXX Trigger Keys sync request to primary device
             // XXX Trigger Config sync request to primary device

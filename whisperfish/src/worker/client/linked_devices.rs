@@ -104,6 +104,7 @@ impl Handler<LinkDevice> for ClientActor {
             .fetch_self_recipient_profile_key()
             .and_then(|key| key.try_into().ok());
         let mut account_manager = AccountManager::new(service, profile_key.map(ProfileKey::create));
+        let master_key = store.fetch_master_key();
 
         Box::pin(
             // Without `async move`, service would be borrowed instead of encapsulated in a Future.
@@ -111,7 +112,13 @@ impl Handler<LinkDevice> for ClientActor {
                 let url = tsurl.parse()?;
                 Ok::<_, anyhow::Error>(
                     account_manager
-                        .link_device(url, &store.aci_storage(), &store.pni_storage(), credentials)
+                        .link_device(
+                            url,
+                            &store.aci_storage(),
+                            &store.pni_storage(),
+                            credentials,
+                            master_key,
+                        )
                         .await?,
                 )
             }

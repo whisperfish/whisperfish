@@ -69,59 +69,6 @@ impl Settings {
     pub const LOGFILE: &'static str = "logfile";
 }
 
-// XXX Should this be in libsignal_service?
-const MASTER_KEY_LEN: usize = 32;
-#[derive(Eq, PartialEq, Debug)]
-pub struct MasterKey {
-    pub inner: [u8; MASTER_KEY_LEN],
-}
-
-impl StorageServiceKey {
-    pub fn from_master_key(master_key: &MasterKey) -> Self {
-        use hmac::{Hmac, Mac};
-        use sha2::Sha256;
-
-        type HmacSha256 = Hmac<Sha256>;
-        const KEY: &[u8] = b"Storage Service Encryption";
-
-        let mut mac = HmacSha256::new_from_slice(&master_key.inner).unwrap();
-        mac.update(KEY);
-        let result = mac.finalize();
-        let inner: [u8; STORAGE_KEY_LEN] = result.into_bytes().into();
-
-        Self { inner }
-    }
-
-    pub fn from_slice(slice: &Vec<u8>) -> Result<Self, std::array::TryFromSliceError> {
-        let inner = slice.as_slice().try_into()?;
-        Ok(Self { inner })
-    }
-}
-
-// XXX Should this be in libsignal_service?
-const STORAGE_KEY_LEN: usize = 32;
-#[derive(Eq, PartialEq, Debug)]
-pub struct StorageServiceKey {
-    pub inner: [u8; STORAGE_KEY_LEN],
-}
-
-impl MasterKey {
-    pub fn generate() -> Self {
-        use rand::Rng;
-
-        // Create random bytes
-        let mut rng = rand::thread_rng();
-        let mut inner = [0_u8; MASTER_KEY_LEN];
-        rng.fill(&mut inner);
-        Self { inner }
-    }
-
-    pub fn from_slice(slice: &Vec<u8>) -> Result<Self, std::array::TryFromSliceError> {
-        let inner = slice.as_slice().try_into()?;
-        Ok(Self { inner })
-    }
-}
-
 /// How much trust you put into the correctness of the data.
 #[derive(Clone, Copy, Eq, Debug, PartialEq)]
 pub enum TrustLevel {
@@ -1697,65 +1644,6 @@ impl<O: Observable> Storage<O> {
         }
 
         pointers
-    }
-
-    /// Fetch the master key from database.
-    #[tracing::instrument(skip(self))]
-    pub fn fetch_or_create_master_key(&self) -> MasterKey {
-        use crate::schema::settings;
-        use base64::prelude::*;
-
-        let row: Option<String> = settings::table
-            .select(settings::value)
-            .filter(settings::key.eq(Settings::MASTER_KEY))
-            .first(&mut *self.db())
-            .optional()
-            .expect("db");
-        if let Some(key) = row {
-            let key = BASE64_STANDARD.decode(key).unwrap();
-            MasterKey::from_slice(&key).unwrap()
-        } else {
-            tracing::info!("Creating master key");
-            let key = MasterKey::generate();
-            let key_base64 = BASE64_STANDARD.encode(key.inner);
-            diesel::update(settings::table.filter(settings::key.eq(Settings::MASTER_KEY)))
-                .set(settings::value.eq(key_base64))
-                .execute(&mut *self.db())
-                .expect("db");
-            key
-        }
-    }
-
-    /// Fetches the storage service key.
-    ///
-    /// Note: This will create the master key if it doesn't exist.
-    #[tracing::instrument(skip(self))]
-    pub fn fetch_storage_service_key(&self) -> StorageServiceKey {
-        use crate::schema::settings;
-        use base64::prelude::*;
-
-        let row: Option<String> = settings::table
-            .select(settings::value)
-            .filter(settings::key.eq(Settings::STORAGE_SERVICE_KEY))
-            .first(&mut *self.db())
-            .optional()
-            .expect("db");
-        if let Some(key) = row {
-            let key = BASE64_STANDARD.decode(key).unwrap();
-            return StorageServiceKey::from_slice(&key).unwrap();
-        }
-
-        tracing::info!("Creating storage service key");
-
-        let master_key = self.fetch_or_create_master_key();
-        let key = StorageServiceKey::from_master_key(&master_key);
-
-        let key_base64 = BASE64_STANDARD.encode(key.inner);
-        diesel::update(settings::table.filter(settings::key.eq(Settings::STORAGE_SERVICE_KEY)))
-            .set(settings::value.eq(key_base64))
-            .execute(&mut *self.db())
-            .expect("db");
-        key
     }
 
     /// Get all sessions in no particular order.

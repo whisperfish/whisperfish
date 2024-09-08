@@ -923,9 +923,9 @@ impl ClientActor {
                     sender.send_configuration(&local_addr, configuration).await?;
                 },
                 RequestType::Keys => {
-                    let master = storage.fetch_or_create_master_key().inner;
-                    let storage_service = storage.fetch_storage_service_key().inner;
-                    sender.send_keys(&local_addr, Keys { master: Some(master.into()), storage_service: Some(storage_service.into()) }).await?;
+                    let master = storage.fetch_master_key();
+                    let storage_service = storage.fetch_storage_service_key();
+                    sender.send_keys(&local_addr, Keys { master: master.map(|k| k.into()), storage_service: storage_service.map(|k| k.into()) }).await?;
                 }
                 // Type::Blocked
                 // Type::PniIdentity

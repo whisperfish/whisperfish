@@ -80,6 +80,80 @@ impl ProtocolStore {
     }
 }
 
+impl<O: Observable> MasterKeyStore for Storage<O> {
+    #[tracing::instrument(skip(self))]
+    fn fetch_storage_service_key(&self) -> Option<StorageServiceKey> {
+        use crate::schema::settings;
+        use base64::prelude::*;
+
+        let row: Option<String> = settings::table
+            .select(settings::value)
+            .filter(settings::key.eq(Settings::STORAGE_SERVICE_KEY))
+            .first(&mut *self.db())
+            .optional()
+            .expect("db");
+
+        row.map(|key| {
+            let key = BASE64_STANDARD.decode(key).unwrap();
+            StorageServiceKey::from_slice(&key).unwrap()
+        })
+    }
+
+    #[tracing::instrument(skip(self))]
+    fn fetch_master_key(&self) -> Option<MasterKey> {
+        use crate::schema::settings;
+        use base64::prelude::*;
+
+        let row: Option<String> = settings::table
+            .select(settings::value)
+            .filter(settings::key.eq(Settings::MASTER_KEY))
+            .first(&mut *self.db())
+            .optional()
+            .expect("db");
+
+        row.map(|key| {
+            let key = BASE64_STANDARD.decode(key).unwrap();
+            MasterKey::from_slice(&key).unwrap()
+        })
+    }
+
+    #[tracing::instrument(skip(self))]
+    fn store_master_key(&self, master_key: Option<&MasterKey>) {
+        use crate::schema::settings;
+        use base64::prelude::*;
+
+        if let Some(master_key) = master_key {
+            let key_base64 = BASE64_STANDARD.encode(master_key.inner);
+            diesel::update(settings::table.filter(settings::key.eq(Settings::MASTER_KEY)))
+                .set(settings::value.eq(key_base64))
+                .execute(&mut *self.db())
+                .expect("db");
+        } else {
+            diesel::delete(settings::table.filter(settings::key.eq(Settings::MASTER_KEY)))
+                .execute(&mut *self.db())
+                .expect("db");
+        }
+    }
+
+    #[tracing::instrument(skip(self))]
+    fn store_storage_service_key(&self, storage_key: Option<&StorageServiceKey>) {
+        use crate::schema::settings;
+        use base64::prelude::*;
+
+        if let Some(storage_key) = storage_key {
+            let key_base64 = BASE64_STANDARD.encode(storage_key.inner);
+            diesel::update(settings::table.filter(settings::key.eq(Settings::STORAGE_SERVICE_KEY)))
+                .set(settings::value.eq(key_base64))
+                .execute(&mut *self.db())
+                .expect("db");
+        } else {
+            diesel::delete(settings::table.filter(settings::key.eq(Settings::STORAGE_SERVICE_KEY)))
+                .execute(&mut *self.db())
+                .expect("db");
+        }
+    }
+}
+
 impl<O: Observable> Storage<O> {
     pub fn pni_storage(&self) -> PniStorage<O> {
         PniStorage::new(self.clone())
