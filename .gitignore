@@ -23,6 +23,8 @@ harbour-whisperfish.o
 translations/*.qm
 libsignal-build/
 
+ringrtc/
+
 # cargo
 /target
 **/*.rs.bk
