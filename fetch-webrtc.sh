@@ -17,10 +17,15 @@ ARCHS[x86]="i686-unknown-linux-gnu"
 
 for arch in "${!ARCHS[@]}"; do
     hash=${WEBRTC_HASHES[${arch}]}
-    echo "Fetching WebRTC for ${arch}..."
     target="ringrtc/${ARCHS[${arch}]}/release/obj/"
     debug_target="ringrtc/${ARCHS[${arch}]}/debug/obj/"
     mkdir -p "${target}" "${debug_target}"
+
+    if [ -f "${target}/libwebrtc.a" ]; then
+        echo "${WEBRTC_HASHES[${arch}]}  ${target}/libwebrtc.a" | sha384sum -c && continue || echo "Hash mismatch, refetching..."
+    fi
+
+    echo "Fetching WebRTC for ${arch}..."
 
     curl -L "${BASE_URL}/libwebrtc-${arch}-${hash}.a" -o "${target}/libwebrtc.a"
     echo "Verifying WebRTC for ${arch}..."
