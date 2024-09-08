@@ -74,14 +74,14 @@ fn configure_webrtc() -> anyhow::Result<()> {
 
     if !target_path.exists() {
         panic!(
-            "{} does not exist. Please download the correct libwebrtc.a from {}.",
+            "{} does not exist. Please download the correct libwebrtc.a from {} (use `bash fetch-webrtc.sh`)",
             target_path.display(),
             base_url,
         );
     }
     if !verify_sha384(target_path, sha384) {
         panic!(
-            "SHA384 does not check out. Please download the correct libwebrtc.a from {} and place it in {}",
+            "SHA384 does not check out. Please download the correct libwebrtc.a from {} and place it in {} (use `bash fetch-webrtc.sh`)",
             base_url,
             target_path.display()
         );
