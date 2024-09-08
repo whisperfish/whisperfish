@@ -1363,25 +1363,25 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="133"/>
         <source>Enable read receipts</source>
         <extracomment>Settings page use read receipts</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Okundu bilgisini etkinleştir</translation>
     </message>
     <message id="whisperfish-settings-enable-read-receipts-description">
         <location filename="../qml/pages/Settings.qml" line="136"/>
         <source>See when others have read your messages, and let others see when you are have read theirs, if they also have this enabled.</source>
         <extracomment>Settings page scale read receipts description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Başkalarının mesajlarınızı ne zaman okuduğunu görün ve eğer onlar da bu özelliği etkinleştirmişlerse sizin mesajlarınızı ne zaman okuduklarını görmelerini sağlayın.</translation>
     </message>
     <message id="whisperfish-settings-enable-link-previews">
         <location filename="../qml/pages/Settings.qml" line="150"/>
         <source>Link previews</source>
         <extracomment>Settings page enable link previews</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Bağlantı ön izlemeleri</translation>
     </message>
     <message id="whisperfish-settings-enable-link-previews-description">
         <location filename="../qml/pages/Settings.qml" line="153"/>
         <source>Create and send previews of the links you send in messages. Note: Feature not yet implemented in Whisperfish.</source>
         <extracomment>Settings page enable link previews description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mesajlarda gönderdiğiniz bağlantıların ön izlemelerini oluşturun ve gönderin. Not: Özellik henüz Whisperfish&apos;te uygulanmadı.</translation>
     </message>
     <message id="whisperfish-settings-country-code">
         <location filename="../qml/pages/Settings.qml" line="185"/>
@@ -1535,7 +1535,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="93"/>
         <source>Some setting can only be changed from the primary device.</source>
         <extracomment>Settings page, not a primary device note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Bazı ayarlar yalnızca birincil aygıttan değiştirilebilir.</translation>
     </message>
     <message id="whisperfish-settings-enable-typing-indicators">
         <location filename="../qml/pages/Settings.qml" line="116"/>
@@ -2573,19 +2573,19 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/MessageInfoPage.qml" line="130"/>
         <source>Delivery receipts</source>
         <extracomment>Delivered receipts section header</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Gönderildi bilgisi</translation>
     </message>
     <message id="whisperfish-message-info-read-receipts">
         <location filename="../qml/pages/MessageInfoPage.qml" line="146"/>
         <source>Read receipts</source>
         <extracomment>Read receipts section header</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Okundu bilgisi</translation>
     </message>
     <message id="whisperfish-message-info-viewed-receipts">
         <location filename="../qml/pages/MessageInfoPage.qml" line="162"/>
         <source>Viewed receipts</source>
         <extracomment>Viewed receipts section header</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Görüntülendi bilgisi</translation>
     </message>
     <message id="whisperfish-creating-conversation-title">
         <location filename="../qml/pages/CreateConversationPage.qml" line="46"/>
