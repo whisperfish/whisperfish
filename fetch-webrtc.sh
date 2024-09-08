@@ -19,10 +19,12 @@ for arch in "${!ARCHS[@]}"; do
     hash=${WEBRTC_HASHES[${arch}]}
     echo "Fetching WebRTC for ${arch}..."
     target="ringrtc/${ARCHS[${arch}]}/release/obj/"
-    mkdir -p "${target}"
+    debug_target="ringrtc/${ARCHS[${arch}]}/debug/obj/"
+    mkdir -p "${target}" "${debug_target}"
 
     curl -L "${BASE_URL}/libwebrtc-${arch}-${hash}.a" -o "${target}/libwebrtc.a"
     echo "Verifying WebRTC for ${arch}..."
     echo "${WEBRTC_HASHES[${arch}]}  ${target}/libwebrtc.a" | sha384sum -c
+    cp "${target}/libwebrtc.a" "${debug_target}/libwebrtc.a"
     echo "Done fetching WebRTC for ${arch}."
 done
