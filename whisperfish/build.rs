@@ -44,7 +44,7 @@ fn configure_webrtc() -> anyhow::Result<()> {
     let files = [
         ("arm", "56d4809b7d034816185b2f165a56514e29a799a6a5be1528a53c72a42990e275bf6c2895076fce991704f9899acfe280"),
         ("arm64", "28e0605917aa99b34303ee8b59eb0495b2bb3056ca9be2a5a553d34ac21d067324afd0bef06ac91cb266a7ad04dac4ba"),
-        ("x64", "337860360916a03c0a0da3e44f002f9cf3083c38ad4b4de9a9052a6ff50c9fc909433cabccaf6075554056d29408558f"),
+        ("x64", "29db5abda6f5a9ccfa4d748f295a16b212b275bcf1441ac3856de6ee6cff855b89e6cf3a510d4da4d0abdcbcd3553434"),
         ("x86", "89143eb3464547263770cffc66bb741e4407366ac4a21e695510fb3474ddef4b5bf30eb5b1abac3060b1d9b562c6cbab"),
     ].iter().cloned().collect::<std::collections::HashMap<&str, &str>>();
 
