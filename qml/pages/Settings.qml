@@ -15,11 +15,34 @@ Page {
 
     // Cache encryption state so it's only queried once from storage
     property bool encryptedDatabase: AppState.isEncrypted()
+    readonly property bool isPrimaryDevice: SettingsBridge.isPrimaryDevice()
+
+    // Triggers to send Syng Type::Configuration after closing the page
+    property bool _typingIndicators: false
+    property bool _readReceipts: false
+    property bool _linkPreviews: false
+
+    Component.onCompleted: {
+        _typingIndicators = SettingsBridge.enable_typing_indicators
+        _readReceipts = SettingsBridge.enable_read_receipts
+        _linkPreviews = SettingsBridge.enable_link_previews
+    }
+
+    Component.onDestruction: {
+        if (
+            _typingIndicators != SettingsBridge.enable_typing_indicators ||
+            _readReceipts != SettingsBridge.enable_read_receipts ||
+            _linkPreviews != SettingsBridge.enable_link_previews
+         ) {
+            console.log("Configuration sync needed")
+            ClientWorker.sendConfiguration()
+        }
+    }
 
     SilicaFlickable {
         anchors.fill: parent
         contentWidth: parent.width
-        contentHeight: col.height + Theme.paddingLarge
+        contentHeight: contentColumn.height + Theme.paddingLarge
 
         PullDownMenu {
             MenuItem {
@@ -51,13 +74,32 @@ Page {
         VerticalScrollDecorator {}
 
         Column {
-            id: col
+            id: contentColumn
             spacing: Theme.paddingLarge
             width: parent.width
             PageHeader {
                 //: Settings page title
                 //% "Settings"
                 title: qsTrId("whisperfish-settings-title")
+            }
+
+            Label {
+                visible: !isPrimaryDevice
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: parent.width - 4*Theme.horizontalPageMargin
+                wrapMode: Text.Wrap
+                //: Settings page, not a primary device note
+                //% "Some setting can only be changed from the primary device."
+                text: qsTrId("whisperfish-settings-some-settings-locked")
+
+                Rectangle {
+                    z: -1
+                    anchors.centerIn: parent
+                    width: parent.width + 2*Theme.horizontalPageMargin
+                    height: parent.height + 2*Theme.horizontalPageMargin + 1
+                    color: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
+                    radius: 2*Theme.horizontalPageMargin
+                }
             }
 
             // ------ BEGIN GENERAL SETTINGS ------
@@ -67,12 +109,12 @@ Page {
                 text: qsTrId("whisperfish-settings-general-section")
             }
             IconTextSwitch {
-                id: useIsTypingMessages
+                enabled: isPrimaryDevice
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page use typing indicators
                 //% "Enable typing indicators"
                 text: qsTrId("whisperfish-settings-enable-typing-indicators")
-                //: Settings page scale image attachments description
+                //: Settings page typing indicators description
                 //% "See when others are typing, and let others see when you are typing, if they also have this enabled."
                 description: qsTrId("whisperfish-settings-enable-typing-indicators-description")
                 checked: SettingsBridge.enable_typing_indicators
@@ -80,6 +122,40 @@ Page {
                 onCheckedChanged: {
                     if(checked != SettingsBridge.enable_typing_indicators) {
                         SettingsBridge.enable_typing_indicators = checked
+                    }
+                }
+            }
+            IconTextSwitch {
+                enabled: isPrimaryDevice
+                anchors.horizontalCenter: parent.horizontalCenter
+                //: Settings page use read receipts
+                //% "Enable read receipts"
+                text: qsTrId("whisperfish-settings-enable-read-receipts")
+                //: Settings page scale read receipts description
+                //% "See when others have read your messages, and let others see when you are have read theirs, if they also have this enabled."
+                description: qsTrId("whisperfish-settings-enable-read-receipts-description")
+                checked: SettingsBridge.enable_read_receipts
+                icon.source: "image://theme/icon-m-activity-messaging"
+                onCheckedChanged: {
+                    if(checked != SettingsBridge.enable_read_receipts) {
+                        SettingsBridge.enable_read_receipts = checked
+                    }
+                }
+            }
+            IconTextSwitch {
+                enabled: isPrimaryDevice
+                anchors.horizontalCenter: parent.horizontalCenter
+                //: Settings page enable link previews
+                //% "Link previews"
+                text: qsTrId("whisperfish-settings-enable-link-previews")
+                //: Settings page enable link previews description
+                //% "Create and send previews of the links you send in messages. Note: Feature not yet implemented in Whisperfish."
+                description: qsTrId("whisperfish-settings-enable-link-previews-description")
+                checked: SettingsBridge.enable_link_previews
+                icon.source: "image://theme/icon-m-website"
+                onCheckedChanged: {
+                    if(checked != SettingsBridge.enable_link_previews) {
+                        SettingsBridge.enable_link_previews = checked
                     }
                 }
             }
@@ -142,7 +218,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                id: saveAttachments
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page save attachments
                 //% "Save Attachments"
@@ -162,7 +237,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                id: shareContacts
                 visible: false // XXX: Unimplemented
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page share contacts
@@ -196,7 +270,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                id: enableEnterSend
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page enable enter send
                 //% "Return key send"
@@ -213,7 +286,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                id: autoTranscribeVoiceNotes
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page auto transcribe voice notes
                 //% "Transcribe voice notes"
@@ -263,7 +335,6 @@ Page {
                 }
             }
             ComboBox {
-                id: notificationPrivacyCombo
                 property string _setting: SettingsBridge.notification_privacy
                 width: parent.width
                 //: Settings page notification privacy
@@ -342,7 +413,6 @@ Page {
 
             // ------ BEGIN BACKGROUND&STARTUP SETTINGS ------
             Column {
-                id: colStartup
                 spacing: Theme.paddingLarge
                 width: parent.width
                 visible: !AppState.isHarbour()
@@ -353,7 +423,6 @@ Page {
                     text: qsTrId("whisperfish-settings-startup-shutdown-section")
                 }
                 IconTextSwitch {
-                    id: enableAutostart
                     anchors.horizontalCenter: parent.horizontalCenter
                     //: Settings page enable autostart
                     //% "Autostart after boot"
@@ -387,7 +456,6 @@ Page {
                     text: SettingsBridge.plaintext_password
                 }
                 Button {
-                    id: savePasswordButton
                     visible: encryptedDatabase
                     enabled: passwordField.acceptableInput
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -402,7 +470,6 @@ Page {
                     onClicked: SettingsBridge.plaintext_password = passwordField.text
                 }
                 TextArea {
-                    id: passwordFieldInfo
                     visible: encryptedDatabase
                     anchors.horizontalCenter: parent.horizontalCenter
                     readOnly: true
@@ -414,7 +481,6 @@ Page {
                     text: qsTrId("whisperfish-settings-auto-unlock-password-info")
                 }
                 TextArea {
-                    id: autostartInfo
                     visible: !autostartService.serviceExists
                     anchors.horizontalCenter: parent.horizontalCenter
                     readOnly: true
@@ -445,7 +511,6 @@ Page {
                     }
                 }
                 Button {
-                    id: quitAppButton
                     anchors.horizontalCenter: parent.horizontalCenter
                     width: parent.width - 2*Theme.horizontalPageMargin
                     enabled: enableQuitOnUiClose.checked
@@ -466,7 +531,6 @@ Page {
                 text: qsTrId("whisperfish-settings-advanced-section")
             }
             IconTextSwitch {
-                id: scaleImageAttachments
                 visible: false // XXX: Unimplemented
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page scale image attachments
@@ -484,7 +548,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                id: showDebugInformation
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page: debug info toggle
                 //% "Debug mode"
@@ -501,7 +564,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                id: enableVerbose
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page enable verbose logging
                 //% "Verbose logging"
@@ -518,7 +580,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                id: enableLogfile
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page enable logging to a file
                 //% "Enable log file"
@@ -535,7 +596,6 @@ Page {
                 }
             }
             Button {
-                id: compressDb
                 visible: SettingsBridge.debug_mode
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: parent.width - 2*Theme.horizontalPageMargin
@@ -547,7 +607,6 @@ Page {
                 }
             }
             Button {
-                id: testCaptcha
                 visible: SettingsBridge.debug_mode
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: parent.width - 2*Theme.horizontalPageMargin

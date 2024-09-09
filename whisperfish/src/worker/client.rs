@@ -17,17 +17,22 @@ use self::unidentified::UnidentifiedCertificates;
 use image::GenericImageView;
 use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
+use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
+use libsignal_service::proto::sync_message::Configuration;
 use libsignal_service::proto::sync_message::Sent;
 use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::push_service::ServiceIdType;
+use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 use libsignal_service::sender::SendMessageResult;
 use tracing_futures::Instrument;
 use uuid::Uuid;
 use whisperfish_store::millis_to_naive_chrono;
+use whisperfish_store::naive_chrono_rounded_down;
 use whisperfish_store::naive_chrono_to_millis;
 use whisperfish_store::orm;
 use whisperfish_store::orm::shorten;
 use whisperfish_store::orm::MessageType;
+use whisperfish_store::orm::SessionType;
 use whisperfish_store::orm::StoryType;
 use whisperfish_store::TrustLevel;
 use zkgroup::profiles::ProfileKey;
@@ -36,6 +41,7 @@ use super::message_expiry::ExpiredMessagesStream;
 use super::profile_refresh::OutdatedProfileStream;
 use crate::actor::SendReaction;
 use crate::actor::SessionActor;
+use crate::config::SettingsBridge;
 use crate::gui::StorageReady;
 use crate::model::DeviceModel;
 use crate::platform::QmlApp;
@@ -55,8 +61,9 @@ use libsignal_service::content::{
     TypingMessage,
 };
 use libsignal_service::prelude::*;
+use libsignal_service::proto::receipt_message::Type as ReceiptType;
 use libsignal_service::proto::typing_message::Action;
-use libsignal_service::proto::{receipt_message, ReceiptMessage};
+use libsignal_service::proto::ReceiptMessage;
 use libsignal_service::protocol::{self, *};
 use libsignal_service::push_service::{
     AccountAttributes, DeviceCapabilities, RegistrationSessionMetadataResponse, ServiceIds,
@@ -72,6 +79,7 @@ use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
 use qttypes::QVariantList;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::convert::TryInto;
@@ -81,6 +89,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
+use sync_message::request::Type as RequestType;
 
 // Maximum theoretical TypingMessage send rate,
 // plus some change for Reaction messages etc.
@@ -156,7 +165,7 @@ struct DeliverMessage<T> {
     timestamp: u64,
     online: bool,
     for_story: bool,
-    session_type: orm::SessionType,
+    session_type: SessionType,
 }
 
 #[derive(actix::Message)]
@@ -250,6 +259,8 @@ pub struct ClientWorker {
 
     linkRecipient: qt_method!(fn(&self, recipient_id: i32, external_id: String)),
     unlinkRecipient: qt_method!(fn(&self, recipient_id: i32)),
+
+    sendConfiguration: qt_method!(fn(&self)),
 }
 
 /// ClientActor keeps track of the connection state.
@@ -276,6 +287,8 @@ pub struct ClientActor {
     message_expiry_notification_handle: Option<tokio::sync::mpsc::UnboundedSender<()>>,
 
     registration_session: Option<RegistrationSessionMetadataResponse>,
+
+    settings: SettingsBridge,
 }
 
 fn whisperfish_device_capabilities() -> DeviceCapabilities {
@@ -330,6 +343,8 @@ impl ClientActor {
             message_expiry_notification_handle: None,
 
             registration_session: None,
+
+            settings: SettingsBridge::default(),
         })
     }
 
@@ -446,13 +461,13 @@ impl ClientActor {
         metadata: &Metadata,
     ) -> Option<()> {
         let content = ReceiptMessage {
-            r#type: Some(receipt_message::Type::Delivery as _),
+            r#type: Some(ReceiptType::Delivery as _),
             timestamp: vec![message.timestamp?],
         };
 
         let storage = self.storage.as_ref().unwrap();
 
-        let session_type = orm::SessionType::DirectMessage(
+        let session_type = SessionType::DirectMessage(
             storage
                 .fetch_recipient(&metadata.sender)
                 .expect("needs-receipt sender recipient"),
@@ -467,6 +482,56 @@ impl ClientActor {
         });
 
         Some(())
+    }
+
+    /// Send read receipts to recipients.
+    ///
+    /// Assumes that read receipts setting is enabled.
+    pub fn handle_needs_read_receipts(
+        &mut self,
+        ctx: &mut <Self as Actor>::Context,
+        message_ids: Vec<i32>,
+    ) {
+        let storage = self.storage.as_ref().unwrap();
+        let messages = storage.fetch_messages_by_ids(message_ids);
+        let mut sessions: HashMap<i32, orm::Session> = HashMap::new();
+
+        // Iterate over messages
+
+        for message in messages.iter() {
+            sessions.entry(message.session_id).or_insert_with(|| {
+                storage
+                    .fetch_session_by_id(message.session_id)
+                    .expect("existing session for message")
+            });
+        }
+
+        tracing::trace!(
+            "Sending read receipts for {} messages in {} sessions",
+            messages.len(),
+            sessions.len()
+        );
+
+        for (session_id, session) in sessions {
+            let timestamp: Vec<u64> = messages
+                .iter()
+                .filter(|m| m.session_id == session_id)
+                .map(|m| m.server_timestamp.and_utc().timestamp_millis() as u64)
+                .collect();
+
+            let content = ReceiptMessage {
+                r#type: Some(ReceiptType::Read as _),
+                timestamp,
+            };
+
+            ctx.notify(DeliverMessage {
+                content,
+                timestamp: Utc::now().timestamp_millis() as u64,
+                session_type: session.r#type,
+                online: false,
+                for_story: false,
+            });
+        }
     }
 
     /// Process incoming message from Signal
@@ -489,7 +554,6 @@ impl ClientActor {
     ) -> Option<i32> {
         let timestamp = metadata.timestamp;
         let dest_identity = metadata.destination.identity;
-        let settings = crate::config::SettingsBridge::default();
         let is_sync_sent = sync_sent.is_some();
 
         let mut storage = self.storage.clone().expect("storage");
@@ -554,6 +618,10 @@ impl ClientActor {
 
         if flags & DataMessageFlags::ProfileKeyUpdate as i32 != 0 {
             message_type = Some(MessageType::ProfileKeyUpdate);
+        }
+
+        if !msg.preview.is_empty() {
+            tracing::warn!("Message contains preview data, which is not yet saved nor displayed. Please upvote issue #695");
         }
 
         let expiration_timer_update = flags & DataMessageFlags::ExpirationTimerUpdate as i32 != 0;
@@ -746,7 +814,7 @@ impl ClientActor {
             h.send(()).expect("send message expiry notification");
         }
 
-        if settings.get_bool("attachment_log") && !msg.attachments.is_empty() {
+        if self.settings.get_bool("attachment_log") && !msg.attachments.is_empty() {
             tracing::trace!("Logging message to the attachment log");
             // XXX Sync code, but it's not the only sync code in here...
             let mut log = self.attachment_log();
@@ -764,7 +832,7 @@ impl ClientActor {
         for attachment in &msg.attachments {
             let attachment_id = storage.register_attachment(message.id, attachment.clone());
 
-            if settings.get_bool("save_attachments") {
+            if self.settings.get_bool("save_attachments") {
                 ctx.notify(FetchAttachment { attachment_id });
             }
         }
@@ -777,9 +845,9 @@ impl ClientActor {
         // XXX If from ourselves, skip
         if !is_sync_sent && !session.is_muted {
             let session_name: Cow<'_, str> = match &session.r#type {
-                orm::SessionType::GroupV1(group) => Cow::from(&group.name),
-                orm::SessionType::GroupV2(group) => Cow::from(&group.name),
-                orm::SessionType::DirectMessage(recipient) => recipient.name(),
+                SessionType::GroupV1(group) => Cow::from(&group.name),
+                SessionType::GroupV2(group) => Cow::from(&group.name),
+                SessionType::DirectMessage(recipient) => recipient.name(),
             };
 
             self.inner.pinned().borrow_mut().notifyMessage(
@@ -810,22 +878,22 @@ impl ClientActor {
     }
 
     fn handle_sync_request(&mut self, meta: Metadata, req: SyncRequest) {
-        use sync_message::request::Type;
         tracing::trace!("Processing sync request {:?}", req.r#type());
 
         let local_addr = self.self_aci.unwrap();
         let storage = self.storage.clone().unwrap();
         let sender = self.message_sender();
+        let configuration = self.get_configuration();
 
         actix::spawn(async move {
             let mut sender = sender.await?;
             match req.r#type() {
-                Type::Unknown => {
+                RequestType::Unknown => {
                     tracing::warn!("Unknown sync request from {:?}:{}. Please upgrade Whisperfish or file an issue.", meta.sender, meta.sender_device);
                     tracing::trace!("Unknown sync request: {:#?}", req);
                     return Ok(());
                 }
-                Type::Contacts => {
+                RequestType::Contacts => {
                     use libsignal_service::sender::ContactDetails;
                     // In fact, we should query for registered contacts instead of sessions here.
                     // https://gitlab.com/whisperfish/whisperfish/-/issues/133
@@ -850,8 +918,10 @@ impl ClientActor {
 
                     sender.send_contact_details(&local_addr, None, contacts, false, true).await?;
                 },
+                RequestType::Configuration => {
+                    sender.send_configuration(&local_addr, configuration).await?;
+                },
                 // Type::Blocked
-                // Type::Configuration
                 // Type::Keys
                 // Type::PniIdentity
                 _ => {
@@ -864,34 +934,13 @@ impl ClientActor {
         }.map(|v| if let Err(e) = v {tracing::error!("{:?} in handle_sync_request()", e)}));
     }
 
-    fn process_receipt(&mut self, msg: &Envelope) {
-        let millis = msg.timestamp();
-
-        // If the receipt timestamp matches a transient timestamp,
-        // such as a TypingMessage or a sent/updated/removed Reaction,
-        // stop processing, since there's no such message in database.
-        if self.transient_timestamps.contains(&millis) {
-            tracing::info!("Transient receipt: {}", millis);
-            return;
-        }
-
-        tracing::info!("Received receipt: {}", millis);
-
-        let storage = self.storage.as_mut().expect("storage initialized");
-        let source = msg.source_address();
-
-        let timestamp = millis_to_naive_chrono(millis);
-        tracing::trace!(
-            "Marking message from {:?} at {} ({}) as received.",
-            source,
-            timestamp,
-            millis
-        );
-        if let Some(updated) = storage.mark_message_received(source, timestamp, None) {
-            self.inner
-                .pinned()
-                .borrow_mut()
-                .messageReceipt(updated.session_id, updated.message_id)
+    fn get_configuration(&self) -> Configuration {
+        Configuration {
+            read_receipts: Some(self.settings.get_enable_read_receipts()),
+            unidentified_delivery_indicators: None,
+            typing_indicators: Some(self.settings.get_enable_typing_indicators()),
+            provisioning_version: None,
+            link_previews: Some(self.settings.get_enable_link_previews()),
         }
     }
 
@@ -1043,45 +1092,42 @@ impl ClientActor {
                     handled = true;
                     tracing::trace!("Sync read message");
                     for read in &message.read {
-                        // XXX: this should probably not be based on ts alone.
-                        let ts = read.timestamp();
-                        let source = read.sender_aci();
-                        // XXX: Also handle PNI
                         // Signal uses timestamps in milliseconds, chrono has nanoseconds
-                        let ts = millis_to_naive_chrono(ts);
-                        tracing::trace!(
-                            "Marking message from {} at {} ({}) as read.",
-                            source,
-                            ts,
-                            read.timestamp()
-                        );
-                        if let Some(updated) = storage.mark_message_read(ts) {
-                            self.inner
-                                .pinned()
-                                .borrow_mut()
-                                .messageReceipt(updated.session_id, updated.message_id)
-                        } else {
-                            tracing::warn!("Could not mark as received!");
+                        // XXX: this should probably not be based on ts alone.
+                        if let Some(timestamp) = read.timestamp.map(millis_to_naive_chrono) {
+                            let source = read.sender_aci();
+                            tracing::trace!(
+                                "Marking message from {} at {} ({}) as read.",
+                                source,
+                                timestamp,
+                                naive_chrono_rounded_down(timestamp),
+                            );
+                            if let Some(updated) = storage.mark_message_read(timestamp) {
+                                self.inner
+                                    .pinned()
+                                    .borrow_mut()
+                                    .messageReceipt(updated.session_id, updated.message_id)
+                            }
                         }
                     }
                 }
                 if let Some(fetch) = message.fetch_latest {
                     handled = true;
                     match fetch.r#type() {
-                        sync_message::fetch_latest::Type::Unknown => {
+                        LatestType::Unknown => {
                             tracing::warn!("Sync FetchLatest with unknown type")
                         }
-                        sync_message::fetch_latest::Type::LocalProfile => {
+                        LatestType::LocalProfile => {
                             tracing::trace!("Scheduling local profile refresh");
                             ctx.notify(RefreshOwnProfile { force: true });
                         }
-                        sync_message::fetch_latest::Type::StorageManifest => {
+                        LatestType::StorageManifest => {
                             // XXX
                             tracing::warn!(
                                 "Unimplemented: synchronize fetch request StorageManifest"
                             )
                         }
-                        sync_message::fetch_latest::Type::SubscriptionStatus => {
+                        LatestType::SubscriptionStatus => {
                             tracing::warn!(
                                 "Unimplemented: synchronize fetch request SubscriptionStatus"
                             )
@@ -1093,9 +1139,8 @@ impl ClientActor {
                 }
             }
             ContentBody::TypingMessage(typing) => {
-                let settings = crate::config::SettingsBridge::default();
-                if settings.get_enable_typing_indicators() {
-                    tracing::info!("{:?} is typing.", metadata.sender);
+                if self.settings.get_enable_typing_indicators() {
+                    tracing::info!("{:?} is typing.", metadata.sender.to_service_id());
                     let res = self
                         .inner
                         .pinned()
@@ -1118,26 +1163,62 @@ impl ClientActor {
                 }
             }
             ContentBody::ReceiptMessage(receipt) => {
-                tracing::info!("{:?} received a message.", metadata.sender);
-                // XXX dispatch on receipt.type
-                for &ts in &receipt.timestamp {
-                    // Signal uses timestamps in milliseconds, chrono has nanoseconds
-                    if let Some(updated) = storage.mark_message_received(
-                        metadata.sender,
-                        millis_to_naive_chrono(ts),
-                        None,
-                    ) {
-                        self.inner
-                            .pinned()
-                            .borrow_mut()
-                            .messageReceipt(updated.session_id, updated.message_id)
-                    } else {
-                        tracing::warn!("Could not mark {} as received!", ts);
+                if let Some(receipt_type_i32) = receipt.r#type {
+                    if let Ok(receipt_type) = ReceiptType::try_from(receipt_type_i32) {
+                        let timestamps = receipt
+                            .timestamp
+                            .into_iter()
+                            .map(millis_to_naive_chrono)
+                            .collect();
+                        let rcpt_timestamp = millis_to_naive_chrono(metadata.timestamp);
+                        match receipt_type {
+                            ReceiptType::Delivery => {
+                                tracing::info!(
+                                    "{:?} received a message.",
+                                    metadata.sender.to_service_id()
+                                );
+                                for updated in storage.mark_messages_delivered(
+                                    metadata.sender,
+                                    timestamps,
+                                    rcpt_timestamp,
+                                ) {
+                                    self.inner
+                                        .pinned()
+                                        .borrow_mut()
+                                        .messageReceipt(updated.session_id, updated.message_id)
+                                }
+                            }
+                            ReceiptType::Read => {
+                                if self.settings.get_enable_read_receipts() {
+                                    tracing::info!(
+                                        "{:?} read a message.",
+                                        metadata.sender.to_service_id()
+                                    );
+                                    for updated in storage.mark_messages_read(
+                                        metadata.sender,
+                                        timestamps,
+                                        rcpt_timestamp,
+                                    ) {
+                                        self.inner
+                                            .pinned()
+                                            .borrow_mut()
+                                            .messageReceipt(updated.session_id, updated.message_id)
+                                    }
+                                } else {
+                                    tracing::debug!("Ignoring DeliveryMessage(Read)");
+                                }
+                            }
+                            ReceiptType::Viewed => {
+                                tracing::warn!(
+                                    "Viewed receipts are not yet implemented. Please upvote issue #670"
+                                );
+                            }
+                        }
                     }
                 }
             }
             ContentBody::CallMessage(_call) => {
-                tracing::info!("{:?} is calling.", metadata.sender);
+                tracing::info!("{:?} is calling.", metadata.sender.to_service_id());
             }
             _ => {
                 tracing::info!("TODO")
@@ -1236,8 +1317,7 @@ impl Handler<FetchAttachment> for ClientActor {
         // in this method, as well as the generated path.
         // We have this function that returns a filesystem path, so we can
         // set it ourselves.
-        let settings = crate::config::SettingsBridge::default();
-        let dir = settings.get_string("attachment_dir");
+        let dir = self.settings.get_string("attachment_dir");
         let dest = PathBuf::from(dir);
 
         // Take the extension of the file_name string, if it exists
@@ -1271,6 +1351,7 @@ impl Handler<FetchAttachment> for ClientActor {
         let attachment_id = attachment.id;
         let session_id = session.id;
         let message_id = message.id;
+        let transcribe_voice_notes = self.settings.get_transcribe_voice_notes();
 
         Box::pin(
             async move {
@@ -1354,8 +1435,7 @@ impl Handler<FetchAttachment> for ClientActor {
                 if attachment.is_voice_note {
                     // If the attachment is a voice note, and we enabled automatic transcription,
                     // trigger the transcription
-                    let settings = crate::config::SettingsBridge::default();
-                    if settings.get_transcribe_voice_notes() {
+                    if transcribe_voice_notes {
                         client_addr
                             .send(voice_note_transcription::TranscribeVoiceNote { message_id })
                             .await?;
@@ -1431,8 +1511,7 @@ impl Handler<QueueMessage> for ClientActor {
         if msg.is_voice_note {
             // If the attachment is a voice note, and we enabled automatic transcription,
             // trigger the transcription
-            let settings = crate::config::SettingsBridge::default();
-            if settings.get_transcribe_voice_notes() {
+            if self.settings.get_transcribe_voice_notes() {
                 ctx.notify(voice_note_transcription::TranscribeVoiceNote {
                     message_id: inserted_msg.id,
                 });
@@ -1504,7 +1583,7 @@ impl Handler<SendMessage> for ClientActor {
         Box::pin(
             async move {
                 let mut sender = sender.await?;
-                if let orm::SessionType::GroupV1(_group) = &session.r#type {
+                if let SessionType::GroupV1(_group) = &session.r#type {
                     // FIXME
                     tracing::error!("Cannot send to Group V1 anymore.");
                 }
@@ -1815,11 +1894,11 @@ impl Handler<SendTypingNotification> for ClientActor {
         Box::pin(
             async move {
                 let group_id = match &session.r#type {
-                    orm::SessionType::DirectMessage(_) => None,
-                    orm::SessionType::GroupV1(group) => {
+                    SessionType::DirectMessage(_) => None,
+                    SessionType::GroupV1(group) => {
                         Some(hex::decode(&group.id).expect("valid hex identifiers in db"))
                     }
-                    orm::SessionType::GroupV2(group) => {
+                    SessionType::GroupV2(group) => {
                         Some(hex::decode(&group.id).expect("valid hex identifiers in db"))
                     }
                 };
@@ -2014,8 +2093,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
         let sender = self.message_sender();
         // XXX What about PNI? When should we use it?
         let local_addr = self.self_aci.unwrap();
-        let settings = crate::config::SettingsBridge::default();
-        let cert_type = if settings.get_share_phone_number() {
+        let cert_type = if self.settings.get_share_phone_number() {
             CertType::UuidOnly
         } else {
             CertType::Complete
@@ -2027,12 +2105,12 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
             let mut sender = sender.await?;
 
             let results = match &session {
-                orm::SessionType::GroupV1(_group) => {
+                SessionType::GroupV1(_group) => {
                     // FIXME
                     tracing::error!("Cannot send to Group V1 anymore.");
                     Vec::new()
                 }
-                orm::SessionType::GroupV2(group) => {
+                SessionType::GroupV2(group) => {
                     let members = storage.fetch_group_members_by_group_v2_id(&group.id);
                     let members = members
                         .iter()
@@ -2059,7 +2137,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                         .send_message_to_group(&members, content, timestamp, online)
                         .await
                 }
-                orm::SessionType::DirectMessage(recipient) => {
+                SessionType::DirectMessage(recipient) => {
                     let svc = recipient.to_service_address();
 
                     let access = certs.access_for(cert_type, recipient, for_story);
@@ -2255,7 +2333,7 @@ impl Handler<RefreshProfile> for ClientActor {
         let recipient = match profile {
             RefreshProfile::BySession(session_id) => {
                 match storage.fetch_session_by_id(session_id).map(|x| x.r#type) {
-                    Some(orm::SessionType::DirectMessage(recipient)) => recipient,
+                    Some(SessionType::DirectMessage(recipient)) => recipient,
                     None => {
                         tracing::error!("No session with id {}", session_id);
                         return;
@@ -2315,18 +2393,6 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
 
         let mut cipher = self.cipher(incoming_address.identity);
 
-        if msg.is_receipt() {
-            self.process_receipt(&msg);
-        }
-
-        if !(msg.is_prekey_signal_message()
-            || msg.is_signal_message()
-            || msg.is_unidentified_sender()
-            || msg.is_receipt())
-        {
-            tracing::warn!("Unknown envelope type {:?}", msg.r#type());
-        }
-
         let storage = self.storage.clone().expect("initialized storage");
 
         ctx.spawn(
@@ -2374,7 +2440,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                     }
                 };
 
-                tracing::trace!(sender = ?content.metadata.sender, "opened envelope");
+                tracing::trace!(sender = ?content.metadata.sender.to_service_id(), "opened envelope");
 
                 Some(content)
             }.instrument(tracing::trace_span!("opening envelope", %incoming_address.identity))
@@ -2935,6 +3001,10 @@ impl ClientWorker {
     #[with_executor]
     #[tracing::instrument(skip(self))]
     fn send_typing_notification(&self, session_id: i32, is_start: bool) {
+        if session_id < 0 {
+            tracing::warn!("Bad session ID {session_id}, ignoring.");
+            return;
+        };
         actix::spawn(
             self.actor
                 .as_ref()
@@ -2976,6 +3046,18 @@ impl ClientWorker {
                 .map(Result::unwrap),
         );
     }
+
+    #[with_executor]
+    #[allow(non_snake_case)]
+    fn sendConfiguration(&self) {
+        actix::spawn(
+            self.actor
+                .as_ref()
+                .unwrap()
+                .send(SendConfiguration)
+                .map(Result::unwrap),
+        );
+    }
 }
 
 impl Handler<CompactDb> for ClientActor {
@@ -2997,12 +3079,16 @@ pub struct MarkMessagesRead {
 impl Handler<MarkMessagesRead> for ClientActor {
     type Result = ResponseFuture<()>;
 
-    fn handle(&mut self, msg_ids: MarkMessagesRead, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, read: MarkMessagesRead, ctx: &mut Self::Context) -> Self::Result {
         let storage = self.storage.clone().unwrap();
         let handle = self.message_expiry_notification_handle.clone().unwrap();
+        if self.settings.get_enable_read_receipts() {
+            tracing::trace!("Sending read receipts");
+            self.handle_needs_read_receipts(ctx, read.message_ids.clone());
+        };
         Box::pin(
             async move {
-                storage.mark_messages_read_in_ui(msg_ids.message_ids);
+                storage.mark_messages_read_in_ui(read.message_ids);
                 handle.send(()).expect("send messages expiry notification");
             }
             .instrument(tracing::debug_span!("mark messages read")),
@@ -3299,6 +3385,32 @@ impl Handler<LinkRecipient> for ClientActor {
     ) {
         let storage = self.storage.as_mut().unwrap();
         storage.set_recipient_external_id(recipient_id, external_id);
+    }
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct SendConfiguration;
+
+impl Handler<SendConfiguration> for ClientActor {
+    type Result = ();
+
+    fn handle(&mut self, _: SendConfiguration, _ctx: &mut Self::Context) {
+        if self.config.get_device_id() != DeviceId::from(DEFAULT_DEVICE_ID) {
+            tracing::info!("Not the primary device, ignoring SendConfiguration request");
+            return;
+        };
+        let sender = self.message_sender();
+        let local_addr = self.config.get_addr().unwrap();
+        let configuration = self.get_configuration();
+
+        actix::spawn(async move {
+            let mut sender = sender.await.unwrap();
+            sender
+                .send_configuration(&local_addr, configuration)
+                .await
+                .expect("send configuration");
+        });
     }
 }
 

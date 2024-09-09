@@ -1386,9 +1386,9 @@ impl<O: Observable> Storage<O> {
             .expect("db")
     }
 
-    /// Marks the message with a certain timestamp as read by a certain person.
-    ///
-    /// This is e.g. called from Signal Desktop from a sync message
+    /// Marks the message read without creating a Receipt entry.
+    /// This is used in handling sync messages only, and should
+    /// only cover messages that was sent through a paired device.
     #[tracing::instrument(skip(self))]
     pub fn mark_message_read(&self, timestamp: NaiveDateTime) -> Option<MessagePointer> {
         use schema::messages::dsl::*;
@@ -1400,7 +1400,7 @@ impl<O: Observable> Storage<O> {
             .unwrap();
 
         if row.is_empty() {
-            tracing::warn!("Could not find message with timestamp {}", timestamp);
+            tracing::warn!("Could not sync message {} as received", timestamp);
             tracing::warn!(
                 "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
             );
@@ -1416,6 +1416,98 @@ impl<O: Observable> Storage<O> {
         self.observe_update(messages, pointer.message_id)
             .with_relation(schema::sessions::table, pointer.session_id);
         Some(pointer)
+    }
+
+    /// Marks the messages with the certain timestamps as read by a certain person.
+    ///
+    /// This is called when a recipient sends a ReceiptMessage with some number of timestamps.
+    #[tracing::instrument(skip(self))]
+    pub fn mark_messages_read(
+        &self,
+        sender: ServiceAddress,
+        timestamps: Vec<NaiveDateTime>,
+        read_at: NaiveDateTime,
+    ) -> Vec<MessagePointer> {
+        use schema::messages::dsl::*;
+
+        // Find the recipient
+        let rcpt = self.merge_and_fetch_recipient_by_address(None, sender, TrustLevel::Certain);
+
+        let num_timestamps = timestamps.len();
+        let pointers: Vec<MessagePointer> = diesel::update(messages)
+            .filter(server_timestamp.eq_any(timestamps))
+            .set(is_read.eq(true))
+            .returning((schema::messages::id, schema::messages::session_id))
+            .load(&mut *self.db())
+            .unwrap()
+            .into_iter()
+            .map(|(m_id, s_id)| MessagePointer {
+                message_id: m_id,
+                session_id: s_id,
+            })
+            .collect();
+
+        if pointers.is_empty() {
+            tracing::warn!(
+                "Received {} read timestamps but found {} messages",
+                num_timestamps,
+                pointers.len()
+            );
+            tracing::warn!(
+                "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
+            );
+            return Vec::new();
+        }
+
+        for ptr in pointers.iter() {
+            self.observe_update(messages, ptr.message_id)
+                .with_relation(schema::sessions::table, ptr.session_id);
+
+            // For read receipts, existing row is likely present - try update first
+            let mut affected = diesel::update(schema::receipts::table)
+                .filter(
+                    schema::receipts::message_id
+                        .eq(ptr.message_id)
+                        .and(schema::receipts::recipient_id.eq(rcpt.id))
+                        .and(schema::receipts::read.is_null()),
+                )
+                .set(schema::receipts::read.eq(read_at))
+                .execute(&mut *self.db())
+                .map_err(|e| {
+                    tracing::error!("Could not update delivery receipt: {}", e);
+                    e
+                })
+                .unwrap_or(0);
+
+            // SQLite doesn't support SupportsOnConflictClauseWhere so we have to resort to two queries
+            if affected == 0 {
+                affected += diesel::insert_into(schema::receipts::table)
+                    .values((
+                        schema::receipts::message_id.eq(ptr.message_id),
+                        schema::receipts::recipient_id.eq(rcpt.id),
+                        schema::receipts::read.eq(read_at),
+                    ))
+                    .on_conflict((schema::receipts::message_id, schema::receipts::recipient_id))
+                    .do_nothing()
+                    .execute(&mut *self.db())
+                    .map_err(|e| {
+                        tracing::error!("Could not save delivery receipt: {}", e);
+                        e
+                    })
+                    .unwrap_or(0);
+            }
+
+            if affected > 1 {
+                tracing::warn!("Delivery receipt update affected {} rows", affected);
+            }
+            if affected > 0 {
+                self.observe_upsert(schema::receipts::table, PrimaryKey::Unknown)
+                    .with_relation(schema::messages::table, ptr.message_id)
+                    .with_relation(schema::recipients::table, rcpt.id);
+            }
+        }
+
+        pointers
     }
 
     /// Handle marking multiple messages as read and potentially starting their expiry timer.
@@ -1463,67 +1555,92 @@ impl<O: Observable> Storage<O> {
         }
     }
 
-    /// Marks the message with a certain timestamp as received by a certain person.
+    /// Marks the messages with the certain timestamps as delivered to a certain person.
     #[tracing::instrument(skip(self))]
-    pub fn mark_message_received(
+    pub fn mark_messages_delivered(
         &self,
         receiver_addr: ServiceAddress,
-        timestamp: NaiveDateTime,
-        delivered_at: Option<chrono::DateTime<Utc>>,
-    ) -> Option<MessagePointer> {
-        // XXX: probably, the trigger for this method call knows a better time stamp.
-        let delivered_at = delivered_at.unwrap_or_else(chrono::Utc::now).naive_utc();
-
+        timestamps: Vec<NaiveDateTime>,
+        delivered_at: NaiveDateTime,
+    ) -> Vec<MessagePointer> {
         // Find the recipient
-        let recipient =
+        let rcpt =
             self.merge_and_fetch_recipient_by_address(None, receiver_addr, TrustLevel::Certain);
-        let row: Option<(i32, i32)> = schema::messages::table
+
+        let num_timestamps = timestamps.len();
+        let pointers: Vec<MessagePointer> = schema::messages::table
             .select((schema::messages::id, schema::messages::session_id))
-            .filter(schema::messages::server_timestamp.eq(timestamp))
-            .first(&mut *self.db())
-            .optional()
-            .expect("db");
-        if row.is_none() {
-            tracing::warn!("Could not find message with timestamp {}", timestamp);
+            .filter(schema::messages::server_timestamp.eq_any(timestamps))
+            .load(&mut *self.db())
+            .unwrap()
+            .into_iter()
+            .map(|(m_id, s_id)| MessagePointer {
+                message_id: m_id,
+                session_id: s_id,
+            })
+            .collect();
+
+        if pointers.is_empty() {
+            tracing::warn!(
+                "Received {} delivered timestamps but found {} messages",
+                num_timestamps,
+                pointers.len()
+            );
             tracing::warn!(
                 "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
             );
+            return Vec::new();
         }
-        let pointer = row?;
-        let pointer = MessagePointer {
-            message_id: pointer.0,
-            session_id: pointer.1,
-        };
 
-        let upsert = diesel::insert_into(schema::receipts::table)
-            .values((
-                schema::receipts::message_id.eq(pointer.message_id),
-                schema::receipts::recipient_id.eq(recipient.id),
-                schema::receipts::delivered.eq(delivered_at),
-            ))
-            .on_conflict((schema::receipts::message_id, schema::receipts::recipient_id))
-            .do_update()
-            .set(schema::receipts::delivered.eq(delivered_at))
-            .execute(&mut *self.db());
+        for ptr in pointers.iter() {
+            self.observe_update(schema::messages::table, ptr.message_id)
+                .with_relation(schema::sessions::table, ptr.session_id);
 
-        match upsert {
-            Ok(n) => {
-                if n != 1 {
-                    tracing::warn!(
-                        "Read receipt had {} affected rows instead of expected 1. Updating anyway.",
-                        n
-                    );
-                }
+            // For delivery receipts, existing row is likely absent - try insert first
+            let mut affected = diesel::insert_into(schema::receipts::table)
+                .values((
+                    schema::receipts::message_id.eq(ptr.message_id),
+                    schema::receipts::recipient_id.eq(rcpt.id),
+                    schema::receipts::delivered.eq(delivered_at),
+                ))
+                .on_conflict((schema::receipts::message_id, schema::receipts::recipient_id))
+                .do_nothing()
+                .execute(&mut *self.db())
+                .map_err(|e| {
+                    tracing::error!("Could not save read receipt: {}", e);
+                    e
+                })
+                .unwrap_or(0);
+
+            // SQLite doesn't support SupportsOnConflictClauseWhere so we have to resort to two queries
+            if affected == 0 {
+                affected += diesel::update(schema::receipts::table)
+                    .filter(
+                        schema::receipts::message_id
+                            .eq(ptr.message_id)
+                            .and(schema::receipts::recipient_id.eq(rcpt.id))
+                            .and(schema::receipts::delivered.is_null()),
+                    )
+                    .set(schema::receipts::delivered.eq(delivered_at))
+                    .execute(&mut *self.db())
+                    .map_err(|e| {
+                        tracing::error!("Could not update read receipt: {}", e);
+                        e
+                    })
+                    .unwrap_or(0);
+            }
+
+            if affected > 1 {
+                tracing::warn!("Read receipt update affected {} rows", affected);
+            }
+            if affected > 0 {
                 self.observe_upsert(schema::receipts::table, PrimaryKey::Unknown)
-                    .with_relation(schema::messages::table, pointer.message_id)
-                    .with_relation(schema::recipients::table, recipient.id);
-                Some(pointer)
-            }
-            Err(e) => {
-                tracing::error!("Could not insert receipt: {}.", e);
-                None
+                    .with_relation(schema::messages::table, ptr.message_id)
+                    .with_relation(schema::recipients::table, rcpt.id);
             }
         }
+
+        pointers
     }
 
     /// Get all sessions in no particular order.
@@ -2540,6 +2657,14 @@ impl<O: Observable> Storage<O> {
             .filter(schema::messages::id.eq(id))
             .first(&mut *self.db())
             .ok()
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_messages_by_ids(&self, ids: Vec<i32>) -> Vec<orm::Message> {
+        schema::messages::table
+            .filter(schema::messages::id.eq_any(ids))
+            .load(&mut *self.db())
+            .expect("db")
     }
 
     /// Returns a vector of messages for a specific session, ordered by server timestamp.
