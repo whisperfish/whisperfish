@@ -3,7 +3,7 @@ variables: &variables
   GIT_FETCH_EXTRA_FLAGS: --tags
   RUST_BACKTRACE: full
   # Output dir for the webrtc artifacts
-  OUTPUT_DIR: $CI_PROJECT_DIR/ringrtc/x86_64-unknown-linux-gnu/
+  OUTPUT_DIR: $CI_PROJECT_DIR/ringrtc/322/x86_64-unknown-linux-gnu/
 
 include:
   # Awesome OpenRepos script by @nobodyinperson/Yann Büchau

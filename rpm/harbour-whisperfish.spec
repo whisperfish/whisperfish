@@ -237,7 +237,7 @@ export TMPDIR=${TMPDIR:-$(realpath ".tmp")}
 mkdir -p $TMPDIR
 
 # ringrtc requires an output directory for the WebRTC artifacts
-export OUTPUT_DIR=%{_sourcedir}/../ringrtc/${SB2_RUST_TARGET_TRIPLE}
+export OUTPUT_DIR=%{_sourcedir}/../ringrtc/111/${SB2_RUST_TARGET_TRIPLE}
 
 cargo build \
           -j 1 \

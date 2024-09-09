@@ -15,7 +15,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 use std::{io::Read, process::Command};
 
-fn verify_sha384(path: &std::path::Path, hash: &str) -> bool {
+fn verify_sha384(path: &std::path::Path, hashes: &[&str]) -> bool {
     use sha2::{Digest, Sha384};
     let mut hasher = Sha384::new();
 
@@ -31,7 +31,7 @@ fn verify_sha384(path: &std::path::Path, hash: &str) -> bool {
 
     let result = hasher.finalize();
 
-    hex::encode(result) == hash
+    hashes.contains(&hex::encode(result).as_str())
 }
 
 fn configure_webrtc() -> anyhow::Result<()> {
@@ -41,12 +41,15 @@ fn configure_webrtc() -> anyhow::Result<()> {
     // Don't confuse OUTPUT_DIR with OUT_DIR... ringrtc is special.
     // We download it, and verify the SHA384 hash.
     // Keep in sync with `fetch-webrtc.sh`
+    //
+    // There are two possible legal hashes for each arch, because we have two different versions of the library:
+    // one is built with OpenSSL 1.1.1, the other with OpenSSL 3.2.2. These differ in ABI.
     let files = [
-        ("arm", "56d4809b7d034816185b2f165a56514e29a799a6a5be1528a53c72a42990e275bf6c2895076fce991704f9899acfe280"),
-        ("arm64", "28e0605917aa99b34303ee8b59eb0495b2bb3056ca9be2a5a553d34ac21d067324afd0bef06ac91cb266a7ad04dac4ba"),
-        ("x64", "29db5abda6f5a9ccfa4d748f295a16b212b275bcf1441ac3856de6ee6cff855b89e6cf3a510d4da4d0abdcbcd3553434"),
-        ("x86", "89143eb3464547263770cffc66bb741e4407366ac4a21e695510fb3474ddef4b5bf30eb5b1abac3060b1d9b562c6cbab"),
-    ].iter().cloned().collect::<std::collections::HashMap<&str, &str>>();
+        ("arm", &["56d4809b7d034816185b2f165a56514e29a799a6a5be1528a53c72a42990e275bf6c2895076fce991704f9899acfe280", "56e28c6c02fec08dd6b39eab5d08b43fcb50342b0328cb127962b794ecb2c0b0031e0846c2318fe1efcac65363c74e1a"] as &[&str]),
+        ("arm64", &["28e0605917aa99b34303ee8b59eb0495b2bb3056ca9be2a5a553d34ac21d067324afd0bef06ac91cb266a7ad04dac4ba", "fc325ad89677706d61c7fed82f2ff753f591f93636f6ab615a5042fdd4ba681cc1aed70e0d5ce1d22391957640efd11f"]),
+        ("x64", &["337860360916a03c0a0da3e44f002f9cf3083c38ad4b4de9a9052a6ff50c9fc909433cabccaf6075554056d29408558f", "29db5abda6f5a9ccfa4d748f295a16b212b275bcf1441ac3856de6ee6cff855b89e6cf3a510d4da4d0abdcbcd3553434"]),
+        ("x86", &["89143eb3464547263770cffc66bb741e4407366ac4a21e695510fb3474ddef4b5bf30eb5b1abac3060b1d9b562c6cbab", "3752471a15b21dc40703e9a00bc7de2a18e3a60bb8a76c8c18665aa4a4cf14b7e7674e4d0342a051516bbbf63e16adfc"]),
+    ].iter().cloned().collect::<std::collections::HashMap<&str, &[&str]>>();
 
     // This maps the target arch to the webrtc arch. Google has weird conventions
     let archs = [
@@ -67,7 +70,7 @@ fn configure_webrtc() -> anyhow::Result<()> {
         std::env::var("OUTPUT_DIR").unwrap_or_else(|_| {
             let manifest = std::env::var("CARGO_MANIFEST_DIR").unwrap();
             let target = std::env::var("TARGET").unwrap();
-            format!("{manifest}/../ringrtc/{target}")
+            format!("{manifest}/../ringrtc/322/{target}")
         })
     );
     let target_path = std::path::Path::new(&target_path);
