@@ -21,6 +21,18 @@ qmetaobject = { git = 'https://github.com/woboq/qmetaobject-rs', commit = '72822
 # libsignal-service = { path = "../libsignal-service-rs/libsignal-service" }
 # libsignal-service-hyper = { path = "../libsignal-service-rs/libsignal-service-hyper" }
 
+[patch."https://github.com/signalapp/libsignal/"]
+# Signal's ringrtc depends on zkgroup, but they don't really bother bumping the tag.
+# https://github.com/signalapp/ringrtc/issues/55
+# This patch section aligns the versions.
+
+# The source and target refs are the same URL. If we add another / in there,
+# cargo sees this as a valid patch.  Very ugly workaround.
+# https://github.com/rust-lang/cargo/issues/5478#issuecomment-1055365283
+zkgroup = { git = "https://github.com/signalapp//libsignal", tag = "v0.56.1" }
+libsignal-core = { git = "https://github.com/signalapp//libsignal", tag = "v0.56.1" }
+signal-crypto = { git = "https://github.com/signalapp//libsignal", tag = "v0.56.1" }
+
 # Smart dev mode: Compile most stuff in release mode, except for the things
 # that are actually maintained by our community
 [profile.dev.package."*"]

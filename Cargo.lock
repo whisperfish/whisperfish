@@ -1990,7 +1990,7 @@ dependencies = [
 [[package]]
 name = "libsignal-core"
 version = "0.1.0"
-source = "git+https://github.com/signalapp/libsignal?tag=v0.56.1#e46841ea2c1ad03bc5113eba267ac1543689d031"
+source = "git+https://github.com/signalapp//libsignal?tag=v0.56.1#e46841ea2c1ad03bc5113eba267ac1543689d031"
 dependencies = [
  "num_enum",
  "uuid",
@@ -2706,7 +2706,7 @@ dependencies = [
 [[package]]
 name = "poksho"
 version = "0.7.0"
-source = "git+https://github.com/signalapp/libsignal?tag=v0.56.1#e46841ea2c1ad03bc5113eba267ac1543689d031"
+source = "git+https://github.com/signalapp//libsignal?tag=v0.56.1#e46841ea2c1ad03bc5113eba267ac1543689d031"
 dependencies = [
  "curve25519-dalek",
  "hmac",
@@ -3552,7 +3552,7 @@ dependencies = [
 [[package]]
 name = "signal-crypto"
 version = "0.1.0"
-source = "git+https://github.com/signalapp/libsignal?tag=v0.56.1#e46841ea2c1ad03bc5113eba267ac1543689d031"
+source = "git+https://github.com/signalapp//libsignal?tag=v0.56.1#e46841ea2c1ad03bc5113eba267ac1543689d031"
 dependencies = [
  "aes",
  "cbc",
@@ -3938,9 +3938,9 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.34"
+version = "0.3.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8248b6521bb14bc45b4067159b9b6ad792e2d6d754d6c41fb50e29fefe38749"
+checksum = "5dfd88e563464686c916c7e46e623e520ddc6d79fa6641390f2e3fa86e83e885"
 dependencies = [
  "deranged",
  "itoa",
@@ -3959,9 +3959,9 @@ checksum = "ef927ca75afb808a4d64dd374f00a2adf8d0fcff8e7b184af886c3c87ec4a3f3"
 
 [[package]]
 name = "time-macros"
-version = "0.2.17"
+version = "0.2.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ba3a3ef41e6672a2f0f001392bb5dcd3ff0a9992d618ca761a11c3121547774"
+checksum = "3f252a68540fde3a3877aeea552b832b40ab9a69e318efd078774a01ddee1ccf"
 dependencies = [
  "num-conv",
  "time-core",
@@ -4965,7 +4965,7 @@ dependencies = [
 [[package]]
 name = "zkcredential"
 version = "0.1.0"
-source = "git+https://github.com/signalapp/libsignal?tag=v0.56.1#e46841ea2c1ad03bc5113eba267ac1543689d031"
+source = "git+https://github.com/signalapp//libsignal?tag=v0.56.1#e46841ea2c1ad03bc5113eba267ac1543689d031"
 dependencies = [
  "cfg-if",
  "curve25519-dalek",
@@ -4984,7 +4984,7 @@ dependencies = [
 [[package]]
 name = "zkgroup"
 version = "0.9.0"
-source = "git+https://github.com/signalapp/libsignal?tag=v0.56.1#e46841ea2c1ad03bc5113eba267ac1543689d031"
+source = "git+https://github.com/signalapp//libsignal?tag=v0.56.1#e46841ea2c1ad03bc5113eba267ac1543689d031"
 dependencies = [
  "aes-gcm-siv",
  "bincode",
