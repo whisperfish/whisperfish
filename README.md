@@ -112,6 +112,13 @@ the version is 1.52 (with 1.61 upstreamed).
 
 Please see [Rust 1.75 build instructions](doc/rust-1.75.md) for details.
 
+For voice and video calling, Whisperfish requires the RingRTC library,
+including Signal's custom WebRTC implementation.  You can download pre-built artifacts with the following command:
+
+    bash fetch-webrtc.sh
+
+See <https://www.rubdos.be/2024/09/08/building-ringrtc-for-whisperfish.html> for how to build these artifacts.
+
 Once you have the SDK up and running and the Whisperfish sources fetched,
 it compiles just like any other native Sailfish OS application.
 
@@ -133,6 +140,19 @@ For Sailfish 4.2 and older, use `--with shareplugin_v1` instead.
 Because of a bug in `sb2`, it is currently not possible to (reliably) build Whisperfish (or any other Rust project) using more than a single thread. This means your compilation is going to take a while, especially the first time. Get yourself some coffee!
 
 If you get errors (command not found or status 126) at linking stage, make sure that you are not using `~/.cargo/config` to override linkers or compilers.
+
+### Building for the host
+
+Building Whisperfish on your host machine is also possible. This is useful for development and debugging purposes. There are some differences to be aware of.
+
+The RPM automatically selects the `sailfish` feature flag, which will not compile outside of SailfishOS.  This feature flag is *not* enabled by default, so it doesn't sit in the way.
+
+You'll have to manually set the `OUTPUT_DIR` variable, which contains the output of the `webrtc` build.  The `fetch-webrtc.sh` script fetches `libwebrtc.a` pre-built for all four architectures, and for the two major versions of OpenSSL (3.x, and 1.1.1).
+
+    bash fetch-webrtc.sh
+    OUTPUT_DIR=$PWD/ringrtc/322/x86_64-unknown-linux-gnu/ cargo build --features bundled-sqlcipher
+
+You can swap out `322` for `111` if your system uses OpenSSL 1.1.1.
 
 ## Database
 
