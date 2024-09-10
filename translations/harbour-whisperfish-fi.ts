@@ -1443,15 +1443,17 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-unavailable">
         <location filename="../qml/pages/Settings.qml" line="299"/>
-        <source>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</source>
-        <extracomment>Auto transcribe voice notes description (always English), Speech Note installed but not configured.</extracomment>
-        <translation>Litteroi saapuvat ääniviestit automaattisesti. Asenna englannin kielimalli Speech Note -sovelluksessa käyttääksesi tätä ominaisuutta.</translation>
+        <source>Automatically transcribe voice notes to text upon reception. Configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
+        <oldsource>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</oldsource>
+        <extracomment>Auto transcribe voice notes description, Speech Note installed but not configured.</extracomment>
+        <translation type="unfinished">Litteroi saapuvat ääniviestit automaattisesti. Asenna englannin kielimalli Speech Note -sovelluksessa käyttääksesi tätä ominaisuutta.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-uninstalled">
         <location filename="../qml/pages/Settings.qml" line="302"/>
-        <source>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</source>
-        <extracomment>Auto transcribe voice notes description (always English), Speech Note not installed</extracomment>
-        <translation>Litteroi saapuvat ääniviestit tekstiksi automaattisesti niiden saapuessa. Asenna Speech Note sekä englannin kielimalli käyttääksesi tätä ominaisuutta.</translation>
+        <source>Automatically transcribe voice notes to text upon reception. Install and configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
+        <oldsource>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</oldsource>
+        <extracomment>Auto transcribe voice notes description, Speech Note not installed</extracomment>
+        <translation type="unfinished">Litteroi saapuvat ääniviestit tekstiksi automaattisesti niiden saapuessa. Asenna Speech Note sekä englannin kielimalli käyttääksesi tätä ominaisuutta.</translation>
     </message>
     <message id="whisperfish-settings-privacy-section">
         <location filename="../qml/pages/Settings.qml" line="319"/>
