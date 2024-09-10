@@ -1,5 +1,6 @@
 use actix::prelude::*;
-use qmetaobject::{QObject, QObjectBox};
+use qmetaobject::QObject;
+use qmetaobject::QPointer;
 
 use crate::store::observer::Event;
 use crate::store::observer::EventObserving;
@@ -18,7 +19,7 @@ macro_rules! observing_model {
         #[derive(QObject)]
         $vis struct $model {
             base: qt_base_class!(trait QObject),
-            inner: std::sync::Arc<qmetaobject::QObjectBox<$encapsulated>>,
+            inner: qmetaobject::QObjectBox<$encapsulated>,
             actor: Option<actix::Addr<ObservingModelActor<$encapsulated>>>,
             observer_handle: Option<$crate::store::observer::ObserverHandle>,
 
@@ -44,7 +45,7 @@ macro_rules! observing_model {
         impl Default for $model {
             fn default() -> Self {
                 let _span = tracing::debug_span!("creating {}", stringify!($model)).entered();
-                let inner = std::sync::Arc::<qmetaobject::QObjectBox::<$encapsulated>>::default();
+                let inner = qmetaobject::QObjectBox::<$encapsulated>::default();
 
                 Self {
                     base: Default::default(),
@@ -73,7 +74,7 @@ macro_rules! observing_model {
                 if let Some(app) = self.app.as_pinned() {
                     if let Some(mut storage) = app.borrow().storage.borrow().clone() {
                         let actor = ObservingModelActor {
-                            model: std::sync::Arc::downgrade(&self.inner),
+                            model: qmetaobject::QPointer::from(self.inner.pinned().borrow()),
                             storage: storage.clone(),
                         }
                         .start();
@@ -157,7 +158,7 @@ impl<T: QObject + 'static> ModelContext<T> {
 /// The contained model is a weak pointer, such that the actor will stop when the model goes out of
 /// scope.
 pub struct ObservingModelActor<T: QObject> {
-    pub(super) model: std::sync::Weak<QObjectBox<T>>,
+    pub(super) model: QPointer<T>,
     pub(super) storage: Storage,
 }
 
@@ -178,9 +179,8 @@ where
             ?event
         )
         .in_scope(|| {
-            match self.model.upgrade() {
+            match self.model.as_pinned() {
                 Some(model) => {
-                    let model = model.pinned();
                     let mut model = model.borrow_mut();
                     let ctx = ModelContext {
                         storage: self.storage.clone(),
