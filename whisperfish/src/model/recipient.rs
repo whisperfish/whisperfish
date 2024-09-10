@@ -3,7 +3,6 @@
 use crate::model::*;
 use crate::store::observer::{EventObserving, Interest};
 use crate::store::orm;
-use actix::{ActorContext, Handler};
 use futures::TryFutureExt;
 use libsignal_service::protocol::SessionStore;
 use libsignal_service::session_store::SessionStoreExt;
@@ -76,49 +75,6 @@ impl EventObserving for RecipientImpl {
             .iter()
             .flat_map(|r| r.inner.interests())
             .collect()
-    }
-}
-
-#[derive(actix::Message)]
-#[rtype(result = "()")]
-struct SessionAnalyzed {
-    recipient_id: i32,
-    fingerprint: String,
-    versions: Vec<(u32, u32)>,
-}
-
-impl Handler<SessionAnalyzed> for ObservingModelActor<RecipientImpl> {
-    type Result = ();
-
-    fn handle(
-        &mut self,
-        SessionAnalyzed {
-            recipient_id,
-            fingerprint,
-            versions,
-        }: SessionAnalyzed,
-        ctx: &mut Self::Context,
-    ) -> Self::Result {
-        match self.model.upgrade() {
-            Some(model) => {
-                let model = model.pinned();
-                let mut model = model.borrow_mut();
-                if let Some(recipient) = &mut model.recipient {
-                    if recipient.id == recipient_id {
-                        recipient.fingerprint = Some(fingerprint);
-                        recipient.versions = versions;
-                        // TODO: trigger something changed
-                    }
-                }
-            }
-            None => {
-                // In principle, the actor should have gotten stopped when the model got dropped,
-                // because the actor's only strong reference is contained in the ObservingModel.
-                tracing::debug!("Model got dropped, stopping actor execution.");
-                // XXX What is the difference between stop and terminate?
-                ctx.stop();
-            }
-        }
     }
 }
 
@@ -243,6 +199,8 @@ impl RecipientImpl {
     }
 
     fn compute_fingerprint(&mut self, ctx: ModelContext<Self>) {
+        let qptr = QPointer::from(&*self);
+
         if self.recipient.is_none() || self.recipient.as_ref().unwrap().fingerprint.is_some() {
             tracing::trace!("Not computing fingerprint");
             return;
@@ -276,13 +234,19 @@ impl RecipientImpl {
                         .unwrap_or(0);
                     versions.push((device_id, version));
                 }
-                ctx.addr()
-                    .send(SessionAnalyzed {
-                        recipient_id,
-                        fingerprint,
-                        versions,
-                    })
-                    .await?;
+
+                // XXX This is possibly not alive anymore
+                let recipient = qptr.as_pinned().expect("recipient object still alive");
+                let mut recipient = recipient.borrow_mut();
+
+                if let Some(recipient) = &mut recipient.recipient {
+                    if recipient.id != recipient_id {
+                        // Skip and drop data
+                        return anyhow::Result::Ok(());
+                    }
+                    recipient.fingerprint = Some(fingerprint);
+                    recipient.versions = versions;
+                }
 
                 Result::<_, anyhow::Error>::Ok(())
             }
