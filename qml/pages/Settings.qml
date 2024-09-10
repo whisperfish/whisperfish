@@ -294,11 +294,11 @@ Page {
                     //: Auto transcribe voice notes description, Speech Note installed
                     //% "Automatically transcribe voice notes to text upon reception using Speech Note."
                     qsTrId("whisperfish-transcribe-voice-notes-description-available") : (dbusSpeechInterface.installed ?
-                    //: Auto transcribe voice notes description (always English), Speech Note installed but not configured.
-                    //% "Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature."
+                    //: Auto transcribe voice notes description, Speech Note installed but not configured.
+                    //% "Automatically transcribe voice notes to text upon reception. Configure an 'Auto detected' model in Speech Note to use this feature."
                     qsTrId("whisperfish-transcribe-voice-notes-description-unavailable") :
-                    //: Auto transcribe voice notes description (always English), Speech Note not installed
-                    //% "Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature."
+                    //: Auto transcribe voice notes description, Speech Note not installed
+                    //% "Automatically transcribe voice notes to text upon reception. Install and configure an 'Auto detected' model in Speech Note to use this feature."
                     qsTrId("whisperfish-transcribe-voice-notes-description-uninstalled")
                 )
                 checked: SettingsBridge.transcribe_voice_notes

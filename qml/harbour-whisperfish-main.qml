@@ -361,11 +361,11 @@ ApplicationWindow
         propertiesEnabled: true
 
         // 3 == Idle
-        property bool available: installed && _state === 3 && _englishSTTAvailable
+        property bool available: installed && _state === 3 && _autoSTTAvailable
         property bool installed: status == DBusInterface.Available
 
         property var _state
-        property bool _englishSTTAvailable: false
+        property bool _autoSTTAvailable: false
 
         Component.onCompleted: {
             // We need to read e.g. State once to trigger updates
@@ -379,8 +379,8 @@ ApplicationWindow
 
         function sttLangsPropertyChanged(langs) {
             console.log("sttLangsPropertyChanged:", JSON.stringify(langs))
-            _englishSTTAvailable = "en" in langs;
-            console.log("English available:", _englishSTTAvailable);
+            _autoSTTAvailable = "auto" in langs;
+            console.log("Automatic language detection available:", _autoSTTAvailable);
         }
     }
 
