@@ -1444,14 +1444,14 @@ Settings page share contacts</extracomment>
         <source>Automatically transcribe voice notes to text upon reception. Configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note installed but not configured.</extracomment>
-        <translation type="unfinished">Alındığında sesli notları otomatik olarak metne dönüştür. Bu özelliği kullanmak için sesli notta İngilizce modelini yapılandırın.</translation>
+        <translation>Alındığında sesli notları otomatik olarak metne dönüştür. Bu özelliği kullanmak için sesli notta &apos;Otomatik algılanan&apos; modelini yapılandırın.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-uninstalled">
         <location filename="../qml/pages/Settings.qml" line="302"/>
         <source>Automatically transcribe voice notes to text upon reception. Install and configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note not installed</extracomment>
-        <translation type="unfinished">Alındığında sesli notları otomatik olarak metne dönüştür. Bu özelliği kullanmak için sesli notta İngilizce modelini kurun ve yapılandırın.</translation>
+        <translation>Alındığında sesli notları otomatik olarak metne dönüştür. Bu özelliği kullanmak için sesli notta &apos;Otomatik algılanan&apos; modelini kurun ve yapılandırın.</translation>
     </message>
     <message id="whisperfish-settings-privacy-section">
         <location filename="../qml/pages/Settings.qml" line="319"/>
