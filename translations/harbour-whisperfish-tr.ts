@@ -1535,9 +1535,10 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-settings-some-settings-locked">
         <location filename="../qml/pages/Settings.qml" line="93"/>
-        <source>Some setting can only be changed from the primary device.</source>
+        <source>Some settings can only be changed from the primary device.</source>
+        <oldsource>Some setting can only be changed from the primary device.</oldsource>
         <extracomment>Settings page, not a primary device note</extracomment>
-        <translation>Bazı ayarlar yalnızca birincil aygıttan değiştirilebilir.</translation>
+        <translation type="unfinished">Bazı ayarlar yalnızca birincil aygıttan değiştirilebilir.</translation>
     </message>
     <message id="whisperfish-settings-enable-typing-indicators">
         <location filename="../qml/pages/Settings.qml" line="116"/>
