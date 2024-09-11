@@ -22,7 +22,7 @@ pub struct GroupImpl {
     membership_list: QObjectBox<GroupMembershipListModel>,
 }
 
-crate::observing_model! {
+crate::observing_model_v1! {
     pub struct Group(GroupImpl) {
         groupId: QString; READ get_group_id WRITE set_group_id,
         isGroupV1: bool; READ get_is_group_v1,

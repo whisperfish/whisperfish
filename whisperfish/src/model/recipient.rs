@@ -14,6 +14,7 @@ use uuid::Uuid;
 
 /// QML-constructable object that interacts with a single recipient.
 #[derive(Default, QObject)]
+#[observing_model]
 pub struct RecipientImpl {
     base: qt_base_class!(trait QObject),
     recipient_id: Option<i32>,
@@ -25,7 +26,7 @@ pub struct RecipientImpl {
     force_init: bool,
 }
 
-crate::observing_model! {
+crate::observing_model_v1! {
     pub struct Recipient(RecipientImpl) {
         recipientId: i32; READ get_recipient_id WRITE set_recipient_id,
         recipientUuid: String; READ get_recipient_uuid WRITE set_recipient_uuid,

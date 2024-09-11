@@ -18,7 +18,7 @@ pub struct GroupedReactionsImpl {
     grouped_reaction_list: QObjectBox<GroupedReactionListModel>,
 }
 
-crate::observing_model! {
+crate::observing_model_v1! {
     pub struct GroupedReactions(GroupedReactionsImpl) {
         messageId: i32;                READ get_message_id    WRITE set_message_id,
         valid: bool;                   READ get_valid,

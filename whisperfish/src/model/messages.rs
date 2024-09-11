@@ -22,7 +22,7 @@ pub struct MessageImpl {
     detail_attachments: QObjectBox<AttachmentListModel>,
 }
 
-crate::observing_model! {
+crate::observing_model_v1! {
     pub struct Message(MessageImpl) {
         messageId: i32; READ get_message_id WRITE set_message_id,
         valid: bool; READ get_valid,
@@ -199,7 +199,7 @@ pub struct SessionImpl {
     message_list: QObjectBox<MessageListModel>,
 }
 
-crate::observing_model! {
+crate::observing_model_v1! {
     pub struct Session(SessionImpl) {
         sessionId: i32; READ get_session_id WRITE set_session_id,
         valid: bool; READ get_valid,

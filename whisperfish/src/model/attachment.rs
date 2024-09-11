@@ -16,7 +16,7 @@ pub struct AttachmentImpl {
     attachment: Option<orm::Attachment>,
 }
 
-crate::observing_model! {
+crate::observing_model_v1! {
     pub struct Attachment(AttachmentImpl) {
         attachmentId: i32; READ get_attachment_id WRITE set_attachment_id,
         valid: bool; READ get_valid,

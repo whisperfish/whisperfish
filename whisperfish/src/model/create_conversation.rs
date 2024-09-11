@@ -20,7 +20,7 @@ pub struct CreateConversationImpl {
     name: Option<String>,
 }
 
-crate::observing_model! {
+crate::observing_model_v1! {
     pub struct CreateConversation(CreateConversationImpl) {
         sessionId: i32; READ get_session_id,
         uuid: QString; READ get_uuid WRITE set_uuid,

@@ -2,13 +2,15 @@ use actix::prelude::*;
 use qmetaobject::QObject;
 use qmetaobject::QPointer;
 
+pub use whisperfish_model_macro::observing_model;
+
 use crate::store::observer::Event;
 use crate::store::observer::EventObserving;
 use crate::store::observer::Interest;
 use crate::store::{ActixEvent, Storage};
 
 #[macro_export]
-macro_rules! observing_model {
+macro_rules! observing_model_v1 {
     ($vis:vis struct $model:ident($encapsulated:ty) {
         $($property:ident: $t:ty; READ $getter:ident $(WRITE $setter:ident)?),* $(,)?
     } $(

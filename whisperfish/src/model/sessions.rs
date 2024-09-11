@@ -20,7 +20,7 @@ pub struct SessionsImpl {
     session_list: QObjectBox<SessionListModel>,
 }
 
-crate::observing_model! {
+crate::observing_model_v1! {
     pub struct Sessions(SessionsImpl) {
         sessions: QVariant; READ sessions,
 

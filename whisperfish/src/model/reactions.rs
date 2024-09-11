@@ -18,7 +18,7 @@ pub struct ReactionsImpl {
     reaction_list: QObjectBox<ReactionListModel>,
 }
 
-crate::observing_model! {
+crate::observing_model_v1! {
     pub struct Reactions(ReactionsImpl) {
         messageId: i32; READ get_message_id WRITE set_message_id,
         valid: bool; READ get_valid,
