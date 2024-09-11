@@ -89,7 +89,7 @@ Page {
                 width: parent.width - 4*Theme.horizontalPageMargin
                 wrapMode: Text.Wrap
                 //: Settings page, not a primary device note
-                //% "Some setting can only be changed from the primary device."
+                //% "Some settings can only be changed from the primary device."
                 text: qsTrId("whisperfish-settings-some-settings-locked")
 
                 Rectangle {
