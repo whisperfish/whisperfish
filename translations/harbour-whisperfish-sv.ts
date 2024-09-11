@@ -1383,7 +1383,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="153"/>
         <source>Create and send previews of the links you send in messages. Note: Feature not yet implemented in Whisperfish.</source>
         <extracomment>Settings page enable link previews description</extracomment>
-        <translation>Skapa och skicka förhandsvisningar av länkarna du skickar i meddelanden. Obs: Denna funktionen är ännu inte implementerad i Whisperfish.</translation>
+        <translation>Skapa och skicka förhandsvisningar av länkarna du skickar i meddelanden. OBS! Denna funktionen är ännu inte implementerad i Whisperfish.</translation>
     </message>
     <message id="whisperfish-settings-country-code">
         <location filename="../qml/pages/Settings.qml" line="185"/>
@@ -1446,14 +1446,14 @@ Settings page share contacts</extracomment>
         <source>Automatically transcribe voice notes to text upon reception. Configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note installed but not configured.</extracomment>
-        <translation>Transkribera röstanteckningar automatiskt till text vid mottagning. Konfigurera en &quot;Auto detekterad&quot; modell i Talanteckningar för att använda den här funktionen.</translation>
+        <translation>Transkribera röstanteckningar automatiskt till text vid mottagning. Konfigurera en &quot;Autoidentifierad&quot; modell i Speech Note för att använda den här funktionen.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-uninstalled">
         <location filename="../qml/pages/Settings.qml" line="302"/>
         <source>Automatically transcribe voice notes to text upon reception. Install and configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note not installed</extracomment>
-        <translation>Transkribera röstanteckningar automatiskt till text vid mottagning. Installera och konfigurera en &quot;Auto detekterad&quot; modell i Talanteckningar för att använda den här funktionen.</translation>
+        <translation>Transkribera röstanteckningar automatiskt till text vid mottagning. Installera och konfigurera en &quot;Autoidentifierad&quot; modell i Speech Note för att använda den här funktionen.</translation>
     </message>
     <message id="whisperfish-settings-privacy-section">
         <location filename="../qml/pages/Settings.qml" line="319"/>
@@ -2602,20 +2602,20 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/MessageInfoPage.qml" line="162"/>
         <source>Viewed receipts</source>
         <extracomment>Viewed receipts section header</extracomment>
-        <translation>Visat kvitton</translation>
+        <translation>Visade kvitton</translation>
     </message>
     <message id="whisperfish-creating-conversation-title">
         <location filename="../qml/pages/CreateConversationPage.qml" line="46"/>
         <location filename="../qml/pages/CreateConversationPage.qml" line="47"/>
         <source>Creating conversation</source>
         <extracomment>Page header title when a new conversation is being created</extracomment>
-        <translation>Skapar konversationen</translation>
+        <translation>Skapar konversation</translation>
     </message>
     <message id="whisperfish-captcha-test-title">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="15"/>
         <source>Captcha Test</source>
         <extracomment>Captcha test page title</extracomment>
-        <translation>Captcha Test</translation>
+        <translation>Captcha-test</translation>
     </message>
     <message id="whisperfish-captcha-test-message">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="19"/>
@@ -2623,13 +2623,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/TestCaptchaPage.qml" line="84"/>
         <source>You can use this page to test the Whisperfish captcha challenge integration</source>
         <extracomment>Captcha test page description</extracomment>
-        <translation>Du kan använda den här sidan för att testa integrationen av Whisperfish captcha utmaning</translation>
+        <translation>Du kan använda den här sidan för att testa integrationen av Whisperfish captcha-utmaning</translation>
     </message>
     <message id="whisperfish-captcha-test-success">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="56"/>
         <source>Captcha token received!</source>
         <extracomment>Captcha test successful message</extracomment>
-        <translation>Captcha token mottagen!</translation>
+        <translation>Captcha-token mottagen!</translation>
     </message>
     <message id="whisperfish-start-test-button-label">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="80"/>
