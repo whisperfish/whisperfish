@@ -203,3 +203,8 @@ where
         })
     }
 }
+
+pub struct ObservingModelRegistration<T: QObject + 'static> {
+    pub(crate) actor: actix::Addr<ObservingModelActor<T>>,
+    pub(crate) observer_handle: crate::store::observer::ObserverHandle,
+}

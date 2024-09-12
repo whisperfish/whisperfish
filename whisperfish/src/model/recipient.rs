@@ -13,26 +13,8 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 /// QML-constructable object that interacts with a single recipient.
-#[derive(Default, QObject)]
-#[observing_model]
-pub struct RecipientImpl {
-    base: qt_base_class!(trait QObject),
-    recipient_id: Option<i32>,
-    // XXX What about PNI?
-    recipient_uuid: Option<Uuid>,
-    recipient: Option<RecipientWithAnalyzedSession>,
-    fingerprint_needed: bool,
-
-    force_init: bool,
-}
-
-crate::observing_model_v1! {
-    pub struct Recipient(RecipientImpl) {
-        recipientId: i32; READ get_recipient_id WRITE set_recipient_id,
-        recipientUuid: String; READ get_recipient_uuid WRITE set_recipient_uuid,
-        fingerprintNeeded: bool; READ get_fingerprint_needed WRITE set_fingerprint_needed,
-        valid: bool; READ get_valid,
-    } WITH OPTIONAL PROPERTIES FROM recipient WITH ROLE RecipientWithAnalyzedSessionRoles {
+#[observing_model(
+    properties_from_role(recipient: Option<RecipientWithAnalyzedSessionRoles> {
         id Id,
         externalId ExternalId,
         directMessageSessionId DirectMessageSessionId,
@@ -59,10 +41,42 @@ crate::observing_model_v1! {
         profileSharing ProfileSharing,
 
         isRegistered IsRegistered,
-    }
+    })
+)]
+#[derive(Default, QObject)]
+pub struct Recipient {
+    base: qt_base_class!(trait QObject),
+    recipient_id: Option<i32>,
+    // XXX What about PNI?
+    recipient_uuid: Option<Uuid>,
+    recipient: Option<RecipientWithAnalyzedSession>,
+
+    // #[qt_property(
+    //     READ: get_recipient_id,
+    //     WRITE: set_recipient_id,
+    // )]
+    recipientId: i32,
+
+    // #[qt_property(
+    //     READ: get_recipient_uuid,
+    //     WRITE: set_recipient_uuid,
+    // )]
+    recipientUuid: String,
+
+    // #[qt_property(
+    //     READ: get_fingerprint_needed,
+    //     WRITE: set_fingerprint_needed,
+    //     ALIAS: fingerprintNeeded,
+    // )]
+    fingerprint_needed: bool,
+    // #[qt_property(
+    //     READ: get_valid,
+    // )]
+    valid: bool,
+    force_init: bool,
 }
 
-impl EventObserving for RecipientImpl {
+impl EventObserving for Recipient {
     type Context = ModelContext<Self>;
 
     fn observe(&mut self, ctx: Self::Context, _event: crate::store::observer::Event) {
@@ -79,7 +93,7 @@ impl EventObserving for RecipientImpl {
     }
 }
 
-impl RecipientImpl {
+impl Recipient {
     fn get_recipient_id(&self) -> i32 {
         self.recipient_id.unwrap_or(-1)
     }
@@ -185,6 +199,8 @@ impl RecipientImpl {
 
             // XXX trigger Qt signal for this?
             self.recipient = recipient;
+
+            self.update_interests();
         }
 
         if self.force_init {
