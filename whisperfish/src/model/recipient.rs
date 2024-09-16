@@ -51,27 +51,27 @@ pub struct Recipient {
     recipient_uuid: Option<Uuid>,
     recipient: Option<RecipientWithAnalyzedSession>,
 
-    // #[qt_property(
-    //     READ: get_recipient_id,
-    //     WRITE: set_recipient_id,
-    // )]
+    #[qt_property(
+        READ: get_recipient_id,
+        WRITE: set_recipient_id,
+    )]
     recipientId: i32,
 
-    // #[qt_property(
-    //     READ: get_recipient_uuid,
-    //     WRITE: set_recipient_uuid,
-    // )]
+    #[qt_property(
+        READ: get_recipient_uuid,
+        WRITE: set_recipient_uuid,
+    )]
     recipientUuid: String,
 
-    // #[qt_property(
-    //     READ: get_fingerprint_needed,
-    //     WRITE: set_fingerprint_needed,
-    //     ALIAS: fingerprintNeeded,
-    // )]
+    #[qt_property(
+        READ: get_fingerprint_needed,
+        WRITE: set_fingerprint_needed,
+        ALIAS: fingerprintNeeded,
+    )]
     fingerprint_needed: bool,
-    // #[qt_property(
-    //     READ: get_valid,
-    // )]
+    #[qt_property(
+        READ: get_valid,
+    )]
     valid: bool,
     force_init: bool,
 }

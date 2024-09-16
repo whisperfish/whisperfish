@@ -140,11 +140,32 @@ pub fn observing_model(attr: TokenStream, input: TokenStream) -> TokenStream {
 
     inject_struct_fields(&attr, fields);
     let methods = generate_methods(&attr, &strukt);
+    inject_literal_properties(&attr, &mut strukt);
 
     TokenStream::from(quote! {
         #strukt
         #methods
     })
+}
+
+fn extract_field_attr(field: &mut syn::Field, property_name: &str) -> Option<syn::Attribute> {
+    let idx = field.attrs.iter().position(|attr| {
+        attr.path()
+            .get_ident()
+            .map(syn::Ident::to_string)
+            .as_deref()
+            == Some(property_name)
+    })?;
+    Some(field.attrs.remove(idx))
+}
+
+fn inject_literal_properties(attr: &ObservingModelAttribute, strukt: &mut syn::ItemStruct) {
+    for field in &mut strukt.fields {
+        let Some(attr) = extract_field_attr(field, "qt_property") else {
+            continue;
+        };
+        //
+    }
 }
 
 fn inject_struct_fields(attr: &ObservingModelAttribute, strukt: &mut syn::FieldsNamed) {
