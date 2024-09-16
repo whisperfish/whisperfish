@@ -215,20 +215,8 @@ impl Message {
 }
 
 /// QML-constructable object that interacts with a single session.
-#[derive(Default, QObject)]
-pub struct SessionImpl {
-    base: qt_base_class!(trait QObject),
-    session_id: Option<i32>,
-    session: Option<orm::AugmentedSession>,
-    message_list: QObjectBox<MessageListModel>,
-}
-
-crate::observing_model_v1! {
-    pub struct Session(SessionImpl) {
-        sessionId: i32; READ get_session_id WRITE set_session_id,
-        valid: bool; READ get_valid,
-        messages: QVariant; READ messages,
-    } WITH OPTIONAL PROPERTIES FROM session WITH ROLE SessionRoles {
+#[observing_model(
+    properties_from_role(session: Option<SessionRoles> NOTIFY session_changed {
         recipientId RecipientId,
 
         isGroup IsGroup,
@@ -252,10 +240,30 @@ crate::observing_model_v1! {
         viewCount Viewed,
         draft Draft,
         expiringMessageTimeout ExpiringMessageTimeout,
-    }
+    })
+)]
+#[derive(Default, QObject)]
+pub struct Session {
+    base: qt_base_class!(trait QObject),
+    session_id: Option<i32>,
+    session: Option<orm::AugmentedSession>,
+    message_list: QObjectBox<MessageListModel>,
+
+    #[qt_property(
+        READ: get_session_id,
+        WRITE: set_session_id,
+        NOTIFY: session_changed,
+    )]
+    sessionId: i32,
+    #[qt_property(READ: get_valid, NOTIFY: session_changed)]
+    valid: bool,
+    #[qt_property(READ: messages, NOTIFY: session_changed)]
+    messages: QVariant,
+
+    session_changed: qt_signal!(),
 }
 
-impl EventObserving for SessionImpl {
+impl EventObserving for Session {
     type Context = ModelContext<Self>;
 
     #[tracing::instrument(level = "trace", skip(self, ctx))]
@@ -274,14 +282,12 @@ impl EventObserving for SessionImpl {
                 tracing::trace!("Skipping reaction update");
             } else if event.for_row(schema::sessions::table, session_id) {
                 self.session = storage.fetch_session_by_id_augmented(session_id);
-                // XXX how to trigger a Qt signal now?
             } else if message_id.is_some() {
                 self.session = storage.fetch_session_by_id_augmented(session_id);
                 self.message_list
                     .pinned()
                     .borrow_mut()
                     .observe(storage, session_id, event);
-                // XXX how to trigger a Qt signal now?
             } else if event.for_table(schema::recipients::table) {
                 let Some(new_recipient) = event
                     .relation_key_for(schema::recipients::table)
@@ -290,6 +296,7 @@ impl EventObserving for SessionImpl {
                 else {
                     // Only refresh session - messages update themselves.
                     self.session = storage.fetch_session_by_id_augmented(session_id);
+                    self.session_changed();
                     return;
                 };
                 if let Some(session) = &mut self.session {
@@ -306,7 +313,6 @@ impl EventObserving for SessionImpl {
                         }
                     }
                 }
-                // XXX how to trigger a Qt signal now?
             } else {
                 tracing::debug!(
                     "Falling back to reloading the whole Session for event {:?}",
@@ -314,6 +320,7 @@ impl EventObserving for SessionImpl {
                 );
                 self.fetch(storage, session_id);
             }
+            self.session_changed();
         }
     }
 
@@ -333,12 +340,12 @@ impl EventObserving for SessionImpl {
     }
 }
 
-impl SessionImpl {
-    fn get_session_id(&self) -> i32 {
+impl Session {
+    fn get_session_id(&self, _ctx: Option<ModelContext<Self>>) -> i32 {
         self.session_id.unwrap_or(-1)
     }
 
-    fn get_valid(&self) -> bool {
+    fn get_valid(&self, _ctx: Option<ModelContext<Self>>) -> bool {
         self.session_id.is_some() && self.session.is_some()
     }
 
@@ -348,6 +355,7 @@ impl SessionImpl {
             .pinned()
             .borrow_mut()
             .load_all(storage, id);
+        self.session_changed();
     }
 
     fn set_session_id(&mut self, ctx: Option<ModelContext<Self>>, id: i32) {
@@ -363,7 +371,7 @@ impl SessionImpl {
         }
     }
 
-    fn messages(&self) -> QVariant {
+    fn messages(&self, _ctx: Option<ModelContext<Self>>) -> QVariant {
         self.message_list.pinned().into()
     }
 }
