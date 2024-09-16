@@ -116,17 +116,17 @@ fn parse_until<E: syn::parse::Peek>(
 
 impl syn::parse::Parse for ObservingModelAttribute {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        // XXX Currently, this doesn't parse trailing commas
         let mut segments = Punctuated::new();
 
-        let first = parse_until(input, syn::Token!(,))?;
-        segments.push_value(syn::parse2(first)?);
-
-        while input.peek(syn::Token!(,)) {
-            segments.push_punct(input.parse()?);
-
+        while !input.is_empty() {
             let next = parse_until(input, syn::Token!(,))?;
             segments.push_value(syn::parse2(next)?);
+            match input.parse() {
+                Ok(punct) => {
+                    segments.push_punct(punct);
+                }
+                Err(_) => break,
+            }
         }
 
         Ok(Self { segments })
