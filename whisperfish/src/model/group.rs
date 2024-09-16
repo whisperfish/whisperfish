@@ -26,9 +26,9 @@ pub struct Group {
         NOTIFY: group_changed,
     )]
     groupId: QString,
-    #[qt_property(READ: get_is_group_v1, NOTIFY group_changed)]
+    #[qt_property(READ: get_is_group_v1, NOTIFY: group_changed)]
     isGroupV1: bool,
-    #[qt_property(READ: get_is_group_v2, NOTIFY group_changed)]
+    #[qt_property(READ: get_is_group_v2, NOTIFY: group_changed)]
     isGroupV2: bool,
 
     #[qt_property(READ: get_valid, NOTIFY: group_changed)]

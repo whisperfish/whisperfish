@@ -11,26 +11,8 @@ use whisperfish_store::schema;
 use whisperfish_store::store::orm;
 
 /// QML-constructable object that interacts with a single session.
-#[derive(Default, QObject)]
-pub struct MessageImpl {
-    base: qt_base_class!(trait QObject),
-    message_id: Option<i32>,
-    message: Option<orm::AugmentedMessage>,
-
-    attachments: QObjectBox<AttachmentListModel>,
-    visual_attachments: QObjectBox<AttachmentListModel>,
-    detail_attachments: QObjectBox<AttachmentListModel>,
-}
-
-crate::observing_model_v1! {
-    pub struct Message(MessageImpl) {
-        messageId: i32; READ get_message_id WRITE set_message_id,
-        valid: bool; READ get_valid,
-        attachments: QVariant; READ attachments,
-        reactions_: u32; READ reactions,
-        thumbsAttachments: QVariant; READ visual_attachments,
-        detailAttachments: QVariant; READ detail_attachments,
-    } WITH OPTIONAL PROPERTIES FROM message WITH ROLE MessageRoles {
+#[observing_model(
+    properties_from_role(augmented_message: Option<MessageRoles> NOTIFY message_changed {
         sessionId SessionId,
         message Message,
         styledMessage StyledMessage,
@@ -60,10 +42,38 @@ crate::observing_model_v1! {
         hasStrikeThrough HasStrikeThrough,
 
         expiresIn ExpiresIn,
-    }
+    })
+)]
+#[derive(Default, QObject)]
+pub struct Message {
+    base: qt_base_class!(trait QObject),
+    message_id: Option<i32>,
+    augmented_message: Option<orm::AugmentedMessage>,
+
+    attachment_list_model: QObjectBox<AttachmentListModel>,
+    visual_attachments_model: QObjectBox<AttachmentListModel>,
+    detail_attachments_model: QObjectBox<AttachmentListModel>,
+
+    #[qt_property(
+        READ: get_message_id,
+        WRITE: set_message_id,
+        NOTIFY: message_changed,
+    )]
+    messageId: i32,
+    #[qt_property(READ: get_valid, NOTIFY: message_changed)]
+    valid: bool,
+    #[qt_property(READ: attachments, NOTIFY: message_changed)]
+    attachments: QVariant,
+    #[qt_property(READ: reactions, NOTIFY: message_changed)]
+    reactions_: u32,
+    #[qt_property(READ: visual_attachments, NOTIFY: message_changed)]
+    thumbsAttachments: QVariant,
+    #[qt_property(READ: detail_attachments, NOTIFY: message_changed)]
+    detailAttachments: QVariant,
+    message_changed: qt_signal!(),
 }
 
-impl EventObserving for MessageImpl {
+impl EventObserving for Message {
     type Context = ModelContext<Self>;
 
     fn observe(&mut self, ctx: Self::Context, event: crate::store::observer::Event) {
@@ -76,6 +86,7 @@ impl EventObserving for MessageImpl {
                     // Only reload the attachments.
                     // We could also just reload the necessary attachment, but we're lazy today.
                     self.load_attachment(ctx.storage(), id, attachment_id.as_i32().unwrap());
+                    self.message_changed();
                 }
             } else {
                 self.fetch(ctx.storage(), id);
@@ -84,7 +95,7 @@ impl EventObserving for MessageImpl {
     }
 
     fn interests(&self) -> Vec<Interest> {
-        self.message
+        self.augmented_message
             .iter()
             .flat_map(orm::AugmentedMessage::interests)
             .chain(self.message_id.iter().map(|mid| {
@@ -98,44 +109,48 @@ impl EventObserving for MessageImpl {
     }
 }
 
-impl MessageImpl {
-    fn get_message_id(&self) -> i32 {
+impl Message {
+    fn get_message_id(&self, _ctx: Option<ModelContext<Self>>) -> i32 {
         self.message_id.unwrap_or(-1)
     }
 
-    fn get_valid(&self) -> bool {
-        self.message_id.is_some() && self.message.is_some()
+    fn get_valid(&self, _ctx: Option<ModelContext<Self>>) -> bool {
+        self.message_id.is_some() && self.augmented_message.is_some()
     }
 
-    fn attachments(&self) -> QVariant {
-        self.attachments.pinned().into()
+    fn attachments(&self, _ctx: Option<ModelContext<Self>>) -> QVariant {
+        self.attachment_list_model.pinned().into()
     }
 
-    fn reactions(&self) -> u32 {
+    fn reactions(&self, _ctx: Option<ModelContext<Self>>) -> u32 {
         tracing::trace!(
             "reactions (mid {:?}): {:?}",
-            self.message.as_ref().map(|m| m.id),
-            self.message.as_ref().map(|m| m.reactions)
+            self.augmented_message.as_ref().map(|m| m.id),
+            self.augmented_message.as_ref().map(|m| m.reactions)
         );
-        self.message.as_ref().map(|m| m.reactions).unwrap_or(0) as _
+        self.augmented_message
+            .as_ref()
+            .map(|m| m.reactions)
+            .unwrap_or(0) as _
     }
 
-    fn detail_attachments(&self) -> QVariant {
-        self.detail_attachments.pinned().into()
+    fn detail_attachments(&self, _ctx: Option<ModelContext<Self>>) -> QVariant {
+        self.detail_attachments_model.pinned().into()
     }
 
-    fn visual_attachments(&self) -> QVariant {
-        self.visual_attachments.pinned().into()
+    fn visual_attachments(&self, _ctx: Option<ModelContext<Self>>) -> QVariant {
+        self.visual_attachments_model.pinned().into()
     }
 
     fn fetch(&mut self, storage: Storage, id: i32) {
-        self.message = storage.fetch_augmented_message(id);
+        self.augmented_message = storage.fetch_augmented_message(id);
         self.fetch_attachments(storage, id);
+        self.message_changed();
     }
 
     fn fetch_attachments(&mut self, storage: Storage, id: i32) {
         let attachments = storage.fetch_attachments_for_message(id);
-        self.attachments
+        self.attachment_list_model
             .pinned()
             .borrow_mut()
             .set(attachments.clone());
@@ -144,8 +159,14 @@ impl MessageImpl {
             .into_iter()
             .partition(|x| x.content_type.contains("image") || x.content_type.contains("video"));
 
-        self.detail_attachments.pinned().borrow_mut().set(detail);
-        self.visual_attachments.pinned().borrow_mut().set(visual);
+        self.detail_attachments_model
+            .pinned()
+            .borrow_mut()
+            .set(detail);
+        self.visual_attachments_model
+            .pinned()
+            .borrow_mut()
+            .set(visual);
     }
 
     fn load_attachment(&mut self, storage: Storage, _id: i32, attachment_id: i32) {
@@ -154,13 +175,13 @@ impl MessageImpl {
             .expect("existing attachment");
 
         for container in &[
-            &self.attachments,
+            &self.attachment_list_model,
             if attachment.content_type.contains("image")
                 || attachment.content_type.contains("video")
             {
-                &self.visual_attachments
+                &self.visual_attachments_model
             } else {
-                &self.detail_attachments
+                &self.detail_attachments_model
             },
         ] {
             container
@@ -178,8 +199,11 @@ impl MessageImpl {
             }
         } else {
             self.message_id = None;
-            self.message = None;
-            self.attachments.pinned().borrow_mut().set(Vec::new());
+            self.augmented_message = None;
+            self.attachment_list_model
+                .pinned()
+                .borrow_mut()
+                .set(Vec::new());
         }
     }
 
