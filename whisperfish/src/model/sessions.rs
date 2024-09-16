@@ -14,43 +14,45 @@ use whisperfish_store::store::orm;
 /// Currently, this object will list all sessions unfiltered, ordered by the last message received
 /// timestamp.
 /// In the future, it should be possible to install filters and change the ordering.
+#[observing_model]
 #[derive(Default, QObject)]
-pub struct SessionsImpl {
+pub struct Sessions {
     base: qt_base_class!(trait QObject),
     session_list: QObjectBox<SessionListModel>,
+
+    #[qt_property(READ: sessions, NOTIFY: sessions_changed)]
+    sessions: QVariant,
+    #[qt_property(READ: count, NOTIFY: sessions_changed)]
+    count: usize,
+    #[qt_property(READ: unread, NOTIFY: sessions_changed)]
+    unread: usize,
+
+    sessions_changed: qt_signal!(),
 }
 
-crate::observing_model_v1! {
-    pub struct Sessions(SessionsImpl) {
-        sessions: QVariant; READ sessions,
-
-        count: usize; READ count,
-        unread: usize; READ unread,
-    }
-}
-
-impl SessionsImpl {
+impl Sessions {
     fn init(&mut self, ctx: ModelContext<Self>) {
         self.session_list
             .pinned()
             .borrow_mut()
             .load_all(ctx.storage());
+        self.sessions_changed();
     }
 
-    fn sessions(&self) -> QVariant {
+    fn sessions(&self, _ctx: Option<ModelContext<Self>>) -> QVariant {
         self.session_list.pinned().into()
     }
 
-    fn count(&self) -> usize {
+    fn count(&self, _ctx: Option<ModelContext<Self>>) -> usize {
         self.session_list.pinned().borrow().count()
     }
 
-    fn unread(&self) -> usize {
+    fn unread(&self, _ctx: Option<ModelContext<Self>>) -> usize {
         self.session_list.pinned().borrow().unread()
     }
 }
 
-impl EventObserving for SessionsImpl {
+impl EventObserving for Sessions {
     type Context = ModelContext<Self>;
 
     fn observe(&mut self, ctx: Self::Context, event: Event) {
