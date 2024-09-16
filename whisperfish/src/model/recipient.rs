@@ -14,7 +14,7 @@ use uuid::Uuid;
 
 /// QML-constructable object that interacts with a single recipient.
 #[observing_model(
-    properties_from_role(recipient: Option<RecipientWithAnalyzedSessionRoles> {
+    properties_from_role(recipient: Option<RecipientWithAnalyzedSessionRoles> NOTIFY recipient_changed {
         id Id,
         externalId ExternalId,
         directMessageSessionId DirectMessageSessionId,
@@ -209,9 +209,6 @@ impl Recipient {
 
             self.recipient = recipient;
             self.recipient_changed();
-            // XXX: This _role_property_changed is currently injected by the #[observing_model] attribute,
-            //      but we should be able to customize the signal name.
-            self._role_property_changed();
 
             self.update_interests();
         }
@@ -276,7 +273,7 @@ impl Recipient {
                     }
                     recipient.fingerprint = Some(fingerprint);
                     recipient.versions = versions;
-                    recipient_model._role_property_changed();
+                    recipient_model.recipient_changed();
                 }
 
                 Result::<_, anyhow::Error>::Ok(())

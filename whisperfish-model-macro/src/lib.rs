@@ -11,6 +11,7 @@ struct ObservingModelAttribute {
 struct RoleProperties {
     field: syn::Ident,
     role_type: syn::TypePath,
+    role_signal: syn::Ident,
     optional: bool,
     // Name -> Role mapping
     properties: Vec<(String, String)>,
@@ -45,6 +46,10 @@ impl syn::parse::Parse for RoleProperties {
             ty
         };
 
+        let _notify = input.parse::<syn::Ident>()?;
+        assert!(_notify == "NOTIFY");
+        let role_signal = input.parse::<syn::Ident>()?;
+
         let content;
         let _brace_token = syn::braced!(content in input);
 
@@ -64,6 +69,7 @@ impl syn::parse::Parse for RoleProperties {
 
         Ok(Self {
             field,
+            role_signal,
             role_type,
             optional,
             properties,
@@ -322,7 +328,7 @@ fn inject_base_fields(fields: &mut syn::FieldsNamed) {
     fields
         .named
         .extend::<Vec<syn::Field>>(vec![
-            syn::parse_quote! { _app: QPointer<crate::gui::AppState> },
+            syn::parse_quote! { _app: qt_property!(QPointer<crate::gui::AppState>; ALIAS app WRITE set_app) },
             syn::parse_quote! { _observing_model_registration: Option<crate::model::ObservingModelRegistration<Self>> },
         ]);
 }
@@ -336,9 +342,7 @@ fn inject_role_fields(attr: &ObservingModelAttribute, fields: &mut syn::FieldsNa
         return;
     }
 
-    fields.named.push(syn::parse_quote! {
-        _role_property_changed: qmetaobject::qt_signal!()
-    });
+    let role_signal = &role.role_signal;
 
     for (property, _) in &role.properties {
         let getter = syn::Ident::new(
@@ -348,7 +352,7 @@ fn inject_role_fields(attr: &ObservingModelAttribute, fields: &mut syn::FieldsNa
         let property = syn::Ident::new(property, proc_macro2::Span::call_site());
 
         fields.named.push(syn::parse_quote! {
-            #property : qmetaobject::qt_property!(QVariant; READ #getter NOTIFY _role_property_changed)
+            #property : qmetaobject::qt_property!(QVariant; READ #getter NOTIFY #role_signal)
         });
     }
 }
