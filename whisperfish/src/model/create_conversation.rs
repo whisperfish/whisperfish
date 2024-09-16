@@ -10,29 +10,60 @@ use whisperfish_store::schema;
 
 /// QML-constructable object that queries a session based on e164 or uuid, and creates it if
 /// necessary.
+#[observing_model]
 #[derive(Default, QObject)]
-pub struct CreateConversationImpl {
+pub struct CreateConversation {
     base: qt_base_class!(trait QObject),
     session_id: Option<i32>,
     // XXX What about PNI?
     uuid: Option<uuid::Uuid>,
     e164: Option<phonenumber::PhoneNumber>,
     name: Option<String>,
+
+    #[qt_property(
+        READ: get_session_id,
+        NOTIFY: conversation_changed,
+    )]
+    sessionId: i32,
+    #[qt_property(
+        READ: get_uuid,
+        WRITE: set_uuid,
+        NOTIFY: conversation_changed,
+        ALIAS: uuid,
+    )]
+    uuid_: QString,
+    #[qt_property(
+        READ: get_e164,
+        WRITE: set_e164,
+        NOTIFY: conversation_changed,
+        ALIAS: e164,
+    )]
+    e164_: QString,
+    #[qt_property(
+        READ: get_name,
+        NOTIFY: conversation_changed,
+    )]
+    name_: QString,
+    #[qt_property(
+        READ: get_ready,
+        NOTIFY: conversation_changed,
+    )]
+    ready: bool,
+    #[qt_property(
+        READ: get_invalid,
+        NOTIFY: conversation_changed,
+    )]
+    invalid: bool,
+    #[qt_property(
+        READ: has_name,
+        NOTIFY: conversation_changed,
+    )]
+    hasName: bool,
+
+    conversation_changed: qt_signal!(),
 }
 
-crate::observing_model_v1! {
-    pub struct CreateConversation(CreateConversationImpl) {
-        sessionId: i32; READ get_session_id,
-        uuid: QString; READ get_uuid WRITE set_uuid,
-        e164: QString; READ get_e164 WRITE set_e164,
-        ready: bool; READ get_ready,
-        invalid: bool; READ get_invalid,
-        hasName: bool; READ has_name,
-        name: QString; READ get_name,
-    }
-}
-
-impl EventObserving for CreateConversationImpl {
+impl EventObserving for CreateConversation {
     type Context = ModelContext<Self>;
 
     fn observe(&mut self, ctx: Self::Context, _event: crate::store::observer::Event) {
@@ -47,20 +78,20 @@ impl EventObserving for CreateConversationImpl {
     }
 }
 
-impl CreateConversationImpl {
-    fn get_session_id(&self) -> i32 {
+impl CreateConversation {
+    fn get_session_id(&self, _ctx: Option<ModelContext<Self>>) -> i32 {
         self.session_id.unwrap_or(-1)
     }
 
-    fn has_name(&self) -> bool {
+    fn has_name(&self, _ctx: Option<ModelContext<Self>>) -> bool {
         self.name.is_some()
     }
 
-    fn get_ready(&self) -> bool {
+    fn get_ready(&self, _ctx: Option<ModelContext<Self>>) -> bool {
         self.session_id.is_some()
     }
 
-    fn get_invalid(&self) -> bool {
+    fn get_invalid(&self, _ctx: Option<ModelContext<Self>>) -> bool {
         // XXX Also invalid when lookup failed
         self.e164.is_none() && self.uuid.is_none()
     }
@@ -89,9 +120,10 @@ impl CreateConversationImpl {
             return;
         };
         self.session_id = Some(session.id);
+        self.conversation_changed();
     }
 
-    fn get_uuid(&self) -> QString {
+    fn get_uuid(&self, _ctx: Option<ModelContext<Self>>) -> QString {
         self.uuid
             .as_ref()
             .map(uuid::Uuid::to_string)
@@ -129,7 +161,7 @@ impl CreateConversationImpl {
         }
     }
 
-    fn get_e164(&self) -> QString {
+    fn get_e164(&self, _ctx: Option<ModelContext<Self>>) -> QString {
         self.e164
             .as_ref()
             .map(PhoneNumber::to_string)
@@ -137,7 +169,7 @@ impl CreateConversationImpl {
             .into()
     }
 
-    fn get_name(&self) -> QString {
+    fn get_name(&self, _ctx: Option<ModelContext<Self>>) -> QString {
         self.name.as_deref().unwrap_or_default().into()
     }
 
