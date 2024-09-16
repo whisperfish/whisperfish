@@ -159,12 +159,54 @@ fn extract_field_attr(field: &mut syn::Field, property_name: &str) -> Option<syn
     Some(field.attrs.remove(idx))
 }
 
+#[derive(Debug)]
+struct QtProperty {
+    read: Option<syn::Ident>,
+    write: Option<syn::Ident>,
+}
+
+impl syn::parse::Parse for QtProperty {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let mut read = None;
+        let mut write = None;
+
+        while !input.is_empty() {
+            let ident = input.parse::<syn::Ident>()?;
+            let _ = input.parse::<syn::Token!(:)>()?;
+            match ident.to_string().as_str() {
+                "READ" => {
+                    read = Some(input.parse::<syn::Ident>()?);
+                }
+                "WRITE" => {
+                    write = Some(input.parse::<syn::Ident>()?);
+                }
+                _ => panic!("unexpected token {:?}", ident),
+            }
+            if input.parse::<syn::Token!(,)>().is_err() {
+                break;
+            }
+        }
+
+        Ok(Self { read, write })
+    }
+}
+
 fn inject_literal_properties(attr: &ObservingModelAttribute, strukt: &mut syn::ItemStruct) {
     for field in &mut strukt.fields {
         let Some(attr) = extract_field_attr(field, "qt_property") else {
             continue;
         };
-        //
+        let syn::Meta::List(list) = attr.meta else {
+            panic!(
+                "Parse error for {} attribute {:?}",
+                field.ident.as_ref().unwrap(),
+                attr.meta
+            );
+        };
+
+        let property = syn::parse2::<QtProperty>(list.tokens).expect("expected a property name");
+
+        panic!("{:?}", property);
     }
 }
 
