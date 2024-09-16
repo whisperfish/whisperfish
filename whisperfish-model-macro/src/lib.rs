@@ -14,7 +14,7 @@ struct RoleProperties {
     role_signal: syn::Ident,
     optional: bool,
     // Name -> Role mapping
-    properties: Vec<(String, String)>,
+    properties: Vec<(syn::Ident, String)>,
 }
 
 impl syn::parse::Parse for RoleProperties {
@@ -59,7 +59,7 @@ impl syn::parse::Parse for RoleProperties {
             let name = content.parse::<syn::Ident>()?;
             let role = content.parse::<syn::Ident>()?;
 
-            properties.push((name.to_string(), role.to_string()));
+            properties.push((name, role.to_string()));
 
             if content.parse::<syn::Token!(,)>().is_err() {
                 // Allow trailing comma
@@ -345,11 +345,14 @@ fn inject_role_fields(attr: &ObservingModelAttribute, fields: &mut syn::FieldsNa
     let role_signal = &role.role_signal;
 
     for (property, _) in &role.properties {
+        let property_str = property.to_string();
         let getter = syn::Ident::new(
-            &format!("_get_role_{}", property),
-            proc_macro2::Span::call_site(),
+            &format!(
+                "_get_role_{}",
+                property_str.strip_prefix("r#").unwrap_or(&property_str)
+            ),
+            property.span(),
         );
-        let property = syn::Ident::new(property, proc_macro2::Span::call_site());
 
         fields.named.push(syn::parse_quote! {
             #property : qmetaobject::qt_property!(QVariant; READ #getter NOTIFY #role_signal)
@@ -369,11 +372,14 @@ fn generate_methods(
         let role_type = &properties.role_type;
 
         for (property, role_variant) in &properties.properties {
-            let property = syn::Ident::new(property, proc_macro2::Span::call_site());
             let role_variant = syn::Ident::new(role_variant, proc_macro2::Span::call_site());
+            let property_str = property.to_string();
             let getter = syn::Ident::new(
-                &format!("_get_role_{}", property),
-                proc_macro2::Span::call_site(),
+                &format!(
+                    "_get_role_{}",
+                    property_str.strip_prefix("r#").unwrap_or(&property_str)
+                ),
+                property.span(),
             );
 
             property_getters.push(if properties.optional {
