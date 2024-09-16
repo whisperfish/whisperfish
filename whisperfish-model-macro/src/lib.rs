@@ -140,11 +140,12 @@ pub fn observing_model(attr: TokenStream, input: TokenStream) -> TokenStream {
 
     inject_struct_fields(&attr, fields);
     let methods = generate_methods(&attr, &strukt);
-    inject_literal_properties(&attr, &mut strukt);
+    let property_wrappers = inject_literal_properties(&mut strukt);
 
     TokenStream::from(quote! {
         #strukt
         #methods
+        #property_wrappers
     })
 }
 
@@ -163,12 +164,16 @@ fn extract_field_attr(field: &mut syn::Field, property_name: &str) -> Option<syn
 struct QtProperty {
     read: Option<syn::Ident>,
     write: Option<syn::Ident>,
+    alias: Option<syn::Ident>,
+    notify: Option<syn::Ident>,
 }
 
 impl syn::parse::Parse for QtProperty {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let mut read = None;
         let mut write = None;
+        let mut alias = None;
+        let mut notify = None;
 
         while !input.is_empty() {
             let ident = input.parse::<syn::Ident>()?;
@@ -180,6 +185,12 @@ impl syn::parse::Parse for QtProperty {
                 "WRITE" => {
                     write = Some(input.parse::<syn::Ident>()?);
                 }
+                "ALIAS" => {
+                    alias = Some(input.parse::<syn::Ident>()?);
+                }
+                "NOTIFY" => {
+                    notify = Some(input.parse::<syn::Ident>()?);
+                }
                 _ => panic!("unexpected token {:?}", ident),
             }
             if input.parse::<syn::Token!(,)>().is_err() {
@@ -187,11 +198,90 @@ impl syn::parse::Parse for QtProperty {
             }
         }
 
-        Ok(Self { read, write })
+        Ok(Self {
+            read,
+            write,
+            alias,
+            notify,
+        })
     }
 }
 
-fn inject_literal_properties(attr: &ObservingModelAttribute, strukt: &mut syn::ItemStruct) {
+impl QtProperty {
+    fn attrs(&self) -> impl Iterator<Item = proc_macro2::TokenStream> + '_ {
+        [
+            ("READ", self.read.as_ref()),
+            ("WRITE", self.write.as_ref()),
+            ("ALIAS", self.alias.as_ref()),
+            ("NOTIFY", self.notify.as_ref()),
+        ]
+        .into_iter()
+        .filter_map(|(name, ident)| {
+            let name_ident = syn::Ident::new(name, proc_macro2::Span::call_site());
+            let ident = ident?;
+            let ident_str = ident.to_string();
+            let ident = match name {
+                "ALIAS" | "NOTIFY" => ident.clone(),
+                "READ" => syn::Ident::new(&format!("_{}", ident_str), ident.span()),
+                "WRITE" => syn::Ident::new(&format!("_{}", ident_str), ident.span()),
+                _ => unreachable!("unexpected token {}", name),
+            };
+            Some(quote! {#name_ident #ident})
+        })
+    }
+
+    fn methods<'a>(
+        &'a self,
+        ty: &'a syn::Type,
+    ) -> impl Iterator<Item = proc_macro2::TokenStream> + 'a {
+        let ctx = quote! {
+            let storage = self._app.as_pinned().and_then(|app| app.borrow().storage.borrow().clone());
+            let addr = self._observing_model_registration.as_ref().map(|omr| omr.actor.clone());
+            let ctx = storage.clone().zip(addr).map(|(storage, addr)| {
+                crate::model::active_model::ModelContext {
+                    storage,
+                    addr,
+                }
+            });
+        };
+
+        [("READ", self.read.as_ref()), ("WRITE", self.write.as_ref())]
+            .into_iter()
+            .filter_map(move |(name, ident)| {
+                let ident = ident?;
+                let ident_str = ident.to_string();
+                Some(match name {
+                    "READ" => {
+                        let wrapping_ident =
+                            syn::Ident::new(&format!("_{}", ident_str), ident.span());
+                        quote! {
+                            #[qmeta_async::with_executor]
+                            fn #wrapping_ident(&self) -> #ty {
+                                #ctx
+                                self.#ident(ctx)
+                            }
+                        }
+                    }
+                    "WRITE" => {
+                        let wrapping_ident =
+                            syn::Ident::new(&format!("_{}", ident_str), ident.span());
+                        quote! {
+                            #[qmeta_async::with_executor]
+                            fn #wrapping_ident(&mut self, val: #ty) {
+                                #ctx
+                                self.#ident(ctx, val)
+                            }
+                        }
+                    }
+                    _ => unreachable!("unexpected token {}", name),
+                })
+            })
+    }
+}
+
+fn inject_literal_properties(strukt: &mut syn::ItemStruct) -> proc_macro2::TokenStream {
+    let mut methods = Vec::<proc_macro2::TokenStream>::new();
+
     for field in &mut strukt.fields {
         let Some(attr) = extract_field_attr(field, "qt_property") else {
             continue;
@@ -205,8 +295,21 @@ fn inject_literal_properties(attr: &ObservingModelAttribute, strukt: &mut syn::I
         };
 
         let property = syn::parse2::<QtProperty>(list.tokens).expect("expected a property name");
+        let name = field.ident.as_ref().unwrap();
+        let ty = &field.ty;
 
-        panic!("{:?}", property);
+        let attrs = property.attrs();
+
+        methods.extend(property.methods(ty));
+
+        *field = syn::parse_quote! { #name: qt_property!(#ty; #(#attrs)*) };
+    }
+
+    let ty = &strukt.ident;
+    quote! {
+        impl #ty {
+            #(#methods)*
+        }
     }
 }
 

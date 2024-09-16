@@ -54,12 +54,14 @@ pub struct Recipient {
     #[qt_property(
         READ: get_recipient_id,
         WRITE: set_recipient_id,
+        NOTIFY: recipient_changed,
     )]
     recipientId: i32,
 
     #[qt_property(
         READ: get_recipient_uuid,
         WRITE: set_recipient_uuid,
+        NOTIFY: recipient_changed,
     )]
     recipientUuid: String,
 
@@ -67,13 +69,17 @@ pub struct Recipient {
         READ: get_fingerprint_needed,
         WRITE: set_fingerprint_needed,
         ALIAS: fingerprintNeeded,
+        NOTIFY: recipient_changed,
     )]
     fingerprint_needed: bool,
     #[qt_property(
         READ: get_valid,
+        NOTIFY: recipient_changed,
     )]
     valid: bool,
     force_init: bool,
+
+    recipient_changed: qt_signal!(),
 }
 
 impl EventObserving for Recipient {
@@ -94,41 +100,46 @@ impl EventObserving for Recipient {
 }
 
 impl Recipient {
-    fn get_recipient_id(&self) -> i32 {
+    fn get_recipient_id(&self, _ctx: Option<ModelContext<Self>>) -> i32 {
         self.recipient_id.unwrap_or(-1)
     }
 
-    fn get_recipient_uuid(&self) -> String {
+    fn get_recipient_uuid(&self, _ctx: Option<ModelContext<Self>>) -> String {
         self.recipient_uuid
             .as_ref()
             .map(Uuid::to_string)
             .unwrap_or("".into())
     }
 
-    fn get_valid(&self) -> bool {
+    fn get_valid(&self, _ctx: Option<ModelContext<Self>>) -> bool {
         self.recipient_id.is_some() && self.recipient.is_some()
     }
 
-    #[with_executor]
     #[tracing::instrument(skip(self, ctx))]
     fn set_recipient_id(&mut self, ctx: Option<ModelContext<Self>>, id: i32) {
         if self.recipient_id == Some(id) {
             return;
         }
         self.recipient_id = Some(id);
-        self.recipient_uuid = None; // Set in init()
+
+        // Set in init()
+        if self.recipient_uuid.take().is_some() {
+            self.recipient_changed();
+        }
         if let Some(ctx) = ctx {
             self.init(ctx);
         }
     }
 
-    #[with_executor]
     #[tracing::instrument(skip(self, ctx))]
     fn set_recipient_uuid(&mut self, ctx: Option<ModelContext<Self>>, uuid: String) {
         if self.recipient_uuid.map(|u| u.to_string()).as_ref() == Some(&uuid) {
             return;
         }
-        self.recipient_id = None; // Set in init()
+        if self.recipient_id.take().is_some() {
+            // Set in init()
+            self.recipient_changed();
+        }
         if let Ok(uuid) = Uuid::parse_str(&uuid) {
             self.recipient_uuid = Some(uuid);
         } else {
@@ -149,7 +160,7 @@ impl Recipient {
         }
     }
 
-    fn get_fingerprint_needed(&self) -> bool {
+    fn get_fingerprint_needed(&self, _ctx: Option<ModelContext<Self>>) -> bool {
         self.fingerprint_needed
     }
 
@@ -182,7 +193,6 @@ impl Recipient {
                             .unwrap_or(-1);
                         // XXX Clean this up after #532
                         self.recipient_uuid = inner.uuid.or(Some(Uuid::nil()));
-                        // XXX trigger Qt signal for this?
                         RecipientWithAnalyzedSession {
                             inner,
                             direct_message_recipient_id,
@@ -197,8 +207,11 @@ impl Recipient {
                 None
             };
 
-            // XXX trigger Qt signal for this?
             self.recipient = recipient;
+            self.recipient_changed();
+            // XXX: This _role_property_changed is currently injected by the #[observing_model] attribute,
+            //      but we should be able to customize the signal name.
+            self._role_property_changed();
 
             self.update_interests();
         }
@@ -254,15 +267,16 @@ impl Recipient {
 
                 // XXX This is possibly not alive anymore
                 let recipient = qptr.as_pinned().expect("recipient object still alive");
-                let mut recipient = recipient.borrow_mut();
+                let mut recipient_model = recipient.borrow_mut();
 
-                if let Some(recipient) = &mut recipient.recipient {
+                if let Some(recipient) = &mut recipient_model.recipient {
                     if recipient.id != recipient_id {
                         // Skip and drop data
                         return anyhow::Result::Ok(());
                     }
                     recipient.fingerprint = Some(fingerprint);
                     recipient.versions = versions;
+                    recipient_model._role_property_changed();
                 }
 
                 Result::<_, anyhow::Error>::Ok(())
