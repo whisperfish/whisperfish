@@ -47,6 +47,9 @@ pub struct AppState {
     pub storage: RefCell<Option<Storage>>,
     // XXX Is this really thread safe?
     pub rustlegraphs: Rc<RefCell<HashMap<String, Weak<rustlegraph::Vizualizer>>>>,
+
+    #[allow(clippy::type_complexity)]
+    pub on_storage_ready: RefCell<Vec<Box<dyn FnOnce(Storage)>>>,
 }
 
 impl AppState {
@@ -146,6 +149,27 @@ impl AppState {
         self.storage.borrow().as_ref().unwrap().unsent_count()
     }
 
+    pub fn set_storage(&self, storage: Storage) {
+        for cb in self.on_storage_ready.take() {
+            let storage = storage.clone();
+            // Reason for actix::spawn, see below
+            actix::spawn(async move { cb(storage) });
+        }
+        *self.storage.borrow_mut() = Some(storage);
+    }
+
+    pub fn deferred_with_storage(&self, cb: impl FnOnce(Storage) + 'static) {
+        // Calling the callback from within AppState means we have the RefCells that AppState is
+        // encapsulated in potentially panic.
+        // Spawn the closure on actix, this ensures the borrow of self will have ended.
+        if let Some(storage) = self.storage.borrow_mut().as_mut() {
+            let storage = storage.clone();
+            actix::spawn(async move { cb(storage) });
+        } else {
+            self.on_storage_ready.borrow_mut().push(Box::new(cb));
+        }
+    }
+
     #[with_executor]
     fn new() -> Self {
         Self {
@@ -174,6 +198,8 @@ impl AppState {
             sessionCount: Default::default(),
             recipientCount: Default::default(),
             unsentCount: Default::default(),
+
+            on_storage_ready: Default::default(),
         }
     }
 }

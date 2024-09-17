@@ -413,39 +413,44 @@ fn generate_methods(
             #[qmeta_async::with_executor]
             #[tracing::instrument(skip(self, app))]
             fn set_app(&mut self, app: QPointer<crate::gui::AppState>) {
-                self._app = app;
-                self.reinit();
+                self._app = app.clone();
+                let this = qmetaobject::QPointer::from(&*self);
+                let app = app.as_pinned().expect("Valid AppState initialization");
+                let app = app.borrow();
+                drop(self);
+                app.deferred_with_storage(move |storage| {
+                    let Some(this) = this.as_pinned() else {
+                        tracing::warn!("Object destroyed before being initialized");
+                        return;
+                    };
+                    this.borrow_mut().reinit(storage);
+                });
             }
 
-            fn reinit(&mut self) {
+            fn reinit(&mut self, mut storage: crate::store::Storage) {
                 use actix::prelude::*;
-                let ptr = qmetaobject::QPointer::from(&*self);
-                if let Some(app) = self._app.as_pinned() {
-                    let storage = app.borrow().storage.borrow().clone();
-                    if let Some(mut storage) = storage {
-                        let actor = ObservingModelActor {
-                            model: ptr,
-                            storage: storage.clone(),
-                        }
-                        .start();
 
-                        let ctx = crate::model::active_model::ModelContext {
-                            storage: storage.clone(),
-                            addr: actor.clone(),
-                        };
-                        self.init(ctx);
-
-                        let handle = storage.register_observer(
-                            crate::store::observer::EventObserving::interests(self),
-                            actor.downgrade().recipient(),
-                        );
-
-                        self._observing_model_registration = Some(ObservingModelRegistration {
-                            actor,
-                            observer_handle: handle,
-                        });
-                    }
+                let actor = ObservingModelActor {
+                    model: qmetaobject::QPointer::from(&*self),
+                    storage: storage.clone(),
                 }
+                .start();
+
+                let ctx = crate::model::active_model::ModelContext {
+                    storage: storage.clone(),
+                    addr: actor.clone(),
+                };
+                self.init(ctx);
+
+                let handle = storage.register_observer(
+                    crate::store::observer::EventObserving::interests(self),
+                    actor.downgrade().recipient(),
+                );
+
+                self._observing_model_registration = Some(ObservingModelRegistration {
+                    actor,
+                    observer_handle: handle,
+                });
             }
 
             fn storage(&self) -> crate::store::Storage {

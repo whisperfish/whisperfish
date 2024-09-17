@@ -111,6 +111,7 @@ impl Reactions {
     fn init(&mut self, ctx: ModelContext<Self>) {
         if let Some(id) = self.message_id {
             self.fetch(ctx.storage(), id);
+            self.reactions_changed();
         }
     }
 
