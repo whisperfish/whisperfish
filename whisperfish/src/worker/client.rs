@@ -1630,6 +1630,7 @@ impl Handler<SendMessage> for ClientActor {
                     profile_key: storage.fetch_self_recipient_profile_key(),
                     quote,
                     expire_timer: msg.expires_in.map(|x| x as u32),
+                    expire_timer_version: Some(msg.expire_timer_version as u32),
                     body_ranges: crate::store::body_ranges::to_vec(msg.message_ranges.as_ref()),
                     ..Default::default()
                 };
@@ -2007,6 +2008,7 @@ impl Handler<SendReaction> for ClientActor {
                 let content = DataMessage {
                     group_v2,
                     timestamp: Some(now.timestamp_millis() as u64),
+                    // XXX: Expire timer?
                     required_protocol_version: Some(4), // Source: received emoji from Signal Android
                     reaction: Some(Reaction {
                         emoji: Some(emoji.clone()),
