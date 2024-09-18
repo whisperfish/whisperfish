@@ -277,12 +277,10 @@ impl EventObserving for Session {
             if event.for_table(schema::attachments::table) && event.is_update() {
                 // AugmentedMessage only cares about the number of attachments.
                 tracing::trace!("Skipping attachment update");
-            } else if event.relation_key_for(schema::reactions::table).is_some() {
-                // Reactions update themselves.
-                tracing::trace!("Skipping reaction update");
             } else if event.for_row(schema::sessions::table, session_id) {
                 self.session = storage.fetch_session_by_id_augmented(session_id);
             } else if message_id.is_some() {
+                // This also grabs reactions.
                 self.session = storage.fetch_session_by_id_augmented(session_id);
                 self.message_list
                     .pinned()
@@ -502,7 +500,7 @@ impl MessageListModel {
                 self.end_remove_rows();
                 return;
             }
-        } else if event.is_update_or_insert() {
+        } else if event.is_update_or_insert() || event.for_table(schema::reactions::table) {
             let message = storage
                 .fetch_augmented_message(message_id)
                 .expect("inserted message");
