@@ -20,14 +20,15 @@ pub struct Sessions {
     base: qt_base_class!(trait QObject),
     session_list: QObjectBox<SessionListModel>,
 
-    #[qt_property(READ: sessions, NOTIFY: sessions_changed)]
+    #[qt_property(READ: sessions, NOTIFY: model_changed)]
     sessions: QVariant,
-    #[qt_property(READ: count, NOTIFY: sessions_changed)]
+    #[qt_property(READ: count, NOTIFY: count_changed)]
     count: usize,
-    #[qt_property(READ: unread, NOTIFY: sessions_changed)]
+    #[qt_property(READ: unread, NOTIFY: count_changed)]
     unread: usize,
 
-    sessions_changed: qt_signal!(),
+    model_changed: qt_signal!(),
+    count_changed: qt_signal!(),
 }
 
 impl Sessions {
@@ -36,7 +37,7 @@ impl Sessions {
             .pinned()
             .borrow_mut()
             .load_all(ctx.storage());
-        self.sessions_changed();
+        self.count_changed();
     }
 
     fn sessions(&self, _ctx: Option<ModelContext<Self>>) -> QVariant {
@@ -61,6 +62,8 @@ impl EventObserving for Sessions {
             .pinned()
             .borrow_mut()
             .observe(storage, event);
+        self.count_changed();
+        self.update_interests();
     }
 
     fn interests(&self) -> Vec<crate::store::observer::Interest> {
