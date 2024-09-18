@@ -1,5 +1,5 @@
 --- whisperfish-store/src/schema.rs	2024-09-18 11:02:36.401569009 +0200
-+++ whisperfish-store/src/schema.rs	2024-09-18 11:00:10.784283180 +0200
++++ whisperfish-store/src/schema.rs	2024-09-18 11:38:20.127421277 +0200
 @@ -1,4 +1,7 @@
  // @generated automatically by Diesel CLI.
 +pub mod migrations;

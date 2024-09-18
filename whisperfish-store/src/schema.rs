@@ -200,6 +200,7 @@ diesel::table! {
         is_muted -> Bool,
         draft -> Nullable<Text>,
         expiring_message_timeout -> Nullable<Integer>,
+        expire_timer_version -> Integer,
     }
 }
 

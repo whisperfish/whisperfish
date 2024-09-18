@@ -622,6 +622,7 @@ pub struct DbSession {
     pub draft: Option<String>,
 
     pub expiring_message_timeout: Option<i32>,
+    pub expire_timer_version: i32,
 }
 
 impl Display for DbSession {
@@ -723,6 +724,7 @@ pub struct Session {
     pub is_muted: bool,
 
     pub expiring_message_timeout: Option<Duration>,
+    pub expire_timer_version: i32,
 
     pub draft: Option<String>,
     pub r#type: SessionType,
@@ -880,6 +882,7 @@ impl
             draft,
 
             expiring_message_timeout,
+            expire_timer_version,
         } = session;
         Session {
             id,
@@ -896,6 +899,7 @@ impl
                 .and_then(|i| if i == 0 { None } else { Some(i) })
                 .map(|i| i as u64)
                 .map(Duration::from_secs),
+            expire_timer_version,
 
             r#type: t,
         }
@@ -1600,6 +1604,7 @@ mod tests {
             is_silent: false,
             is_muted: false,
             expiring_message_timeout: None,
+            expire_timer_version: 1,
             draft: None,
             r#type: SessionType::DirectMessage(get_recipient()),
         }
@@ -1613,6 +1618,7 @@ mod tests {
             is_silent: false,
             is_muted: false,
             expiring_message_timeout: None,
+            expire_timer_version: 1,
             draft: None,
             r#type: SessionType::GroupV2(get_group_v2()),
         }
@@ -1799,6 +1805,7 @@ mod tests {
             is_muted: false,
             draft: None,
             expiring_message_timeout: None,
+            expire_timer_version: 1,
         };
         assert_eq!(
             format!("{}", s),
