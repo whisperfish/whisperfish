@@ -847,6 +847,7 @@ async fn test_recipient_actions() {
         group_v2: None,
         flags: None,
         expire_timer: None,
+        expire_timer_version: None,
         profile_key: Some([0].to_vec()),
         timestamp: Some(naive_chrono_to_millis(msg.server_timestamp)),
         quote: None,
