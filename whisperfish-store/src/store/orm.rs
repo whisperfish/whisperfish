@@ -162,6 +162,8 @@ pub struct Message {
     pub original_message_id: Option<i32>,
     pub revision: i32,
     pub message_type: Option<MessageType>,
+
+    pub expire_timer_version: i32,
 }
 
 impl Message {
@@ -247,6 +249,7 @@ impl Default for Message {
             latest_revision_id: None,
             revision: 0,
             message_type: None,
+            expire_timer_version: 1,
         }
     }
 }
