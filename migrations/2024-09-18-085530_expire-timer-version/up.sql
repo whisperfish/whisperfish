@@ -1,0 +1,2 @@
+ALTER TABLE messages
+    ADD COLUMN expire_timer_version INTEGER DEFAULT 1 NOT NULL;

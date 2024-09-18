@@ -132,6 +132,7 @@ diesel::table! {
         original_message_id -> Nullable<Integer>,
         revision_number -> Integer,
         message_type -> Nullable<MessageTypeMapping>,
+        expire_timer_version -> Integer,
     }
 }
 
