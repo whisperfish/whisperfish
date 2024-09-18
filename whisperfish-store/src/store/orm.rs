@@ -1337,7 +1337,11 @@ impl AugmentedSession {
 
     pub fn read(&self) -> u32 {
         if let Some(m) = &self.last_message {
-            m.receipts.iter().filter(|(r, _)| r.read.is_some()).count() as _
+            if m.message_type.is_some() && m.is_read {
+                1
+            } else {
+                m.receipts.iter().filter(|(r, _)| r.read.is_some()).count() as _
+            }
         } else {
             0
         }
