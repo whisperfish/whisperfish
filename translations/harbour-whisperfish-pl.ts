@@ -235,7 +235,7 @@
         <source>Whisperfish is an unofficial, but advanced Signal client for Sailfish OS. Whisperfish is highly usable, but is still considered beta quality software. Make sure to update regularily! Also, check our Wiki and feel free to contribute to it! Do not ever contact the Signal developers about a Whisperfish issue, contact us instead!</source>
         <oldsource>Whisperfish is an unofficial, but advanced Signal client for Sailfish OS. Whisperfish is highly usable, but is still considered beta quality software. Make sure to update regularily! Also, check our Wiki and feel free to contribute to it! Do not ever contact the Signal developers about a Whisperfish issue, contact us instead!.</oldsource>
         <extracomment>Whisperfish description, longer version, also for Jolla Store</extracomment>
-        <translation>Whisperfish to nieoficjalny ale zaawansowany klient Signala dla systemu Sailfish OS. Pomimo tego, że Whisperfish oferuje wiele funkcjonalności, wciąż jest uważany za oprogramowanie w fazie rozwoju beta. Pamiętaj o częstych aktualizacjach! Odwiedź również nasze Wiki i pomóż w tworzeniu! Nigdy nie kontaktuj się z twórcami oficjalnego klienta Signal w związku z problemami Whisperfish, kontaktuj się bezpośrednio z nami!</translation>
+        <translation>Whisperfish to nieoficjalny ale zaawansowany klient Signal dla systemu Sailfish OS. Whisperfish oferuje wiele funkcjonalności ale wciąż jest uważany za oprogramowanie w fazie rozwoju beta. Pamiętaj o częstych aktualizacjach! Możesz również odwiedzić nasze Wiki i pomóc w jego tworzeniu! W razie problemów z Whisperfish nigdy nie kontaktuj się z twórcami oficjalnego klienta Signal, ale bezpośrednio z nami!</translation>
     </message>
     <message id="whisperfish-build-id">
         <location filename="../qml/pages/About.qml" line="78"/>
@@ -277,7 +277,7 @@
         <location filename="../qml/pages/About.qml" line="236"/>
         <source>Dutch translators</source>
         <extracomment>Dutch (nl) language about page translation section</extracomment>
-        <translation>Tłumacze holenderskiego</translation>
+        <translation>Tłumacze na język holenderski</translation>
     </message>
     <message id="whisperfish-translators-it">
         <location filename="../qml/pages/About.qml" line="256"/>
@@ -823,7 +823,7 @@
         <location filename="../qml/pages/ProfilePage.qml" line="338"/>
         <source>Your profile is encrypted. Your profile and changes to it will be visible to your contacts and when you start or accept new chats.</source>
         <extracomment>Signal Profile description / help text</extracomment>
-        <translation>Twój profil jest zaszyfrowany. Twój profil i zmiany w nim będą widoczne dla twoich kontaktów tylko gdy rozpoczniesz lub zaakceptujesz nowe rozmowy.</translation>
+        <translation>Twój profil jest zaszyfrowany. Zmiany w nim będą widoczne dla twoich kontaktów gdy rozpoczniesz lub zaakceptujesz nowe rozmowy.</translation>
     </message>
     <message id="whisperfish-own-profile-learn-more-button">
         <location filename="../qml/pages/ProfilePage.qml" line="345"/>
@@ -2102,8 +2102,8 @@ Settings page share contacts</extracomment>
         <source>%n week(s)</source>
         <oldsource>%1 week(s)</oldsource>
         <extracomment>Expiring message timeout in weeks. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%n  tydzień</numerusform>
+        <translation>
+            <numerusform>%n tydzień</numerusform>
             <numerusform>%n tygodnie</numerusform>
             <numerusform>%n tygodni</numerusform>
         </translation>
