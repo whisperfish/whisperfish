@@ -383,8 +383,8 @@ Page {
                 readOnly: true
                 text: {
                     "A" + "\n" +
-                    "Alexander Schlarb" + "\n" +
                     "Karol Kurek" + "\n" +
+                    "Alexander Schlarb" + "\n" +
                     "Eryk Michalak" + "\n" +
                     "Wojtek" + "\n" +
                     "carlosgonz" + "\n" +
