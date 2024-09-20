@@ -25,9 +25,6 @@ use uuid::Uuid;
         username Username,
         email Email,
 
-        sessionFingerprint SessionFingerprint,
-        sessionIsPostQuantum SessionIsPostQuantum,
-
         blocked Blocked,
 
         name JoinedName,
@@ -79,7 +76,21 @@ pub struct Recipient {
     valid: bool,
     force_init: bool,
 
+    #[qt_property(
+        NOTIFY: fingerprint_changed,
+    )]
+    fingerprint: String,
+    versions: Vec<(u32, u32)>,
+
+    #[qt_property(
+        READ: session_is_post_quantum,
+        NOTIFY: fingerprint_changed,
+        ALIAS: sessionIsPostQuantum,
+    )]
+    session_is_post_quantum: bool,
+
     recipient_changed: qt_signal!(),
+    fingerprint_changed: qt_signal!(),
 }
 
 impl EventObserving for Recipient {
@@ -180,8 +191,6 @@ impl Recipient {
                         RecipientWithAnalyzedSession {
                             inner,
                             direct_message_recipient_id,
-                            fingerprint: None,
-                            versions: Vec::new(),
                         }
                     })
             } else if let Some(id) = self.recipient_id {
@@ -196,8 +205,6 @@ impl Recipient {
                         RecipientWithAnalyzedSession {
                             inner,
                             direct_message_recipient_id,
-                            fingerprint: None,
-                            versions: Vec::new(),
                         }
                     })
                 } else {
@@ -215,8 +222,9 @@ impl Recipient {
 
         if self.force_init {
             self.force_init = false;
-            if let Some(recipient) = self.recipient.as_mut() {
-                recipient.fingerprint = None;
+            if self.recipient.is_some() {
+                self.fingerprint = String::default();
+                self.fingerprint_changed();
             }
         }
 
@@ -228,7 +236,7 @@ impl Recipient {
     fn compute_fingerprint(&mut self, ctx: ModelContext<Self>) {
         let qptr = QPointer::from(&*self);
 
-        if self.recipient.is_none() || self.recipient.as_ref().unwrap().fingerprint.is_some() {
+        if self.recipient.is_none() || !self.fingerprint.is_empty() {
             tracing::trace!("Not computing fingerprint");
             return;
         }
@@ -263,7 +271,10 @@ impl Recipient {
                 }
 
                 // XXX This is possibly not alive anymore
-                let recipient = qptr.as_pinned().expect("recipient object still alive");
+                let Some(recipient) = qptr.as_pinned() else {
+                    tracing::warn!("Recipient object is gone, dropping fingerprint");
+                    return anyhow::Result::Ok(());
+                };
                 let mut recipient_model = recipient.borrow_mut();
 
                 if let Some(recipient) = &mut recipient_model.recipient {
@@ -271,9 +282,9 @@ impl Recipient {
                         // Skip and drop data
                         return anyhow::Result::Ok(());
                     }
-                    recipient.fingerprint = Some(fingerprint);
-                    recipient.versions = versions;
-                    recipient_model.recipient_changed();
+                    recipient_model.fingerprint = fingerprint;
+                    recipient_model.versions = versions;
+                    recipient_model.fingerprint_changed();
                 }
 
                 Result::<_, anyhow::Error>::Ok(())
@@ -281,6 +292,14 @@ impl Recipient {
             .map_ok_or_else(|e| tracing::error!("Computing fingerprint: {}", e), |_| ());
             actix::spawn(compute);
         }
+    }
+
+    fn session_is_post_quantum(&self, _ctx: Option<ModelContext<Self>>) -> bool {
+        const KYBER_AWARE_MESSAGE_VERSION: u32 = 4;
+
+        self.versions
+            .iter()
+            .all(|(_, version)| *version >= KYBER_AWARE_MESSAGE_VERSION)
     }
 }
 
@@ -293,18 +312,6 @@ pub struct RecipientListModel {
 pub struct RecipientWithAnalyzedSession {
     inner: orm::Recipient,
     direct_message_recipient_id: i32,
-    fingerprint: Option<String>,
-    versions: Vec<(u32, u32)>,
-}
-
-impl RecipientWithAnalyzedSession {
-    fn session_is_post_quantum(&self) -> bool {
-        const KYBER_AWARE_MESSAGE_VERSION: u32 = 4;
-
-        self.versions
-            .iter()
-            .all(|(_, version)| *version >= KYBER_AWARE_MESSAGE_VERSION)
-    }
 }
 
 impl std::ops::Deref for RecipientWithAnalyzedSession {
@@ -341,10 +348,6 @@ define_model_roles! {
 
         UnidentifiedAccessMode(unidentified_access_mode via Into<i32>::into): "unidentifiedAccessMode",
         ProfileSharing(profile_sharing): "profileSharing",
-
-        SessionFingerprint(fingerprint via qstring_from_option): "sessionFingerprint",
-
-        SessionIsPostQuantum(fn session_is_post_quantum(&self)): "sessionIsPostQuantum",
     }
 }
 
