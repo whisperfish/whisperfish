@@ -24,7 +24,7 @@ pub struct Reactions {
     messageId: i32,
     #[qt_property(READ: get_valid, NOTIFY: reactions_changed)]
     valid: bool,
-    #[qt_property(READ: reactions, NOTIFY: reactions_changed)]
+    #[qt_property(READ: reactions, NOTIFY: reactions_model_changed)]
     reactions: QVariant,
     #[qt_property(READ: reaction_count, NOTIFY: reactions_changed)]
     count: i32,
@@ -32,6 +32,7 @@ pub struct Reactions {
     reaction_list: QObjectBox<ReactionListModel>,
 
     reactions_changed: qt_signal!(),
+    reactions_model_changed: qt_signal!(),
 }
 
 impl EventObserving for Reactions {
