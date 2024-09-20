@@ -144,6 +144,7 @@ impl Group {
             } else {
                 self.membership_list.pinned().borrow_mut().clear();
             }
+            self.group_changed();
         }
     }
 }
