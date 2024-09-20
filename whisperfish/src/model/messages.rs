@@ -66,11 +66,13 @@ pub struct Message {
     attachments: QVariant,
     #[qt_property(READ: reactions, NOTIFY: message_changed)]
     reactions_: u32,
-    #[qt_property(READ: visual_attachments, NOTIFY: message_changed)]
+    #[qt_property(READ: visual_attachments, NOTIFY: attachment_model_changed)]
     thumbsAttachments: QVariant,
-    #[qt_property(READ: detail_attachments, NOTIFY: message_changed)]
+    #[qt_property(READ: detail_attachments, NOTIFY: attachment_model_changed)]
     detailAttachments: QVariant,
+
     message_changed: qt_signal!(),
+    attachment_model_changed: qt_signal!(),
 }
 
 impl EventObserving for Message {
