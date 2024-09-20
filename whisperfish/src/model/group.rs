@@ -34,7 +34,7 @@ pub struct Group {
     #[qt_property(READ: get_valid, NOTIFY: group_changed)]
     valid: bool,
 
-    #[qt_property(READ: members, NOTIFY: group_changed)]
+    #[qt_property(READ: members, NOTIFY: members_model_changed)]
     members: QVariant,
 
     #[qt_property(READ: member_count, NOTIFY: group_changed)]
@@ -43,6 +43,7 @@ pub struct Group {
     membership_list: QObjectBox<GroupMembershipListModel>,
 
     group_changed: qt_signal!(),
+    members_model_changed: qt_signal!(),
 }
 
 impl EventObserving for Group {
