@@ -35,6 +35,23 @@ pub fn naive_chrono_rounded_down(naive: chrono::NaiveDateTime) -> chrono::NaiveD
         .unwrap()
 }
 
+pub fn replace_tilde_with_home(path: &str) -> std::borrow::Cow<str> {
+    if let Some(path) = path.strip_prefix("~/") {
+        let home = std::env::var("HOME").expect("home dir set");
+        format!("{home}/{path}").into()
+    } else {
+        path.into()
+    }
+}
+
+pub fn replace_home_with_tilde(path: &str) -> std::borrow::Cow<str> {
+    if let Some(path) = path.strip_prefix(&std::env::var("HOME").expect("home dir set")) {
+        format!("~/{path}").into()
+    } else {
+        path.into()
+    }
+}
+
 /// Checks if the db contains foreign key violations.
 #[tracing::instrument(skip(db))]
 pub fn check_foreign_keys(db: &mut diesel::SqliteConnection) -> Result<(), anyhow::Error> {

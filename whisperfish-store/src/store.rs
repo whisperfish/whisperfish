@@ -2619,6 +2619,7 @@ impl<O: Observable> Storage<O> {
         });
 
         let filename = path.file_name().map(|s| s.to_str().unwrap());
+        let path = crate::replace_home_with_tilde(path.to_str().expect("UTF8-compliant path"));
 
         let id = {
             use schema::attachments::dsl::*;
@@ -2626,7 +2627,7 @@ impl<O: Observable> Storage<O> {
                 .values((
                     message_id.eq(attachment_message_id),
                     content_type.eq(mime_type),
-                    attachment_path.eq(path.as_os_str().to_str().expect("path UTF-8 compliant")),
+                    attachment_path.eq(path),
                     size.eq(att_size),
                     file_name.eq(filename),
                     is_voice_note.eq(voice_note),
@@ -3037,7 +3038,7 @@ impl<O: Observable> Storage<O> {
                 self.observe_delete(schema::attachments::table, attachment.id)
                     .with_relation(schema::messages::table, message_id);
 
-                if let Some(path) = attachment.attachment_path {
+                if let Some(path) = attachment.absolute_attachment_path() {
                     let _span = tracing::debug_span!("considering attachment file deletion", id = attachment.id, path = %path).entered();
                     let remaining = schema::attachments::table
                         .filter(schema::attachments::attachment_path.eq(&path))
@@ -3047,7 +3048,7 @@ impl<O: Observable> Storage<O> {
                     if remaining > 0 {
                         tracing::warn!(attachment.id, %path, "references to attachment exist, not deleting");
                     } else if allowed.is_match(&path) {
-                        match std::fs::remove_file(&path) {
+                        match std::fs::remove_file(path.as_ref()) {
                             Ok(()) => {
                                 tracing::trace!("deleted file");
                                 n_attachments += 1;
@@ -3162,9 +3163,12 @@ impl<O: Observable> Storage<O> {
                 )
             })?;
 
+        let relative_dir =
+            crate::replace_home_with_tilde(path.to_str().expect("UTF8-compliant path"));
+
         diesel::update(schema::attachments::table)
             .filter(schema::attachments::id.eq(id))
-            .set(schema::attachments::attachment_path.eq(path.to_str().expect("valid UTF8 path")))
+            .set(schema::attachments::attachment_path.eq(relative_dir))
             .execute(&mut *self.db())
             .unwrap();
 

@@ -117,7 +117,7 @@ impl RustleGraph {
                         self.duration_updated();
                         return;
                     }
-                    if let Some(path) = att.attachment_path {
+                    if let Some(path) = att.absolute_attachment_path() {
                         tracing::debug!(
                             "Generating a RustleGraph of {}x{}",
                             self.width,
@@ -126,7 +126,7 @@ impl RustleGraph {
                         let viz = Vizualizer::from_file(
                             self.vizualizer_params(),
                             Some(&att.content_type),
-                            std::path::Path::new(&path),
+                            std::path::Path::new(path.as_ref()),
                         );
                         match viz {
                             Ok(viz) => self.vizualizer = Some(Arc::new(viz)),

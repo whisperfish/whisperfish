@@ -89,26 +89,11 @@ define_model_roles! {
         // There's a lot more useful stuff to expose.
         Id(id):                                          "id",
         MimeType(content_type via QString::from):        "type",
-        Data(attachment_path via strip_nemo):            "data",
+        Data(fn absolute_attachment_path(&self) via qstring_from_option): "data",
         OriginalName(file_name via qstring_from_option): "original_name",
         VisualHash(visual_hash via qstring_from_option): "visual_hash",
         IsVoiceNote(is_voice_note):                      "is_voice_note",
         Transcription(transcription via qstring_from_option): "transcription",
-    }
-}
-
-fn strip_nemo(path: Option<String>) -> QString {
-    let path = path.as_deref().unwrap_or_default();
-
-    // XXX Maybe this should be cached?
-    let home = std::env::var("HOME").expect("home dir set");
-
-    // TODO: we could maybe strip a generic user path here, instead of just nemo.
-    if let Some(path) = path.strip_prefix("/home/nemo/") {
-        tracing::trace!("[attachment] Stripping /home/nemo/ from path; altering to {home}/{path}");
-        format!("{home}/{path}").into()
-    } else {
-        path.into()
     }
 }
 
@@ -179,14 +164,12 @@ impl AttachmentListModel {
             tracing::error!("[attachment] Message not found at index {}", idx);
             return;
         };
-        let attachment = if let Some(path) = &attachment.attachment_path {
-            path
-        } else {
+        let Some(attachment) = attachment.absolute_attachment_path() else {
             tracing::error!("[attachment] Opening attachment without path (idx {})", idx);
             return;
         };
 
-        match Command::new("xdg-open").arg(attachment).status() {
+        match Command::new("xdg-open").arg(attachment.as_ref()).status() {
             Ok(status) => {
                 if !status.success() {
                     tracing::error!("[attachment] fail");
