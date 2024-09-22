@@ -89,11 +89,26 @@ define_model_roles! {
         // There's a lot more useful stuff to expose.
         Id(id):                                          "id",
         MimeType(content_type via QString::from):        "type",
-        Data(attachment_path via qstring_from_option):   "data",
+        Data(attachment_path via strip_nemo):            "data",
         OriginalName(file_name via qstring_from_option): "original_name",
         VisualHash(visual_hash via qstring_from_option): "visual_hash",
         IsVoiceNote(is_voice_note):                      "is_voice_note",
         Transcription(transcription via qstring_from_option): "transcription",
+    }
+}
+
+fn strip_nemo(path: Option<String>) -> QString {
+    let path = path.as_deref().unwrap_or_default();
+
+    // XXX Maybe this should be cached?
+    let home = std::env::var("HOME").expect("home dir set");
+
+    // TODO: we could maybe strip a generic user path here, instead of just nemo.
+    if let Some(path) = path.strip_prefix("/home/nemo/") {
+        tracing::trace!("[attachment] Stripping /home/nemo/ from path; altering to {home}/{path}");
+        format!("{home}/{path}").into()
+    } else {
+        path.into()
     }
 }
 
