@@ -1427,7 +1427,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="279"/>
         <source>When enabled, the return key functions as a send key. Otherwise, the return key can be used for multi-line messages.</source>
         <extracomment>Settings page enable enter send description</extracomment>
-        <translation>Jos käytössä, rivinvaihto lähettää viestin. Muutoin rivinvaihtoa voi käyttää monirivisten viestin kirjoittamiseen.</translation>
+        <translation>Jos käytössä, rivinvaihto lähettää viestin. Muutoin rivinvaihtoa voi käyttää monirivisten viestien kirjoittamiseen.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-label">
         <location filename="../qml/pages/Settings.qml" line="292"/>
