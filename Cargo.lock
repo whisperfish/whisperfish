@@ -4664,6 +4664,7 @@ dependencies = [
  "tracing-futures",
  "tracing-subscriber",
  "uuid",
+ "whisperfish-model-macro",
  "whisperfish-store",
  "zkgroup",
 ]
@@ -4681,6 +4682,15 @@ dependencies = [
  "tracing",
  "whisperfish",
  "whisperfish-store",
+]
+
+[[package]]
+name = "whisperfish-model-macro"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.76",
 ]
 
 [[package]]

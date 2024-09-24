@@ -9,18 +9,8 @@ use crate::store::Storage;
 use std::collections::HashMap;
 use std::process::Command;
 
-#[derive(Default, QObject)]
-pub struct AttachmentImpl {
-    base: qt_base_class!(trait QObject),
-    attachment_id: Option<i32>,
-    attachment: Option<orm::Attachment>,
-}
-
-crate::observing_model! {
-    pub struct Attachment(AttachmentImpl) {
-        attachmentId: i32; READ get_attachment_id WRITE set_attachment_id,
-        valid: bool; READ get_valid,
-    } WITH OPTIONAL PROPERTIES FROM attachment WITH ROLE AttachmentRoles {
+#[observing_model(
+    properties_from_role(attachment: Option<AttachmentRoles> NOTIFY attachment_changed {
         r#type MimeType,
         data Data,
         original_name OriginalName,
@@ -28,21 +18,39 @@ crate::observing_model! {
         is_voice_note IsVoiceNote,
 
         transcription Transcription,
-    }
+    })
+)]
+#[derive(Default, QObject)]
+pub struct Attachment {
+    base: qt_base_class!(trait QObject),
+    attachment_id: Option<i32>,
+    attachment: Option<orm::Attachment>,
+
+    #[qt_property(
+        READ: get_attachment_id,
+        WRITE: set_attachment_id,
+    )]
+    attachmentId: i32,
+    #[qt_property(
+        READ: get_valid
+    )]
+    valid: bool,
+
+    attachment_changed: qt_signal!(),
 }
 
-impl AttachmentImpl {
+impl Attachment {
     fn init(&mut self, ctx: ModelContext<Self>) {
         if let Some(id) = self.attachment_id {
             self.fetch(ctx.storage(), id);
         }
     }
 
-    fn get_valid(&self) -> bool {
+    fn get_valid(&self, _ctx: Option<ModelContext<Self>>) -> bool {
         self.attachment_id.is_some() && self.attachment.is_some()
     }
 
-    fn get_attachment_id(&self) -> i32 {
+    fn get_attachment_id(&self, _ctx: Option<ModelContext<Self>>) -> i32 {
         self.attachment_id.unwrap_or(-1)
     }
 
@@ -55,10 +63,11 @@ impl AttachmentImpl {
 
     fn fetch(&mut self, storage: Storage, id: i32) {
         self.attachment = storage.fetch_attachment(id);
+        self.attachment_changed();
     }
 }
 
-impl EventObserving for AttachmentImpl {
+impl EventObserving for Attachment {
     type Context = ModelContext<Self>;
 
     fn observe(&mut self, ctx: Self::Context, _event: Event) {

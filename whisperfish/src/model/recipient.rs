@@ -3,7 +3,6 @@
 use crate::model::*;
 use crate::store::observer::{EventObserving, Interest};
 use crate::store::orm;
-use actix::{ActorContext, Handler};
 use futures::TryFutureExt;
 use libsignal_service::protocol::SessionStore;
 use libsignal_service::session_store::SessionStoreExt;
@@ -14,25 +13,8 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 /// QML-constructable object that interacts with a single recipient.
-#[derive(Default, QObject)]
-pub struct RecipientImpl {
-    base: qt_base_class!(trait QObject),
-    recipient_id: Option<i32>,
-    // XXX What about PNI?
-    recipient_uuid: Option<Uuid>,
-    recipient: Option<RecipientWithAnalyzedSession>,
-    fingerprint_needed: bool,
-
-    force_init: bool,
-}
-
-crate::observing_model! {
-    pub struct Recipient(RecipientImpl) {
-        recipientId: i32; READ get_recipient_id WRITE set_recipient_id,
-        recipientUuid: String; READ get_recipient_uuid WRITE set_recipient_uuid,
-        fingerprintNeeded: bool; READ get_fingerprint_needed WRITE set_fingerprint_needed,
-        valid: bool; READ get_valid,
-    } WITH OPTIONAL PROPERTIES FROM recipient WITH ROLE RecipientWithAnalyzedSessionRoles {
+#[observing_model(
+    properties_from_role(recipient: Option<RecipientWithAnalyzedSessionRoles> NOTIFY recipient_changed {
         id Id,
         externalId ExternalId,
         directMessageSessionId DirectMessageSessionId,
@@ -42,9 +24,6 @@ crate::observing_model! {
         phoneNumber PhoneNumber,
         username Username,
         email Email,
-
-        sessionFingerprint SessionFingerprint,
-        sessionIsPostQuantum SessionIsPostQuantum,
 
         blocked Blocked,
 
@@ -59,10 +38,62 @@ crate::observing_model! {
         profileSharing ProfileSharing,
 
         isRegistered IsRegistered,
-    }
+    })
+)]
+#[derive(Default, QObject)]
+pub struct Recipient {
+    base: qt_base_class!(trait QObject),
+    recipient_id: Option<i32>,
+    // XXX What about PNI?
+    recipient_uuid: Option<Uuid>,
+    recipient: Option<RecipientWithAnalyzedSession>,
+
+    #[qt_property(
+        READ: get_recipient_id,
+        WRITE: set_recipient_id,
+        NOTIFY: recipient_changed,
+    )]
+    recipientId: i32,
+
+    #[qt_property(
+        READ: get_recipient_uuid,
+        WRITE: set_recipient_uuid,
+        NOTIFY: recipient_changed,
+    )]
+    recipientUuid: String,
+
+    #[qt_property(
+        READ: get_fingerprint_needed,
+        WRITE: set_fingerprint_needed,
+        ALIAS: fingerprintNeeded,
+        NOTIFY: recipient_changed,
+    )]
+    fingerprint_needed: bool,
+    #[qt_property(
+        READ: get_valid,
+        NOTIFY: recipient_changed,
+    )]
+    valid: bool,
+    force_init: bool,
+
+    #[qt_property(
+        NOTIFY: fingerprint_changed,
+    )]
+    fingerprint: String,
+    versions: Vec<(u32, u32)>,
+
+    #[qt_property(
+        READ: session_is_post_quantum,
+        NOTIFY: fingerprint_changed,
+        ALIAS: sessionIsPostQuantum,
+    )]
+    session_is_post_quantum: bool,
+
+    recipient_changed: qt_signal!(),
+    fingerprint_changed: qt_signal!(),
 }
 
-impl EventObserving for RecipientImpl {
+impl EventObserving for Recipient {
     type Context = ModelContext<Self>;
 
     fn observe(&mut self, ctx: Self::Context, _event: crate::store::observer::Event) {
@@ -79,85 +110,47 @@ impl EventObserving for RecipientImpl {
     }
 }
 
-#[derive(actix::Message)]
-#[rtype(result = "()")]
-struct SessionAnalyzed {
-    recipient_id: i32,
-    fingerprint: String,
-    versions: Vec<(u32, u32)>,
-}
-
-impl Handler<SessionAnalyzed> for ObservingModelActor<RecipientImpl> {
-    type Result = ();
-
-    fn handle(
-        &mut self,
-        SessionAnalyzed {
-            recipient_id,
-            fingerprint,
-            versions,
-        }: SessionAnalyzed,
-        ctx: &mut Self::Context,
-    ) -> Self::Result {
-        match self.model.upgrade() {
-            Some(model) => {
-                let model = model.pinned();
-                let mut model = model.borrow_mut();
-                if let Some(recipient) = &mut model.recipient {
-                    if recipient.id == recipient_id {
-                        recipient.fingerprint = Some(fingerprint);
-                        recipient.versions = versions;
-                        // TODO: trigger something changed
-                    }
-                }
-            }
-            None => {
-                // In principle, the actor should have gotten stopped when the model got dropped,
-                // because the actor's only strong reference is contained in the ObservingModel.
-                tracing::debug!("Model got dropped, stopping actor execution.");
-                // XXX What is the difference between stop and terminate?
-                ctx.stop();
-            }
-        }
-    }
-}
-
-impl RecipientImpl {
-    fn get_recipient_id(&self) -> i32 {
+impl Recipient {
+    fn get_recipient_id(&self, _ctx: Option<ModelContext<Self>>) -> i32 {
         self.recipient_id.unwrap_or(-1)
     }
 
-    fn get_recipient_uuid(&self) -> String {
+    fn get_recipient_uuid(&self, _ctx: Option<ModelContext<Self>>) -> String {
         self.recipient_uuid
             .as_ref()
             .map(Uuid::to_string)
             .unwrap_or("".into())
     }
 
-    fn get_valid(&self) -> bool {
+    fn get_valid(&self, _ctx: Option<ModelContext<Self>>) -> bool {
         self.recipient_id.is_some() && self.recipient.is_some()
     }
 
-    #[with_executor]
     #[tracing::instrument(skip(self, ctx))]
     fn set_recipient_id(&mut self, ctx: Option<ModelContext<Self>>, id: i32) {
         if self.recipient_id == Some(id) {
             return;
         }
         self.recipient_id = Some(id);
-        self.recipient_uuid = None; // Set in init()
+
+        // Set in init()
+        if self.recipient_uuid.take().is_some() {
+            self.recipient_changed();
+        }
         if let Some(ctx) = ctx {
             self.init(ctx);
         }
     }
 
-    #[with_executor]
     #[tracing::instrument(skip(self, ctx))]
     fn set_recipient_uuid(&mut self, ctx: Option<ModelContext<Self>>, uuid: String) {
         if self.recipient_uuid.map(|u| u.to_string()).as_ref() == Some(&uuid) {
             return;
         }
-        self.recipient_id = None; // Set in init()
+        if self.recipient_id.take().is_some() {
+            // Set in init()
+            self.recipient_changed();
+        }
         if let Ok(uuid) = Uuid::parse_str(&uuid) {
             self.recipient_uuid = Some(uuid);
         } else {
@@ -178,7 +171,7 @@ impl RecipientImpl {
         }
     }
 
-    fn get_fingerprint_needed(&self) -> bool {
+    fn get_fingerprint_needed(&self, _ctx: Option<ModelContext<Self>>) -> bool {
         self.fingerprint_needed
     }
 
@@ -198,8 +191,6 @@ impl RecipientImpl {
                         RecipientWithAnalyzedSession {
                             inner,
                             direct_message_recipient_id,
-                            fingerprint: None,
-                            versions: Vec::new(),
                         }
                     })
             } else if let Some(id) = self.recipient_id {
@@ -211,12 +202,9 @@ impl RecipientImpl {
                             .unwrap_or(-1);
                         // XXX Clean this up after #532
                         self.recipient_uuid = inner.uuid.or(Some(Uuid::nil()));
-                        // XXX trigger Qt signal for this?
                         RecipientWithAnalyzedSession {
                             inner,
                             direct_message_recipient_id,
-                            fingerprint: None,
-                            versions: Vec::new(),
                         }
                     })
                 } else {
@@ -226,14 +214,17 @@ impl RecipientImpl {
                 None
             };
 
-            // XXX trigger Qt signal for this?
             self.recipient = recipient;
+            self.recipient_changed();
+
+            self.update_interests();
         }
 
         if self.force_init {
             self.force_init = false;
-            if let Some(recipient) = self.recipient.as_mut() {
-                recipient.fingerprint = None;
+            if self.recipient.is_some() {
+                self.fingerprint = String::default();
+                self.fingerprint_changed();
             }
         }
 
@@ -243,7 +234,9 @@ impl RecipientImpl {
     }
 
     fn compute_fingerprint(&mut self, ctx: ModelContext<Self>) {
-        if self.recipient.is_none() || self.recipient.as_ref().unwrap().fingerprint.is_some() {
+        let qptr = QPointer::from(&*self);
+
+        if self.recipient.is_none() || !self.fingerprint.is_empty() {
             tracing::trace!("Not computing fingerprint");
             return;
         }
@@ -276,19 +269,37 @@ impl RecipientImpl {
                         .unwrap_or(0);
                     versions.push((device_id, version));
                 }
-                ctx.addr()
-                    .send(SessionAnalyzed {
-                        recipient_id,
-                        fingerprint,
-                        versions,
-                    })
-                    .await?;
+
+                // XXX This is possibly not alive anymore
+                let Some(recipient) = qptr.as_pinned() else {
+                    tracing::warn!("Recipient object is gone, dropping fingerprint");
+                    return anyhow::Result::Ok(());
+                };
+                let mut recipient_model = recipient.borrow_mut();
+
+                if let Some(recipient) = &mut recipient_model.recipient {
+                    if recipient.id != recipient_id {
+                        // Skip and drop data
+                        return anyhow::Result::Ok(());
+                    }
+                    recipient_model.fingerprint = fingerprint;
+                    recipient_model.versions = versions;
+                    recipient_model.fingerprint_changed();
+                }
 
                 Result::<_, anyhow::Error>::Ok(())
             }
             .map_ok_or_else(|e| tracing::error!("Computing fingerprint: {}", e), |_| ());
             actix::spawn(compute);
         }
+    }
+
+    fn session_is_post_quantum(&self, _ctx: Option<ModelContext<Self>>) -> bool {
+        const KYBER_AWARE_MESSAGE_VERSION: u32 = 4;
+
+        self.versions
+            .iter()
+            .all(|(_, version)| *version >= KYBER_AWARE_MESSAGE_VERSION)
     }
 }
 
@@ -301,18 +312,6 @@ pub struct RecipientListModel {
 pub struct RecipientWithAnalyzedSession {
     inner: orm::Recipient,
     direct_message_recipient_id: i32,
-    fingerprint: Option<String>,
-    versions: Vec<(u32, u32)>,
-}
-
-impl RecipientWithAnalyzedSession {
-    fn session_is_post_quantum(&self) -> bool {
-        const KYBER_AWARE_MESSAGE_VERSION: u32 = 4;
-
-        self.versions
-            .iter()
-            .all(|(_, version)| *version >= KYBER_AWARE_MESSAGE_VERSION)
-    }
 }
 
 impl std::ops::Deref for RecipientWithAnalyzedSession {
@@ -349,10 +348,6 @@ define_model_roles! {
 
         UnidentifiedAccessMode(unidentified_access_mode via Into<i32>::into): "unidentifiedAccessMode",
         ProfileSharing(profile_sharing): "profileSharing",
-
-        SessionFingerprint(fingerprint via qstring_from_option): "sessionFingerprint",
-
-        SessionIsPostQuantum(fn session_is_post_quantum(&self)): "sessionIsPostQuantum",
     }
 }
 

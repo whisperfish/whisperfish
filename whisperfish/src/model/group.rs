@@ -12,30 +12,41 @@ use whisperfish_store::schema;
 use whisperfish_store::store::orm;
 
 /// QML-constructable object that interacts with a single recipient.
+#[observing_model]
 #[derive(Default, QObject)]
-pub struct GroupImpl {
+pub struct Group {
     base: qt_base_class!(trait QObject),
     id: Option<String>,
     group_v1: Option<orm::GroupV1>,
     group_v2: Option<orm::GroupV2>,
 
+    #[qt_property(
+        READ: get_group_id,
+        WRITE: set_group_id,
+        NOTIFY: group_changed,
+    )]
+    groupId: QString,
+    #[qt_property(READ: get_is_group_v1, NOTIFY: group_changed)]
+    isGroupV1: bool,
+    #[qt_property(READ: get_is_group_v2, NOTIFY: group_changed)]
+    isGroupV2: bool,
+
+    #[qt_property(READ: get_valid, NOTIFY: group_changed)]
+    valid: bool,
+
+    #[qt_property(READ: members, NOTIFY: members_model_changed)]
+    members: QVariant,
+
+    #[qt_property(READ: member_count, NOTIFY: group_changed)]
+    member_count: i32,
+
     membership_list: QObjectBox<GroupMembershipListModel>,
+
+    group_changed: qt_signal!(),
+    members_model_changed: qt_signal!(),
 }
 
-crate::observing_model! {
-    pub struct Group(GroupImpl) {
-        groupId: QString; READ get_group_id WRITE set_group_id,
-        isGroupV1: bool; READ get_is_group_v1,
-        isGroupV2: bool; READ get_is_group_v2,
-
-        valid: bool; READ get_valid,
-
-        members: QVariant; READ members,
-        member_count: i32; READ member_count,
-    }
-}
-
-impl EventObserving for GroupImpl {
+impl EventObserving for Group {
     type Context = ModelContext<Self>;
 
     fn observe(&mut self, ctx: Self::Context, _event: crate::store::observer::Event) {
@@ -79,41 +90,41 @@ impl EventObserving for GroupImpl {
     }
 }
 
-impl GroupImpl {
-    fn get_group_id(&self) -> QString {
+impl Group {
+    fn get_group_id(&self, _ctx: Option<ModelContext<Self>>) -> QString {
         self.id.clone().unwrap_or_default().into()
     }
 
-    fn get_is_group_v1(&self) -> bool {
+    fn get_is_group_v1(&self, _ctx: Option<ModelContext<Self>>) -> bool {
         self.group_v1.is_some()
     }
 
-    fn get_is_group_v2(&self) -> bool {
+    fn get_is_group_v2(&self, _ctx: Option<ModelContext<Self>>) -> bool {
         self.group_v2.is_some()
     }
 
-    fn member_count(&self) -> i32 {
+    fn member_count(&self, _ctx: Option<ModelContext<Self>>) -> i32 {
         self.membership_list.pinned().borrow_mut().row_count()
     }
 
-    fn get_valid(&self) -> bool {
+    fn get_valid(&self, _ctx: Option<ModelContext<Self>>) -> bool {
         self.id.is_some() && (self.group_v1.is_some() || self.group_v2.is_some())
     }
 
-    fn members(&self) -> QVariant {
+    fn members(&self, _ctx: Option<ModelContext<Self>>) -> QVariant {
         self.membership_list.pinned().into()
     }
 
     #[with_executor]
     #[tracing::instrument(skip(self, ctx))]
-    fn set_group_id(&mut self, ctx: Option<ModelContext<GroupImpl>>, id: QString) {
+    fn set_group_id(&mut self, ctx: Option<ModelContext<Self>>, id: QString) {
         self.id = Some(id.to_string());
         if let Some(ctx) = ctx {
             self.init(ctx);
         }
     }
 
-    fn init(&mut self, ctx: ModelContext<GroupImpl>) {
+    fn init(&mut self, ctx: ModelContext<Self>) {
         let storage = ctx.storage();
         if let Some(id) = &self.id {
             self.group_v1 = None;
@@ -133,6 +144,7 @@ impl GroupImpl {
             } else {
                 self.membership_list.pinned().borrow_mut().clear();
             }
+            self.group_changed();
         }
     }
 }
