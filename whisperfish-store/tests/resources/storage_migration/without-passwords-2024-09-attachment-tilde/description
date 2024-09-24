@@ -1,0 +1,10 @@
+This storage was initialized in June 2024, and goes up to the 2024-08-18-201739_modify-identity-records-pk migration.
+The purpose is to test whether /home/nemo and /home/defaultuser attachments get correctly updated to ~/
+
+https://gitlab.com/whisperfish/whisperfish/-/merge_requests/630
+
+sqlite> select * from attachments;
+1||1|||||/home/nemo/foobar.png|0||||||0|1|0|||||||||||0|2021-02-14T18:05:49Z|0|||
+2||1|||||/home/defaultuser/foobar2.png|0||||||0|1|0|||||||||||0|2021-02-14T18:05:49Z|0|||
+3||1|||||/home/defaultuser2/foobar3.png|0||||||0|1|0|||||||||||0|2021-02-14T18:05:49Z|0|||
+4||1|||||/media/sdcard/foobar4.png|0||||||0|1|0|||||||||||0|2021-02-14T18:05:49Z|0|||
