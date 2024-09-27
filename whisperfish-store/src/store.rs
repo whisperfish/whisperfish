@@ -1062,26 +1062,39 @@ impl<O: Observable> Storage<O> {
     ///
     /// Returns the new expiration time version
     // TODO: accept Duration instead of i32 seconds
-    pub fn update_expiration_timer(&self, session_id: i32, timer: Option<u32>) -> i32 {
+    #[tracing::instrument(skip(self))]
+    pub fn update_expiration_timer(
+        &self,
+        session_id: i32,
+        timer: Option<u32>,
+        version: Option<u32>,
+    ) -> i32 {
         // Carry out the update only if the timer changes
         use crate::schema::sessions::dsl::*;
-        // TODO: this timer update logic is incorrect!!
-        // TODO: groups don't have a timer version (and might not update timer version!)
-        let mut versions = diesel::update(sessions)
-            .set((expiring_message_timeout.eq(timer.map(|i| i as i32)),))
+        let session = self
+            .fetch_session_by_id(session_id)
+            .expect("existing session for expiration update");
+        let new_version = if session.is_group() {
+            1
+        } else if let Some(version) = version {
+            version as i32
+        } else {
+            session.expire_timer_version + 1
+        };
+        let mut affected_rows: Vec<i32> = diesel::update(sessions)
+            .set((
+                expiring_message_timeout.eq(timer.map(|i| i as i32)),
+                expire_timer_version.eq(new_version),
+            ))
             .filter(id.eq(session_id))
             .returning(expire_timer_version)
             .load(&mut *self.db())
             .expect("existing record updated");
-
-        let Some(version) = versions.pop() else {
-            panic!("exactly one version for a session_id");
-        };
-        self.observe_update(sessions, session_id);
-        assert!(versions.is_empty(), "exactly one version returned");
-        version
+        if affected_rows.len() != 1 {
+            panic!("Message expiry update should only have changed a single session")
+        }
+        affected_rows.pop().unwrap()
     }
-
     #[tracing::instrument(
         skip(self, rcpt_e164, new_profile_key),
         fields(

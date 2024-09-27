@@ -779,7 +779,7 @@ impl ClientActor {
             storage.fetch_or_insert_session_by_recipient_id(recipient.id)
         });
 
-        let expire_timer_version = storage.update_expiration_timer(session.id, msg.expire_timer);
+        let expire_timer_version = storage.update_expiration_timer(session.id, msg.expire_timer, msg.expire_timer_version);
 
         let expires_in = session.expiring_message_timeout;
 
@@ -1545,7 +1545,7 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
             .expect("existing session when sending");
 
         let expire_timer_version =
-            storage.update_expiration_timer(session.id, msg.expires_in.map(|x| x.as_secs() as u32));
+            storage.update_expiration_timer(session.id, msg.expires_in.map(|x| x.as_secs() as u32), None);
 
         let msg = storage.create_message(&crate::store::NewMessage {
             session_id: session.id,
