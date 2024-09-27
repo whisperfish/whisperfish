@@ -1638,17 +1638,21 @@ impl Handler<SendMessage> for ClientActor {
 
                 for mut attachment in attachments {
                     let attachment_path = attachment
-                        .attachment_path
+                        .absolute_attachment_path()
                         .expect("attachment path when uploading");
                     let contents =
-                        tokio::fs::read(&attachment_path)
+                        tokio::fs::read(attachment_path.as_ref())
                             .await
                             .context("reading attachment")?;
 
-                    let content_type = match mime_guess::from_path(&attachment_path).first() {
+                    let content_type = match mime_guess::from_path(attachment_path.as_ref()).first() {
                         Some(mime) => mime.essence_str().into(),
                         None => String::from("application/octet-stream"),
                     };
+
+                    let file_name= Path::new(attachment_path.as_ref())
+                            .file_name()
+                            .map(|f| f.to_string_lossy().into_owned());
 
                     if attachment.visual_hash.is_none() && content_type.starts_with("image/") {
                         tracing::info!("Computing blurhash for attachment {}", attachment.id);
@@ -1675,9 +1679,7 @@ impl Handler<SendMessage> for ClientActor {
                     let spec = AttachmentSpec {
                         content_type,
                         length: contents.len(),
-                        file_name: Path::new(&attachment_path)
-                            .file_name()
-                            .map(|f| f.to_string_lossy().into_owned()),
+                        file_name,
                         preview: None,
                         voice_note: Some(attachment.is_voice_note),
                         borderless: Some(attachment.is_borderless),
@@ -3281,7 +3283,7 @@ impl Handler<ExportAttachment> for ClientActor {
 
         // 2) Check the source file
 
-        let source = PathBuf::from_str(&attachment.attachment_path.unwrap()).unwrap();
+        let source = PathBuf::from_str(&attachment.absolute_attachment_path().unwrap()).unwrap();
         if !source.exists() {
             tracing::error!(
                 "Attachment {} doesn't exist anymore, not exporting!",

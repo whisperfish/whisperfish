@@ -709,6 +709,14 @@ impl Display for Attachment {
     }
 }
 
+impl Attachment {
+    pub fn absolute_attachment_path(&self) -> Option<std::borrow::Cow<str>> {
+        self.attachment_path
+            .as_deref()
+            .map(crate::replace_tilde_with_home)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Session {
     pub id: i32,

@@ -192,21 +192,23 @@ impl TranscriptionTask {
         // XXX we should probably first check whether the dbus daemon is busy or not.
 
         // Prepare the arguments
-        let file_path = attachment.attachment_path.expect("valid attachment path");
+        let file_path = attachment
+            .absolute_attachment_path()
+            .expect("valid attachment path");
         let lang = "auto";
         let out_lang = "auto";
         let options: std::collections::HashMap<
             &str,
             dbus::arg::Variant<Box<dyn dbus::arg::RefArg>>,
         > = std::collections::HashMap::new();
-        let path = std::path::Path::new(&file_path);
+        let path = std::path::Path::new(file_path.as_ref());
         assert!(path.exists(), "file exists: {:?}", path);
 
         let (task_id,): (i32,) = proxy
             .method_call(
                 "org.mkiol.Speech",
                 "SttTranscribeFile",
-                (file_path, lang, out_lang, options),
+                (file_path.as_ref(), lang, out_lang, options),
             )
             .await?;
 

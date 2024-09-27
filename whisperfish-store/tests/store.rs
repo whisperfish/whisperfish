@@ -1109,36 +1109,36 @@ fn test_remove_attachment_filenames() {
     // List of known good and bad locations, feel free to add samples.
     let test_data: [(bool, &str); 21]= [
         // defaultuser, new
-        (true, "/home/defaultuser/.local/share/be.rubdos/harbour-whisperfish/storage/attachments/5da77b73f271bd460956d3807643f6b8.png"),
-        (true, "/home/defaultuser/.local/share/be.rubdos/harbour-whisperfish/storage/attachments/Photo_20220417_233207.jpg"),
-        (true, "/home/defaultuser/.local/share/be.rubdos/harbour-whisperfish/storage/camera/Photo_20220617_183938.jpg"),
+        (true, "~/.local/share/be.rubdos/harbour-whisperfish/storage/attachments/5da77b73f271bd460956d3807643f6b8.png"),
+        (true, "~/.local/share/be.rubdos/harbour-whisperfish/storage/attachments/Photo_20220417_233207.jpg"),
+        (true, "~/.local/share/be.rubdos/harbour-whisperfish/storage/camera/Photo_20220617_183938.jpg"),
         // defaultuser, old
-        (true, "/home/defaultuser/.local/share/harbour-whisperfish/storage/attachments/d801caeea1cc119aac4fe6a64d1ecc3e.jpg"),
-        (true, "/home/defaultuser/.local/share/harbour-whisperfish/storage/camera/Photo_20220617_192842.jpg"),
+        (true, "~/.local/share/harbour-whisperfish/storage/attachments/d801caeea1cc119aac4fe6a64d1ecc3e.jpg"),
+        (true, "~/.local/share/harbour-whisperfish/storage/camera/Photo_20220617_192842.jpg"),
         // nemo, new
-        (true, "/home/nemo/.local/share/be.rubdos/harbour-whisperfish/storage/attachments/3a9f821ec8395b9a6565df0e1a952a85.jpg"),
-        (true, "/home/nemo/.local/share/be.rubdos/harbour-whisperfish/storage/camera/Photo_20230703_174003.jpg"),
+        (true, "~/.local/share/be.rubdos/harbour-whisperfish/storage/attachments/3a9f821ec8395b9a6565df0e1a952a85.jpg"),
+        (true, "~/.local/share/be.rubdos/harbour-whisperfish/storage/camera/Photo_20230703_174003.jpg"),
         // nemo, old
-        (true, "/home/nemo/.local/share/harbour-whisperfish/storage/attachments/bd09cdd805f5aa07aa3ee950a9b1fef9.pdf"),
-        (true, "/home/nemo/.local/share/harbour-whisperfish/storage/camera/Photo_20221108_202942.jpg"),
+        (true, "~/.local/share/harbour-whisperfish/storage/attachments/bd09cdd805f5aa07aa3ee950a9b1fef9.pdf"),
+        (true, "~/.local/share/harbour-whisperfish/storage/camera/Photo_20221108_202942.jpg"),
         // Android storage
-        (false, "/home/defaultuser/android_storage/Download/cat-meme.jpg"),
+        (false, "~/android_storage/Download/cat-meme.jpg"),
         // Downloads
-        (false, "/home/defaultuser/Downloads/Photo_20220422_144241.jpg"),
+        (false, "~/Downloads/Photo_20220422_144241.jpg"),
         // Pictures
-        (false, "/home/defaultuser/Pictures/AdvancedCam/IMG_20210730_160213.jpg"),
-        (false, "/home/defaultuser/Pictures/Camera/20211103_184820.jpg"),
-        (false, "/home/defaultuser/Pictures/MMS/mms-20230409.jpg"),
-        (false, "/home/defaultuser/Pictures/Screenshots/Näyttökuva_20210502_001.png"),
-        (false, "/home/defaultuser/Pictures/totally_legit_png_just_without_extension"),
+        (false, "~/Pictures/AdvancedCam/IMG_20210730_160213.jpg"),
+        (false, "~/Pictures/Camera/20211103_184820.jpg"),
+        (false, "~/Pictures/MMS/mms-20230409.jpg"),
+        (false, "~/Pictures/Screenshots/Näyttökuva_20210502_001.png"),
+        (false, "~/Pictures/totally_legit_png_just_without_extension"),
         // Videos
-        (false, "/home/defaultuser/Videos/Camera/20210812_232017.mp4"),
+        (false, "~/Videos/Camera/20210812_232017.mp4"),
         // MicroSD card
         (false, "/run/media/defaultuser/0123-4567/Pictures/Camera/20220611_203625.jpg"),
         (false, "/run/media/defaultuser/0123-4567/Videos/Camera/20230703_144325.mp4"),
         (false, "/run/media/defaultuser/6738bbbc-5a3b-4505-971e-9f40ff14d51f/Pictures/Camera/20210425_134502.jpg"),
         // Local storage
-        (false, "/home/defaultuser/.local/share/commhistory/data/1241/image000000.jpg"),
+        (false, "~/.local/share/commhistory/data/1241/image000000.jpg"),
     ];
 
     test_data.map(|(deleted, filename)| {

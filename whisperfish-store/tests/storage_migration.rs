@@ -314,3 +314,54 @@ async fn test_2022_06_migration(
 
     assert!(!path.join("storage").join("sessions").exists());
 }
+
+/// This storages wes initialized in September 2024, and contains a message with four attachments
+/// on four different locations.
+///
+/// sqlite> select * from attachments;
+/// 1||1|||||/home/nemo/foobar.png|0||||||0|1|0|||||||||||0|2021-02-14T18:05:49Z|0|||
+/// 2||1|||||/home/defaultuser/foobar2.png|0||||||0|1|0|||||||||||0|2021-02-14T18:05:49Z|0|||
+/// 3||1|||||/home/defaultuser2/foobar3.png|0||||||0|1|0|||||||||||0|2021-02-14T18:05:49Z|0|||
+/// 4||1|||||/media/sdcard/foobar4.png|0||||||0|1|0|||||||||||0|2021-02-14T18:05:49Z|0|||
+///
+/// https://gitlab.com/whisperfish/whisperfish/-/merge_requests/630
+#[rstest]
+#[tokio::test]
+async fn test_2024_09_attachment_tilde_migration() {
+    let path = std::path::PathBuf::from(
+        "tests/resources/storage_migration/without-passwords-2024-09-attachment-tilde",
+    );
+
+    let path = StorageLocation::Path(copy_to_temp(path).await);
+    let storage = SimpleStorage::open(Arc::new(SignalConfig::default()), &path, None)
+        .await
+        .expect("open older storage");
+
+    let attachments = storage.fetch_attachments_for_message(1);
+    assert_eq!(attachments.len(), 4);
+
+    let to_find = [
+        "~/foobar.png",
+        "~/foobar2.png",
+        "/home/defaultuser2/foobar3.png",
+        "/media/sdcard/foobar4.png",
+    ];
+
+    for attachment in attachments {
+        let path = attachment.attachment_path.as_deref().unwrap();
+        assert!(to_find.contains(&path));
+
+        let absolute_path = attachment.absolute_attachment_path().unwrap().into_owned();
+
+        if attachment
+            .attachment_path
+            .as_deref()
+            .unwrap()
+            .starts_with("~")
+        {
+            assert_ne!(absolute_path, path);
+        } else {
+            assert_eq!(absolute_path, path);
+        }
+    }
+}
