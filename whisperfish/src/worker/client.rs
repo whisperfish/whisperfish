@@ -2016,11 +2016,23 @@ impl Handler<SendReaction> for ClientActor {
             async move {
                 let group_v2 = session.group_context_v2();
 
+                let expire_timer = if session.is_group() {
+                    None
+                } else {
+                    session.expiring_message_timeout.map(|t| t.as_secs() as _)
+                };
+                let expire_timer_version = if session.is_group() {
+                    None
+                } else {
+                    Some(session.expire_timer_version as _)
+                };
+
                 let content = DataMessage {
                     group_v2,
                     timestamp: Some(now.timestamp_millis() as u64),
-                    // XXX: Expire timer?
                     required_protocol_version: Some(4), // Source: received emoji from Signal Android
+                    expire_timer,
+                    expire_timer_version,
                     reaction: Some(Reaction {
                         emoji: Some(emoji.clone()),
                         remove: Some(remove),
