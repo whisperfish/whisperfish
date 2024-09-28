@@ -724,7 +724,8 @@ impl ClientActor {
 
             // XXX handle group.group_change like a real client
             if let Some(_change) = group.group_change.as_ref() {
-                tracing::warn!("We're not handling raw group changes yet. Let's trigger a group refresh for now.");
+                tracing::error!("Group change messages are not supported yet. Please upvote bug #706");
+                tracing::warn!("Let's trigger a group refresh for now.");
                 ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
             } else if !storage.group_v2_exists(&store_v2) {
                 tracing::info!(
@@ -1543,6 +1544,12 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
         let session = storage
             .fetch_session_by_id(msg.session_id)
             .expect("existing session when sending");
+
+        // TODO: #706
+        if session.is_group() {
+            tracing::error!("Group change messages and group message expiry timer changes are not supported yet. Please upvote bugs #706 and #707");
+            return;
+        }
 
         let expire_timer_version =
             storage.update_expiration_timer(session.id, msg.expires_in.map(|x| x.as_secs() as u32), None);
