@@ -9,7 +9,10 @@ use libsignal_service::{
 };
 use ringrtc::{
     common::CallId,
-    core::{call_manager::CallManager, signaling::ReceivedOffer},
+    core::{
+        call_manager::CallManager,
+        signaling::{IceCandidate, ReceivedIce, ReceivedOffer},
+    },
     lite::http::DelegatingClient,
 };
 use std::collections::HashMap;
@@ -270,9 +273,30 @@ impl super::ClientActor {
         metadata: &Metadata,
         _destination_device_id: u32,
         peer: &Recipient,
-        ice_update: Vec<IceUpdate>,
+        ice_updates: Vec<IceUpdate>,
     ) {
-        tracing::info!("{} is sending ICE update.", peer);
+        tracing::info!("{} is sending ICE updates.", peer);
+        for update in ice_updates {
+            let Some(id) = update.id else {
+                tracing::warn!("ICE update did not have an ID. Ignoring.");
+                continue;
+            };
+            let call_id = CallId::from(id);
+            let Some(opaque) = update.opaque else {
+                tracing::warn!("ICE update did not have opaque data. Ignoring.");
+                continue;
+            };
+            let received_ice = ReceivedIce {
+                ice: ringrtc::core::signaling::Ice {
+                    candidates: vec![IceCandidate::new(opaque)],
+                },
+                sender_device_id: metadata.sender_device,
+            };
+            self.call_state
+                .manager
+                .received_ice(call_id, received_ice)
+                .expect("handled ICE update");
+        }
     }
 
     #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
