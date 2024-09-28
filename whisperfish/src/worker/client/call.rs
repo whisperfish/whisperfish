@@ -11,7 +11,7 @@ use ringrtc::{
     common::CallId,
     core::{
         call_manager::CallManager,
-        signaling::{IceCandidate, ReceivedIce, ReceivedOffer},
+        signaling::{IceCandidate, ReceivedAnswer, ReceivedIce, ReceivedOffer},
     },
     lite::http::DelegatingClient,
 };
@@ -133,6 +133,7 @@ impl super::ClientActor {
         }
     }
 
+    // Equiv. of WebRtcActionProcessor::handleReceivedOffer
     #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
     fn handle_call_offer(
         &mut self,
@@ -264,6 +265,60 @@ impl super::ClientActor {
         answer: Answer,
     ) {
         tracing::info!("{} answered.", peer);
+        let Some(call_id) = answer.id.map(CallId::from) else {
+            tracing::warn!("Call answer did not have a call ID. Ignoring.");
+            return;
+        };
+
+        let mut manager = self.call_state.manager.clone();
+
+        let Some(opaque) = answer.opaque else {
+            tracing::warn!("Call answer did not have opaque data. Ignoring.");
+            return;
+        };
+
+        let protocol_address = peer
+            .to_service_address()
+            .expect("existing session for peer")
+            .to_protocol_address(DEFAULT_DEVICE_ID);
+
+        let protocol_storage = self
+            .storage
+            .as_ref()
+            .expect("storage initialized")
+            .aci_or_pni(metadata.destination.identity);
+        let sender_device_id = metadata.sender_device;
+
+        let handle_answer = async move {
+            use libsignal_service::protocol::IdentityKeyStore;
+
+            let receiver_identity_key = protocol_storage
+                .get_identity_key_pair()
+                .await
+                .expect("identity stored")
+                .public_key()
+                .serialize()
+                .into();
+            let sender_identity_key = protocol_storage
+                .get_identity(&protocol_address)
+                .await
+                .expect("protocol store")
+                .expect("identity exists for remote peer")
+                .serialize()
+                .into();
+
+            let answer = ReceivedAnswer {
+                answer: ringrtc::core::signaling::Answer::new(opaque).expect("parsed answer"),
+                sender_device_id,
+                sender_identity_key,
+                receiver_identity_key,
+            };
+
+            manager
+                .received_answer(call_id, answer)
+                .expect("handled call answer");
+        };
+        actix::spawn(handle_answer);
     }
 
     #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
