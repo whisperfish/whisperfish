@@ -160,7 +160,7 @@ impl super::ClientActor {
             tracing::warn!(?setup, "Call setup already exists. replacing.");
         }
 
-        let storage = self.storage.as_ref().expect("initialized storage").clone();
+        let storage = self.storage.as_ref().expect("initialized storage");
 
         let setup = CallSetupState {
             enable_video_on_create: false,
@@ -211,10 +211,10 @@ impl super::ClientActor {
         let sender_device_id = metadata.sender_device;
         let destination_identity = metadata.destination.identity;
 
+        let protocol_storage = storage.aci_or_pni(destination_identity);
+
         let receive_offer = async move {
             use libsignal_service::protocol::IdentityKeyStore;
-
-            let protocol_storage = storage.aci_or_pni(destination_identity);
 
             let receiver_identity_key = protocol_storage
                 .get_identity_key_pair()
