@@ -724,7 +724,9 @@ impl ClientActor {
 
             // XXX handle group.group_change like a real client
             if let Some(_change) = group.group_change.as_ref() {
-                tracing::error!("Group change messages are not supported yet. Please upvote bug #706");
+                tracing::error!(
+                    "Group change messages are not supported yet. Please upvote bug #706"
+                );
                 tracing::warn!("Let's trigger a group refresh for now.");
                 ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
             } else if !storage.group_v2_exists(&store_v2) {
@@ -780,7 +782,8 @@ impl ClientActor {
             storage.fetch_or_insert_session_by_recipient_id(recipient.id)
         });
 
-        let expire_timer_version = storage.update_expiration_timer(session.id, msg.expire_timer, msg.expire_timer_version);
+        let expire_timer_version =
+            storage.update_expiration_timer(session.id, msg.expire_timer, msg.expire_timer_version);
 
         let expires_in = session.expiring_message_timeout;
 
@@ -1551,8 +1554,11 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
             return;
         }
 
-        let expire_timer_version =
-            storage.update_expiration_timer(session.id, msg.expires_in.map(|x| x.as_secs() as u32), None);
+        let expire_timer_version = storage.update_expiration_timer(
+            session.id,
+            msg.expires_in.map(|x| x.as_secs() as u32),
+            None,
+        );
 
         let msg = storage.create_message(&crate::store::NewMessage {
             session_id: session.id,
