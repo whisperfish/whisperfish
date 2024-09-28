@@ -129,7 +129,26 @@ impl super::ClientActor {
         }
 
         if let Some(opaque) = call.opaque {
-            self.handle_call_opaque(ctx, &metadata, destination_id, &peer, opaque);
+            tracing::info!("{} sent an opaque message.", peer);
+
+            let Some(opaque) = opaque.data else {
+                tracing::warn!("Opaque message did not have data. Ignoring.");
+                return;
+            };
+
+            let sent_time = millis_to_naive_chrono(metadata.timestamp).and_utc();
+            let age = Utc::now() - sent_time;
+
+            self.call_state
+                .manager
+                .received_call_message(
+                    metadata.sender.uuid.to_string().into_bytes(),
+                    metadata.sender_device,
+                    self.config.get_device_id().into(),
+                    opaque,
+                    age.to_std().unwrap_or(std::time::Duration::ZERO),
+                )
+                .expect("handled opaque message");
         }
     }
 
@@ -376,17 +395,5 @@ impl super::ClientActor {
         hangup: Hangup,
     ) {
         tracing::info!("{} hung up.", peer);
-    }
-
-    #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
-    fn handle_call_opaque(
-        &mut self,
-        _ctx: &mut <Self as actix::Actor>::Context,
-        metadata: &Metadata,
-        _destination_device_id: u32,
-        peer: &Recipient,
-        opaque: Opaque,
-    ) {
-        tracing::info!("{} sent an opaque message.", peer);
     }
 }
