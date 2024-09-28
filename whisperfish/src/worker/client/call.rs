@@ -95,28 +95,34 @@ impl super::ClientActor {
             );
         }
 
+        let peer = self
+            .storage
+            .as_ref()
+            .expect("initialized storage")
+            .fetch_or_insert_recipient_by_address(&metadata.sender);
+
         if let Some(offer) = call.offer {
-            self.handle_call_offer(ctx, &metadata, destination_id, offer);
+            self.handle_call_offer(ctx, &metadata, destination_id, &peer, offer);
         }
 
         if let Some(answer) = call.answer {
-            self.handle_call_answer(ctx, &metadata, destination_id, answer);
+            self.handle_call_answer(ctx, &metadata, destination_id, &peer, answer);
         }
 
         if !call.ice_update.is_empty() {
-            self.handle_call_ice(ctx, &metadata, destination_id, call.ice_update);
+            self.handle_call_ice(ctx, &metadata, destination_id, &peer, call.ice_update);
         }
 
         if let Some(busy) = call.busy {
-            self.handle_call_busy(ctx, &metadata, destination_id, busy);
+            self.handle_call_busy(ctx, &metadata, destination_id, &peer, busy);
         }
 
         if let Some(hangup) = call.hangup {
-            self.handle_call_hangup(ctx, &metadata, destination_id, hangup);
+            self.handle_call_hangup(ctx, &metadata, destination_id, &peer, hangup);
         }
 
         if let Some(opaque) = call.opaque {
-            self.handle_call_opaque(ctx, &metadata, destination_id, opaque);
+            self.handle_call_opaque(ctx, &metadata, destination_id, &peer, opaque);
         }
     }
 
@@ -126,9 +132,10 @@ impl super::ClientActor {
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
         _destination_device_id: u32,
+        peer: &Recipient,
         offer: Offer,
     ) {
-        tracing::info!("{} is calling.", metadata.sender.to_service_id());
+        tracing::info!("{} is calling.", peer);
         // TODO: decline call if:
         // - Call is not from a trusted contact
         // - Phone is already in a call (from any other Telepathy client)
@@ -184,9 +191,10 @@ impl super::ClientActor {
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
         _destination_device_id: u32,
+        peer: &Recipient,
         answer: Answer,
     ) {
-        tracing::info!("{} answered.", metadata.sender.to_service_id());
+        tracing::info!("{} answered.", peer);
     }
 
     #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
@@ -195,9 +203,10 @@ impl super::ClientActor {
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
         _destination_device_id: u32,
+        peer: &Recipient,
         ice_update: Vec<IceUpdate>,
     ) {
-        tracing::info!("{} is sending ICE update.", metadata.sender.to_service_id());
+        tracing::info!("{} is sending ICE update.", peer);
     }
 
     #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
@@ -206,9 +215,10 @@ impl super::ClientActor {
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
         _destination_device_id: u32,
+        peer: &Recipient,
         busy: Busy,
     ) {
-        tracing::info!("{} is busy.", metadata.sender.to_service_id());
+        tracing::info!("{} is busy.", peer);
     }
 
     #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
@@ -217,9 +227,10 @@ impl super::ClientActor {
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
         _destination_device_id: u32,
+        peer: &Recipient,
         hangup: Hangup,
     ) {
-        tracing::info!("{} hung up.", metadata.sender.to_service_id());
+        tracing::info!("{} hung up.", peer);
     }
 
     #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
@@ -228,11 +239,9 @@ impl super::ClientActor {
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
         _destination_device_id: u32,
+        peer: &Recipient,
         opaque: Opaque,
     ) {
-        tracing::info!(
-            "{} sent an opaque message.",
-            metadata.sender.to_service_id()
-        );
+        tracing::info!("{} sent an opaque message.", peer);
     }
 }
