@@ -7,7 +7,11 @@ use libsignal_service::{
     },
     push_service::DEFAULT_DEVICE_ID,
 };
-use ringrtc::{common::CallId, core::call_manager::CallManager, lite::http::DelegatingClient};
+use ringrtc::{
+    common::CallId,
+    core::{call_manager::CallManager, signaling::ReceivedOffer},
+    lite::http::DelegatingClient,
+};
 use std::collections::HashMap;
 use whisperfish_store::{millis_to_naive_chrono, store::orm::Recipient};
 
@@ -137,10 +141,10 @@ impl super::ClientActor {
     ) {
         tracing::info!("{} is calling.", peer);
         // TODO: decline call if:
-        // - Call is not from a trusted contact
-        // - Phone is already in a call (from any other Telepathy client)
-        // - No opaque data is provided
-        // - Recipient is blocked through a notification profile
+        // - [ ] Call is not from a trusted contact
+        // - [ ] Phone is already in a call (from any other Telepathy client)
+        // - [X] No opaque data is provided
+        // - [ ] Recipient is blocked through a notification profile
         // Otherwise: ring!
 
         let Some(call_id) = offer.id.map(CallId::from) else {
@@ -153,6 +157,8 @@ impl super::ClientActor {
             tracing::warn!(?setup, "Call setup already exists. replacing.");
         }
 
+        let storage = self.storage.as_ref().expect("initialized storage").clone();
+
         let setup = CallSetupState {
             enable_video_on_create: false,
             offer_type: offer.r#type(),
@@ -160,11 +166,7 @@ impl super::ClientActor {
             sent_joined_message: false,
             ring_group: true,
             ring_id: 0,
-            ringer_recipient: self
-                .storage
-                .as_ref()
-                .expect("initialized storage")
-                .fetch_or_insert_recipient_by_address(&metadata.sender),
+            ringer_recipient: storage.fetch_or_insert_recipient_by_address(&metadata.sender),
             ice_servers: Vec::new(),
             always_turn_servers: false,
         };
@@ -177,6 +179,70 @@ impl super::ClientActor {
             ringer = %setup.ringer_recipient,
             "Call offer is {seconds} seconds old.",
         );
+
+        let call_media_type = match offer.r#type() {
+            offer::Type::OfferAudioCall => ringrtc::common::CallMediaType::Audio,
+            offer::Type::OfferVideoCall => ringrtc::common::CallMediaType::Video,
+        };
+
+        let Some(opaque) = offer.opaque else {
+            tracing::warn!("Call offer did not have opaque data. Ignoring.");
+            return;
+        };
+
+        let offer = match ringrtc::core::signaling::Offer::new(call_media_type, opaque) {
+            Ok(x) => x,
+            Err(e) => {
+                tracing::error!("Failed to parse call offer: {:?}", e);
+                return;
+            }
+        };
+        let remote_peer = peer.id.to_string();
+        let mut call_manager = self.call_state.manager.clone();
+
+        let protocol_address = peer
+            .to_service_address()
+            .expect("existing session for peer")
+            .to_protocol_address(DEFAULT_DEVICE_ID);
+        let self_device_id = u32::from(self.config.get_device_id());
+        let sender_device_id = metadata.sender_device;
+        let destination_identity = metadata.destination.identity;
+
+        let receive_offer = async move {
+            use libsignal_service::protocol::IdentityKeyStore;
+
+            let protocol_storage = storage.aci_or_pni(destination_identity);
+
+            let receiver_identity_key = protocol_storage
+                .get_identity_key_pair()
+                .await
+                .expect("identity stored")
+                .public_key()
+                .serialize()
+                .into();
+            let sender_identity_key = protocol_storage
+                .get_identity(&protocol_address)
+                .await
+                .expect("protocol store")
+                .expect("identity exists for remote peer")
+                .serialize()
+                .into();
+
+            let received_offer = ReceivedOffer {
+                offer,
+                age: age.to_std().unwrap_or(std::time::Duration::ZERO),
+                sender_device_id,
+                receiver_device_id: self_device_id,
+                receiver_device_is_primary: self_device_id == DEFAULT_DEVICE_ID,
+                sender_identity_key,
+                receiver_identity_key,
+            };
+
+            call_manager
+                .received_offer(remote_peer, call_id, received_offer)
+                .expect("handled call offer");
+        };
+        actix::spawn(receive_offer);
 
         assert!(self
             .call_state
