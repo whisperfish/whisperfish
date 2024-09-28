@@ -12,7 +12,7 @@ use std::sync::Arc;
 use whisperfish_store::config::SignalConfig;
 use whisperfish_store::orm::{Receipt, Recipient, StoryType, UnidentifiedAccessMode};
 use whisperfish_store::{
-    naive_chrono_to_millis, GroupV1, MasterKey, NewMessage, StorageServiceKey,
+    naive_chrono_to_millis, GroupV1, MasterKey, NewMessage, Settings, StorageServiceKey,
 };
 
 #[rstest]
@@ -1242,4 +1242,103 @@ fn derive_storage_key_from_master_key() {
 
     assert_eq!(master_key.inner, master_key_bytes.as_slice());
     assert_eq!(storage_key.inner, storage_key_bytes.as_slice());
+}
+
+#[tokio::test]
+async fn store_and_load_master_key_and_storage_key() {
+    use rand::distributions::Alphanumeric;
+    use rand::Rng;
+
+    let location = whisperfish_store::temp();
+    let rng = rand::thread_rng();
+
+    // Signaling password for REST API
+    let password: String = rng
+        .sample_iter(&Alphanumeric)
+        .take(24)
+        .map(char::from)
+        .collect();
+
+    // Registration ID
+    let regid = 12345;
+    let pni_regid = 12345;
+
+    let storage = SimpleStorage::new(
+        Arc::new(SignalConfig::default()),
+        &location,
+        None,
+        regid,
+        pni_regid,
+        &password,
+        None,
+        None,
+    )
+    .await;
+    assert!(storage.is_ok(), "{}", storage.err().unwrap());
+    let storage = storage.unwrap();
+
+    // Part 1: Store and load known master and storage keys
+
+    use base64::prelude::*;
+    const MASTER_KEY_BASE64: &str = "9hquLIIZmom8fHF7H8pbUAreawmPLEqli5ceJ94pFkU=";
+    const STORAGE_KEY_BASE64: &str = "QMgZ5RGTLFTr4u/J6nypaJX6DKDlSgMw8vmxU6gxnvI=";
+
+    assert!(storage.read_setting(Settings::MASTER_KEY).is_none());
+    assert!(storage
+        .read_setting(Settings::STORAGE_SERVICE_KEY)
+        .is_none());
+
+    let master_key =
+        MasterKey::from_slice(&BASE64_STANDARD.decode(MASTER_KEY_BASE64).unwrap()).unwrap();
+    let storage_key =
+        StorageServiceKey::from_slice(&BASE64_STANDARD.decode(STORAGE_KEY_BASE64).unwrap())
+            .unwrap();
+
+    storage.write_setting(Settings::MASTER_KEY, MASTER_KEY_BASE64);
+    assert!(storage.read_setting(Settings::MASTER_KEY).is_some());
+    assert!(storage
+        .read_setting(Settings::STORAGE_SERVICE_KEY)
+        .is_none());
+
+    storage.write_setting(Settings::STORAGE_SERVICE_KEY, STORAGE_KEY_BASE64);
+    assert!(storage.read_setting(Settings::MASTER_KEY).is_some());
+    assert!(storage
+        .read_setting(Settings::STORAGE_SERVICE_KEY)
+        .is_some());
+
+    let master_key_db = storage.fetch_or_create_master_key();
+    let storage_key_db = storage.fetch_storage_service_key();
+
+    assert_eq!(master_key, master_key_db);
+    assert_eq!(storage_key, storage_key_db);
+
+    // Part 2: Store (overwrite) and load a generated master key and a derived storage key
+
+    let master_key = MasterKey::generate();
+    let storage_key = StorageServiceKey::from_master_key(&master_key);
+
+    storage.write_setting(
+        Settings::MASTER_KEY,
+        &BASE64_STANDARD.encode(master_key.inner),
+    );
+    storage.write_setting(
+        Settings::STORAGE_SERVICE_KEY,
+        &BASE64_STANDARD.encode(storage_key.inner),
+    );
+
+    let master_key_db = storage.fetch_or_create_master_key();
+    let storage_key_db = storage.fetch_storage_service_key();
+
+    assert_eq!(master_key, master_key_db);
+    assert_eq!(storage_key, storage_key_db);
+
+    // Part 3: Delete the setting and verify that they are gone
+
+    storage.delete_setting(Settings::MASTER_KEY);
+    storage.delete_setting(Settings::STORAGE_SERVICE_KEY);
+
+    assert!(storage.read_setting(Settings::MASTER_KEY).is_none());
+    assert!(storage
+        .read_setting(Settings::STORAGE_SERVICE_KEY)
+        .is_none());
 }

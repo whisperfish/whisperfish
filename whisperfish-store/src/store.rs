@@ -71,6 +71,7 @@ impl Settings {
 
 // XXX Should this be in libsignal_service?
 const MASTER_KEY_LEN: usize = 32;
+#[derive(Eq, PartialEq, Debug)]
 pub struct MasterKey {
     pub inner: [u8; MASTER_KEY_LEN],
 }
@@ -99,6 +100,7 @@ impl StorageServiceKey {
 
 // XXX Should this be in libsignal_service?
 const STORAGE_KEY_LEN: usize = 32;
+#[derive(Eq, PartialEq, Debug)]
 pub struct StorageServiceKey {
     pub inner: [u8; STORAGE_KEY_LEN],
 }
