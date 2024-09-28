@@ -1,3 +1,4 @@
+use libsignal_service::proto::CallMessage;
 use ringrtc::{
     lite::http,
     native::{CallStateHandler, GroupUpdateHandler, SignalingSender},
@@ -24,7 +25,92 @@ impl SignalingSender for WhisperfishSignalingSender {
         receiver_device_id: Option<ringrtc::common::DeviceId>,
         message: ringrtc::core::signaling::Message,
     ) -> ringrtc::common::Result<()> {
-        todo!()
+        let mut message = match message {
+            ringrtc::core::signaling::Message::Offer(offer) => {
+                use libsignal_service::proto::call_message::offer::Type as OfferType;
+                use libsignal_service::proto::call_message::Offer;
+                let offer = Offer {
+                    id: Some(call_id.into()),
+                    r#type: Some(
+                        match offer.call_media_type {
+                            ringrtc::common::CallMediaType::Audio => OfferType::OfferAudioCall,
+                            ringrtc::common::CallMediaType::Video => OfferType::OfferVideoCall,
+                        }
+                        .into(),
+                    ),
+                    opaque: Some(offer.opaque),
+                };
+                CallMessage {
+                    offer: Some(offer),
+                    ..Default::default()
+                }
+            }
+            ringrtc::core::signaling::Message::Answer(answer) => {
+                use libsignal_service::proto::call_message::Answer;
+                let answer = Answer {
+                    id: Some(call_id.into()),
+                    opaque: Some(answer.opaque),
+                };
+                CallMessage {
+                    answer: Some(answer),
+                    ..Default::default()
+                }
+            }
+            ringrtc::core::signaling::Message::Ice(ice) => {
+                use libsignal_service::proto::call_message::IceUpdate;
+                let ice_update: Vec<_> = ice
+                    .candidates
+                    .into_iter()
+                    .map(|c| IceUpdate {
+                        id: Some(call_id.into()),
+                        opaque: Some(c.opaque),
+                    })
+                    .collect();
+                CallMessage {
+                    ice_update,
+                    ..Default::default()
+                }
+            }
+            ringrtc::core::signaling::Message::Hangup(hangup) => {
+                use libsignal_service::proto::call_message::hangup::Type as ProtoHangupType;
+                use libsignal_service::proto::call_message::Hangup;
+                use ringrtc::core::signaling::HangupType;
+                let (ty, device_id) = hangup.to_type_and_device_id();
+                let hangup = Hangup {
+                    id: Some(call_id.into()),
+                    device_id,
+                    r#type: Some(
+                        match ty {
+                            HangupType::Normal => ProtoHangupType::HangupNormal,
+                            HangupType::AcceptedOnAnotherDevice => ProtoHangupType::HangupAccepted,
+                            HangupType::DeclinedOnAnotherDevice => ProtoHangupType::HangupDeclined,
+                            HangupType::BusyOnAnotherDevice => ProtoHangupType::HangupBusy,
+                            HangupType::NeedPermission => ProtoHangupType::HangupNeedPermission,
+                        }
+                        .into(),
+                    ),
+                };
+                CallMessage {
+                    hangup: Some(hangup),
+                    ..Default::default()
+                }
+            }
+            ringrtc::core::signaling::Message::Busy => {
+                use libsignal_service::proto::call_message::Busy;
+                let busy = Busy {
+                    id: Some(call_id.into()),
+                };
+                CallMessage {
+                    busy: Some(busy),
+                    ..Default::default()
+                }
+            }
+        };
+        message.destination_device_id = receiver_device_id;
+
+        todo!("Send {:?}", message);
+
+        Ok(())
     }
 
     fn send_call_message(
@@ -33,7 +119,7 @@ impl SignalingSender for WhisperfishSignalingSender {
         message: Vec<u8>,
         urgency: ringrtc::core::group_call::SignalingMessageUrgency,
     ) -> ringrtc::common::Result<()> {
-        todo!()
+        todo!("group calls")
     }
 
     fn send_call_message_to_group(
@@ -43,7 +129,7 @@ impl SignalingSender for WhisperfishSignalingSender {
         urgency: ringrtc::core::group_call::SignalingMessageUrgency,
         recipients_override: std::collections::HashSet<ringrtc::lite::sfu::UserId>,
     ) -> ringrtc::common::Result<()> {
-        todo!()
+        todo!("group calls")
     }
 }
 
