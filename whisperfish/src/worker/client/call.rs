@@ -383,6 +383,19 @@ impl super::ClientActor {
         busy: Busy,
     ) {
         tracing::info!("{} is busy.", peer);
+        let Some(call_id) = busy.id.map(CallId::from) else {
+            tracing::warn!("Busy message did not have a call ID. Ignoring.");
+            return;
+        };
+        self.call_state
+            .manager
+            .received_busy(
+                call_id,
+                ReceivedBusy {
+                    sender_device_id: metadata.sender_device,
+                },
+            )
+            .expect("handled busy message");
     }
 
     #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
