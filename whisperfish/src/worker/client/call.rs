@@ -11,7 +11,9 @@ use ringrtc::{
     common::CallId,
     core::{
         call_manager::CallManager,
-        signaling::{IceCandidate, ReceivedAnswer, ReceivedIce, ReceivedOffer},
+        signaling::{
+            IceCandidate, ReceivedAnswer, ReceivedBusy, ReceivedHangup, ReceivedIce, ReceivedOffer,
+        },
     },
     lite::http::DelegatingClient,
 };
@@ -407,6 +409,36 @@ impl super::ClientActor {
         peer: &Recipient,
         hangup: Hangup,
     ) {
+        use libsignal_service::proto::call_message::hangup::Type as ProtoHangupType;
+        use ringrtc::core::signaling::Hangup;
+
         tracing::info!("{} hung up.", peer);
+        let Some(call_id) = hangup.id.map(CallId::from) else {
+            tracing::warn!("Hangup message did not have a call ID. Ignoring.");
+            return;
+        };
+        let hangup = match hangup.r#type() {
+            ProtoHangupType::HangupNormal => Hangup::Normal,
+            ProtoHangupType::HangupAccepted => Hangup::AcceptedOnAnotherDevice(
+                hangup.device_id.expect("device_id set for accepted hangup") as u32,
+            ),
+            ProtoHangupType::HangupDeclined => Hangup::DeclinedOnAnotherDevice(
+                hangup.device_id.expect("device_id set for declined hangup") as u32,
+            ),
+            ProtoHangupType::HangupBusy => Hangup::BusyOnAnotherDevice(
+                hangup.device_id.expect("device_id set for busy hangup") as u32,
+            ),
+            ProtoHangupType::HangupNeedPermission => Hangup::NeedPermission(hangup.device_id),
+        };
+        self.call_state
+            .manager
+            .received_hangup(
+                call_id,
+                ReceivedHangup {
+                    sender_device_id: metadata.sender_device,
+                    hangup,
+                },
+            )
+            .expect("handled hangup message");
     }
 }
