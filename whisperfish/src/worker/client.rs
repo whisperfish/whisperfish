@@ -493,7 +493,8 @@ impl ClientActor {
         message_ids: Vec<i32>,
     ) {
         let storage = self.storage.as_ref().unwrap();
-        let messages = storage.fetch_messages_by_ids(message_ids);
+        let mut messages = storage.fetch_messages_by_ids(message_ids);
+        messages.retain(|m| m.message_type.is_none());
         let mut sessions: HashMap<i32, orm::Session> = HashMap::new();
 
         // Iterate over messages

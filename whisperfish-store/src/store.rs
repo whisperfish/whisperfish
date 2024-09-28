@@ -1529,7 +1529,8 @@ impl<O: Observable> Storage<O> {
                 id.eq_any(msg_ids)
                     .and(schema::messages::expires_in.is_not_null())
                     .and(schema::messages::expires_in.gt(0))
-                    .and(schema::messages::expiry_started.is_null()),
+                    .and(schema::messages::expiry_started.is_null())
+                    .and(schema::messages::message_type.eq::<Option<MessageType>>(None)),
             )
             .set(schema::messages::expiry_started.eq(Some(chrono::Utc::now().naive_utc())))
             .returning((schema::messages::id, schema::messages::session_id))

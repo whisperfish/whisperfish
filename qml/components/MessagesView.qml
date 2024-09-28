@@ -267,8 +267,8 @@ SilicaListView {
 
         property bool messageLoaded: loader.status === Loader.Ready
 
-        property int messageId: !isServiceMessage ? model.id : -1
-        property bool messageRead: !isServiceMessage ? model.isRead === true : true
+        property int messageId: model.id
+        property bool messageRead: model.isRead
         property int messageExpiresIn: !isServiceMessage ? model.expiresIn : -1
         property bool messageExpiring: !isServiceMessage ? model.expiryStarted > 0 : true
 
