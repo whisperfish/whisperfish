@@ -11,7 +11,9 @@ use std::future::Future;
 use std::sync::Arc;
 use whisperfish_store::config::SignalConfig;
 use whisperfish_store::orm::{Receipt, Recipient, StoryType, UnidentifiedAccessMode};
-use whisperfish_store::{naive_chrono_to_millis, GroupV1, NewMessage};
+use whisperfish_store::{
+    naive_chrono_to_millis, GroupV1, MasterKey, NewMessage, StorageServiceKey,
+};
 
 #[rstest]
 #[tokio::test]
@@ -1217,4 +1219,27 @@ async fn settings_table() {
     assert_eq!(storage.read_setting(k1), Some(v1));
     assert_eq!(storage.read_setting(k2), Some(v2));
     assert_eq!(storage.read_setting(k3), Some(v3));
+}
+
+#[test]
+fn derive_storage_key_from_master_key() {
+    use base64::prelude::*;
+
+    // This test passed with actual 'masterKey' and 'storageKey' values taken
+    // from Signal Desktop v7.23.0 database at 2024-09-08 after linking it with Signal Andoid.
+
+    let master_key_bytes = BASE64_STANDARD
+        .decode("9hquLIIZmom8fHF7H8pbUAreawmPLEqli5ceJ94pFkU=")
+        .unwrap();
+    let storage_key_bytes = BASE64_STANDARD
+        .decode("QMgZ5RGTLFTr4u/J6nypaJX6DKDlSgMw8vmxU6gxnvI=")
+        .unwrap();
+    assert_eq!(master_key_bytes.len(), 32);
+    assert_eq!(storage_key_bytes.len(), 32);
+
+    let master_key = MasterKey::from_slice(&master_key_bytes).unwrap();
+    let storage_key = StorageServiceKey::from_master_key(&master_key);
+
+    assert_eq!(master_key.inner, master_key_bytes.as_slice());
+    assert_eq!(storage_key.inner, storage_key_bytes.as_slice());
 }

@@ -60,6 +60,7 @@ anyhow = "1.0"
 prost-build = "0.13"
 
 [dev-dependencies]
+base64 = "0.21"
 # Git version for async tests. 0.6.5 will contain this feature,
 # so revert to crates.io on release
 criterion = "0.5"

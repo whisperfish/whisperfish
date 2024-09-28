@@ -4700,6 +4700,7 @@ dependencies = [
  "aes",
  "anyhow",
  "async-trait",
+ "base64",
  "bincode",
  "cbc",
  "chrono",
