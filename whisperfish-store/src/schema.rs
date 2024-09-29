@@ -132,6 +132,7 @@ diesel::table! {
         original_message_id -> Nullable<Integer>,
         revision_number -> Integer,
         message_type -> Nullable<MessageTypeMapping>,
+        expire_timer_version -> Integer,
     }
 }
 
@@ -199,6 +200,7 @@ diesel::table! {
         is_muted -> Bool,
         draft -> Nullable<Text>,
         expiring_message_timeout -> Nullable<Integer>,
+        expire_timer_version -> Integer,
     }
 }
 

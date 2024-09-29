@@ -58,6 +58,7 @@ fn fetch_augmented_messages(c: &mut Criterion) {
                     body_ranges: None,
                     message_type: None,
                     edit: None,
+                    expire_timer_version: 1,
                 });
                 for _attachment in 0..attachments {
                     storage.register_attachment(msg.id, AttachmentPointer::default());

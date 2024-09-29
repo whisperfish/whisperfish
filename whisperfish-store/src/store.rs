@@ -138,6 +138,7 @@ pub struct NewMessage<'a> {
     pub is_unidentified: bool,
     pub quote_timestamp: Option<u64>,
     pub expires_in: Option<std::time::Duration>,
+    pub expire_timer_version: i32,
     pub story_type: StoryType,
     pub body_ranges: Option<Vec<u8>>,
     pub message_type: Option<MessageType>,
@@ -161,6 +162,7 @@ impl NewMessage<'_> {
             is_unidentified: false,
             quote_timestamp: None,
             expires_in: None,
+            expire_timer_version: 1,
             story_type: StoryType::None,
             body_ranges: None,
             message_type: None,
@@ -183,6 +185,7 @@ impl NewMessage<'_> {
             is_unidentified: false,
             quote_timestamp: None,
             expires_in: None,
+            expire_timer_version: 1,
             story_type: StoryType::None,
             body_ranges: None,
             message_type: None,
@@ -1055,20 +1058,43 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn update_expiration_timer(&self, session_id: i32, timer: Option<u32>) {
+    /// Update the expiration timer for a session.
+    ///
+    /// Returns the new expiration time version
+    // TODO: accept Duration instead of i32 seconds
+    #[tracing::instrument(skip(self))]
+    pub fn update_expiration_timer(
+        &self,
+        session_id: i32,
+        timer: Option<u32>,
+        version: Option<u32>,
+    ) -> i32 {
         // Carry out the update only if the timer changes
         use crate::schema::sessions::dsl::*;
-        let affected_rows = diesel::update(sessions)
-            .set((expiring_message_timeout.eq(timer.map(|i| i as i32)),))
+        let session = self
+            .fetch_session_by_id(session_id)
+            .expect("existing session for expiration update");
+        let new_version = if session.is_group() {
+            1
+        } else if let Some(version) = version {
+            version as i32
+        } else {
+            session.expire_timer_version + 1
+        };
+        let mut affected_rows: Vec<i32> = diesel::update(sessions)
+            .set((
+                expiring_message_timeout.eq(timer.map(|i| i as i32)),
+                expire_timer_version.eq(new_version),
+            ))
             .filter(id.eq(session_id))
-            .execute(&mut *self.db())
+            .returning(expire_timer_version)
+            .load(&mut *self.db())
             .expect("existing record updated");
-
-        if affected_rows > 0 {
-            self.observe_update(sessions, session_id);
+        if affected_rows.len() != 1 {
+            panic!("Message expiry update should only have changed a single session")
         }
+        affected_rows.pop().unwrap()
     }
-
     #[tracing::instrument(
         skip(self, rcpt_e164, new_profile_key),
         fields(
@@ -2517,6 +2543,7 @@ impl<O: Observable> Storage<O> {
                     message_type.eq(new_message.message_type.clone()),
                     quote_id.eq(quoted_message_id),
                     expires_in.eq(new_message.expires_in.map(|x| x.as_secs() as i32)),
+                    expire_timer_version.eq(new_message.expire_timer_version),
                     story_type.eq(new_message.story_type as i32),
                     message_ranges.eq(&new_message.body_ranges),
                     original_message_id.eq(edit_id),

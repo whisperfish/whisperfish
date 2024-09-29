@@ -725,7 +725,10 @@ impl ClientActor {
 
             // XXX handle group.group_change like a real client
             if let Some(_change) = group.group_change.as_ref() {
-                tracing::warn!("We're not handling raw group changes yet. Let's trigger a group refresh for now.");
+                tracing::error!(
+                    "Group change messages are not supported yet. Please upvote bug #706"
+                );
+                tracing::warn!("Let's trigger a group refresh for now.");
                 ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
             } else if !storage.group_v2_exists(&store_v2) {
                 tracing::info!(
@@ -780,7 +783,8 @@ impl ClientActor {
             storage.fetch_or_insert_session_by_recipient_id(recipient.id)
         });
 
-        storage.update_expiration_timer(session.id, msg.expire_timer);
+        let expire_timer_version =
+            storage.update_expiration_timer(session.id, msg.expire_timer, msg.expire_timer_version);
 
         let expires_in = session.expiring_message_timeout;
 
@@ -801,6 +805,7 @@ impl ClientActor {
             is_read: is_sync_sent,
             quote_timestamp: msg.quote.as_ref().and_then(|x| x.id),
             expires_in,
+            expire_timer_version,
             story_type: StoryType::None,
             server_guid: metadata.server_guid,
             body_ranges,
@@ -1497,6 +1502,7 @@ impl Handler<QueueMessage> for ClientActor {
             text: msg.message,
             quote_timestamp: quote.map(|msg| naive_chrono_to_millis(msg.server_timestamp)),
             expires_in: session.expiring_message_timeout,
+            expire_timer_version: session.expire_timer_version,
             ..crate::store::NewMessage::new_outgoing()
         });
 
@@ -1543,16 +1549,27 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
             .fetch_session_by_id(msg.session_id)
             .expect("existing session when sending");
 
+        // TODO: #706
+        if session.is_group() {
+            tracing::error!("Group change messages and group message expiry timer changes are not supported yet. Please upvote bugs #706 and #707");
+            return;
+        }
+
+        let expire_timer_version = storage.update_expiration_timer(
+            session.id,
+            msg.expires_in.map(|x| x.as_secs() as u32),
+            None,
+        );
+
         let msg = storage.create_message(&crate::store::NewMessage {
             session_id: session.id,
             source_addr: storage.fetch_self_service_address_aci(),
             expires_in: msg.expires_in,
+            expire_timer_version,
             flags: DataMessageFlags::ExpirationTimerUpdate as i32,
             message_type: Some(MessageType::ExpirationTimerUpdate),
             ..crate::store::NewMessage::new_outgoing()
         });
-
-        storage.update_expiration_timer(session.id, msg.expires_in.map(|x| x as u32));
 
         ctx.notify(SendMessage(msg.id));
     }
@@ -1631,6 +1648,7 @@ impl Handler<SendMessage> for ClientActor {
                     profile_key: storage.fetch_self_recipient_profile_key(),
                     quote,
                     expire_timer: msg.expires_in.map(|x| x as u32),
+                    expire_timer_version: Some(msg.expire_timer_version as u32),
                     body_ranges: crate::store::body_ranges::to_vec(msg.message_ranges.as_ref()),
                     ..Default::default()
                 };
@@ -2007,10 +2025,23 @@ impl Handler<SendReaction> for ClientActor {
             async move {
                 let group_v2 = session.group_context_v2();
 
+                let expire_timer = if session.is_group() {
+                    None
+                } else {
+                    session.expiring_message_timeout.map(|t| t.as_secs() as _)
+                };
+                let expire_timer_version = if session.is_group() {
+                    None
+                } else {
+                    Some(session.expire_timer_version as _)
+                };
+
                 let content = DataMessage {
                     group_v2,
                     timestamp: Some(now.timestamp_millis() as u64),
                     required_protocol_version: Some(4), // Source: received emoji from Signal Android
+                    expire_timer,
+                    expire_timer_version,
                     reaction: Some(Reaction {
                         emoji: Some(emoji.clone()),
                         remove: Some(remove),
@@ -2422,6 +2453,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                                 session_id: session.id,
                                 source_addr: Some(dest_address),
                                 message_type: Some(MessageType::IdentityKeyChange),
+                                // XXX: Message timer?
                                 ..crate::store::NewMessage::new_incoming()
                             };
                             storage.create_message(&msg);
