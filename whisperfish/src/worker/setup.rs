@@ -220,10 +220,24 @@ impl SetupWorker {
             .collect();
 
         let reg = if is_primary {
-            SetupWorker::register_as_primary(app.clone(), &config, password, storage_password)
-                .await?
+            let result =
+                SetupWorker::register_as_primary(app.clone(), &config, password, storage_password)
+                    .await?;
+
+            use libsignal_service::master_key::MasterKeyStore;
+
+            // FIXME: tracing::info doesn't seem to work here - why?
+            let master_key = MasterKey::generate();
+            let storage_key = StorageServiceKey::from_master_key(&master_key);
+            result.storage.store_master_key(Some(&master_key));
+            result.storage.store_storage_service_key(Some(&storage_key));
+
+            result
         } else {
             SetupWorker::register_as_secondary(app.clone(), password, storage_password).await?
+
+            // XXX Trigger Keys sync request to primary device
+            // XXX Trigger Config sync request to primary device
         };
 
         let storage = reg.storage;
@@ -247,19 +261,6 @@ impl SetupWorker {
                 &profile_key,
                 TrustLevel::Certain,
             );
-        }
-
-        if is_primary {
-            use libsignal_service::prelude::MasterKeyStore;
-
-            let master_key = MasterKey::generate();
-            let storage_key = StorageServiceKey::from_master_key(&master_key);
-
-            storage.store_master_key(Some(&master_key));
-            storage.store_storage_service_key(Some(&storage_key));
-        } else {
-            // XXX Trigger Keys sync request to primary device
-            // XXX Trigger Config sync request to primary device
         }
 
         app.app_state.pinned().borrow().set_storage(storage);
