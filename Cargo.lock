@@ -727,20 +727,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "create-store"
-version = "0.6.0-dev"
-dependencies = [
- "actix-rt",
- "anyhow",
- "clap 3.2.25",
- "libsignal-protocol",
- "libsignal-service",
- "rand 0.8.5",
- "uuid",
- "whisperfish",
-]
-
-[[package]]
 name = "criterion"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1094,24 +1080,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4f9bfee30e4dedf0ab8b422f03af778d9612b63f502710fc500a334ebe2de645"
 dependencies = [
  "simd-adler32",
-]
-
-[[package]]
-name = "fetch-signal-attachment"
-version = "0.6.0-dev"
-dependencies = [
- "actix-rt",
- "anyhow",
- "clap 3.2.25",
- "futures",
- "hex",
- "libsignal-service",
- "libsignal-service-hyper",
- "mime",
- "mime_classifier",
- "tracing",
- "uuid",
- "whisperfish",
 ]
 
 [[package]]
@@ -4614,6 +4582,7 @@ dependencies = [
  "cc",
  "chrono",
  "cipher",
+ "clap 3.2.25",
  "cmake",
  "cpp",
  "cpp_build",
@@ -4649,6 +4618,7 @@ dependencies = [
  "qttypes",
  "rand 0.8.5",
  "regex",
+ "rpassword",
  "rstest",
  "rstest_reuse",
  "rustlegraph",
@@ -4667,21 +4637,6 @@ dependencies = [
  "whisperfish-model-macro",
  "whisperfish-store",
  "zkgroup",
-]
-
-[[package]]
-name = "whisperfish-migration-dry-run"
-version = "0.6.0-dev"
-dependencies = [
- "anyhow",
- "diesel",
- "diesel_migrations",
- "hex",
- "rpassword",
- "scrypt",
- "tracing",
- "whisperfish",
- "whisperfish-store",
 ]
 
 [[package]]

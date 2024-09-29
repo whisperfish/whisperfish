@@ -1,12 +1,9 @@
 [workspace]
 resolver = "2"
 members = [
-    "create-store",
-    "fetch-signal-attachment",
     "harbour-whisperfish",
     "whisperfish",
     "whisperfish-store",
-    "whisperfish-migration-dry-run",
     "whisperfish-model-macro",
 ]
 
