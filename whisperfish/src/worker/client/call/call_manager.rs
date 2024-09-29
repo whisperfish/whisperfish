@@ -110,7 +110,11 @@ impl SignalingSender for WhisperfishSignalingSender {
         };
         message.destination_device_id = receiver_device_id;
 
-        todo!("Send {:?}", message);
+        self.client.do_send(crate::worker::client::SendCallMessage {
+            recipient_id: recipient_id.parse().expect("recipient id is an u32"),
+            content: message,
+            urgent: false, // TODO: urgency is a param
+        });
 
         Ok(())
     }

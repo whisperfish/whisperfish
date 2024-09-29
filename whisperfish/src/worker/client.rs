@@ -22,6 +22,7 @@ use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
 use libsignal_service::proto::sync_message::Configuration;
 use libsignal_service::proto::sync_message::Keys;
 use libsignal_service::proto::sync_message::Sent;
+use libsignal_service::proto::CallMessage;
 use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::push_service::ServiceIdType;
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
@@ -155,6 +156,15 @@ impl Display for QueueExpiryUpdate {
 ///
 /// This will construct a DataMessage, and pass it to a DeliverMessage
 pub struct SendMessage(pub i32);
+
+/// Delivers a CallMessage to a session.
+#[derive(Message)]
+#[rtype(result = "Result<Vec<SendMessageResult>, anyhow::Error>")]
+struct SendCallMessage {
+    content: CallMessage,
+    recipient_id: i32,
+    urgent: bool,
+}
 
 /// Delivers a constructed `T: Into<ContentBody>` to a session.
 ///
@@ -1988,6 +1998,44 @@ impl Handler<SendTypingNotification> for ClientActor {
                 };
             }),
         )
+    }
+}
+
+impl Handler<SendCallMessage> for ClientActor {
+    type Result = ResponseFuture<anyhow::Result<Vec<SendMessageResult>>>;
+
+    #[tracing::instrument(skip(self, ctx))]
+    fn handle(
+        &mut self,
+        SendCallMessage {
+            recipient_id,
+            content,
+            urgent,
+        }: SendCallMessage,
+        ctx: &mut Self::Context,
+    ) -> Self::Result {
+        // XXX handle urgent flag
+        let storage = self.storage.as_mut().unwrap();
+        let session = storage
+            .fetch_session_by_recipient_id(recipient_id)
+            .expect("existing session for recipient");
+
+        // Outgoing messages should not have sender_recipient_id set
+        let now = Utc::now();
+        self.transient_timestamps
+            .insert(now.timestamp_millis() as u64);
+
+        let addr = ctx.address();
+        Box::pin(async move {
+            addr.send(DeliverMessage {
+                content,
+                online: false,
+                timestamp: now.timestamp_millis() as u64,
+                session_type: session.r#type,
+                for_story: false,
+            })
+            .await?
+        })
     }
 }
 
