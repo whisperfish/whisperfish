@@ -100,11 +100,13 @@ impl super::ClientActor {
         .count();
 
         let _span =
-            tracing::trace_span!("handle_call_message", sender = ?metadata.sender, destination_id, ?metadata, ?call).entered();
+            tracing::trace_span!("handle_call_message", sender = ?metadata.sender, destination_id)
+                .entered();
 
         if num_fields_set > 1 {
             tracing::warn!(
-                "CallMessage has more than one field set.  Handling all, but this is unexpected."
+                call=?call,
+                "CallMessage has more than one field set.  Handling all, but this is unexpected.",
             );
         }
 
@@ -348,7 +350,10 @@ impl super::ClientActor {
         actix::spawn(handle_answer);
     }
 
-    #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
+    #[tracing::instrument(
+        skip(self, _ctx, metadata, _destination_device_id, ice_updates),
+        fields(number_ice_updates = ice_updates.len()),
+    )]
     fn handle_call_ice(
         &mut self,
         _ctx: &mut <Self as actix::Actor>::Context,

@@ -145,13 +145,15 @@ struct WhisperfishStateHandler {
 }
 
 impl CallStateHandler for WhisperfishStateHandler {
+    #[tracing::instrument(skip(self))]
     fn handle_call_state(
         &self,
         remote_peer_id: &str,
         call_id: ringrtc::common::CallId,
         state: ringrtc::native::CallState,
     ) -> ringrtc::common::Result<()> {
-        todo!()
+        tracing::warn!("unimplemented call state");
+        anyhow::bail!("unimplemented call state")
     }
 
     fn handle_remote_audio_state(
@@ -178,11 +180,13 @@ impl CallStateHandler for WhisperfishStateHandler {
         todo!()
     }
 
+    #[tracing::instrument(skip(self))]
     fn handle_network_route(
         &self,
         remote_peer_id: &str,
         network_route: ringrtc::webrtc::peer_connection_observer::NetworkRoute,
     ) -> ringrtc::common::Result<()> {
+        tracing::warn!("unimplemented network route");
         todo!()
     }
 
