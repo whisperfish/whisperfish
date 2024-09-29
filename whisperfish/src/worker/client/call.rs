@@ -2,7 +2,7 @@ use chrono::Utc;
 use libsignal_service::{
     content::Metadata,
     proto::{
-        call_message::{offer, Answer, Busy, Hangup, IceUpdate, Offer, Opaque},
+        call_message::{offer, Answer, Busy, Hangup, IceUpdate, Offer},
         CallMessage,
     },
     push_service::DEFAULT_DEVICE_ID,
