@@ -391,45 +391,51 @@ impl ClientActor {
         let service = self.authenticated_service();
         let mut u_service = self.unauthenticated_service();
 
-        let ws = self.ws.clone().unwrap();
+        let ws = self.ws.clone();
         let cipher = self.cipher(ServiceIdType::AccountIdentity);
         let local_aci = self.self_aci.unwrap();
         let local_pni = self.self_pni.unwrap();
         let device_id = self.config.get_device_id();
 
         async move {
-            let aci_key = storage
-                .aci_storage()
-                .get_identity_key_pair()
-                .await
-                .expect("aci identity set");
-            let pni_key = storage
-                .pni_storage()
-                .get_identity_key_pair()
-                .await
-                .map_err(|_e| {
-                    tracing::warn!(
-                        "PNI identity key pair not set. Assuming PNI is not initialized."
-                    );
-                })
-                .ok();
+            if let Some(ws) = ws {
+                let aci_key = storage
+                    .aci_storage()
+                    .get_identity_key_pair()
+                    .await
+                    .expect("aci identity set");
+                let pni_key = storage
+                    .pni_storage()
+                    .get_identity_key_pair()
+                    .await
+                    .map_err(|_e| {
+                        tracing::warn!(
+                            "PNI identity key pair not set. Assuming PNI is not initialized."
+                        );
+                    })
+                    .ok();
 
-            let u_ws = u_service
-                .ws("/v1/websocket/", "/v1/keepalive", &[], None)
-                .await?;
-            Ok(MessageSender::new(
-                ws,
-                u_ws,
-                service,
-                cipher,
-                rand::thread_rng(),
-                storage.aci_or_pni(ServiceIdType::AccountIdentity), // In what cases do we use the
-                local_aci,
-                local_pni,
-                aci_key,
-                pni_key,
-                device_id,
-            ))
+                let u_ws = u_service
+                    .ws("/v1/websocket/", "/v1/keepalive", &[], None)
+                    .await?;
+                Ok(MessageSender::new(
+                    ws,
+                    u_ws,
+                    service,
+                    cipher,
+                    rand::thread_rng(),
+                    storage.aci_or_pni(ServiceIdType::AccountIdentity), // In what cases do we use the
+                    local_aci,
+                    local_pni,
+                    aci_key,
+                    pni_key,
+                    device_id,
+                ))
+            } else {
+                Err(ServiceError::SendError {
+                    reason: "SignalWebSocket is not open".into(),
+                })
+            }
         }
     }
 
