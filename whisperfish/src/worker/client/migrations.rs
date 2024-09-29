@@ -1,8 +1,10 @@
 /// Migrations related to groupv2
 mod groupv2;
+/// Migration to ensure the primary device Whisperfish has master key and storage service key
+mod master_key;
 /// Migration to remove R@ reactions and dump them in the correct table.
 mod parse_reactions;
-/// MIgration to initialize PNI
+/// Migration to initialize PNI
 mod pni;
 /// Migration to ensure our own UUID is known.
 ///
@@ -10,6 +12,7 @@ mod pni;
 mod whoami;
 
 use self::groupv2::*;
+use self::master_key::*;
 use self::parse_reactions::*;
 use self::pni::*;
 use self::whoami::*;
@@ -41,6 +44,7 @@ pub(super) struct MigrationState {
     pub self_profile_ready: bool,
     pub reactions_ready: bool,
     pub pni_distributed: bool,
+    pub check_master_key: bool,
 }
 
 impl MigrationState {
@@ -52,6 +56,7 @@ impl MigrationState {
             self_profile_ready: false,
             reactions_ready: false,
             pni_distributed: false,
+            check_master_key: false,
         }
     }
 
@@ -65,6 +70,7 @@ impl MigrationState {
             self_profile_ready = %self.self_profile_ready,
             reactions_ready = %self.reactions_ready,
             pni_distributed = %self.pni_distributed,
+            check_master_key = %self.check_master_key,
             "is_ready",
         );
         self.whoami
@@ -73,6 +79,7 @@ impl MigrationState {
             && self.self_profile_ready
             && self.reactions_ready
             && self.pni_distributed
+            && self.check_master_key
     }
 
     /// Signals true if the client is ready to connect.
@@ -145,6 +152,7 @@ impl MigrationCondVar {
     notify_method_for_var!(notify_self_profile_ready -> self_profile_ready);
     notify_method_for_var!(notify_reactions_ready -> reactions_ready);
     notify_method_for_var!(notify_pni_distributed -> pni_distributed);
+    notify_method_for_var!(notify_check_master_key -> check_master_key);
 }
 
 impl ClientActor {
@@ -155,6 +163,7 @@ impl ClientActor {
         ctx.notify(RefreshOwnProfile { force: false });
         ctx.notify(ParseOldReaction);
         ctx.notify(InitializePni);
+        ctx.notify(CheckMasterKey);
     }
 }
 
