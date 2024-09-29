@@ -152,8 +152,12 @@ impl CallStateHandler for WhisperfishStateHandler {
         call_id: ringrtc::common::CallId,
         state: ringrtc::native::CallState,
     ) -> ringrtc::common::Result<()> {
-        tracing::warn!("unimplemented call state");
-        anyhow::bail!("unimplemented call state")
+        self.client.do_send(crate::worker::client::call::CallState {
+            remote_peer_id: remote_peer_id.parse().expect("remote peer id is an u32"),
+            call_id: call_id.into(),
+            state,
+        });
+        Ok(())
     }
 
     fn handle_remote_audio_state(

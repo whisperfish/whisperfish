@@ -1,3 +1,4 @@
+use actix::Handler;
 use chrono::Utc;
 use libsignal_service::{
     content::Metadata,
@@ -23,7 +24,7 @@ use whisperfish_store::{millis_to_naive_chrono, store::orm::Recipient};
 mod call_manager;
 
 #[derive(Debug)]
-pub(super) struct CallState {
+pub(super) struct WhisperfishCallManager {
     sub_state: CallSubState,
 
     call_setup_states: HashMap<CallId, CallSetupState>,
@@ -31,7 +32,7 @@ pub(super) struct CallState {
     manager: CallManager<ringrtc::native::NativePlatform>,
 }
 
-impl CallState {
+impl WhisperfishCallManager {
     pub fn new(client: actix::Addr<super::ClientActor>) -> Self {
         let platform = call_manager::new_native_platform(client).unwrap();
         let client = DelegatingClient::new(call_manager::WhisperfishRingRtcHttpClient::default());
@@ -69,10 +70,10 @@ enum CallSubState {
     Idle,
 }
 
-impl CallState {}
+impl WhisperfishCallManager {}
 
 impl super::ClientActor {
-    fn call_state(&mut self) -> &mut CallState {
+    fn call_state(&mut self) -> &mut WhisperfishCallManager {
         self.call_state.as_mut().expect("initialized call state")
     }
 
@@ -451,5 +452,104 @@ impl super::ClientActor {
                 },
             )
             .expect("handled hangup message");
+    }
+}
+
+#[derive(actix::Message)]
+#[rtype(result = "()")]
+pub struct CallState {
+    remote_peer_id: i32,
+    call_id: CallId,
+    state: ringrtc::native::CallState,
+}
+
+#[derive(actix::Message)]
+#[rtype(result = "()")]
+pub struct AnswerCall {
+    pub call_id: CallId,
+}
+
+#[derive(actix::Message)]
+#[rtype(result = "()")]
+pub struct HangupCall {
+    pub call_id: CallId,
+}
+
+#[derive(actix::Message)]
+#[rtype(result = "()")]
+pub struct InitiateCall {
+    pub recipient_id: i32,
+    pub r#type: ringrtc::common::CallMediaType,
+}
+
+impl Handler<CallState> for super::ClientActor {
+    type Result = ();
+
+    #[tracing::instrument(skip(self, _ctx))]
+    fn handle(
+        &mut self,
+        CallState {
+            remote_peer_id,
+            call_id,
+            state,
+        }: CallState,
+        _ctx: &mut Self::Context,
+    ) -> Self::Result {
+        // TODO: events should get injected in the database from here too.
+        self.calls_model
+            .pinned()
+            .borrow_mut()
+            .handle_state(remote_peer_id, call_id, state);
+    }
+}
+
+impl Handler<AnswerCall> for super::ClientActor {
+    type Result = ();
+
+    #[tracing::instrument(skip(self, _ctx))]
+    fn handle(
+        &mut self,
+        AnswerCall { call_id }: AnswerCall,
+        _ctx: &mut Self::Context,
+    ) -> Self::Result {
+        tracing::info!("accepting call");
+        self.call_state()
+            .manager
+            .accept_call(call_id)
+            .expect("answered call");
+    }
+}
+
+impl Handler<HangupCall> for super::ClientActor {
+    type Result = ();
+
+    #[tracing::instrument(skip(self, _ctx))]
+    fn handle(
+        &mut self,
+        HangupCall { call_id }: HangupCall,
+        _ctx: &mut Self::Context,
+    ) -> Self::Result {
+        tracing::info!("declining call");
+        self.call_state().manager.hangup().expect("declined call");
+    }
+}
+
+impl Handler<InitiateCall> for super::ClientActor {
+    type Result = ();
+
+    #[tracing::instrument(skip(self, _ctx))]
+    fn handle(
+        &mut self,
+        InitiateCall {
+            recipient_id,
+            r#type,
+        }: InitiateCall,
+        _ctx: &mut Self::Context,
+    ) -> Self::Result {
+        tracing::info!("initiating call");
+        let device_id = self.config.get_device_id().into();
+        self.call_state()
+            .manager
+            .call(recipient_id.to_string(), r#type, device_id);
     }
 }

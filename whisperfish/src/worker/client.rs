@@ -46,6 +46,7 @@ use crate::actor::SendReaction;
 use crate::actor::SessionActor;
 use crate::config::SettingsBridge;
 use crate::gui::StorageReady;
+use crate::model::Calls;
 use crate::model::DeviceModel;
 use crate::platform::QmlApp;
 use crate::store::orm::UnidentifiedAccessMode;
@@ -54,6 +55,7 @@ use crate::store::Storage;
 use crate::worker::client::unidentified::CertType;
 use actix::prelude::*;
 use anyhow::Context;
+pub use call::*;
 use chrono::prelude::*;
 use futures::prelude::*;
 use libsignal_service::configuration::SignalServers;
@@ -277,6 +279,7 @@ pub struct ClientWorker {
 /// ClientActor keeps track of the connection state.
 pub struct ClientActor {
     inner: QObjectBox<ClientWorker>,
+    calls_model: QObjectBox<Calls>,
 
     migration_state: MigrationCondVar,
 
@@ -301,7 +304,7 @@ pub struct ClientActor {
 
     settings: SettingsBridge,
 
-    call_state: Option<call::CallState>,
+    call_state: Option<call::WhisperfishCallManager>,
 }
 
 fn whisperfish_device_capabilities() -> DeviceCapabilities {
@@ -325,8 +328,10 @@ impl ClientActor {
     ) -> Result<Self, anyhow::Error> {
         let inner = QObjectBox::new(ClientWorker::default());
         let device_model = QObjectBox::new(DeviceModel::default());
+        let calls_model = QObjectBox::new(Calls::new());
         app.set_object_property("ClientWorker".into(), inner.pinned());
         app.set_object_property("DeviceModel".into(), device_model.pinned());
+        app.set_object_property("calls".into(), calls_model.pinned());
 
         inner.pinned().borrow_mut().session_actor = Some(session_actor);
         inner.pinned().borrow_mut().device_model = Some(device_model);
@@ -336,6 +341,7 @@ impl ClientActor {
 
         Ok(Self {
             inner,
+            calls_model,
             migration_state: MigrationCondVar::new(),
             unidentified_certificates: UnidentifiedCertificates::default(),
             credentials: None,
@@ -1302,7 +1308,11 @@ impl Actor for ClientActor {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         self.inner.pinned().borrow_mut().actor = Some(ctx.address());
-        self.call_state = Some(call::CallState::new(ctx.address()));
+        self.call_state = Some(call::WhisperfishCallManager::new(ctx.address()));
+        self.calls_model
+            .pinned()
+            .borrow_mut()
+            .set_client(ctx.address());
     }
 
     fn stopped(&mut self, ctx: &mut Self::Context) {

@@ -323,6 +323,23 @@ ApplicationWindow
     }
 
     Connections {
+        // Calls is a global, injected by the client actor.
+        target: calls
+
+        onRingingChanged: {
+            if (calls.ringing) {
+                pageStack.push(
+                    Qt.resolvedUrl("pages/RingingDialog.qml"), { }
+                )
+            }
+        }
+
+        onHungUp: {
+            console.log("Hung up notification")
+        }
+    }
+
+    Connections {
         target: Qt.application
         onStateChanged: {
             if(Qt.application.state == Qt.ApplicationActive) {
