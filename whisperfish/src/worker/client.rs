@@ -291,7 +291,7 @@ pub struct ClientActor {
 
     settings: SettingsBridge,
 
-    call_state: call::CallState,
+    call_state: Option<call::CallState>,
 }
 
 fn whisperfish_device_capabilities() -> DeviceCapabilities {
@@ -349,7 +349,7 @@ impl ClientActor {
 
             settings: SettingsBridge::default(),
 
-            call_state: call::CallState::default(),
+            call_state: None,
         })
     }
 
@@ -1292,6 +1292,7 @@ impl Actor for ClientActor {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         self.inner.pinned().borrow_mut().actor = Some(ctx.address());
+        self.call_state = Some(call::CallState::new(ctx.address()));
     }
 
     fn stopped(&mut self, ctx: &mut Self::Context) {

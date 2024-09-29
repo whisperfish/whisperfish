@@ -31,10 +31,10 @@ pub(super) struct CallState {
     manager: CallManager<ringrtc::native::NativePlatform>,
 }
 
-impl Default for CallState {
-    fn default() -> Self {
+impl CallState {
+    pub fn new(client: actix::Addr<super::ClientActor>) -> Self {
+        let platform = call_manager::new_native_platform(client).unwrap();
         let client = DelegatingClient::new(call_manager::WhisperfishRingRtcHttpClient::default());
-        let platform = call_manager::new_native_platform().unwrap();
         Self {
             sub_state: CallSubState::default(),
             call_setup_states: HashMap::new(),
@@ -72,6 +72,10 @@ enum CallSubState {
 impl CallState {}
 
 impl super::ClientActor {
+    fn call_state(&mut self) -> &mut CallState {
+        self.call_state.as_mut().expect("initialized call state")
+    }
+
     /// Dispatch the CallMessage to the appropriate handlers.
     pub(super) fn handle_call_message(
         &mut self,
@@ -141,12 +145,14 @@ impl super::ClientActor {
             let sent_time = millis_to_naive_chrono(metadata.timestamp).and_utc();
             let age = Utc::now() - sent_time;
 
-            self.call_state
+            let local_device_id = self.config.get_device_id();
+
+            self.call_state()
                 .manager
                 .received_call_message(
                     metadata.sender.uuid.to_string().into_bytes(),
                     metadata.sender_device,
-                    self.config.get_device_id().into(),
+                    local_device_id.into(),
                     opaque,
                     age.to_std().unwrap_or(std::time::Duration::ZERO),
                 )
@@ -178,11 +184,11 @@ impl super::ClientActor {
         };
         let _span = tracing::trace_span!("processing offer with id", call_id = ?call_id).entered();
 
-        if let Some(setup) = self.call_state.call_setup_states.remove(&call_id) {
+        if let Some(setup) = self.call_state().call_setup_states.remove(&call_id) {
             tracing::warn!(?setup, "Call setup already exists. replacing.");
         }
 
-        let storage = self.storage.as_ref().expect("initialized storage");
+        let storage = self.storage.clone().expect("initialized storage");
 
         let setup = CallSetupState {
             enable_video_on_create: false,
@@ -223,7 +229,7 @@ impl super::ClientActor {
             }
         };
         let remote_peer = peer.id.to_string();
-        let mut call_manager = self.call_state.manager.clone();
+        let mut call_manager = self.call_state().manager.clone();
 
         let protocol_address = peer
             .to_service_address()
@@ -270,7 +276,7 @@ impl super::ClientActor {
         actix::spawn(receive_offer);
 
         assert!(self
-            .call_state
+            .call_state()
             .call_setup_states
             .insert(call_id, setup)
             .is_none());
@@ -291,7 +297,7 @@ impl super::ClientActor {
             return;
         };
 
-        let mut manager = self.call_state.manager.clone();
+        let mut manager = self.call_state().manager.clone();
 
         let Some(opaque) = answer.opaque else {
             tracing::warn!("Call answer did not have opaque data. Ignoring.");
@@ -368,7 +374,7 @@ impl super::ClientActor {
                 },
                 sender_device_id: metadata.sender_device,
             };
-            self.call_state
+            self.call_state()
                 .manager
                 .received_ice(call_id, received_ice)
                 .expect("handled ICE update");
@@ -389,7 +395,7 @@ impl super::ClientActor {
             tracing::warn!("Busy message did not have a call ID. Ignoring.");
             return;
         };
-        self.call_state
+        self.call_state()
             .manager
             .received_busy(
                 call_id,
@@ -430,7 +436,7 @@ impl super::ClientActor {
             ),
             ProtoHangupType::HangupNeedPermission => Hangup::NeedPermission(hangup.device_id),
         };
-        self.call_state
+        self.call_state()
             .manager
             .received_hangup(
                 call_id,

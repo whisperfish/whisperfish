@@ -14,8 +14,10 @@ impl http::Delegate for WhisperfishRingRtcHttpClient {
     }
 }
 
-#[derive(Default, Debug)]
-struct WhisperfishSignalingSender {}
+#[derive(Debug)]
+struct WhisperfishSignalingSender {
+    client: actix::Addr<crate::worker::ClientActor>,
+}
 
 impl SignalingSender for WhisperfishSignalingSender {
     fn send_signaling(
@@ -133,8 +135,10 @@ impl SignalingSender for WhisperfishSignalingSender {
     }
 }
 
-#[derive(Default, Debug)]
-struct WhisperfishStateHandler {}
+#[derive(Debug)]
+struct WhisperfishStateHandler {
+    client: actix::Addr<crate::worker::ClientActor>,
+}
 
 impl CallStateHandler for WhisperfishStateHandler {
     fn handle_call_state(
@@ -196,8 +200,10 @@ impl CallStateHandler for WhisperfishStateHandler {
     }
 }
 
-#[derive(Default, Debug)]
-struct WhisperfishGroupUpdateHandler {}
+#[derive(Debug)]
+struct WhisperfishGroupUpdateHandler {
+    client: actix::Addr<crate::worker::ClientActor>,
+}
 
 impl GroupUpdateHandler for WhisperfishGroupUpdateHandler {
     fn handle_group_update(
@@ -208,12 +214,18 @@ impl GroupUpdateHandler for WhisperfishGroupUpdateHandler {
     }
 }
 
-pub fn new_native_platform() -> anyhow::Result<ringrtc::native::NativePlatform> {
+pub fn new_native_platform(
+    client: actix::Addr<crate::worker::ClientActor>,
+) -> anyhow::Result<ringrtc::native::NativePlatform> {
     let connection_factory = PeerConnectionFactory::new(&AudioConfig::default(), false)?;
-    let signaling_sender = Box::new(WhisperfishSignalingSender::default());
+    let signaling_sender = Box::new(WhisperfishSignalingSender {
+        client: client.clone(),
+    });
     const SHOULD_ASSUME_MESSAGES_SENT: bool = true;
-    let state_handler = Box::new(WhisperfishStateHandler::default());
-    let group_handler = Box::new(WhisperfishGroupUpdateHandler::default());
+    let state_handler = Box::new(WhisperfishStateHandler {
+        client: client.clone(),
+    });
+    let group_handler = Box::new(WhisperfishGroupUpdateHandler { client });
 
     Ok(ringrtc::native::NativePlatform::new(
         connection_factory,
