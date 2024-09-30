@@ -233,7 +233,7 @@ pub fn new_native_platform(
     let signaling_sender = Box::new(WhisperfishSignalingSender {
         client: client.clone(),
     });
-    const SHOULD_ASSUME_MESSAGES_SENT: bool = true;
+    const SHOULD_ASSUME_MESSAGES_SENT: bool = false;
     let state_handler = Box::new(WhisperfishStateHandler {
         client: client.clone(),
     });
