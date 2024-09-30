@@ -2014,7 +2014,7 @@ dependencies = [
 [[package]]
 name = "libsignal-service"
 version = "0.1.0"
-source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=main#f99ff8324378ea653dbd5aa0c5d55e4414b34e23"
+source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=main#9c77576022ff577ad2601536803fd198b2cf63ba"
 dependencies = [
  "aes",
  "aes-gcm",
@@ -2049,7 +2049,7 @@ dependencies = [
 [[package]]
 name = "libsignal-service-hyper"
 version = "0.1.0"
-source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=main#f99ff8324378ea653dbd5aa0c5d55e4414b34e23"
+source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=main#9c77576022ff577ad2601536803fd198b2cf63ba"
 dependencies = [
  "async-trait",
  "async-tungstenite",
@@ -2592,7 +2592,7 @@ dependencies = [
  "bincode",
  "either",
  "fnv",
- "itertools 0.10.5",
+ "itertools 0.12.1",
  "lazy_static",
  "nom",
  "quick-xml",
@@ -2828,7 +2828,7 @@ checksum = "f8650aabb6c35b860610e9cff5dc1af886c9e25073b7b1712a68972af4281302"
 dependencies = [
  "bytes",
  "heck 0.5.0",
- "itertools 0.10.5",
+ "itertools 0.12.1",
  "log",
  "multimap",
  "once_cell",
@@ -2861,7 +2861,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "acf0c195eebb4af52c752bec4f52f645da98b6e92077a04110c7f349477ae5ac"
 dependencies = [
  "anyhow",
- "itertools 0.10.5",
+ "itertools 0.12.1",
  "proc-macro2",
  "quote",
  "syn 2.0.76",
