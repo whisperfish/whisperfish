@@ -950,7 +950,7 @@ impl ClientActor {
         }
     }
 
-    #[tracing::instrument(level = "debug", skip(self))]
+    #[tracing::instrument(level = "debug", skip(self, recipient), fields(recipient = %recipient))]
     fn handle_message_not_sealed(&mut self, recipient: ServiceAddress) {
         // TODO: if the contact should have our profile key already, send it again.
         //       if the contact should not yet have our profile key, this is ok, and we

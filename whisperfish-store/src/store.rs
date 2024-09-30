@@ -883,7 +883,7 @@ impl<O: Observable> Storage<O> {
             .ok()
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, addr), fields(addr = %addr))]
     pub fn fetch_recipient(&self, addr: &ServiceAddress) -> Option<orm::Recipient> {
         use crate::schema::recipients::dsl::*;
 
@@ -1325,7 +1325,7 @@ impl<O: Observable> Storage<O> {
         recipient
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, addr), fields(addr = %addr))]
     pub fn fetch_or_insert_recipient_by_address(&self, addr: &ServiceAddress) -> orm::Recipient {
         use crate::schema::recipients::dsl::*;
 
@@ -1447,7 +1447,7 @@ impl<O: Observable> Storage<O> {
     /// Marks the messages with the certain timestamps as read by a certain person.
     ///
     /// This is called when a recipient sends a ReceiptMessage with some number of timestamps.
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, sender), fields(sender = %sender))]
     pub fn mark_messages_read(
         &self,
         sender: ServiceAddress,
@@ -1583,7 +1583,7 @@ impl<O: Observable> Storage<O> {
     }
 
     /// Marks the messages with the certain timestamps as delivered to a certain person.
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, receiver_addr), fields(receiver_addr = %receiver_addr))]
     pub fn mark_messages_delivered(
         &self,
         receiver_addr: ServiceAddress,
@@ -2332,7 +2332,7 @@ impl<O: Observable> Storage<O> {
         }
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, service_address), fields(service_address = %service_address))]
     pub fn mark_recipient_registered(
         &self,
         service_address: ServiceAddress,
