@@ -162,7 +162,7 @@ impl AsRef<str> for MessageType {
     }
 }
 
-#[derive(diesel_derive_enum::DbEnum, Debug, Clone, PartialEq, Eq)]
+#[derive(diesel_derive_enum::DbEnum, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CallType {
     Audio,
     Video,
@@ -170,7 +170,8 @@ pub enum CallType {
     AdHoc,
 }
 
-#[derive(diesel_derive_enum::DbEnum, Debug, Clone, PartialEq, Eq)]
+#[derive(diesel_derive_enum::DbEnum, Debug, Clone, Copy, PartialEq, Eq)]
+// TODO: rename to CallEventType
 pub enum EventType {
     Ongoing,
     Accepted,
@@ -181,6 +182,12 @@ pub enum EventType {
     Ringing,
     Declined,
     OutgoingRing,
+}
+
+impl EventType {
+    pub fn is_missed_call(&self) -> bool {
+        *self == Self::Missed // || self == Self::MissedNotificationProfile
+    }
 }
 
 #[derive(Queryable, Identifiable, Debug, Clone, PartialEq, Eq)]
