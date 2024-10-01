@@ -20,6 +20,7 @@ struct WhisperfishSignalingSender {
 }
 
 impl SignalingSender for WhisperfishSignalingSender {
+    #[tracing::instrument(skip(self, message))]
     fn send_signaling(
         &self,
         recipient_id: &str,
@@ -31,6 +32,9 @@ impl SignalingSender for WhisperfishSignalingSender {
             ringrtc::core::signaling::Message::Offer(offer) => {
                 use libsignal_service::proto::call_message::offer::Type as OfferType;
                 use libsignal_service::proto::call_message::Offer;
+
+                tracing::debug!("sending offer");
+
                 let offer = Offer {
                     id: Some(call_id.into()),
                     r#type: Some(
@@ -49,6 +53,9 @@ impl SignalingSender for WhisperfishSignalingSender {
             }
             ringrtc::core::signaling::Message::Answer(answer) => {
                 use libsignal_service::proto::call_message::Answer;
+
+                tracing::debug!("sending answer");
+
                 let answer = Answer {
                     id: Some(call_id.into()),
                     opaque: Some(answer.opaque),
@@ -60,6 +67,9 @@ impl SignalingSender for WhisperfishSignalingSender {
             }
             ringrtc::core::signaling::Message::Ice(ice) => {
                 use libsignal_service::proto::call_message::IceUpdate;
+
+                tracing::debug!("sending ICE");
+
                 let ice_update: Vec<_> = ice
                     .candidates
                     .into_iter()
@@ -77,6 +87,9 @@ impl SignalingSender for WhisperfishSignalingSender {
                 use libsignal_service::proto::call_message::hangup::Type as ProtoHangupType;
                 use libsignal_service::proto::call_message::Hangup;
                 use ringrtc::core::signaling::HangupType;
+
+                tracing::debug!("sending hangup");
+
                 let (ty, device_id) = hangup.to_type_and_device_id();
                 let hangup = Hangup {
                     id: Some(call_id.into()),
@@ -99,6 +112,9 @@ impl SignalingSender for WhisperfishSignalingSender {
             }
             ringrtc::core::signaling::Message::Busy => {
                 use libsignal_service::proto::call_message::Busy;
+
+                tracing::debug!("sending busy");
+
                 let busy = Busy {
                     id: Some(call_id.into()),
                 };

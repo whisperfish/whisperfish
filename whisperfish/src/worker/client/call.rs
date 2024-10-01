@@ -10,7 +10,7 @@ use libsignal_service::{
     push_service::DEFAULT_DEVICE_ID,
 };
 use ringrtc::{
-    common::CallId,
+    common::{CallConfig, CallId},
     core::{
         call_manager::CallManager,
         signaling::{
@@ -18,6 +18,7 @@ use ringrtc::{
         },
     },
     lite::http::DelegatingClient,
+    native::NativeCallContext,
 };
 use std::collections::HashMap;
 use whisperfish_store::millis_to_naive_chrono;
@@ -582,10 +583,20 @@ impl Handler<AnswerCall> for super::ClientActor {
         _ctx: &mut Self::Context,
     ) -> Self::Result {
         tracing::info!("accepting call");
-        self.call_state()
+        let call_state = self.call_state();
+        call_state
             .manager
             .accept_call(call_id)
             .expect("answered call");
+        // call_state
+        //     .manager
+        //     .proceed(
+        //         call_id,
+        //         NativeCallContext::new(),
+        //         CallConfig::default(),
+        //         None, // audio level interval
+        //     )
+        //     .expect("proceed with call");
     }
 }
 
@@ -619,6 +630,7 @@ impl Handler<InitiateCall> for super::ClientActor {
         let device_id = self.config.get_device_id().into();
         self.call_state()
             .manager
-            .call(recipient_id.to_string(), r#type, device_id);
+            .call(recipient_id.to_string(), r#type, device_id)
+            .expect("initiate call");
     }
 }
