@@ -99,7 +99,6 @@ impl Display for GroupV2Member {
 
 #[derive(diesel_derive_enum::DbEnum, Debug, Clone, PartialEq, Eq)]
 pub enum MessageType {
-    // XXX: add calls
     Unsupported,
     ProfileKeyUpdate,
     EndSession,
@@ -109,6 +108,35 @@ pub enum MessageType {
     GroupCallUpdate,
     ExpirationTimerUpdate,
     IdentityReset,
+
+    // Call stuff
+    IncomingAudioCall,
+    OutgoingAudioCall,
+    MissedAudioCall,
+
+    IncomingVideoCall,
+    OutgoingVideoCall,
+    MissedVideoCall,
+
+    GroupCall,
+}
+
+impl MessageType {
+    // Kotlin: CallTable.Call.getMessageType
+    pub fn from_call_type(ty: CallType, is_outgoing: bool, event: EventType) -> Self {
+        match (ty, is_outgoing) {
+            (CallType::Group, _) | (CallType::AdHoc, _) => Self::GroupCall,
+            // Incoming missed
+            (CallType::Audio, false) if event.is_missed_call() => Self::MissedAudioCall,
+            (CallType::Video, false) if event.is_missed_call() => Self::MissedVideoCall,
+            // Incoming not missed
+            (CallType::Audio, false) => Self::IncomingAudioCall,
+            (CallType::Video, false) => Self::IncomingVideoCall,
+            // Outgoing
+            (CallType::Audio, true) => Self::OutgoingAudioCall,
+            (CallType::Video, true) => Self::OutgoingVideoCall,
+        }
+    }
 }
 
 impl AsRef<str> for MessageType {
@@ -123,6 +151,13 @@ impl AsRef<str> for MessageType {
             MessageType::GroupCallUpdate => "group_call_update",
             MessageType::ExpirationTimerUpdate => "expiration_timer_update",
             MessageType::IdentityReset => "identity_reset",
+            MessageType::IncomingAudioCall => "incoming_audio_call",
+            MessageType::OutgoingAudioCall => "outgoing_audio_call",
+            MessageType::MissedAudioCall => "missed_audio_call",
+            MessageType::IncomingVideoCall => "incoming_video_call",
+            MessageType::OutgoingVideoCall => "outgoing_video_call",
+            MessageType::MissedVideoCall => "missed_video_call",
+            MessageType::GroupCall => "group_call",
         }
     }
 }
