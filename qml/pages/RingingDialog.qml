@@ -22,7 +22,7 @@ Dialog {
 
     Connections {
         target: calls
-        onHungUp: {
+        onHungup: {
             ringtone.stop()
             mce.setCallState(mce.callStateNone)
             pageStack.pop()

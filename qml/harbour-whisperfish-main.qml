@@ -334,7 +334,7 @@ ApplicationWindow
             }
         }
 
-        onHungUp: {
+        onHungup: {
             console.log("Hung up notification")
         }
     }

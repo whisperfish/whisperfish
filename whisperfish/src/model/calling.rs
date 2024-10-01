@@ -27,7 +27,7 @@ pub struct Calls {
     ringing: qt_property!(i32; NOTIFY ringing_changed),
 
     ringing_changed: qt_signal!(),
-    hung_up: qt_signal!(),
+    hungup: qt_signal!(),
 
     answer: qt_method!(fn(&self)),
     hangup: qt_method!(fn(&self)),
@@ -46,7 +46,7 @@ impl Calls {
             direction: -1,
 
             ringing_changed: Default::default(),
-            hung_up: Default::default(),
+            hungup: Default::default(),
             answer: Default::default(),
             hangup: Default::default(),
             call: Default::default(),
@@ -113,7 +113,7 @@ impl Calls {
                 self.direction = -1;
 
                 self.ringing_changed();
-                self.hung_up();
+                self.hungup();
             }
             ringrtc::native::CallState::Ringing
             | ringrtc::native::CallState::Connected
