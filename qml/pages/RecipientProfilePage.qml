@@ -134,16 +134,39 @@ Page {
                 text: qsTrId("whisperfish-profile-page-unregistered-profile")
             }
 
-            TextField {
-                id: profileFullName
-                readOnly: true
-                visible: text.length > 0
-                width: parent.width
-                anchors.horizontalCenter: parent.horizontalCenter
-                font.pixelSize: Theme.fontSizeLarge
-                // Translation in ProfilePage.qml
-                label: qsTrId("whisperfish-profile-joined-name")
-                text: recipient.name
+            Row {
+                spacing: Theme.paddingMedium
+                anchors.left: parent.left
+                width: parent.width - Theme.horizontalPageMargin
+
+                TextField {
+                    id: profileFullName
+                    readOnly: true
+                    visible: text.length > 0
+                    width: parent.width - voiceCallButton.width - videoCallButton.width - 2*Theme.paddingMedium
+                    font.pixelSize: Theme.fontSizeLarge
+                    // Translation in ProfilePage.qml
+                    label: qsTrId("whisperfish-profile-joined-name")
+                    text: recipient.name
+                }
+
+                IconButton {
+                    id: voiceCallButton
+                    anchors.verticalCenter: parent.verticalCenter
+                    icon.source: "image://theme/icon-m-call"
+                    onClicked: {
+                        calls.call(recipient.id, false);
+                    }
+                }
+
+                IconButton {
+                    id: videoCallButton
+                    anchors.verticalCenter: parent.verticalCenter
+                    icon.source: "image://theme/icon-m-video"
+                    onClicked: {
+                        calls.call(recipient.id, true);
+                    }
+                }
             }
 
             TextField {

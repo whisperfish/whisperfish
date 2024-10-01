@@ -338,28 +338,6 @@ Page {
                 text: qsTrId("whisperfish-own-profile-help-text")
             }
 
-            ButtonLayout {
-                id: initiateCallLayout
-
-                Button {
-                    //: Button to start a voice call
-                    //% "Voice call"
-                    text: qsTrId("whisperfish-calling-start-voice-call")
-                    onClicked: {
-                        calls.call(recipient.id, false);
-                    }
-                }
-
-                Button {
-                    //: Button to start a video call
-                    //% "Video call"
-                    text: qsTrId("whisperfish-calling-start-video-call")
-                    onClicked: {
-                        calls.call(recipient.id, true);
-                    }
-                }
-            }
-
             Button {
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Button to open link to Signal help page about profiles
