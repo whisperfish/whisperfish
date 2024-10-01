@@ -1,3 +1,4 @@
+use crate::store::orm::{self, Recipient};
 use actix::Handler;
 use chrono::Utc;
 use libsignal_service::{
@@ -19,7 +20,7 @@ use ringrtc::{
     lite::http::DelegatingClient,
 };
 use std::collections::HashMap;
-use whisperfish_store::{millis_to_naive_chrono, store::orm::Recipient};
+use whisperfish_store::millis_to_naive_chrono;
 
 mod call_manager;
 
@@ -457,6 +458,7 @@ impl super::ClientActor {
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
+// XXX Should probably also include the arrival/server timestamp!
 pub struct CallState {
     remote_peer_id: i32,
     call_id: CallId,
@@ -482,6 +484,13 @@ pub struct InitiateCall {
     pub r#type: ringrtc::common::CallMediaType,
 }
 
+fn call_type_from_call_media_type(media_type: &ringrtc::common::CallMediaType) -> orm::CallType {
+    match media_type {
+        ringrtc::common::CallMediaType::Audio => orm::CallType::Audio,
+        ringrtc::common::CallMediaType::Video => orm::CallType::Video,
+    }
+}
+
 impl Handler<CallState> for super::ClientActor {
     type Result = ();
 
@@ -495,7 +504,67 @@ impl Handler<CallState> for super::ClientActor {
         }: CallState,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        // TODO: events should get injected in the database from here too.
+        // Map the call state to the message and call storage
+        let storage = self.storage.as_ref().expect("initialized storage");
+        match &state {
+            ringrtc::native::CallState::Incoming(media) => {
+                storage.insert_one_to_one_call(
+                    call_id.into(),
+                    // XXX
+                    Utc::now().naive_utc(),
+                    remote_peer_id,
+                    call_type_from_call_media_type(media),
+                    false,
+                    orm::EventType::Ringing,
+                    // XXX: unidentified?
+                    false,
+                );
+            }
+            ringrtc::native::CallState::Outgoing(media) => {
+                storage.insert_one_to_one_call(
+                    call_id.into(),
+                    // XXX
+                    Utc::now().naive_utc(),
+                    remote_peer_id,
+                    call_type_from_call_media_type(media),
+                    true,
+                    orm::EventType::Ringing,
+                    // XXX: unidentified?
+                    false,
+                );
+            }
+            ringrtc::native::CallState::Ended(reason) => {
+                // TODO: insert updates
+                match reason {
+                    ringrtc::native::EndReason::LocalHangup
+                    | ringrtc::native::EndReason::RemoteHangup
+                    | ringrtc::native::EndReason::RemoteHangupNeedPermission
+                    | ringrtc::native::EndReason::Declined
+                    | ringrtc::native::EndReason::Busy
+                    | ringrtc::native::EndReason::Glare
+                    | ringrtc::native::EndReason::ReCall
+                    | ringrtc::native::EndReason::ReceivedOfferExpired { age: _ }
+                    | ringrtc::native::EndReason::ReceivedOfferWhileActive
+                    | ringrtc::native::EndReason::ReceivedOfferWithGlare
+                    | ringrtc::native::EndReason::SignalingFailure
+                    | ringrtc::native::EndReason::GlareFailure
+                    | ringrtc::native::EndReason::ConnectionFailure
+                    | ringrtc::native::EndReason::InternalFailure
+                    | ringrtc::native::EndReason::Timeout
+                    | ringrtc::native::EndReason::AcceptedOnAnotherDevice
+                    | ringrtc::native::EndReason::DeclinedOnAnotherDevice
+                    | ringrtc::native::EndReason::BusyOnAnotherDevice => {
+                        tracing::warn!("Call ended, unprocessed reason: {:?}", reason);
+                    }
+                }
+            }
+            ringrtc::native::CallState::Ringing
+            | ringrtc::native::CallState::Connected
+            | ringrtc::native::CallState::Connecting
+            | ringrtc::native::CallState::Concluded => tracing::error!("unimplemented call state"),
+        }
+
+        // Map the call state to the UI
         self.calls_model
             .pinned()
             .borrow_mut()
