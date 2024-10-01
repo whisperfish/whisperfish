@@ -252,6 +252,22 @@ impl Message {
     }
 }
 
+#[derive(Queryable, Identifiable, Debug, Clone, PartialEq, Eq)]
+pub struct Call {
+    pub id: i32,
+    pub call_id: i32,
+    pub message_id: Option<i32>,
+    pub session_id: Option<i32>,
+    pub r#type: CallType,
+    pub is_outbound: bool,
+    pub event: EventType,
+    pub timestamp: NaiveDateTime,
+    pub deletion_timestamp: Option<NaiveDateTime>,
+    pub is_read: bool,
+    pub local_joined: bool,
+    pub group_call_active: bool,
+}
+
 impl Display for Message {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match (&self.text, &self.quote_id) {
