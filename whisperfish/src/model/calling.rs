@@ -134,14 +134,18 @@ impl Calls {
     }
 
     pub fn answer(&self) {
-        self.client().do_send(AnswerCall {
-            call_id: self.call_id.unwrap(),
-        });
+        let Some(call_id) = self.call_id else {
+            tracing::error!("No call_id to answer");
+            return;
+        };
+        self.client().do_send(AnswerCall { call_id });
     }
 
     pub fn hangup(&self) {
-        self.client().do_send(HangupCall {
-            call_id: self.call_id.unwrap(),
-        });
+        let Some(call_id) = self.call_id else {
+            tracing::error!("No call_id to hangup");
+            return;
+        };
+        self.client().do_send(HangupCall { call_id });
     }
 }
