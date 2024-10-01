@@ -61,6 +61,7 @@ impl Interest {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Table {
     Attachments,
+    Calls,
     GroupV1Members,
     GroupV1s,
     GroupV2Members,
@@ -259,6 +260,7 @@ impl Table {
         }
         diesel_to_observation_table!(
             attachments => Attachments,
+            calls => Calls,
             group_v1_members => GroupV1Members,
             group_v1s => GroupV1s,
             group_v2_members => GroupV2Members,
