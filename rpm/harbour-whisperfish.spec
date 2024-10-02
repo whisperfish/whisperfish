@@ -149,13 +149,6 @@ export CXXFLAGS=$CFLAGS
 # export SB2_RUST_USE_REAL_FN=Yes
 # export SB2_RUST_NO_SPAWNVP=Yes
 
-%ifnarch %ix86
-export HOST_CC=host-cc
-export HOST_CXX=host-cxx
-export CC_i686_unknown_linux_gnu=$HOST_CC
-export CXX_i686_unknown_linux_gnu=$HOST_CXX
-%endif
-
 # Set meego cross compilers
 export PATH=/opt/cross/bin/:$PATH
 export CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER=armv7hl-meego-linux-gnueabi-gcc
