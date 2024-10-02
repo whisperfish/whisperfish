@@ -150,7 +150,6 @@ export CXXFLAGS=$CFLAGS
 # export SB2_RUST_NO_SPAWNVP=Yes
 
 # Set meego cross compilers
-export PATH=/opt/cross/bin/:$PATH
 export CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER=armv7hl-meego-linux-gnueabi-gcc
 export CC_armv7_unknown_linux_gnueabihf=armv7hl-meego-linux-gnueabi-gcc
 export CXX_armv7_unknown_linux_gnueabihf=armv7hl-meego-linux-gnueabi-g++
