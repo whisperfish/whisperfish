@@ -1145,6 +1145,23 @@ impl ClientActor {
                         }
                     }
                 }
+                if let Some(keys) = message.keys {
+                    handled = true;
+                    tracing::debug!("Sync Keys message");
+                    // Note: storage_key is deprecated; it's generated from master_key
+                    if let Some(bytes) = &keys.master {
+                        if let Ok(master_key) = MasterKey::from_slice(bytes) {
+                            storage.store_master_key(Some(&master_key));
+                            let storage_key = StorageServiceKey::from_master_key(&master_key);
+                            storage.store_storage_service_key(Some(&storage_key));
+                            tracing::info!("Keys sync message handled successfully");
+                        } else {
+                            tracing::error!("Keys sync message with invalid data");
+                        };
+                    } else {
+                        tracing::error!("Keys sync message without data");
+                    }
+                }
                 if !handled {
                     tracing::warn!("Sync message without known sync type");
                 }
