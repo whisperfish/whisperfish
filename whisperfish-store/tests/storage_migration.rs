@@ -357,7 +357,7 @@ async fn test_2024_09_attachment_tilde_migration() {
             .attachment_path
             .as_deref()
             .unwrap()
-            .starts_with("~")
+            .starts_with('~')
         {
             assert_ne!(absolute_path, path);
         } else {
