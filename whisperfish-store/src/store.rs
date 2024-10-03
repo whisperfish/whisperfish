@@ -886,7 +886,7 @@ impl<O: Observable> Storage<O> {
             .ok()
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, addr), fields(addr = %addr))]
     pub fn fetch_recipient(&self, addr: &ServiceAddress) -> Option<orm::Recipient> {
         use crate::schema::recipients::dsl::*;
 
@@ -1065,26 +1065,39 @@ impl<O: Observable> Storage<O> {
     ///
     /// Returns the new expiration time version
     // TODO: accept Duration instead of i32 seconds
-    pub fn update_expiration_timer(&self, session_id: i32, timer: Option<u32>) -> i32 {
+    #[tracing::instrument(skip(self))]
+    pub fn update_expiration_timer(
+        &self,
+        session_id: i32,
+        timer: Option<u32>,
+        version: Option<u32>,
+    ) -> i32 {
         // Carry out the update only if the timer changes
         use crate::schema::sessions::dsl::*;
-        // TODO: this timer update logic is incorrect!!
-        // TODO: groups don't have a timer version (and might not update timer version!)
-        let mut versions = diesel::update(sessions)
-            .set((expiring_message_timeout.eq(timer.map(|i| i as i32)),))
+        let session = self
+            .fetch_session_by_id(session_id)
+            .expect("existing session for expiration update");
+        let new_version = if session.is_group() {
+            1
+        } else if let Some(version) = version {
+            version as i32
+        } else {
+            session.expire_timer_version + 1
+        };
+        let mut affected_rows: Vec<i32> = diesel::update(sessions)
+            .set((
+                expiring_message_timeout.eq(timer.map(|i| i as i32)),
+                expire_timer_version.eq(new_version),
+            ))
             .filter(id.eq(session_id))
             .returning(expire_timer_version)
             .load(&mut *self.db())
             .expect("existing record updated");
-
-        let Some(version) = versions.pop() else {
-            panic!("exactly one version for a session_id");
-        };
-        self.observe_update(sessions, session_id);
-        assert!(versions.is_empty(), "exactly one version returned");
-        version
+        if affected_rows.len() != 1 {
+            panic!("Message expiry update should only have changed a single session")
+        }
+        affected_rows.pop().unwrap()
     }
-
     #[tracing::instrument(
         skip(self, rcpt_e164, new_profile_key),
         fields(
@@ -1315,7 +1328,7 @@ impl<O: Observable> Storage<O> {
         recipient
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, addr), fields(addr = %addr))]
     pub fn fetch_or_insert_recipient_by_address(&self, addr: &ServiceAddress) -> orm::Recipient {
         use crate::schema::recipients::dsl::*;
 
@@ -1437,7 +1450,7 @@ impl<O: Observable> Storage<O> {
     /// Marks the messages with the certain timestamps as read by a certain person.
     ///
     /// This is called when a recipient sends a ReceiptMessage with some number of timestamps.
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, sender), fields(sender = %sender))]
     pub fn mark_messages_read(
         &self,
         sender: ServiceAddress,
@@ -1545,7 +1558,8 @@ impl<O: Observable> Storage<O> {
                 id.eq_any(msg_ids)
                     .and(schema::messages::expires_in.is_not_null())
                     .and(schema::messages::expires_in.gt(0))
-                    .and(schema::messages::expiry_started.is_null()),
+                    .and(schema::messages::expiry_started.is_null())
+                    .and(schema::messages::message_type.eq::<Option<MessageType>>(None)),
             )
             .set(schema::messages::expiry_started.eq(Some(chrono::Utc::now().naive_utc())))
             .returning((schema::messages::id, schema::messages::session_id))
@@ -1572,7 +1586,7 @@ impl<O: Observable> Storage<O> {
     }
 
     /// Marks the messages with the certain timestamps as delivered to a certain person.
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, receiver_addr), fields(receiver_addr = %receiver_addr))]
     pub fn mark_messages_delivered(
         &self,
         receiver_addr: ServiceAddress,
@@ -2321,7 +2335,7 @@ impl<O: Observable> Storage<O> {
         }
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, service_address), fields(service_address = %service_address))]
     pub fn mark_recipient_registered(
         &self,
         service_address: ServiceAddress,

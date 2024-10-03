@@ -889,7 +889,7 @@ impl<O: Observable> Storage<O> {
     /// Removes the identity matching ServiceAddress (ACI or PNI) from the database.
     ///
     /// Does not lock the protocol storage.
-    #[tracing::instrument(level = "warn", skip(self))]
+    #[tracing::instrument(level = "warn", skip(self, addr), fields(addr = %addr))]
     pub fn delete_identity_key(&self, addr: &ServiceAddress) -> bool {
         use crate::schema::identity_records::dsl::*;
         let removed = diesel::delete(identity_records)
@@ -915,7 +915,7 @@ impl<O: Observable> Storage<O> {
 
 #[async_trait::async_trait(?Send)]
 impl<T: Identity<O>, O: Observable> SessionStoreExt for IdentityStorage<T, O> {
-    #[tracing::instrument(level = "trace", skip(self))]
+    #[tracing::instrument(level = "trace", skip(self, addr), fields(addr = %addr))]
     async fn get_sub_device_sessions(
         &self,
         addr: &ServiceAddress,
@@ -960,7 +960,7 @@ impl<T: Identity<O>, O: Observable> SessionStoreExt for IdentityStorage<T, O> {
         }
     }
 
-    #[tracing::instrument(level = "trace", skip(self))]
+    #[tracing::instrument(level = "trace", skip(self, addr), fields(addr = %addr))]
     async fn delete_all_sessions(
         &self,
         addr: &ServiceAddress,

@@ -500,7 +500,8 @@ impl ClientActor {
         message_ids: Vec<i32>,
     ) {
         let storage = self.storage.as_ref().unwrap();
-        let messages = storage.fetch_messages_by_ids(message_ids);
+        let mut messages = storage.fetch_messages_by_ids(message_ids);
+        messages.retain(|m| m.message_type.is_none());
         let mut sessions: HashMap<i32, orm::Session> = HashMap::new();
 
         // Iterate over messages
@@ -731,7 +732,10 @@ impl ClientActor {
 
             // XXX handle group.group_change like a real client
             if let Some(_change) = group.group_change.as_ref() {
-                tracing::warn!("We're not handling raw group changes yet. Let's trigger a group refresh for now.");
+                tracing::error!(
+                    "Group change messages are not supported yet. Please upvote bug #706"
+                );
+                tracing::warn!("Let's trigger a group refresh for now.");
                 ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
             } else if !storage.group_v2_exists(&store_v2) {
                 tracing::info!(
@@ -786,7 +790,8 @@ impl ClientActor {
             storage.fetch_or_insert_session_by_recipient_id(recipient.id)
         });
 
-        let expire_timer_version = storage.update_expiration_timer(session.id, msg.expire_timer);
+        let expire_timer_version =
+            storage.update_expiration_timer(session.id, msg.expire_timer, msg.expire_timer_version);
 
         let expires_in = session.expiring_message_timeout;
 
@@ -956,7 +961,7 @@ impl ClientActor {
         }
     }
 
-    #[tracing::instrument(level = "debug", skip(self))]
+    #[tracing::instrument(level = "debug", skip(self, recipient), fields(recipient = %recipient))]
     fn handle_message_not_sealed(&mut self, recipient: ServiceAddress) {
         // TODO: if the contact should have our profile key already, send it again.
         //       if the contact should not yet have our profile key, this is ok, and we
@@ -1572,8 +1577,17 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
             .fetch_session_by_id(msg.session_id)
             .expect("existing session when sending");
 
-        let expire_timer_version =
-            storage.update_expiration_timer(session.id, msg.expires_in.map(|x| x.as_secs() as u32));
+        // TODO: #706
+        if session.is_group() {
+            tracing::error!("Group change messages and group message expiry timer changes are not supported yet. Please upvote bugs #706 and #707");
+            return;
+        }
+
+        let expire_timer_version = storage.update_expiration_timer(
+            session.id,
+            msg.expires_in.map(|x| x.as_secs() as u32),
+            None,
+        );
 
         let msg = storage.create_message(&crate::store::NewMessage {
             session_id: session.id,
@@ -2039,11 +2053,23 @@ impl Handler<SendReaction> for ClientActor {
             async move {
                 let group_v2 = session.group_context_v2();
 
+                let expire_timer = if session.is_group() {
+                    None
+                } else {
+                    session.expiring_message_timeout.map(|t| t.as_secs() as _)
+                };
+                let expire_timer_version = if session.is_group() {
+                    None
+                } else {
+                    Some(session.expire_timer_version as _)
+                };
+
                 let content = DataMessage {
                     group_v2,
                     timestamp: Some(now.timestamp_millis() as u64),
-                    // XXX: Expire timer?
                     required_protocol_version: Some(4), // Source: received emoji from Signal Android
+                    expire_timer,
+                    expire_timer_version,
                     reaction: Some(Reaction {
                         emoji: Some(emoji.clone()),
                         remove: Some(remove),

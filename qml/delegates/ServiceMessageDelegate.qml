@@ -233,7 +233,7 @@ ListItem {
             width: parent.width
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.Wrap
-            text: _message
+            text: (SettingsBridge.debug_mode ? "[" + modelData.id + "] " : "") + _message
             color: Theme.secondaryHighlightColor
             font.pixelSize: _fontSize
             textFormat: Text.PlainText
