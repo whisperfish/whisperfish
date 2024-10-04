@@ -84,13 +84,13 @@ BuildRequires:  automake
 %{!?qtc_make:%define qtc_make make}
 
 %ifarch %arm
-%define targetdir %{_sourcedir}/../target/armv7-unknown-linux-gnueabihf/release
+%define targetdir target/armv7-unknown-linux-gnueabihf/release
 %endif
 %ifarch aarch64
-%define targetdir %{_sourcedir}/../target/aarch64-unknown-linux-gnu/release
+%define targetdir target/aarch64-unknown-linux-gnu/release
 %endif
 %ifarch %ix86
-%define targetdir %{_sourcedir}/../target/i686-unknown-linux-gnu/release
+%define targetdir target/i686-unknown-linux-gnu/release
 %endif
 
 %description
@@ -101,7 +101,7 @@ BuildRequires:  automake
 
 %build
 
-# export CARGO_HOME=%{_sourcedir}/../target
+# export CARGO_HOME=target
 
 rustc --version
 cargo --version
@@ -149,15 +149,7 @@ export CXXFLAGS=$CFLAGS
 # export SB2_RUST_USE_REAL_FN=Yes
 # export SB2_RUST_NO_SPAWNVP=Yes
 
-%ifnarch %ix86
-export HOST_CC=host-cc
-export HOST_CXX=host-cxx
-export CC_i686_unknown_linux_gnu=$HOST_CC
-export CXX_i686_unknown_linux_gnu=$HOST_CXX
-%endif
-
 # Set meego cross compilers
-export PATH=/opt/cross/bin/:$PATH
 export CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER=armv7hl-meego-linux-gnueabi-gcc
 export CC_armv7_unknown_linux_gnueabihf=armv7hl-meego-linux-gnueabi-gcc
 export CXX_armv7_unknown_linux_gnueabihf=armv7hl-meego-linux-gnueabi-g++
@@ -168,7 +160,7 @@ export CXX_aarch64_unknown_linux_gnu=aarch64-meego-linux-gnu-g++
 export AR_aarch64_unknown_linux_gnu=aarch64-meego-linux-gnu-ar
 
 # Hack for qmetaobject on QT_SELECT=5 platforms
-# export QMAKE=%{_sourcedir}/../rpm/qmake-sailfish
+# export QMAKE=rpm/qmake-sailfish
 
 # Hack for cross linking against dbus
 export PKG_CONFIG_ALLOW_CROSS_i686_unknown_linux_gnu=1
@@ -213,12 +205,12 @@ export GIT_VERSION=$(git describe  --exclude release,tag --dirty=-dirty)
 # Configure Cargo.toml
 # https://blog.rust-lang.org/2022/09/22/Rust-1.64.0.html#cargo-improvements-workspace-inheritance-and-multi-target-builds
 %if 0%{?cargo_version:1}
-for TOML in $(ls %{_sourcedir}/../Cargo.toml %{_sourcedir}/../*/Cargo.toml) ; do
+for TOML in $(ls Cargo.toml */Cargo.toml) ; do
   sed -i.bak "s/^version\s*=\s*\"[-\.0-9a-zA-Z]*\"$/version = \"%{cargo_version}\"/" "$TOML"
 done
 export CARGO_PROFILE_RELEASE_LTO=thin
 %endif
-cat %{_sourcedir}/../Cargo.toml
+cat Cargo.toml
 
 %if %{with lto}
 export CARGO_PROFILE_RELEASE_LTO=thin
@@ -236,7 +228,7 @@ TARGET_VERSION=$(grep VERSION_ID /etc/sailfish-release | cut -d "=" -f2)
 fi
 
 # Workaround a Scratchbox bug - /tmp/[...]/symbols.o not found
-export TMPDIR=${TMPDIR:-$(realpath "%{_sourcedir}/../.tmp")}
+export TMPDIR=${TMPDIR:-$(realpath ".tmp")}
 mkdir -p $TMPDIR
 
 cargo build \
@@ -246,18 +238,18 @@ cargo build \
           --no-default-features \
           $BINS \
           --features $FEATURES \
-          --manifest-path %{_sourcedir}/../Cargo.toml
+          %nil
 
 %if %{with sccache}
 sccache -s
 %endif
 
-lrelease -idbased %{_sourcedir}/../translations/*.ts
+lrelease -idbased translations/*.ts
 
 %install
 
 install -d %{buildroot}%{_datadir}/harbour-whisperfish/translations
-install -Dm 644 %{_sourcedir}/../translations/*.qm \
+install -Dm 644 translations/*.qm \
         %{buildroot}%{_datadir}/harbour-whisperfish/translations
 
 install -D %{targetdir}/harbour-whisperfish %{buildroot}%{_bindir}/harbour-whisperfish
@@ -271,27 +263,27 @@ install -D %{targetdir}/whisperfish-migration-dry-run %{buildroot}%{_bindir}/whi
 
 desktop-file-install \
   --dir %{buildroot}%{_datadir}/applications \
-   %{_sourcedir}/../harbour-whisperfish.desktop
+   harbour-whisperfish.desktop
 
-install -Dm 644 %{_sourcedir}/../harbour-whisperfish.profile \
+install -Dm 644 harbour-whisperfish.profile \
     %{buildroot}%{_sysconfdir}/sailjail/permissions/harbour-whisperfish.profile
-install -Dm 644 %{_sourcedir}/../harbour-whisperfish.privileges \
+install -Dm 644 harbour-whisperfish.privileges \
     %{buildroot}%{_datadir}/mapplauncherd/privileges.d/harbour-whisperfish.privileges
-install -Dm 644 %{_sourcedir}/../harbour-whisperfish-message.conf \
+install -Dm 644 harbour-whisperfish-message.conf \
     %{buildroot}%{_datadir}/lipstick/notificationcategories/harbour-whisperfish-message.conf
 
 # Application icons
-install -Dm 644 %{_sourcedir}/../icons/86x86/harbour-whisperfish.png \
+install -Dm 644 icons/86x86/harbour-whisperfish.png \
     %{buildroot}%{_datadir}/icons/hicolor/86x86/apps/harbour-whisperfish.png
-install -Dm 644 %{_sourcedir}/../icons/108x108/harbour-whisperfish.png \
+install -Dm 644 icons/108x108/harbour-whisperfish.png \
     %{buildroot}%{_datadir}/icons/hicolor/108x108/apps/harbour-whisperfish.png
-install -Dm 644 %{_sourcedir}/../icons/128x128/harbour-whisperfish.png \
+install -Dm 644 icons/128x128/harbour-whisperfish.png \
     %{buildroot}%{_datadir}/icons/hicolor/128x128/apps/harbour-whisperfish.png
-install -Dm 644 %{_sourcedir}/../icons/172x172/harbour-whisperfish.png \
+install -Dm 644 icons/172x172/harbour-whisperfish.png \
     %{buildroot}%{_datadir}/icons/hicolor/172x172/apps/harbour-whisperfish.png
 
 # QML & icons
-(cd %{_sourcedir}/../ && find ./qml ./icons \
+(find ./qml ./icons \
     -type f \
     -exec \
         install -Dm 644 "{}" "%{buildroot}%{_datadir}/harbour-whisperfish/{}" \; )
@@ -302,9 +294,9 @@ sed -i -r "s/buildDate: \"[0-9\-]{10}\".*/buildDate: \"${CURR_DATE}\"/g" "%{buil
 
 %if %{without harbour}
 # Dbus service
-install -Dm 644 %{_sourcedir}/../be.rubdos.whisperfish.service \
+install -Dm 644 be.rubdos.whisperfish.service \
     %{buildroot}%{_unitdir}/be.rubdos.whisperfish.service
-install -Dm 644 %{_sourcedir}/../harbour-whisperfish.service \
+install -Dm 644 harbour-whisperfish.service \
     %{buildroot}%{_userunitdir}/harbour-whisperfish.service
 %endif
 
