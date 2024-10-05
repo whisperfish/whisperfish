@@ -327,7 +327,7 @@ ApplicationWindow
         target: calls
 
         onRingingChanged: {
-            if (calls.ringing) {
+            if (calls.ringing && SettingsBridge.debug_mode) {
                 pageStack.push(
                     Qt.resolvedUrl("pages/RingingDialog.qml"), { }
                 )
