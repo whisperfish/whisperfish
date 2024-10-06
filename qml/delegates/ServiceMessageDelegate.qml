@@ -109,7 +109,7 @@ ListItem {
         case "profile_key_update": // incoming only
             //: Service message for profile (key) update. %1 is a name
             //% "%1 updated their profile."
-            qsTrId("whisperfish-service-message-profile-key-update-peer").arg(peerName)
+            return qsTrId("whisperfish-service-message-profile-key-update-peer").arg(peerName)
         case "end_session":
             return _outgoing
             //: Service message, %1 is a name
@@ -174,7 +174,7 @@ ListItem {
             //: Service message, %1 is a name
             //% "Your safety number with %1 has changed. "
             //% "Swipe right to verify the new number."
-            qsTrId("whisperfish-service-message-fingerprint-changed").arg(peerName)
+            return qsTrId("whisperfish-service-message-fingerprint-changed").arg(peerName)
         case "session_reset":
             return _outgoing
             //: Service message, %1 is a name
