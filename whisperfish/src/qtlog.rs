@@ -15,8 +15,6 @@ const FILE_START: &str = "file:///usr/share/harbour-whisperfish/";
 
 #[no_mangle]
 pub extern "C" fn log_qt(msg_type: QtMsgType, msg_context: &QMessageLogContext, msg: &QString) {
-    let span = tracing::span!(Level::TRACE, "qt_log");
-    let _span = span.enter();
     // QML may have prepended the message with the file information (so shorten it a bit),
     // or QMessageLogContext may provide it to us.
     let mut new_msg = msg.to_string();
@@ -35,11 +33,11 @@ pub extern "C" fn log_qt(msg_type: QtMsgType, msg_context: &QMessageLogContext, 
 
     let level = QLEVEL.get(msg_type as usize).unwrap_or(&QLEVEL[6]);
     match *level {
-        Level::TRACE => tracing::trace!(parent: &span, "{}", new_msg),
-        Level::DEBUG => tracing::debug!(parent: &span, "{}", new_msg),
-        Level::INFO => tracing::info!(parent: &span, "{}", new_msg),
-        Level::WARN => tracing::warn!(parent: &span, "{}", new_msg),
-        Level::ERROR => tracing::error!(parent: &span, "{}", new_msg),
+        Level::TRACE => tracing::trace!("{new_msg}"),
+        Level::DEBUG => tracing::debug!("{new_msg}"),
+        Level::INFO => tracing::info!("{new_msg}"),
+        Level::WARN => tracing::warn!("{new_msg}"),
+        Level::ERROR => tracing::error!("{new_msg}"),
     }
 }
 
