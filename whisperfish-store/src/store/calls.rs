@@ -4,6 +4,7 @@ use chrono::NaiveDateTime;
 use diesel::prelude::*;
 
 impl<O: Observable + Default> super::Storage<O> {
+    #[tracing::instrument(skip(self))]
     pub fn insert_one_to_one_call(
         &self,
         call_id: u64,
@@ -57,6 +58,7 @@ impl<O: Observable + Default> super::Storage<O> {
         new_call_id
     }
 
+    #[tracing::instrument(skip(self))]
     fn insert_call_log(
         &self,
         recipient: Option<i32>,
