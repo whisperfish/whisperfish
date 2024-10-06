@@ -80,6 +80,52 @@ impl ProtocolStore {
     }
 }
 
+impl<O: Observable> MasterKeyStore for Storage<O> {
+    #[tracing::instrument(skip(self))]
+    fn fetch_storage_service_key(&self) -> Option<StorageServiceKey> {
+        use base64::prelude::*;
+
+        self.read_setting(Settings::STORAGE_SERVICE_KEY).map(|key| {
+            let key = BASE64_STANDARD.decode(key).unwrap();
+            StorageServiceKey::from_slice(&key).unwrap()
+        })
+    }
+
+    #[tracing::instrument(skip(self))]
+    fn fetch_master_key(&self) -> Option<MasterKey> {
+        use base64::prelude::*;
+
+        self.read_setting(Settings::MASTER_KEY).map(|key| {
+            let key = BASE64_STANDARD.decode(key).unwrap();
+            MasterKey::from_slice(&key).unwrap()
+        })
+    }
+
+    #[tracing::instrument(skip(self))]
+    fn store_master_key(&self, master_key: Option<&MasterKey>) {
+        use base64::prelude::*;
+
+        if let Some(master_key) = master_key {
+            let key_base64 = BASE64_STANDARD.encode(master_key.inner);
+            self.write_setting(Settings::MASTER_KEY, &key_base64);
+        } else {
+            self.delete_setting(Settings::MASTER_KEY);
+        }
+    }
+
+    #[tracing::instrument(skip(self))]
+    fn store_storage_service_key(&self, storage_key: Option<&StorageServiceKey>) {
+        use base64::prelude::*;
+
+        if let Some(storage_key) = storage_key {
+            let key_base64 = BASE64_STANDARD.encode(storage_key.inner);
+            self.write_setting(Settings::STORAGE_SERVICE_KEY, &key_base64);
+        } else {
+            self.delete_setting(Settings::STORAGE_SERVICE_KEY);
+        }
+    }
+}
+
 impl<O: Observable> Storage<O> {
     pub fn pni_storage(&self) -> PniStorage<O> {
         PniStorage::new(self.clone())

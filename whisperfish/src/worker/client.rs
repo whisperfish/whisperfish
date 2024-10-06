@@ -19,6 +19,7 @@ use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
 use libsignal_service::proto::sync_message::Configuration;
+use libsignal_service::proto::sync_message::Keys;
 use libsignal_service::proto::sync_message::Sent;
 use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::push_service::ServiceIdType;
@@ -390,13 +391,19 @@ impl ClientActor {
         let service = self.authenticated_service();
         let mut u_service = self.unauthenticated_service();
 
-        let ws = self.ws.clone().unwrap();
+        let ws = self.ws.clone();
         let cipher = self.cipher(ServiceIdType::AccountIdentity);
         let local_aci = self.self_aci.unwrap();
         let local_pni = self.self_pni.unwrap();
         let device_id = self.config.get_device_id();
 
         async move {
+            let Some(ws) = ws else {
+                return Err(ServiceError::SendError {
+                    reason: "SignalWebSocket is not open".into(),
+                });
+            };
+
             let aci_key = storage
                 .aci_storage()
                 .get_identity_key_pair()
@@ -927,8 +934,12 @@ impl ClientActor {
                 RequestType::Configuration => {
                     sender.send_configuration(&local_addr, configuration).await?;
                 },
+                RequestType::Keys => {
+                    let master = storage.fetch_master_key();
+                    let storage_service = storage.fetch_storage_service_key();
+                    sender.send_keys(&local_addr, Keys { master: master.map(|k| k.into()), storage_service: storage_service.map(|k| k.into()) }).await?;
+                }
                 // Type::Blocked
-                // Type::Keys
                 // Type::PniIdentity
                 _ => {
                     tracing::trace!("Unimplemented sync request: {:#?}", req);
@@ -1138,6 +1149,23 @@ impl ClientActor {
                                 "Unimplemented: synchronize fetch request SubscriptionStatus"
                             )
                         }
+                    }
+                }
+                if let Some(keys) = message.keys {
+                    handled = true;
+                    tracing::debug!("Sync Keys message");
+                    // Note: storage_key is deprecated; it's generated from master_key
+                    if let Some(bytes) = &keys.master {
+                        if let Ok(master_key) = MasterKey::from_slice(bytes) {
+                            storage.store_master_key(Some(&master_key));
+                            let storage_key = StorageServiceKey::from_master_key(&master_key);
+                            storage.store_storage_service_key(Some(&storage_key));
+                            tracing::info!("Keys sync message handled successfully");
+                        } else {
+                            tracing::error!("Keys sync message with invalid data");
+                        };
+                    } else {
+                        tracing::error!("Keys sync message without data");
                     }
                 }
                 if !handled {

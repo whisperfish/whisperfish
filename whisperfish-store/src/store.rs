@@ -62,6 +62,9 @@ impl Settings {
     pub const HTTP_PASSWORD: &'static str = "http_password";
     pub const HTTP_SIGNALING_KEY: &'static str = "http_signaling_key";
 
+    pub const MASTER_KEY: &'static str = "master_key";
+    pub const STORAGE_SERVICE_KEY: &'static str = "storage_service_key";
+
     pub const VERBOSE: &'static str = "verbose";
     pub const LOGFILE: &'static str = "logfile";
 }
