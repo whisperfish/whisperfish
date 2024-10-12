@@ -2293,8 +2293,8 @@ impl Handler<StorageReady> for ClientActor {
                     act.credentials = Some(credentials);
                     let cred = act.credentials.as_ref().unwrap();
 
-                    act.self_aci = cred.aci.map(ServiceAddress::new_aci);
-                    act.self_pni = cred.pni.map(ServiceAddress::new_pni);
+                    act.self_aci = cred.aci.map(ServiceAddress::from_aci);
+                    act.self_pni = cred.pni.map(ServiceAddress::from_pni);
 
                     Self::queue_migrations(ctx);
 

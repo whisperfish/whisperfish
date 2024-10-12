@@ -114,7 +114,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                 let members_to_assert = group
                     .members
                     .iter()
-                    .map(|member| (ServiceAddress::new_aci(member.uuid), Some(&member.profile_key)))
+                    .map(|member| (ServiceAddress::from_aci(member.uuid), Some(&member.profile_key)))
                     .chain(
                         group
                             .pending_members
@@ -125,7 +125,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         group
                             .requesting_members
                             .iter()
-                            .map(|member| (ServiceAddress::new_aci(member.uuid), Some(&member.profile_key))),
+                            .map(|member| (ServiceAddress::from_aci(member.uuid), Some(&member.profile_key))),
                     );
 
                 // We need all the profile keys and UUIDs in the database.
@@ -192,7 +192,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         // XXX there's a bit of duplicate work going on here.
                         // XXX What about PNI?
                         let recipient =
-                            storage.fetch_or_insert_recipient_by_address(&ServiceAddress::new_aci(member.uuid));
+                            storage.fetch_or_insert_recipient_by_address(&ServiceAddress::from_aci(member.uuid));
                         let _span = tracing::trace_span!(
                             "Asserting member of the group",
                             %recipient

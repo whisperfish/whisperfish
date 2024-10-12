@@ -20,12 +20,12 @@ fn phonenumber() -> ::phonenumber::PhoneNumber {
 
 #[fixture]
 fn aci() -> ::libsignal_service::ServiceAddress {
-    ServiceAddress::new_aci(Uuid::new_v4())
+    ServiceAddress::from_aci(Uuid::new_v4())
 }
 
 #[fixture]
 fn pni() -> ::libsignal_service::ServiceAddress {
-    ServiceAddress::new_pni(Uuid::new_v4())
+    ServiceAddress::from_pni(Uuid::new_v4())
 }
 
 #[fixture]
@@ -47,7 +47,7 @@ fn storage_with_uuid_recipient(
 ) -> impl Future<Output = InMemoryDb> {
     use futures::prelude::*;
     storage.map(|(storage, _temp_dir)| {
-        storage.fetch_or_insert_recipient_by_address(&ServiceAddress::new_aci(UUID));
+        storage.fetch_or_insert_recipient_by_address(&ServiceAddress::from_aci(UUID));
 
         (storage, _temp_dir)
     })
@@ -72,8 +72,8 @@ async fn insert_then_fetch_by_e164(
 async fn insert_then_fetch_by_uuid(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
-    let recipient1 = storage.fetch_or_insert_recipient_by_address(&ServiceAddress::new_aci(UUID));
-    let recipient2 = storage.fetch_or_insert_recipient_by_address(&ServiceAddress::new_aci(UUID));
+    let recipient1 = storage.fetch_or_insert_recipient_by_address(&ServiceAddress::from_aci(UUID));
+    let recipient2 = storage.fetch_or_insert_recipient_by_address(&ServiceAddress::from_aci(UUID));
     assert_eq!(recipient1.id, recipient2.id);
     assert_eq!(recipient1.uuid, Some(UUID));
 }
@@ -89,7 +89,7 @@ mod merge_and_fetch {
 
         let recipient = storage.merge_and_fetch_recipient_by_address(
             Some(phonenumber.clone()),
-            ServiceAddress::new_aci(UUID),
+            ServiceAddress::from_aci(UUID),
             TrustLevel::Certain,
         );
         assert_eq!(recipient.e164.as_ref(), Some(&phonenumber));
@@ -98,7 +98,7 @@ mod merge_and_fetch {
         // Second call should be a no-op
         let recipient_check = storage.merge_and_fetch_recipient(
             Some(phonenumber.clone()),
-            Some(ServiceAddress::new_aci(UUID)),
+            Some(ServiceAddress::from_aci(UUID)),
             None,
             TrustLevel::Certain,
         );
@@ -114,7 +114,7 @@ mod merge_and_fetch {
 
         let recipient = storage.merge_and_fetch_recipient_by_address(
             Some(phonenumber.clone()),
-            ServiceAddress::new_aci(UUID),
+            ServiceAddress::from_aci(UUID),
             TrustLevel::Uncertain,
         );
 
@@ -132,7 +132,7 @@ mod merge_and_fetch {
 
         let recipient = storage.merge_and_fetch_recipient_by_address(
             Some(phonenumber.clone()),
-            ServiceAddress::new_aci(UUID),
+            ServiceAddress::from_aci(UUID),
             TrustLevel::Certain,
         );
         assert_eq!(recipient.e164.as_ref(), Some(&phonenumber));
@@ -156,7 +156,7 @@ mod merge_and_fetch {
 
         let recipient = storage.merge_and_fetch_recipient(
             Some(phonenumber.clone()),
-            Some(ServiceAddress::new_aci(UUID)),
+            Some(ServiceAddress::from_aci(UUID)),
             None,
             TrustLevel::Uncertain,
         );
@@ -169,7 +169,7 @@ mod merge_and_fetch {
         assert_eq!(storage.fetch_recipients().len(), 1);
 
         let recipient_uuid = storage
-            .fetch_recipient(&ServiceAddress::new_aci(UUID))
+            .fetch_recipient(&ServiceAddress::from_aci(UUID))
             .expect("uuid still in db");
         assert_eq!(recipient.id, recipient_uuid.id);
     }
@@ -184,7 +184,7 @@ mod merge_and_fetch {
 
         let recipient = storage.merge_and_fetch_recipient(
             Some(phonenumber.clone()),
-            Some(ServiceAddress::new_aci(UUID)),
+            Some(ServiceAddress::from_aci(UUID)),
             None,
             TrustLevel::Certain,
         );
@@ -204,7 +204,7 @@ mod merge_and_fetch {
 
         let recipient = storage.merge_and_fetch_recipient(
             Some(phonenumber.clone()),
-            Some(ServiceAddress::new_aci(UUID)),
+            Some(ServiceAddress::from_aci(UUID)),
             None,
             TrustLevel::Uncertain,
         );
@@ -234,7 +234,7 @@ mod merge_and_fetch_conflicting_recipients {
         let (storage, _temp_dir) = storage.await;
 
         let r1 = storage.fetch_or_insert_recipient_by_phonenumber(&phonenumber);
-        let r2 = storage.fetch_or_insert_recipient_by_address(&ServiceAddress::new_aci(UUID));
+        let r2 = storage.fetch_or_insert_recipient_by_address(&ServiceAddress::from_aci(UUID));
         // We have two separate recipients.
         assert_ne!(r1.id, r2.id);
         assert_eq!(storage.fetch_recipients().len(), 2);
@@ -244,7 +244,7 @@ mod merge_and_fetch_conflicting_recipients {
         // we trigger their merger.
         let recipient = storage.merge_and_fetch_recipient(
             Some(phonenumber.clone()),
-            Some(ServiceAddress::new_aci(UUID)),
+            Some(ServiceAddress::from_aci(UUID)),
             None,
             TrustLevel::Certain,
         );
@@ -264,7 +264,7 @@ mod merge_and_fetch_conflicting_recipients {
         let (storage, _temp_dir) = storage.await;
 
         let r1 = storage.fetch_or_insert_recipient_by_phonenumber(&phonenumber);
-        let r2 = storage.fetch_or_insert_recipient_by_address(&ServiceAddress::new_aci(UUID));
+        let r2 = storage.fetch_or_insert_recipient_by_address(&ServiceAddress::from_aci(UUID));
         // We have two separate recipients.
         assert_ne!(r1.id, r2.id);
         assert_eq!(storage.fetch_recipients().len(), 2);
@@ -274,7 +274,7 @@ mod merge_and_fetch_conflicting_recipients {
         // because there is no conflicting data or PNI/ACI set.
         let recipient = storage.merge_and_fetch_recipient(
             Some(phonenumber.clone()),
-            Some(ServiceAddress::new_aci(UUID)),
+            Some(ServiceAddress::from_aci(UUID)),
             None,
             TrustLevel::Uncertain,
         );
@@ -295,7 +295,7 @@ mod merge_and_fetch_conflicting_recipients {
 
         let r1 = storage.merge_and_fetch_recipient(
             Some(phonenumber.clone()),
-            Some(ServiceAddress::new_aci(UUID)),
+            Some(ServiceAddress::from_aci(UUID)),
             None,
             TrustLevel::Certain,
         );
@@ -317,7 +317,7 @@ mod merge_and_fetch_conflicting_recipients {
         // exist anymore, and that the data needs to be moved.
         let recipient = storage.merge_and_fetch_recipient(
             Some(phonenumber.clone()),
-            Some(ServiceAddress::new_aci(UUID2)),
+            Some(ServiceAddress::from_aci(UUID2)),
             None,
             TrustLevel::Certain,
         );
@@ -342,8 +342,8 @@ mod merge_and_fetch_conflicting_recipients {
     ) {
         let (storage, _temp_dir) = storage.await;
 
-        let addr1 = ServiceAddress::new_aci(UUID);
-        let addr2 = ServiceAddress::new_aci(UUID2);
+        let addr1 = ServiceAddress::from_aci(UUID);
+        let addr2 = ServiceAddress::from_aci(UUID2);
 
         let r1 = storage.merge_and_fetch_recipient(
             Some(phonenumber.clone()),
@@ -809,7 +809,7 @@ mod merge_and_fetch_conflicting_recipients {
     ) {
         let (storage, _temp_dir) = storage.await;
 
-        let aci_2 = ServiceAddress::new_aci(Uuid::new_v4());
+        let aci_2 = ServiceAddress::from_aci(Uuid::new_v4());
         assert_ne!(aci, aci_2);
 
         let r1 = storage.merge_and_fetch_recipient(
@@ -859,7 +859,7 @@ mod merge_and_fetch_conflicting_recipients {
     ) {
         let (storage, _temp_dir) = storage.await;
 
-        let aci_2 = ServiceAddress::new_aci(Uuid::new_v4());
+        let aci_2 = ServiceAddress::from_aci(Uuid::new_v4());
         assert_ne!(aci, aci_2);
 
         let r1 = storage.merge_and_fetch_recipient(
