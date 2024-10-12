@@ -114,24 +114,23 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                 let members_to_assert = group
                     .members
                     .iter()
-                    .map(|member| (&member.uuid, Some(&member.profile_key)))
+                    .map(|member| (ServiceAddress::new_aci(member.uuid), Some(&member.profile_key)))
                     .chain(
                         group
                             .pending_members
                             .iter()
-                            .map(|member| (&member.uuid, None)),
+                            .map(|member| (member.address, None)),
                     )
                     .chain(
                         group
                             .requesting_members
                             .iter()
-                            .map(|member| (&member.uuid, Some(&member.profile_key))),
+                            .map(|member| (ServiceAddress::new_aci(member.uuid), Some(&member.profile_key))),
                     );
 
                 // We need all the profile keys and UUIDs in the database.
-                for (uuid, profile_key) in members_to_assert {
-                    // XXX What about PNI?
-                    let recipient = storage.fetch_or_insert_recipient_by_address(&ServiceAddress::new_aci(*uuid));
+                for (addr, profile_key) in members_to_assert {
+                    let recipient = storage.fetch_or_insert_recipient_by_address(&addr);
                     if let Some(profile_key) = profile_key {
                         let (recipient, _was_changed) = storage.update_profile_key(recipient.e164.clone(), recipient.to_service_address(), &profile_key.get_bytes(), TrustLevel::Uncertain);
                         match recipient.profile_key {
