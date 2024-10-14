@@ -4,6 +4,7 @@ use chrono::NaiveDateTime;
 use diesel::prelude::*;
 
 impl<O: Observable + Default> super::Storage<O> {
+    /// Return (session, call ID)
     #[tracing::instrument(skip(self))]
     pub fn insert_one_to_one_call(
         &self,
@@ -15,7 +16,7 @@ impl<O: Observable + Default> super::Storage<O> {
         is_outgoing: bool,
         event: orm::EventType,
         unidentified: bool,
-    ) -> i32 {
+    ) -> (orm::Session, i32) {
         let session = self
             .fetch_session_by_recipient_id(recipient_id)
             .expect("fetching session by recipient id");
@@ -55,7 +56,7 @@ impl<O: Observable + Default> super::Storage<O> {
             .get_result(&mut *self.db())
             .expect("inserting a call");
 
-        new_call_id
+        (session, new_call_id)
     }
 
     #[tracing::instrument(skip(self))]

@@ -278,6 +278,8 @@ install -Dm 644 harbour-whisperfish.privileges \
     %{buildroot}%{_datadir}/mapplauncherd/privileges.d/harbour-whisperfish.privileges
 install -Dm 644 harbour-whisperfish-message.conf \
     %{buildroot}%{_datadir}/lipstick/notificationcategories/harbour-whisperfish-message.conf
+install -Dm 644 harbour-whisperfish-call.conf \
+    %{buildroot}%{_datadir}/lipstick/notificationcategories/harbour-whisperfish-call.conf
 
 # Application icons
 install -Dm 644 icons/86x86/harbour-whisperfish.png \
@@ -331,7 +333,7 @@ systemctl-user disable harbour-whisperfish.service || true
 %{_datadir}/applications/%{name}.desktop
 %{_datadir}/mapplauncherd/privileges.d/%{name}.privileges
 %{_datadir}/icons/hicolor/*/apps/%{name}.png
-%{_datadir}/lipstick/notificationcategories/%{name}-message.conf
+%{_datadir}/lipstick/notificationcategories/%{name}*.conf
 
 %{_sysconfdir}/sailjail/permissions/harbour-whisperfish.profile
 

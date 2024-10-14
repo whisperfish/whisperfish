@@ -509,7 +509,7 @@ impl Handler<CallState> for super::ClientActor {
         let storage = self.storage.as_ref().expect("initialized storage");
         match &state {
             ringrtc::native::CallState::Incoming(media) => {
-                storage.insert_one_to_one_call(
+                let (session, _call_id) = storage.insert_one_to_one_call(
                     call_id.into(),
                     // XXX
                     Utc::now().naive_utc(),
@@ -518,6 +518,29 @@ impl Handler<CallState> for super::ClientActor {
                     false,
                     orm::EventType::Ringing,
                     // XXX: unidentified?
+                    false,
+                );
+                let sender_recipient = storage.fetch_recipient_by_id(remote_peer_id);
+                let session_name: std::borrow::Cow<'_, str> = match &session.r#type {
+                    orm::SessionType::GroupV1(group) => std::borrow::Cow::from(&group.name),
+                    orm::SessionType::GroupV2(group) => std::borrow::Cow::from(&group.name),
+                    orm::SessionType::DirectMessage(recipient) => recipient.name(),
+                };
+                self.inner.pinned().borrow_mut().missedCall(
+                    session.id,
+                    session_name.to_string().into(),
+                    sender_recipient
+                        .as_ref()
+                        .map(|x| x.name().to_string())
+                        .unwrap_or_else(|| "".into())
+                        .into(),
+                    sender_recipient
+                        .as_ref()
+                        .map(|x| x.e164_or_address())
+                        .unwrap_or_default()
+                        .into(),
+                    sender_recipient.map(|x| x.aci()).unwrap_or_default().into(),
+                    *media == ringrtc::common::CallMediaType::Video,
                     false,
                 );
             }

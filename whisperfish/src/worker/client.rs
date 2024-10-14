@@ -233,6 +233,15 @@ pub struct ClientWorker {
         message: QString,
         isGroup: bool
     ),
+    missedCall: qt_signal!(
+        sid: i32,
+        sessionName: QString,
+        senderName: QString,
+        senderIdentifier: QString,
+        senderUuid: QString,
+        isVideo: bool,
+        isGroup: bool
+    ),
     promptResetPeerIdentity: qt_signal!(),
     messageSent: qt_signal!(sid: i32, mid: i32, message: QString),
     messageNotSent: qt_signal!(sid: i32, mid: i32),
