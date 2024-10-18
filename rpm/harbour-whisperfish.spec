@@ -77,10 +77,12 @@ BuildRequires:  perl-IPC-Cmd
 
 BuildRequires:  meego-rpm-config
 
+%if %{with calling}
 # We statically link to OpenSSL3 for the sqlcipher dependency,
 # and we dynamically link to openssl 1.1 for webrtc,
 # so we need both.  Yikes, and sorry.
 BuildRequires:  pkgconfig(openssl) >= 1.1
+%endif
 
 # For vendored sqlcipher
 BuildRequires:  tcl
