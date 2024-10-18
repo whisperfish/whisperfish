@@ -69,6 +69,7 @@ mb2 -t SailfishOS-$TARGET_VERSION-$MER_ARCH build \
     --with lto \
     --with sccache \
     --with tools \
+    --with calling \
 
 rm -rf $TMPDIR
 export TMPDIR="$TMPDIR2"

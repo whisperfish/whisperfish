@@ -1,5 +1,5 @@
 use crate::store::orm::{self, Recipient};
-use actix::Handler;
+use actix::prelude::*;
 use chrono::Utc;
 use libsignal_service::{
     content::Metadata,
@@ -655,5 +655,52 @@ impl Handler<InitiateCall> for super::ClientActor {
             .manager
             .call(recipient_id.to_string(), r#type, device_id)
             .expect("initiate call");
+    }
+}
+
+/// Delivers a CallMessage to a session.
+#[derive(Message)]
+#[rtype(result = "Result<Vec<super::SendMessageResult>, anyhow::Error>")]
+struct SendCallMessage {
+    content: CallMessage,
+    recipient_id: i32,
+    urgent: bool,
+}
+
+impl Handler<SendCallMessage> for super::ClientActor {
+    type Result = ResponseFuture<anyhow::Result<Vec<super::SendMessageResult>>>;
+
+    #[tracing::instrument(skip(self, ctx))]
+    fn handle(
+        &mut self,
+        SendCallMessage {
+            recipient_id,
+            content,
+            urgent,
+        }: SendCallMessage,
+        ctx: &mut Self::Context,
+    ) -> Self::Result {
+        // XXX handle urgent flag
+        let storage = self.storage.as_mut().unwrap();
+        let session = storage
+            .fetch_session_by_recipient_id(recipient_id)
+            .expect("existing session for recipient");
+
+        // Outgoing messages should not have sender_recipient_id set
+        let now = Utc::now();
+        self.transient_timestamps
+            .insert(now.timestamp_millis() as u64);
+
+        let addr = ctx.address();
+        Box::pin(async move {
+            addr.send(super::DeliverMessage {
+                content,
+                online: false,
+                timestamp: now.timestamp_millis() as u64,
+                session_type: session.r#type,
+                for_story: false,
+            })
+            .await?
+        })
     }
 }

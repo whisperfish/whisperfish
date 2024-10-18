@@ -76,7 +76,7 @@ regex = "1.7.3"
 gstreamer = "0.23"
 glib = "0.20"
 
-ringrtc = { git = "https://github.com/whisperfish/ringrtc", branch = "whisperfork", version = "2.46.2", features = ["native", "system_ssl"] }
+ringrtc = { git = "https://github.com/whisperfish/ringrtc", branch = "whisperfork", version = "2.46.2", features = ["native", "system_ssl"], optional = true }
 
 sailors = { git = "https://gitlab.com/whisperfish/sailo-rs.git", optional = true }
 whisperfish-store = { path = "../whisperfish-store" }
@@ -112,6 +112,7 @@ sailfish = [
     "sailors",
     "whisperfish-store/sailfish",
 ]
+calling = ["ringrtc"]
 harbour = ["sailfish"]
 
 bundled-openssl = [

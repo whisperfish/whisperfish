@@ -1,6 +1,7 @@
 // XXX maybe the session-to-db migration should move into the store module.
 pub mod migrations;
 
+#[cfg(feature = "calling")]
 mod call;
 mod groupv2;
 mod linked_devices;
@@ -22,6 +23,7 @@ use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
 use libsignal_service::proto::sync_message::Configuration;
 use libsignal_service::proto::sync_message::Keys;
 use libsignal_service::proto::sync_message::Sent;
+#[cfg(feature = "calling")]
 use libsignal_service::proto::CallMessage;
 use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::push_service::ServiceIdType;
@@ -46,6 +48,7 @@ use crate::actor::SendReaction;
 use crate::actor::SessionActor;
 use crate::config::SettingsBridge;
 use crate::gui::StorageReady;
+#[cfg(feature = "calling")]
 use crate::model::Calls;
 use crate::model::DeviceModel;
 use crate::platform::QmlApp;
@@ -55,6 +58,7 @@ use crate::store::Storage;
 use crate::worker::client::unidentified::CertType;
 use actix::prelude::*;
 use anyhow::Context;
+#[cfg(feature = "calling")]
 pub use call::*;
 use chrono::prelude::*;
 use futures::prelude::*;
@@ -158,15 +162,6 @@ impl Display for QueueExpiryUpdate {
 ///
 /// This will construct a DataMessage, and pass it to a DeliverMessage
 pub struct SendMessage(pub i32);
-
-/// Delivers a CallMessage to a session.
-#[derive(Message)]
-#[rtype(result = "Result<Vec<SendMessageResult>, anyhow::Error>")]
-struct SendCallMessage {
-    content: CallMessage,
-    recipient_id: i32,
-    urgent: bool,
-}
 
 /// Delivers a constructed `T: Into<ContentBody>` to a session.
 ///
@@ -288,6 +283,7 @@ pub struct ClientWorker {
 /// ClientActor keeps track of the connection state.
 pub struct ClientActor {
     inner: QObjectBox<ClientWorker>,
+    #[cfg(feature = "calling")]
     calls_model: QObjectBox<Calls>,
 
     migration_state: MigrationCondVar,
@@ -313,6 +309,7 @@ pub struct ClientActor {
 
     settings: SettingsBridge,
 
+    #[cfg(feature = "calling")]
     call_state: Option<call::WhisperfishCallManager>,
 }
 
@@ -337,10 +334,20 @@ impl ClientActor {
     ) -> Result<Self, anyhow::Error> {
         let inner = QObjectBox::new(ClientWorker::default());
         let device_model = QObjectBox::new(DeviceModel::default());
+
+        #[cfg(feature = "calling")]
         let calls_model = QObjectBox::new(Calls::new());
+        // This way, QML can access the model, but it's empty.
+        #[cfg(not(feature = "calling"))]
+        let calls_model = QVariant::default();
+
         app.set_object_property("ClientWorker".into(), inner.pinned());
         app.set_object_property("DeviceModel".into(), device_model.pinned());
-        app.set_object_property("calls".into(), calls_model.pinned());
+        {
+            #[cfg(feature = "calling")]
+            let calls_model = calls_model.pinned();
+            app.set_object_property("calls".into(), calls_model);
+        }
 
         inner.pinned().borrow_mut().session_actor = Some(session_actor);
         inner.pinned().borrow_mut().device_model = Some(device_model);
@@ -350,6 +357,7 @@ impl ClientActor {
 
         Ok(Self {
             inner,
+            #[cfg(feature = "calling")]
             calls_model,
             migration_state: MigrationCondVar::new(),
             unidentified_certificates: UnidentifiedCertificates::default(),
@@ -374,6 +382,7 @@ impl ClientActor {
 
             settings: SettingsBridge::default(),
 
+            #[cfg(feature = "calling")]
             call_state: None,
         })
     }
@@ -1276,11 +1285,12 @@ impl ClientActor {
                     }
                 }
             }
+            #[cfg(feature = "calling")]
             ContentBody::CallMessage(call) => {
                 self.handle_call_message(ctx, metadata, call);
             }
             _ => {
-                tracing::info!("TODO")
+                tracing::warn!("unimplemented ContentBody")
             }
         }
     }
@@ -1317,11 +1327,14 @@ impl Actor for ClientActor {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         self.inner.pinned().borrow_mut().actor = Some(ctx.address());
-        self.call_state = Some(call::WhisperfishCallManager::new(ctx.address()));
-        self.calls_model
-            .pinned()
-            .borrow_mut()
-            .set_client(ctx.address());
+        #[cfg(feature = "calling")]
+        {
+            self.call_state = Some(call::WhisperfishCallManager::new(ctx.address()));
+            self.calls_model
+                .pinned()
+                .borrow_mut()
+                .set_client(ctx.address());
+        }
     }
 
     fn stopped(&mut self, ctx: &mut Self::Context) {
@@ -2017,44 +2030,6 @@ impl Handler<SendTypingNotification> for ClientActor {
                 };
             }),
         )
-    }
-}
-
-impl Handler<SendCallMessage> for ClientActor {
-    type Result = ResponseFuture<anyhow::Result<Vec<SendMessageResult>>>;
-
-    #[tracing::instrument(skip(self, ctx))]
-    fn handle(
-        &mut self,
-        SendCallMessage {
-            recipient_id,
-            content,
-            urgent,
-        }: SendCallMessage,
-        ctx: &mut Self::Context,
-    ) -> Self::Result {
-        // XXX handle urgent flag
-        let storage = self.storage.as_mut().unwrap();
-        let session = storage
-            .fetch_session_by_recipient_id(recipient_id)
-            .expect("existing session for recipient");
-
-        // Outgoing messages should not have sender_recipient_id set
-        let now = Utc::now();
-        self.transient_timestamps
-            .insert(now.timestamp_millis() as u64);
-
-        let addr = ctx.address();
-        Box::pin(async move {
-            addr.send(DeliverMessage {
-                content,
-                online: false,
-                timestamp: now.timestamp_millis() as u64,
-                session_type: session.r#type,
-                for_story: false,
-            })
-            .await?
-        })
     }
 }
 

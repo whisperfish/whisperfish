@@ -13,8 +13,11 @@ OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-use std::{io::Read, process::Command};
+#[cfg(feature = "calling")]
+use std::io::Read;
+use std::process::Command;
 
+#[cfg(feature = "calling")]
 fn verify_sha384(path: &std::path::Path, hashes: &[&str]) -> bool {
     use sha2::{Digest, Sha384};
     let mut hasher = Sha384::new();
@@ -34,6 +37,7 @@ fn verify_sha384(path: &std::path::Path, hashes: &[&str]) -> bool {
     hashes.contains(&hex::encode(result).as_str())
 }
 
+#[cfg(feature = "calling")]
 fn configure_webrtc() -> anyhow::Result<()> {
     let base_url = "https://nas.rubdos.be/~rsmet/webrtc/";
 
@@ -171,5 +175,6 @@ fn main() {
         println!("cargo:rustc-link-lib{}={}", macos_lib_search, lib);
     }
 
+    #[cfg(feature = "calling")]
     configure_webrtc().unwrap();
 }

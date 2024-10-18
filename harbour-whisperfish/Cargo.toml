@@ -30,6 +30,7 @@ tracing-flame = { version = "0.2", optional = true }
 bundled-sqlcipher = ["whisperfish/bundled-sqlcipher"]
 sailfish = ["whisperfish/sailfish"]
 harbour = ["whisperfish/harbour"]
+calling = ["whisperfish/calling"]
 console-subscriber = ["dep:console-subscriber"]
 tracy = ["dep:tracing-tracy"]
 coz = ["dep:tracing-coz"]
