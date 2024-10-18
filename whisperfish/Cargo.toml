@@ -27,12 +27,7 @@ fs2 = "0.4.3"
 blurhash = "0.2.2"
 percent-encoding = "2.2"
 
-libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features = [
-    "unsend-futures",
-] }
-libsignal-service-hyper = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features = [
-    "unsend-futures",
-] }
+libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main" }
 
 libsignal-protocol = { git = "https://github.com/signalapp/libsignal", tag = "v0.56.1" }
 zkgroup = { git = "https://github.com/signalapp/libsignal", tag = "v0.56.1" }
