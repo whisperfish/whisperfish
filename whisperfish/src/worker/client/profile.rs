@@ -29,7 +29,7 @@ impl StreamHandler<OutdatedProfile> for ClientActor {
                 (
                     uuid,
                     service
-                        .retrieve_profile_by_id(ServiceAddress::new_aci(uuid), key)
+                        .retrieve_profile_by_id(ServiceAddress::from_aci(uuid), key)
                         .await,
                 )
             }
@@ -98,7 +98,7 @@ impl ClientActor {
     ) -> anyhow::Result<()> {
         let storage = self.storage.clone().unwrap();
         let recipient = storage
-            .fetch_recipient(&ServiceAddress::new_aci(recipient_uuid))
+            .fetch_recipient(&ServiceAddress::from_aci(recipient_uuid))
             .ok_or_else(|| {
                 anyhow::anyhow!("could not find recipient for which we fetched a profile")
             })?;

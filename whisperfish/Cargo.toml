@@ -27,12 +27,7 @@ fs2 = "0.4.3"
 blurhash = "0.2.2"
 percent-encoding = "2.2"
 
-libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features = [
-    "unsend-futures",
-] }
-libsignal-service-hyper = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features = [
-    "unsend-futures",
-] }
+libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main" }
 
 libsignal-protocol = { git = "https://github.com/signalapp/libsignal", tag = "v0.56.1" }
 zkgroup = { git = "https://github.com/signalapp/libsignal", tag = "v0.56.1" }
@@ -120,7 +115,3 @@ bundled-openssl = [
     "whisperfish-store/bundled-openssl",
 ]
 diesel-instrumentation = ["whisperfish-store/diesel-instrumentation"]
-
-# Unused in Whisperfish, but makes rust-analyzer happy when developing
-# both Whisperfish and libsignal-service-rs at the same time
-unsend-futures = []

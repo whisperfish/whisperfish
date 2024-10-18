@@ -236,8 +236,8 @@ impl SignalConfig {
     /// Create ServiceAddress from Whisperfish user. Prefers ACI over PNI.
     pub fn get_addr(&self) -> Option<ServiceAddress> {
         self.get_aci()
-            .map(ServiceAddress::new_aci)
-            .or(self.get_pni().map(ServiceAddress::new_pni))
+            .map(ServiceAddress::from_aci)
+            .or(self.get_pni().map(ServiceAddress::from_pni))
     }
 
     pub fn get_device_id(&self) -> DeviceId {

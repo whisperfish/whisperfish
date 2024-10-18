@@ -562,12 +562,12 @@ impl Recipient {
 
     /// Create an ACI `ServiceAddress` of the `Recipient` if possible.
     pub fn to_aci_service_address(&self) -> Option<ServiceAddress> {
-        self.uuid.map(ServiceAddress::new_aci)
+        self.uuid.map(ServiceAddress::from_aci)
     }
 
     /// Create an PNI `ServiceAddress` of the `Recipient` if possible.
     pub fn to_pni_service_address(&self) -> Option<ServiceAddress> {
-        self.pni.map(ServiceAddress::new_pni)
+        self.pni.map(ServiceAddress::from_pni)
     }
 
     pub fn aci(&self) -> String {

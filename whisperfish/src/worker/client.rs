@@ -73,7 +73,6 @@ use libsignal_service::push_service::{
 use libsignal_service::sender::AttachmentSpec;
 use libsignal_service::websocket::SignalWebSocket;
 use libsignal_service::AccountManager;
-use libsignal_service_hyper::prelude::*;
 use mime_classifier::{ApacheBugFlag, LoadContext, MimeClassifier, NoSniffFlag};
 use phonenumber::PhoneNumber;
 use qmeta_async::with_executor;
@@ -360,33 +359,29 @@ impl ClientActor {
         crate::user_agent()
     }
 
-    fn unauthenticated_service(&self) -> HyperPushService {
+    fn unauthenticated_service(&self) -> PushService {
         let service_cfg = self.service_cfg();
-        HyperPushService::new(service_cfg, None, self.user_agent())
+        PushService::new(service_cfg, None, self.user_agent())
     }
 
     fn authenticated_service_with_credentials(
         &self,
         credentials: ServiceCredentials,
-    ) -> HyperPushService {
+    ) -> PushService {
         let service_cfg = self.service_cfg();
 
-        HyperPushService::new(service_cfg, Some(credentials), self.user_agent())
+        PushService::new(service_cfg, Some(credentials), self.user_agent())
     }
 
     /// Panics if no authentication credentials are set.
-    fn authenticated_service(&self) -> HyperPushService {
+    fn authenticated_service(&self) -> PushService {
         self.authenticated_service_with_credentials(self.credentials.clone().unwrap())
     }
 
     fn message_sender(
         &self,
-    ) -> impl Future<
-        Output = Result<
-            MessageSender<HyperPushService, AciOrPniStorage, rand::rngs::ThreadRng>,
-            ServiceError,
-        >,
-    > {
+    ) -> impl Future<Output = Result<MessageSender<AciOrPniStorage, rand::rngs::ThreadRng>, ServiceError>>
+    {
         let storage = self.storage.clone().unwrap();
         let service = self.authenticated_service();
         let mut u_service = self.unauthenticated_service();
@@ -2293,8 +2288,8 @@ impl Handler<StorageReady> for ClientActor {
                     act.credentials = Some(credentials);
                     let cred = act.credentials.as_ref().unwrap();
 
-                    act.self_aci = cred.aci.map(ServiceAddress::new_aci);
-                    act.self_pni = cred.pni.map(ServiceAddress::new_pni);
+                    act.self_aci = cred.aci.map(ServiceAddress::from_aci);
+                    act.self_pni = cred.pni.map(ServiceAddress::from_pni);
 
                     Self::queue_migrations(ctx);
 

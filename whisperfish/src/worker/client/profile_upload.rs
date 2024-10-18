@@ -133,7 +133,7 @@ impl Handler<RefreshOwnProfile> for ClientActor {
                 }
 
                 let online = service
-                    .retrieve_profile_by_id(ServiceAddress::new_aci(uuid), Some(profile_key))
+                    .retrieve_profile_by_id(ServiceAddress::from_aci(uuid), Some(profile_key))
                     .await;
 
                 let outdated = match online {
@@ -209,7 +209,7 @@ impl Handler<UploadProfile> for ClientActor {
         let service = self.authenticated_service();
         let client = ctx.address();
         let config = self.config.clone();
-        let addr = ServiceAddress::new_aci(config.get_aci().expect("valid uuid at this point"));
+        let addr = ServiceAddress::from_aci(config.get_aci().expect("valid uuid at this point"));
 
         Box::pin(
             async move {

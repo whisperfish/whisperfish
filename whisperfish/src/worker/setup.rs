@@ -257,7 +257,7 @@ impl SetupWorker {
         if let Some(profile_key) = reg.profile_key {
             storage.update_profile_key(
                 Some(reg.phonenumber),
-                Some(ServiceAddress::new_aci(reg.service_ids.aci)),
+                Some(ServiceAddress::from_aci(reg.service_ids.aci)),
                 &profile_key,
                 TrustLevel::Certain,
             );
