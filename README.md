@@ -112,13 +112,6 @@ the version is 1.52 (with 1.61 upstreamed).
 
 Please see [Rust 1.75 build instructions](doc/rust-1.75.md) for details.
 
-For voice and video calling, Whisperfish requires the RingRTC library,
-including Signal's custom WebRTC implementation.  You can download pre-built artifacts with the following command:
-
-    bash fetch-webrtc.sh
-
-See <https://www.rubdos.be/2024/09/08/building-ringrtc-for-whisperfish.html> for how to build these artifacts.
-
 Once you have the SDK up and running and the Whisperfish sources fetched,
 it compiles just like any other native Sailfish OS application.
 
@@ -140,6 +133,21 @@ For Sailfish 4.2 and older, use `--with shareplugin_v1` instead.
 Because of a bug in `sb2`, it is currently not possible to (reliably) build Whisperfish (or any other Rust project) using more than a single thread. This means your compilation is going to take a while, especially the first time. Get yourself some coffee!
 
 If you get errors (command not found or status 126) at linking stage, make sure that you are not using `~/.cargo/config` to override linkers or compilers.
+
+### Voice and video calls
+
+For voice and video calling, Whisperfish requires the RingRTC library,
+including Signal's custom WebRTC implementation.  You can download pre-built artifacts with the following command:
+
+    bash fetch-webrtc.sh
+
+See <https://www.rubdos.be/2024/09/08/building-ringrtc-for-whisperfish.html> for how to build these artifacts.
+
+To build Whisperfish with support for voice and video calls included, use
+
+    sfdk build -- --with calling
+
+This triggers the `cargo build --feature calling` feature flag, which adds voice and video support.
 
 ### Building for the host
 
