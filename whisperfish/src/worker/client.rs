@@ -337,17 +337,11 @@ impl ClientActor {
 
         #[cfg(feature = "calling")]
         let calls_model = QObjectBox::new(Calls::new());
-        // This way, QML can access the model, but it's empty.
-        #[cfg(not(feature = "calling"))]
-        let calls_model = QVariant::default();
 
         app.set_object_property("ClientWorker".into(), inner.pinned());
         app.set_object_property("DeviceModel".into(), device_model.pinned());
-        {
-            #[cfg(feature = "calling")]
-            let calls_model = calls_model.pinned();
-            app.set_object_property("calls".into(), calls_model);
-        }
+        #[cfg(feature = "calling")]
+        app.set_object_property("calls".into(), calls_model.pinned());
 
         inner.pinned().borrow_mut().session_actor = Some(session_actor);
         inner.pinned().borrow_mut().device_model = Some(device_model);

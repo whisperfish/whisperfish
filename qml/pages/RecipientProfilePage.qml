@@ -152,7 +152,7 @@ Page {
 
                 IconButton {
                     id: voiceCallButton
-                    visible: SettingsBridge.debug_mode
+                    visible: SetupWorker.callingSupported && SettingsBridge.debug_mode
                     anchors.verticalCenter: parent.verticalCenter
                     icon.source: "image://theme/icon-m-call"
                     onClicked: {
@@ -162,7 +162,7 @@ Page {
 
                 IconButton {
                     id: videoCallButton
-                    visible: SettingsBridge.debug_mode
+                    visible: SetupWorker.callingSupported && SettingsBridge.debug_mode
                     anchors.verticalCenter: parent.verticalCenter
                     icon.source: "image://theme/icon-m-video"
                     onClicked: {
