@@ -115,7 +115,3 @@ bundled-openssl = [
     "whisperfish-store/bundled-openssl",
 ]
 diesel-instrumentation = ["whisperfish-store/diesel-instrumentation"]
-
-# Unused in Whisperfish, but makes rust-analyzer happy when developing
-# both Whisperfish and libsignal-service-rs at the same time
-unsend-futures = []
