@@ -289,7 +289,9 @@ Page {
             dockMoving: panel.moving
             recipientIsRegistered: session.isRegistered // true for any group
 
-            Component.onCompleted: text = session.draft
+            Component.onCompleted: if (session.draft != null) {
+                text = session.draft
+            }
 
             Component.onDestruction: {
                 if(session != null && session.draft !== text) {
