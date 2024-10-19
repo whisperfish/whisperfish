@@ -1051,7 +1051,11 @@ impl ClientActor {
         }
     }
 
-    #[tracing::instrument(level = "debug", skip(self, ctx, metadata))]
+    #[tracing::instrument(
+        level = "debug",
+        skip(self, ctx),
+        fields(%metadata, %body),
+    )]
     fn process_envelope(
         &mut self,
         Content { body, metadata }: Content,
