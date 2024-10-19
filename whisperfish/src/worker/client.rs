@@ -577,7 +577,15 @@ impl ClientActor {
     /// This was `MessageHandler` in Go.
     ///
     /// TODO: consider putting this as an actor `Handle<>` implementation instead.
-    #[tracing::instrument(level = "debug", skip(self, ctx, msg, sync_sent, metadata))]
+    #[tracing::instrument(
+        level = "debug",
+        skip(self, ctx, source_phonenumber, source_addr, msg, sync_sent, metadata),
+        fields(
+            source_phonenumber = %source_phonenumber.as_ref().map(|p| p.to_string()).as_deref().unwrap_or("None"),
+            source_addr = %source_addr.as_ref().map(|a| a.to_service_id()).as_deref().unwrap_or("None"),
+            is_edit = %edit.is_some(),
+        ),
+    )]
     #[allow(clippy::too_many_arguments)]
     pub fn handle_message(
         &mut self,
