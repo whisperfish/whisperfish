@@ -25,6 +25,7 @@ struct Opts {
     ///
     /// Equivalent with setting
     /// `QT_LOGGING_TO_CONSOLE=1 RUST_LOG=libsignal_service=trace,libsignal_service_actix=trace,whisperfish=trace`.
+    /// Implies '--ts'
     #[clap(short = 'v', long)]
     verbose: bool,
 
@@ -73,7 +74,7 @@ fn main() {
     });
 
     // Then, handle command line arguments and overwrite settings from config file if necessary
-    let opt: Opts = Parser::parse_from(args);
+    let mut opt: Opts = Parser::parse_from(args);
 
     if opt.quit {
         if let Err(e) = dbus_quit_app() {
@@ -129,6 +130,7 @@ fn main() {
     }
 
     if opt.verbose {
+        opt.ts = true;
         config.verbose = true;
     }
     if opt.prestart {
