@@ -255,7 +255,6 @@ install -Dm 644 translations/*.qm \
 install -D %{targetdir}/harbour-whisperfish %{buildroot}%{_bindir}/harbour-whisperfish
 %if %{without harbour}
 %if %{with tools}
-install -D %{targetdir}/fetch-signal-attachment %{buildroot}%{_bindir}/fetch-signal-attachment
 install -D %{targetdir}/storage_key %{buildroot}%{_bindir}/whisperfish-storage-key
 install -D %{targetdir}/whisperfish-migration-dry-run %{buildroot}%{_bindir}/whisperfish-migration-dry-run
 %endif
