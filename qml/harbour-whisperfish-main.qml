@@ -123,7 +123,7 @@ ApplicationWindow
         } else if (contact_avatar_ok) {
             return contact_avatar
         }
-        return 'image://theme/icon-m-telephony-contact-avatar'
+        return ""
     }
 
     // Return either given peer name or device contacts name based on
