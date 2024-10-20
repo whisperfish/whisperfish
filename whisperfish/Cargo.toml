@@ -73,8 +73,8 @@ rustlegraph = { git = "https://gitlab.com/whisperfish/rustlegraph", branch = "ma
 
 regex = "1.7.3"
 
-gstreamer = "0.22"
-glib = "0.19"
+gstreamer = "0.23"
+glib = "0.20"
 
 sailors = { git = "https://gitlab.com/whisperfish/sailo-rs.git", optional = true }
 whisperfish-store = { path = "../whisperfish-store" }
