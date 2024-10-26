@@ -50,7 +50,7 @@
     </message>
     <message id="whisperfish-session-note-to-self">
         <location filename="../qml/delegates/SessionDelegate.qml" line="220"/>
-        <location filename="../qml/harbour-whisperfish-main.qml" line="149"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="160"/>
         <location filename="../qml/pages/ShareDestinationV1.qml" line="106"/>
         <location filename="../qml/pages/ShareDestinationV2.qml" line="105"/>
         <source>Note to self</source>
@@ -107,101 +107,113 @@
         <extracomment>Delete all messages from session menu</extracomment>
         <translation>Gesprek verwijderen</translation>
     </message>
+    <message id="whisperfish-notification-missed-voice-call">
+        <location filename="../qml/harbour-whisperfish-main.qml" line="225"/>
+        <source>Missed voice call</source>
+        <extracomment>Notification text for missed call notification</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-notification-missed-video-call">
+        <location filename="../qml/harbour-whisperfish-main.qml" line="229"/>
+        <source>Missed video call</source>
+        <extracomment>Notification text for missed call notification</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-notification-default-message">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="213"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="286"/>
         <source>New Message</source>
         <extracomment>Default label for new message notification</extracomment>
         <translation>Nief bericht</translation>
     </message>
     <message id="whisperfish-fatal-error-setup-client">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="316"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="392"/>
         <source>Failed to setup Signal client</source>
         <extracomment>Failed to setup signal client error message</extracomment>
         <translation>’t Instellen van de Signal-cliënt is mislukt</translation>
     </message>
     <message id="whisperfish-fatal-error-invalid-datastore">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="321"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="397"/>
         <source>Failed to setup data storage</source>
         <oldsource>Failed to setup datastore</oldsource>
         <extracomment>Failed to setup datastore error message</extracomment>
         <translation>’t Instellen van de gegevensopslag is mislukt</translation>
     </message>
     <message id="permission-la-data">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="493"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="586"/>
         <source>Whisperfish data storage</source>
         <extracomment>Permission for Whisperfish data storage</extracomment>
         <translation>Whisperfish-gegevensopslag</translation>
     </message>
     <message id="permission-la-data_description">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="497"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="590"/>
         <source>Store configuration and messages</source>
         <extracomment>Permission description for Whisperfish data storage</extracomment>
         <translation>Opslag van configuratie en berichten</translation>
     </message>
     <message id="whisperfish-show-archived-menu">
-        <location filename="../qml/pages/MainPage.qml" line="99"/>
+        <location filename="../qml/pages/MainPage.qml" line="104"/>
         <source>Show archived conversations</source>
         <extracomment>Menu item for showing archived conversations</extracomment>
         <translation>Gearchiveerde gesprekken tônen</translation>
     </message>
     <message id="whisperfish-show-inbox-menu">
-        <location filename="../qml/pages/MainPage.qml" line="102"/>
+        <location filename="../qml/pages/MainPage.qml" line="107"/>
         <source>Return to conversations</source>
         <extracomment>Menu item for returning to &quot;inbox&quot; from archived sessions</extracomment>
         <translation>Terug naar gesprekken</translation>
     </message>
     <message id="whisperfish-subtitle-active-conversations">
-        <location filename="../qml/pages/MainPage.qml" line="239"/>
+        <location filename="../qml/pages/MainPage.qml" line="244"/>
         <source>Conversations</source>
         <extracomment>Whisperfish subtitle for active conversations aka. &quot;inbox&quot;</extracomment>
         <translation>Gesprekken</translation>
     </message>
     <message id="whisperfish-subtitle-archived-conversations">
-        <location filename="../qml/pages/MainPage.qml" line="242"/>
+        <location filename="../qml/pages/MainPage.qml" line="247"/>
         <source>Archived conversations</source>
         <extracomment>Whisperfish subtitle for archived conversations</extracomment>
         <translation>Gearchiveerde gesprekken</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text-237">
-        <location filename="../qml/pages/MainPage.qml" line="265"/>
+        <location filename="../qml/pages/MainPage.qml" line="270"/>
         <source>Start a new conversation through a linked device, or let someone message you</source>
         <extracomment>No messages found, hint on what to do</extracomment>
         <translation>Begint e nief gesprek via e gekoppeld toestel, of laat iemand anders u een bericht sturen</translation>
     </message>
     <message id="whisperfish-no-archived-messages-hint-text">
-        <location filename="../qml/pages/MainPage.qml" line="275"/>
+        <location filename="../qml/pages/MainPage.qml" line="280"/>
         <source>No archived conversations</source>
         <extracomment>Showing archived conversations, but the list is empty</extracomment>
         <translation>Geên gearchiveerde gesprekken</translation>
     </message>
     <message id="whisperfish-session-section-pinned">
-        <location filename="../qml/pages/MainPage.qml" line="293"/>
+        <location filename="../qml/pages/MainPage.qml" line="298"/>
         <source>Pinned</source>
         <extracomment>Session section label for pinned messages</extracomment>
         <translation>Vastgepind</translation>
     </message>
     <message id="whisperfish-session-section-never">
-        <location filename="../qml/pages/MainPage.qml" line="313"/>
+        <location filename="../qml/pages/MainPage.qml" line="318"/>
         <source>No messages</source>
         <extracomment>Session section label for never (i.e. no messages, no timestamp)</extracomment>
         <translation>Geên berichten</translation>
     </message>
     <message id="whisperfish-session-section-today">
         <location filename="../qml/pages/LinkedDevices.qml" line="117"/>
-        <location filename="../qml/pages/MainPage.qml" line="298"/>
+        <location filename="../qml/pages/MainPage.qml" line="303"/>
         <source>Today</source>
         <extracomment>Session section label for today</extracomment>
         <translation>Vandaag</translation>
     </message>
     <message id="whisperfish-session-section-yesterday">
         <location filename="../qml/pages/LinkedDevices.qml" line="120"/>
-        <location filename="../qml/pages/MainPage.qml" line="303"/>
+        <location filename="../qml/pages/MainPage.qml" line="308"/>
         <source>Yesterday</source>
         <extracomment>Session section label for yesterday</extracomment>
         <translation>Gisteren</translation>
     </message>
     <message id="whisperfish-session-section-older">
-        <location filename="../qml/pages/MainPage.qml" line="308"/>
+        <location filename="../qml/pages/MainPage.qml" line="313"/>
         <source>Older</source>
         <extracomment>Session section label for older</extracomment>
         <translation>Ouder</translation>
@@ -515,13 +527,13 @@
         <translation>Ontkoppelen</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text">
-        <location filename="../qml/pages/MainPage.qml" line="271"/>
+        <location filename="../qml/pages/MainPage.qml" line="276"/>
         <source>Pull down to start a new conversation.</source>
         <extracomment>No messages found, hint on what to do</extracomment>
         <translation>Trekt naar omleêg voôr e nief gesprek te beginnen.</translation>
     </message>
     <message id="whisperfish-about-menu">
-        <location filename="../qml/pages/MainPage.qml" line="63"/>
+        <location filename="../qml/pages/MainPage.qml" line="68"/>
         <source>About Whisperfish</source>
         <extracomment>About whisperfish menu item</extracomment>
         <translation>Over Whisperfish</translation>
@@ -539,25 +551,25 @@
         <translation>Deze versie van Whisperfish is meêr as 90 dagen oud. Kijkt of da’ der updates zijn voôr te zorgen da Whisperfish blijft wèrken.</translation>
     </message>
     <message id="whisperfish-settings-menu">
-        <location filename="../qml/pages/MainPage.qml" line="69"/>
+        <location filename="../qml/pages/MainPage.qml" line="74"/>
         <source>Settings</source>
         <extracomment>Whisperfish settings menu item</extracomment>
         <translation>Instellingen</translation>
     </message>
     <message id="whisperfish-new-message-menu">
-        <location filename="../qml/pages/MainPage.qml" line="120"/>
+        <location filename="../qml/pages/MainPage.qml" line="125"/>
         <source>New Message</source>
         <extracomment>Whisperfish new message menu item</extracomment>
         <translation>Nief bericht</translation>
     </message>
     <message id="whisperfish-registration-required-message">
-        <location filename="../qml/pages/MainPage.qml" line="255"/>
+        <location filename="../qml/pages/MainPage.qml" line="260"/>
         <source>Registration required</source>
         <extracomment>Whisperfish registration required message</extracomment>
         <translation>Registratie vereist</translation>
     </message>
     <message id="whisperfish-locked-message">
-        <location filename="../qml/pages/MainPage.qml" line="259"/>
+        <location filename="../qml/pages/MainPage.qml" line="264"/>
         <source>Locked</source>
         <extracomment>Whisperfish locked message</extracomment>
         <translation>Vergrendeld</translation>
@@ -690,7 +702,7 @@
     </message>
     <message id="whisperfish-profile-joined-name">
         <location filename="../qml/pages/ProfilePage.qml" line="199"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="145"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="149"/>
         <source>Name</source>
         <extracomment>Profile, name field (first name + last name)</extracomment>
         <translation>Naam</translation>
@@ -709,56 +721,56 @@
     </message>
     <message id="whisperfish-profile-uuid">
         <location filename="../qml/pages/ProfilePage.qml" line="245"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="156"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="181"/>
         <source>UUID</source>
         <extracomment>Profile UUID field</extracomment>
         <translation>UUID</translation>
     </message>
     <message id="whisperfish-profile-phone-number">
         <location filename="../qml/pages/ProfilePage.qml" line="257"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="185"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="210"/>
         <source>Phone number</source>
         <extracomment>Profile phone number field</extracomment>
         <translation>Telefonnumero</translation>
     </message>
     <message id="whisperfish-profile-about">
         <location filename="../qml/pages/ProfilePage.qml" line="269"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="196"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="221"/>
         <source>Write something about yourself</source>
         <extracomment>Profile, about you (greeting/status) field</extracomment>
         <translation>Schrijft iet over u eigen</translation>
     </message>
     <message id="whisperfish-profile-unidentified">
         <location filename="../qml/pages/ProfilePage.qml" line="285"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="211"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="236"/>
         <source>Sealed sending mode</source>
         <extracomment>Profile, sealed sending mode option</extracomment>
         <translation>Verzegeldeverzendingsmodus</translation>
     </message>
     <message id="whisperfish-unidentified-unknown">
         <location filename="../qml/pages/ProfilePage.qml" line="292"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="217"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="242"/>
         <source>Unknown</source>
         <extracomment>Profile, sealed sending mode, unknown option</extracomment>
         <translation>Ongekend</translation>
     </message>
     <message id="whisperfish-unidentified-disabled">
         <location filename="../qml/pages/ProfilePage.qml" line="297"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="221"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="246"/>
         <source>Disabled</source>
         <extracomment>Profile, sealed sending mode, disabled option</extracomment>
         <translation>Afgezet</translation>
     </message>
     <message id="whisperfish-unidentified-enabled">
         <location filename="../qml/pages/ProfilePage.qml" line="302"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="225"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="250"/>
         <source>Enabled</source>
         <extracomment>Profile, sealed sending mode, enabled option</extracomment>
         <translation>Ingeschakeld</translation>
     </message>
     <message id="whisperfish-unidentified-unrestricted">
         <location filename="../qml/pages/ProfilePage.qml" line="307"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="229"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="254"/>
         <source>Unrestricted</source>
         <extracomment>Profile, sealed sending mode, unrestricted option</extracomment>
         <translation>Onbepèrkt</translation>
@@ -782,37 +794,37 @@
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-profile-uuid-invalid-warning">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="174"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="199"/>
         <source>This user profile is broken and can&apos;t be used.</source>
         <extracomment>Warning about recipient UUID not existing or nil (all zeros)</extracomment>
         <translation>Da’ gebruikersprofiel is kapot en kunde nimeêr gebruiken.</translation>
     </message>
     <message id="whisperfish-show-fingerprint">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="243"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="268"/>
         <source>Show fingerprint</source>
         <extracomment>Show fingerprint button</extracomment>
         <translation>Vingerafdruk tônen</translation>
     </message>
     <message id="whisperfish-numeric-fingerprint-directions">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="286"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="311"/>
         <source>If you wish to verify the security of your end-to-end encryption with %1, compare the numbers above with the numbers on their device.</source>
         <extracomment>Numeric fingerprint instructions</extracomment>
         <translation>Vergelijkt de cijferkes hierboven me’ de die op ’t toestel van %1 voôr de veiligheid van u eind-tot-eind-versleuteling te verifiëren.</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="296"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="321"/>
         <source>Post-quantum keys in use</source>
         <extracomment>Profile page: whether a contact has post-quantum secure sessions</extracomment>
         <translation>Postkwantumsleutels in gebruik</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled-description">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="299"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="324"/>
         <source>If checked, this session was initialized with post-quantum secure cryptography.</source>
         <extracomment>Profile page: description for post-quantum secure sessions</extracomment>
         <translation>As er hier e vinkske staat is deze sessie geïnitialiseerd me postkwantumbeveiligde cryptografie.</translation>
     </message>
     <message id="whisperfish-kyber-click-explanation">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="309"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="334"/>
         <source>Session reset for post-quantum upgrade</source>
         <extracomment>Upgrading the session to Kyber remorse popup, past tense</extracomment>
         <translation>Sessie heringesteld voôr postkwantumupgrade</translation>
@@ -1712,7 +1724,7 @@ Settings page share contacts</extracomment>
         <translation>Afgezet</translation>
     </message>
     <message id="whisperfish-verify-contact-identity-title">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="237"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="262"/>
         <source>Verify safety numbers</source>
         <oldsource>Verify %1</oldsource>
         <extracomment>Verify safety numbers</extracomment>
@@ -1980,7 +1992,7 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-sender-name-label-outgoing">
         <location filename="../qml/components/QuotedMessagePreview.qml" line="109"/>
         <location filename="../qml/components/SenderNameLabel.qml" line="67"/>
-        <location filename="../qml/harbour-whisperfish-main.qml" line="153"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="164"/>
         <source>You</source>
         <extracomment>Name shown when replying to own messages</extracomment>
         <translation>Gij</translation>
@@ -2027,26 +2039,26 @@ Settings page share contacts</extracomment>
         <translation>da’s hier gewoôn e leeg bericht se, awel merci</translation>
     </message>
     <message id="whisperfish-service-message-joined-group-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="129"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="135"/>
         <source>You joined the group.</source>
         <oldsource>You joined the group “%1”.</oldsource>
         <extracomment>Service message</extracomment>
         <translation>G’hed de groep vervoegd.</translation>
     </message>
     <message id="whisperfish-service-message-left-group-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="137"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="143"/>
         <source>You left the group.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Ge zijt et afgetrapt.</translation>
     </message>
     <message id="whisperfish-service-message-joined-group-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="132"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="138"/>
         <source>%1 joined the group.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 hee’ de groep vervoegd.</translation>
     </message>
     <message id="whisperfish-service-message-left-group-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="140"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="146"/>
         <source>%1 left the group.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 is ’t afgetrapt.</translation>
@@ -2062,35 +2074,35 @@ Settings page share contacts</extracomment>
         <translation type="vanished">G’hed ne video-oproep van %1 gemist.</translation>
     </message>
     <message id="whisperfish-service-message-call-voice-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="169"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="182"/>
         <source>You had a voice call with %1.</source>
         <oldsource>You called %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>G’hed e gesprek me %1 gehad.</translation>
     </message>
     <message id="whisperfish-service-message-call-video-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="161"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="174"/>
         <source>You had a video call with %1.</source>
         <oldsource>You started a video call with %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>G’hed e videogesprek me %1 gehad.</translation>
     </message>
     <message id="whisperfish-service-message-call-voice-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="172"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="186"/>
         <source>%1 had a voice call with you.</source>
         <oldsource>%1 called you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 heed e gesprek me u gehad.</translation>
     </message>
     <message id="whisperfish-service-message-call-video-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="164"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="178"/>
         <source>%1 had a video call with you.</source>
         <oldsource>%1 started a video call with you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 heed e videogesprek me u gehad.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-weeks" numerus="yes">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="51"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="57"/>
         <source>%n week(s)</source>
         <oldsource>%1 week(s)</oldsource>
         <extracomment>Expiring message timeout in weeks. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
@@ -2100,7 +2112,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-days" numerus="yes">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="55"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="61"/>
         <source>%n day(s)</source>
         <oldsource>%1 day(s)</oldsource>
         <extracomment>Expiring message timeout in days. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
@@ -2110,7 +2122,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-hours" numerus="yes">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="59"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="65"/>
         <source>%n hour(s)</source>
         <oldsource>%1 hour(s)</oldsource>
         <extracomment>Expiring message timeout in hours. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
@@ -2120,7 +2132,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-minutes" numerus="yes">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="63"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="69"/>
         <source>%n minute(s)</source>
         <oldsource>%1 minute(s)</oldsource>
         <extracomment>Expiring message timeout in minutes. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
@@ -2130,7 +2142,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-seconds" numerus="yes">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="67"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="73"/>
         <source>%n second(s)</source>
         <oldsource>%1 second(s)</oldsource>
         <extracomment>Expiring message timeout in seconds. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
@@ -2140,118 +2152,130 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-update-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="88"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="94"/>
         <source>You set expiring messages timeout to %1.</source>
         <extracomment>Service message, %1 time</extracomment>
         <translation>G’hed ingesteld da berichten moeten verdwijnen achter %1.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-update-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="91"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="97"/>
         <source>%1 set expiring messages timeout to %2.</source>
         <extracomment>Service message, %1 is a name, %2 is time</extracomment>
         <translation>%1 heed ingesteld da berichten moeten verdwijnen achter %2.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-disable-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="96"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="102"/>
         <source>You disabled expiring messages.</source>
         <extracomment>Service message</extracomment>
         <translation>G’hed ingesteld da berichten ni moeten verdwijnen.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-disable-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="99"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="105"/>
         <source>%1 disabled expiring messages.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 heed ingesteld da berichten ni moeten verdwijnen.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-unknown-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="104"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="110"/>
         <source>You set or disabled expiring messages timeout.</source>
         <extracomment>Service message</extracomment>
         <translation>G’hed ingesteld of da berichten al dan ni moeten verdwijnen.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-unknown-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="107"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="113"/>
         <source>%1 set or disabled expiring messages timeout.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 heed ingesteld of da berichten al dan ni moeten verdwijnen.</translation>
     </message>
     <message id="whisperfish-service-message-profile-key-update-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="112"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="118"/>
         <source>%1 updated their profile.</source>
         <oldsource>%1 updated their profile key with you.</oldsource>
         <extracomment>Service message for profile (key) update. %1 is a name</extracomment>
         <translation>%1 hee’ zijn/heur profiel bijgewèrkt.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="117"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="123"/>
         <source>You ended the session with %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>G’hed de sessie me %1 beëindigd.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="120"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="126"/>
         <source>%1 ended the session with you.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 hee’ de sessie me u beëindigd.</translation>
     </message>
     <message id="whisperfish-service-message-changed-group">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="124"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="130"/>
         <source>The group was updated.</source>
         <extracomment>Service message</extracomment>
         <translation>De groep is bijgewèrkt.</translation>
     </message>
+    <message id="whisperfish-service-message-call-group-self">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="151"/>
+        <source>You had a group call.</source>
+        <extracomment>Service message</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-call-group-peer">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="154"/>
+        <source>%1 had a group call with you.</source>
+        <extracomment>Service message, %1 is the person initiating the call.</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-service-message-missed-call-voice-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="145"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="159"/>
         <source>You missed a voice call from %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>G’hed nen oproep van %1 gemist.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="148"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="162"/>
         <source>You tried to voice call %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>G’hed geprobeerd van %1 te bellen.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-video-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="153"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="167"/>
         <source>You missed a video call from %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>G’hed ne video-oproep van %1 gemist.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-video-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="156"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="170"/>
         <source>You tried to video call %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>G’hed geprobeerd van %1 te videobellen.</translation>
     </message>
     <message id="whisperfish-service-message-fingerprint-changed">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="177"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="191"/>
         <source>Your safety number with %1 has changed. Swipe right to verify the new number.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Uwe veiligheidsnumero me %1 is veranderd. Vaagt naar rechts voôr de nieve numero te verifiëren.</translation>
     </message>
     <message id="whisperfish-service-message-session-reset-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="182"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="196"/>
         <source>You reset the secure session with %1.</source>
         <oldsource>You have reset the secure session with %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>G’hed de beveiligde sessie me %1 heringesteld.</translation>
     </message>
     <message id="whisperfish-service-message-session-reset-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="185"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="199"/>
         <source>%1 reset the secure session with you.</source>
         <oldsource>%1 has reset the secure session with you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 hee’ de beveiligde sessie me u heringesteld.</translation>
     </message>
     <message id="whisperfish-service-message-not-supported">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="191"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="205"/>
         <source>This service message of is not yet supported by Whisperfish. Please file a bug report. (Flags: %1, Type: %2, Contents: &quot;%3&quot;)</source>
         <oldsource>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: %1)</oldsource>
         <translation>Da’ dienstbericht wordt nog ni ondersteund deur Whisperfish. Dient hier een foutmelding voôr in. (Vlaggen: %1, Type: %2, Inhoud: “%3”)</translation>
     </message>
     <message id="whisperfish-service-message-more-info">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="247"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="261"/>
         <source>more information</source>
         <translation>meêr informatie</translation>
     </message>
@@ -2664,6 +2688,36 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/LinkContactPage.qml" line="10"/>
         <source>Select contact</source>
         <extracomment>Link Signal user to Sailfish OS contact page title</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-incoming-voice-call-title">
+        <location filename="../qml/pages/RingingDialog.qml" line="96"/>
+        <source>Incoming voice call</source>
+        <extracomment>Title of the dialog shown when a voice call is incoming</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-incoming-video-call-title">
+        <location filename="../qml/pages/RingingDialog.qml" line="99"/>
+        <source>Incoming video call</source>
+        <extracomment>Title of the dialog shown when a video call is incoming</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-calling-decline">
+        <location filename="../qml/pages/RingingDialog.qml" line="117"/>
+        <source>Decline</source>
+        <extracomment>Button to decline an incoming call</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-calling-answer">
+        <location filename="../qml/pages/RingingDialog.qml" line="127"/>
+        <source>Answer</source>
+        <extracomment>Button to answer an incoming call</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-calling-hang-up">
+        <location filename="../qml/pages/RingingDialog.qml" line="147"/>
+        <source>Hang up</source>
+        <extracomment>Button to hang up/cancel an outgoing ringing call</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>
