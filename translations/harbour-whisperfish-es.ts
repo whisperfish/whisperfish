@@ -111,13 +111,13 @@
         <location filename="../qml/harbour-whisperfish-main.qml" line="225"/>
         <source>Missed voice call</source>
         <extracomment>Notification text for missed call notification</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Llamada perdida</translation>
     </message>
     <message id="whisperfish-notification-missed-video-call">
         <location filename="../qml/harbour-whisperfish-main.qml" line="229"/>
         <source>Missed video call</source>
         <extracomment>Notification text for missed call notification</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Videollamada perdida</translation>
     </message>
     <message id="whisperfish-notification-default-message">
         <location filename="../qml/harbour-whisperfish-main.qml" line="286"/>
@@ -2339,13 +2339,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="151"/>
         <source>You had a group call.</source>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Tuviste una llamada de grupal.</translation>
     </message>
     <message id="whisperfish-service-message-call-group-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="154"/>
         <source>%1 had a group call with you.</source>
         <extracomment>Service message, %1 is the person initiating the call.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 tuvo una llamada de grupal contigo.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="159"/>
@@ -2817,31 +2817,31 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RingingDialog.qml" line="96"/>
         <source>Incoming voice call</source>
         <extracomment>Title of the dialog shown when a voice call is incoming</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Llamada entrante</translation>
     </message>
     <message id="whisperfish-incoming-video-call-title">
         <location filename="../qml/pages/RingingDialog.qml" line="99"/>
         <source>Incoming video call</source>
         <extracomment>Title of the dialog shown when a video call is incoming</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Videollamada entrante</translation>
     </message>
     <message id="whisperfish-calling-decline">
         <location filename="../qml/pages/RingingDialog.qml" line="117"/>
         <source>Decline</source>
         <extracomment>Button to decline an incoming call</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Rechazar</translation>
     </message>
     <message id="whisperfish-calling-answer">
         <location filename="../qml/pages/RingingDialog.qml" line="127"/>
         <source>Answer</source>
         <extracomment>Button to answer an incoming call</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Responder</translation>
     </message>
     <message id="whisperfish-calling-hang-up">
         <location filename="../qml/pages/RingingDialog.qml" line="147"/>
         <source>Hang up</source>
         <extracomment>Button to hang up/cancel an outgoing ringing call</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Colgar</translation>
     </message>
 </context>
 </TS>
