@@ -147,6 +147,7 @@ impl super::ClientActor {
         // - [ ] Phone is already in a call (from any other Telepathy client)
         // - [X] No opaque data is provided
         // - [ ] Recipient is blocked through a notification profile
+        // - [ ] Recipient session is not muted (notification profile?)
         // Otherwise: ring!
 
         let Some(call_id) = offer.id.map(CallId::from) else {
