@@ -42,6 +42,28 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use crate::store::orm::{CallTypeMapping, EventTypeMapping};
+
+    calls (id) {
+        id -> Integer,
+        call_id -> Integer,
+        message_id -> Nullable<Integer>,
+        session_id -> Integer,
+        #[sql_name = "type"]
+        type_ -> CallTypeMapping,
+        is_outbound -> Bool,
+        event -> EventTypeMapping,
+        timestamp -> Timestamp,
+        ringer -> Integer,
+        deletion_timestamp -> Nullable<Timestamp>,
+        is_read -> Bool,
+        local_joined -> Bool,
+        group_call_active -> Bool,
+    }
+}
+
+diesel::table! {
     distribution_list_members (distribution_id, session_id) {
         distribution_id -> Text,
         session_id -> Integer,
@@ -241,6 +263,9 @@ diesel::table! {
 }
 
 diesel::joinable!(attachments -> messages (message_id));
+diesel::joinable!(calls -> messages (message_id));
+diesel::joinable!(calls -> recipients (ringer));
+diesel::joinable!(calls -> sessions (session_id));
 diesel::joinable!(distribution_list_members -> distribution_lists (distribution_id));
 diesel::joinable!(distribution_list_members -> sessions (session_id));
 diesel::joinable!(distribution_lists -> sessions (session_id));
@@ -263,6 +288,7 @@ diesel::joinable!(story_sends -> sessions (session_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     attachments,
+    calls,
     distribution_list_members,
     distribution_lists,
     group_v1_members,

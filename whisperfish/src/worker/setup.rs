@@ -47,6 +47,8 @@ pub struct SetupWorker {
 
     useVoice: qt_property!(bool; NOTIFY setupChanged),
 
+    callingSupported: qt_property!(bool; READ calling_supported NOTIFY setupChanged),
+
     /// Emitted when any of the properties change.
     setupChanged: qt_signal!(),
 }
@@ -409,6 +411,10 @@ impl SetupWorker {
                 complete => return Err(anyhow::Error::msg("Linking to device completed without any result")),
             }
         }
+    }
+
+    fn calling_supported(&self) -> bool {
+        cfg!(feature = "calling")
     }
 
     fn get_uuid(&self) -> QString {

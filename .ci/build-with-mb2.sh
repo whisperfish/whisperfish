@@ -30,6 +30,8 @@ fi
 git clone . ~/whisperfish-build
 pushd ~/whisperfish-build
 
+bash fetch-webrtc.sh
+
 # We also need to move the cache, and afterwards move it back.
 if [ -e "$CI_PROJECT_DIR/cargo" ]; then
     sudo mv $CI_PROJECT_DIR/cargo ~/cargo
@@ -67,6 +69,7 @@ mb2 -t SailfishOS-$TARGET_VERSION-$MER_ARCH build \
     --with lto \
     --with sccache \
     --with tools \
+    --with calling \
 
 rm -rf $TMPDIR
 export TMPDIR="$TMPDIR2"

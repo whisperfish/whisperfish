@@ -76,6 +76,8 @@ regex = "1.7.3"
 gstreamer = "0.23"
 glib = "0.20"
 
+ringrtc = { git = "https://github.com/whisperfish/ringrtc", branch = "whisperfork", version = "2.46.2", features = ["native", "system_ssl"], optional = true }
+
 sailors = { git = "https://gitlab.com/whisperfish/sailo-rs.git", optional = true }
 whisperfish-store = { path = "../whisperfish-store" }
 whisperfish-model-macro = { path = "../whisperfish-model-macro" }
@@ -90,6 +92,8 @@ cmake = "0.1.48"
 cpp_build = "0.5"
 cc = "1.0"
 anyhow = "1.0"
+sha2 = { version = "0.10", features = ["force-soft"] }
+hex = "0.4"
 
 [dev-dependencies]
 actix-rt = "2.8.0"
@@ -108,6 +112,7 @@ sailfish = [
     "sailors",
     "whisperfish-store/sailfish",
 ]
+calling = ["ringrtc"]
 harbour = ["sailfish"]
 
 bundled-openssl = [

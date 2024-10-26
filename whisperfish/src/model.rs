@@ -52,6 +52,8 @@ macro_rules! define_model_roles {
 
 mod active_model;
 pub mod attachment;
+#[cfg(feature = "calling")]
+pub mod calling;
 pub mod contact;
 pub mod create_conversation;
 pub mod device;
@@ -70,6 +72,8 @@ use std::time::Duration;
 
 pub use self::active_model::*;
 pub use self::attachment::*;
+#[cfg(feature = "calling")]
+pub use self::calling::*;
 pub use self::contact::*;
 pub use self::create_conversation::*;
 pub use self::device::*;

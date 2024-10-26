@@ -1,6 +1,8 @@
 // XXX maybe the session-to-db migration should move into the store module.
 pub mod migrations;
 
+#[cfg(feature = "calling")]
+mod call;
 mod groupv2;
 mod linked_devices;
 mod message_expiry;
@@ -44,6 +46,8 @@ use crate::actor::SendReaction;
 use crate::actor::SessionActor;
 use crate::config::SettingsBridge;
 use crate::gui::StorageReady;
+#[cfg(feature = "calling")]
+use crate::model::Calls;
 use crate::model::DeviceModel;
 use crate::platform::QmlApp;
 use crate::store::orm::UnidentifiedAccessMode;
@@ -52,6 +56,8 @@ use crate::store::Storage;
 use crate::worker::client::unidentified::CertType;
 use actix::prelude::*;
 use anyhow::Context;
+#[cfg(feature = "calling")]
+pub use call::*;
 use chrono::prelude::*;
 use futures::prelude::*;
 use libsignal_service::configuration::SignalServers;
@@ -220,6 +226,15 @@ pub struct ClientWorker {
         message: QString,
         isGroup: bool
     ),
+    missedCall: qt_signal!(
+        sid: i32,
+        sessionName: QString,
+        senderName: QString,
+        senderIdentifier: QString,
+        senderUuid: QString,
+        isVideo: bool,
+        isGroup: bool
+    ),
     promptResetPeerIdentity: qt_signal!(),
     messageSent: qt_signal!(sid: i32, mid: i32, message: QString),
     messageNotSent: qt_signal!(sid: i32, mid: i32),
@@ -266,6 +281,8 @@ pub struct ClientWorker {
 /// ClientActor keeps track of the connection state.
 pub struct ClientActor {
     inner: QObjectBox<ClientWorker>,
+    #[cfg(feature = "calling")]
+    calls_model: QObjectBox<Calls>,
 
     migration_state: MigrationCondVar,
 
@@ -289,6 +306,9 @@ pub struct ClientActor {
     registration_session: Option<RegistrationSessionMetadataResponse>,
 
     settings: SettingsBridge,
+
+    #[cfg(feature = "calling")]
+    call_state: Option<call::WhisperfishCallManager>,
 }
 
 fn whisperfish_device_capabilities() -> DeviceCapabilities {
@@ -312,8 +332,14 @@ impl ClientActor {
     ) -> Result<Self, anyhow::Error> {
         let inner = QObjectBox::new(ClientWorker::default());
         let device_model = QObjectBox::new(DeviceModel::default());
+
+        #[cfg(feature = "calling")]
+        let calls_model = QObjectBox::new(Calls::new());
+
         app.set_object_property("ClientWorker".into(), inner.pinned());
         app.set_object_property("DeviceModel".into(), device_model.pinned());
+        #[cfg(feature = "calling")]
+        app.set_object_property("calls".into(), calls_model.pinned());
 
         inner.pinned().borrow_mut().session_actor = Some(session_actor);
         inner.pinned().borrow_mut().device_model = Some(device_model);
@@ -323,6 +349,8 @@ impl ClientActor {
 
         Ok(Self {
             inner,
+            #[cfg(feature = "calling")]
+            calls_model,
             migration_state: MigrationCondVar::new(),
             unidentified_certificates: UnidentifiedCertificates::default(),
             credentials: None,
@@ -345,6 +373,9 @@ impl ClientActor {
             registration_session: None,
 
             settings: SettingsBridge::default(),
+
+            #[cfg(feature = "calling")]
+            call_state: None,
         })
     }
 
@@ -1246,11 +1277,12 @@ impl ClientActor {
                     }
                 }
             }
-            ContentBody::CallMessage(_call) => {
-                tracing::info!("{:?} is calling.", metadata.sender.to_service_id());
+            #[cfg(feature = "calling")]
+            ContentBody::CallMessage(call) => {
+                self.handle_call_message(ctx, metadata, call);
             }
             _ => {
-                tracing::info!("TODO")
+                tracing::warn!("unimplemented ContentBody")
             }
         }
     }
@@ -1287,6 +1319,14 @@ impl Actor for ClientActor {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         self.inner.pinned().borrow_mut().actor = Some(ctx.address());
+        #[cfg(feature = "calling")]
+        {
+            self.call_state = Some(call::WhisperfishCallManager::new(ctx.address()));
+            self.calls_model
+                .pinned()
+                .borrow_mut()
+                .set_client(ctx.address());
+        }
     }
 
     fn stopped(&mut self, ctx: &mut Self::Context) {

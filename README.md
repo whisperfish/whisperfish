@@ -134,6 +134,34 @@ Because of a bug in `sb2`, it is currently not possible to (reliably) build Whis
 
 If you get errors (command not found or status 126) at linking stage, make sure that you are not using `~/.cargo/config` to override linkers or compilers.
 
+### Voice and video calls
+
+For voice and video calling, Whisperfish requires the RingRTC library,
+including Signal's custom WebRTC implementation.  You can download pre-built artifacts with the following command:
+
+    bash fetch-webrtc.sh
+
+See <https://www.rubdos.be/2024/09/08/building-ringrtc-for-whisperfish.html> for how to build these artifacts.
+
+To build Whisperfish with support for voice and video calls included, use
+
+    sfdk build -- --with calling
+
+This triggers the `cargo build --feature calling` feature flag, which adds voice and video support.
+
+### Building for the host
+
+Building Whisperfish on your host machine is also possible. This is useful for development and debugging purposes. There are some differences to be aware of.
+
+The RPM automatically selects the `sailfish` feature flag, which will not compile outside of SailfishOS.  This feature flag is *not* enabled by default, so it doesn't sit in the way.
+
+You'll have to manually set the `OUTPUT_DIR` variable, which contains the output of the `webrtc` build.  The `fetch-webrtc.sh` script fetches `libwebrtc.a` pre-built for all four architectures, and for the two major versions of OpenSSL (3.x, and 1.1.1).
+
+    bash fetch-webrtc.sh
+    OUTPUT_DIR=$PWD/ringrtc/322/x86_64-unknown-linux-gnu/ cargo build --features bundled-sqlcipher
+
+You can swap out `322` for `111` if your system uses OpenSSL 1.1.1.
+
 ## Database
 
 Whisperfish uses SQLCipher to store its data. SQLCipher is essentially SQLite with encryption features.

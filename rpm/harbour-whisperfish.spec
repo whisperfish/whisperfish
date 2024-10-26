@@ -6,6 +6,7 @@
 %bcond_with lto
 %bcond_with sccache
 %bcond_with tools
+%bcond_with calling
 %bcond_with diesel_instrumentation
 
 # Targets 4.5 and newer default to Zstd RPM compression,
@@ -197,6 +198,10 @@ FEATURES="$FEATURES,coz"
 FEATURES="$FEATURES,diesel-instrumentation"
 %endif
 
+%if %{with calling}
+FEATURES="$FEATURES,calling"
+%endif
+
 # We could use the %(version) and %(release), but SFDK will include a datetime stamp,
 # ordering Cargo to recompile literally every second when the workspace is dirty.
 # git describe is a lot stabler, because it only uses the commit number and potentially a -dirty flag
@@ -230,6 +235,9 @@ fi
 # Workaround a Scratchbox bug - /tmp/[...]/symbols.o not found
 export TMPDIR=${TMPDIR:-$(realpath ".tmp")}
 mkdir -p $TMPDIR
+
+# ringrtc requires an output directory for the WebRTC artifacts
+export OUTPUT_DIR=%{_sourcedir}/../ringrtc/111/${SB2_RUST_TARGET_TRIPLE}
 
 cargo build \
           -j 1 \
@@ -270,6 +278,8 @@ install -Dm 644 harbour-whisperfish.privileges \
     %{buildroot}%{_datadir}/mapplauncherd/privileges.d/harbour-whisperfish.privileges
 install -Dm 644 harbour-whisperfish-message.conf \
     %{buildroot}%{_datadir}/lipstick/notificationcategories/harbour-whisperfish-message.conf
+install -Dm 644 harbour-whisperfish-call.conf \
+    %{buildroot}%{_datadir}/lipstick/notificationcategories/harbour-whisperfish-call.conf
 
 # Application icons
 install -Dm 644 icons/86x86/harbour-whisperfish.png \
@@ -323,7 +333,7 @@ systemctl-user disable harbour-whisperfish.service || true
 %{_datadir}/applications/%{name}.desktop
 %{_datadir}/mapplauncherd/privileges.d/%{name}.privileges
 %{_datadir}/icons/hicolor/*/apps/%{name}.png
-%{_datadir}/lipstick/notificationcategories/%{name}-message.conf
+%{_datadir}/lipstick/notificationcategories/%{name}*.conf
 
 %{_sysconfdir}/sailjail/permissions/harbour-whisperfish.profile
 

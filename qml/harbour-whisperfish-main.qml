@@ -65,6 +65,17 @@ ApplicationWindow
         }
     }
 
+    Component {
+        id: callNotification
+        Notification {
+            property int sessionId
+            appIcon: "harbour-whisperfish"
+            appName: "Whisperfish"
+            category: "harbour-whisperfish-call"
+            Component.onDestruction: close()
+        }
+    }
+
     Notification {
         id: quietMessageNotification
         property bool isSupported: false
@@ -189,6 +200,68 @@ ApplicationWindow
         }
     }
 
+    function newMissedCallNotification(sid, sessionName, senderName, senderIdentifier, senderUuid, isVideo, isGroup) {
+        var name = getRecipientName(senderIdentifier, undefined, senderName) // FIXME
+        var contactName = isGroup ? sessionName : name
+
+        // Only ConversationPage.qml has `sessionId` property.
+        if(Qt.application.state == Qt.ApplicationActive &&
+           (pageStack.currentPage == _mainPage || pageStack.currentPage.sessionId == sid)) {
+            if(quietMessageNotification.isSupported) {
+                quietMessageNotification.publish()
+            }
+            return
+        }
+
+        var m = callNotification.createObject(null)
+        m.itemCount = 1
+        var setting = SettingsBridge.notification_privacy.toString();
+        if(setting === "off") {
+            return;
+        } else {
+            if (!isVideo) {
+                //: Notification text for missed call notification
+                //% "Missed voice call"
+                m.body = qsTrId("whisperfish-notification-missed-voice-call")
+            } else {
+                //: Notification text for missed call notification
+                //% "Missed video call"
+                m.body = qsTrId("whisperfish-notification-missed-video-call")
+            }
+        }
+
+        if(setting === "complete" || setting === "sender-only") {
+            m.previewSummary = name
+            m.summary = name
+            if(m.subText !== undefined) {
+                m.subText = contactName
+            }
+        }
+
+        m.previewBody = m.body
+        m.clicked.connect(function() {
+            console.log("Activating session: " + sid)
+            mainWindow.activate()
+            showMainPage()
+            pageStack.push(Qt.resolvedUrl("pages/ConversationPage.qml"), { sessionId: sid }, PageStackAction.Immediate)
+        })
+        // This is needed to call default action
+        m.remoteActions = [ {
+            "name": "default",
+            "displayName": "Show Conversation",
+            // Doesn't work as-is.
+            // TODO: Drop in Avatar image here.
+            // "icon": "harbour-whisperfish",
+            "service": "org.whisperfish.session",
+            "path": "/message",
+            "iface": "org.whisperfish.session",
+            "method": "showConversation",
+            "arguments": [ "sid", sid ]
+        } ]
+        m.publish()
+        m.sid = sid
+    }
+
     function newMessageNotification(sid, mid, sessionName, senderName, senderIdentifier, senderUuid, message, isGroup) {
         var name = getRecipientName(senderIdentifier, undefined, senderName) // FIXME
         var contactName = isGroup ? sessionName : name
@@ -286,6 +359,9 @@ ApplicationWindow
         onNotifyMessage: {
             newMessageNotification(sid, mid, sessionName, senderName, senderIdentifier, senderUuid, message, isGroup)
         }
+        onMissedCall: {
+            newMissedCallNotification(sid, sessionName, senderName, senderIdentifier, senderUuid, isVideo, isGroup)
+        }
         onMessageNotSent: { }
         onProofRequested: {
             if(proofCaptchaToken === '') {
@@ -319,6 +395,23 @@ ApplicationWindow
             //: Failed to setup datastore error message
             //% "Failed to setup data storage"
             showFatalError(qsTrId("whisperfish-fatal-error-invalid-datastore"))
+        }
+    }
+
+    Connections {
+        // Calls is a global, injected by the client actor.
+        target: calls
+
+        onRingingChanged: {
+            if (calls.ringingRecipientId != -1 && SettingsBridge.debug_mode) {
+                pageStack.push(
+                    Qt.resolvedUrl("pages/RingingDialog.qml"), { }
+                )
+            }
+        }
+
+        onHungup: {
+            console.log("Hung up notification")
         }
     }
 

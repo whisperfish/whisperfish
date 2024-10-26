@@ -108,6 +108,35 @@ pub enum MessageType {
     GroupCallUpdate,
     ExpirationTimerUpdate,
     IdentityReset,
+
+    // Call stuff
+    IncomingAudioCall,
+    OutgoingAudioCall,
+    MissedAudioCall,
+
+    IncomingVideoCall,
+    OutgoingVideoCall,
+    MissedVideoCall,
+
+    GroupCall,
+}
+
+impl MessageType {
+    // Kotlin: CallTable.Call.getMessageType
+    pub fn from_call_type(ty: CallType, is_outgoing: bool, event: EventType) -> Self {
+        match (ty, is_outgoing) {
+            (CallType::Group, _) | (CallType::AdHoc, _) => Self::GroupCall,
+            // Incoming missed
+            (CallType::Audio, false) if event.is_missed_call() => Self::MissedAudioCall,
+            (CallType::Video, false) if event.is_missed_call() => Self::MissedVideoCall,
+            // Incoming not missed
+            (CallType::Audio, false) => Self::IncomingAudioCall,
+            (CallType::Video, false) => Self::IncomingVideoCall,
+            // Outgoing
+            (CallType::Audio, true) => Self::OutgoingAudioCall,
+            (CallType::Video, true) => Self::OutgoingVideoCall,
+        }
+    }
 }
 
 impl AsRef<str> for MessageType {
@@ -122,7 +151,42 @@ impl AsRef<str> for MessageType {
             MessageType::GroupCallUpdate => "group_call_update",
             MessageType::ExpirationTimerUpdate => "expiration_timer_update",
             MessageType::IdentityReset => "identity_reset",
+            MessageType::IncomingAudioCall => "incoming_audio_call",
+            MessageType::OutgoingAudioCall => "outgoing_audio_call",
+            MessageType::MissedAudioCall => "missed_audio_call",
+            MessageType::IncomingVideoCall => "incoming_video_call",
+            MessageType::OutgoingVideoCall => "outgoing_video_call",
+            MessageType::MissedVideoCall => "missed_video_call",
+            MessageType::GroupCall => "group_call",
         }
+    }
+}
+
+#[derive(diesel_derive_enum::DbEnum, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CallType {
+    Audio,
+    Video,
+    Group,
+    AdHoc,
+}
+
+#[derive(diesel_derive_enum::DbEnum, Debug, Clone, Copy, PartialEq, Eq)]
+// TODO: rename to CallEventType
+pub enum EventType {
+    Ongoing,
+    Accepted,
+    NotAccepted,
+    Missed,
+    GenericGroupCall,
+    Joined,
+    Ringing,
+    Declined,
+    OutgoingRing,
+}
+
+impl EventType {
+    pub fn is_missed_call(&self) -> bool {
+        *self == Self::Missed // || self == Self::MissedNotificationProfile
     }
 }
 
@@ -186,6 +250,22 @@ impl Message {
     pub fn is_edited(&self) -> bool {
         !self.is_latest_revision() && !self.is_original_message()
     }
+}
+
+#[derive(Queryable, Identifiable, Debug, Clone, PartialEq, Eq)]
+pub struct Call {
+    pub id: i32,
+    pub call_id: i32,
+    pub message_id: Option<i32>,
+    pub session_id: Option<i32>,
+    pub r#type: CallType,
+    pub is_outbound: bool,
+    pub event: EventType,
+    pub timestamp: NaiveDateTime,
+    pub deletion_timestamp: Option<NaiveDateTime>,
+    pub is_read: bool,
+    pub local_joined: bool,
+    pub group_call_active: bool,
 }
 
 impl Display for Message {
