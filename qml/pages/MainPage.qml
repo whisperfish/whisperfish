@@ -59,7 +59,7 @@ Page {
 
             MenuItem {
                 text: "Call test"
-                visible: SettingsBridge.debug_mode
+                visible: SetupWorker.callingSupported && SettingsBridge.debug_mode
                 onClicked: pageStack.push(Qt.resolvedUrl("RingingDialog.qml"))
             }
             MenuItem {
