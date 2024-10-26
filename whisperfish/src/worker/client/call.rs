@@ -19,17 +19,12 @@ use ringrtc::{
     },
     lite::http::DelegatingClient,
 };
-use std::collections::HashMap;
 use whisperfish_store::millis_to_naive_chrono;
 
 mod call_manager;
 
 #[derive(Debug)]
 pub(super) struct WhisperfishCallManager {
-    sub_state: CallSubState,
-
-    call_setup_states: HashMap<CallId, CallSetupState>,
-
     manager: CallManager<ringrtc::native::NativePlatform>,
 }
 
@@ -38,37 +33,9 @@ impl WhisperfishCallManager {
         let platform = call_manager::new_native_platform(client).unwrap();
         let client = DelegatingClient::new(call_manager::WhisperfishRingRtcHttpClient::default());
         Self {
-            sub_state: CallSubState::default(),
-            call_setup_states: HashMap::new(),
             manager: CallManager::new(platform, client).expect("initialized call manager"),
         }
     }
-}
-
-#[derive(Debug)]
-struct CallSetupState {
-    enable_video_on_create: bool,
-    // Note that we store Offer Type instead of a isRemoteVideoOffer flag
-    offer_type: offer::Type,
-    accept_with_video: bool,
-    sent_joined_message: bool,
-    #[allow(dead_code)]
-    ring_group: bool,
-    ring_id: i64,
-    // XXX: This doesn't support groups; we'd need a Session instead, but we don't handle GroupCall
-    //      yet anyway.
-    ringer_recipient: Recipient,
-    // This is for Telepathy integration
-    // wait_for_telecom_approval: bool,
-    // telecom_approved: bool,
-    ice_servers: Vec<()>,
-    always_turn_servers: bool,
-}
-
-#[derive(Debug, Default)]
-enum CallSubState {
-    #[default]
-    Idle,
 }
 
 impl WhisperfishCallManager {}
@@ -188,30 +155,16 @@ impl super::ClientActor {
         };
         let _span = tracing::trace_span!("processing offer with id", call_id = ?call_id).entered();
 
-        if let Some(setup) = self.call_state().call_setup_states.remove(&call_id) {
-            tracing::warn!(?setup, "Call setup already exists. replacing.");
-        }
-
         let storage = self.storage.clone().expect("initialized storage");
 
-        let setup = CallSetupState {
-            enable_video_on_create: false,
-            offer_type: offer.r#type(),
-            accept_with_video: false,
-            sent_joined_message: false,
-            ring_group: true,
-            ring_id: 0,
-            ringer_recipient: storage.fetch_or_insert_recipient_by_address(&metadata.sender),
-            ice_servers: Vec::new(),
-            always_turn_servers: false,
-        };
+        let ringer_recipient = storage.fetch_or_insert_recipient_by_address(&metadata.sender);
 
         let sent_time = millis_to_naive_chrono(metadata.timestamp).and_utc();
         let age = Utc::now() - sent_time;
         let seconds = std::cmp::max(age.num_seconds(), 0);
         tracing::debug!(
             %sent_time,
-            ringer = %setup.ringer_recipient,
+            ringer = %ringer_recipient,
             "Call offer is {seconds} seconds old.",
         );
 
@@ -278,12 +231,6 @@ impl super::ClientActor {
                 .expect("handled call offer");
         };
         actix::spawn(receive_offer);
-
-        assert!(self
-            .call_state()
-            .call_setup_states
-            .insert(call_id, setup)
-            .is_none());
     }
 
     #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
