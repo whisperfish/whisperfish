@@ -24,7 +24,7 @@ pub struct Calls {
     direction: qt_property!(i32; NOTIFY ringing_changed),
 
     // Recipient id that's currently calling
-    ringing: qt_property!(i32; NOTIFY ringing_changed),
+    ringing_recipient_id: qt_property!(i32; NOTIFY ringing_changed ALIAS ringingRecipientId),
 
     ringing_changed: qt_signal!(),
     hungup: qt_signal!(),
@@ -42,7 +42,7 @@ impl Calls {
 
             call_type: -1,
             call_id: None,
-            ringing: -1,
+            ringing_recipient_id: -1,
             direction: -1,
 
             ringing_changed: Default::default(),
@@ -64,7 +64,7 @@ impl Calls {
     pub fn handle_state(&mut self, remote_peer_id: i32, call_id: CallId, state: CallState) {
         match state {
             ringrtc::native::CallState::Incoming(incoming) => {
-                self.ringing = remote_peer_id;
+                self.ringing_recipient_id = remote_peer_id;
                 self.call_id = Some(call_id);
                 self.call_type = match incoming {
                     CallMediaType::Audio => 0,
@@ -74,7 +74,7 @@ impl Calls {
                 self.ringing_changed();
             }
             ringrtc::native::CallState::Outgoing(outgoing) => {
-                self.ringing = remote_peer_id;
+                self.ringing_recipient_id = remote_peer_id;
                 self.call_id = Some(call_id);
                 self.call_type = match outgoing {
                     CallMediaType::Audio => 0,
@@ -108,7 +108,7 @@ impl Calls {
                         tracing::warn!("Call ended, unprocessed reason: {:?}", reason);
                     }
                 }
-                self.ringing = -1;
+                self.ringing_recipient_id = -1;
                 self.call_id = None;
                 self.direction = -1;
 

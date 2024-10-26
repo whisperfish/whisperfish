@@ -15,7 +15,7 @@ Dialog {
         sourceComponent: Component{
             Recipient {
                 app: AppState
-                recipientId: calls.ringing
+                recipientId: calls.ringingRecipientId
             }
         }
     }
