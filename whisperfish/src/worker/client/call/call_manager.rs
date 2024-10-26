@@ -9,7 +9,7 @@ use ringrtc::{
 pub struct WhisperfishRingRtcHttpClient {}
 
 impl http::Delegate for WhisperfishRingRtcHttpClient {
-    fn send_request(&self, request_id: u32, request: http::Request) {
+    fn send_request(&self, _request_id: u32, _request: http::Request) {
         todo!()
     }
 }
@@ -137,19 +137,19 @@ impl SignalingSender for WhisperfishSignalingSender {
 
     fn send_call_message(
         &self,
-        recipient_id: ringrtc::lite::sfu::UserId,
-        message: Vec<u8>,
-        urgency: ringrtc::core::group_call::SignalingMessageUrgency,
+        _recipient_id: ringrtc::lite::sfu::UserId,
+        _message: Vec<u8>,
+        _urgency: ringrtc::core::group_call::SignalingMessageUrgency,
     ) -> ringrtc::common::Result<()> {
         todo!("group calls")
     }
 
     fn send_call_message_to_group(
         &self,
-        group_id: ringrtc::core::group_call::GroupId,
-        message: Vec<u8>,
-        urgency: ringrtc::core::group_call::SignalingMessageUrgency,
-        recipients_override: std::collections::HashSet<ringrtc::lite::sfu::UserId>,
+        _group_id: ringrtc::core::group_call::GroupId,
+        _message: Vec<u8>,
+        _urgency: ringrtc::core::group_call::SignalingMessageUrgency,
+        _recipients_override: std::collections::HashSet<ringrtc::lite::sfu::UserId>,
     ) -> ringrtc::common::Result<()> {
         todo!("group calls")
     }
@@ -178,24 +178,24 @@ impl CallStateHandler for WhisperfishStateHandler {
 
     fn handle_remote_audio_state(
         &self,
-        remote_peer_id: &str,
-        enabled: bool,
+        _remote_peer_id: &str,
+        _enabled: bool,
     ) -> ringrtc::common::Result<()> {
         todo!()
     }
 
     fn handle_remote_video_state(
         &self,
-        remote_peer_id: &str,
-        enabled: bool,
+        _remote_peer_id: &str,
+        _enabled: bool,
     ) -> ringrtc::common::Result<()> {
         todo!()
     }
 
     fn handle_remote_sharing_screen(
         &self,
-        remote_peer_id: &str,
-        enabled: bool,
+        _remote_peer_id: &str,
+        _enabled: bool,
     ) -> ringrtc::common::Result<()> {
         todo!()
     }
@@ -212,17 +212,17 @@ impl CallStateHandler for WhisperfishStateHandler {
 
     fn handle_audio_levels(
         &self,
-        remote_peer_id: &str,
-        captured_level: ringrtc::webrtc::peer_connection::AudioLevel,
-        received_level: ringrtc::webrtc::peer_connection::AudioLevel,
+        _remote_peer_id: &str,
+        _captured_level: ringrtc::webrtc::peer_connection::AudioLevel,
+        _received_level: ringrtc::webrtc::peer_connection::AudioLevel,
     ) -> ringrtc::common::Result<()> {
         todo!()
     }
 
     fn handle_low_bandwidth_for_video(
         &self,
-        remote_peer_id: &str,
-        recovered: bool,
+        _remote_peer_id: &str,
+        _recovered: bool,
     ) -> ringrtc::common::Result<()> {
         todo!()
     }
@@ -230,13 +230,14 @@ impl CallStateHandler for WhisperfishStateHandler {
 
 #[derive(Debug)]
 struct WhisperfishGroupUpdateHandler {
+    #[allow(unused)]
     client: actix::Addr<crate::worker::ClientActor>,
 }
 
 impl GroupUpdateHandler for WhisperfishGroupUpdateHandler {
     fn handle_group_update(
         &self,
-        update: ringrtc::native::GroupUpdate,
+        _update: ringrtc::native::GroupUpdate,
     ) -> ringrtc::common::Result<()> {
         todo!()
     }

@@ -10,7 +10,7 @@ use libsignal_service::{
     push_service::DEFAULT_DEVICE_ID,
 };
 use ringrtc::{
-    common::{CallConfig, CallId},
+    common::CallId,
     core::{
         call_manager::CallManager,
         signaling::{
@@ -18,7 +18,6 @@ use ringrtc::{
         },
     },
     lite::http::DelegatingClient,
-    native::NativeCallContext,
 };
 use std::collections::HashMap;
 use whisperfish_store::millis_to_naive_chrono;

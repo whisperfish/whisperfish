@@ -23,8 +23,6 @@ use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
 use libsignal_service::proto::sync_message::Configuration;
 use libsignal_service::proto::sync_message::Keys;
 use libsignal_service::proto::sync_message::Sent;
-#[cfg(feature = "calling")]
-use libsignal_service::proto::CallMessage;
 use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::push_service::ServiceIdType;
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
