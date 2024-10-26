@@ -62,8 +62,9 @@ impl Calls {
     }
 
     pub fn handle_state(&mut self, remote_peer_id: i32, call_id: CallId, state: CallState) {
+        use ringrtc::native::{CallState, EndReason};
         match state {
-            ringrtc::native::CallState::Incoming(incoming) => {
+            CallState::Incoming(incoming) => {
                 self.ringing_recipient_id = remote_peer_id;
                 self.call_id = Some(call_id);
                 self.call_type = match incoming {
@@ -73,7 +74,7 @@ impl Calls {
                 self.direction = 1;
                 self.ringing_changed();
             }
-            ringrtc::native::CallState::Outgoing(outgoing) => {
+            CallState::Outgoing(outgoing) => {
                 self.ringing_recipient_id = remote_peer_id;
                 self.call_id = Some(call_id);
                 self.call_type = match outgoing {
@@ -83,28 +84,28 @@ impl Calls {
                 self.direction = 0;
                 self.ringing_changed();
             }
-            ringrtc::native::CallState::Ended(reason) => {
+            CallState::Ended(reason) => {
                 // We probably don't have to care about the reason in the UI,
                 // and instead pull it out of the database when it needs rendering.
                 match reason {
-                    ringrtc::native::EndReason::LocalHangup
-                    | ringrtc::native::EndReason::RemoteHangup
-                    | ringrtc::native::EndReason::RemoteHangupNeedPermission
-                    | ringrtc::native::EndReason::Declined
-                    | ringrtc::native::EndReason::Busy
-                    | ringrtc::native::EndReason::Glare
-                    | ringrtc::native::EndReason::ReCall
-                    | ringrtc::native::EndReason::ReceivedOfferExpired { age: _ }
-                    | ringrtc::native::EndReason::ReceivedOfferWhileActive
-                    | ringrtc::native::EndReason::ReceivedOfferWithGlare
-                    | ringrtc::native::EndReason::SignalingFailure
-                    | ringrtc::native::EndReason::GlareFailure
-                    | ringrtc::native::EndReason::ConnectionFailure
-                    | ringrtc::native::EndReason::InternalFailure
-                    | ringrtc::native::EndReason::Timeout
-                    | ringrtc::native::EndReason::AcceptedOnAnotherDevice
-                    | ringrtc::native::EndReason::DeclinedOnAnotherDevice
-                    | ringrtc::native::EndReason::BusyOnAnotherDevice => {
+                    EndReason::LocalHangup
+                    | EndReason::RemoteHangup
+                    | EndReason::RemoteHangupNeedPermission
+                    | EndReason::Declined
+                    | EndReason::Busy
+                    | EndReason::Glare
+                    | EndReason::ReCall
+                    | EndReason::ReceivedOfferExpired { age: _ }
+                    | EndReason::ReceivedOfferWhileActive
+                    | EndReason::ReceivedOfferWithGlare
+                    | EndReason::SignalingFailure
+                    | EndReason::GlareFailure
+                    | EndReason::ConnectionFailure
+                    | EndReason::InternalFailure
+                    | EndReason::Timeout
+                    | EndReason::AcceptedOnAnotherDevice
+                    | EndReason::DeclinedOnAnotherDevice
+                    | EndReason::BusyOnAnotherDevice => {
                         tracing::warn!("Call ended, unprocessed reason: {:?}", reason);
                     }
                 }
@@ -115,10 +116,10 @@ impl Calls {
                 self.ringing_changed();
                 self.hungup();
             }
-            ringrtc::native::CallState::Ringing
-            | ringrtc::native::CallState::Connected
-            | ringrtc::native::CallState::Connecting
-            | ringrtc::native::CallState::Concluded => tracing::error!("unimplemented call state"),
+            CallState::Ringing
+            | CallState::Connected
+            | CallState::Connecting
+            | CallState::Concluded => tracing::error!("unimplemented call state"),
         }
     }
 
