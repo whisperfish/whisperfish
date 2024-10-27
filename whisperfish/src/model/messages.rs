@@ -81,14 +81,24 @@ impl EventObserving for Message {
     fn observe(&mut self, ctx: Self::Context, event: crate::store::observer::Event) {
         if let Some(id) = self.message_id {
             if let Some(attachment_id) = event.relation_key_for(schema::attachments::table) {
-                if event.is_delete() {
-                    // XXX This could also be implemented efficiently
-                    self.fetch(ctx.storage(), id);
-                } else {
-                    // Only reload the attachments.
-                    // We could also just reload the necessary attachment, but we're lazy today.
-                    self.load_attachment(ctx.storage(), id, attachment_id.as_i32().unwrap());
-                    self.message_changed();
+                // XXX Maybe we should just provide the session ID to match in the ActixEvent
+                if self
+                    .attachment_list_model
+                    .pinned()
+                    .borrow()
+                    .attachments
+                    .iter()
+                    .any(|x| x.id == attachment_id.as_i32().unwrap())
+                {
+                    if event.is_delete() {
+                        // XXX This could also be implemented efficiently
+                        self.fetch(ctx.storage(), id);
+                    } else {
+                        // Only reload the attachments.
+                        // We could also just reload the necessary attachment, but we're lazy today.
+                        self.load_attachment(ctx.storage(), id, attachment_id.as_i32().unwrap());
+                        self.message_changed();
+                    }
                 }
             } else {
                 self.fetch(ctx.storage(), id);
