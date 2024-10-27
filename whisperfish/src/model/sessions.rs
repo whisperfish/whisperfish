@@ -159,7 +159,10 @@ impl SessionListModel {
             }
         }
 
-        if attachment_id.is_some() && event.is_update() {
+        if attachment_id.is_some()
+            && event.for_table(schema::attachments::table)
+            && event.is_update()
+        {
             // Don't care, because SessionListModel only takes into account the number of
             // attachments.
             // Furthermore, inserts will have an associated message_id, and deletes don't occur
