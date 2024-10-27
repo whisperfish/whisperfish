@@ -47,6 +47,8 @@ pub struct SetupWorker {
 
     useVoice: qt_property!(bool; NOTIFY setupChanged),
 
+    callingSupported: qt_property!(bool; READ calling_supported NOTIFY setupChanged),
+
     /// Emitted when any of the properties change.
     setupChanged: qt_signal!(),
 }
@@ -257,7 +259,7 @@ impl SetupWorker {
         if let Some(profile_key) = reg.profile_key {
             storage.update_profile_key(
                 Some(reg.phonenumber),
-                Some(ServiceAddress::new_aci(reg.service_ids.aci)),
+                Some(ServiceAddress::from_aci(reg.service_ids.aci)),
                 &profile_key,
                 TrustLevel::Certain,
             );
@@ -409,6 +411,10 @@ impl SetupWorker {
                 complete => return Err(anyhow::Error::msg("Linking to device completed without any result")),
             }
         }
+    }
+
+    fn calling_supported(&self) -> bool {
+        cfg!(feature = "calling")
     }
 
     fn get_uuid(&self) -> QString {

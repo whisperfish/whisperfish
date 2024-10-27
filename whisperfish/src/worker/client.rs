@@ -1,6 +1,8 @@
 // XXX maybe the session-to-db migration should move into the store module.
 pub mod migrations;
 
+#[cfg(feature = "calling")]
+mod call;
 mod groupv2;
 mod linked_devices;
 mod message_expiry;
@@ -47,6 +49,8 @@ use crate::actor::SendReaction;
 use crate::actor::SessionActor;
 use crate::config::SettingsBridge;
 use crate::gui::StorageReady;
+#[cfg(feature = "calling")]
+use crate::model::Calls;
 use crate::model::DeviceModel;
 use crate::platform::QmlApp;
 use crate::store::orm::UnidentifiedAccessMode;
@@ -55,6 +59,8 @@ use crate::store::Storage;
 use crate::worker::client::unidentified::CertType;
 use actix::prelude::*;
 use anyhow::Context;
+#[cfg(feature = "calling")]
+pub use call::*;
 use chrono::prelude::*;
 use futures::prelude::*;
 use libsignal_service::configuration::SignalServers;
@@ -76,7 +82,6 @@ use libsignal_service::push_service::{
 use libsignal_service::sender::AttachmentSpec;
 use libsignal_service::websocket::SignalWebSocket;
 use libsignal_service::AccountManager;
-use libsignal_service_hyper::prelude::*;
 use mime_classifier::{ApacheBugFlag, LoadContext, MimeClassifier, NoSniffFlag};
 use phonenumber::PhoneNumber;
 use qmeta_async::with_executor;
@@ -224,6 +229,15 @@ pub struct ClientWorker {
         message: QString,
         isGroup: bool
     ),
+    missedCall: qt_signal!(
+        sid: i32,
+        sessionName: QString,
+        senderName: QString,
+        senderIdentifier: QString,
+        senderUuid: QString,
+        isVideo: bool,
+        isGroup: bool
+    ),
     promptResetPeerIdentity: qt_signal!(),
     messageSent: qt_signal!(sid: i32, mid: i32, message: QString),
     messageNotSent: qt_signal!(sid: i32, mid: i32),
@@ -271,6 +285,8 @@ pub struct ClientWorker {
 /// ClientActor keeps track of the connection state.
 pub struct ClientActor {
     inner: QObjectBox<ClientWorker>,
+    #[cfg(feature = "calling")]
+    calls_model: QObjectBox<Calls>,
 
     migration_state: MigrationCondVar,
 
@@ -294,6 +310,9 @@ pub struct ClientActor {
     registration_session: Option<RegistrationSessionMetadataResponse>,
 
     settings: SettingsBridge,
+
+    #[cfg(feature = "calling")]
+    call_state: Option<call::WhisperfishCallManager>,
 }
 
 fn whisperfish_device_capabilities() -> DeviceCapabilities {
@@ -317,8 +336,14 @@ impl ClientActor {
     ) -> Result<Self, anyhow::Error> {
         let inner = QObjectBox::new(ClientWorker::default());
         let device_model = QObjectBox::new(DeviceModel::default());
+
+        #[cfg(feature = "calling")]
+        let calls_model = QObjectBox::new(Calls::new());
+
         app.set_object_property("ClientWorker".into(), inner.pinned());
         app.set_object_property("DeviceModel".into(), device_model.pinned());
+        #[cfg(feature = "calling")]
+        app.set_object_property("calls".into(), calls_model.pinned());
 
         inner.pinned().borrow_mut().session_actor = Some(session_actor);
         inner.pinned().borrow_mut().device_model = Some(device_model);
@@ -328,6 +353,8 @@ impl ClientActor {
 
         Ok(Self {
             inner,
+            #[cfg(feature = "calling")]
+            calls_model,
             migration_state: MigrationCondVar::new(),
             unidentified_certificates: UnidentifiedCertificates::default(),
             credentials: None,
@@ -350,6 +377,9 @@ impl ClientActor {
             registration_session: None,
 
             settings: SettingsBridge::default(),
+
+            #[cfg(feature = "calling")]
+            call_state: None,
         })
     }
 
@@ -364,33 +394,29 @@ impl ClientActor {
         crate::user_agent()
     }
 
-    fn unauthenticated_service(&self) -> HyperPushService {
+    fn unauthenticated_service(&self) -> PushService {
         let service_cfg = self.service_cfg();
-        HyperPushService::new(service_cfg, None, self.user_agent())
+        PushService::new(service_cfg, None, self.user_agent())
     }
 
     fn authenticated_service_with_credentials(
         &self,
         credentials: ServiceCredentials,
-    ) -> HyperPushService {
+    ) -> PushService {
         let service_cfg = self.service_cfg();
 
-        HyperPushService::new(service_cfg, Some(credentials), self.user_agent())
+        PushService::new(service_cfg, Some(credentials), self.user_agent())
     }
 
     /// Panics if no authentication credentials are set.
-    fn authenticated_service(&self) -> HyperPushService {
+    fn authenticated_service(&self) -> PushService {
         self.authenticated_service_with_credentials(self.credentials.clone().unwrap())
     }
 
     fn message_sender(
         &self,
-    ) -> impl Future<
-        Output = Result<
-            MessageSender<HyperPushService, AciOrPniStorage, rand::rngs::ThreadRng>,
-            ServiceError,
-        >,
-    > {
+    ) -> impl Future<Output = Result<MessageSender<AciOrPniStorage, rand::rngs::ThreadRng>, ServiceError>>
+    {
         let storage = self.storage.clone().unwrap();
         let service = self.authenticated_service();
         let mut u_service = self.unauthenticated_service();
@@ -1299,11 +1325,12 @@ impl ClientActor {
                     }
                 }
             }
-            ContentBody::CallMessage(_call) => {
-                tracing::info!("{:?} is calling.", metadata.sender.to_service_id());
+            #[cfg(feature = "calling")]
+            ContentBody::CallMessage(call) => {
+                self.handle_call_message(ctx, metadata, call);
             }
             _ => {
-                tracing::info!("TODO")
+                tracing::warn!("unimplemented ContentBody")
             }
         }
     }
@@ -1340,6 +1367,14 @@ impl Actor for ClientActor {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         self.inner.pinned().borrow_mut().actor = Some(ctx.address());
+        #[cfg(feature = "calling")]
+        {
+            self.call_state = Some(call::WhisperfishCallManager::new(ctx.address()));
+            self.calls_model
+                .pinned()
+                .borrow_mut()
+                .set_client(ctx.address());
+        }
     }
 
     fn stopped(&mut self, ctx: &mut Self::Context) {
@@ -2341,8 +2376,8 @@ impl Handler<StorageReady> for ClientActor {
                     act.credentials = Some(credentials);
                     let cred = act.credentials.as_ref().unwrap();
 
-                    act.self_aci = cred.aci.map(ServiceAddress::new_aci);
-                    act.self_pni = cred.pni.map(ServiceAddress::new_pni);
+                    act.self_aci = cred.aci.map(ServiceAddress::from_aci);
+                    act.self_pni = cred.pni.map(ServiceAddress::from_pni);
 
                     Self::queue_migrations(ctx);
 

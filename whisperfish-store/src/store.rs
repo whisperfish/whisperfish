@@ -1,6 +1,7 @@
 pub mod orm;
 
 pub mod body_ranges;
+mod calls;
 mod encryption;
 #[cfg(feature = "diesel-instrumentation")]
 mod instrumentation;
@@ -803,8 +804,8 @@ impl<O: Observable> Storage<O> {
         }
 
         let e164 = self.config.get_tel();
-        let aci = self.config.get_aci().map(ServiceAddress::new_aci);
-        let pni = self.config.get_pni().map(ServiceAddress::new_pni);
+        let aci = self.config.get_aci().map(ServiceAddress::from_aci);
+        let pni = self.config.get_pni().map(ServiceAddress::from_pni);
         if e164.is_none() {
             tracing::warn!("No E.164 set, cannot fetch self.");
             return None;
@@ -865,7 +866,7 @@ impl<O: Observable> Storage<O> {
 
     #[tracing::instrument(skip(self))]
     pub fn fetch_self_service_address_aci(&self) -> Option<ServiceAddress> {
-        self.config.get_aci().map(ServiceAddress::new_aci)
+        self.config.get_aci().map(ServiceAddress::from_aci)
     }
 
     #[tracing::instrument(skip(self))]
@@ -1006,7 +1007,7 @@ impl<O: Observable> Storage<O> {
             if recipient.uuid == self.config.get_aci() {
                 self.invalidate_self_recipient();
             }
-            let recipient = self.fetch_recipient(&ServiceAddress::new_aci(aci));
+            let recipient = self.fetch_recipient(&ServiceAddress::from_aci(aci));
             if let Some(recipient) = &recipient {
                 self.observe_update(recipients, recipient.id);
             }
@@ -1037,7 +1038,7 @@ impl<O: Observable> Storage<O> {
         };
 
         let recipient = self
-            .fetch_recipient(&ServiceAddress::new_aci(*profile_uuid))
+            .fetch_recipient(&ServiceAddress::from_aci(*profile_uuid))
             .unwrap();
         use crate::schema::recipients::dsl::*;
         let affected_rows = diesel::update(recipients)
@@ -3025,7 +3026,7 @@ impl<O: Observable> Storage<O> {
                 },
                 _ => None,
             })
-            .filter_map(|uuid| self.fetch_recipient(&ServiceAddress::new_aci(uuid)))
+            .filter_map(|uuid| self.fetch_recipient(&ServiceAddress::from_aci(uuid)))
             .map(|r| (r.uuid.expect("queried by uuid"), r))
             .collect()
     }

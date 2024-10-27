@@ -49,7 +49,7 @@ impl Handler<WhoAmI> for ClientActor {
                     } else {
                         tracing::error!("Credentials was none while setting UUID");
                     }
-                    act.self_pni = Some(ServiceAddress::new_pni(result.pni));
+                    act.self_pni = Some(ServiceAddress::from_pni(result.pni));
                 },
             ),
         )

@@ -63,7 +63,7 @@ mod tests {
         let user_id = uuid::Uuid::new_v4();
         let device_id = rng.gen_range(2..=20);
 
-        let svc = ServiceAddress::new_aci(user_id);
+        let svc = ServiceAddress::from_aci(user_id);
         let prot = ProtocolAddress::new(user_id.to_string(), DeviceId::from(device_id));
         (svc, prot)
     }

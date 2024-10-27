@@ -27,12 +27,7 @@ fs2 = "0.4.3"
 blurhash = "0.2.2"
 percent-encoding = "2.2"
 
-libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features = [
-    "unsend-futures",
-] }
-libsignal-service-hyper = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", features = [
-    "unsend-futures",
-] }
+libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main" }
 
 libsignal-protocol = { git = "https://github.com/signalapp/libsignal", tag = "v0.56.1" }
 zkgroup = { git = "https://github.com/signalapp/libsignal", tag = "v0.56.1" }
@@ -78,8 +73,10 @@ rustlegraph = { git = "https://gitlab.com/whisperfish/rustlegraph", branch = "ma
 
 regex = "1.7.3"
 
-gstreamer = "0.22"
-glib = "0.19"
+gstreamer = "0.23"
+glib = "0.20"
+
+ringrtc = { git = "https://github.com/whisperfish/ringrtc", branch = "whisperfork", version = "2.46.2", features = ["native", "system_ssl"], optional = true }
 
 sailors = { git = "https://gitlab.com/whisperfish/sailo-rs.git", optional = true }
 whisperfish-store = { path = "../whisperfish-store" }
@@ -95,6 +92,8 @@ cmake = "0.1.48"
 cpp_build = "0.5"
 cc = "1.0"
 anyhow = "1.0"
+sha2 = { version = "0.10", features = ["force-soft"] }
+hex = "0.4"
 
 [dev-dependencies]
 actix-rt = "2.8.0"
@@ -113,6 +112,7 @@ sailfish = [
     "sailors",
     "whisperfish-store/sailfish",
 ]
+calling = ["ringrtc"]
 harbour = ["sailfish"]
 
 bundled-openssl = [
@@ -120,7 +120,3 @@ bundled-openssl = [
     "whisperfish-store/bundled-openssl",
 ]
 diesel-instrumentation = ["whisperfish-store/diesel-instrumentation"]
-
-# Unused in Whisperfish, but makes rust-analyzer happy when developing
-# both Whisperfish and libsignal-service-rs at the same time
-unsend-futures = []

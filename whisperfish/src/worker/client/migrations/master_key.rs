@@ -46,7 +46,7 @@ impl Handler<CheckMasterKey> for ClientActor {
 
                     match sender.await {
                         Ok(mut sender) => {
-                            let addr = ServiceAddress::new_aci(config.get_aci().unwrap());
+                            let addr = ServiceAddress::from_aci(config.get_aci().unwrap());
                             let req = RequestType::Keys;
                             sender.send_sync_message_request(&addr, req).await.unwrap();
                             Ok(true)

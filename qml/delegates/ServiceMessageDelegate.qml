@@ -24,11 +24,17 @@ ListItem {
     property url _iconSource: switch (_type) {
         case "expiration_timer_update":
             return "image://theme/icon-s-timer"
-        case "missed_voice_call":
+        case "missed_audio_call":
         case "missed_video_call":
             return "image://theme/icon-s-activity-missed-call"
-        case "voice_call":
-        case "video_call":
+        case "group_call":
+            // XXX m-size is not ideal
+            return "image://theme/icon-m-call"
+        case "incoming_audio_call":
+        case "incoming_video_call":
+            return "image://theme/icon-s-activity-incoming-call"
+        case "outgoing_audio_call":
+        case "outgoing_video_call":
             return "image://theme/icon-s-activity-outgoing-call"
         case "identity_reset":
             return "image://theme/icon-s-outline-secure"
@@ -138,7 +144,15 @@ ListItem {
             //: Service message, %1 is a name
             //% "%1 left the group."
             : qsTrId("whisperfish-service-message-left-group-peer").arg(peerName)
-        case "missed_voice_call":
+        case "group_call":
+            return _outgoing
+            //: Service message
+            //% "You had a group call."
+            ? qsTrId("whisperfish-service-message-call-group-self")
+            //: Service message, %1 is the person initiating the call.
+            //% "%1 had a group call with you."
+            : qsTrId("whisperfish-service-message-call-group-peer").arg(peerName)
+        case "missed_audio_call":
             return _outgoing
             //: Service message, %1 is a name
             //% "You missed a voice call from %1."
@@ -154,22 +168,22 @@ ListItem {
             //: Service message, %1 is a name
             //% "You tried to video call %1."
             : qsTrId("whisperfish-service-message-missed-call-video-peer").arg(peerName)
-        case "video_call":
-            return _outgoing
+        case "outgoing_video_call":
             //: Service message, %1 is a name
             //% "You had a video call with %1."
-            ? qsTrId("whisperfish-service-message-call-video-self").arg(peerName)
+            return qsTrId("whisperfish-service-message-call-video-self").arg(peerName)
+        case "incoming_video_call":
             //: Service message, %1 is a name
             //% "%1 had a video call with you."
-            : qsTrId("whisperfish-service-message-call-video-peer").arg(peerName)
-        case "voice_call":
-            return _outgoing
+            return qsTrId("whisperfish-service-message-call-video-peer").arg(peerName)
+        case "outgoing_audio_call":
             //: Service message, %1 is a name
             //% "You had a voice call with %1."
-            ? qsTrId("whisperfish-service-message-call-voice-self").arg(peerName)
+            return qsTrId("whisperfish-service-message-call-voice-self").arg(peerName)
+        case "incoming_audio_call":
             //: Service message, %1 is a name
             //% "%1 had a voice call with you."
-            : qsTrId("whisperfish-service-message-call-voice-peer").arg(peerName)
+            return qsTrId("whisperfish-service-message-call-voice-peer").arg(peerName)
         case "identity_reset":
             //: Service message, %1 is a name
             //% "Your safety number with %1 has changed. "

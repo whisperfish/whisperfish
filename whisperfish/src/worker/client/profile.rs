@@ -10,12 +10,9 @@ use whisperfish_store::StoreProfile;
 impl StreamHandler<OutdatedProfile> for ClientActor {
     fn handle(&mut self, OutdatedProfile(uuid, key): OutdatedProfile, ctx: &mut Self::Context) {
         tracing::trace!("Received OutdatedProfile({}, [..]), fetching.", uuid);
-        let mut service = if let Some(ws) = self.ws.clone() {
-            ProfileService::from_socket(ws)
-        } else {
-            tracing::debug!("Ignoring outdated profiles until reconnected.");
-            return;
-        };
+        // XXX: this should actually be unauthenticated and use sealed sender access:
+        // PushServiceSocket::retrieveProfile(SignalServiceAddress target, @Nullable SealedSenderAccess sealedSenderAccess, Locale locale)
+        let mut service = ProfileService::from_socket(self.authenticated_service());
 
         // If our own Profile is outdated, schedule a profile refresh
         if self.config.get_aci() == Some(uuid) {
@@ -29,7 +26,7 @@ impl StreamHandler<OutdatedProfile> for ClientActor {
                 (
                     uuid,
                     service
-                        .retrieve_profile_by_id(ServiceAddress::new_aci(uuid), key)
+                        .retrieve_profile_by_id(ServiceAddress::from_aci(uuid), key)
                         .await,
                 )
             }
@@ -98,7 +95,7 @@ impl ClientActor {
     ) -> anyhow::Result<()> {
         let storage = self.storage.clone().unwrap();
         let recipient = storage
-            .fetch_recipient(&ServiceAddress::new_aci(recipient_uuid))
+            .fetch_recipient(&ServiceAddress::from_aci(recipient_uuid))
             .ok_or_else(|| {
                 anyhow::anyhow!("could not find recipient for which we fetched a profile")
             })?;

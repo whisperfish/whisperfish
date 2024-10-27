@@ -1,4 +1,11 @@
+# SFDK debug builds
 documentation.list
+debugfiles.list
+debuglinks.list
+debugsourcefiles.list
+debugsources.list
+elfbins.list
+
 RPMS/
 rpmbuilddir/
 vendor/
@@ -16,10 +23,7 @@ harbour-whisperfish.o
 translations/*.qm
 libsignal-build/
 
-sqlcipher/*.c
-sqlcipher/*.tar.gz
-sqlcipher/*.h
-sqlcipher/LICENSE
+ringrtc/
 
 # cargo
 /target

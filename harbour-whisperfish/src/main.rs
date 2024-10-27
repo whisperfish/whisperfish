@@ -25,8 +25,13 @@ struct Opts {
     ///
     /// Equivalent with setting
     /// `QT_LOGGING_TO_CONSOLE=1 RUST_LOG=libsignal_service=trace,libsignal_service_actix=trace,whisperfish=trace`.
+    /// Implies '--ts'
     #[clap(short = 'v', long)]
     verbose: bool,
+
+    /// Print timestamps in the log. Off by default, because journald records the output as well.
+    #[clap(long)]
+    ts: bool,
 
     /// Whether whisperfish was launched from autostart. Also accepts '-prestart'
     #[clap(long)]
@@ -69,7 +74,7 @@ fn main() {
     });
 
     // Then, handle command line arguments and overwrite settings from config file if necessary
-    let opt: Opts = Parser::parse_from(args);
+    let mut opt: Opts = Parser::parse_from(args);
 
     if opt.quit {
         if let Err(e) = dbus_quit_app() {
@@ -125,6 +130,7 @@ fn main() {
     }
 
     if opt.verbose {
+        opt.ts = true;
         config.verbose = true;
     }
     if opt.prestart {
@@ -189,8 +195,13 @@ fn main() {
             )
             .with(tracing_subscriber::fmt::layer().with_writer(stdio))
             .init();
+    } else if opt.ts {
+        tracing_subscriber::fmt::fmt()
+            .with_env_filter(log_filter)
+            .init();
     } else {
         tracing_subscriber::fmt::fmt()
+            .without_time()
             .with_env_filter(log_filter)
             .init();
     }

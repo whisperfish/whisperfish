@@ -58,6 +58,11 @@ Page {
             // This makes room for 'Search' and 'Bookmarks'.
 
             MenuItem {
+                text: "Call test"
+                visible: SetupWorker.callingSupported && SettingsBridge.debug_mode
+                onClicked: pageStack.push(Qt.resolvedUrl("RingingDialog.qml"))
+            }
+            MenuItem {
                 //: About whisperfish menu item
                 //% "About Whisperfish"
                 text: qsTrId("whisperfish-about-menu")
