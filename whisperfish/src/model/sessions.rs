@@ -130,31 +130,33 @@ impl SessionListModel {
             return;
         }
 
-        if let Some(recipient_id) = recipient_id {
-            if let Some(new_recipient) = storage.fetch_recipient_by_id(recipient_id) {
-                let mut updates = Vec::new();
-                for (idx, session) in self.content.iter_mut().enumerate() {
-                    match &mut session.inner.r#type {
-                        orm::SessionType::DirectMessage(recipient) => {
-                            if recipient.id == recipient_id {
-                                *recipient = new_recipient.clone();
-                                updates.push(idx);
+        if event.for_table(schema::recipients::table) && event.is_update() {
+            if let Some(recipient_id) = recipient_id {
+                if let Some(new_recipient) = storage.fetch_recipient_by_id(recipient_id) {
+                    let mut updates = Vec::new();
+                    for (idx, session) in self.content.iter_mut().enumerate() {
+                        match &mut session.inner.r#type {
+                            orm::SessionType::DirectMessage(recipient) => {
+                                if recipient.id == recipient_id {
+                                    *recipient = new_recipient.clone();
+                                    updates.push(idx);
+                                }
+                            }
+                            orm::SessionType::GroupV1(_group) => {
+                                // Groups don't have recipients in this model
+                            }
+                            orm::SessionType::GroupV2(_) => {
+                                // Groups don't have recipients in this model
                             }
                         }
-                        orm::SessionType::GroupV1(_group) => {
-                            // Groups don't have recipients in this model
-                        }
-                        orm::SessionType::GroupV2(_) => {
-                            // Groups don't have recipients in this model
-                        }
                     }
-                }
-                if session_id.is_none() && message_id.is_none() && attachment_id.is_none() {
-                    return;
-                }
-                for idx in updates {
-                    let idx = self.row_index(idx as i32);
-                    self.data_changed(idx, idx);
+                    if session_id.is_none() && message_id.is_none() && attachment_id.is_none() {
+                        return;
+                    }
+                    for idx in updates {
+                        let idx = self.row_index(idx as i32);
+                        self.data_changed(idx, idx);
+                    }
                 }
             }
         }
