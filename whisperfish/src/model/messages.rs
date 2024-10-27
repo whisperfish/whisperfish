@@ -217,6 +217,7 @@ impl Message {
                 .borrow_mut()
                 .set(Vec::new());
         }
+        self.message_changed();
     }
 
     fn init(&mut self, ctx: ModelContext<Self>) {
