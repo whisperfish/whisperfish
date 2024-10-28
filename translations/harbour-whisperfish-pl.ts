@@ -111,13 +111,13 @@
         <location filename="../qml/harbour-whisperfish-main.qml" line="225"/>
         <source>Missed voice call</source>
         <extracomment>Notification text for missed call notification</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nieodebrane połączenie głosowe</translation>
     </message>
     <message id="whisperfish-notification-missed-video-call">
         <location filename="../qml/harbour-whisperfish-main.qml" line="229"/>
         <source>Missed video call</source>
         <extracomment>Notification text for missed call notification</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nieodebrane połączenie wideo</translation>
     </message>
     <message id="whisperfish-notification-default-message">
         <location filename="../qml/harbour-whisperfish-main.qml" line="286"/>
@@ -787,13 +787,13 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="58"/>
         <source>Unblock</source>
         <extracomment>Menu action to unblock a recipient</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Odblokuj</translation>
     </message>
     <message id="whisperfish-recipient-block">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="61"/>
         <source>Block</source>
         <extracomment>Menu action to block a recipient</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zablokuj</translation>
     </message>
     <message id="whisperfish-recipient-unlink">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="100"/>
@@ -811,13 +811,13 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="163"/>
         <source>You have blocked the recipient.</source>
         <extracomment>Recipient profile page, blocked recipient into</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kontakt zablokowany.</translation>
     </message>
     <message id="whisperfish-profile-page-message-request-pending">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="166"/>
         <source>You can&apos;t communicate with the recipient until you accept their message request.</source>
         <extracomment>Recipient profile page, message request is pending</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Komunikacja nie jest możliwa do czasu akceptacji prośby o kontakt tego użytkownika.</translation>
     </message>
     <message id="whisperfish-profile-uuid-invalid-warning">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="231"/>
@@ -2075,7 +2075,7 @@ Settings page share contacts</extracomment>
         <source>You joined the group.</source>
         <oldsource>You joined the group “%1”.</oldsource>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished">Dołączyłeś do grupy „%1”.</translation>
+        <translation>Dołączono do grupy.</translation>
     </message>
     <message id="whisperfish-service-message-left-group-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="143"/>
@@ -2110,28 +2110,28 @@ Settings page share contacts</extracomment>
         <source>You had a voice call with %1.</source>
         <oldsource>You called %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">Dzwoniłeś do %1.</translation>
+        <translation>Przeprowadzono rozmowę głosową z %1.</translation>
     </message>
     <message id="whisperfish-service-message-call-video-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="174"/>
         <source>You had a video call with %1.</source>
         <oldsource>You started a video call with %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">Rozpocząłeś rozmowę wideo z %1.</translation>
+        <translation>Przeprowadzono rozmowę wideo z %1.</translation>
     </message>
     <message id="whisperfish-service-message-call-voice-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="186"/>
         <source>%1 had a voice call with you.</source>
         <oldsource>%1 called you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">%1 dzwonił do ciebie.</translation>
+        <translation>%1 przeprowadził z Tobą rozmowę głosową.</translation>
     </message>
     <message id="whisperfish-service-message-call-video-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="178"/>
         <source>%1 had a video call with you.</source>
         <oldsource>%1 started a video call with you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished">%1 rozpoczął z Tobą rozmowę wideo.</translation>
+        <translation>%1 przeprowadził z Tobą rozmowę wideo.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-weeks" numerus="yes">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="57"/>
@@ -2160,9 +2160,9 @@ Settings page share contacts</extracomment>
         <source>%n hour(s)</source>
         <oldsource>%1 hour(s)</oldsource>
         <extracomment>Expiring message timeout in hours. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n godzina</numerusform>
-            <numerusform>%n godzin</numerusform>
+            <numerusform>%n godziny</numerusform>
             <numerusform>%n godzin</numerusform>
         </translation>
     </message>
@@ -2171,9 +2171,9 @@ Settings page share contacts</extracomment>
         <source>%n minute(s)</source>
         <oldsource>%1 minute(s)</oldsource>
         <extracomment>Expiring message timeout in minutes. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
-        <translation type="unfinished">
-            <numerusform>%n minut</numerusform>
-            <numerusform>%n minut</numerusform>
+        <translation>
+            <numerusform>%n minuta</numerusform>
+            <numerusform>%n minuty</numerusform>
             <numerusform>%n minut</numerusform>
         </translation>
     </message>
@@ -2253,7 +2253,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="151"/>
         <source>You had a group call.</source>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Przeprowadzono rozmowę grupową.</translation>
     </message>
     <message id="whisperfish-service-message-call-group-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="154"/>
