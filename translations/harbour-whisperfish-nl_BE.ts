@@ -111,13 +111,13 @@
         <location filename="../qml/harbour-whisperfish-main.qml" line="225"/>
         <source>Missed voice call</source>
         <extracomment>Notification text for missed call notification</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Gemisten oproep</translation>
     </message>
     <message id="whisperfish-notification-missed-video-call">
         <location filename="../qml/harbour-whisperfish-main.qml" line="229"/>
         <source>Missed video call</source>
         <extracomment>Notification text for missed call notification</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Gemist videogesprek</translation>
     </message>
     <message id="whisperfish-notification-default-message">
         <location filename="../qml/harbour-whisperfish-main.qml" line="286"/>
@@ -614,7 +614,7 @@
         <location filename="../qml/components/MessagesView.qml" line="480"/>
         <source>Transcribe</source>
         <extracomment>Transcribe message menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transcriberen</translation>
     </message>
     <message id="whisperfish-select-or-options-message-menu">
         <location filename="../qml/components/MessagesView.qml" line="487"/>
@@ -785,37 +785,37 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="58"/>
         <source>Unblock</source>
         <extracomment>Menu action to unblock a recipient</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Deblokkeren</translation>
     </message>
     <message id="whisperfish-recipient-block">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="61"/>
         <source>Block</source>
         <extracomment>Menu action to block a recipient</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Blokkeren</translation>
     </message>
     <message id="whisperfish-recipient-unlink">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="100"/>
         <source>Unlink contact</source>
         <extracomment>Menu action to unlink a Signal contact from a Sailfish OS contact</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ontkoppelen van contact</translation>
     </message>
     <message id="whisperfish-recipient-link">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="103"/>
         <source>Link contact</source>
         <extracomment>Menu action to pick a Sailfish OS contact to link the Signal user to</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Koppelen aan contact</translation>
     </message>
     <message id="whisperfish-profile-page-blocked-recipient">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="163"/>
         <source>You have blocked the recipient.</source>
         <extracomment>Recipient profile page, blocked recipient into</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>G’hed da contact geblokkeerd.</translation>
     </message>
     <message id="whisperfish-profile-page-message-request-pending">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="166"/>
         <source>You can&apos;t communicate with the recipient until you accept their message request.</source>
         <extracomment>Recipient profile page, message request is pending</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ge kunt ni communiceren me’ den ontvanger totda’ ge ’t gespreksverzoek aanvèèrdt.</translation>
     </message>
     <message id="whisperfish-profile-uuid-invalid-warning">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="231"/>
@@ -1283,25 +1283,25 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="133"/>
         <source>Enable read receipts</source>
         <extracomment>Settings page use read receipts</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Leesbevestigingen inschakelen</translation>
     </message>
     <message id="whisperfish-settings-enable-read-receipts-description">
         <location filename="../qml/pages/Settings.qml" line="136"/>
         <source>See when others have read your messages, and let others see when you are have read theirs, if they also have this enabled.</source>
         <extracomment>Settings page scale read receipts description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Hiermee ziede wanneêr da mensen u berichten lezen en zien zij oôk wanneêr da’ gij die van hun leest. Daarvoôr moeten zij oôk die optie hier inschakelen.</translation>
     </message>
     <message id="whisperfish-settings-enable-link-previews">
         <location filename="../qml/pages/Settings.qml" line="150"/>
         <source>Link previews</source>
         <extracomment>Settings page enable link previews</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Linkvoôrbeelden</translation>
     </message>
     <message id="whisperfish-settings-enable-link-previews-description">
         <location filename="../qml/pages/Settings.qml" line="153"/>
         <source>Create and send previews of the links you send in messages. Note: Feature not yet implemented in Whisperfish.</source>
         <extracomment>Settings page enable link previews description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Maakt linkvoôrbeelden aan voôr de links da’ g’in uw berichten stuurt. Past op: die functie is nog ni’ geïmplementeerd in Whisperfish.</translation>
     </message>
     <message id="whisperfish-settings-country-code">
         <location filename="../qml/pages/Settings.qml" line="185"/>
@@ -1351,27 +1351,27 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="292"/>
         <source>Transcribe voice notes</source>
         <extracomment>Settings page auto transcribe voice notes</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Spraakberichten transcriberen</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-available">
         <location filename="../qml/pages/Settings.qml" line="296"/>
         <source>Automatically transcribe voice notes to text upon reception using Speech Note.</source>
         <extracomment>Auto transcribe voice notes description, Speech Note installed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transcribeert automatisch de spraakberichten da’ g’ontvangt naar tekst me Speech Note.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-unavailable">
         <location filename="../qml/pages/Settings.qml" line="299"/>
         <source>Automatically transcribe voice notes to text upon reception. Configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note installed but not configured.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transcribeert automatisch de spraakberichten da’ g’ontvangt. Stelt in Speech Note een ‘automatisch gedetecteerd’ model in voôr die functie hier te kunnen gebruiken.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-uninstalled">
         <location filename="../qml/pages/Settings.qml" line="302"/>
         <source>Automatically transcribe voice notes to text upon reception. Install and configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note not installed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transcribeert automatisch de spraakberichten da’ g’ontvangt. Installeert en stelt in Speech Note een ‘automatisch gedetecteerd’ model in voôr die functie hier te kunnen gebruiken.</translation>
     </message>
     <message id="whisperfish-settings-privacy-section">
         <location filename="../qml/pages/Settings.qml" line="319"/>
@@ -1439,7 +1439,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="667"/>
         <source>GStreamer version</source>
         <extracomment>GStreamer version indication in settings</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>GStreamer-versie</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
         <location filename="../qml/pages/Settings.qml" line="499"/>
@@ -1458,7 +1458,7 @@ Settings page share contacts</extracomment>
         <source>Some settings can only be changed from the primary device.</source>
         <oldsource>Some setting can only be changed from the primary device.</oldsource>
         <extracomment>Settings page, not a primary device note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sommigte instellingen kunde alleên aanpassen vanop ’t primair toestel.</translation>
     </message>
     <message id="whisperfish-settings-enable-typing-indicators">
         <location filename="../qml/pages/Settings.qml" line="116"/>
@@ -1941,7 +1941,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ChatTextInput.qml" line="287"/>
         <source>Incompatible with Signal iOS</source>
         <extracomment>Short warning note that the voice note is being recorded in Vorbis format</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ni compatibel me Signal iOS</translation>
     </message>
     <message id="whisperfish-chat-input-attachment-label" numerus="yes">
         <location filename="../qml/components/ChatTextInput.qml" line="317"/>
@@ -2240,13 +2240,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="151"/>
         <source>You had a group call.</source>
         <extracomment>Service message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>G’had e groepsgesprek.</translation>
     </message>
     <message id="whisperfish-service-message-call-group-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="154"/>
         <source>%1 had a group call with you.</source>
         <extracomment>Service message, %1 is the person initiating the call.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 had e groepsgesprek me u.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="159"/>
@@ -2445,13 +2445,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="545"/>
         <source>Let the group members message with you and let its members see your profile information?</source>
         <extracomment>Information about a pending or blocked group</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Wilde da’ de groepsleden u berichten kunnen sturen en da’ z’uw profielinformatie kunnen zien?</translation>
     </message>
     <message id="whisperfish-message-request-information">
         <location filename="../qml/pages/ConversationPage.qml" line="548"/>
         <source>Let the contact message with you and let them see your profile information?</source>
         <extracomment>Information about a pending or blocked recipient</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Wilde da ’t contact u berichten kan sturen en uw profielinformatie kan zien?</translation>
     </message>
     <message id="whisperfish-share-page-title">
         <location filename="../qml/pages/ShareDestinationV1.qml" line="35"/>
@@ -2532,19 +2532,19 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/MessageInfoPage.qml" line="130"/>
         <source>Delivery receipts</source>
         <extracomment>Delivered receipts section header</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ontvangstbevestigingen</translation>
     </message>
     <message id="whisperfish-message-info-read-receipts">
         <location filename="../qml/pages/MessageInfoPage.qml" line="146"/>
         <source>Read receipts</source>
         <extracomment>Read receipts section header</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Leesbevestigingen</translation>
     </message>
     <message id="whisperfish-message-info-viewed-receipts">
         <location filename="../qml/pages/MessageInfoPage.qml" line="162"/>
         <source>Viewed receipts</source>
         <extracomment>Viewed receipts section header</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kijkbevestigingen</translation>
     </message>
     <message id="whisperfish-creating-conversation-title">
         <location filename="../qml/pages/CreateConversationPage.qml" line="46"/>
@@ -2724,37 +2724,37 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/LinkContactPage.qml" line="10"/>
         <source>Select contact</source>
         <extracomment>Link Signal user to Sailfish OS contact page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Selecteert e contact</translation>
     </message>
     <message id="whisperfish-incoming-voice-call-title">
         <location filename="../qml/pages/RingingDialog.qml" line="96"/>
         <source>Incoming voice call</source>
         <extracomment>Title of the dialog shown when a voice call is incoming</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Inkomende spraakoproep</translation>
     </message>
     <message id="whisperfish-incoming-video-call-title">
         <location filename="../qml/pages/RingingDialog.qml" line="99"/>
         <source>Incoming video call</source>
         <extracomment>Title of the dialog shown when a video call is incoming</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Inkomend videogesprek</translation>
     </message>
     <message id="whisperfish-calling-decline">
         <location filename="../qml/pages/RingingDialog.qml" line="117"/>
         <source>Decline</source>
         <extracomment>Button to decline an incoming call</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Weigeren</translation>
     </message>
     <message id="whisperfish-calling-answer">
         <location filename="../qml/pages/RingingDialog.qml" line="127"/>
         <source>Answer</source>
         <extracomment>Button to answer an incoming call</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Oppakken</translation>
     </message>
     <message id="whisperfish-calling-hang-up">
         <location filename="../qml/pages/RingingDialog.qml" line="147"/>
         <source>Hang up</source>
         <extracomment>Button to hang up/cancel an outgoing ringing call</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Afleggen</translation>
     </message>
 </context>
 </TS>
