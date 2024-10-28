@@ -2461,22 +2461,25 @@ impl<O: Observable> Storage<O> {
     ) {
         use schema::attachments::dsl::*;
 
-        let count = diesel::update(attachments.filter(id.eq(attachment_id)))
+        let updated_message_id = diesel::update(attachments.filter(id.eq(attachment_id)))
             .set((
                 visual_hash.eq(hash),
                 width.eq(new_width as i32),
                 height.eq(new_height as i32),
             ))
-            .execute(&mut *self.db())
+            .returning(message_id)
+            .get_result::<i32>(&mut *self.db())
+            .optional()
             .expect("store attachment visual hash");
 
-        if count == 1 {
-            tracing::trace!("Attachment visual hash saved to id {}", attachment_id);
-            self.observe_update(schema::attachments::table, PrimaryKey::RowId(attachment_id));
+        if let Some(updated_message_id) = updated_message_id {
+            tracing::trace!(%attachment_id, %updated_message_id, "Attachment visual hash saved");
+            self.observe_update(schema::attachments::table, PrimaryKey::RowId(attachment_id))
+                .with_relation(schema::messages::table, updated_message_id);
         } else {
             tracing::error!(
-                "Could not save attachment visual hash to attachment {}",
-                attachment_id
+                %attachment_id,
+                "Could not save attachment visual hash",
             );
         };
     }
