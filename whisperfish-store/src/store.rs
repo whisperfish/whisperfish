@@ -2492,17 +2492,21 @@ impl<O: Observable> Storage<O> {
     ) {
         use schema::attachments::dsl::*;
 
-        let count = diesel::update(attachments.filter(id.eq(attachment_id)))
+        let updated_message_id = diesel::update(attachments.filter(id.eq(attachment_id)))
             .set(pointer.eq(attachment_pointer.encode_to_vec()))
-            .execute(&mut *self.db())
+            .returning(message_id)
+            .get_result::<i32>(&mut *self.db())
+            .optional()
             .expect("store sent attachment pointer");
 
-        if count == 1 {
+        if let Some(updated_message_id) = updated_message_id {
             tracing::trace!("Attachment pointer saved to id {}", attachment_id);
+            self.observe_update(schema::attachments::table, PrimaryKey::RowId(attachment_id))
+                .with_relation(schema::messages::table, updated_message_id);
         } else {
             tracing::error!(
-                "Could not save attachment pointer to attachment {}",
-                attachment_id
+                %attachment_id,
+                "Could not save attachment pointer",
             );
         };
     }
