@@ -1439,7 +1439,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="667"/>
         <source>GStreamer version</source>
         <extracomment>GStreamer version indication in settings</extracomment>
-        <translation>GStreamerversie</translation>
+        <translation>GStreamer-versie</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
         <location filename="../qml/pages/Settings.qml" line="499"/>
