@@ -3240,13 +3240,24 @@ impl<O: Observable> Storage<O> {
         let relative_dir =
             crate::replace_home_with_tilde(path.to_str().expect("UTF8-compliant path"));
 
-        diesel::update(schema::attachments::table)
+        let updated_message_id = diesel::update(schema::attachments::table)
             .filter(schema::attachments::id.eq(id))
             .set(schema::attachments::attachment_path.eq(relative_dir))
-            .execute(&mut *self.db())
+            .returning(schema::attachments::message_id)
+            .get_result::<i32>(&mut *self.db())
+            .optional()
             .unwrap();
 
-        self.observe_update(schema::attachments::table, id);
+        if let Some(updated_message_id) = updated_message_id {
+            tracing::trace!(%id, %updated_message_id, "Attachment path saved");
+            self.observe_update(schema::attachments::table, id)
+                .with_relation(schema::messages::table, updated_message_id);
+        } else {
+            tracing::error!(
+                %id,
+                "Could not save attachment path",
+            );
+        };
 
         Ok(path)
     }
