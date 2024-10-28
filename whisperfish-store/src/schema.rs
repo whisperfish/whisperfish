@@ -207,6 +207,7 @@ diesel::table! {
         pni -> Nullable<Text>,
         needs_pni_signature -> Bool,
         external_id -> Nullable<Text>,
+        is_accepted -> Bool,
     }
 }
 

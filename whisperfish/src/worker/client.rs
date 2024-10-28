@@ -20,13 +20,16 @@ use image::GenericImageView;
 use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
+use libsignal_service::proto::sync_message::message_request_response::Type as MessageRequestAction;
 use libsignal_service::proto::sync_message::Configuration;
 use libsignal_service::proto::sync_message::Keys;
+use libsignal_service::proto::sync_message::MessageRequestResponse;
 use libsignal_service::proto::sync_message::Sent;
 use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::push_service::ServiceIdType;
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 use libsignal_service::sender::SendMessageResult;
+use libsignal_service::sender::ThreadIdentifier;
 use tracing_futures::Instrument;
 use uuid::Uuid;
 use whisperfish_store::millis_to_naive_chrono;
@@ -276,6 +279,7 @@ pub struct ClientWorker {
     unlinkRecipient: qt_method!(fn(&self, recipient_id: i32)),
 
     sendConfiguration: qt_method!(fn(&self)),
+    handleMessageRequest: qt_method!(fn(&self, recipient_aci: String, action: String)),
 }
 
 /// ClientActor keeps track of the connection state.
@@ -999,6 +1003,46 @@ impl ClientActor {
         );
     }
 
+    #[tracing::instrument(level = "debug", skip(self))]
+    fn handle_message_request_response(&mut self, response: &MessageRequestResponse) -> bool {
+        let storage = self.storage.clone().expect("storage initialized");
+        if let Some(aci) = &response.thread_aci {
+            let addr = ServiceAddress::try_from(aci.as_str())
+                .expect("valid aci uuid in MessageRequestResponse");
+            match response.r#type() {
+                MessageRequestAction::Accept => storage.mark_recipient_accepted(&addr),
+                MessageRequestAction::Block => storage.mark_recipient_blocked(&addr),
+                MessageRequestAction::BlockAndDelete => {
+                    // Is it a "thread delete" which we don't support yet either?
+                    storage.mark_recipient_blocked(&addr)
+                }
+                MessageRequestAction::BlockAndSpam => {
+                    tracing::warn!(
+                        "Reporting spam for groups is not yet implemented. Please upvote bug #392"
+                    );
+                    storage.mark_recipient_blocked(&addr)
+                }
+                _ => {
+                    tracing::warn!(
+                        "unhandled response type {:?} for ACI {}. Please upvote bug #324",
+                        response.r#type(),
+                        addr.uuid
+                    );
+                    false
+                }
+            }
+        } else if let Some(group_id) = &response.group_id {
+            tracing::warn!("Group message request responses are not yet implemented. {:?}. Please upvote bug #327", group_id);
+            false
+        } else {
+            tracing::warn!(
+                "Unhandle message request response: {:?}. Please upvote bug #324",
+                response
+            );
+            false
+        }
+    }
+
     #[tracing::instrument(level = "debug", skip(self, ctx, metadata))]
     fn process_envelope(
         &mut self,
@@ -1176,6 +1220,10 @@ impl ClientActor {
                             )
                         }
                     }
+                }
+                if let Some(response) = message.message_request_response {
+                    handled = true;
+                    self.handle_message_request_response(&response);
                 }
                 if let Some(keys) = message.keys {
                     handled = true;
@@ -3156,6 +3204,45 @@ impl ClientWorker {
                 .map(Result::unwrap),
         );
     }
+
+    #[with_executor]
+    #[allow(non_snake_case)]
+    fn handleMessageRequest(&self, recipient_aci: String, action: String) {
+        if let Ok(aci) = Uuid::parse_str(recipient_aci.as_str()) {
+            match action.as_str() {
+                "accept" => {
+                    actix::spawn(
+                        self.actor
+                            .as_ref()
+                            .unwrap()
+                            .send(MessageRequestAnswer {
+                                thread: ThreadIdentifier::Aci(aci),
+                                action: MessageRequestAction::Accept,
+                            })
+                            .map(Result::unwrap),
+                    );
+                }
+                "block" => {
+                    actix::spawn(
+                        self.actor
+                            .as_ref()
+                            .unwrap()
+                            .send(MessageRequestAnswer {
+                                thread: ThreadIdentifier::Aci(aci),
+                                action: MessageRequestAction::Block,
+                            })
+                            .map(Result::unwrap),
+                    );
+                }
+                _ => tracing::warn!(
+                    "Unrecognized recipient message request handle action: {}",
+                    action
+                ),
+            }
+        } else {
+            tracing::warn!("QML requested unparsable ACI for recipient accept/block");
+        }
+    }
 }
 
 impl Handler<CompactDb> for ClientActor {
@@ -3508,6 +3595,67 @@ impl Handler<SendConfiguration> for ClientActor {
                 .send_configuration(&local_addr, configuration)
                 .await
                 .expect("send configuration");
+        });
+    }
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+/// Set recipient into accepted or blocked state
+pub struct MessageRequestAnswer {
+    pub thread: ThreadIdentifier,
+    pub action: MessageRequestAction,
+}
+
+impl Handler<MessageRequestAnswer> for ClientActor {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        MessageRequestAnswer { thread, action }: MessageRequestAnswer,
+        _ctx: &mut Self::Context,
+    ) {
+        let storage = self.storage.as_mut().unwrap().clone();
+        match thread {
+            ThreadIdentifier::Aci(aci) => {
+                let address = ServiceAddress::new_aci(aci);
+                match action {
+                    MessageRequestAction::Accept => {
+                        storage.mark_recipient_accepted(&address);
+                    }
+                    MessageRequestAction::Block => {
+                        storage.mark_recipient_blocked(&address);
+                    }
+                    _ => {
+                        tracing::error!("Unimplemented message request action: {:?}", action);
+                        return;
+                    }
+                }
+            }
+            ThreadIdentifier::Group(_group) => {
+                tracing::warn!("Group message request responses are not yet implemented. Please upvote bug #327");
+                return;
+            }
+        }
+
+        let self_addr =
+            ServiceAddress::new_aci(self.config.get_aci().expect("valid uuid at this point"));
+        let sender = self.message_sender();
+        actix::spawn(async move {
+            let sender = sender.await;
+            if let Err(e) = sender {
+                tracing::error!("message sender failed: {}", e);
+                return;
+            }
+            let mut sender = sender.unwrap();
+
+            let result = sender
+                .send_message_request_response(&self_addr, &thread, action)
+                .await;
+
+            if let Err(e) = result {
+                tracing::error!("message request response failed: {}", e);
+            }
         });
     }
 }

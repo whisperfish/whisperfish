@@ -50,6 +50,24 @@ Page {
                 }
             }
             MenuItem {
+                // Don't show when message request is unanswered
+                visible: recipient.accepted || recipient.blocked
+                text: recipient.blocked
+                    //: Menu action to unblock a recipient
+                    //% "Unblock"
+                    ? qsTrId("whisperfish-recipient-unblock")
+                    //: Menu action to block a recipient
+                    //% "Block"
+                    : qsTrId("whisperfish-recipient-block")
+                onClicked: {
+                    recipient.blocked
+                        ? ClientWorker.handleMessageRequest(recipient.recipientUuid, "accept")
+                        : ClientWorker.handleMessageRequest(recipient.recipientUuid, "block")
+                    // XXX Workaround until recipient update propagates back
+                    recipient.recipientUuid = recipient.recipientUuid
+                }
+            }
+            MenuItem {
                 // Translation in ProfilePage.qml
                 text: qsTrId("whisperfish-refresh-profile-menu")
                 visible: SettingsBridge.debug_mode
@@ -76,18 +94,16 @@ Page {
                 }
             }
             MenuItem {
-                //: Menu action to unlink a Signal contact from a Sailfish OS contact
-                //% "Unlink contact"
-                text: qsTrId("whisperfish-recipient-unlink")
-                visible: recipient.externalId != null
-                onClicked: ClientWorker.unlinkRecipient(recipient.recipientId)
-            }
-            MenuItem {
-                //: Menu action to pick a Sailfish OS contact to link the Signal user to
-                //% "Link contact"
-                text: qsTrId("whisperfish-recipient-link")
-                visible: recipient.externalId == null
-                onClicked: pageStack.push(Qt.resolvedUrl("LinkContactPage.qml"), { recipient: recipient })
+                text: recipient.externalId != null
+                    //: Menu action to unlink a Signal contact from a Sailfish OS contact
+                    //% "Unlink contact"
+                    ? qsTrId("whisperfish-recipient-unlink")
+                    //: Menu action to pick a Sailfish OS contact to link the Signal user to
+                    //% "Link contact"
+                    : qsTrId("whisperfish-recipient-link")
+                onClicked: recipient.externalId != null
+                    ? ClientWorker.unlinkRecipient(recipient.recipientId)
+                    : pageStack.push(Qt.resolvedUrl("LinkContactPage.qml"), { recipient: recipient })
             }
             MenuItem {
                 // Translation in ProfilePage.qml
@@ -132,6 +148,22 @@ Page {
                 width: parent.width
                 // Translation in ProfilePage.qml
                 text: qsTrId("whisperfish-profile-page-unregistered-profile")
+            }
+
+            TextArea {
+                anchors.horizontalCenter: parent.horizontalCenter
+                horizontalAlignment: Qt.AlignHCenter
+                color: Theme.highlightColor
+                visible: recipient.isRegistered && (!recipient.accepted || recipient.blocked)
+                readOnly: true
+                width: parent.width
+                text: recipient.blocked
+                    //: Recipient profile page, blocked recipient into
+                    //% "You have blocked the recipient."
+                    ? qsTrId("whisperfish-profile-page-blocked-recipient")
+                    //: Recipient profile page, message request is pending
+                    //% "You can't communicate with the recipient until you accept their message request."
+                    : qsTrId("whisperfish-profile-page-message-request-pending")
             }
 
             Row {
@@ -193,7 +225,7 @@ Page {
                 }
                 font.pixelSize: Theme.fontSizeMedium
                 horizontalAlignment: Text.alignHCenter
-                wrapMode: Text.Wrap 
+                wrapMode: Text.Wrap
                 //: Warning about recipient UUID not existing or nil (all zeros)
                 //% "This user profile is broken and can't be used."
                 text: qsTrId("whisperfish-profile-uuid-invalid-warning")

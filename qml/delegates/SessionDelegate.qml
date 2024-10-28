@@ -14,6 +14,7 @@ ListItem {
     property bool isPinned: model.isPinned
     property bool isArchived: model.isArchived
     property bool isRegistered: model.isRegistered
+    property bool isBlocked: model.isBlocked
     property bool hasDraft: model.draft.length > 0
     property string draft: model.draft
     property string profilePicture: model !== undefined ? (isGroup
@@ -170,9 +171,10 @@ ListItem {
             isNoteToSelf: delegate.isNoteToSelf
             isGroup: delegate.isGroup
             // TODO: Rework infomarks to four corners or something like that; we can currently show only one status or emoji
-            showInfoMark: !isRegistered || hasDraft || isNoteToSelf || isMuted || infoMarkEmoji !== ''
+            showInfoMark: !isRegistered || hasDraft || isNoteToSelf || isMuted || isBlocked || infoMarkEmoji !== ''
             infoMarkSource: {
                 if (!isRegistered) 'image://theme/icon-s-warning'
+                else if (isBlocked) 'image://theme/icon-s-blocked'
                 else if (hasDraft) 'image://theme/icon-s-edit'
                 else if (isNoteToSelf) 'image://theme/icon-s-retweet' // task|secure|retweet
                 else if (isMuted) 'image://theme/icon-s-low-importance'
