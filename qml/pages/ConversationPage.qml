@@ -21,8 +21,8 @@ Page {
     property int _selectedCount: messages.selectedCount // proxy to avoid some costly lookups
     property bool _showDeleteAll: false
     // XXX handle group.group_change like a real client
-    property bool _accepted: session.isGroup ? true : recipient.accepted
-    property bool _blocked: session.isGroup ? false : recipient.blocked
+    property bool _accepted: session.isGroup || !recipient.valid ? true : recipient.accepted
+    property bool _blocked: session.isGroup || !recipient.valid ? false : recipient.blocked
     property bool _showInputPanel: true
     on_ShowInputPanelChanged: maybeShowPanel()
 
