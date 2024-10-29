@@ -44,13 +44,13 @@ Page {
     Group {
         id: group
         app: AppState
-        groupId: session.isGroup ? session.groupId : -1
+        groupId: session.isGroup && session.valid ? session.groupId : -1
     }
 
     Recipient {
         id: recipient
         app: AppState
-        recipientId: !session.isGroup ? session.recipientId : -1
+        recipientId: !session.isGroup && session.valid ? session.recipientId : -1
     }
 
     onStatusChanged: {
