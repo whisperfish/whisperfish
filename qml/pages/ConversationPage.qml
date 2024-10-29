@@ -39,6 +39,11 @@ Page {
         id: session
         app: AppState
         // sessionId is set through the property alias above.
+
+        onValidChanged: if (valid) {
+            if (session.draft != null)
+                textInput.text = session.draft
+        }
     }
 
     Group {
@@ -290,10 +295,6 @@ Page {
             editor.onFocusChanged: if (editor.focus) _showInputPanel = true
             dockMoving: panel.moving
             recipientIsRegistered: session.valid && session.isRegistered // true for any group
-
-            Component.onCompleted: if (session.draft != null) {
-                text = session.draft
-            }
 
             Component.onDestruction: {
                 if(session != null && session.draft !== text) {
