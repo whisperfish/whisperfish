@@ -2461,22 +2461,25 @@ impl<O: Observable> Storage<O> {
     ) {
         use schema::attachments::dsl::*;
 
-        let count = diesel::update(attachments.filter(id.eq(attachment_id)))
+        let updated_message_id = diesel::update(attachments.filter(id.eq(attachment_id)))
             .set((
                 visual_hash.eq(hash),
                 width.eq(new_width as i32),
                 height.eq(new_height as i32),
             ))
-            .execute(&mut *self.db())
+            .returning(message_id)
+            .get_result::<i32>(&mut *self.db())
+            .optional()
             .expect("store attachment visual hash");
 
-        if count == 1 {
-            tracing::trace!("Attachment visual hash saved to id {}", attachment_id);
-            self.observe_update(schema::attachments::table, PrimaryKey::RowId(attachment_id));
+        if let Some(updated_message_id) = updated_message_id {
+            tracing::trace!(%attachment_id, %updated_message_id, "Attachment visual hash saved");
+            self.observe_update(schema::attachments::table, PrimaryKey::RowId(attachment_id))
+                .with_relation(schema::messages::table, updated_message_id);
         } else {
             tracing::error!(
-                "Could not save attachment visual hash to attachment {}",
-                attachment_id
+                %attachment_id,
+                "Could not save attachment visual hash",
             );
         };
     }
@@ -2489,17 +2492,21 @@ impl<O: Observable> Storage<O> {
     ) {
         use schema::attachments::dsl::*;
 
-        let count = diesel::update(attachments.filter(id.eq(attachment_id)))
+        let updated_message_id = diesel::update(attachments.filter(id.eq(attachment_id)))
             .set(pointer.eq(attachment_pointer.encode_to_vec()))
-            .execute(&mut *self.db())
+            .returning(message_id)
+            .get_result::<i32>(&mut *self.db())
+            .optional()
             .expect("store sent attachment pointer");
 
-        if count == 1 {
+        if let Some(updated_message_id) = updated_message_id {
             tracing::trace!("Attachment pointer saved to id {}", attachment_id);
+            self.observe_update(schema::attachments::table, PrimaryKey::RowId(attachment_id))
+                .with_relation(schema::messages::table, updated_message_id);
         } else {
             tracing::error!(
-                "Could not save attachment pointer to attachment {}",
-                attachment_id
+                %attachment_id,
+                "Could not save attachment pointer",
             );
         };
     }
@@ -2641,14 +2648,17 @@ impl<O: Observable> Storage<O> {
     pub fn update_transcription(&mut self, attachment_id: i32, new_transcription: &str) {
         use schema::attachments::dsl::*;
 
-        let count = diesel::update(attachments.filter(id.eq(attachment_id)))
+        let updated_message_id = diesel::update(attachments.filter(id.eq(attachment_id)))
             .set(transcription.eq(new_transcription))
-            .execute(&mut *self.db())
+            .returning(message_id)
+            .get_result::<i32>(&mut *self.db())
+            .optional()
             .expect("update transcription");
 
-        if count == 1 {
+        if let Some(updated_message_id) = updated_message_id {
             tracing::trace!("Transcription updated for attachment id {}", attachment_id);
-            self.observe_update(schema::attachments::table, attachment_id);
+            self.observe_update(schema::attachments::table, PrimaryKey::RowId(attachment_id))
+                .with_relation(schema::messages::table, updated_message_id);
         } else {
             tracing::error!(
                 "Could not update transcription for attachment {}",
@@ -3230,13 +3240,24 @@ impl<O: Observable> Storage<O> {
         let relative_dir =
             crate::replace_home_with_tilde(path.to_str().expect("UTF8-compliant path"));
 
-        diesel::update(schema::attachments::table)
+        let updated_message_id = diesel::update(schema::attachments::table)
             .filter(schema::attachments::id.eq(id))
             .set(schema::attachments::attachment_path.eq(relative_dir))
-            .execute(&mut *self.db())
+            .returning(schema::attachments::message_id)
+            .get_result::<i32>(&mut *self.db())
+            .optional()
             .unwrap();
 
-        self.observe_update(schema::attachments::table, id);
+        if let Some(updated_message_id) = updated_message_id {
+            tracing::trace!(%id, %updated_message_id, "Attachment path saved");
+            self.observe_update(schema::attachments::table, id)
+                .with_relation(schema::messages::table, updated_message_id);
+        } else {
+            tracing::error!(
+                %id,
+                "Could not save attachment path",
+            );
+        };
 
         Ok(path)
     }

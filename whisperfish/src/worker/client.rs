@@ -3618,7 +3618,7 @@ impl Handler<MessageRequestAnswer> for ClientActor {
         let storage = self.storage.as_mut().unwrap().clone();
         match thread {
             ThreadIdentifier::Aci(aci) => {
-                let address = ServiceAddress::new_aci(aci);
+                let address = ServiceAddress::from_aci(aci);
                 match action {
                     MessageRequestAction::Accept => {
                         storage.mark_recipient_accepted(&address);
@@ -3639,7 +3639,7 @@ impl Handler<MessageRequestAnswer> for ClientActor {
         }
 
         let self_addr =
-            ServiceAddress::new_aci(self.config.get_aci().expect("valid uuid at this point"));
+            ServiceAddress::from_aci(self.config.get_aci().expect("valid uuid at this point"));
         let sender = self.message_sender();
         actix::spawn(async move {
             let sender = sender.await;
