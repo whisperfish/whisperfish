@@ -270,10 +270,11 @@ pub struct Session {
     sessionId: i32,
     #[qt_property(READ: get_valid, NOTIFY: session_changed)]
     valid: bool,
-    #[qt_property(READ: messages, NOTIFY: session_changed)]
+    #[qt_property(READ: messages, NOTIFY: messages_changed)]
     messages: QVariant,
 
     session_changed: qt_signal!(),
+    messages_changed: qt_signal!(),
 }
 
 impl EventObserving for Session {
