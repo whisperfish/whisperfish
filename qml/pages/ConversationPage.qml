@@ -15,7 +15,7 @@ Page {
     property string conversationName: session.isGroup ? session.groupName : getRecipientName(recipient.e164, recipient.externalId, recipient.name, true)
     property string profilePicture: session.isGroup ? getGroupAvatar(session.groupId) : getRecipientAvatar(recipient.e164, recipient.uuid, recipient.externalId)
     property alias sessionId: session.sessionId
-    property int expiringMessages: session.expiringMessageTimeout != -1
+    property bool expiringMessages: session.valid ? session.expiringMessageTimeout != -1 : false
     property DockedPanel activePanel: actionsPanel.open ? actionsPanel : (acceptPanel.open ? acceptPanel : panel)
 
     property int _selectedCount: messages.selectedCount // proxy to avoid some costly lookups
@@ -86,10 +86,12 @@ Page {
     ConversationPageHeader {
         id: pageHeader
         title: conversationName + (expiringMessages ? "⏱" : "")
-        isGroup: session.isGroup
+        isGroup: session.valid && session.isGroup
         anchors.top: parent.top
         description: {
-            if (session.isGroup) {
+            if (!session.valid) {
+                return "";
+            } else if (session.isGroup) {
                 //: The number of members in a group, you included
                 //% "%n member(s)"
                 return qsTrId("whisperfish-group-n-members", group.member_count)
@@ -287,7 +289,7 @@ Page {
             showSeparator: !messages.atYEnd || quotedMessageShown
             editor.onFocusChanged: if (editor.focus) _showInputPanel = true
             dockMoving: panel.moving
-            recipientIsRegistered: session.isRegistered // true for any group
+            recipientIsRegistered: session.valid && session.isRegistered // true for any group
 
             Component.onCompleted: if (session.draft != null) {
                 text = session.draft
