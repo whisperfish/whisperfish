@@ -16,7 +16,7 @@ qmetaobject = { git = 'https://github.com/woboq/qmetaobject-rs' }
 # diesel = { git = "https://github.com/diesel-rs/diesel" }
 
 # [patch."https://github.com/whisperfish/libsignal-service-rs"]
-# libsignal-service = { path = "../libsignal-service-rs/libsignal-service" }
+# libsignal-service = { path = "../libsignal-service-rs" }
 
 [patch."https://github.com/signalapp/libsignal/"]
 # Signal's ringrtc depends on zkgroup, but they don't really bother bumping the tag.
