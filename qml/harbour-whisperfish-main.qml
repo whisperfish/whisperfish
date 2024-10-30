@@ -268,7 +268,7 @@ ApplicationWindow
 
         // Only ConversationPage.qml has `sessionId` property.
         if(Qt.application.state == Qt.ApplicationActive &&
-           (pageStack.currentPage == _mainPage || pageStack.currentPage.sessionId == sid)) {
+           (pageStack.currentPage.sessionId == sid)) {
             if(quietMessageNotification.isSupported) {
                 quietMessageNotification.publish()
             }
