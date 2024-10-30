@@ -33,40 +33,41 @@ Page {
             panel.hide()
     }
 
-    Component.onCompleted: maybeShowPanel()
-
     Session {
         id: session
         app: AppState
         // sessionId is set through the property alias above.
+
+        onValidChanged: if (valid) {
+            if (session.draft != null)
+                textInput.text = session.draft
+        }
     }
 
     Group {
         id: group
         app: AppState
         groupId: session.isGroup && session.valid ? session.groupId : -1
+        onValidChanged: if (valid) {
+            maybeShowPanel()
+            if (groupId != -1) {
+                pageStack.pushAttached(Qt.resolvedUrl("GroupProfilePage.qml"), { session: session, group: group })
+            }
+        }
     }
 
     Recipient {
         id: recipient
         app: AppState
         recipientId: !session.isGroup && session.valid ? session.recipientId : -1
-    }
-
-    onStatusChanged: {
-        if (status == PageStatus.Active) {
-            // XXX this should be a call into the client/application state/...
-            // TODO: Re-think what marking session as read means
-            //SessionModel.markRead(sessionId)
-
-            if (session.isGroup) {
-                pageStack.pushAttached(Qt.resolvedUrl("GroupProfilePage.qml"), { session: session, group: group })
-            }
-            else if(!session.isGroup && session.recipientUuid !== SetupWorker.uuid) {
-                pageStack.pushAttached(Qt.resolvedUrl("RecipientProfilePage.qml"), { session: session, recipient: recipient })
-            }
-            else {
-                pageStack.pushAttached(Qt.resolvedUrl("ProfilePage.qml"), { session: session })
+        onValidChanged: if (valid) {
+            if (recipientId != -1) {
+                maybeShowPanel()
+                if (session.recipientUuid !== SetupWorker.uuid) {
+                    pageStack.pushAttached(Qt.resolvedUrl("RecipientProfilePage.qml"), { session: session, recipient: recipient })
+                } else {
+                    pageStack.pushAttached(Qt.resolvedUrl("ProfilePage.qml"), { session: session })
+                }
             }
         }
     }
@@ -290,10 +291,6 @@ Page {
             editor.onFocusChanged: if (editor.focus) _showInputPanel = true
             dockMoving: panel.moving
             recipientIsRegistered: session.valid && session.isRegistered // true for any group
-
-            Component.onCompleted: if (session.draft != null) {
-                text = session.draft
-            }
 
             Component.onDestruction: {
                 if(session != null && session.draft !== text) {
