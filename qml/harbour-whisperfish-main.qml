@@ -18,6 +18,7 @@ ApplicationWindow
     _defaultLabelFormat: Text.PlainText
 
     property var notificationMap: ({})
+    property var notificationQueue: ([])
     property var _mainPage: null
 
     // setting this to "true" will block global navigation
@@ -183,6 +184,7 @@ ApplicationWindow
     }
 
     function closeMessageNotification(sid, mid) {
+        console.log("Closing message notification for session", sid, "and message", mid)
         if(sid in notificationMap) {
             for(var i in notificationMap[sid]) {
                 // This needs to be a loose comparison for some reason
@@ -196,6 +198,14 @@ ApplicationWindow
                     }
                     break
                 }
+            }
+        }
+        for(var i in notificationQueue) {
+            if(notificationQueue[i].mid == mid) {
+                console.log("Removing from queue")
+                delete notificationQueue[i]
+                notificationQueue.splice(i, 1)
+                break
             }
         }
     }
@@ -262,13 +272,23 @@ ApplicationWindow
         m.sid = sid
     }
 
+    function flushNotifications() {
+        console.log("Flushing notifications, len:", notificationQueue.length)
+        for(var i in notificationQueue) {
+            notificationQueue[i].publish()
+        }
+        notificationQueue = []
+    }
+
     function newMessageNotification(sid, mid, sessionName, senderName, senderIdentifier, senderUuid, message, isGroup) {
+        console.log("New message notification for session", sid, "from", senderIdentifier, "with message", message)
         var name = getRecipientName(senderIdentifier, undefined, senderName) // FIXME
         var contactName = isGroup ? sessionName : name
 
         // Only ConversationPage.qml has `sessionId` property.
         if(Qt.application.state == Qt.ApplicationActive &&
            (pageStack.currentPage.sessionId == sid)) {
+            console.log("Quiet notification for session " + sid)
             if(quietMessageNotification.isSupported) {
                 quietMessageNotification.publish()
             }
@@ -291,7 +311,8 @@ ApplicationWindow
             return;
         }
 
-        if (SettingsBridge.minimise_notify && (sid in notificationMap)) {
+        var isReplacement = SettingsBridge.minimise_notify && (sid in notificationMap);
+        if (isReplacement) {
             var first_message = notificationMap[sid][0]
             m.replacesId = first_message.replacesId
             m.itemCount = first_message.itemCount + 1
@@ -326,7 +347,13 @@ ApplicationWindow
             "method": "showConversation",
             "arguments": [ "sid", sid ]
         } ]
-        m.publish()
+        if (!ClientWorker.queueEmpty) {
+            console.log("Adding to queue")
+            notificationQueue.push(m)
+        } else {
+            console.log("Publishing immediately")
+            m.publish()
+        }
         m.mid = mid
         if(sid in notificationMap && !SettingsBridge.minimise_notify) {
               notificationMap[sid].push(m)
@@ -358,6 +385,11 @@ ApplicationWindow
         }
         onNotifyMessage: {
             newMessageNotification(sid, mid, sessionName, senderName, senderIdentifier, senderUuid, message, isGroup)
+        }
+        onQueueEmptyChanged: {
+            if (ClientWorker.queueEmpty) {
+                flushNotifications()
+            }
         }
         onMissedCall: {
             newMissedCallNotification(sid, sessionName, senderName, senderIdentifier, senderUuid, isVideo, isGroup)
