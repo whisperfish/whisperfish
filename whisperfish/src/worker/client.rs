@@ -284,10 +284,10 @@ enum QueueProcessState {
     #[default]
     Starting,
     Processing {
-        most_recent_envelope: String,
+        expected_envelopes: Vec<String>,
     },
     SignalSeen {
-        last_envelope: String,
+        expected_envelopes: Vec<String>,
     },
     Done,
 }
@@ -296,10 +296,13 @@ impl QueueProcessState {
     #[tracing::instrument(level = "trace")]
     fn observe_guid(&mut self, envelope: &str) {
         match self {
-            Self::Starting | Self::Processing { .. } => {
+            Self::Starting => {
                 *self = Self::Processing {
-                    most_recent_envelope: envelope.to_string(),
+                    expected_envelopes: vec![envelope.to_string()],
                 };
+            }
+            Self::Processing { expected_envelopes } => {
+                expected_envelopes.push(envelope.to_string());
             }
             Self::SignalSeen { .. } | Self::Done => {
                 // no-op
@@ -312,16 +315,14 @@ impl QueueProcessState {
     #[tracing::instrument(level = "trace")]
     fn processed_guid(&mut self, processed_envelope: &str) {
         match self {
-            Self::SignalSeen { last_envelope } if last_envelope == processed_envelope => {
-                *self = Self::Done
+            Self::SignalSeen { expected_envelopes } => {
+                expected_envelopes.retain(|e| e != processed_envelope);
+                if expected_envelopes.is_empty() {
+                    *self = Self::Done;
+                }
             }
-            Self::Processing {
-                most_recent_envelope,
-            } if most_recent_envelope == processed_envelope => *self = Self::Starting,
-            Self::Processing { .. } => {
-                *self = Self::Processing {
-                    most_recent_envelope: processed_envelope.to_string(),
-                };
+            Self::Processing { expected_envelopes } => {
+                expected_envelopes.retain(|e| e != processed_envelope);
             }
             _ => {}
         }
@@ -332,11 +333,9 @@ impl QueueProcessState {
     #[tracing::instrument(level = "trace")]
     fn observe_signal(&mut self) {
         match self {
-            Self::Processing {
-                most_recent_envelope,
-            } => {
+            Self::Processing { expected_envelopes } => {
                 *self = Self::SignalSeen {
-                    last_envelope: most_recent_envelope.clone(),
+                    expected_envelopes: std::mem::take(expected_envelopes),
                 };
             }
             Self::Starting => *self = Self::Done,
