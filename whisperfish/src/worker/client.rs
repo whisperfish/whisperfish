@@ -279,6 +279,16 @@ pub struct ClientWorker {
     handleMessageRequest: qt_method!(fn(&self, recipient_aci: String, action: String)),
 }
 
+/// State machine for keeping track of initial envelope delivery
+///
+/// On initial connect, Signal sends us a dump of all envelopes that are in the queue,
+/// followed by a "done" signal.  We need to keep track of which envelopes we've decrypted and
+/// processed, so that we can forward the "done" Signal to QML, to display the final notification.
+///
+/// All envelopes are identified by their server GUID, and initially stored in the `Processing` state.
+/// When the "done" signal is received, we transition to the `SignalSeen` state, and we stop adding
+/// any new envelopes to the state machine.  We then wait for all envelopes to be processed,
+/// and move to the `Done` state when the last envelope is processed.
 #[derive(Default, Debug)]
 enum QueueProcessState {
     #[default]
