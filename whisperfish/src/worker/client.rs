@@ -213,6 +213,7 @@ pub struct ClientWorker {
     attachmentDownloaded: qt_signal!(sid: i32, mid: i32),
     attachmentDownloadProgress: qt_signal!(sid: i32, mid: i32, progress: usize),
     messageReceipt: qt_signal!(sid: i32, mid: i32),
+    queueEmptyChanged: qt_signal!(),
     notifyMessage: qt_signal!(
         sid: i32,
         mid: i32,
@@ -245,6 +246,7 @@ pub struct ClientWorker {
     transcribeVoiceNote: qt_method!(fn(&self, message_id: i32)),
 
     connected: qt_property!(bool; NOTIFY connectedChanged),
+    queueEmpty: qt_property!(bool; NOTIFY queueEmptyChanged),
     connectedChanged: qt_signal!(),
 
     actor: Option<Addr<ClientActor>>,
@@ -277,6 +279,78 @@ pub struct ClientWorker {
     handleMessageRequest: qt_method!(fn(&self, recipient_aci: String, action: String)),
 }
 
+#[derive(Default, Debug)]
+enum QueueProcessState {
+    #[default]
+    Starting,
+    Processing {
+        most_recent_envelope: String,
+    },
+    SignalSeen {
+        last_envelope: String,
+    },
+    Done,
+}
+
+impl QueueProcessState {
+    #[tracing::instrument(level = "trace")]
+    fn observe_guid(&mut self, envelope: &str) {
+        match self {
+            Self::Starting | Self::Processing { .. } => {
+                *self = Self::Processing {
+                    most_recent_envelope: envelope.to_string(),
+                };
+            }
+            Self::SignalSeen { .. } | Self::Done => {
+                // no-op
+            }
+        }
+
+        tracing::trace!(new_state = ?self);
+    }
+
+    #[tracing::instrument(level = "trace")]
+    fn processed_guid(&mut self, processed_envelope: &str) {
+        match self {
+            Self::SignalSeen { last_envelope } if last_envelope == processed_envelope => {
+                *self = Self::Done
+            }
+            Self::Processing {
+                most_recent_envelope,
+            } if most_recent_envelope == processed_envelope => *self = Self::Starting,
+            Self::Processing { .. } => {
+                *self = Self::Processing {
+                    most_recent_envelope: processed_envelope.to_string(),
+                };
+            }
+            _ => {}
+        }
+
+        tracing::trace!(new_state = ?self);
+    }
+
+    #[tracing::instrument(level = "trace")]
+    fn observe_signal(&mut self) {
+        match self {
+            Self::Processing {
+                most_recent_envelope,
+            } => {
+                *self = Self::SignalSeen {
+                    last_envelope: most_recent_envelope.clone(),
+                };
+            }
+            Self::Starting => *self = Self::Done,
+            _ => {}
+        }
+
+        tracing::trace!(new_state = ?self);
+    }
+
+    fn is_done(&self) -> bool {
+        matches!(self, Self::Done)
+    }
+}
+
 /// ClientActor keeps track of the connection state.
 pub struct ClientActor {
     inner: QObjectBox<ClientWorker>,
@@ -294,6 +368,7 @@ pub struct ClientActor {
     config: std::sync::Arc<crate::config::SignalConfig>,
 
     transient_timestamps: HashSet<u64>,
+    initial_queue_process_state: QueueProcessState,
 
     voice_note_transcription_queue: voice_note_transcription::VoiceNoteTranscriptionQueue,
 
@@ -360,6 +435,7 @@ impl ClientActor {
             config,
 
             transient_timestamps,
+            initial_queue_process_state: QueueProcessState::Starting,
 
             voice_note_transcription_queue:
                 voice_note_transcription::VoiceNoteTranscriptionQueue::default(),
@@ -2221,6 +2297,10 @@ impl Handler<Restart> for ClientActor {
                             .instrument(tracing::info_span!("message receiver")),
                     );
 
+                    act.inner.pinned().borrow_mut().queueEmpty = false;
+                    act.initial_queue_process_state = QueueProcessState::Starting;
+                    act.inner.pinned().borrow().queueEmptyChanged();
+
                     ctx.set_mailbox_capacity(1);
                     act.inner.pinned().borrow_mut().connected = true;
                     act.ws = Some(ws);
@@ -2296,10 +2376,14 @@ impl Handler<RefreshProfile> for ClientActor {
 
 impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
     fn handle(&mut self, msg: Result<Incoming, ServiceError>, ctx: &mut Self::Context) {
-        let msg = match msg {
-            Ok(Incoming::Envelope(e)) => e,
+        let (guid, msg) = match msg {
+            Ok(Incoming::Envelope(e)) => {
+                let guid = e.server_guid.clone().unwrap();
+                (guid, e)
+            }
             Ok(Incoming::QueueEmpty) => {
                 tracing::info!("Message queue is empty!");
+                self.initial_queue_process_state.observe_signal();
                 return;
             }
             Err(e) => {
@@ -2329,6 +2413,8 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
         let mut cipher = self.cipher(incoming_address.identity);
 
         let storage = self.storage.clone().expect("initialized storage");
+
+        self.initial_queue_process_state.observe_guid(&guid);
 
         ctx.spawn(
             async move {
@@ -2381,9 +2467,17 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                 Some(content)
             }.instrument(tracing::trace_span!("opening envelope", %incoming_address.identity))
             .into_actor(self)
-            .map(|content, act, ctx| {
+            .map(move |content, act, ctx| {
                 if let Some(content) = content {
                     act.process_envelope(content, ctx);
+                }
+
+                act.initial_queue_process_state
+                    .processed_guid(&guid);
+
+                if act.initial_queue_process_state.is_done() && !act.inner.pinned().borrow_mut().queueEmpty {
+                    act.inner.pinned().borrow_mut().queueEmpty = true;
+                    act.inner.pinned().borrow_mut().queueEmptyChanged();
                 }
             }),
         );
