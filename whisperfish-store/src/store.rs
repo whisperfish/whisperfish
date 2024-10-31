@@ -3262,6 +3262,26 @@ impl<O: Observable> Storage<O> {
         Ok(path)
     }
 
+    pub fn update_attachment_progress(
+        &self,
+        attachment_id: i32,
+        stream_len: usize,
+    ) -> anyhow::Result<()> {
+        use schema::attachments::dsl::*;
+
+        let affected_message_id = diesel::update(attachments.filter(id.eq(attachment_id)))
+            .set(download_length.eq(stream_len as i32))
+            .returning(message_id)
+            .get_result::<i32>(&mut *self.db())
+            .optional()
+            .context("update attachment progress")?
+            .ok_or_else(|| anyhow::anyhow!("Attachment not found"))?;
+
+        self.observe_update(schema::attachments::table, attachment_id)
+            .with_relation(schema::messages::table, affected_message_id);
+        Ok(())
+    }
+
     pub fn set_recipient_external_id(&mut self, rcpt_id: i32, ext_id: Option<String>) {
         use crate::schema::recipients::dsl::*;
 

@@ -118,6 +118,7 @@ impl Handler<FetchAttachment> for ClientActor {
                     let mut buf = [0u8; 1024 * 1024];
                     let read = stream.read(&mut buf).await?;
                     stream_len += read;
+                    assert_eq!(stream_len, buf.len());
 
                     ciphertext.extend_from_slice(&buf[..read]);
 
@@ -126,6 +127,8 @@ impl Handler<FetchAttachment> for ClientActor {
                         message_id,
                         progress: stream_len,
                     })?;
+
+                    storage.update_attachment_progress(attachment_id, stream_len)?;
 
                     if read == 0 {
                         break;
