@@ -114,19 +114,18 @@ impl Handler<FetchAttachment> for ClientActor {
                 let mut ciphertext = Vec::with_capacity(actual_len as usize);
 
                 let mut stream_len = 0;
+                let mut buf = vec![0u8; 128 * 1024];
+                let mut bytes_since_previous_report = 0;
                 loop {
-                    let mut buf = [0u8; 1024 * 1024];
                     let read = stream.read(&mut buf).await?;
+                    bytes_since_previous_report += read;
                     stream_len += read;
-                    assert_eq!(stream_len, buf.len());
 
-                    ciphertext.extend_from_slice(&buf[..read]);
-
-                    client_addr.try_send(DownloadProgress::Progress {
-                        session_id,
-                        message_id,
-                        progress: stream_len,
-                    })?;
+                    // Report progress if more than 0.5% has been downloaded
+                    if bytes_since_previous_report > actual_len / 200 {
+                        storage.update_attachment_progress(attachment_id, stream_len)?;
+                        bytes_since_previous_report = 0;
+                    }
 
                     storage.update_attachment_progress(attachment_id, stream_len)?;
 
@@ -178,15 +177,15 @@ impl Handler<FetchAttachment> for ClientActor {
                         ext = "jpg".into();
                     }
                 }
-
+                    .send(AttachmentDownloaded {
                 let _attachment_path = storage
                     .save_attachment(attachment_id, &dest, &ext, &ciphertext)
                     .await?;
 
-                client_addr
+
                     .send(DownloadProgress::Downloaded {
                         session_id,
-                        message_id,
+                    .send(AttachmentDownloaded {
                     })
                     .await?;
 
@@ -223,54 +222,32 @@ impl Handler<FetchAttachment> for ClientActor {
                     }
                 }
             }),
+struct AttachmentDownloaded {
+    session_id: i32,
         )
     }
 }
 
 #[derive(Message)]
 #[rtype(result = "()")]
-enum DownloadProgress {
-    Downloaded {
-        session_id: i32,
-        message_id: i32,
+    message_id: i32,
     },
     Progress {
-        session_id: i32,
-        message_id: i32,
-        progress: usize,
-    },
-}
-
-impl Handler<DownloadProgress> for ClientActor {
+impl Handler<AttachmentDownloaded> for ClientActor {
     type Result = ();
 
-    fn handle(&mut self, progress: DownloadProgress, _ctx: &mut Self::Context) {
-        match progress {
-            DownloadProgress::Downloaded {
-                session_id,
-                message_id,
-            } => {
-                tracing::info!("Attachment downloaded for message {}", message_id);
-                self.inner
-                    .pinned()
-                    .borrow()
-                    .attachmentDownloaded(session_id, message_id);
-            }
-            DownloadProgress::Progress {
-                session_id,
-                message_id,
-                progress,
-            } => {
-                tracing::info!(
-                    "Attachment download progress for message {}: {} bytes",
-                    message_id,
-                    progress
-                );
-                self.inner
-                    .pinned()
-                    .borrow()
-                    .attachmentDownloadProgress(session_id, message_id, progress);
-            }
-        }
+    fn handle(
+        &mut self,
+        AttachmentDownloaded {
+}
+
+        }: AttachmentDownloaded,
+        _ctx: &mut Self::Context,
+    ) {
+        tracing::info!("Attachment downloaded for message {}", message_id);
+        self.inner
+            .pinned()
+            .borrow()
+            .attachmentDownloaded(session_id, message_id);
     }
 }

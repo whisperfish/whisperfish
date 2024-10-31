@@ -802,6 +802,15 @@ impl Attachment {
             .as_deref()
             .map(crate::replace_tilde_with_home)
     }
+
+    pub fn downloaded_percentage(&self) -> f64 {
+        if let Some(size) = self.size {
+            let length = self.download_length.unwrap_or(0);
+            (length as f64 / size as f64).clamp(0.0, 1.0) * 100.0
+        } else {
+            0.0
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
