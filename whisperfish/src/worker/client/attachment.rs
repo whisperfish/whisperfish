@@ -93,6 +93,10 @@ impl Handler<FetchAttachment> for ClientActor {
         let message_id = message.id;
         let transcribe_voice_notes = self.settings.get_transcribe_voice_notes();
 
+        storage
+            .update_attachment_progress(attachment_id, 0)
+            .expect("update attachment progress");
+
         Box::pin(
             async move {
                 use futures::io::AsyncReadExt;
