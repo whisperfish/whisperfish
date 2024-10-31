@@ -97,6 +97,7 @@ define_model_roles! {
         Size(size via Option::unwrap_or_default):        "size",
         DownloadLength(download_length via Option::unwrap_or_default): "download_length",
         DownloadedPercentage(fn downloaded_percentage(&self)): "downloaded_percentage",
+        IsDownloading(fn is_downloading(&self)):         "is_downloading",
     }
 }
 

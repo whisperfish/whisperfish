@@ -811,6 +811,10 @@ impl Attachment {
             0.0
         }
     }
+
+    pub fn is_downloading(&self) -> bool {
+        self.download_length.is_some()
+    }
 }
 
 #[derive(Debug, Clone)]
