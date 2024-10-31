@@ -39,8 +39,9 @@ Page {
         // sessionId is set through the property alias above.
 
         onValidChanged: if (valid) {
-            if (session.draft != null)
+            if (!session.draft && session.draft != "") {
                 textInput.text = session.draft
+            }
         }
     }
 
