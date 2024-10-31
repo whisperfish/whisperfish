@@ -211,6 +211,7 @@ pub struct ClientWorker {
     messageReceived: qt_signal!(sid: i32, mid: i32),
     messageReactionReceived: qt_signal!(sid: i32, mid: i32),
     attachmentDownloaded: qt_signal!(sid: i32, mid: i32),
+    attachmentDownloadProgress: qt_signal!(sid: i32, mid: i32, progress: usize),
     messageReceipt: qt_signal!(sid: i32, mid: i32),
     notifyMessage: qt_signal!(
         sid: i32,

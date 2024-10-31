@@ -110,12 +110,27 @@ impl Handler<FetchAttachment> for ClientActor {
                 };
 
                 // We need the whole file for the crypto to check out 😢
-                let actual_len = ptr.size.unwrap();
+                let actual_len = ptr.size.unwrap() as usize;
                 let mut ciphertext = Vec::with_capacity(actual_len as usize);
-                let stream_len = stream
-                    .read_to_end(&mut ciphertext)
-                    .await
-                    .expect("streamed attachment") as u32;
+
+                let mut stream_len = 0;
+                loop {
+                    let mut buf = [0u8; 1024 * 1024];
+                    let read = stream.read(&mut buf).await?;
+                    stream_len += read;
+
+                    ciphertext.extend_from_slice(&buf[..read]);
+
+                    client_addr.try_send(DownloadProgress::Progress {
+                        session_id,
+                        message_id,
+                        progress: stream_len,
+                    })?;
+
+                    if read == 0 {
+                        break;
+                    }
+                }
 
                 let key_material = ptr.key();
                 assert_eq!(
@@ -166,7 +181,7 @@ impl Handler<FetchAttachment> for ClientActor {
                     .await?;
 
                 client_addr
-                    .send(AttachmentDownloaded {
+                    .send(DownloadProgress::Downloaded {
                         session_id,
                         message_id,
                     })
@@ -211,23 +226,48 @@ impl Handler<FetchAttachment> for ClientActor {
 
 #[derive(Message)]
 #[rtype(result = "()")]
-struct AttachmentDownloaded {
-    session_id: i32,
-    message_id: i32,
+enum DownloadProgress {
+    Downloaded {
+        session_id: i32,
+        message_id: i32,
+    },
+    Progress {
+        session_id: i32,
+        message_id: i32,
+        progress: usize,
+    },
 }
 
-impl Handler<AttachmentDownloaded> for ClientActor {
+impl Handler<DownloadProgress> for ClientActor {
     type Result = ();
 
-    fn handle(
-        &mut self,
-        AttachmentDownloaded {
-            session_id: sid,
-            message_id: mid,
-        }: AttachmentDownloaded,
-        _ctx: &mut Self::Context,
-    ) {
-        tracing::info!("Attachment downloaded for message {}", mid);
-        self.inner.pinned().borrow().attachmentDownloaded(sid, mid);
+    fn handle(&mut self, progress: DownloadProgress, _ctx: &mut Self::Context) {
+        match progress {
+            DownloadProgress::Downloaded {
+                session_id,
+                message_id,
+            } => {
+                tracing::info!("Attachment downloaded for message {}", message_id);
+                self.inner
+                    .pinned()
+                    .borrow()
+                    .attachmentDownloaded(session_id, message_id);
+            }
+            DownloadProgress::Progress {
+                session_id,
+                message_id,
+                progress,
+            } => {
+                tracing::info!(
+                    "Attachment download progress for message {}: {} bytes",
+                    message_id,
+                    progress
+                );
+                self.inner
+                    .pinned()
+                    .borrow()
+                    .attachmentDownloadProgress(session_id, message_id, progress);
+            }
+        }
     }
 }
