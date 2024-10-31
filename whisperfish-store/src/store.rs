@@ -3298,6 +3298,22 @@ impl<O: Observable> Storage<O> {
         Ok(())
     }
 
+    pub fn reset_all_attachment_progress(&self) {
+        use schema::attachments::dsl::*;
+
+        let affected_attachments = diesel::update(attachments)
+            .set(download_length.eq(Option::<i32>::None))
+            .returning((id, message_id))
+            .load::<(i32, i32)>(&mut *self.db())
+            .context("update attachment progress")
+            .expect("db");
+
+        for (affected_attachment_id, affected_message_id) in affected_attachments {
+            self.observe_update(schema::attachments::table, affected_attachment_id)
+                .with_relation(schema::messages::table, affected_message_id);
+        }
+    }
+
     pub fn set_recipient_external_id(&mut self, rcpt_id: i32, ext_id: Option<String>) {
         use crate::schema::recipients::dsl::*;
 
