@@ -259,6 +259,7 @@ pub struct ClientWorker {
 
     refresh_group_v2: qt_method!(fn(&self, session_id: usize)),
 
+    fetchAttachment: qt_method!(fn(&self, attachment_id: i32)),
     delete_file: qt_method!(fn(&self, file_name: String)),
     startMessageExpiry: qt_method!(fn(&self, message_id: i32)),
 
@@ -2823,6 +2824,17 @@ impl ClientWorker {
                 tracing::error!("{:?} in compact_db()", e);
             }
         });
+    }
+
+    #[with_executor]
+    #[tracing::instrument(skip(self))]
+    #[allow(non_snake_case)]
+    pub fn fetchAttachment(&self, attachment_id: i32) {
+        self.actor
+            .as_ref()
+            .unwrap()
+            .try_send(FetchAttachment { attachment_id })
+            .unwrap();
     }
 
     #[with_executor]

@@ -103,6 +103,18 @@ MouseArea {
             font.pixelSize: Theme.fontSizeSmall
             color: Theme.highlightColor
         }
+
+        IconButton {
+            id: retryDownloadButton
+            // XXX: this shouldn't depend on the blurhash
+            visible: blurhashThumb.visible && !attach.is_downloading
+            anchors.centerIn: blurhashThumb
+            icon.source: 'image://theme/icon-s-cloud-download'
+            onClicked: {
+                console.log("retry download clicked for attachment", attach.id)
+                ClientWorker.fetchAttachment(attach.id)
+            }
+        }
     }
 
     Loader {
