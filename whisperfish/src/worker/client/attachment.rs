@@ -215,6 +215,14 @@ impl Handler<FetchAttachment> for ClientActor {
                         "Error fetching attachment for message with ID `{}` {:?}: {:?}",
                         message.id, ptr2, e
                     );
+                    if let Err(e) = act
+                        .storage
+                        .as_ref()
+                        .unwrap()
+                        .reset_attachment_progress(attachment_id)
+                    {
+                        tracing::error!("Could not reset attachment progress: {}", e);
+                    }
                     tracing::error!("{} in handle()", e);
                     let mut log = act.attachment_log();
                     if let Err(e) = writeln!(log, "{}", e) {
