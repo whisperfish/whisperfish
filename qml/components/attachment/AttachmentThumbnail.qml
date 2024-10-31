@@ -87,6 +87,22 @@ MouseArea {
         Behavior on opacity { NumberAnimation { duration: 250 } }
         width: parent.width; height: parent.height
         source: "image://blurhash/" + attach.visual_hash
+
+        BusyIndicator {
+            id: downloadingBusyIndicator
+            running: blurhashThumb.visible && attach.download_length > 0
+            anchors.centerIn: blurhashThumb
+            size: BusyIndicatorSize.Medium
+        }
+
+        Label {
+            id: downloadingLabel
+            visible: downloadingBusyIndicator.running
+            text: Math.round(attach.downloaded_percentage) + " %"
+            anchors.centerIn: blurhashThumb
+            font.pixelSize: Theme.fontSizeSmall
+            color: Theme.highlightColor
+        }
     }
 
     Loader {

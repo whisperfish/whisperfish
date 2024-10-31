@@ -120,14 +120,14 @@ impl Handler<FetchAttachment> for ClientActor {
                     let read = stream.read(&mut buf).await?;
                     bytes_since_previous_report += read;
                     stream_len += read;
+                    ciphertext.extend_from_slice(&buf[..read]);
+                    assert_eq!(stream_len, ciphertext.len());
 
                     // Report progress if more than 0.5% has been downloaded
                     if bytes_since_previous_report > actual_len / 200 {
                         storage.update_attachment_progress(attachment_id, stream_len)?;
                         bytes_since_previous_report = 0;
                     }
-
-                    storage.update_attachment_progress(attachment_id, stream_len)?;
 
                     if read == 0 {
                         break;
@@ -177,15 +177,15 @@ impl Handler<FetchAttachment> for ClientActor {
                         ext = "jpg".into();
                     }
                 }
-                    .send(AttachmentDownloaded {
+
                 let _attachment_path = storage
                     .save_attachment(attachment_id, &dest, &ext, &ciphertext)
                     .await?;
 
-
-                    .send(DownloadProgress::Downloaded {
-                        session_id,
+                client_addr
                     .send(AttachmentDownloaded {
+                        session_id,
+                        message_id,
                     })
                     .await?;
 
@@ -222,25 +222,25 @@ impl Handler<FetchAttachment> for ClientActor {
                     }
                 }
             }),
-struct AttachmentDownloaded {
-    session_id: i32,
         )
     }
 }
 
 #[derive(Message)]
 #[rtype(result = "()")]
+struct AttachmentDownloaded {
+    session_id: i32,
     message_id: i32,
-    },
-    Progress {
+}
+
 impl Handler<AttachmentDownloaded> for ClientActor {
     type Result = ();
 
     fn handle(
         &mut self,
         AttachmentDownloaded {
-}
-
+            session_id,
+            message_id,
         }: AttachmentDownloaded,
         _ctx: &mut Self::Context,
     ) {
