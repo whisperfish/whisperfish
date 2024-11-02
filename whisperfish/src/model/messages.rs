@@ -292,6 +292,7 @@ impl EventObserving for Session {
             if event.for_table(schema::attachments::table) && event.is_update() {
                 // AugmentedMessage only cares about the number of attachments.
                 tracing::trace!("Skipping attachment update");
+                return;
             } else if event.for_row(schema::sessions::table, session_id) {
                 self.session = storage.fetch_session_by_id_augmented(session_id);
             } else if message_id.is_some() {
