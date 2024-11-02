@@ -19,7 +19,7 @@ AttachmentItemBase {
     RustleGraph {
         id: rustlegraph
         app: AppState
-        attachmentId: attach.id
+        attachmentId: attach.is_downloaded ? attach.id : -1
 
         // When the graph becomes interactive for scrolling, we might want to make these into primaryColor and  + secondaryColor
         pastColor: Theme.highlightColor
@@ -32,14 +32,14 @@ AttachmentItemBase {
 
     // Qt 5.9+ can just use the notifyInterval of MediaPlayer, but we have to trick the animation into being smooth.
     Timer {
-        running: audioMessage.playbackState == MediaPlayer.PlayingState
+        running: attach.is_downloaded && audioMessage.playbackState == MediaPlayer.PlayingState
         repeat: true
         interval: 20 // ms, 50fps
         onTriggered: rustlegraph.timestamp = audioMessage.position / 1000.
     }
 
     Timer {
-        running: audioMessage.playbackState == MediaPlayer.PlayingState
+        running: attach.is_downloaded && audioMessage.playbackState == MediaPlayer.PlayingState
 
         interval: 100 // ms, 10fps
         property int seconds: 0
@@ -83,7 +83,7 @@ AttachmentItemBase {
 
     MediaPlayer {
         id: audioMessage
-        source: attach.data
+        source: attach.is_downloaded ? attach.data : ""
         // Qt 5.9+
         // notifyInterval: 20 // ms
     }
@@ -101,14 +101,42 @@ AttachmentItemBase {
                 height: item.height
                 icon.width: item.height * 0.6
                 icon.height: item.height * 0.6
-                icon.source: audioMessage.playbackState === MediaPlayer.PlayingState
+                icon.source: attach.is_downloaded
+                    ? ( audioMessage.playbackState === MediaPlayer.PlayingState
                         ? "../../../icons/pause.png"
-                        : "../../../icons/play.png"
-                onClicked: audioMessage.playbackState === MediaPlayer.PlayingState
-                           ? audioMessage.pause()
-                           : audioMessage.play()
+                        : "../../../icons/play.png" )
+                    : (attach.can_retry ? 'image://theme/icon-s-cloud-download' : '')
+                onClicked: {
+                    if (attach.can_retry) {
+                        ClientWorker.fetchAttachment(attach.id)
+                        return;
+                    }
+                    if (audioMessage.playbackState === MediaPlayer.PlayingState) {
+                        audioMessage.pause();
+                    } else {
+                        audioMessage.play();
+                    }
+                }
+
                 onPressAndHold: audioMessage.stop()
                 clip: true
+
+                BusyIndicator {
+                    id: downloadingBusyIndicator
+                    running: attach.is_downloading
+                    anchors.centerIn: parent
+                    size: BusyIndicatorSize.Medium
+                }
+
+                Label {
+                    id: downloadingLabel
+                    visible: downloadingBusyIndicator.running
+                    text: Math.round(attach.downloaded_percentage) + " %"
+                    anchors.centerIn: parent
+                    font.pixelSize: Theme.fontSizeExtraSmall
+                    color: Theme.highlightColor
+                }
+
                 Rectangle {
                     z: -2
                     anchors { fill: parent; margins: -parent.width/2 }
