@@ -7,7 +7,9 @@ import "../../js/attachment.js" as Attachment
 
 MouseArea {
     id: root
-    property var attach: null
+    property int index: 0
+    property var attach: detailAttachments.get(index)
+    property var attachments: null
     property bool highlighted: containsPress
     property string icon: ''
     property bool enableDefaultClickAction: true
@@ -30,6 +32,17 @@ MouseArea {
         var i = path.lastIndexOf("/");
         if (i < -1) return path;
         return path.substring(i+1);
+    }
+
+    Connections {
+        target: attachments
+        onDataChanged: {
+            var i = topLeft.row;
+            if (i != index) {
+                return;
+            }
+            attach = attachments.get(i);
+        }
     }
 
     Row {
