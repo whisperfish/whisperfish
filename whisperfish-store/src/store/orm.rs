@@ -813,7 +813,20 @@ impl Attachment {
     }
 
     pub fn is_downloading(&self) -> bool {
-        self.download_length.is_some()
+        self.download_length.is_some() && !self.is_downloaded()
+    }
+
+    pub fn is_downloaded(&self) -> bool {
+        let Some(path) = self.absolute_attachment_path() else {
+            return false;
+        };
+        std::fs::metadata(path.as_ref())
+            .map(|m| m.is_file())
+            .unwrap_or(false)
+    }
+
+    pub fn can_retry(&self) -> bool {
+        !self.is_downloading() && self.pointer.is_some()
     }
 }
 

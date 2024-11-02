@@ -98,6 +98,8 @@ define_model_roles! {
         DownloadLength(download_length via Option::unwrap_or_default): "download_length",
         DownloadedPercentage(fn downloaded_percentage(&self)): "downloaded_percentage",
         IsDownloading(fn is_downloading(&self)):         "is_downloading",
+        IsDownloaded(fn is_downloaded(&self)):           "is_downloaded",
+        CanRetry(fn can_retry(&self)):                   "can_retry",
     }
 }
 

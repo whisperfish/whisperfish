@@ -90,7 +90,7 @@ MouseArea {
 
         BusyIndicator {
             id: downloadingBusyIndicator
-            running: blurhashThumb.visible && attach.download_length > 0
+            running: blurhashThumb.visible && attach.is_downloading
             anchors.centerIn: blurhashThumb
             size: BusyIndicatorSize.Medium
         }
@@ -107,7 +107,7 @@ MouseArea {
         IconButton {
             id: retryDownloadButton
             // XXX: this shouldn't depend on the blurhash
-            visible: blurhashThumb.visible && !attach.is_downloading
+            visible: attach.can_retry
             anchors.centerIn: blurhashThumb
             icon.source: 'image://theme/icon-s-cloud-download'
             onClicked: {
