@@ -3242,7 +3242,10 @@ impl<O: Observable> Storage<O> {
 
         let updated_message_id = diesel::update(schema::attachments::table)
             .filter(schema::attachments::id.eq(id))
-            .set(schema::attachments::attachment_path.eq(relative_dir))
+            .set((
+                schema::attachments::attachment_path.eq(relative_dir),
+                schema::attachments::download_length.eq(Option::<i32>::None),
+            ))
             .returning(schema::attachments::message_id)
             .get_result::<i32>(&mut *self.db())
             .optional()
