@@ -410,8 +410,7 @@ impl ClientActor {
 
     fn message_sender(
         &self,
-    ) -> impl Future<Output = Result<MessageSender<AciOrPniStorage, rand::rngs::ThreadRng>, ServiceError>>
-    {
+    ) -> impl Future<Output = Result<MessageSender<AciOrPniStorage>, ServiceError>> {
         let storage = self.storage.clone().unwrap();
         let service = self.authenticated_service();
         let mut u_service = self.unauthenticated_service();
@@ -453,7 +452,6 @@ impl ClientActor {
                 u_ws,
                 service,
                 cipher,
-                rand::thread_rng(),
                 storage.aci_or_pni(ServiceIdType::AccountIdentity), // In what cases do we use the
                 local_aci,
                 local_pni,
@@ -1353,15 +1351,11 @@ impl ClientActor {
             .expect("open attachment log")
     }
 
-    fn cipher(
-        &self,
-        service_identity: ServiceIdType,
-    ) -> ServiceCipher<AciOrPniStorage, rand::prelude::ThreadRng> {
+    fn cipher(&self, service_identity: ServiceIdType) -> ServiceCipher<AciOrPniStorage> {
         let service_cfg = self.service_cfg();
         let device_id = self.config.get_device_id();
         ServiceCipher::new(
             self.storage.as_ref().unwrap().aci_or_pni(service_identity),
-            rand::thread_rng(),
             service_cfg.unidentified_sender_trust_root,
             self.self_aci.unwrap().uuid,
             device_id.into(),
