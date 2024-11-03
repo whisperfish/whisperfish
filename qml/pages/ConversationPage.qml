@@ -39,8 +39,13 @@ Page {
         // sessionId is set through the property alias above.
 
         onValidChanged: if (valid) {
-            if (session.draft != null)
+            // XXX: should probably be triggered on *session (id) change*,
+            // because the validity flag might trigger multiple times
+            if (session.draft && session.draft != "") {
                 textInput.text = session.draft
+                // XXX session.draft = ""
+                SessionModel.saveDraft(sessionId, "")
+            }
         }
     }
 
@@ -293,7 +298,7 @@ Page {
             recipientIsRegistered: session.valid && session.isRegistered // true for any group
 
             Component.onDestruction: {
-                if(session != null && session.draft !== text) {
+                if(sessionId > -1 && session.draft !== text) {
                     SessionModel.saveDraft(sessionId, text)
                 }
             }

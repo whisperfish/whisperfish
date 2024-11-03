@@ -268,12 +268,13 @@ pub struct Session {
         NOTIFY: session_changed,
     )]
     sessionId: i32,
-    #[qt_property(READ: get_valid, NOTIFY: session_changed)]
+    #[qt_property(READ: get_valid, NOTIFY: valid_changed)]
     valid: bool,
     #[qt_property(READ: messages, NOTIFY: messages_changed)]
     messages: QVariant,
 
     session_changed: qt_signal!(),
+    valid_changed: qt_signal!(),
     messages_changed: qt_signal!(),
 }
 
@@ -362,12 +363,16 @@ impl Session {
     }
 
     fn fetch(&mut self, storage: Storage, id: i32) {
+        let was_valid = self.get_valid(None);
         self.session = storage.fetch_session_by_id_augmented(id);
         self.message_list
             .pinned()
             .borrow_mut()
             .load_all(storage, id);
         self.session_changed();
+        if was_valid != self.get_valid(None) {
+            self.valid_changed();
+        }
     }
 
     fn set_session_id(&mut self, ctx: Option<ModelContext<Self>>, id: i32) {
