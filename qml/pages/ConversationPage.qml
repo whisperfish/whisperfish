@@ -296,7 +296,7 @@ Page {
             recipientIsRegistered: session.valid && session.isRegistered // true for any group
 
             Component.onDestruction: {
-                if(session != null && session.draft !== text) {
+                if(sessionId > -1 && session.draft !== text) {
                     SessionModel.saveDraft(sessionId, text)
                 }
             }
