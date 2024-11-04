@@ -17,7 +17,7 @@ MouseArea {
     default property alias contents: attachmentContentItem.data
 
     // check _effectiveEnableClick in derived types, not enableDefaultClickAction
-    property bool _effectiveEnableClick: _hasAttach && enableDefaultClickAction
+    property bool _effectiveEnableClick: _hasAttach && attach.is_downloaded && enableDefaultClickAction
     property bool _hasAttach: attach != null
 
     function mimeToIcon(mimeType) {
@@ -76,7 +76,32 @@ MouseArea {
                 width: Theme.iconSizeMedium; height: width
                 visible: thumb.status === Thumbnail.Error ||
                          thumb.status === Thumbnail.Null
-                source: _hasAttach ? mimeToIcon(attach.type) : ''
+                source: _hasAttach ? (attach.is_downloaded ? mimeToIcon(attach.type) : (attach.can_retry ? 'image://theme/icon-s-cloud-download' : '')) : ''
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        if (attach.can_retry) {
+                            ClientWorker.fetchAttachment(attach.id)
+                        }
+                    }
+                }
+
+                BusyIndicator {
+                    id: downloadingBusyIndicator
+                    running: attach.is_downloading
+                    anchors.centerIn: parent
+                    size: BusyIndicatorSize.Medium
+                }
+
+                Label {
+                    id: downloadingLabel
+                    visible: downloadingBusyIndicator.running
+                    text: Math.round(attach.downloaded_percentage) + " %"
+                    anchors.centerIn: parent
+                    font.pixelSize: Theme.fontSizeExtraSmall
+                    color: Theme.highlightColor
+                }
             }
         }
 
