@@ -7,7 +7,7 @@ mod tests {
     use libsignal_service::session_store::SessionStoreExt;
     use std::sync::Arc;
 
-    use libsignal_service::{protocol::*, ServiceAddress};
+    use libsignal_service::protocol::*;
     use rstest::rstest;
 
     use whisperfish_store::config::SignalConfig;
@@ -56,14 +56,14 @@ mod tests {
         Ok((storage, location))
     }
 
-    fn create_random_protocol_address() -> (ServiceAddress, ProtocolAddress) {
+    fn create_random_protocol_address() -> (ServiceId, ProtocolAddress) {
         use rand::Rng;
         let mut rng = rand::thread_rng();
 
         let user_id = uuid::Uuid::new_v4();
         let device_id = rng.gen_range(2..=20);
 
-        let svc = ServiceAddress::from_aci(user_id);
+        let svc = ServiceId::from(Aci::from(user_id));
         let prot = ProtocolAddress::new(user_id.to_string(), DeviceId::from(device_id));
         (svc, prot)
     }

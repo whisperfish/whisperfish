@@ -8,6 +8,7 @@ use libsignal_service::{
         CallMessage,
     },
     push_service::DEFAULT_DEVICE_ID,
+    ServiceIdExt,
 };
 use ringrtc::{
     common::CallId,
@@ -121,7 +122,7 @@ impl super::ClientActor {
             self.call_state()
                 .manager
                 .received_call_message(
-                    metadata.sender.uuid.to_string().into_bytes(),
+                    metadata.sender.raw_uuid().into_bytes().to_vec(),
                     metadata.sender_device,
                     local_device_id.into(),
                     opaque,
@@ -195,7 +196,7 @@ impl super::ClientActor {
             .to_protocol_address(DEFAULT_DEVICE_ID);
         let self_device_id = u32::from(self.config.get_device_id());
         let sender_device_id = metadata.sender_device;
-        let destination_identity = metadata.destination.identity;
+        let destination_identity = metadata.destination.kind();
 
         let protocol_storage = storage.aci_or_pni(destination_identity);
 
@@ -265,7 +266,7 @@ impl super::ClientActor {
             .storage
             .as_ref()
             .expect("storage initialized")
-            .aci_or_pni(metadata.destination.identity);
+            .aci_or_pni(metadata.destination.kind());
         let sender_device_id = metadata.sender_device;
 
         let handle_answer = async move {

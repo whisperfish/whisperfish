@@ -4,9 +4,8 @@ use crate::store::TrustLevel;
 use anyhow::Context;
 use libsignal_service::prelude::MasterKey;
 use libsignal_service::prelude::StorageServiceKey;
-use libsignal_service::protocol;
+use libsignal_service::protocol::{self, Aci};
 use libsignal_service::push_service::{ServiceIds, VerificationTransport, DEFAULT_DEVICE_ID};
-use libsignal_service::ServiceAddress;
 use phonenumber::PhoneNumber;
 use qmetaobject::prelude::*;
 use std::rc::Rc;
@@ -260,7 +259,7 @@ impl SetupWorker {
         if let Some(profile_key) = reg.profile_key {
             storage.update_profile_key(
                 Some(reg.phonenumber),
-                Some(ServiceAddress::from_aci(reg.service_ids.aci)),
+                Some(Aci::from(reg.service_ids.aci).into()),
                 &profile_key,
                 TrustLevel::Certain,
             );

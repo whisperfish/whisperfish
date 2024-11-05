@@ -3,7 +3,7 @@ use libsignal_service::pre_keys::{KyberPreKeyStoreExt, PreKeysStore};
 use libsignal_service::protocol::{
     self, GenericSignedPreKey, IdentityKeyPair, SignalProtocolError,
 };
-use libsignal_service::push_service::ServiceIdType;
+use libsignal_service::protocol::{ServiceId, ServiceIdKind};
 use libsignal_service::session_store::SessionStoreExt;
 use std::path::Path;
 
@@ -135,7 +135,7 @@ impl<O: Observable> Storage<O> {
         AciStorage::new(self.clone())
     }
 
-    pub fn aci_or_pni(&self, service_id: ServiceIdType) -> AciOrPniStorage<O> {
+    pub fn aci_or_pni(&self, service_id: ServiceIdKind) -> AciOrPniStorage<O> {
         IdentityStorage(self.clone(), AciOrPni(service_id))
     }
 }
@@ -156,7 +156,7 @@ pub struct Pni;
 pub type PniStorage<O> = IdentityStorage<Pni, O>;
 // Dynamic dispatch between Aci and Pni
 #[derive(Clone)]
-pub struct AciOrPni(ServiceIdType);
+pub struct AciOrPni(ServiceIdKind);
 pub type AciOrPniStorage<O> = IdentityStorage<AciOrPni, O>;
 pub trait Identity<O: Observable> {
     fn identity(&self) -> orm::Identity;
@@ -220,20 +220,20 @@ impl<O: Observable> Identity<O> for Pni {
 impl<O: Observable> Identity<O> for AciOrPni {
     fn identity(&self) -> orm::Identity {
         match self.0 {
-            ServiceIdType::AccountIdentity => orm::Identity::Aci,
-            ServiceIdType::PhoneNumberIdentity => orm::Identity::Pni,
+            ServiceIdKind::Aci => orm::Identity::Aci,
+            ServiceIdKind::Pni => orm::Identity::Pni,
         }
     }
     fn identity_key_filename(&self) -> &'static str {
         match self.0 {
-            ServiceIdType::AccountIdentity => "identity_key",
-            ServiceIdType::PhoneNumberIdentity => "pni_identity_key",
+            ServiceIdKind::Aci => "identity_key",
+            ServiceIdKind::Pni => "pni_identity_key",
         }
     }
     fn regid_filename(&self) -> &'static str {
         match self.0 {
-            ServiceIdType::AccountIdentity => "regid",
-            ServiceIdType::PhoneNumberIdentity => "pni_regid",
+            ServiceIdKind::Aci => "regid",
+            ServiceIdKind::Pni => "pni_regid",
         }
     }
     async fn identity_key_pair_cached(
@@ -241,8 +241,8 @@ impl<O: Observable> Identity<O> for AciOrPni {
         storage: &Storage<O>,
     ) -> impl std::ops::Deref<Target = Option<IdentityKeyPair>> {
         match self.0 {
-            ServiceIdType::AccountIdentity => &storage.aci_identity_key_pair,
-            ServiceIdType::PhoneNumberIdentity => &storage.pni_identity_key_pair,
+            ServiceIdKind::Aci => &storage.aci_identity_key_pair,
+            ServiceIdKind::Pni => &storage.pni_identity_key_pair,
         }
         .read()
         .await
@@ -252,8 +252,8 @@ impl<O: Observable> Identity<O> for AciOrPni {
         storage: &Storage<O>,
     ) -> impl std::ops::DerefMut<Target = Option<IdentityKeyPair>> {
         match self.0 {
-            ServiceIdType::AccountIdentity => &storage.aci_identity_key_pair,
-            ServiceIdType::PhoneNumberIdentity => &storage.pni_identity_key_pair,
+            ServiceIdKind::Aci => &storage.aci_identity_key_pair,
+            ServiceIdKind::Pni => &storage.pni_identity_key_pair,
         }
         .write()
         .await
@@ -886,17 +886,17 @@ impl<T: Identity<O>, O: Observable> IdentityStorage<T, O> {
 
 // BEGIN identity key block
 impl<O: Observable> Storage<O> {
-    /// Removes the identity matching ServiceAddress (ACI or PNI) from the database.
+    /// Removes the identity matching ServiceId (ACI or PNI) from the database.
     ///
     /// Does not lock the protocol storage.
-    #[tracing::instrument(level = "warn", skip(self, addr), fields(addr = %addr))]
-    pub fn delete_identity_key(&self, addr: &ServiceAddress) -> bool {
+    #[tracing::instrument(level = "warn", skip(self, addr), fields(addr = addr.service_id_string()))]
+    pub fn delete_identity_key(&self, addr: &ServiceId) -> bool {
         use crate::schema::identity_records::dsl::*;
         let removed = diesel::delete(identity_records)
             .filter(
                 address
-                    .eq(addr.to_service_id())
-                    .and(identity.eq(orm::Identity::from(addr.identity.to_string().as_str()))),
+                    .eq(addr.service_id_string())
+                    .and(identity.eq(orm::Identity::from(addr.kind()))),
             )
             .execute(&mut *self.db())
             .expect("db")
@@ -915,10 +915,10 @@ impl<O: Observable> Storage<O> {
 
 #[async_trait::async_trait(?Send)]
 impl<T: Identity<O>, O: Observable> SessionStoreExt for IdentityStorage<T, O> {
-    #[tracing::instrument(level = "trace", skip(self, addr), fields(addr = %addr))]
+    #[tracing::instrument(level = "trace", skip(self, addr), fields(addr = addr.service_id_string()))]
     async fn get_sub_device_sessions(
         &self,
-        addr: &ServiceAddress,
+        addr: &ServiceId,
     ) -> Result<Vec<u32>, SignalProtocolError> {
         use crate::schema::session_records::dsl::*;
 
@@ -926,7 +926,7 @@ impl<T: Identity<O>, O: Observable> SessionStoreExt for IdentityStorage<T, O> {
             .select(device_id)
             .filter(
                 address
-                    .eq(addr.to_service_id())
+                    .eq(addr.service_id_string())
                     .and(device_id.ne(libsignal_service::push_service::DEFAULT_DEVICE_ID as i32))
                     .and(identity.eq(self.1.identity())),
             )
@@ -960,17 +960,14 @@ impl<T: Identity<O>, O: Observable> SessionStoreExt for IdentityStorage<T, O> {
         }
     }
 
-    #[tracing::instrument(level = "trace", skip(self, addr), fields(addr = %addr))]
-    async fn delete_all_sessions(
-        &self,
-        addr: &ServiceAddress,
-    ) -> Result<usize, SignalProtocolError> {
+    #[tracing::instrument(level = "trace", skip(self, addr), fields(addr = addr.service_id_string()))]
+    async fn delete_all_sessions(&self, addr: &ServiceId) -> Result<usize, SignalProtocolError> {
         use crate::schema::session_records::dsl::*;
 
         let num = diesel::delete(session_records)
             .filter(
                 address
-                    .eq(addr.to_service_id())
+                    .eq(addr.service_id_string())
                     .and(identity.eq(self.1.identity())),
             )
             .execute(&mut *self.0.db())

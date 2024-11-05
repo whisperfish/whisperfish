@@ -4,9 +4,9 @@ use crate::model::*;
 use crate::store::observer::{EventObserving, Interest};
 use crate::store::orm;
 use futures::TryFutureExt;
-use libsignal_service::protocol::SessionStore;
+use libsignal_service::protocol::{Aci, SessionStore};
 use libsignal_service::session_store::SessionStoreExt;
-use libsignal_service::ServiceAddress;
+use libsignal_service::ServiceIdExt;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
 use std::collections::HashMap;
@@ -181,7 +181,7 @@ impl Recipient {
             let storage = ctx.storage();
             let recipient = if let Some(uuid) = self.recipient_uuid {
                 storage
-                    .fetch_recipient(&ServiceAddress::from_aci(uuid))
+                    .fetch_recipient(&Aci::from(uuid).into())
                     .map(|inner| {
                         let direct_message_recipient_id = storage
                             .fetch_session_by_recipient_id(inner.id)

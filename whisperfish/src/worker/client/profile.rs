@@ -2,64 +2,59 @@ use super::*;
 use crate::worker::profile_refresh::OutdatedProfile;
 use actix::prelude::*;
 use libsignal_service::profile_cipher::ProfileCipher;
-use libsignal_service::profile_service::ProfileService;
 use libsignal_service::push_service::SignalServiceProfile;
 use tokio::io::AsyncWriteExt;
 use whisperfish_store::StoreProfile;
 
 impl StreamHandler<OutdatedProfile> for ClientActor {
-    fn handle(&mut self, OutdatedProfile(uuid, key): OutdatedProfile, ctx: &mut Self::Context) {
-        tracing::trace!("Received OutdatedProfile({}, [..]), fetching.", uuid);
+    fn handle(&mut self, OutdatedProfile(aci, key): OutdatedProfile, ctx: &mut Self::Context) {
+        tracing::trace!(
+            "Received OutdatedProfile({}, [..]), fetching.",
+            Uuid::from(aci)
+        );
         // XXX: this should actually be unauthenticated and use sealed sender access:
-        // PushServiceSocket::retrieveProfile(SignalServiceAddress target, @Nullable SealedSenderAccess sealedSenderAccess, Locale locale)
-        let mut service = ProfileService::from_socket(self.authenticated_service());
+        // PushServiceSocket::retrieveProfile(SignalServiceId target, @Nullable SealedSenderAccess sealedSenderAccess, Locale locale)
+        let mut service = self.authenticated_service();
 
         // If our own Profile is outdated, schedule a profile refresh
-        if self.config.get_aci() == Some(uuid) {
+        if self.config.get_aci() == Some(Uuid::from(aci)) {
             tracing::trace!("Scheduling a refresh for our own profile");
             ctx.notify(RefreshOwnProfile { force: false });
             return;
         }
 
         ctx.spawn(
-            async move {
-                (
-                    uuid,
-                    service
-                        .retrieve_profile_by_id(ServiceAddress::from_aci(uuid), key)
-                        .await,
-                )
-            }
-            .into_actor(self)
-            .map(|(recipient_uuid, profile), _act, ctx| {
-                match profile {
-                    Ok(profile) => ctx.notify(ProfileFetched(recipient_uuid, Some(profile))),
-                    Err(e) => {
-                        if let ServiceError::NotFoundError = e {
-                            ctx.notify(ProfileFetched(recipient_uuid, None))
-                        } else {
-                            tracing::error!("Error refreshing outdated profile: {}", e);
+            async move { (aci, service.retrieve_profile_by_id(aci, key).await) }
+                .into_actor(self)
+                .map(|(recipient_aci, profile), _act, ctx| {
+                    match profile {
+                        Ok(profile) => ctx.notify(ProfileFetched(recipient_aci, Some(profile))),
+                        Err(e) => {
+                            if let ServiceError::NotFoundError = e {
+                                ctx.notify(ProfileFetched(recipient_aci, None))
+                            } else {
+                                tracing::error!("Error refreshing outdated profile: {}", e);
+                            }
                         }
-                    }
-                };
-            }),
+                    };
+                }),
         );
     }
 }
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
-pub(super) struct ProfileFetched(pub uuid::Uuid, pub Option<SignalServiceProfile>);
+pub(super) struct ProfileFetched(pub Aci, pub Option<SignalServiceProfile>);
 
 impl Handler<ProfileFetched> for ClientActor {
     type Result = ();
 
     fn handle(
         &mut self,
-        ProfileFetched(uuid, profile): ProfileFetched,
+        ProfileFetched(aci, profile): ProfileFetched,
         ctx: &mut Self::Context,
     ) -> Self::Result {
-        match self.handle_profile_fetched(ctx, uuid, profile) {
+        match self.handle_profile_fetched(ctx, aci, profile) {
             Ok(()) => {}
             Err(e) => {
                 tracing::warn!("Error with fetched profile: {}", e);
@@ -90,12 +85,12 @@ impl ClientActor {
     fn handle_profile_fetched(
         &mut self,
         ctx: &mut <Self as Actor>::Context,
-        recipient_uuid: Uuid,
+        recipient_aci: Aci,
         profile: Option<SignalServiceProfile>,
     ) -> anyhow::Result<()> {
         let storage = self.storage.clone().unwrap();
         let recipient = storage
-            .fetch_recipient(&ServiceAddress::from_aci(recipient_uuid))
+            .fetch_recipient(&recipient_aci.into())
             .ok_or_else(|| {
                 anyhow::anyhow!("could not find recipient for which we fetched a profile")
             })?;
@@ -154,12 +149,12 @@ impl ClientActor {
 
             diesel::update(recipients)
                 .set((last_profile_fetch.eq(Utc::now().naive_utc()),))
-                .filter(uuid.nullable().eq(&recipient_uuid.to_string()))
+                .filter(uuid.nullable().eq(&Uuid::from(recipient_aci).to_string()))
                 .execute(&mut *db)
                 .expect("db");
 
             // If updating self, invalidate the cache
-            if Some(recipient_uuid) == self.config.get_aci() {
+            if Some(Uuid::from(recipient_aci)) == self.config.get_aci() {
                 storage.invalidate_self_recipient();
             }
         }

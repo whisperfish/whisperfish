@@ -39,17 +39,17 @@ impl Handler<WhoAmI> for ClientActor {
                             return;
                         }
                     };
-                    tracing::info!("Retrieved ACI ({}) and PNI ({})", result.uuid, result.pni);
+                    tracing::info!("Retrieved ACI ({}) and PNI ({})", result.aci, result.pni);
 
                     if let Some(credentials) = act.credentials.as_mut() {
-                        credentials.aci = Some(result.uuid);
-                        config.set_aci(result.uuid);
+                        credentials.aci = Some(result.aci);
+                        config.set_aci(result.aci);
                         config.set_pni(result.pni);
                         config.write_to_file().expect("write config");
                     } else {
                         tracing::error!("Credentials was none while setting UUID");
                     }
-                    act.self_pni = Some(ServiceAddress::from_pni(result.pni));
+                    act.self_pni = Some(Pni::from(result.pni));
                 },
             ),
         )

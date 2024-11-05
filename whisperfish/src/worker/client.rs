@@ -27,8 +27,8 @@ use libsignal_service::proto::sync_message::Configuration;
 use libsignal_service::proto::sync_message::Keys;
 use libsignal_service::proto::sync_message::MessageRequestResponse;
 use libsignal_service::proto::sync_message::Sent;
+use libsignal_service::protocol::ServiceIdKind;
 use libsignal_service::push_service::RegistrationMethod;
-use libsignal_service::push_service::ServiceIdType;
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 use libsignal_service::sender::SendMessageResult;
 use libsignal_service::sender::ThreadIdentifier;
@@ -287,8 +287,8 @@ pub struct ClientActor {
 
     unidentified_certificates: unidentified::UnidentifiedCertificates,
     credentials: Option<ServiceCredentials>,
-    self_aci: Option<ServiceAddress>,
-    self_pni: Option<ServiceAddress>,
+    self_aci: Option<Aci>,
+    self_pni: Option<Pni>,
     storage: Option<Storage>,
     ws: Option<SignalWebSocket>,
     config: std::sync::Arc<crate::config::SignalConfig>,
@@ -416,7 +416,7 @@ impl ClientActor {
         let mut u_service = self.unauthenticated_service();
 
         let ws = self.ws.clone();
-        let cipher = self.cipher(ServiceIdType::AccountIdentity);
+        let cipher = self.cipher(ServiceIdKind::Aci);
         let local_aci = self.self_aci.unwrap();
         let local_pni = self.self_pni.unwrap();
         let device_id = self.config.get_device_id();
@@ -452,7 +452,7 @@ impl ClientActor {
                 u_ws,
                 service,
                 cipher,
-                storage.aci_or_pni(ServiceIdType::AccountIdentity), // In what cases do we use the
+                storage.aci_or_pni(ServiceIdKind::Aci), // In what cases do we use the
                 local_aci,
                 local_pni,
                 aci_key,
@@ -575,7 +575,7 @@ impl ClientActor {
         skip(self, ctx, source_phonenumber, source_addr, msg, sync_sent, metadata),
         fields(
             source_phonenumber = %source_phonenumber.as_ref().map(|p| p.to_string()).as_deref().unwrap_or("None"),
-            source_addr = %source_addr.as_ref().map(|a| a.to_service_id()).as_deref().unwrap_or("None"),
+            source_addr = %source_addr.as_ref().map(ServiceId::service_id_string).as_deref().unwrap_or("None"),
             is_edit = %edit.is_some(),
         ),
     )]
@@ -585,22 +585,22 @@ impl ClientActor {
         ctx: &mut <Self as Actor>::Context,
         // XXX: remove this argument
         source_phonenumber: Option<PhoneNumber>,
-        source_addr: Option<ServiceAddress>,
+        source_addr: Option<ServiceId>,
         msg: &DataMessage,
         sync_sent: Option<Sent>,
         metadata: &Metadata,
         edit: Option<NaiveDateTime>,
     ) -> Option<i32> {
         let timestamp = metadata.timestamp;
-        let dest_identity = metadata.destination.identity;
+        let dest_identity = metadata.destination.kind();
         let is_sync_sent = sync_sent.is_some();
 
         let mut storage = self.storage.clone().expect("storage");
         let sender_recipient = if source_phonenumber.is_some() || source_addr.is_some() {
             Some(storage.merge_and_fetch_recipient(
                 source_phonenumber.clone(),
-                source_addr,
-                None,
+                source_addr.map(Aci::try_from).transpose().ok().flatten(),
+                source_addr.map(Pni::try_from).transpose().ok().flatten(),
                 crate::store::TrustLevel::Certain,
             ))
         } else {
@@ -621,16 +621,16 @@ impl ClientActor {
             {
                 actix::spawn(async move {
                     if let Err(e) = match dest_identity {
-                        ServiceIdType::AccountIdentity => {
+                        ServiceIdKind::Aci => {
                             storage.aci_storage().delete_all_sessions(&svc_addr).await
                         }
-                        ServiceIdType::PhoneNumberIdentity => {
+                        ServiceIdKind::Pni => {
                             storage.pni_storage().delete_all_sessions(&svc_addr).await
                         }
                     } {
                         tracing::error!(
                             "End session requested for {}, but could not end session: {:?}",
-                            &svc_addr.to_service_id(),
+                            &svc_addr.service_id_string(),
                             e
                         );
                     };
@@ -789,7 +789,7 @@ impl ClientActor {
         };
 
         let is_unidentified = if let (Some(sent), Some(source_addr)) = (&sync_sent, &source_addr) {
-            let source_service_id = source_addr.to_service_id();
+            let source_service_id = source_addr.service_id_string();
             sent.unidentified_status
                 .iter()
                 .any(|x| x.unidentified() && x.destination_service_id() == source_service_id)
@@ -814,8 +814,8 @@ impl ClientActor {
         let session = group.unwrap_or_else(|| {
             let recipient = storage.merge_and_fetch_recipient(
                 source_phonenumber.clone(),
-                source_addr,
-                None,
+                source_addr.map(Aci::try_from).transpose().ok().flatten(),
+                source_addr.map(Pni::try_from).transpose().ok().flatten(),
                 TrustLevel::Certain,
             );
             storage.fetch_or_insert_session_by_recipient_id(recipient.id)
@@ -960,15 +960,15 @@ impl ClientActor {
                             }
                     });
 
-                    sender.send_contact_details(&local_addr, None, contacts, false, true).await?;
+                    sender.send_contact_details(&local_addr.into(), None, contacts, false, true).await?;
                 },
                 RequestType::Configuration => {
-                    sender.send_configuration(&local_addr, configuration).await?;
+                    sender.send_configuration(&local_addr.into(), configuration).await?;
                 },
                 RequestType::Keys => {
                     let master = storage.fetch_master_key();
                     let storage_service = storage.fetch_storage_service_key();
-                    sender.send_keys(&local_addr, Keys { master: master.map(|k| k.into()), storage_service: storage_service.map(|k| k.into()) }).await?;
+                    sender.send_keys(&local_addr.into(), Keys { master: master.map(|k| k.into()), storage_service: storage_service.map(|k| k.into()) }).await?;
                 }
                 // Type::Blocked
                 // Type::PniIdentity
@@ -992,8 +992,8 @@ impl ClientActor {
         }
     }
 
-    #[tracing::instrument(level = "debug", skip(self, recipient), fields(recipient = %recipient))]
-    fn handle_message_not_sealed(&mut self, recipient: ServiceAddress) {
+    #[tracing::instrument(level = "debug", skip(self, recipient), fields(recipient = recipient.service_id_string()))]
+    fn handle_message_not_sealed(&mut self, recipient: ServiceId) {
         // TODO: if the contact should have our profile key already, send it again.
         //       if the contact should not yet have our profile key, this is ok, and we
         //       should offer the user a message request.
@@ -1008,7 +1008,7 @@ impl ClientActor {
     fn handle_message_request_response(&mut self, response: &MessageRequestResponse) -> bool {
         let storage = self.storage.clone().expect("storage initialized");
         if let Some(aci) = &response.thread_aci {
-            let addr = ServiceAddress::try_from(aci.as_str())
+            let addr = ServiceId::parse_from_service_id_string(aci.as_str())
                 .expect("valid aci uuid in MessageRequestResponse");
             match response.r#type() {
                 MessageRequestAction::Accept => storage.mark_recipient_accepted(&addr),
@@ -1025,9 +1025,9 @@ impl ClientActor {
                 }
                 _ => {
                     tracing::warn!(
-                        "unhandled response type {:?} for ACI {}. Please upvote bug #324",
+                        "unhandled response type {:?} for {}. Please upvote bug #324",
                         response.r#type(),
-                        addr.uuid
+                        addr.service_id_string()
                     );
                     false
                 }
@@ -1117,19 +1117,11 @@ impl ClientActor {
                     handled = true;
                     tracing::trace!("Sync sent message");
                     // These are messages sent through a paired device.
-                    let address = sent
-                        .destination_service_id
-                        .as_deref()
-                        .map(ServiceAddress::try_from)
-                        .transpose()
-                        .map_err(|_| {
-                            tracing::warn!(
-                                "Unparsable ServiceAddress {}",
-                                sent.destination_service_id()
-                            )
-                        })
-                        .ok()
-                        .flatten();
+                    let address =
+                        ServiceId::parse_from_service_id_string(sent.destination_service_id());
+                    if address.is_none() {
+                        tracing::warn!("Unparsable ServiceId {}", sent.destination_service_id());
+                    }
                     let phonenumber = sent
                         .destination_e164
                         .as_deref()
@@ -1253,7 +1245,7 @@ impl ClientActor {
             }
             ContentBody::TypingMessage(typing) => {
                 if self.settings.get_enable_typing_indicators() {
-                    tracing::info!("{:?} is typing.", metadata.sender.to_service_id());
+                    tracing::info!("{:?} is typing.", metadata.sender.service_id_string());
                     let res = self
                         .inner
                         .pinned()
@@ -1288,7 +1280,7 @@ impl ClientActor {
                             ReceiptType::Delivery => {
                                 tracing::info!(
                                     "{:?} received a message.",
-                                    metadata.sender.to_service_id()
+                                    metadata.sender.service_id_string()
                                 );
                                 for updated in storage.mark_messages_delivered(
                                     metadata.sender,
@@ -1305,7 +1297,7 @@ impl ClientActor {
                                 if self.settings.get_enable_read_receipts() {
                                     tracing::info!(
                                         "{:?} read a message.",
-                                        metadata.sender.to_service_id()
+                                        metadata.sender.service_id_string()
                                     );
                                     for updated in storage.mark_messages_read(
                                         metadata.sender,
@@ -1351,13 +1343,13 @@ impl ClientActor {
             .expect("open attachment log")
     }
 
-    fn cipher(&self, service_identity: ServiceIdType) -> ServiceCipher<AciOrPniStorage> {
+    fn cipher(&self, service_identity: ServiceIdKind) -> ServiceCipher<AciOrPniStorage> {
         let service_cfg = self.service_cfg();
         let device_id = self.config.get_device_id();
         ServiceCipher::new(
             self.storage.as_ref().unwrap().aci_or_pni(service_identity),
             service_cfg.unidentified_sender_trust_root,
-            self.self_aci.unwrap().uuid,
+            Uuid::from(self.self_aci.unwrap()),
             device_id.into(),
         )
     }
@@ -1642,7 +1634,7 @@ impl Handler<SendMessage> for ClientActor {
                     Ok(results) => {
                         let unidentified = results.iter().all(|res| match res {
                             // XXX: We should be able to send unidentified messages to our own devices too.
-                            Ok(message) => message.unidentified || (message.recipient.uuid == self_addr.uuid),
+                            Ok(message) => message.unidentified || (message.recipient == self_addr),
                             _ => false,
                         });
 
@@ -1708,20 +1700,21 @@ impl Handler<SendMessage> for ClientActor {
                                             tracing::warn!("Rate limit proof requested, but type 'recaptcha' wasn't available!");
                                         }
                                     },
-                                    MessageSenderError::NotFound { addr } => {
-                                        tracing::warn!("Recipient not found, removing device sessions {:?}", addr);
-                                        let num = match self_addr.identity {
-                                            ServiceIdType::AccountIdentity =>
-                                                storage.aci_storage().delete_all_sessions(&addr).await?,
-                                            ServiceIdType::PhoneNumberIdentity =>
-                                                storage.pni_storage().delete_all_sessions(&addr).await?,
+                                    MessageSenderError::NotFound { service_id } => {
+                                        tracing::warn!("Recipient not found, removing device sessions {:?}", service_id);
+                                        // XXX: This is a hack; we always have an ACI here for now.
+                                        let num = match ServiceId::from(self_addr).kind() {
+                                            ServiceIdKind::Aci =>
+                                                storage.aci_storage().delete_all_sessions(&service_id).await?,
+                                            ServiceIdKind::Pni =>
+                                                storage.pni_storage().delete_all_sessions(&service_id).await?,
                                         };
 
                                         tracing::trace!("Removed {} device session(s)", num);
-                                        if storage.mark_recipient_registered(addr, false) {
-                                            tracing::trace!("Marked recipient {addr:?} as unregistered");
+                                        if storage.mark_recipient_registered(service_id, false) {
+                                            tracing::trace!("Marked recipient {service_id:?} as unregistered");
                                         } else {
-                                            tracing::warn!("Could not mark recipient {addr:?} as unregistered");
+                                            tracing::warn!("Could not mark recipient {service_id:?} as unregistered");
                                         }
                                     },
                                     _ => {
@@ -2062,7 +2055,9 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                         .filter_map(|(_member, recipient)| {
                             let member = recipient.to_service_address();
 
-                            if !recipient.is_registered || Some(local_addr) == member {
+                            if !recipient.is_registered
+                                || Some(ServiceId::from(local_addr)) == member
+                            {
                                 None
                             } else if let Some(member) = member {
                                 // XXX change the cert type when we want to introduce E164 privacy.
@@ -2089,7 +2084,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
 
                     if let Some(svc) = svc {
                         if !recipient.is_registered {
-                            anyhow::bail!("Unregistered recipient {}", svc.uuid.to_string());
+                            anyhow::bail!("Unregistered recipient {}", svc.service_id_string());
                         }
 
                         vec![
@@ -2160,8 +2155,8 @@ impl Handler<StorageReady> for ClientActor {
                     act.credentials = Some(credentials);
                     let cred = act.credentials.as_ref().unwrap();
 
-                    act.self_aci = cred.aci.map(ServiceAddress::from_aci);
-                    act.self_pni = cred.pni.map(ServiceAddress::from_pni);
+                    act.self_aci = cred.aci.map(Aci::from);
+                    act.self_pni = cred.pni.map(Pni::from);
 
                     Self::queue_migrations(ctx);
 
@@ -2308,10 +2303,14 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             return;
         }
         let incoming_address =
-            ServiceAddress::try_from(msg.destination_service_id.as_deref().unwrap()).unwrap();
-        if ![self.self_aci, self.self_pni]
-            .iter()
-            .any(|self_dest| self_dest == &Some(incoming_address))
+            ServiceId::parse_from_service_id_string(msg.destination_service_id.as_deref().unwrap())
+                .unwrap();
+        if ![
+            self.self_aci.map(ServiceId::from),
+            self.self_pni.map(ServiceId::from),
+        ]
+        .iter()
+        .any(|self_dest| self_dest == &Some(incoming_address))
         {
             tracing::warn!(
                 "Message destination {:?} doesn't match our ACI or PNI. Dropping.",
@@ -2320,7 +2319,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             return;
         }
 
-        let mut cipher = self.cipher(incoming_address.identity);
+        let mut cipher = self.cipher(incoming_address.kind());
 
         let storage = self.storage.clone().expect("initialized storage");
 
@@ -2337,10 +2336,10 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             SignalProtocolError::UntrustedIdentity(dest_protocol_address),
                         )) => {
                             // This branch is the only one that loops, and it *should not* loop more than once.
-                            let dest_address = ServiceAddress::try_from(dest_protocol_address.name()).expect("valid ACI or PNI UUID in ProtocolAddress");
+                            let dest_address = ServiceId::parse_from_service_id_string(dest_protocol_address.name()).expect("valid ACI or PNI UUID in ProtocolAddress");
                             tracing::warn!("Untrusted identity for {}; replacing identity and inserting a warning.", dest_protocol_address);
                             let recipient = storage.fetch_or_insert_recipient_by_address(&dest_address);
-                            if dest_address.identity == ServiceIdType::PhoneNumberIdentity {
+                            if dest_address.kind() == ServiceIdKind::Pni {
                                 storage.mark_recipient_needs_pni_signature(&recipient, true);
                             }
                             let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
@@ -2370,10 +2369,10 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                     }
                 };
 
-                tracing::trace!(sender = ?content.metadata.sender.to_service_id(), "opened envelope");
+                tracing::trace!(sender = ?content.metadata.sender.service_id_string(), "opened envelope");
 
                 Some(content)
-            }.instrument(tracing::trace_span!("opening envelope", %incoming_address.identity))
+            }.instrument(tracing::trace_span!("opening envelope", incoming_address=incoming_address.service_id_string()))
             .into_actor(self)
             .map(|content, act, ctx| {
                 if let Some(content) = content {
@@ -2785,25 +2784,15 @@ impl Handler<RefreshPreKeys> for ClientActor {
 
             // It's tempting to run those two in parallel,
             // but I'm afraid the pre-key counts are going to be mixed up.
-            am.update_pre_key_bundle(
-                &mut aci,
-                ServiceIdType::AccountIdentity,
-                &mut rand::thread_rng(),
-                true,
-            )
-            .await
-            .context("refreshing ACI pre keys")?;
+            am.update_pre_key_bundle(&mut aci, ServiceIdKind::Aci, &mut rand::thread_rng(), true)
+                .await
+                .context("refreshing ACI pre keys")?;
 
             let _pni_distribution = pni_distribution.await;
 
-            am.update_pre_key_bundle(
-                &mut pni,
-                ServiceIdType::PhoneNumberIdentity,
-                &mut rand::thread_rng(),
-                true,
-            )
-            .await
-            .context("refreshing PNI pre keys")?;
+            am.update_pre_key_bundle(&mut pni, ServiceIdKind::Pni, &mut rand::thread_rng(), true)
+                .await
+                .context("refreshing PNI pre keys")?;
             anyhow::Result::<()>::Ok(())
         }
         .instrument(tracing::trace_span!("RefreshPreKeys"));
@@ -3413,13 +3402,13 @@ impl Handler<MessageRequestAnswer> for ClientActor {
         let storage = self.storage.as_mut().unwrap().clone();
         match thread {
             ThreadIdentifier::Aci(aci) => {
-                let address = ServiceAddress::from_aci(aci);
+                let address = Aci::from(aci);
                 match action {
                     MessageRequestAction::Accept => {
-                        storage.mark_recipient_accepted(&address);
+                        storage.mark_recipient_accepted(&address.into());
                     }
                     MessageRequestAction::Block => {
-                        storage.mark_recipient_blocked(&address);
+                        storage.mark_recipient_blocked(&address.into());
                     }
                     _ => {
                         tracing::error!("Unimplemented message request action: {:?}", action);
@@ -3433,8 +3422,7 @@ impl Handler<MessageRequestAnswer> for ClientActor {
             }
         }
 
-        let self_addr =
-            ServiceAddress::from_aci(self.config.get_aci().expect("valid uuid at this point"));
+        let self_addr = Aci::from(self.config.get_aci().expect("valid uuid at this point"));
         let sender = self.message_sender();
         actix::spawn(async move {
             let sender = sender.await;
@@ -3445,7 +3433,7 @@ impl Handler<MessageRequestAnswer> for ClientActor {
             let mut sender = sender.unwrap();
 
             let result = sender
-                .send_message_request_response(&self_addr, &thread, action)
+                .send_message_request_response(&self_addr.into(), &thread, action)
                 .await;
 
             if let Err(e) = result {
