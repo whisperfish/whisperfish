@@ -57,7 +57,7 @@ QtObject {
     // --------------------------- private ---------------------------
 
     property var _emojiImpl: null
-    property string _supportedImplVersion: "0.1.0"
+    property string _supportedImplVersion: "0.4.0"
 
     readonly property string _style: _styleConfig.value
     property ConfigurationValue _styleConfig: ConfigurationValue {
@@ -72,7 +72,7 @@ QtObject {
     readonly property string logScope: "[Emojify]"
 
     // TODO Use /usr/share/sailor-emoji/emoji.js.
-    readonly property string _implPath: "/usr/share/maliit/plugins/com/jolla/ichthyo_color_emojis/patch_ichthyo_emoji.js"
+    readonly property string _implPath: "/usr/share/maliit/plugins/com/jolla/ichthyo_color_emojis/emoji.js"
 
     Component.onCompleted: {
         try {
