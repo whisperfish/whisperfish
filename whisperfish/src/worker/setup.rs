@@ -229,7 +229,7 @@ impl SetupWorker {
             use libsignal_service::master_key::MasterKeyStore;
 
             // FIXME: tracing::info doesn't seem to work here - why?
-            let master_key = MasterKey::generate();
+            let master_key = MasterKey::generate(&mut rand::thread_rng());
             let storage_key = StorageServiceKey::from_master_key(&master_key);
             result.storage.store_master_key(Some(&master_key));
             result.storage.store_storage_service_key(Some(&storage_key));

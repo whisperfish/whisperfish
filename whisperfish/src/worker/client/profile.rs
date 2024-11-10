@@ -100,14 +100,15 @@ impl ClientActor {
             let cipher = if let Some(key) = key {
                 let mut bytes = [0u8; 32];
                 bytes.copy_from_slice(key);
-                ProfileCipher::from(zkgroup::profiles::ProfileKey::create(bytes))
+                ProfileCipher::new(zkgroup::profiles::ProfileKey::create(bytes))
             } else {
                 anyhow::bail!(
                     "Fetched a profile for a contact that did not share the profile key."
                 );
             };
 
-            let profile_decrypted = profile.decrypt(cipher)?;
+            let unrestricted_unidentified_access = profile.unrestricted_unidentified_access;
+            let profile_decrypted = cipher.decrypt(profile)?;
 
             tracing::info!("Decrypted profile {:?}", profile_decrypted);
 
@@ -123,12 +124,12 @@ impl ClientActor {
                 joined_name: profile_decrypted.name.as_ref().map(|x| x.to_string()),
                 about_text: profile_decrypted.about,
                 emoji: profile_decrypted.about_emoji,
-                unidentified: if profile.unrestricted_unidentified_access {
+                unidentified: if unrestricted_unidentified_access {
                     UnidentifiedAccessMode::Unrestricted
                 } else {
                     recipient.unidentified_access_mode
                 },
-                avatar: profile.avatar,
+                avatar: profile_decrypted.avatar,
                 last_fetch: Utc::now().naive_utc(),
                 r_uuid: recipient.uuid.unwrap(),
                 r_id: recipient.id,
@@ -192,7 +193,7 @@ impl Handler<ProfileCreated> for ClientActor {
                         let mut bytes = [0u8; 32];
                         bytes.copy_from_slice(store_profile.r_key.as_ref().unwrap());
                         let key = zkgroup::profiles::ProfileKey::create(bytes);
-                        let cipher = ProfileCipher::from(key);
+                        let cipher = ProfileCipher::new(key);
                         let mut avatar = service.retrieve_profile_avatar(avatar).await?;
                         // 10MB is what Signal Android allocates
                         let mut contents = Vec::with_capacity(10 * 1024 * 1024);

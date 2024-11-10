@@ -36,7 +36,7 @@ impl Handler<CheckMasterKey> for ClientActor {
                 connectable.await;
                 if is_primary {
                     tracing::debug!("Whisperfish is primary. Generating master key...");
-                    let master_key = MasterKey::generate();
+                    let master_key = MasterKey::generate(&mut rand::thread_rng());
                     let storage_key = StorageServiceKey::from_master_key(&master_key);
                     storage.store_master_key(Some(&master_key));
                     storage.store_storage_service_key(Some(&storage_key));

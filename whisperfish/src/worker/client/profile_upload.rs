@@ -238,6 +238,7 @@ impl Handler<UploadProfile> for ClientActor {
                         self_recipient.about,
                         self_recipient.about_emoji,
                         true,
+                        &mut rand::thread_rng(),
                     )
                     .await
                 {

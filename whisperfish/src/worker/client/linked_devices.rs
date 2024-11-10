@@ -113,6 +113,7 @@ impl Handler<LinkDevice> for ClientActor {
                 Ok::<_, anyhow::Error>(
                     account_manager
                         .link_device(
+                            &mut rand::thread_rng(),
                             url,
                             &store.aci_storage(),
                             &store.pni_storage(),

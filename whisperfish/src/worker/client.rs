@@ -410,7 +410,8 @@ impl ClientActor {
 
     fn message_sender(
         &self,
-    ) -> impl Future<Output = Result<MessageSender<AciOrPniStorage>, ServiceError>> {
+    ) -> impl Future<Output = Result<MessageSender<AciOrPniStorage, rand::rngs::ThreadRng>, ServiceError>>
+    {
         let storage = self.storage.clone().unwrap();
         let service = self.authenticated_service();
         let mut u_service = self.unauthenticated_service();
@@ -452,6 +453,7 @@ impl ClientActor {
                 u_ws,
                 service,
                 cipher,
+                rand::thread_rng(),
                 storage.aci_or_pni(ServiceIdKind::Aci), // In what cases do we use the
                 local_aci,
                 local_pni,
@@ -2326,7 +2328,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
         ctx.spawn(
             async move {
                 let content = loop {
-                    match cipher.open_envelope(msg.clone()).await {
+                    match cipher.open_envelope(msg.clone(), &mut rand::thread_rng()).await {
                         Ok(Some(content)) => break content,
                         Ok(None) => {
                             tracing::warn!("Empty envelope");
@@ -2784,13 +2786,13 @@ impl Handler<RefreshPreKeys> for ClientActor {
 
             // It's tempting to run those two in parallel,
             // but I'm afraid the pre-key counts are going to be mixed up.
-            am.update_pre_key_bundle(&mut aci, ServiceIdKind::Aci, &mut rand::thread_rng(), true)
+            am.update_pre_key_bundle(&mut aci, ServiceIdKind::Aci, true, &mut rand::thread_rng())
                 .await
                 .context("refreshing ACI pre keys")?;
 
             let _pni_distribution = pni_distribution.await;
 
-            am.update_pre_key_bundle(&mut pni, ServiceIdKind::Pni, &mut rand::thread_rng(), true)
+            am.update_pre_key_bundle(&mut pni, ServiceIdKind::Pni, true, &mut rand::thread_rng())
                 .await
                 .context("refreshing PNI pre keys")?;
             anyhow::Result::<()>::Ok(())

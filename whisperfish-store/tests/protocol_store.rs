@@ -491,10 +491,10 @@ mod tests {
         use rand::Rng;
 
         let location = whisperfish_store::temp();
-        let rng = rand::thread_rng();
+        let mut rng = rand::thread_rng();
 
         // Signaling password for REST API
-        let password: String = rng
+        let password: String = (&mut rng)
             .sample_iter(&Alphanumeric)
             .take(24)
             .map(char::from)
@@ -555,7 +555,7 @@ mod tests {
 
         // Part 2: Store (overwrite) and load a generated master key and a derived storage key
 
-        let master_key = MasterKey::generate();
+        let master_key = MasterKey::generate(&mut rng);
         let storage_key = StorageServiceKey::from_master_key(&master_key);
 
         storage.write_setting(

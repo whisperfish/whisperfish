@@ -57,7 +57,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                 let mut credential_cache = storage.credential_cache_mut().await;
                 let mut gm =
                     GroupsManager::new(service_ids, authenticated_service, &mut *credential_cache, zk_params);
-                let group = gm.fetch_encrypted_group(&master_key).await?;
+                let group = gm.fetch_encrypted_group(&mut rand::thread_rng(), &master_key).await?;
                 let group = groups_v2::decrypt_group(&master_key, group)?;
                 // let group = gm.decrypt_
                 // We now know the group's name and properties

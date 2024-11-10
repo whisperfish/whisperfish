@@ -68,6 +68,7 @@ impl Handler<InitializePni> for ClientActor {
                         sender.await?,
                         local_addr,
                         local_e164,
+                        &mut rand::thread_rng(),
                     )
                     .await
                     .context("initializing linked devices for PNP");
