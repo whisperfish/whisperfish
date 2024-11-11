@@ -80,10 +80,9 @@ MouseArea {
 
                 MouseArea {
                     anchors.fill: parent
+                    enabled: attach.can_retry
                     onClicked: {
-                        if (attach.can_retry) {
-                            ClientWorker.fetchAttachment(attach.id)
-                        }
+                        ClientWorker.fetchAttachment(attach.id)
                     }
                 }
 
