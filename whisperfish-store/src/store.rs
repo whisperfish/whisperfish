@@ -896,13 +896,10 @@ impl<O: Observable> Storage<O> {
 
         let mut query = recipients.into_boxed();
 
+        let raw_uuid = addr.raw_uuid().to_string();
         match addr.kind() {
-            ServiceIdKind::Aci => {
-                query = query.filter(uuid.eq(addr.raw_uuid().to_string()));
-            }
-            ServiceIdKind::Pni => {
-                query = query.filter(pni.eq(addr.raw_uuid().to_string()));
-            }
+            ServiceIdKind::Aci => query = query.filter(uuid.eq(raw_uuid)),
+            ServiceIdKind::Pni => query = query.filter(pni.eq(raw_uuid)),
         }
 
         query.first(&mut *self.db()).optional().expect("db")
