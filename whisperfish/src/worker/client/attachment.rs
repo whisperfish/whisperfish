@@ -40,10 +40,6 @@ impl Handler<FetchAttachment> for ClientActor {
         let message = storage
             .fetch_message_by_id(attachment.message_id)
             .expect("existing message");
-        // XXX We probably don't need the session object itself anymore in this part of the code.
-        let session = storage
-            .fetch_session_by_id(message.session_id)
-            .expect("existing session");
         // XXX We may want some graceful error handling here
         let ptr = AttachmentPointer::decode(
             attachment
@@ -89,7 +85,7 @@ impl Handler<FetchAttachment> for ClientActor {
 
         let ptr2 = attachment.clone();
         let attachment_id = attachment.id;
-        let session_id = session.id;
+        let session_id = message.session_id;
         let message_id = message.id;
         let transcribe_voice_notes = self.settings.get_transcribe_voice_notes();
 
