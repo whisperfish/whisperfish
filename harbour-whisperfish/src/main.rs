@@ -29,10 +29,6 @@ struct Opts {
     #[clap(short = 'v', long)]
     verbose: bool,
 
-    /// Print timestamps in console. Off by default, because journald records the output as well.
-    #[clap(long)]
-    ts: bool,
-
     /// Whether whisperfish was launched from autostart. Also accepts '-prestart'
     #[clap(long)]
     prestart: bool,
@@ -74,7 +70,7 @@ fn main() {
     });
 
     // Then, handle command line arguments and overwrite settings from config file if necessary
-    let mut opt: Opts = Parser::parse_from(args);
+    let opt: Opts = Parser::parse_from(args);
 
     if opt.quit {
         if let Err(e) = dbus_quit_app() {
@@ -129,16 +125,12 @@ fn main() {
         std::process::exit(1);
     }
 
-    if opt.verbose {
-        opt.ts = true;
-        config.verbose = true;
-    }
     if opt.prestart {
         config.autostart = true;
     }
     config.override_captcha = opt.captcha;
 
-    let log_filter = if config.verbose {
+    let log_filter = if config.verbose || opt.verbose {
         // Enable QML debug output and full backtrace (for Sailjail).
         std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
         std::env::set_var("RUST_BACKTRACE", "full");
@@ -175,13 +167,8 @@ fn main() {
 
         #[cfg(feature = "coz")]
         tracing::subscriber::set_global_default(tracing_coz::TracingCozBridge::new()).unwrap();
-    } else if opt.ts {
-        tracing_subscriber::fmt::fmt()
-            .with_env_filter(log_filter)
-            .init();
     } else {
         tracing_subscriber::fmt::fmt()
-            .without_time()
             .with_env_filter(log_filter)
             .init();
     }
