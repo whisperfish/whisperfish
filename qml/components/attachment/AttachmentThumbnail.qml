@@ -20,7 +20,7 @@ MouseArea {
     Recipient {
         id: recipient
         app: AppState
-        recipientId: message ? message.senderRecipientId : -1
+        recipientId: message.valid ? message.senderRecipientId : -1
     }
 
     Connections {
@@ -74,7 +74,7 @@ MouseArea {
         sourceSize { width: width; height: height }
 
         onStatusChanged: {
-            if (status === Thumbnail.Error && _hasAttach) {
+            if (status === Thumbnail.Error && _hasAttach && !/\.(mp4)$/i.test(attach.data)) {
                 console.warn("thumbnail failed for", attach.data)
             }
         }

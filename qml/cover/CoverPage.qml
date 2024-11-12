@@ -4,12 +4,6 @@ import be.rubdos.whisperfish 1.0
 
 CoverBackground {
     property bool rightToLeft: Qt.application.layoutDirection === Qt.RightToLeft
-    Connections {
-        target: SetupWorker
-        onSetupComplete: {
-            sessions.reinit()
-        }
-    }
 
     Sessions {
         id: sessions
