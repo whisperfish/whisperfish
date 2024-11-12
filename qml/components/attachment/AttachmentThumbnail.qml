@@ -107,10 +107,10 @@ MouseArea {
 
     IconButton {
         id: retryDownloadButton
-        // XXX: this shouldn't depend on the blurhash
-        visible: attach.can_retry
-        anchors.centerIn: blurhashThumb
-        icon.source: 'image://theme/icon-s-cloud-download'
+        enabled: !attach.is_downloaded && attach.can_retry
+        visible: enabled
+        anchors.centerIn: parent
+        icon.source: 'image://theme/icon-m-cloud-download'
         onClicked: {
             console.log("retry download clicked for attachment", attach.id)
             ClientWorker.fetchAttachment(attach.id)
