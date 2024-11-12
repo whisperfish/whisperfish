@@ -11,6 +11,7 @@ whisperfish = { path = "../whisperfish" }
 dbus = "0.9"
 single-instance = "0.3.3"
 tracing = { version = "0.1", features = ["log"] }
+tracing-journald = "0.3.0"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 time = "0.3.30"
 anyhow = "1.0"
