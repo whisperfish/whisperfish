@@ -86,7 +86,7 @@ MouseArea {
         opacity: (!_isAnimated && (nemoThumbnail.status != Thumbnail.Ready) && attach.visual_hash != null) ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation { duration: 250 } }
         width: parent.width; height: parent.height
-        source: "image://blurhash/" + attach.visual_hash
+        source: attach.visual_hash != null ? "image://blurhash/" + attach.visual_hash : "image://theme/icon-m-image"
 
         BusyIndicator {
             id: downloadingBusyIndicator
