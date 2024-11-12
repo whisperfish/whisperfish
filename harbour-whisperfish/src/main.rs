@@ -4,7 +4,7 @@ use dbus::blocking::Connection;
 use signal_hook::{consts::SIGINT, iterator::Signals};
 use single_instance::SingleInstance;
 use std::{os::unix::prelude::OsStrExt, thread, time::Duration};
-use tracing_subscriber::{fmt::format, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 use whisperfish::*;
 
 /// Unofficial but advanced Signal client for Sailfish OS
@@ -134,7 +134,7 @@ fn main() {
         // Enable QML debug output and full backtrace (for Sailjail).
         std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
         std::env::set_var("RUST_BACKTRACE", "full");
-        "whisperfish=trace,libsignal_service=trace,libsignal_service_hyper=trace"
+        "whisperfish=trace,libsignal_service=trace"
     } else {
         "whisperfish=info,warn"
     };
@@ -168,9 +168,28 @@ fn main() {
         #[cfg(feature = "coz")]
         tracing::subscriber::set_global_default(tracing_coz::TracingCozBridge::new()).unwrap();
     } else {
-        tracing_subscriber::fmt::fmt()
-            .with_env_filter(log_filter)
-            .init();
+        if std::env::var("RUST_LOG").is_err() {
+            std::env::set_var("RUST_LOG", log_filter);
+        }
+        let env_filter = EnvFilter::from_default_env();
+
+        let journald = tracing_journald::layer()
+            .expect("open journald socket")
+            .with_syslog_identifier("whisperfish".into());
+
+        // If verbose, print to terminal (with timestamps and tracing).
+        // Otherwise, send to journald (without tracing).
+        if opt.verbose {
+            tracing_subscriber::registry()
+                .with(env_filter)
+                .with(tracing_subscriber::fmt::layer())
+                .init();
+        } else {
+            tracing_subscriber::registry()
+                .with(env_filter)
+                .with(journald)
+                .init();
+        }
     }
 
     qtlog::enable();
