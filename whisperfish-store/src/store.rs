@@ -67,7 +67,6 @@ impl Settings {
     pub const STORAGE_SERVICE_KEY: &'static str = "storage_service_key";
 
     pub const VERBOSE: &'static str = "verbose";
-    pub const LOGFILE: &'static str = "logfile";
 }
 
 /// How much trust you put into the correctness of the data.
@@ -540,14 +539,6 @@ impl<O: Observable> Storage<O> {
 
     pub fn is_encrypted(&self) -> bool {
         self.store_enc.is_some()
-    }
-
-    pub fn clear_old_logs(
-        path: &std::path::PathBuf,
-        keep_count: usize,
-        filename_regex: &str,
-    ) -> bool {
-        self::utils::clear_old_logs(path, keep_count, filename_regex)
     }
 
     fn scaffold_directories(root: impl AsRef<Path>) -> Result<(), anyhow::Error> {

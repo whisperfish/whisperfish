@@ -29,7 +29,7 @@ struct Opts {
     #[clap(short = 'v', long)]
     verbose: bool,
 
-    /// Print timestamps in the log. Off by default, because journald records the output as well.
+    /// Print timestamps in console. Off by default, because journald records the output as well.
     #[clap(long)]
     ts: bool,
 
@@ -138,12 +138,6 @@ fn main() {
     }
     config.override_captcha = opt.captcha;
 
-    let shared_dir = config.get_share_dir();
-
-    let file_appender = tracing_appender::rolling::hourly(&shared_dir, "harbour-whisperfish.log");
-    let (stdio, _guard) = tracing_appender::non_blocking(std::io::stdout());
-    let (file, _guard) = tracing_appender::non_blocking(file_appender);
-
     let log_filter = if config.verbose {
         // Enable QML debug output and full backtrace (for Sailjail).
         std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
@@ -181,20 +175,6 @@ fn main() {
 
         #[cfg(feature = "coz")]
         tracing::subscriber::set_global_default(tracing_coz::TracingCozBridge::new()).unwrap();
-    } else if config.logfile {
-        let filter = tracing_subscriber::EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new(log_filter));
-
-        tracing_subscriber::registry()
-            .with(filter)
-            .with(
-                tracing_subscriber::fmt::layer()
-                    .with_ansi(false)
-                    .event_format(format().with_ansi(false))
-                    .with_writer(file),
-            )
-            .with(tracing_subscriber::fmt::layer().with_writer(stdio))
-            .init();
     } else if opt.ts {
         tracing_subscriber::fmt::fmt()
             .with_env_filter(log_filter)
@@ -207,12 +187,6 @@ fn main() {
     }
 
     qtlog::enable();
-
-    const MAX_LOGFILE_COUNT: usize = 5;
-    const LOGFILE_REGEX: &str = r"harbour-whisperfish.\d{8}_\d{6}\.log";
-    if config.logfile {
-        store::Storage::clear_old_logs(&shared_dir, MAX_LOGFILE_COUNT, LOGFILE_REGEX);
-    }
 
     let instance_lock = SingleInstance::new("whisperfish").unwrap();
     if !instance_lock.is_single() {
@@ -278,7 +252,6 @@ fn run_main_app(config: config::SignalConfig) -> Result<(), anyhow::Error> {
 
     // Push verbose and logfile settings to QSettings...
     settings.set_bool("verbose", config.verbose);
-    settings.set_bool("logfile", config.logfile);
 
     // This will panic here if feature `sailfish` is not enabled
     gui::run(config).unwrap();
@@ -287,7 +260,6 @@ fn run_main_app(config: config::SignalConfig) -> Result<(), anyhow::Error> {
     match config::SignalConfig::read_from_file() {
         Ok(mut config) => {
             config.verbose = settings.get_verbose();
-            config.logfile = settings.get_logfile();
             if let Err(e) = config.write_to_file() {
                 tracing::error!("Could not save config.yml: {}", e)
             };

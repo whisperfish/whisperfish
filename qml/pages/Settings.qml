@@ -579,22 +579,6 @@ Page {
                     }
                 }
             }
-            IconTextSwitch {
-                anchors.horizontalCenter: parent.horizontalCenter
-                //: Settings page enable logging to a file
-                //% "Enable log file"
-                text: qsTrId("whisperfish-settings-logfile-autostart")
-                //: Settings page enable logfile description
-                //% "When enabled, Whisperfish saves its output to a log file. Requires a restart to take effect."
-                description: qsTrId("whisperfish-settings-enable-logfile-description")
-                checked: SettingsBridge.logfile
-                icon.source: "image://theme/icon-m-downloads"
-                onCheckedChanged: {
-                    if(checked != SettingsBridge.logfile) {
-                        SettingsBridge.logfile = checked
-                    }
-                }
-            }
             Button {
                 visible: SettingsBridge.debug_mode
                 anchors.horizontalCenter: parent.horizontalCenter

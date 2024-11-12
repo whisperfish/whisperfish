@@ -12,7 +12,6 @@ dbus = "0.9"
 single-instance = "0.3.3"
 tracing = { version = "0.1", features = ["log"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-tracing-appender = "0.2"
 time = "0.3.30"
 anyhow = "1.0"
 clap = { version = "3.2", features = ["derive"] }

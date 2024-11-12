@@ -38,7 +38,6 @@ pub struct SettingsBridge {
 
     // These will be mirrored to `config.yml` at Whisperfish exit
     verbose: qt_property!(bool; READ get_verbose WRITE set_verbose NOTIFY verbose_changed),
-    logfile: qt_property!(bool; READ get_logfile WRITE set_logfile NOTIFY verbose_changed),
 
     country_code: qt_property!(String; READ get_country_code WRITE set_country_code NOTIFY country_code_changed),
     avatar_dir: qt_property!(String; READ get_avatar_dir WRITE set_avatar_dir NOTIFY avatar_dir_changed),
@@ -64,7 +63,6 @@ pub struct SettingsBridge {
     share_phone_number_changed: qt_signal!(value: bool),
 
     verbose_changed: qt_signal!(value: bool),
-    logfile_changed: qt_signal!(value: bool),
 
     country_code_changed: qt_signal!(value: String),
     avatar_dir_changed: qt_signal!(value: String),
@@ -112,7 +110,6 @@ impl Default for SettingsBridge {
             transcribe_voice_notes: false,
 
             verbose: false,
-            logfile: false,
 
             country_code: Default::default(),
             avatar_dir: Default::default(),
@@ -145,7 +142,6 @@ impl Default for SettingsBridge {
             transcribe_voice_notes_changed: Default::default(),
 
             verbose_changed: Default::default(),
-            logfile_changed: Default::default(),
         }
     }
 }
@@ -281,10 +277,6 @@ impl SettingsBridge {
         self.get_bool("verbose")
     }
 
-    pub fn get_logfile(&self) -> bool {
-        self.get_bool("logfile")
-    }
-
     pub fn get_avatar_dir(&self) -> String {
         self.get_string("avatar_dir")
     }
@@ -392,11 +384,6 @@ impl SettingsBridge {
     pub fn set_verbose(&mut self, value: bool) {
         self.set_bool("verbose", value);
         self.verbose_changed(value);
-    }
-
-    pub fn set_logfile(&mut self, value: bool) {
-        self.set_bool("logfile", value);
-        self.logfile_changed(value);
     }
 
     pub fn set_country_code(&mut self, value: String) {
