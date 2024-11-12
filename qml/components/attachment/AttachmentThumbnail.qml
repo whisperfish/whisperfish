@@ -87,6 +87,34 @@ MouseArea {
         Behavior on opacity { NumberAnimation { duration: 250 } }
         width: parent.width; height: parent.height
         source: "image://blurhash/" + attach.visual_hash
+
+        BusyIndicator {
+            id: downloadingBusyIndicator
+            running: blurhashThumb.visible && attach.is_downloading
+            anchors.centerIn: blurhashThumb
+            size: BusyIndicatorSize.Medium
+        }
+
+        Label {
+            id: downloadingLabel
+            visible: downloadingBusyIndicator.running
+            text: Math.round(attach.downloaded_percentage) + " %"
+            anchors.centerIn: blurhashThumb
+            font.pixelSize: Theme.fontSizeSmall
+            color: Theme.highlightColor
+        }
+    }
+
+    IconButton {
+        id: retryDownloadButton
+        enabled: !attach.is_downloaded && attach.can_retry
+        visible: enabled
+        anchors.centerIn: parent
+        icon.source: 'image://theme/icon-m-cloud-download'
+        onClicked: {
+            console.log("retry download clicked for attachment", attach.id)
+            ClientWorker.fetchAttachment(attach.id)
+        }
     }
 
     Loader {

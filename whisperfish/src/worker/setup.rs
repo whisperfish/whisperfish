@@ -171,6 +171,7 @@ impl SetupWorker {
         config: Arc<crate::config::SignalConfig>,
     ) -> Result<(), anyhow::Error> {
         let storage = SetupWorker::open_storage(app.clone(), config).await?;
+        storage.reset_all_attachment_progress();
 
         app.app_state.pinned().borrow().set_storage(storage);
 

@@ -346,7 +346,8 @@ Loader {
     Component {
         id: detail_contactComponent
         AttachmentItemContact {
-            attach: detailAttachments.get(currentAttachmentIndex)
+            attachments: detailAttachments
+            index: currentAttachmentIndex
             onPressAndHold: root.pressAndHold(mouse)
         }
     }
@@ -354,7 +355,8 @@ Loader {
     Component {
         id: detail_audioComponent
         AttachmentItemAudio {
-            attach: detailAttachments.get(currentAttachmentIndex)
+            attachments: detailAttachments
+            index: currentAttachmentIndex
             recipientId: message.senderRecipientId
             onPressAndHold: root.pressAndHold(mouse)
         }
@@ -363,7 +365,8 @@ Loader {
     Component {
         id: detail_fileComponent
         AttachmentItemFile {
-            attach: detailAttachments.get(currentAttachmentIndex)
+            attachments: detailAttachments
+            index: currentAttachmentIndex
             recipientId: message.senderRecipientId
             onPressAndHold: root.pressAndHold(mouse)
         }

@@ -94,6 +94,12 @@ define_model_roles! {
         VisualHash(visual_hash via qstring_from_option): "visual_hash",
         IsVoiceNote(is_voice_note):                      "is_voice_note",
         Transcription(transcription via qstring_from_option): "transcription",
+        Size(size via Option::unwrap_or_default):        "size",
+        DownloadLength(download_length via Option::unwrap_or_default): "download_length",
+        DownloadedPercentage(fn downloaded_percentage(&self)): "downloaded_percentage",
+        IsDownloading(fn is_downloading(&self)):         "is_downloading",
+        IsDownloaded(fn is_downloaded(&self)):           "is_downloaded",
+        CanRetry(fn can_retry(&self)):                   "can_retry",
     }
 }
 

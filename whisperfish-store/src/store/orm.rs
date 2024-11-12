@@ -765,6 +765,8 @@ pub struct Attachment {
     pub pointer: Option<Vec<u8>>,
 
     pub transcription: Option<String>,
+
+    pub download_length: Option<i32>,
 }
 
 impl Display for Attachment {
@@ -799,6 +801,32 @@ impl Attachment {
         self.attachment_path
             .as_deref()
             .map(crate::replace_tilde_with_home)
+    }
+
+    pub fn downloaded_percentage(&self) -> f64 {
+        if let Some(size) = self.size {
+            let length = self.download_length.unwrap_or(0);
+            (length as f64 / size as f64).clamp(0.0, 1.0) * 100.0
+        } else {
+            0.0
+        }
+    }
+
+    pub fn is_downloading(&self) -> bool {
+        self.download_length.is_some() && !self.is_downloaded()
+    }
+
+    pub fn is_downloaded(&self) -> bool {
+        let Some(path) = self.absolute_attachment_path() else {
+            return false;
+        };
+        std::fs::metadata(path.as_ref())
+            .map(|m| m.is_file())
+            .unwrap_or(false)
+    }
+
+    pub fn can_retry(&self) -> bool {
+        !self.is_downloading() && self.pointer.is_some()
     }
 }
 
@@ -1695,6 +1723,7 @@ mod tests {
             caption: Some("Funny cat!".into()),
             pointer: None,
             transcription: None,
+            download_length: None,
         }
     }
 

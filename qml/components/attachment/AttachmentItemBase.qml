@@ -7,7 +7,9 @@ import "../../js/attachment.js" as Attachment
 
 MouseArea {
     id: root
-    property var attach: null
+    property int index: 0
+    property var attach: detailAttachments.get(index)
+    property var attachments: null
     property bool highlighted: containsPress
     property string icon: ''
     property bool enableDefaultClickAction: true
@@ -15,7 +17,7 @@ MouseArea {
     default property alias contents: attachmentContentItem.data
 
     // check _effectiveEnableClick in derived types, not enableDefaultClickAction
-    property bool _effectiveEnableClick: _hasAttach && enableDefaultClickAction
+    property bool _effectiveEnableClick: _hasAttach && attach.is_downloaded && enableDefaultClickAction
     property bool _hasAttach: attach != null
 
     function mimeToIcon(mimeType) {
@@ -30,6 +32,17 @@ MouseArea {
         var i = path.lastIndexOf("/");
         if (i < -1) return path;
         return path.substring(i+1);
+    }
+
+    Connections {
+        target: attachments
+        onDataChanged: {
+            var i = topLeft.row;
+            if (i != index) {
+                return;
+            }
+            attach = attachments.get(i);
+        }
     }
 
     Row {
@@ -63,7 +76,31 @@ MouseArea {
                 width: Theme.iconSizeMedium; height: width
                 visible: thumb.status === Thumbnail.Error ||
                          thumb.status === Thumbnail.Null
-                source: _hasAttach ? mimeToIcon(attach.type) : ''
+                source: _hasAttach ? (attach.is_downloaded ? mimeToIcon(attach.type) : (attach.can_retry ? 'image://theme/icon-s-cloud-download' : '')) : ''
+
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: attach.can_retry
+                    onClicked: {
+                        ClientWorker.fetchAttachment(attach.id)
+                    }
+                }
+
+                BusyIndicator {
+                    id: downloadingBusyIndicator
+                    running: attach.is_downloading
+                    anchors.centerIn: parent
+                    size: BusyIndicatorSize.Medium
+                }
+
+                Label {
+                    id: downloadingLabel
+                    visible: downloadingBusyIndicator.running
+                    text: Math.round(attach.downloaded_percentage) + " %"
+                    anchors.centerIn: parent
+                    font.pixelSize: Theme.fontSizeExtraSmall
+                    color: Theme.highlightColor
+                }
             }
         }
 

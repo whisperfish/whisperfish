@@ -1,6 +1,7 @@
 // XXX maybe the session-to-db migration should move into the store module.
 pub mod migrations;
 
+mod attachment;
 #[cfg(feature = "calling")]
 mod call;
 mod groupv2;
@@ -16,6 +17,7 @@ pub use self::linked_devices::*;
 use self::migrations::MigrationCondVar;
 pub use self::profile_upload::*;
 use self::unidentified::UnidentifiedCertificates;
+use attachment::FetchAttachment;
 use image::GenericImageView;
 use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
@@ -67,8 +69,7 @@ use libsignal_service::configuration::SignalServers;
 use libsignal_service::content::sync_message::Request as SyncRequest;
 use libsignal_service::content::DataMessageFlags;
 use libsignal_service::content::{
-    sync_message, AttachmentPointer, ContentBody, DataMessage, GroupContextV2, Metadata, Reaction,
-    TypingMessage,
+    sync_message, ContentBody, DataMessage, GroupContextV2, Metadata, Reaction, TypingMessage,
 };
 use libsignal_service::prelude::*;
 use libsignal_service::proto::receipt_message::Type as ReceiptType;
@@ -82,7 +83,6 @@ use libsignal_service::push_service::{
 use libsignal_service::sender::AttachmentSpec;
 use libsignal_service::websocket::SignalWebSocket;
 use libsignal_service::AccountManager;
-use mime_classifier::{ApacheBugFlag, LoadContext, MimeClassifier, NoSniffFlag};
 use phonenumber::PhoneNumber;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
@@ -196,13 +196,6 @@ struct ReactionSent {
 }
 
 #[derive(Message)]
-#[rtype(result = "()")]
-struct AttachmentDownloaded {
-    session_id: i32,
-    message_id: i32,
-}
-
-#[derive(Message)]
 #[rtype(result = "usize")]
 pub struct CompactDb;
 
@@ -218,6 +211,7 @@ pub struct ClientWorker {
     messageReceived: qt_signal!(sid: i32, mid: i32),
     messageReactionReceived: qt_signal!(sid: i32, mid: i32),
     attachmentDownloaded: qt_signal!(sid: i32, mid: i32),
+    attachmentDownloadProgress: qt_signal!(sid: i32, mid: i32, progress: usize),
     messageReceipt: qt_signal!(sid: i32, mid: i32),
     notifyMessage: qt_signal!(
         sid: i32,
@@ -265,6 +259,7 @@ pub struct ClientWorker {
 
     refresh_group_v2: qt_method!(fn(&self, session_id: usize)),
 
+    fetchAttachment: qt_method!(fn(&self, attachment_id: i32)),
     delete_file: qt_method!(fn(&self, file_name: String)),
     startMessageExpiry: qt_method!(fn(&self, message_id: i32)),
 
@@ -1385,207 +1380,6 @@ impl Actor for ClientActor {
     }
 }
 
-#[derive(Message)]
-#[rtype(result = "()")]
-struct FetchAttachment {
-    attachment_id: i32,
-}
-
-impl Handler<FetchAttachment> for ClientActor {
-    type Result = ResponseActFuture<Self, ()>;
-
-    /// Downloads the attachment in the background and registers it in the database.
-    /// Saves the given attachment into a random-generated path. Saves the path in the database.
-    ///
-    /// This was a Message method in Go
-    fn handle(
-        &mut self,
-        fetch: FetchAttachment,
-        ctx: &mut <Self as Actor>::Context,
-    ) -> Self::Result {
-        let FetchAttachment { attachment_id } = fetch;
-        let _span = tracing::info_span!("handle FetchAttachment", attachment_id).entered();
-
-        let client_addr = ctx.address();
-
-        let mut service = self.unauthenticated_service();
-        let storage = self.storage.clone().unwrap();
-
-        let attachment = storage
-            .fetch_attachment(attachment_id)
-            .expect("existing attachment");
-        let message = storage
-            .fetch_message_by_id(attachment.message_id)
-            .expect("existing message");
-        // XXX We probably don't need the session object itself anymore in this part of the code.
-        let session = storage
-            .fetch_session_by_id(message.session_id)
-            .expect("existing session");
-        // XXX We may want some graceful error handling here
-        let ptr = AttachmentPointer::decode(
-            attachment
-                .pointer
-                .as_deref()
-                .expect("fetch attachment on attachments with associated pointer"),
-        )
-        .expect("valid attachment pointer");
-
-        // Go used to always set has_attachment and mime_type, but also
-        // in this method, as well as the generated path.
-        // We have this function that returns a filesystem path, so we can
-        // set it ourselves.
-        let dir = self.settings.get_string("attachment_dir");
-        let dest = PathBuf::from(dir);
-
-        // Take the extension of the file_name string, if it exists
-        let ptr_ext = ptr
-            .file_name
-            .as_ref()
-            .and_then(|file| file.split('.').last());
-
-        // Sailfish and/or Rust needs "image/jpg" and some others need coaching
-        // before taking a wild guess
-        let mut ext = match ptr.content_type() {
-            "text/plain" => "txt",
-            "image/jpeg" => "jpg",
-            "image/png" => "png",
-            "image/jpg" => "jpg",
-            "text/x-signal-plain" => "txt",
-            "application/x-signal-view-once" => "bin",
-            "audio/x-scpls" => "pls",
-            other => mime_guess::get_mime_extensions_str(other)
-                .and_then(|x| x.first())
-                .copied() // &&str -> &str
-                .unwrap_or_else(|| {
-                    let ext = ptr_ext.unwrap_or("bin");
-                    tracing::warn!("Could not find mime type for {other}; defaulting to .{ext}",);
-                    ext
-                }),
-        }
-        .to_string();
-
-        let ptr2 = attachment.clone();
-        let attachment_id = attachment.id;
-        let session_id = session.id;
-        let message_id = message.id;
-        let transcribe_voice_notes = self.settings.get_transcribe_voice_notes();
-
-        Box::pin(
-            async move {
-                use futures::io::AsyncReadExt;
-                use libsignal_service::attachment_cipher::*;
-
-                let mut stream = loop {
-                    let r = service.get_attachment(&ptr).await;
-                    match r {
-                        Ok(stream) => break stream,
-                        Err(ServiceError::Timeout { .. }) => {
-                            tracing::warn!("get_attachment timed out, retrying")
-                        }
-                        Err(e) => return Err(e.into()),
-                    }
-                };
-
-                // We need the whole file for the crypto to check out 😢
-                let actual_len = ptr.size.unwrap();
-                let mut ciphertext = Vec::with_capacity(actual_len as usize);
-                let stream_len = stream
-                    .read_to_end(&mut ciphertext)
-                    .await
-                    .expect("streamed attachment") as u32;
-
-                let key_material = ptr.key();
-                assert_eq!(
-                    key_material.len(),
-                    64,
-                    "key material for attachments is ought to be 64 bytes"
-                );
-                let mut key = [0u8; 64];
-                key.copy_from_slice(key_material);
-                let mut ciphertext = tokio::task::spawn_blocking(move || {
-                    decrypt_in_place(key, &mut ciphertext).expect("attachment decryption");
-                    ciphertext
-                })
-                .await
-                .context("decryption threadpoool")?;
-
-                // Signal puts exponentially increasing padding at the end
-                // to prevent some distinguishing attacks, so it has to be truncated.
-                if stream_len > actual_len {
-                    tracing::info!(
-                        "The attachment contains {} bytes of padding",
-                        (stream_len - actual_len)
-                    );
-                    tracing::info!("Truncating from {} to {} bytes", stream_len, actual_len);
-                    ciphertext.truncate(actual_len as usize);
-                }
-
-                // Signal Desktop sometimes sends a JPEG image with .png extension,
-                // so double check the received .png image, and rename it if necessary.
-                if ext == "png" {
-                    tracing::trace!("Checking for JPEG with .png extension...");
-                    let classifier = MimeClassifier::new();
-                    let computed_type = classifier.classify(
-                        LoadContext::Image,
-                        NoSniffFlag::Off,
-                        ApacheBugFlag::Off,
-                        &None,
-                        &ciphertext as &[u8],
-                    );
-                    if computed_type == mime::IMAGE_JPEG {
-                        tracing::info!("Received JPEG file with .png suffix, renaming to .jpg");
-                        ext = "jpg".into();
-                    }
-                }
-
-                let _attachment_path = storage
-                    .save_attachment(attachment_id, &dest, &ext, &ciphertext)
-                    .await?;
-
-                client_addr
-                    .send(AttachmentDownloaded {
-                        session_id,
-                        message_id,
-                    })
-                    .await?;
-
-                if attachment.is_voice_note {
-                    // If the attachment is a voice note, and we enabled automatic transcription,
-                    // trigger the transcription
-                    if transcribe_voice_notes {
-                        client_addr
-                            .send(voice_note_transcription::TranscribeVoiceNote { message_id })
-                            .await?;
-                    }
-                }
-
-                Ok(())
-            }
-            .instrument(tracing::trace_span!(
-                "download attachment",
-                attachment_id,
-                session_id,
-                message_id,
-            ))
-            .into_actor(self)
-            .map(move |r: Result<(), anyhow::Error>, act, _ctx| {
-                // Synchronise on the actor, to log the error to attachment.log
-                if let Err(e) = r {
-                    let e = format!(
-                        "Error fetching attachment for message with ID `{}` {:?}: {:?}",
-                        message.id, ptr2, e
-                    );
-                    tracing::error!("{} in handle()", e);
-                    let mut log = act.attachment_log();
-                    if let Err(e) = writeln!(log, "{}", e) {
-                        tracing::error!("Could not write error to error log: {}", e);
-                    }
-                }
-            }),
-        )
-    }
-}
-
 impl Handler<QueueMessage> for ClientActor {
     type Result = ();
 
@@ -2314,22 +2108,6 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
     }
 }
 
-impl Handler<AttachmentDownloaded> for ClientActor {
-    type Result = ();
-
-    fn handle(
-        &mut self,
-        AttachmentDownloaded {
-            session_id: sid,
-            message_id: mid,
-        }: AttachmentDownloaded,
-        _ctx: &mut Self::Context,
-    ) {
-        tracing::info!("Attachment downloaded for message {}", mid);
-        self.inner.pinned().borrow().attachmentDownloaded(sid, mid);
-    }
-}
-
 impl Handler<StorageReady> for ClientActor {
     type Result = ResponseActFuture<Self, ()>;
 
@@ -3046,6 +2824,17 @@ impl ClientWorker {
                 tracing::error!("{:?} in compact_db()", e);
             }
         });
+    }
+
+    #[with_executor]
+    #[tracing::instrument(skip(self))]
+    #[allow(non_snake_case)]
+    pub fn fetchAttachment(&self, attachment_id: i32) {
+        self.actor
+            .as_ref()
+            .unwrap()
+            .try_send(FetchAttachment { attachment_id })
+            .unwrap();
     }
 
     #[with_executor]

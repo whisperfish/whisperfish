@@ -3242,7 +3242,10 @@ impl<O: Observable> Storage<O> {
 
         let updated_message_id = diesel::update(schema::attachments::table)
             .filter(schema::attachments::id.eq(id))
-            .set(schema::attachments::attachment_path.eq(relative_dir))
+            .set((
+                schema::attachments::attachment_path.eq(relative_dir),
+                schema::attachments::download_length.eq(Option::<i32>::None),
+            ))
             .returning(schema::attachments::message_id)
             .get_result::<i32>(&mut *self.db())
             .optional()
@@ -3260,6 +3263,58 @@ impl<O: Observable> Storage<O> {
         };
 
         Ok(path)
+    }
+
+    pub fn update_attachment_progress(
+        &self,
+        attachment_id: i32,
+        stream_len: usize,
+    ) -> anyhow::Result<()> {
+        use schema::attachments::dsl::*;
+
+        let affected_message_id = diesel::update(attachments.filter(id.eq(attachment_id)))
+            .set(download_length.eq(stream_len as i32))
+            .returning(message_id)
+            .get_result::<i32>(&mut *self.db())
+            .optional()
+            .context("update attachment progress")?
+            .ok_or_else(|| anyhow::anyhow!("Attachment not found"))?;
+
+        self.observe_update(schema::attachments::table, attachment_id)
+            .with_relation(schema::messages::table, affected_message_id);
+        Ok(())
+    }
+
+    pub fn reset_attachment_progress(&self, attachment_id: i32) -> anyhow::Result<()> {
+        use schema::attachments::dsl::*;
+
+        let affected_message_id = diesel::update(attachments.filter(id.eq(attachment_id)))
+            .set(download_length.eq(Option::<i32>::None))
+            .returning(message_id)
+            .get_result::<i32>(&mut *self.db())
+            .optional()
+            .context("update attachment progress")?
+            .ok_or_else(|| anyhow::anyhow!("Attachment not found"))?;
+
+        self.observe_update(schema::attachments::table, attachment_id)
+            .with_relation(schema::messages::table, affected_message_id);
+        Ok(())
+    }
+
+    pub fn reset_all_attachment_progress(&self) {
+        use schema::attachments::dsl::*;
+
+        let affected_attachments = diesel::update(attachments)
+            .set(download_length.eq(Option::<i32>::None))
+            .returning((id, message_id))
+            .load::<(i32, i32)>(&mut *self.db())
+            .context("update attachment progress")
+            .expect("db");
+
+        for (affected_attachment_id, affected_message_id) in affected_attachments {
+            self.observe_update(schema::attachments::table, affected_attachment_id)
+                .with_relation(schema::messages::table, affected_message_id);
+        }
     }
 
     pub fn set_recipient_external_id(&mut self, rcpt_id: i32, ext_id: Option<String>) {
