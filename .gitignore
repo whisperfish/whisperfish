@@ -43,3 +43,5 @@ coverage/
 # IDEs
 .idea
 *.iml
+
+vendor.tar.gz
