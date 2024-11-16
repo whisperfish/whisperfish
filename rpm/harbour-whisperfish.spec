@@ -98,7 +98,7 @@ BuildRequires:  automake
 %{summary}
 
 %prep
-%setup -q -n %{?with_harbour:harbour-}whisperfish
+%setup -q -n %{name}-%{version}
 
 %build
 
