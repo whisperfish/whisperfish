@@ -50,7 +50,7 @@
     </message>
     <message id="whisperfish-session-note-to-self">
         <location filename="../qml/delegates/SessionDelegate.qml" line="222"/>
-        <location filename="../qml/harbour-whisperfish-main.qml" line="160"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="161"/>
         <location filename="../qml/pages/ShareDestinationV1.qml" line="106"/>
         <location filename="../qml/pages/ShareDestinationV2.qml" line="105"/>
         <source>Note to self</source>
@@ -108,44 +108,44 @@
         <translation>Șterge conversația</translation>
     </message>
     <message id="whisperfish-notification-missed-voice-call">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="225"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="235"/>
         <source>Missed voice call</source>
         <extracomment>Notification text for missed call notification</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-notification-missed-video-call">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="229"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="239"/>
         <source>Missed video call</source>
         <extracomment>Notification text for missed call notification</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-notification-default-message">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="286"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="306"/>
         <source>New Message</source>
         <extracomment>Default label for new message notification</extracomment>
         <translation>Mesaj Nou</translation>
     </message>
     <message id="whisperfish-fatal-error-setup-client">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="392"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="424"/>
         <source>Failed to setup Signal client</source>
         <extracomment>Failed to setup signal client error message</extracomment>
         <translation>Configurarea clientului de Signal a eșuat</translation>
     </message>
     <message id="whisperfish-fatal-error-invalid-datastore">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="397"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="429"/>
         <source>Failed to setup data storage</source>
         <oldsource>Failed to setup datastore</oldsource>
         <extracomment>Failed to setup datastore error message</extracomment>
         <translation>Configurarea stocării datelor a eșuat</translation>
     </message>
     <message id="permission-la-data">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="586"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="618"/>
         <source>Whisperfish data storage</source>
         <extracomment>Permission for Whisperfish data storage</extracomment>
         <translation>Stocarea datelor</translation>
     </message>
     <message id="permission-la-data_description">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="590"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="622"/>
         <source>Store configuration and messages</source>
         <extracomment>Permission description for Whisperfish data storage</extracomment>
         <translation>Salvează configurația și mesajele</translation>
@@ -1926,7 +1926,7 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-sender-name-label-outgoing">
         <location filename="../qml/components/QuotedMessagePreview.qml" line="109"/>
         <location filename="../qml/components/SenderNameLabel.qml" line="67"/>
-        <location filename="../qml/harbour-whisperfish-main.qml" line="164"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="165"/>
         <source>You</source>
         <extracomment>Name shown when replying to own messages</extracomment>
         <translation type="unfinished"></translation>
