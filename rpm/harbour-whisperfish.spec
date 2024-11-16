@@ -62,6 +62,12 @@ Recommends:   harbour-whisperfish-shareplugin
 # - Contacts/contacts.db phoneNumbers.normalizedNumber: introduced in 3.3
 Requires:   sailfish-version >= 3.3
 
+BuildRequires:  pkgconfig(sailfishapp) >= 1.0.3
+BuildRequires:  pkgconfig(Qt5Core)
+BuildRequires:  pkgconfig(Qt5Qml)
+BuildRequires:  pkgconfig(Qt5Quick)
+BuildRequires:  pkgconfig(Qt5Widgets)
+
 BuildRequires:  rust >= 1.75
 BuildRequires:  rust-std-static >= 1.75
 BuildRequires:  cargo >= 1.75
