@@ -223,6 +223,21 @@ build:host:stable:
       when: never
     - when: on_success
 
+build:host:vendor-tar-gz:stable:
+  <<: *rust-stable
+  stage: build
+  script:
+    - cargo vendor > .cargo/vendor.toml
+    - git diff --exit-code
+    - tar -czf vendor.tar.gz vendor
+  artifacts:
+    paths:
+      - vendor.tar.gz
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - when: on_success
+
 build:host:nightly:
   <<: *rust-nightly
   stage: build
