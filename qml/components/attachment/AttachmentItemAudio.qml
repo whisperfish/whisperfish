@@ -107,8 +107,12 @@ AttachmentItemBase {
                         : "../../../icons/play.png" )
                     : (attach.can_retry ? 'image://theme/icon-s-cloud-download' : '')
                 onClicked: {
-                    if (attach.can_retry) {
-                        ClientWorker.fetchAttachment(attach.id)
+                    if (!attach.is_downloaded) {
+                        if (attach.can_retry) {
+                            ClientWorker.fetchAttachment(attach.id);
+                        } else {
+                            console.warn("Audio attachment", attach.id, "not playable nor downloadable");
+                        }
                         return;
                     }
                     if (audioMessage.playbackState === MediaPlayer.PlayingState) {
