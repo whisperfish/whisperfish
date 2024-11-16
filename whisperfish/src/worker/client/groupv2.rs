@@ -57,7 +57,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                 let mut credential_cache = storage.credential_cache_mut().await;
                 let mut gm =
                     GroupsManager::new(service_ids, authenticated_service, &mut *credential_cache, zk_params);
-                let group = gm.fetch_encrypted_group(&master_key).await?;
+                let group = gm.fetch_encrypted_group(&mut rand::thread_rng(), &master_key).await?;
                 let group = groups_v2::decrypt_group(&master_key, group)?;
                 // let group = gm.decrypt_
                 // We now know the group's name and properties
@@ -114,7 +114,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                 let members_to_assert = group
                     .members
                     .iter()
-                    .map(|member| (ServiceAddress::from_aci(member.uuid), Some(&member.profile_key)))
+                    .map(|member| (Aci::from(member.uuid).into(), Some(&member.profile_key)))
                     .chain(
                         group
                             .pending_members
@@ -125,7 +125,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         group
                             .requesting_members
                             .iter()
-                            .map(|member| (ServiceAddress::from_aci(member.uuid), Some(&member.profile_key))),
+                            .map(|member| (Aci::from(member.uuid).into(), Some(&member.profile_key))),
                     );
 
                 // We need all the profile keys and UUIDs in the database.
@@ -192,7 +192,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         // XXX there's a bit of duplicate work going on here.
                         // XXX What about PNI?
                         let recipient =
-                            storage.fetch_or_insert_recipient_by_address(&ServiceAddress::from_aci(member.uuid));
+                            storage.fetch_or_insert_recipient_by_address(&Aci::from(member.uuid).into());
                         let _span = tracing::trace_span!(
                             "Asserting member of the group",
                             %recipient

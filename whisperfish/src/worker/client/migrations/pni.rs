@@ -62,7 +62,7 @@ impl Handler<InitializePni> for ClientActor {
                 pni.write_identity_key_pair(identity_key_pair).await?;
 
                 let res = am
-                    .pnp_initialize_devices(
+                    .pnp_initialize_devices::<rand::rngs::ThreadRng, _, _, _>(
                         &mut storage.aci_storage(),
                         &mut storage.pni_storage(),
                         sender.await?,

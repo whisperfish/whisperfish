@@ -62,7 +62,7 @@ impl Calls {
     }
 
     pub fn handle_state(&mut self, remote_peer_id: i32, call_id: CallId, state: CallState) {
-        use ringrtc::native::{CallState, EndReason};
+        use ringrtc::native::EndReason;
         match state {
             CallState::Incoming(incoming) => {
                 self.ringing_recipient_id = remote_peer_id;

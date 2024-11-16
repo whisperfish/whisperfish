@@ -80,7 +80,7 @@ impl Handler<MultideviceSyncProfile> for ClientActor {
                 });
 
                 if let Err(e) = sender
-                    .send_contact_details(&local_addr, None, contacts, false, false)
+                    .send_contact_details(&local_addr.into(), None, contacts, false, false)
                     .await
                 {
                     tracing::warn!("{}", e);
@@ -103,7 +103,7 @@ impl Handler<RefreshOwnProfile> for ClientActor {
         let mut service = self.authenticated_service();
         let client = ctx.address();
         let config = self.config.clone();
-        let uuid = config.get_aci().expect("valid uuid at this point");
+        let aci = Aci::from(config.get_aci().expect("valid uuid at this point"));
 
         Box::pin(
             async move {
@@ -132,16 +132,14 @@ impl Handler<RefreshOwnProfile> for ClientActor {
                     }
                 }
 
-                let online = service
-                    .retrieve_profile_by_id(ServiceAddress::from_aci(uuid), Some(profile_key))
-                    .await;
+                let online = service.retrieve_profile_by_id(aci, Some(profile_key)).await;
 
                 let outdated = match online {
                     Ok(profile) => {
                         let unidentified_access_enabled = profile.unidentified_access.is_some();
                         let capabilities = profile.capabilities.clone();
                         client
-                            .send(ProfileFetched(uuid, Some(profile)))
+                            .send(ProfileFetched(aci, Some(profile)))
                             .await
                             .unwrap();
 
@@ -209,7 +207,7 @@ impl Handler<UploadProfile> for ClientActor {
         let service = self.authenticated_service();
         let client = ctx.address();
         let config = self.config.clone();
-        let addr = ServiceAddress::from_aci(config.get_aci().expect("valid uuid at this point"));
+        let aci = Aci::from(config.get_aci().expect("valid ACI at this point"));
 
         Box::pin(
             async move {
@@ -235,11 +233,12 @@ impl Handler<UploadProfile> for ClientActor {
                 let mut am = AccountManager::new(service, Some(profile_key));
                 if let Err(e) = am
                     .upload_versioned_profile_without_avatar(
-                        addr.uuid.into(),
+                        aci,
                         name,
                         self_recipient.about,
                         self_recipient.about_emoji,
                         true,
+                        &mut rand::thread_rng(),
                     )
                     .await
                 {
@@ -258,7 +257,7 @@ impl Handler<UploadProfile> for ClientActor {
                 // Now also set the database
                 storage.update_profile_key(
                     None,
-                    Some(addr),
+                    Some(aci.into()),
                     &profile_key.get_bytes(),
                     TrustLevel::Certain,
                 );

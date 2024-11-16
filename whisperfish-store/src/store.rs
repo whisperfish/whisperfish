@@ -32,7 +32,10 @@ use libsignal_service::proto::{attachment_pointer, data_message::Reaction, DataM
 use libsignal_service::protocol::{self, *};
 use libsignal_service::zkgroup::api::groups::GroupSecretParams;
 use libsignal_service::zkgroup::PROFILE_KEY_LEN;
-use libsignal_service::{prelude::*, ServiceIdType};
+use libsignal_service::{
+    prelude::*,
+    protocol::{Aci, Pni, ServiceIdKind},
+};
 use phonenumber::PhoneNumber;
 pub use protocol_store::AciOrPniStorage;
 use protocol_store::ProtocolStore;
@@ -130,7 +133,7 @@ pub struct MessagePointer {
 #[derive(Clone, Debug)]
 pub struct NewMessage<'a> {
     pub session_id: i32,
-    pub source_addr: Option<ServiceAddress>,
+    pub source_addr: Option<ServiceId>,
     pub server_guid: Option<Uuid>,
     pub text: String,
     pub timestamp: NaiveDateTime,
@@ -804,8 +807,8 @@ impl<O: Observable> Storage<O> {
         }
 
         let e164 = self.config.get_tel();
-        let aci = self.config.get_aci().map(ServiceAddress::from_aci);
-        let pni = self.config.get_pni().map(ServiceAddress::from_pni);
+        let aci = self.config.get_aci().map(Aci::from);
+        let pni = self.config.get_pni().map(Pni::from);
         if e164.is_none() {
             tracing::warn!("No E.164 set, cannot fetch self.");
             return None;
@@ -865,8 +868,8 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn fetch_self_service_address_aci(&self) -> Option<ServiceAddress> {
-        self.config.get_aci().map(ServiceAddress::from_aci)
+    pub fn fetch_self_service_address_aci(&self) -> Option<ServiceId> {
+        self.config.get_aci().map(Aci::from).map(ServiceId::from)
     }
 
     #[tracing::instrument(skip(self))]
@@ -887,19 +890,16 @@ impl<O: Observable> Storage<O> {
             .ok()
     }
 
-    #[tracing::instrument(skip(self, addr), fields(addr = %addr))]
-    pub fn fetch_recipient(&self, addr: &ServiceAddress) -> Option<orm::Recipient> {
+    #[tracing::instrument(skip(self, addr), fields(addr = addr.service_id_string()))]
+    pub fn fetch_recipient(&self, addr: &ServiceId) -> Option<orm::Recipient> {
         use crate::schema::recipients::dsl::*;
 
         let mut query = recipients.into_boxed();
 
-        match addr.identity {
-            ServiceIdType::AccountIdentity => {
-                query = query.filter(uuid.eq(addr.uuid.to_string()));
-            }
-            ServiceIdType::PhoneNumberIdentity => {
-                query = query.filter(pni.eq(addr.uuid.to_string()));
-            }
+        let raw_uuid = addr.raw_uuid().to_string();
+        match addr.kind() {
+            ServiceIdKind::Aci => query = query.filter(uuid.eq(raw_uuid)),
+            ServiceIdKind::Pni => query = query.filter(pni.eq(raw_uuid)),
         }
 
         query.first(&mut *self.db()).optional().expect("db")
@@ -1007,7 +1007,7 @@ impl<O: Observable> Storage<O> {
             if recipient.uuid == self.config.get_aci() {
                 self.invalidate_self_recipient();
             }
-            let recipient = self.fetch_recipient(&ServiceAddress::from_aci(aci));
+            let recipient = self.fetch_recipient(&Aci::from(aci).into());
             if let Some(recipient) = &recipient {
                 self.observe_update(recipients, recipient.id);
             }
@@ -1038,7 +1038,7 @@ impl<O: Observable> Storage<O> {
         };
 
         let recipient = self
-            .fetch_recipient(&ServiceAddress::from_aci(*profile_uuid))
+            .fetch_recipient(&Aci::from(*profile_uuid).into())
             .unwrap();
         use crate::schema::recipients::dsl::*;
         let affected_rows = diesel::update(recipients)
@@ -1110,7 +1110,7 @@ impl<O: Observable> Storage<O> {
     pub fn update_profile_key(
         &self,
         rcpt_e164: Option<PhoneNumber>,
-        addr: Option<ServiceAddress>,
+        addr: Option<ServiceId>,
         new_profile_key: &[u8],
         trust_level: TrustLevel,
     ) -> (orm::Recipient, bool) {
@@ -1127,7 +1127,7 @@ impl<O: Observable> Storage<O> {
         }
 
         if let Some(addr) = addr {
-            if addr.identity != ServiceIdType::AccountIdentity {
+            if addr.kind() != ServiceIdKind::Aci {
                 tracing::warn!("Ignoring profile key update for non-ACI {:?}", addr);
                 return (recipient, false);
             }
@@ -1219,17 +1219,15 @@ impl<O: Observable> Storage<O> {
     pub fn merge_and_fetch_recipient_by_address(
         &self,
         e164: Option<PhoneNumber>,
-        addr: ServiceAddress,
+        addr: ServiceId,
         trust_level: TrustLevel,
     ) -> orm::Recipient {
-        match addr.identity {
-            ServiceIdType::AccountIdentity => {
-                self.merge_and_fetch_recipient(e164, Some(addr), None, trust_level)
-            }
-            ServiceIdType::PhoneNumberIdentity => {
-                self.merge_and_fetch_recipient(e164, None, Some(addr), trust_level)
-            }
-        }
+        self.merge_and_fetch_recipient(
+            e164,
+            Aci::try_from(addr).ok(),
+            Pni::try_from(addr).ok(),
+            trust_level,
+        )
     }
 
     /// Equivalent of Androids `RecipientDatabase::getAndPossiblyMerge` with `change_self` set to `true.
@@ -1237,8 +1235,8 @@ impl<O: Observable> Storage<O> {
     pub fn merge_and_fetch_self_recipient(
         &self,
         e164: Option<PhoneNumber>,
-        aci: Option<ServiceAddress>,
-        pni: Option<ServiceAddress>,
+        aci: Option<Aci>,
+        pni: Option<Pni>,
     ) -> orm::Recipient {
         let merged = self
             .db()
@@ -1246,8 +1244,8 @@ impl<O: Observable> Storage<O> {
                 merge_and_fetch_recipient_inner(
                     db,
                     e164,
-                    aci.map(|u| u.uuid),
-                    pni.map(|u| u.uuid),
+                    aci.map(Uuid::from),
+                    pni.map(Uuid::from),
                     TrustLevel::Certain,
                     true,
                 )
@@ -1257,11 +1255,13 @@ impl<O: Observable> Storage<O> {
             (Some(id), _, _, _) => self
                 .fetch_recipient_by_id(id)
                 .expect("existing updated recipient"),
+            // XXX: Should we not use the merged ACI/PNI for fetching the new recipient? Would
+            // avoid an unwrap too.
             (_, Some(_), _, _) => self
-                .fetch_recipient(&aci.unwrap())
+                .fetch_recipient(&aci.unwrap().into())
                 .expect("existing updated recipient by aci"),
             (_, _, Some(_), _) => self
-                .fetch_recipient(&pni.unwrap())
+                .fetch_recipient(&pni.unwrap().into())
                 .expect("existing updated recipient by pni"),
             (_, _, _, Some(e164)) => self
                 .fetch_recipient_by_e164(&e164)
@@ -1283,11 +1283,12 @@ impl<O: Observable> Storage<O> {
     /// Always sets `change_self` to `false`.
     ///
     /// XXX: This does *not* trigger observations for removed recipients.
+    /// XXX: Maybe worth allowing one ServiceId too, or to have an alternative method for ServiceId.
     pub fn merge_and_fetch_recipient(
         &self,
         e164: Option<PhoneNumber>,
-        aci: Option<ServiceAddress>,
-        pni: Option<ServiceAddress>,
+        aci: Option<Aci>,
+        pni: Option<Pni>,
         trust_level: TrustLevel,
     ) -> orm::Recipient {
         let merged = self
@@ -1296,8 +1297,8 @@ impl<O: Observable> Storage<O> {
                 merge_and_fetch_recipient_inner(
                     db,
                     e164,
-                    aci.map(|u| u.uuid),
-                    pni.map(|u| u.uuid),
+                    aci.map(Uuid::from),
+                    pni.map(Uuid::from),
                     trust_level,
                     false,
                 )
@@ -1308,10 +1309,10 @@ impl<O: Observable> Storage<O> {
                 .fetch_recipient_by_id(id)
                 .expect("existing updated recipient by id"),
             (_, Some(_), _, _) => self
-                .fetch_recipient(&aci.unwrap())
+                .fetch_recipient(&aci.unwrap().into())
                 .expect("existing updated recipient by aci"),
             (_, _, Some(_), _) => self
-                .fetch_recipient(&pni.unwrap())
+                .fetch_recipient(&pni.unwrap().into())
                 .expect("existing updated recipient by pni"),
             (_, _, _, Some(e164)) => self
                 .fetch_recipient_by_e164(&e164)
@@ -1329,32 +1330,34 @@ impl<O: Observable> Storage<O> {
         recipient
     }
 
-    #[tracing::instrument(skip(self, addr), fields(addr = %addr))]
-    pub fn fetch_or_insert_recipient_by_address(&self, addr: &ServiceAddress) -> orm::Recipient {
+    #[tracing::instrument(skip(self, addr), fields(addr = addr.service_id_string()))]
+    pub fn fetch_or_insert_recipient_by_address(&self, addr: &ServiceId) -> orm::Recipient {
         use crate::schema::recipients::dsl::*;
 
         let mut db = self.db();
         let db = &mut *db;
 
-        let recipient: orm::Recipient = match addr.identity {
-            ServiceIdType::AccountIdentity => {
-                if let Ok(existing) = recipients.filter(uuid.eq(&addr.uuid.to_string())).first(db) {
+        let raw_uuid = addr.raw_uuid().to_string();
+
+        let recipient: orm::Recipient = match addr.kind() {
+            ServiceIdKind::Aci => {
+                if let Ok(existing) = recipients.filter(uuid.eq(&raw_uuid)).first(db) {
                     existing
                 } else {
                     let new_rcpt: orm::Recipient = diesel::insert_into(recipients)
-                        .values(uuid.eq(&addr.uuid.to_string()))
+                        .values(uuid.eq(&raw_uuid))
                         .get_result(db)
                         .expect("insert new recipient");
                     self.observe_insert(recipients, new_rcpt.id);
                     new_rcpt
                 }
             }
-            ServiceIdType::PhoneNumberIdentity => {
-                if let Ok(existing) = recipients.filter(pni.eq(&addr.uuid.to_string())).first(db) {
+            ServiceIdKind::Pni => {
+                if let Ok(existing) = recipients.filter(pni.eq(&raw_uuid)).first(db) {
                     existing
                 } else {
                     let new_rcpt: orm::Recipient = diesel::insert_into(recipients)
-                        .values(pni.eq(&addr.uuid.to_string()))
+                        .values(pni.eq(&raw_uuid))
                         .get_result(db)
                         .expect("insert new recipient");
                     self.observe_insert(recipients, new_rcpt.id);
@@ -1451,10 +1454,10 @@ impl<O: Observable> Storage<O> {
     /// Marks the messages with the certain timestamps as read by a certain person.
     ///
     /// This is called when a recipient sends a ReceiptMessage with some number of timestamps.
-    #[tracing::instrument(skip(self, sender), fields(sender = %sender))]
+    #[tracing::instrument(skip(self, sender), fields(sender = sender.service_id_string()))]
     pub fn mark_messages_read(
         &self,
-        sender: ServiceAddress,
+        sender: ServiceId,
         timestamps: Vec<NaiveDateTime>,
         read_at: NaiveDateTime,
     ) -> Vec<MessagePointer> {
@@ -1587,10 +1590,10 @@ impl<O: Observable> Storage<O> {
     }
 
     /// Marks the messages with the certain timestamps as delivered to a certain person.
-    #[tracing::instrument(skip(self, receiver_addr), fields(receiver_addr = %receiver_addr))]
+    #[tracing::instrument(skip(self, receiver_addr), fields(receiver_addr = receiver_addr.service_id_string()))]
     pub fn mark_messages_delivered(
         &self,
-        receiver_addr: ServiceAddress,
+        receiver_addr: ServiceId,
         timestamps: Vec<NaiveDateTime>,
         delivered_at: NaiveDateTime,
     ) -> Vec<MessagePointer> {
@@ -1717,13 +1720,13 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self, addr))]
-    pub fn fetch_session_by_address(&self, addr: &ServiceAddress) -> Option<orm::Session> {
-        match addr.identity {
-            ServiceIdType::AccountIdentity => fetch_session!(self.db(), |query| {
-                query.filter(schema::recipients::uuid.eq(addr.uuid.to_string()))
+    pub fn fetch_session_by_address(&self, addr: &ServiceId) -> Option<orm::Session> {
+        match addr.kind() {
+            ServiceIdKind::Aci => fetch_session!(self.db(), |query| {
+                query.filter(schema::recipients::uuid.eq(addr.raw_uuid().to_string()))
             }),
-            ServiceIdType::PhoneNumberIdentity => fetch_session!(self.db(), |query| {
-                query.filter(schema::recipients::pni.eq(addr.uuid.to_string()))
+            ServiceIdKind::Pni => fetch_session!(self.db(), |query| {
+                query.filter(schema::recipients::pni.eq(addr.raw_uuid().to_string()))
             }),
         }
     }
@@ -1874,7 +1877,7 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self, addr))]
-    pub fn fetch_or_insert_session_by_address(&self, addr: &ServiceAddress) -> orm::Session {
+    pub fn fetch_or_insert_session_by_address(&self, addr: &ServiceId) -> orm::Session {
         if let Some(session) = self.fetch_session_by_address(addr) {
             return session;
         }
@@ -2336,25 +2339,21 @@ impl<O: Observable> Storage<O> {
         }
     }
 
-    #[tracing::instrument(skip(self, service_address), fields(service_address = %service_address))]
-    pub fn mark_recipient_registered(
-        &self,
-        service_address: ServiceAddress,
-        registered: bool,
-    ) -> bool {
+    #[tracing::instrument(skip(self, service_address), fields(service_address = service_address.service_id_string()))]
+    pub fn mark_recipient_registered(&self, service_address: ServiceId, registered: bool) -> bool {
         use schema::recipients::dsl::*;
 
-        let rid: Option<i32> = match service_address.identity {
-            ServiceIdType::AccountIdentity => {
-                diesel::update(recipients.filter(uuid.eq(service_address.uuid.to_string())))
+        let rid: Option<i32> = match service_address.kind() {
+            ServiceIdKind::Aci => {
+                diesel::update(recipients.filter(uuid.eq(service_address.raw_uuid().to_string())))
                     .set(is_registered.eq(registered))
                     .returning(id)
                     .get_result(&mut *self.db())
                     .optional()
                     .expect("mark recipient (un)registered")
             }
-            ServiceIdType::PhoneNumberIdentity => {
-                diesel::update(recipients.filter(pni.eq(service_address.uuid.to_string())))
+            ServiceIdKind::Pni => {
+                diesel::update(recipients.filter(pni.eq(service_address.raw_uuid().to_string())))
                     .set(is_registered.eq(registered))
                     .returning(id)
                     .get_result(&mut *self.db())
@@ -2377,7 +2376,7 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn mark_recipient_accepted(&self, service_address: &ServiceAddress) -> bool {
+    pub fn mark_recipient_accepted(&self, service_address: &ServiceId) -> bool {
         use schema::recipients::dsl::*;
 
         let rcpt = self.fetch_or_insert_recipient_by_address(service_address);
@@ -2393,7 +2392,7 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn mark_recipient_blocked(&self, service_address: &ServiceAddress) -> bool {
+    pub fn mark_recipient_blocked(&self, service_address: &ServiceId) -> bool {
         use schema::recipients::dsl::*;
 
         let rcpt = self.fetch_or_insert_recipient_by_address(service_address);
@@ -3036,7 +3035,7 @@ impl<O: Observable> Storage<O> {
                 },
                 _ => None,
             })
-            .filter_map(|uuid| self.fetch_recipient(&ServiceAddress::from_aci(uuid)))
+            .filter_map(|uuid| self.fetch_recipient(&Aci::from(uuid).into()))
             .map(|r| (r.uuid.expect("queried by uuid"), r))
             .collect()
     }

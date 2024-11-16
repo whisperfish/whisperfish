@@ -1,6 +1,6 @@
 use super::*;
 use actix::prelude::*;
-use libsignal_service::push_service::DEFAULT_DEVICE_ID;
+use libsignal_service::{protocol::Aci, push_service::DEFAULT_DEVICE_ID};
 
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -36,7 +36,7 @@ impl Handler<CheckMasterKey> for ClientActor {
                 connectable.await;
                 if is_primary {
                     tracing::debug!("Whisperfish is primary. Generating master key...");
-                    let master_key = MasterKey::generate();
+                    let master_key = MasterKey::generate(&mut rand::thread_rng());
                     let storage_key = StorageServiceKey::from_master_key(&master_key);
                     storage.store_master_key(Some(&master_key));
                     storage.store_storage_service_key(Some(&storage_key));
@@ -46,9 +46,12 @@ impl Handler<CheckMasterKey> for ClientActor {
 
                     match sender.await {
                         Ok(mut sender) => {
-                            let addr = ServiceAddress::from_aci(config.get_aci().unwrap());
+                            let addr = Aci::from(config.get_aci().unwrap());
                             let req = RequestType::Keys;
-                            sender.send_sync_message_request(&addr, req).await.unwrap();
+                            sender
+                                .send_sync_message_request(&addr.into(), req)
+                                .await
+                                .unwrap();
                             Ok(true)
                         }
                         Err(e) => {

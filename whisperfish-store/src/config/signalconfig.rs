@@ -1,5 +1,5 @@
 use anyhow::Context;
-use libsignal_service::{protocol::DeviceId, ServiceAddress};
+use libsignal_service::protocol::{Aci, DeviceId, Pni, ServiceId};
 use phonenumber::PhoneNumber;
 use uuid::Uuid;
 
@@ -233,11 +233,12 @@ impl SignalConfig {
         *self.pni.lock().unwrap()
     }
 
-    /// Create ServiceAddress from Whisperfish user. Prefers ACI over PNI.
-    pub fn get_addr(&self) -> Option<ServiceAddress> {
+    /// Create ServiceId from Whisperfish user. Prefers ACI over PNI.
+    pub fn get_addr(&self) -> Option<ServiceId> {
         self.get_aci()
-            .map(ServiceAddress::from_aci)
-            .or(self.get_pni().map(ServiceAddress::from_pni))
+            .map(Aci::from)
+            .map(ServiceId::Aci)
+            .or(self.get_pni().map(Pni::from).map(ServiceId::Pni))
     }
 
     pub fn get_device_id(&self) -> DeviceId {

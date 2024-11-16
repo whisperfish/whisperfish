@@ -3,6 +3,7 @@ use chrono::prelude::*;
 use diesel::sql_types::Integer;
 use libsignal_service::prelude::*;
 use libsignal_service::proto::GroupContextV2;
+use libsignal_service::protocol::{Aci, Pni, ServiceId, ServiceIdKind};
 use phonenumber::PhoneNumber;
 use qmetaobject::QMetaType;
 use qttypes::{QVariantList, QVariantMap};
@@ -528,9 +529,21 @@ impl Display for Identity {
 impl From<&str> for Identity {
     fn from(kind: &str) -> Self {
         match kind {
-            "aci" => Identity::Aci,
-            "pni" => Identity::Pni,
-            _ => panic!("Identity must be \"aci\" or \"pni\""),
+            // Historically, we used our own ServiceIdType type, which was serialized as
+            // lower case.  ServiceIdKind is serialized as upper case, so we better support both
+            // now.
+            "aci" | "ACI" => Identity::Aci,
+            "pni" | "PNI" => Identity::Pni,
+            _ => panic!("Invalid identity: {kind}"),
+        }
+    }
+}
+
+impl From<ServiceIdKind> for Identity {
+    fn from(kind: ServiceIdKind) -> Self {
+        match kind {
+            ServiceIdKind::Aci => Identity::Aci,
+            ServiceIdKind::Pni => Identity::Pni,
         }
     }
 }
@@ -635,20 +648,20 @@ impl Recipient {
         }
     }
 
-    /// Create a `ServiceAddress` from the `Recipient` if possible. Prefers ACI over PNI.
-    pub fn to_service_address(&self) -> Option<libsignal_service::ServiceAddress> {
+    /// Create a `ServiceId` from the `Recipient` if possible. Prefers ACI over PNI.
+    pub fn to_service_address(&self) -> Option<ServiceId> {
         self.to_aci_service_address()
             .or_else(|| self.to_pni_service_address())
     }
 
-    /// Create an ACI `ServiceAddress` of the `Recipient` if possible.
-    pub fn to_aci_service_address(&self) -> Option<ServiceAddress> {
-        self.uuid.map(ServiceAddress::from_aci)
+    /// Create an ACI `ServiceId` of the `Recipient` if possible.
+    pub fn to_aci_service_address(&self) -> Option<ServiceId> {
+        self.uuid.map(Aci::from).map(ServiceId::Aci)
     }
 
-    /// Create an PNI `ServiceAddress` of the `Recipient` if possible.
-    pub fn to_pni_service_address(&self) -> Option<ServiceAddress> {
-        self.pni.map(ServiceAddress::from_pni)
+    /// Create an PNI `ServiceId` of the `Recipient` if possible.
+    pub fn to_pni_service_address(&self) -> Option<ServiceId> {
+        self.pni.map(Pni::from).map(ServiceId::Pni)
     }
 
     pub fn aci(&self) -> String {
@@ -2031,10 +2044,9 @@ mod tests {
         assert_eq!(r.profile_key(), Some(key_ok));
         assert_eq!(
             r.to_service_address(),
-            Some(libsignal_service::ServiceAddress {
-                uuid: uuid::Uuid::parse_str("bff93979-a0fa-41f5-8ccf-e319135384d8").unwrap(),
-                identity: libsignal_service::push_service::ServiceIdType::AccountIdentity,
-            })
+            Some(ServiceId::from(Aci::from(
+                uuid::Uuid::parse_str("bff93979-a0fa-41f5-8ccf-e319135384d8").unwrap()
+            )))
         );
         assert_eq!(r.aci(), "bff93979-a0fa-41f5-8ccf-e319135384d8");
         assert_eq!(r.e164_or_address(), "+358401010101");

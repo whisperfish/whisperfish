@@ -28,6 +28,7 @@ struct MergeRecipients {
 #[derive(Default)]
 pub struct RecipientResults {
     pub id: Option<i32>,
+    // XXX Maybe make these Aci/Pni strong types
     pub aci: Option<Uuid>,
     pub pni: Option<Uuid>,
     pub e164: Option<PhoneNumber>,

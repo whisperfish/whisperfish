@@ -518,6 +518,8 @@ mod tests {
         let possibilities = [
             "<b>B<s>S<i>I</i></s>B</b>",
             "<b>B</b><b><s>S</s></b><b><i><s>I</s></i></b><b>B</b>",
+            // XXX: this is weird, but also valid. This probably means there's some empty segment in the middle, which we shouldn't generate, or at least prune.
+            "<b>B</b><b><s>S</s></b><b><i><s>I</s></i></b><b><s></s></b><b>B</b>",
         ];
 
         assert!(possibilities.contains(&(&styled as &str)), "{}", styled);

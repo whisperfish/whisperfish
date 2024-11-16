@@ -4,7 +4,7 @@ use self::common::*;
 use chrono::prelude::*;
 use libsignal_service::content::Reaction;
 use libsignal_service::proto::DataMessage;
-use libsignal_service::{ServiceAddress, ServiceIdType};
+use libsignal_service::protocol::{Aci, ServiceId};
 use phonenumber::PhoneNumber;
 use rstest::rstest;
 use std::future::Future;
@@ -112,7 +112,7 @@ async fn fetch_messages_without_session(storage: impl Future<Output = InMemoryDb
 async fn process_message_exists_session_source(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
-    let addr1 = ServiceAddress::from_aci(uuid::Uuid::new_v4());
+    let addr1 = ServiceId::from(Aci::from(uuid::Uuid::new_v4()));
     let sess1 = storage.fetch_or_insert_session_by_address(&addr1);
 
     for second in 1..11 {
@@ -156,7 +156,7 @@ async fn process_message_exists_session_source(storage: impl Future<Output = InM
 async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
-    let addr1 = ServiceAddress::from_aci(uuid::Uuid::new_v4());
+    let addr1 = ServiceId::from(Aci::from(uuid::Uuid::new_v4()));
     let sess1 = storage.fetch_or_insert_session_by_address(&addr1);
 
     let timestamp = Utc.timestamp_opt(1, 0).unwrap().naive_utc();
@@ -266,7 +266,7 @@ async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
 async fn dev_message_update(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 
-    let addr1 = ServiceAddress::from_aci(uuid::Uuid::new_v4());
+    let addr1 = ServiceId::from(Aci::from(uuid::Uuid::new_v4()));
     let session = storage.fetch_or_insert_session_by_address(&addr1);
 
     let timestamp = Utc::now().naive_utc();
@@ -446,7 +446,7 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
         let r1 = storage.fetch_or_insert_recipient_by_phonenumber(pn);
         let r2 = storage.merge_and_fetch_recipient(
             Some(pn.clone()),
-            Some(ServiceAddress::from_aci(uuid1)),
+            Some(Aci::from(uuid1)),
             None,
             whisperfish_store::TrustLevel::Certain,
         );
@@ -702,10 +702,7 @@ async fn test_recipient_actions() {
         .unwrap();
 
     let uuid1 = uuid::Uuid::new_v4();
-    let addr1 = ServiceAddress {
-        uuid: uuid1,
-        identity: ServiceIdType::AccountIdentity,
-    };
+    let addr1 = ServiceId::from(Aci::from(uuid1));
 
     let recip = storage.fetch_or_insert_recipient_by_address(&addr1);
 
@@ -777,7 +774,7 @@ async fn test_recipient_actions() {
     assert!(storage.fetch_message_receipts(msg.id).is_empty());
     let num_delivered = storage
         .mark_messages_delivered(
-            ServiceAddress::from_aci(uuid1),
+            ServiceId::from(Aci::from(uuid1)),
             vec![msg.server_timestamp],
             delivered_1,
         )
@@ -791,7 +788,7 @@ async fn test_recipient_actions() {
 
     let num_delivered = storage
         .mark_messages_delivered(
-            ServiceAddress::from_aci(uuid1),
+            ServiceId::from(Aci::from(uuid1)),
             vec![msg.server_timestamp],
             delivered_2,
         )
@@ -811,7 +808,7 @@ async fn test_recipient_actions() {
     assert!(receipts.is_empty());
     let num_read = storage
         .mark_messages_read(
-            ServiceAddress::from_aci(uuid1),
+            ServiceId::from(Aci::from(uuid1)),
             vec![msg.server_timestamp],
             read_1,
         )
@@ -829,7 +826,7 @@ async fn test_recipient_actions() {
 
     let num_read = storage
         .mark_messages_read(
-            ServiceAddress::from_aci(uuid1),
+            ServiceId::from(Aci::from(uuid1)),
             vec![msg.server_timestamp],
             read_2,
         )

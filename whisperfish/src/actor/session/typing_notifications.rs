@@ -4,7 +4,7 @@ use super::*;
 use chrono::prelude::*;
 use libsignal_service::{
     proto::{typing_message, TypingMessage},
-    ServiceAddress,
+    protocol::ServiceId,
 };
 use std::collections::HashMap;
 
@@ -15,7 +15,7 @@ const TYPING_EXIPIRY_DELAY: std::time::Duration = std::time::Duration::from_secs
 #[rtype(result = "()")]
 pub struct TypingNotification {
     pub typing: TypingMessage,
-    pub sender: ServiceAddress,
+    pub sender: ServiceId,
 }
 
 #[derive(actix::Message)]
@@ -25,7 +25,7 @@ pub struct UpdateTypingNotifications;
 #[derive(Clone)]
 pub(super) struct TypingQueueItem {
     inner: TypingMessage,
-    sender: ServiceAddress,
+    sender: ServiceId,
     expire: DateTime<Utc>,
 }
 
