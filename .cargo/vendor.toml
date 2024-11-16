@@ -1,0 +1,47 @@
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/signalapp//libsignal?tag=v0.56.1"]
+git = "https://github.com/signalapp//libsignal"
+tag = "v0.56.1"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/signalapp/curve25519-dalek?tag=signal-curve25519-4.1.3"]
+git = "https://github.com/signalapp/curve25519-dalek"
+tag = "signal-curve25519-4.1.3"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/signalapp/libsignal?tag=v0.56.1"]
+git = "https://github.com/signalapp/libsignal"
+tag = "v0.56.1"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/whisperfish/libsignal-service-rs?branch=main"]
+git = "https://github.com/whisperfish/libsignal-service-rs"
+branch = "main"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/whisperfish/ringrtc?branch=whisperfork"]
+git = "https://github.com/whisperfish/ringrtc"
+branch = "whisperfork"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/woboq/qmetaobject-rs"]
+git = "https://github.com/woboq/qmetaobject-rs"
+replace-with = "vendored-sources"
+
+[source."git+https://gitlab.com/rubdos/qmeta-async.git"]
+git = "https://gitlab.com/rubdos/qmeta-async.git"
+replace-with = "vendored-sources"
+
+[source."git+https://gitlab.com/whisperfish/rustlegraph?branch=main"]
+git = "https://gitlab.com/whisperfish/rustlegraph"
+branch = "main"
+replace-with = "vendored-sources"
+
+[source."git+https://gitlab.com/whisperfish/sailo-rs.git"]
+git = "https://gitlab.com/whisperfish/sailo-rs.git"
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "vendor"

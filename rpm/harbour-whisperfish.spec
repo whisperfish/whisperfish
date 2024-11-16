@@ -107,6 +107,21 @@ BuildRequires:  automake
 rustc --version
 cargo --version
 
+# If there is one, unpack the vendor tarball and add cargo.conf.
+# We don't use the tarball as a .spec Source because we may want to do a
+# non-vendored build when running locally:
+
+if [ -e %{_sourcedir}/vendor.tar.gz ]; then
+printf "Setting up an OFFLINE vendored build."
+export CARGO_NET_OFFLINE=true
+
+gunzip -c %{_sourcedir}/vendor.tar.gz | tar -xof -
+
+mkdir -p .cargo/
+
+cat .cargo/vendor.toml >> .cargo/config.toml
+fi
+
 export PROTOC=/usr/bin/protoc
 protoc --version
 
