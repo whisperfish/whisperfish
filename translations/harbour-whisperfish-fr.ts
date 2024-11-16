@@ -111,13 +111,13 @@
         <location filename="../qml/harbour-whisperfish-main.qml" line="235"/>
         <source>Missed voice call</source>
         <extracomment>Notification text for missed call notification</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Appel vocal manqué</translation>
     </message>
     <message id="whisperfish-notification-missed-video-call">
         <location filename="../qml/harbour-whisperfish-main.qml" line="239"/>
         <source>Missed video call</source>
         <extracomment>Notification text for missed call notification</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Appel vidéo manqué</translation>
     </message>
     <message id="whisperfish-notification-default-message">
         <location filename="../qml/harbour-whisperfish-main.qml" line="306"/>
@@ -196,7 +196,7 @@
         <location filename="../qml/pages/MainPage.qml" line="318"/>
         <source>No messages</source>
         <extracomment>Session section label for never (i.e. no messages, no timestamp)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Aucun message</translation>
     </message>
     <message id="whisperfish-session-section-today">
         <location filename="../qml/pages/LinkedDevices.qml" line="117"/>
@@ -839,7 +839,7 @@
         <location filename="../qml/components/MessagesView.qml" line="480"/>
         <source>Transcribe</source>
         <extracomment>Transcribe message menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transcrire</translation>
     </message>
     <message id="whisperfish-select-or-options-message-menu">
         <location filename="../qml/components/MessagesView.qml" line="487"/>
@@ -1286,7 +1286,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="150"/>
         <source>Link previews</source>
         <extracomment>Settings page enable link previews</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Aperçus des liens</translation>
     </message>
     <message id="whisperfish-settings-enable-link-previews-description">
         <location filename="../qml/pages/Settings.qml" line="153"/>
@@ -1342,7 +1342,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="292"/>
         <source>Transcribe voice notes</source>
         <extracomment>Settings page auto transcribe voice notes</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transcrire notes vocales</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-available">
         <location filename="../qml/pages/Settings.qml" line="296"/>
@@ -1374,7 +1374,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="325"/>
         <source>Share phone number</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Partager le numéro de téléphone</translation>
     </message>
     <message id="whisperfish-settings-share-phone-number-description">
         <location filename="../qml/pages/Settings.qml" line="328"/>
@@ -1430,7 +1430,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="667"/>
         <source>GStreamer version</source>
         <extracomment>GStreamer version indication in settings</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Version GStreamer</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
         <location filename="../qml/pages/Settings.qml" line="499"/>
