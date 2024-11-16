@@ -1,0 +1,7 @@
+<services>
+    <service name="tar_git">
+        <param name="url">https://gitlab.com/whisperfish/whisperfish/</param>
+        <param name="branch">main</param>
+        <param name="revision"></param>
+    </service>
+</services>
