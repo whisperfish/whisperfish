@@ -21,7 +21,7 @@
 %endif
 
 Name: harbour-whisperfish
-Summary: Private messaging using Signal for SailfishOS.
+Summary: Private messaging using Signal for SailfishOS
 
 Version: 0.6.0
 Release: 0
@@ -42,7 +42,6 @@ Requires:   gstreamer1.0
 # For avmux_mp4 and avmux_aac
 Requires:   gstreamer1.0-libav
 Requires:   opus
-Requires:   libvorbis
 BuildRequires:   gstreamer1.0-devel
 
 # For the captcha QML application
@@ -224,7 +223,7 @@ FEATURES="$FEATURES,diesel-instrumentation"
 FEATURES="$FEATURES,calling"
 %endif
 
-# We could use the %(version) and %(release), but SFDK will include a datetime stamp,
+# We could use the %%(version) and %%(release), but SFDK will include a datetime stamp,
 # ordering Cargo to recompile literally every second when the workspace is dirty.
 # git describe is a lot stabler, because it only uses the commit number and potentially a -dirty flag
 export GIT_VERSION=$(git describe  --exclude release,tag --dirty=-dirty)
@@ -331,9 +330,6 @@ install -Dm 644 harbour-whisperfish.service \
     %{buildroot}%{_userunitdir}/harbour-whisperfish.service
 %endif
 
-%clean
-rm -rf %{buildroot}
-
 %if %{without harbour}
 %post
 systemctl-user daemon-reload
@@ -357,7 +353,7 @@ systemctl-user disable harbour-whisperfish.service || true
 %{_datadir}/icons/hicolor/*/apps/%{name}.png
 %{_datadir}/lipstick/notificationcategories/%{name}*.conf
 
-%{_sysconfdir}/sailjail/permissions/harbour-whisperfish.profile
+%config %{_sysconfdir}/sailjail/permissions/harbour-whisperfish.profile
 
 %if %{without harbour}
 %{_userunitdir}/harbour-whisperfish.service
