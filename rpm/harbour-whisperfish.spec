@@ -67,6 +67,7 @@ BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(Qt5Qml)
 BuildRequires:  pkgconfig(Qt5Quick)
 BuildRequires:  pkgconfig(Qt5Widgets)
+BuildRequires:  libatomic-static
 
 BuildRequires:  rust >= 1.75
 BuildRequires:  rust-std-static >= 1.75
