@@ -2396,6 +2396,12 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             Ok(Incoming::QueueEmpty) => {
                 tracing::info!("Message queue is empty!");
                 self.initial_queue_process_state.observe_signal();
+                if self.initial_queue_process_state.is_done()
+                    && !self.inner.pinned().borrow().queueEmpty
+                {
+                    self.inner.pinned().borrow_mut().queueEmpty = true;
+                    self.inner.pinned().borrow_mut().queueEmptyChanged();
+                }
                 return;
             }
             Err(e) => {
