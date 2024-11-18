@@ -13,6 +13,20 @@ Page {
     readonly property string buildDate: "2022-06-13" // This is a placeholder date, which is updated during build
     property bool updateBannerDisplayed: false
 
+    Notification {
+        function show(message, icn) {
+            replacesId = 0
+            previewSummary = ""
+            previewBody = message
+            icon = icn || ""
+            publish()
+        }
+
+        id: notification
+        appName: "Whisperfish"
+        expireTimeout: 3000
+    }
+
     Sessions {
         id: sessions
         app: AppState
@@ -57,6 +71,15 @@ Page {
             // can be merged; 'About' and 'Settings' maybe too.
             // This makes room for 'Search' and 'Bookmarks'.
 
+            MenuItem {
+                //: Whisperfish main menu item: restart websocket/reconnect
+                //% "Reconnect"
+                text: qsTrId("whisperfish-reconnect")
+                onClicked: {
+                    ClientWorker.reconnect();
+                    notification.show(qsTrId("whisperfish-reconnecting"), "image://theme/icon-m-reload");
+                }
+            }
             MenuItem {
                 text: "Call test"
                 visible: SetupWorker.callingSupported && SettingsBridge.debug_mode
