@@ -2396,11 +2396,11 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             Ok(Incoming::QueueEmpty) => {
                 tracing::info!("Message queue is empty!");
                 self.initial_queue_process_state.observe_signal();
-                if self.initial_queue_process_state.is_done()
-                    && !self.inner.pinned().borrow().queueEmpty
-                {
-                    self.inner.pinned().borrow_mut().queueEmpty = true;
-                    self.inner.pinned().borrow_mut().queueEmptyChanged();
+                let inner = self.inner.pinned();
+                let mut inner = inner.borrow_mut();
+                if self.initial_queue_process_state.is_done() && !inner.queueEmpty {
+                    inner.queueEmpty = true;
+                    inner.queueEmptyChanged();
                 }
                 return;
             }
@@ -2497,9 +2497,11 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                 act.initial_queue_process_state
                     .processed_guid(&guid);
 
-                if act.initial_queue_process_state.is_done() && !act.inner.pinned().borrow_mut().queueEmpty {
-                    act.inner.pinned().borrow_mut().queueEmpty = true;
-                    act.inner.pinned().borrow_mut().queueEmptyChanged();
+                let inner = act.inner.pinned();
+                let mut inner = inner.borrow_mut();
+                if act.initial_queue_process_state.is_done() && !inner.queueEmpty {
+                    inner.queueEmpty = true;
+                    inner.queueEmptyChanged();
                 }
             }),
         );
