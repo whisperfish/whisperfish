@@ -554,7 +554,7 @@
         <location filename="../qml/pages/MainPage.qml" line="78"/>
         <source>Reconnect</source>
         <extracomment>Whisperfish main menu item: restart websocket/reconnect</extracomment>
-        <translation type="unfinished">Opnieuw verbinden</translation>
+        <translation>Opnieuw verbinden</translation>
     </message>
     <message id="whisperfish-reconnecting">
         <location filename="../qml/pages/MainPage.qml" line="81"/>
