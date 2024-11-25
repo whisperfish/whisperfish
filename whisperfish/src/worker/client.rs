@@ -265,6 +265,8 @@ pub struct ClientWorker {
     delete_file: qt_method!(fn(&self, file_name: String)),
     startMessageExpiry: qt_method!(fn(&self, message_id: i32)),
 
+    reconnect: qt_method!(fn(&self)),
+
     refresh_profile: qt_method!(fn(&self, recipient_id: i32)),
     upload_profile: qt_method!(
         fn(&self, given_name: String, family_name: String, about: String, emoji: String)
@@ -376,6 +378,8 @@ pub struct ClientActor {
     ws: Option<SignalWebSocket>,
     config: std::sync::Arc<crate::config::SignalConfig>,
 
+    message_stream_handle: Option<SpawnHandle>,
+
     transient_timestamps: HashSet<u64>,
     initial_queue_process_state: QueueProcessState,
 
@@ -442,6 +446,8 @@ impl ClientActor {
             storage: None,
             ws: None,
             config,
+
+            message_stream_handle: None,
 
             transient_timestamps,
             initial_queue_process_state: QueueProcessState::Starting,
@@ -2276,6 +2282,10 @@ impl Handler<Restart> for ClientActor {
             self.message_expiry_notification_handle = Some(message_expiry_notification_handle);
         }
 
+        if let Some(handle) = self.message_stream_handle.take() {
+            ctx.cancel_future(handle);
+        }
+
         self.inner.pinned().borrow_mut().connected = false;
         self.inner.pinned().borrow().connectedChanged();
         Box::pin(
@@ -2292,9 +2302,11 @@ impl Handler<Restart> for ClientActor {
             .map(move |pipe, act, ctx| match pipe {
                 Ok((pipe, ws)) => {
                     ctx.notify(unidentified::RotateUnidentifiedCertificates);
-                    ctx.add_stream(
-                        pipe.stream()
-                            .instrument(tracing::info_span!("message receiver")),
+                    act.message_stream_handle = Some(
+                        ctx.add_stream(
+                            pipe.stream()
+                                .instrument(tracing::info_span!("message receiver")),
+                        ),
                     );
 
                     act.inner.pinned().borrow_mut().queueEmpty = false;
@@ -2384,6 +2396,12 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             Ok(Incoming::QueueEmpty) => {
                 tracing::info!("Message queue is empty!");
                 self.initial_queue_process_state.observe_signal();
+                let inner = self.inner.pinned();
+                let mut inner = inner.borrow_mut();
+                if self.initial_queue_process_state.is_done() && !inner.queueEmpty {
+                    inner.queueEmpty = true;
+                    inner.queueEmptyChanged();
+                }
                 return;
             }
             Err(e) => {
@@ -2479,9 +2497,11 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                 act.initial_queue_process_state
                     .processed_guid(&guid);
 
-                if act.initial_queue_process_state.is_done() && !act.inner.pinned().borrow_mut().queueEmpty {
-                    act.inner.pinned().borrow_mut().queueEmpty = true;
-                    act.inner.pinned().borrow_mut().queueEmptyChanged();
+                let inner = act.inner.pinned();
+                let mut inner = inner.borrow_mut();
+                if act.initial_queue_process_state.is_done() && !inner.queueEmpty {
+                    inner.queueEmpty = true;
+                    inner.queueEmptyChanged();
                 }
             }),
         );
@@ -2935,6 +2955,17 @@ impl ClientWorker {
             .unwrap()
             .try_send(FetchAttachment { attachment_id })
             .unwrap();
+    }
+
+    #[with_executor]
+    #[tracing::instrument(skip(self))]
+    pub fn reconnect(&self) {
+        let actor = self.actor.clone().unwrap();
+        actix::spawn(async move {
+            if let Err(e) = actor.send(Restart).await {
+                tracing::error!("{:?}", e);
+            }
+        });
     }
 
     #[with_executor]
