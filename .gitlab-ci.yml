@@ -650,8 +650,8 @@ deploy:gitlab:tarball:
 deploy:chum:
   stage: deploy
   image: opensuse/leap
-  # only:
-  #   - tags
+  only:
+    - tags
   environment:
       name: "OBS Chum"
       url: "https://build.sailfishos.org/package/show/home:rubdos:whisperfish/Whisperfish"
@@ -663,13 +663,13 @@ deploy:chum:
     - echo $OSCRC | base64 -d > ~/.oscrc
     - zypper install -y osc
     - sed -i.bak "s/main//" _service
-    - sed -i.bak "s/revision\">/revision\">$CI_COMMIT_SHA/" _service
+    - sed -i.bak "s/revision\">/revision\">$CI_COMMIT_TAG/" _service
     - cat _service
     - osc ls home:rubdos:whisperfish Whisperfish
     - osc co home:rubdos:whisperfish Whisperfish
     - cp vendor.tar.gz _service vendor.toml home:rubdos:whisperfish/Whisperfish/
     - cd home:rubdos:whisperfish/Whisperfish
-    - osc ci -m "Resources for Whisperfish $CI_COMMIT_SHA"
+    - osc ci -m "Resources for Whisperfish $CI_COMMIT_TAG"
 
 
 dry-run:triage:
