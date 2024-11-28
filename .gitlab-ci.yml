@@ -670,6 +670,7 @@ deploy:chum:
     - cp vendor.tar.gz _service vendor.toml home:rubdos:whisperfish/Whisperfish/
     - cd home:rubdos:whisperfish/Whisperfish
     - osc ci -m "Resources for Whisperfish $CI_COMMIT_TAG"
+    - # osc submitrequest sailfishos:chum:testing
 
 
 dry-run:triage:
