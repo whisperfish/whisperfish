@@ -663,7 +663,7 @@ deploy:chum:
     - echo $OSCRC | base64 -d > ~/.oscrc
     - zypper install -y osc
     - sed -i.bak "s/main//" _service
-    - sed -i.bak "s/revision\">/revision\">$CI_COMMIT_TAG/" _service
+    - sed -i.bak "s/revision\">/revision\">$CI_COMMIT_SHA/" _service
     - cat _service
     - osc ls home:rubdos:whisperfish Whisperfish
 
