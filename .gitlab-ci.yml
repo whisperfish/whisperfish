@@ -227,12 +227,12 @@ build:host:vendor-tar-gz:stable:
   <<: *rust-stable
   stage: build
   script:
-    - cargo vendor > .cargo/vendor.toml
-    - git diff --exit-code
+    - cargo vendor > vendor.toml
     - tar -czf vendor.tar.gz vendor
   artifacts:
     paths:
       - vendor.tar.gz
+      - vendor.toml
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
@@ -667,8 +667,7 @@ deploy:chum:
     - cat _service
     - osc ls home:rubdos:whisperfish Whisperfish
     - osc co home:rubdos:whisperfish Whisperfish
-    - cp vendor.tar.gz home:rubdos:whisperfish/Whisperfish/
-    - cp _service home:rubdos:whisperfish/Whisperfish/
+    - cp vendor.tar.gz _service vendor.toml home:rubdos:whisperfish/Whisperfish/
     - cd home:rubdos:whisperfish/Whisperfish
     - osc ci -m "Resources for Whisperfish $CI_COMMIT_SHA"
 
