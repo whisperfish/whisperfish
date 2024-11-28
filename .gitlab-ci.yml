@@ -647,6 +647,27 @@ deploy:gitlab:tarball:
   only:
     - tags
 
+deploy:chum:
+  stage: deploy
+  image: opensuse/leap
+  # only:
+  #   - tags
+  environment:
+      name: "OBS Chum"
+      url: "https://build.sailfishos.org/package/show/home:rubdos:whisperfish/Whisperfish"
+  needs:
+    - build:host:vendor-tar-gz:stable
+  dependencies:
+    - build:host:vendor-tar-gz:stable
+  script:
+    - echo $OSCRC | base64 -d > ~/.oscrc
+    - zypper install -y osc
+    - sed -i.bak "s/main//" _service
+    - sed -i.bak "s/revision\">/revision\">$CI_COMMIT_TAG/" _service
+    - cat _service
+    - osc ls home:rubdos:whisperfish Whisperfish
+
+
 dry-run:triage:
   stage: test
   image: ruby:2.4
