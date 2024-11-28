@@ -666,6 +666,11 @@ deploy:chum:
     - sed -i.bak "s/revision\">/revision\">$CI_COMMIT_SHA/" _service
     - cat _service
     - osc ls home:rubdos:whisperfish Whisperfish
+    - osc co home:rubdos:whisperfish Whisperfish
+    - cp vendor.tar.gz home:rubdos:whisperfish/Whisperfish/
+    - cp _service home:rubdos:whisperfish/Whisperfish/
+    - cd home:rubdos:whisperfish/Whisperfish
+    - osc ci -m "Resources for Whisperfish $CI_COMMIT_SHA"
 
 
 dry-run:triage:
