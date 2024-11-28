@@ -639,7 +639,7 @@
         <location filename="../qml/pages/MainPage.qml" line="78"/>
         <source>Reconnect</source>
         <extracomment>Whisperfish main menu item: restart websocket/reconnect</extracomment>
-        <translation type="unfinished">Yhdistä uudelleen</translation>
+        <translation>Yhdistä uudelleen</translation>
     </message>
     <message id="whisperfish-reconnecting">
         <location filename="../qml/pages/MainPage.qml" line="81"/>
@@ -1493,14 +1493,14 @@ Settings page share contacts</extracomment>
         <source>Automatically transcribe voice notes to text upon reception. Configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note installed but not configured.</extracomment>
-        <translation type="unfinished">Litteroi saapuvat ääniviestit automaattisesti. Asenna englannin kielimalli Speech Note -sovelluksessa käyttääksesi tätä ominaisuutta.</translation>
+        <translation>Literoi äänimuistiinpanot automaattisesti tekstiksi vastaanotettaessa. Tämän ominaisuuden käyttämiseksi, määritä &quot;Automaattisesti tunnistettu&quot; -malli Puhemuistiinpanossa.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-uninstalled">
         <location filename="../qml/pages/Settings.qml" line="302"/>
         <source>Automatically transcribe voice notes to text upon reception. Install and configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note not installed</extracomment>
-        <translation type="unfinished">Litteroi saapuvat ääniviestit tekstiksi automaattisesti niiden saapuessa. Asenna Speech Note sekä englannin kielimalli käyttääksesi tätä ominaisuutta.</translation>
+        <translation>Literoi äänimuistiinpanot automaattisesti tekstiksi vastaanotettaessa. Tämän ominaisuuden käyttämiseksi, asenna ja määritä &quot;Automaattisesti tunnistettu&quot; -malli Puhemuistiinpanossa.</translation>
     </message>
     <message id="whisperfish-settings-privacy-section">
         <location filename="../qml/pages/Settings.qml" line="319"/>
