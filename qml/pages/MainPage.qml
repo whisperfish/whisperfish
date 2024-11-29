@@ -66,7 +66,7 @@ Page {
         VerticalScrollDecorator {}
 
         PullDownMenu {
-            busy: !ClientWorker.queueEmpty
+            busy: !ClientWorker.queueEmpty || !ClientWorker.connected
             // NOTE Make sure the pulley menu doesn't have more
             // than four entries. 'New group' and 'New message'
             // can be merged; 'About' and 'Settings' maybe too.
