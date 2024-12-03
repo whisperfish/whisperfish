@@ -270,6 +270,24 @@ Page {
                                //% "Archived conversations"
                              : qsTrId("whisperfish-subtitle-archived-conversations")
                 visible: sessionView.count > 0
+
+                IconButton {
+                    anchors {
+                        left: parent.extraContent.left
+                        top: parent.extraContent.top
+                        margins: Theme.paddingLarge
+                    }
+                    visible: !ClientWorker.queueEmpty || !ClientWorker.connected
+                    height: parent.height - 2 * Theme.paddingLarge
+                    width: height
+
+                    icon {
+                        source: !ClientWorker.connected ? "image://theme/icon-s-blocked" : "image://theme/icon-m-sync"
+                        color: Theme.highlightColor
+                    }
+
+                    onClicked: {}
+                }
             }
 
             ViewPlaceholder {
