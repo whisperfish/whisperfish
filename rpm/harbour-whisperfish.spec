@@ -106,6 +106,31 @@ be in a usable state for many users, but is still considered beta quality
 software. Make sure to always have the latest version! Also, check our
 wiki and feel free to contribute to the project!
 
+
+# This description section includes metadata for SailfishOS:Chum, see
+# https://github.com/sailfishos-chum/main/blob/main/Metadata.md
+%if 0%{?_chum}
+Title: Whisperfish
+Type: desktop-application
+DeveloperName: Ruben De Smet
+Categories:
+ - Network
+ - InstantMessaging
+Custom:
+  Repo: https://gitlab.com/whisperfish/whisperfish
+PackageIcon: https://gitlab.com/whisperfish/whisperfish/-/raw/main/icons/172x172/harbour-whisperfish.png
+Screenshots:
+ - https://gitlab.com/whisperfish/whisperfish/-/raw/main/screenshots/01-conversations.jpg
+ - https://gitlab.com/whisperfish/whisperfish/-/raw/main/screenshots/02-attachments.jpg
+ - https://gitlab.com/whisperfish/whisperfish/-/raw/main/screenshots/03-group-members.jpg
+ - https://gitlab.com/whisperfish/whisperfish/-/raw/main/screenshots/04-cover.jpg
+Links:
+  Homepage: https://gitlab.com/whisperfish/whisperfish
+  Help: https://gitlab.com/whisperfish/whisperfish-wiki
+  Bugtracker: https://gitlab.com/whisperfish/whisperfish/-/issues
+  Donation: https://liberapay.com/Whisperfish/
+%endif
+
 %prep
 %setup -q -n %{name}-%{version}
 
