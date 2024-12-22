@@ -24,7 +24,7 @@ Name: harbour-whisperfish
 Summary: Private messaging using Signal for SailfishOS
 
 Version: 0.6.0
-Release: 0
+Release: 1
 License: GPLv3+
 Group: Qt/Qt
 URL: https://gitlab.com/whisperfish/whisperfish/
