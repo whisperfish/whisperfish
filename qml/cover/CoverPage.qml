@@ -202,16 +202,10 @@ CoverBackground {
     CoverActionList {
         id: coverAction
         enabled: !placeholderLabel.visible
+        property string _connected: "../../icons/connected.png"
+        property string _disconnected: "../../icons/disconnected.png"
         CoverAction {
-            iconSource: {
-                if (ClientWorker.connected) {
-                    return "/usr/share/harbour-whisperfish/icons/connected.png"
-                } else if (!ClientWorker.connected) {
-                    return "/usr/share/harbour-whisperfish/icons/disconnected.png"
-                } else {
-                    return "/usr/share/icons/hicolor/172x172/apps/harbour-whisperfish.png"
-                }
-            }
+            iconSource: ClientWorker.connected ? _connected : _disconnected
             onTriggered: {
                 if(!SetupWorker.locked) {
                     mainWindow.activate()
