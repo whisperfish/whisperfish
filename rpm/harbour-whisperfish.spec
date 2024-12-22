@@ -10,6 +10,16 @@
 %bcond_with diesel_instrumentation
 %bcond_with vendor
 
+# Chum: _chum is set globally
+# OBS: _obs has to be set manually in the project config.
+# Elsewhere: sfdk build --define="_obs 1"
+%if 0%{?_chum} || 0%{?_obs}
+# "Enforce" a few --with build conditions.
+%define with_lto 1
+%define with_tools 1
+%define with_vendor 1
+%endif
+
 # Targets 4.5 and newer default to Zstd RPM compression,
 # which is not supported on 4.4 and older
 %define _source_payload w6.xzdio
