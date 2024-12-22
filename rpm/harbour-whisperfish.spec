@@ -101,7 +101,10 @@ BuildRequires:  automake
 %endif
 
 %description
-%{summary}
+Whisperfish is an advanced but unofficial Signal client. Whisperfish should
+be in a usable state for many users, but is still considered beta quality
+software. Make sure to always have the latest version! Also, check our
+wiki and feel free to contribute to the project!
 
 %prep
 %setup -q -n %{name}-%{version}
