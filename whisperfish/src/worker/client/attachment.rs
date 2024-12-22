@@ -111,7 +111,7 @@ impl Handler<FetchAttachment> for ClientActor {
 
                 // We need the whole file for the crypto to check out 😢
                 let actual_len = ptr.size.unwrap() as usize;
-                let mut ciphertext = Vec::with_capacity(actual_len as usize);
+                let mut ciphertext = Vec::with_capacity(actual_len);
 
                 let mut stream_len = 0;
                 let mut buf = vec![0u8; 128 * 1024];
@@ -157,7 +157,7 @@ impl Handler<FetchAttachment> for ClientActor {
                         (stream_len - actual_len)
                     );
                     tracing::info!("Truncating from {} to {} bytes", stream_len, actual_len);
-                    ciphertext.truncate(actual_len as usize);
+                    ciphertext.truncate(actual_len);
                 }
 
                 // Signal Desktop sometimes sends a JPEG image with .png extension,
