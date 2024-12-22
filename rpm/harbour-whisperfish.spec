@@ -283,11 +283,6 @@ BINS="--bins"
 BINS="--bin harbour-whisperfish"
 %endif
 
-if [ -z "$TARGET_VERSION" ]
-then
-TARGET_VERSION=$(grep VERSION_ID /etc/sailfish-release | cut -d "=" -f2)
-fi
-
 # Workaround a Scratchbox bug - /tmp/[...]/symbols.o not found
 export TMPDIR=${TMPDIR:-$(realpath ".tmp")}
 mkdir -p $TMPDIR

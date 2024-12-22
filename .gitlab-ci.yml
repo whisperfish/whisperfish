@@ -184,7 +184,6 @@ build:sf:latest:armv7hl:
   variables:
     <<: *variables
     MER_ARCH: armv7hl
-    TARGET_VERSION: $SFOS_VERSION
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
@@ -195,7 +194,6 @@ build:sf:latest:i486:
   variables:
     <<: *variables
     MER_ARCH: i486
-    TARGET_VERSION: $SFOS_VERSION
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
@@ -206,7 +204,6 @@ build:sf:latest:aarch64:
   variables:
     <<: *variables
     MER_ARCH: aarch64
-    TARGET_VERSION: $SFOS_VERSION
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
