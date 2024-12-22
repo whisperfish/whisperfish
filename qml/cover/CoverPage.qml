@@ -191,7 +191,7 @@ CoverBackground {
     }
 
     Image {
-        source: "/usr/share/harbour-whisperfish/icons/172x172/cover-background.png"
+        source: "../../icons/cover-background.png"
         anchors.centerIn: parent
         width: Math.max(parent.width, parent.height)
         height: width
@@ -205,9 +205,9 @@ CoverBackground {
         CoverAction {
             iconSource: {
                 if (ClientWorker.connected) {
-                    return "/usr/share/harbour-whisperfish/icons/172x172/connected.png"
+                    return "/usr/share/harbour-whisperfish/icons/connected.png"
                 } else if (!ClientWorker.connected) {
-                    return "/usr/share/harbour-whisperfish/icons/172x172/disconnected.png"
+                    return "/usr/share/harbour-whisperfish/icons/disconnected.png"
                 } else {
                     return "/usr/share/icons/hicolor/172x172/apps/harbour-whisperfish.png"
                 }

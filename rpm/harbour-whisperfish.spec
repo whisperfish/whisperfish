@@ -331,20 +331,19 @@ install -Dm 644 harbour-whisperfish-call.conf \
     %{buildroot}%{_datadir}/lipstick/notificationcategories/harbour-whisperfish-call.conf
 
 # Application icons
-install -Dm 644 icons/86x86/harbour-whisperfish.png \
-    %{buildroot}%{_datadir}/icons/hicolor/86x86/apps/harbour-whisperfish.png
-install -Dm 644 icons/108x108/harbour-whisperfish.png \
-    %{buildroot}%{_datadir}/icons/hicolor/108x108/apps/harbour-whisperfish.png
-install -Dm 644 icons/128x128/harbour-whisperfish.png \
-    %{buildroot}%{_datadir}/icons/hicolor/128x128/apps/harbour-whisperfish.png
-install -Dm 644 icons/172x172/harbour-whisperfish.png \
-    %{buildroot}%{_datadir}/icons/hicolor/172x172/apps/harbour-whisperfish.png
+for RES in 86x86 108x108 128x128 172x172; do
+    install -Dm 644 \
+        icons/${RES}/harbour-whisperfish.png \
+        %{buildroot}%{_datadir}/icons/hicolor/${RES}/apps/harbour-whisperfish.png
+done
 
-# QML & icons
-(find ./qml ./icons \
-    -type f \
-    -exec \
-        install -Dm 644 "{}" "%{buildroot}%{_datadir}/harbour-whisperfish/{}" \; )
+# In-application icons
+find ./icons -maxdepth 1 -type f -exec \
+    install -Dm 644 "{}" "%{buildroot}%{_datadir}/harbour-whisperfish/{}" \;
+
+# QML files
+find ./qml -type f -exec \
+    install -Dm 644 "{}" "%{buildroot}%{_datadir}/harbour-whisperfish/{}" \;
 
 # Set the build date to the update notification
 CURR_DATE=$(date "+%Y-%m-%d")
