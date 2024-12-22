@@ -254,6 +254,8 @@ FEATURES="$FEATURES,diesel-instrumentation"
 
 %if %{with calling}
 FEATURES="$FEATURES,calling"
+# ringrtc requires an output directory for the WebRTC artifacts
+export OUTPUT_DIR=`realpath .`/ringrtc/111/${SB2_RUST_TARGET_TRIPLE}
 %endif
 
 # We could use the %%(version) and %%(release), but SFDK will include a datetime stamp,
@@ -289,9 +291,6 @@ fi
 # Workaround a Scratchbox bug - /tmp/[...]/symbols.o not found
 export TMPDIR=${TMPDIR:-$(realpath ".tmp")}
 mkdir -p $TMPDIR
-
-# ringrtc requires an output directory for the WebRTC artifacts
-export OUTPUT_DIR=%{_sourcedir}/../ringrtc/111/${SB2_RUST_TARGET_TRIPLE}
 
 cargo build \
           -j 1 \
