@@ -372,7 +372,6 @@ systemctl-user disable harbour-whisperfish.service || true
 %endif
 
 %files
-%defattr(-,root,root,-)
 %{_bindir}/*
 %{_datadir}/%{name}
 %{_datadir}/applications/%{name}.desktop
