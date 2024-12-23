@@ -9,6 +9,7 @@
 %bcond_with calling
 %bcond_with diesel_instrumentation
 %bcond_with vendor
+%bcond_without xz
 
 # Chum: _chum is set globally
 # OBS: _obs has to be set manually in the project config.
@@ -20,10 +21,12 @@
 %define with_vendor 1
 %endif
 
+%if %{with xz}
 # Targets 4.5 and newer default to Zstd RPM compression,
 # which is not supported on 4.4 and older
 %define _source_payload w6.xzdio
 %define _binary_payload w6.xzdio
+%endif
 
 %if %{with harbour}
 %define builddir target/sailfishos-harbour/%{_target_cpu}
