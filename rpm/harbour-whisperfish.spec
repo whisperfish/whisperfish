@@ -390,3 +390,38 @@ systemctl-user disable harbour-whisperfish.service || true
 %{_userunitdir}/harbour-whisperfish.service
 %{_unitdir}/be.rubdos.whisperfish.service
 %endif
+
+%changelog
+* Sun Nov 17 2024 Ruben De Smet <ruben.de.smet@rubdos.be> 0.6.0-beta.32
+- Allow retrying attachment downloads from the UI
+- Try to reduce notification flooding on startup
+- Update emoji support to Emoji 15.1
+- Don’t reset the text field on incoming messages
+- Improve logging
+
+* Mon Oct 28 2024 Ruben De Smet <ruben.de.smet@rubdos.be> 0.6.0-beta.31
+- Fix text field not showing up.
+- Send note-to-self messages as sync messages to show up on the “right side” of sync conversations
+
+* Mon Oct 28 2024 Ruben De Smet <ruben.de.smet@rubdos.be> 0.6.0-beta.30
+- Fix linking and initial link synchronisation (implement master key and other sync messages)
+- Fix wrong indication/disambiguation in UI between session resets and identity resets
+- Some initial patches to get WF to compile on OBS (some day, Chum!)
+- More compact logs
+- Expiry timer versions (disable expiry timer changes in groups for now)
+- Read receipts
+- Cleaner migration paths when rsync-ing Whisperfish data directories from nemo to defaultuser phones
+- Rewrite Qt model logic to allow asynchronous model updates
+- Fix a lot of UI glitches; a.o., unread count on cover
+- Introduce a whole lot of new UI glitches; please report them!
+- Initial voice/video call boiler plate
+- “Missed voice call” / “Missed video call” notifications for direct calls (no group calls)
+- Incoming message requests (no group chats)
+- Fix sending attachments, including to Apple users (implement attachment V4 protocol)
+
+* Thu Sep 19 2024 Ruben De Smet <ruben.de.smet@rubdos.be> 0.6.0-beta.29
+- Implements PNI endpoint receiving, PNI-sent endpoint receiving
+- Performance improvement for blurhash rendering
+- Empty GV2 update message fixes
+- libsignal bump
+- Use Speech Note automatic model instead of English
