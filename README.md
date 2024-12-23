@@ -64,6 +64,8 @@ In current releases the paths have changed:
 - [ ] Encrypted local attachment store
 - [x] Archiving conversations
 - [x] Muting conversations
+- [ ] Voice calls
+- [ ] Video calls
 
 Please search the
 [issue tracker](https://gitlab.com/whisperfish/whisperfish/-/issues) before
@@ -133,6 +135,35 @@ For Sailfish 4.2 and older, use `--with shareplugin_v1` instead.
 Because of a bug in `sb2`, it is currently not possible to (reliably) build Whisperfish (or any other Rust project) using more than a single thread. This means your compilation is going to take a while, especially the first time. Get yourself some coffee!
 
 If you get errors (command not found or status 126) at linking stage, make sure that you are not using `~/.cargo/config` to override linkers or compilers.
+
+### Chum and OBS
+
+Whisperfish gained the ability to be built on OBS in late 2024. You can check out the current development package [here](https://build.sailfishos.org/package/show/home:rubdos:whisperfish/Whisperfish).
+
+Chum and OBS don't let us insert e.g. `--with lto` and such, so that needs to be handled differently. Chum sets `%_chum` and the project Whisperfish is built in (manually) sets `%_obs`, so we have [hardwired](https://gitlab.com/whisperfish/whisperfish/-/merge_requests/657/diffs?commit_id=f8bec68a800769c40669136b7d437300852bfbaa) the presence of either of those into `bcond_with` flags.
+
+To mimic OBS build options locally, you can use this command:
+
+    sfdk build -- --define="_obs 1"
+
+At the time of writing, the command above is functionally equivalent with:
+
+    sfdk build -- --with lto --with tools --with vendor
+
+Extra note about vendored build: you need to locally generate (or download from the link above) `vendor.tar.xz` and `vendor.toml` files. You can do them locally like so:
+
+```bash
+# Download dependency sources to `vendor/`
+sfdk build-shell cargo vendor
+# Copy the contents shown for `.cargo/config.toml`...
+vim rpm/vendor.toml # ...and paste it here
+# Compress the sources
+tar cJf rpm/vendor.tar.xz vendor/
+# Build!
+sfdk build -- --with vendor
+```
+
+Another thing about the `vendor.*` files: they are currently excluded from the git repository on purpose.
 
 ### Voice and video calls
 
