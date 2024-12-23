@@ -8,6 +8,7 @@
 %bcond_with tools
 %bcond_with calling
 %bcond_with diesel_instrumentation
+%bcond_with vendor
 
 # Targets 4.5 and newer default to Zstd RPM compression,
 # which is not supported on 4.4 and older
@@ -29,6 +30,13 @@ License: AGPLv3
 Group: Qt/Qt
 URL: https://gitlab.com/whisperfish/whisperfish/
 Source0: %{name}-%{version}.tar.gz
+
+%if %{with vendor}
+# Note: these files don't exist in the git repository
+Source1: vendor.tar.xz
+Source2: vendor.toml
+%endif
+
 Requires:   sailfishsilica-qt5 >= 0.10.9
 Requires:   libsailfishapp-launcher
 Requires:   sailfish-components-contacts-qt5
@@ -141,20 +149,17 @@ Links:
 rustc --version
 cargo --version
 
-# If there is one, unpack the vendor tarball and add cargo.conf.
-# We don't use the tarball as a .spec Source because we may want to do a
-# non-vendored build when running locally:
-
-if [ -e %{_sourcedir}/vendor.toml ]; then
-printf "Setting up an OFFLINE vendored build."
-export CARGO_NET_OFFLINE=true
-
-gunzip -c %{_sourcedir}/vendor.tar.gz | tar -xof -
-
-mkdir -p .cargo/
-
-cat %{_sourcedir}/vendor.toml >> .cargo/config.toml
+%if %{with vendor}
+echo "Setting up an OFFLINE vendored build."
+export OFFLINE="--offline"
+if [ -d "vendor" ]; then
+  echo "Not overwriting existing vendored sources."
+else
+  tar xf %SOURCE1
+  mkdir -p .cargo/
 fi
+cp %SOURCE2 .cargo/config.toml
+%endif
 
 export PROTOC=/usr/bin/protoc
 protoc --version
@@ -295,6 +300,7 @@ cargo build \
           --no-default-features \
           $BINS \
           --features $FEATURES \
+          $OFFLINE \
           %nil
 
 %if %{with sccache}
