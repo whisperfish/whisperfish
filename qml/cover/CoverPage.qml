@@ -202,9 +202,9 @@ CoverBackground {
     CoverActionList {
         id: coverAction
         enabled: !placeholderLabel.visible
-        property string _connected: "../../icons/connected.png"
-        property string _disconnected: "../../icons/disconnected.png"
         CoverAction {
+            property string _connected: "../../icons/connected.png"
+            property string _disconnected: "../../icons/disconnected.png"
             iconSource: ClientWorker.connected ? _connected : _disconnected
             onTriggered: {
                 if(!SetupWorker.locked) {
