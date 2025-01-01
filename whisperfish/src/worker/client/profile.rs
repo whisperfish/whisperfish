@@ -138,9 +138,8 @@ impl ClientActor {
 
             ctx.notify(ProfileCreated(profile_data));
         } else {
-            // XXX: We came here through 404 error, can that mean unregistered user?
             tracing::trace!(
-                "Recipient {} doesn't have a profile on the server",
+                "Recipient {} doesn't have a profile on the server, assuming unregistered user",
                 recipient.e164_or_address()
             );
             let mut db = storage.db();
@@ -149,8 +148,11 @@ impl ClientActor {
             use whisperfish_store::schema::recipients::dsl::*;
 
             diesel::update(recipients)
-                .set((last_profile_fetch.eq(Utc::now().naive_utc()),))
-                .filter(uuid.nullable().eq(&Uuid::from(recipient_aci).to_string()))
+                .set((
+                    last_profile_fetch.eq(Utc::now().naive_utc()),
+                    is_registered.eq(false),
+                ))
+                .filter(uuid.eq(recipient.uuid.unwrap().to_string()))
                 .execute(&mut *db)
                 .expect("db");
 
