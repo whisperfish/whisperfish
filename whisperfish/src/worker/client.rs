@@ -2435,6 +2435,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
 
         ctx.spawn(
             async move {
+                let mut visited = false;
                 let content = loop {
                     match cipher.open_envelope(msg.clone(), &mut rand::thread_rng()).await {
                         Ok(Some(content)) => {
@@ -2449,6 +2450,11 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             SignalProtocolError::UntrustedIdentity(dest_protocol_address),
                         )) => {
                             // This branch is the only one that loops, and it *should not* loop more than once.
+                            if visited {
+                                tracing::warn!("ServiceError::SignalProtocolError visited more than once!");
+                            }
+                            visited = true;
+
                             let dest_address = ServiceId::parse_from_service_id_string(dest_protocol_address.name()).expect("valid ACI or PNI UUID in ProtocolAddress");
                             tracing::warn!("Untrusted identity for {}; replacing identity and inserting a warning.", dest_protocol_address);
                             let recipient = storage.fetch_or_insert_recipient_by_address(&dest_address);
