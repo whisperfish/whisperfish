@@ -175,7 +175,7 @@ fn main() {
 
         let journald = tracing_journald::layer()
             .expect("open journald socket")
-            .with_syslog_identifier("whisperfish".into());
+            .with_syslog_identifier("harbour-whisperfish".into());
 
         // If verbose, print to terminal (with timestamps and tracing).
         // Otherwise, send to journald (without tracing).
