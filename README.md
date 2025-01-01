@@ -132,6 +132,10 @@ For Sailfish 4.2 and older, use `--with shareplugin_v1` instead.
 
 Because of a bug in `sb2`, it is currently not possible to (reliably) build Whisperfish (or any other Rust project) using more than a single thread. This means your compilation is going to take a while, especially the first time. Get yourself some coffee!
 
+However, subsequent compilations (i.e. only Whisperfish code has been changed) tend to build fine with modest threading. This seems to work rather well with `sfdk` at least. You can take advantage of this by defining a `taskset` macro that expands to the [taskset](https://linux.die.net/man/1/taskset) command you want to prefix `cargo build` with. It also removes `-j 1` single-thread parameter:
+
+    sfdk build -- --define "taskset 0x55"
+
 If you get errors (command not found or status 126) at linking stage, make sure that you are not using `~/.cargo/config` to override linkers or compilers.
 
 ### Voice and video calls

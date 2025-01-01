@@ -239,8 +239,13 @@ mkdir -p $TMPDIR
 # ringrtc requires an output directory for the WebRTC artifacts
 export OUTPUT_DIR=%{_sourcedir}/../ringrtc/111/${SB2_RUST_TARGET_TRIPLE}
 
-cargo build \
-          -j 1 \
+%if 0%{?taskset:1}
+export TASKSET="taskset %{taskset}"
+%else
+export JOBS="-j 1"
+%endif
+
+$TASKSET cargo build $JOBS \
           -vv \
           --release \
           --no-default-features \
