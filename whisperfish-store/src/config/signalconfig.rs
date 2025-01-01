@@ -76,7 +76,7 @@ pub struct SignalConfig {
     // cannot set this path by a config file.
     #[serde(skip)]
     share_dir: std::path::PathBuf,
-    /// Verbosity of the logging messages
+    /// Verbosity of messages sent to journal
     pub verbose: bool,
     /// Enable Tokio console debugging and Tracy support
     pub tracing: bool,

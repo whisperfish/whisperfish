@@ -21,11 +21,10 @@ struct Opts {
     #[clap(short = 'c', long)]
     captcha: Option<String>,
 
-    /// Verbosity.
+    /// Enable verbose console log. Disables journal logging.
     ///
     /// Equivalent with setting
     /// `QT_LOGGING_TO_CONSOLE=1 RUST_LOG=libsignal_service=trace,libsignal_service_actix=trace,whisperfish=trace`.
-    /// Implies '--ts'
     #[clap(short = 'v', long)]
     verbose: bool,
 
