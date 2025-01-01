@@ -2437,7 +2437,10 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             async move {
                 let content = loop {
                     match cipher.open_envelope(msg.clone(), &mut rand::thread_rng()).await {
-                        Ok(Some(content)) => break content,
+                        Ok(Some(content)) => {
+                            storage.mark_recipient_registered(content.metadata.sender, true);
+                            break content;
+                        }
                         Ok(None) => {
                             tracing::warn!("Empty envelope");
                             return None;
