@@ -2344,22 +2344,28 @@ impl<O: Observable> Storage<O> {
         use schema::recipients::dsl::*;
 
         let rid: Option<i32> = match service_address.kind() {
-            ServiceIdKind::Aci => {
-                diesel::update(recipients.filter(uuid.eq(service_address.raw_uuid().to_string())))
-                    .set(is_registered.eq(registered))
-                    .returning(id)
-                    .get_result(&mut *self.db())
-                    .optional()
-                    .expect("mark recipient (un)registered")
-            }
-            ServiceIdKind::Pni => {
-                diesel::update(recipients.filter(pni.eq(service_address.raw_uuid().to_string())))
-                    .set(is_registered.eq(registered))
-                    .returning(id)
-                    .get_result(&mut *self.db())
-                    .optional()
-                    .expect("mark recipient (un)registered")
-            }
+            ServiceIdKind::Aci => diesel::update(
+                recipients.filter(
+                    uuid.eq(service_address.raw_uuid().to_string())
+                        .and(is_registered.eq(!registered)),
+                ),
+            )
+            .set(is_registered.eq(registered))
+            .returning(id)
+            .get_result(&mut *self.db())
+            .optional()
+            .expect("mark recipient (un)registered"),
+            ServiceIdKind::Pni => diesel::update(
+                recipients.filter(
+                    pni.eq(service_address.raw_uuid().to_string())
+                        .and(is_registered.eq(!registered)),
+                ),
+            )
+            .set(is_registered.eq(registered))
+            .returning(id)
+            .get_result(&mut *self.db())
+            .optional()
+            .expect("mark recipient (un)registered"),
         };
 
         let Some(rid) = rid else {
