@@ -1804,11 +1804,6 @@ impl Handler<SendMessage> for ClientActor {
                                         };
 
                                         tracing::trace!("Removed {} device session(s)", num);
-                                        if storage.mark_recipient_registered(service_id, false) {
-                                            tracing::trace!("Marked recipient {service_id:?} as unregistered");
-                                        } else {
-                                            tracing::warn!("Could not mark recipient {service_id:?} as unregistered");
-                                        }
                                     },
                                     _ => {
                                         tracing::error!("The above error goes unhandled.");
