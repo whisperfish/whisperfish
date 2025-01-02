@@ -4,20 +4,20 @@
 <context>
     <name></name>
     <message id="whisperfish-session-has-attachment">
-        <location filename="../qml/cover/CoverPage.qml" line="160"/>
+        <location filename="../qml/cover/CoverPage.qml" line="154"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="66"/>
         <source>Attachment</source>
         <extracomment>Session contains an attachment label</extracomment>
         <translation>Επισύναψη</translation>
     </message>
     <message id="whisperfish-cover-service-message">
-        <location filename="../qml/cover/CoverPage.qml" line="146"/>
+        <location filename="../qml/cover/CoverPage.qml" line="140"/>
         <source>Service Message</source>
         <extracomment>Placeholder note for a service message (expiry, profile key...)</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-session-is-voice-note">
-        <location filename="../qml/cover/CoverPage.qml" line="154"/>
+        <location filename="../qml/cover/CoverPage.qml" line="148"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="59"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
@@ -1449,8 +1449,14 @@ Settings page share contacts</extracomment>
         <extracomment>Settings page enable background mode description</extracomment>
         <translation>Όταν είναι ενεργοποιημένο, το Whisperfish συνεχίζει να λειτουργεί στο παρασκήνιο και μπορεί να στέλνει ειδοποιήσεις αφού κλείσετε το παράθυρο της εφαρμογής.</translation>
     </message>
+    <message id="whisperfish-settings-verbose-journal">
+        <location filename="../qml/pages/Settings.qml" line="570"/>
+        <source>Verbose journal log</source>
+        <extracomment>Settings page, send verbose logs to systemd journal</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-settings-gstreamer-version">
-        <location filename="../qml/pages/Settings.qml" line="667"/>
+        <location filename="../qml/pages/Settings.qml" line="651"/>
         <source>GStreamer version</source>
         <extracomment>GStreamer version indication in settings</extracomment>
         <translation type="unfinished"></translation>
@@ -1642,88 +1648,85 @@ Settings page share contacts</extracomment>
         <translation>Εμφάνιση πληροφοριών προγραμματιστή και χειριστηρίων στο παράθυρο της εφαρμογής.</translation>
     </message>
     <message id="whisperfish-settings-enable-verbose">
-        <location filename="../qml/pages/Settings.qml" line="570"/>
         <source>Verbose logging</source>
         <extracomment>Settings page enable verbose logging</extracomment>
-        <translation>Λεπτομερής καταγραφή</translation>
+        <translation type="vanished">Λεπτομερής καταγραφή</translation>
     </message>
     <message id="whisperfish-settings-enable-verbose-description">
         <location filename="../qml/pages/Settings.qml" line="573"/>
-        <source>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a restart to take effect.</source>
-        <oldsource>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a reboot to take effect.</oldsource>
+        <source>When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect.</source>
+        <oldsource>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a restart to take effect.</oldsource>
         <extracomment>Settings page enable verbose logging description</extracomment>
-        <translation>Όταν ενεργοποιηθεί το Whisperfish καταγράφει περισσότερες λεπτομέρειες για τη λειτουργία της εφαρμογής. Χρήσιμη επιλογή όταν εκτελείτε την εφαρμογή σε τερματικό. Απαιτείται επανεκκίνηση της εφαρμογής για να εφαρμοστεί η αλλαγή αυτής της ρύθμισης.</translation>
+        <translation type="unfinished">Όταν ενεργοποιηθεί το Whisperfish καταγράφει περισσότερες λεπτομέρειες για τη λειτουργία της εφαρμογής. Χρήσιμη επιλογή όταν εκτελείτε την εφαρμογή σε τερματικό. Απαιτείται επανεκκίνηση της εφαρμογής για να εφαρμοστεί η αλλαγή αυτής της ρύθμισης.</translation>
     </message>
     <message id="whisperfish-settings-logfile-autostart">
-        <location filename="../qml/pages/Settings.qml" line="586"/>
         <source>Enable log file</source>
         <extracomment>Settings page enable logging to a file</extracomment>
-        <translation>Ενεργοποίηση καταγραφής πληροφοριών λειτουργίας</translation>
+        <translation type="vanished">Ενεργοποίηση καταγραφής πληροφοριών λειτουργίας</translation>
     </message>
     <message id="whisperfish-settings-enable-logfile-description">
-        <location filename="../qml/pages/Settings.qml" line="589"/>
         <source>When enabled, Whisperfish saves its output to a log file. Requires a restart to take effect.</source>
         <oldsource>When enabled, Whisperfish saves its output to a log file. Requires a reboot to take effect.</oldsource>
         <extracomment>Settings page enable logfile description</extracomment>
-        <translation>&apos;Οταν είναι ενεργοποιημένο, το Whisperfish αποθηκεύει πληροφορίες λειτουργίας σε ένα αρχείο. Απαιτέιται επανεκκίνηση της εφαρμογής για να εφαρμοστούν οι αλλαγές αυτής της ρύθμισης.</translation>
+        <translation type="vanished">&apos;Οταν είναι ενεργοποιημένο, το Whisperfish αποθηκεύει πληροφορίες λειτουργίας σε ένα αρχείο. Απαιτέιται επανεκκίνηση της εφαρμογής για να εφαρμοστούν οι αλλαγές αυτής της ρύθμισης.</translation>
     </message>
     <message id="whisperfish-settings-compress-db">
-        <location filename="../qml/pages/Settings.qml" line="604"/>
+        <location filename="../qml/pages/Settings.qml" line="588"/>
         <source>Compact database</source>
         <oldsource>Compress database</oldsource>
         <extracomment>Settings page &apos;Compact database&apos; button: execute &apos;VACUUM&apos; command on SQLite-database</extracomment>
         <translation>Συμπίεση βάσης δεδομένων</translation>
     </message>
     <message id="whisperfish-settings-test-captcha">
-        <location filename="../qml/pages/Settings.qml" line="615"/>
+        <location filename="../qml/pages/Settings.qml" line="599"/>
         <source>Test captcha</source>
         <extracomment>Settings page, test captcha button</extracomment>
         <translation>Τέστ captcha</translation>
     </message>
     <message id="whisperfish-settings-stats-section">
-        <location filename="../qml/pages/Settings.qml" line="626"/>
+        <location filename="../qml/pages/Settings.qml" line="610"/>
         <source>Statistics</source>
         <extracomment>Settings page stats section</extracomment>
         <translation>Στατιστικά</translation>
     </message>
     <message id="whisperfish-settings-websocket">
-        <location filename="../qml/pages/Settings.qml" line="631"/>
+        <location filename="../qml/pages/Settings.qml" line="615"/>
         <source>Websocket Status</source>
         <extracomment>Settings page websocket status</extracomment>
         <translation>Κατάσταση Websocket</translation>
     </message>
     <message id="whisperfish-settings-connected">
-        <location filename="../qml/pages/Settings.qml" line="635"/>
+        <location filename="../qml/pages/Settings.qml" line="619"/>
         <source>Connected</source>
         <extracomment>Settings page connected message</extracomment>
         <translation>Συνδεδεμένο</translation>
     </message>
     <message id="whisperfish-settings-disconnected">
-        <location filename="../qml/pages/Settings.qml" line="638"/>
+        <location filename="../qml/pages/Settings.qml" line="622"/>
         <source>Disconnected</source>
         <extracomment>Settings page disconnected message</extracomment>
         <translation>Αποσυνδεδεμένο</translation>
     </message>
     <message id="whisperfish-settings-unsent-messages">
-        <location filename="../qml/pages/Settings.qml" line="643"/>
+        <location filename="../qml/pages/Settings.qml" line="627"/>
         <source>Unsent Messages</source>
         <extracomment>Settings page unsent messages</extracomment>
         <translation>Μη σταλθέντα μηνύματα</translation>
     </message>
     <message id="whisperfish-settings-total-sessions">
-        <location filename="../qml/pages/Settings.qml" line="649"/>
+        <location filename="../qml/pages/Settings.qml" line="633"/>
         <source>Total Sessions</source>
         <extracomment>Settings page total sessions</extracomment>
         <translation>Συνολικός αριθμός συνεδριών</translation>
     </message>
     <message id="whisperfish-settings-total-messages">
-        <location filename="../qml/pages/Settings.qml" line="655"/>
+        <location filename="../qml/pages/Settings.qml" line="639"/>
         <source>Total Messages</source>
         <extracomment>Settings page total messages</extracomment>
         <translation>Συνολικός αριθμός μηνυμάτων</translation>
     </message>
     <message id="whisperfish-settings-total-contacts">
-        <location filename="../qml/pages/Settings.qml" line="661"/>
+        <location filename="../qml/pages/Settings.qml" line="645"/>
         <source>Signal Contacts</source>
         <extracomment>Settings page total signal contacts</extracomment>
         <translation>Επαφές Signal</translation>
@@ -1744,19 +1747,19 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Απενεργοποιημένη</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db">
-        <location filename="../qml/pages/Settings.qml" line="673"/>
+        <location filename="../qml/pages/Settings.qml" line="657"/>
         <source>Encrypted Database</source>
         <extracomment>Settings page encrypted database</extracomment>
         <translation>Κρυπτογραφημένη Βάση Δεδομένων</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-enabled">
-        <location filename="../qml/pages/Settings.qml" line="677"/>
+        <location filename="../qml/pages/Settings.qml" line="661"/>
         <source>Enabled</source>
         <extracomment>Settings page encrypted db enabled</extracomment>
         <translation>Ενεργοποιημένη</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-disabled">
-        <location filename="../qml/pages/Settings.qml" line="680"/>
+        <location filename="../qml/pages/Settings.qml" line="664"/>
         <source>Disabled</source>
         <extracomment>Settings page encrypted db disabled</extracomment>
         <translation>Απενεργοποιημένη</translation>
@@ -2063,7 +2066,7 @@ Settings page share contacts</extracomment>
         <translation>κανένας αποστολέας</translation>
     </message>
     <message id="whisperfish-message-deleted-note">
-        <location filename="../qml/cover/CoverPage.qml" line="140"/>
+        <location filename="../qml/cover/CoverPage.qml" line="134"/>
         <location filename="../qml/delegates/MessageDelegate.qml" line="265"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="46"/>
         <source>this message was deleted</source>
@@ -2481,7 +2484,7 @@ Settings page share contacts</extracomment>
         <translation>Captcha για την εφαρμογή Signal</translation>
     </message>
     <message id="whisperfish-cover-unread-label" numerus="yes">
-        <location filename="../qml/cover/CoverPage.qml" line="56"/>
+        <location filename="../qml/cover/CoverPage.qml" line="50"/>
         <source>Unread&lt;br/&gt;message(s)</source>
         <extracomment>Unread messages count cover label. Code requires exact line break tag &quot;&lt;br/&gt;&quot;.</extracomment>
         <translation>

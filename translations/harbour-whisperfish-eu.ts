@@ -4,20 +4,20 @@
 <context>
     <name></name>
     <message id="whisperfish-session-has-attachment">
-        <location filename="../qml/cover/CoverPage.qml" line="160"/>
+        <location filename="../qml/cover/CoverPage.qml" line="154"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="66"/>
         <source>Attachment</source>
         <extracomment>Session contains an attachment label</extracomment>
         <translation>Erantsitako artxiboa</translation>
     </message>
     <message id="whisperfish-cover-service-message">
-        <location filename="../qml/cover/CoverPage.qml" line="146"/>
+        <location filename="../qml/cover/CoverPage.qml" line="140"/>
         <source>Service Message</source>
         <extracomment>Placeholder note for a service message (expiry, profile key...)</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-session-is-voice-note">
-        <location filename="../qml/cover/CoverPage.qml" line="154"/>
+        <location filename="../qml/cover/CoverPage.qml" line="148"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="59"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
@@ -1562,113 +1562,100 @@ Settings page share contacts</extracomment>
         <extracomment>Settings page: debug info toggle extended description</extracomment>
         <translation type="unfinished"></translation>
     </message>
-    <message id="whisperfish-settings-enable-verbose">
+    <message id="whisperfish-settings-verbose-journal">
         <location filename="../qml/pages/Settings.qml" line="570"/>
-        <source>Verbose logging</source>
-        <extracomment>Settings page enable verbose logging</extracomment>
+        <source>Verbose journal log</source>
+        <extracomment>Settings page, send verbose logs to systemd journal</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-enable-verbose-description">
         <location filename="../qml/pages/Settings.qml" line="573"/>
-        <source>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a restart to take effect.</source>
-        <oldsource>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a reboot to take effect.</oldsource>
+        <source>When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect.</source>
+        <oldsource>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a restart to take effect.</oldsource>
         <extracomment>Settings page enable verbose logging description</extracomment>
         <translation type="unfinished"></translation>
     </message>
-    <message id="whisperfish-settings-logfile-autostart">
-        <location filename="../qml/pages/Settings.qml" line="586"/>
-        <source>Enable log file</source>
-        <extracomment>Settings page enable logging to a file</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message id="whisperfish-settings-enable-logfile-description">
-        <location filename="../qml/pages/Settings.qml" line="589"/>
-        <source>When enabled, Whisperfish saves its output to a log file. Requires a restart to take effect.</source>
-        <oldsource>When enabled, Whisperfish saves its output to a log file. Requires a reboot to take effect.</oldsource>
-        <extracomment>Settings page enable logfile description</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
     <message id="whisperfish-settings-compress-db">
-        <location filename="../qml/pages/Settings.qml" line="604"/>
+        <location filename="../qml/pages/Settings.qml" line="588"/>
         <source>Compact database</source>
         <oldsource>Compress database</oldsource>
         <extracomment>Settings page &apos;Compact database&apos; button: execute &apos;VACUUM&apos; command on SQLite-database</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-test-captcha">
-        <location filename="../qml/pages/Settings.qml" line="615"/>
+        <location filename="../qml/pages/Settings.qml" line="599"/>
         <source>Test captcha</source>
         <extracomment>Settings page, test captcha button</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-stats-section">
-        <location filename="../qml/pages/Settings.qml" line="626"/>
+        <location filename="../qml/pages/Settings.qml" line="610"/>
         <source>Statistics</source>
         <extracomment>Settings page stats section</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-websocket">
-        <location filename="../qml/pages/Settings.qml" line="631"/>
+        <location filename="../qml/pages/Settings.qml" line="615"/>
         <source>Websocket Status</source>
         <extracomment>Settings page websocket status</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-connected">
-        <location filename="../qml/pages/Settings.qml" line="635"/>
+        <location filename="../qml/pages/Settings.qml" line="619"/>
         <source>Connected</source>
         <extracomment>Settings page connected message</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-disconnected">
-        <location filename="../qml/pages/Settings.qml" line="638"/>
+        <location filename="../qml/pages/Settings.qml" line="622"/>
         <source>Disconnected</source>
         <extracomment>Settings page disconnected message</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-unsent-messages">
-        <location filename="../qml/pages/Settings.qml" line="643"/>
+        <location filename="../qml/pages/Settings.qml" line="627"/>
         <source>Unsent Messages</source>
         <extracomment>Settings page unsent messages</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-total-sessions">
-        <location filename="../qml/pages/Settings.qml" line="649"/>
+        <location filename="../qml/pages/Settings.qml" line="633"/>
         <source>Total Sessions</source>
         <extracomment>Settings page total sessions</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-total-messages">
-        <location filename="../qml/pages/Settings.qml" line="655"/>
+        <location filename="../qml/pages/Settings.qml" line="639"/>
         <source>Total Messages</source>
         <extracomment>Settings page total messages</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-total-contacts">
-        <location filename="../qml/pages/Settings.qml" line="661"/>
+        <location filename="../qml/pages/Settings.qml" line="645"/>
         <source>Signal Contacts</source>
         <extracomment>Settings page total signal contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-gstreamer-version">
-        <location filename="../qml/pages/Settings.qml" line="667"/>
+        <location filename="../qml/pages/Settings.qml" line="651"/>
         <source>GStreamer version</source>
         <extracomment>GStreamer version indication in settings</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-encrypted-db">
-        <location filename="../qml/pages/Settings.qml" line="673"/>
+        <location filename="../qml/pages/Settings.qml" line="657"/>
         <source>Encrypted Database</source>
         <extracomment>Settings page encrypted database</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-enabled">
-        <location filename="../qml/pages/Settings.qml" line="677"/>
+        <location filename="../qml/pages/Settings.qml" line="661"/>
         <source>Enabled</source>
         <extracomment>Settings page encrypted db enabled</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-disabled">
-        <location filename="../qml/pages/Settings.qml" line="680"/>
+        <location filename="../qml/pages/Settings.qml" line="664"/>
         <source>Disabled</source>
         <extracomment>Settings page encrypted db disabled</extracomment>
         <translation type="unfinished"></translation>
@@ -1965,7 +1952,7 @@ Settings page share contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-message-deleted-note">
-        <location filename="../qml/cover/CoverPage.qml" line="140"/>
+        <location filename="../qml/cover/CoverPage.qml" line="134"/>
         <location filename="../qml/delegates/MessageDelegate.qml" line="265"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="46"/>
         <source>this message was deleted</source>
@@ -2373,7 +2360,7 @@ Settings page share contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-cover-unread-label" numerus="yes">
-        <location filename="../qml/cover/CoverPage.qml" line="56"/>
+        <location filename="../qml/cover/CoverPage.qml" line="50"/>
         <source>Unread&lt;br/&gt;message(s)</source>
         <extracomment>Unread messages count cover label. Code requires exact line break tag &quot;&lt;br/&gt;&quot;.</extracomment>
         <translation type="unfinished">
