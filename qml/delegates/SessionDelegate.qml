@@ -27,7 +27,7 @@ ListItem {
     property bool isPreviewSent: hasLastMessage && model.sent // TODO cf. isPreviewReceived (#151)
     property bool isRemoteDeleted: hasLastMessage && lastMessage.remoteDeleted
     property bool hasText: lastMessage.message !== undefined && lastMessage.message !== ''
-    property bool hasLastMessage: lastMessage.messageId > 0
+    property bool hasLastMessage: lastMessage.valid && lastMessage.messageId > 0
     property bool hasSpoilers: hasLastMessage ? lastMessage.hasSpoilers : false
     property bool hasStrikeThrough: hasLastMessage ? lastMessage.hasStrikeThrough : false
     property int expiringMessages: hasLastMessage && model.expiringMessageTimeout != -1

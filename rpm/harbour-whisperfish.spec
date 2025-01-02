@@ -75,6 +75,8 @@ BuildRequires:  zlib-devel
 BuildRequires:  coreutils
 BuildRequires:  perl-IPC-Cmd
 
+BuildRequires:  pkgconfig(systemd)
+
 BuildRequires:  meego-rpm-config
 
 # For vendored sqlcipher
