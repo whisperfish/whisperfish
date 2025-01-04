@@ -68,7 +68,7 @@ ListItem {
     property real _unexpandedWidth: hasAttachments ?
                                         maxMessageWidth :
                                         Math.min(Math.max(metrics.width+messageLabel.emojiCount *
-                                                          messageLabel.font.pixelSize, minMessageWidth) +
+                                                          messageLabel.font.pixelSize, infoRow.minContentWidth) +
                                                  Theme.paddingMedium, maxMessageWidth)
     property real maxMessageWidth: parent.width - 6*Theme.horizontalPageMargin
     property real minMessageWidth: Math.max(showSender ? senderNameLabel.implicitWidth : 0,

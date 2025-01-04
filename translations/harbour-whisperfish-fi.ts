@@ -4,20 +4,20 @@
 <context>
     <name></name>
     <message id="whisperfish-session-has-attachment">
-        <location filename="../qml/cover/CoverPage.qml" line="160"/>
+        <location filename="../qml/cover/CoverPage.qml" line="154"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="66"/>
         <source>Attachment</source>
         <extracomment>Session contains an attachment label</extracomment>
         <translation>Liite</translation>
     </message>
     <message id="whisperfish-cover-service-message">
-        <location filename="../qml/cover/CoverPage.qml" line="146"/>
+        <location filename="../qml/cover/CoverPage.qml" line="140"/>
         <source>Service Message</source>
         <extracomment>Placeholder note for a service message (expiry, profile key...)</extracomment>
         <translation>Palveluviesti</translation>
     </message>
     <message id="whisperfish-session-is-voice-note">
-        <location filename="../qml/cover/CoverPage.qml" line="154"/>
+        <location filename="../qml/cover/CoverPage.qml" line="148"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="59"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
@@ -256,103 +256,103 @@
         <translation>Saksa</translation>
     </message>
     <message id="whisperfish-translators-fr">
-        <location filename="../qml/pages/About.qml" line="298"/>
+        <location filename="../qml/pages/About.qml" line="299"/>
         <source>French translators</source>
         <extracomment>French (fr) language about page translation section</extracomment>
         <translation>Ranska</translation>
     </message>
     <message id="whisperfish-translators-fi">
-        <location filename="../qml/pages/About.qml" line="319"/>
+        <location filename="../qml/pages/About.qml" line="320"/>
         <source>Finnish translators</source>
         <extracomment>Finnish (fi) language about page translation section</extracomment>
         <translation>Suomi</translation>
     </message>
     <message id="whisperfish-translators-sl">
-        <location filename="../qml/pages/About.qml" line="341"/>
+        <location filename="../qml/pages/About.qml" line="343"/>
         <source>Slovenian translators</source>
         <extracomment>Slovenian (sl) language about page translation section</extracomment>
         <translation>Sloveeni</translation>
     </message>
     <message id="whisperfish-translators-sv">
-        <location filename="../qml/pages/About.qml" line="357"/>
+        <location filename="../qml/pages/About.qml" line="359"/>
         <source>Swedish translators</source>
         <extracomment>Swedish (sv) language about page translation section</extracomment>
         <translation>Ruotsi</translation>
     </message>
     <message id="whisperfish-translators-pl">
-        <location filename="../qml/pages/About.qml" line="377"/>
+        <location filename="../qml/pages/About.qml" line="379"/>
         <source>Polish translators</source>
         <extracomment>Polish (pl) language about page translation section</extracomment>
         <translation>Puola</translation>
     </message>
     <message id="whisperfish-translators-zh_CN">
-        <location filename="../qml/pages/About.qml" line="399"/>
+        <location filename="../qml/pages/About.qml" line="401"/>
         <source>Chinese (Simplified) translators</source>
         <extracomment>Chinese (Simplified) (zh_CN) language about page translation section</extracomment>
         <translation>Kiina (yksinkertaistettu)</translation>
     </message>
     <message id="whisperfish-translators-hu">
-        <location filename="../qml/pages/About.qml" line="418"/>
+        <location filename="../qml/pages/About.qml" line="420"/>
         <source>Hungarian translators</source>
         <extracomment>Hungarian (hu) language about page translation section</extracomment>
         <translation>Unkari</translation>
     </message>
     <message id="whisperfish-translators-pt_PT">
-        <location filename="../qml/pages/About.qml" line="436"/>
+        <location filename="../qml/pages/About.qml" line="438"/>
         <source>Portuguese (Portugal) translators</source>
         <extracomment>Portuguese (Portugal) (pt_PT) language about page translation section</extracomment>
         <translation>Portugali</translation>
     </message>
     <message id="whisperfish-translators-cs">
-        <location filename="../qml/pages/About.qml" line="455"/>
+        <location filename="../qml/pages/About.qml" line="457"/>
         <source>Czech translators</source>
         <extracomment>Czech (cs) language about page translation section</extracomment>
         <translation>Tšekki</translation>
     </message>
     <message id="whisperfish-translators-ca">
-        <location filename="../qml/pages/About.qml" line="471"/>
+        <location filename="../qml/pages/About.qml" line="473"/>
         <source>Catalan translators</source>
         <extracomment>Catalan (ca) language about page translation section</extracomment>
         <translation>Katalaani</translation>
     </message>
     <message id="whisperfish-translators-ru">
-        <location filename="../qml/pages/About.qml" line="487"/>
+        <location filename="../qml/pages/About.qml" line="489"/>
         <source>Russian translators</source>
         <extracomment>Russian (ru) language about page translation section</extracomment>
         <translation>Venäjä</translation>
     </message>
     <message id="whisperfish-translators-pt_BR">
-        <location filename="../qml/pages/About.qml" line="504"/>
+        <location filename="../qml/pages/About.qml" line="506"/>
         <source>Portuguese (Brazil) translators</source>
         <extracomment>Portuguese (Brazil) (pt_BR) language about page translation section</extracomment>
         <translation>Portugali (Brasilia)</translation>
     </message>
     <message id="whisperfish-translators-ro">
-        <location filename="../qml/pages/About.qml" line="521"/>
+        <location filename="../qml/pages/About.qml" line="523"/>
         <source>Romanian translators</source>
         <extracomment>Romanian (ro) language about page translation section</extracomment>
         <translation>Romania</translation>
     </message>
     <message id="whisperfish-translators-tr">
-        <location filename="../qml/pages/About.qml" line="538"/>
+        <location filename="../qml/pages/About.qml" line="540"/>
         <source>Turkish translators</source>
         <extracomment>Turkish (tr) language about page translation section</extracomment>
         <translation>Turkki</translation>
     </message>
     <message id="whisperfish-translators-el">
-        <location filename="../qml/pages/About.qml" line="554"/>
+        <location filename="../qml/pages/About.qml" line="556"/>
         <source>Greek translators</source>
         <extracomment>Greek (el) language about page translation section</extracomment>
         <translation>Kreikka</translation>
     </message>
     <message id="whisperfish-translators-eu">
-        <location filename="../qml/pages/About.qml" line="571"/>
+        <location filename="../qml/pages/About.qml" line="573"/>
         <source>Basque translators</source>
         <extracomment>Basque (eu) language about page translation section</extracomment>
         <translation>Baski</translation>
     </message>
     <message id="whisperfish-translators-es">
-        <location filename="../qml/pages/About.qml" line="587"/>
+        <location filename="../qml/pages/About.qml" line="589"/>
         <source>Spanish translators</source>
         <extracomment>Spanish (es) language about page translation section</extracomment>
         <translation>Espanja</translation>
@@ -639,7 +639,7 @@
         <location filename="../qml/pages/MainPage.qml" line="78"/>
         <source>Reconnect</source>
         <extracomment>Whisperfish main menu item: restart websocket/reconnect</extracomment>
-        <translation type="unfinished">Yhdistä uudelleen</translation>
+        <translation>Yhdistä uudelleen</translation>
     </message>
     <message id="whisperfish-reconnecting">
         <location filename="../qml/pages/MainPage.qml" line="81"/>
@@ -1493,14 +1493,14 @@ Settings page share contacts</extracomment>
         <source>Automatically transcribe voice notes to text upon reception. Configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note installed but not configured.</extracomment>
-        <translation type="unfinished">Litteroi saapuvat ääniviestit automaattisesti. Asenna englannin kielimalli Speech Note -sovelluksessa käyttääksesi tätä ominaisuutta.</translation>
+        <translation>Literoi äänimuistiinpanot automaattisesti tekstiksi vastaanotettaessa. Tämän ominaisuuden käyttämiseksi, määritä &quot;Automaattisesti tunnistettu&quot; -malli Puhemuistiinpanossa.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-uninstalled">
         <location filename="../qml/pages/Settings.qml" line="302"/>
         <source>Automatically transcribe voice notes to text upon reception. Install and configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note not installed</extracomment>
-        <translation type="unfinished">Litteroi saapuvat ääniviestit tekstiksi automaattisesti niiden saapuessa. Asenna Speech Note sekä englannin kielimalli käyttääksesi tätä ominaisuutta.</translation>
+        <translation>Literoi äänimuistiinpanot automaattisesti tekstiksi vastaanotettaessa. Tämän ominaisuuden käyttämiseksi, asenna ja määritä &quot;Automaattisesti tunnistettu&quot; -malli Puhemuistiinpanossa.</translation>
     </message>
     <message id="whisperfish-settings-privacy-section">
         <location filename="../qml/pages/Settings.qml" line="319"/>
@@ -1564,8 +1564,14 @@ Settings page share contacts</extracomment>
         <extracomment>Settings page enable background mode description</extracomment>
         <translation>Jos käytössä, Whisperfish pysyy taustalla käynnissä ja voi lähettää ilmoituksia myös sovelluksen sulkemisen jälkeen.</translation>
     </message>
+    <message id="whisperfish-settings-verbose-journal">
+        <location filename="../qml/pages/Settings.qml" line="570"/>
+        <source>Verbose journal log</source>
+        <extracomment>Settings page, send verbose logs to systemd journal</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-settings-gstreamer-version">
-        <location filename="../qml/pages/Settings.qml" line="667"/>
+        <location filename="../qml/pages/Settings.qml" line="651"/>
         <source>GStreamer version</source>
         <extracomment>GStreamer version indication in settings</extracomment>
         <translation>GStreamer-versio</translation>
@@ -1757,88 +1763,85 @@ Settings page share contacts</extracomment>
         <translation>Näytä virheenkorjaustiedot ja -toiminnot käyttöliittymässä.</translation>
     </message>
     <message id="whisperfish-settings-enable-verbose">
-        <location filename="../qml/pages/Settings.qml" line="570"/>
         <source>Verbose logging</source>
         <extracomment>Settings page enable verbose logging</extracomment>
-        <translation>Vianetsintäloki</translation>
+        <translation type="vanished">Vianetsintäloki</translation>
     </message>
     <message id="whisperfish-settings-enable-verbose-description">
         <location filename="../qml/pages/Settings.qml" line="573"/>
-        <source>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a restart to take effect.</source>
-        <oldsource>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a reboot to take effect.</oldsource>
+        <source>When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect.</source>
+        <oldsource>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a restart to take effect.</oldsource>
         <extracomment>Settings page enable verbose logging description</extracomment>
-        <translation>Kun tämä on käytössä, Whisperfish kirjoittaa vianetsintätason lokia. Valinta voi olla eduksi, kun Whisperfish käynnistetään terminaalista. Muutos vaatii Whisperfishin uudelleenkäynnistyksen tullakseen voimaan.</translation>
+        <translation type="unfinished">Kun tämä on käytössä, Whisperfish kirjoittaa vianetsintätason lokia. Valinta voi olla eduksi, kun Whisperfish käynnistetään terminaalista. Muutos vaatii Whisperfishin uudelleenkäynnistyksen tullakseen voimaan.</translation>
     </message>
     <message id="whisperfish-settings-logfile-autostart">
-        <location filename="../qml/pages/Settings.qml" line="586"/>
         <source>Enable log file</source>
         <extracomment>Settings page enable logging to a file</extracomment>
-        <translation>Tallenna lokitiedostoja</translation>
+        <translation type="vanished">Tallenna lokitiedostoja</translation>
     </message>
     <message id="whisperfish-settings-enable-logfile-description">
-        <location filename="../qml/pages/Settings.qml" line="589"/>
         <source>When enabled, Whisperfish saves its output to a log file. Requires a restart to take effect.</source>
         <oldsource>When enabled, Whisperfish saves its output to a log file. Requires a reboot to take effect.</oldsource>
         <extracomment>Settings page enable logfile description</extracomment>
-        <translation>Kun tämä on käytössä, Whisperfish tallentaa lokitiedoston myöhempää käyttöä varten. Muutos vaatii Whisperfishin uudelleenkäynnistyksen tullakseen voimaan.</translation>
+        <translation type="vanished">Kun tämä on käytössä, Whisperfish tallentaa lokitiedoston myöhempää käyttöä varten. Muutos vaatii Whisperfishin uudelleenkäynnistyksen tullakseen voimaan.</translation>
     </message>
     <message id="whisperfish-settings-compress-db">
-        <location filename="../qml/pages/Settings.qml" line="604"/>
+        <location filename="../qml/pages/Settings.qml" line="588"/>
         <source>Compact database</source>
         <oldsource>Compress database</oldsource>
         <extracomment>Settings page &apos;Compact database&apos; button: execute &apos;VACUUM&apos; command on SQLite-database</extracomment>
         <translation>Tiivistä tietokanta</translation>
     </message>
     <message id="whisperfish-settings-test-captcha">
-        <location filename="../qml/pages/Settings.qml" line="615"/>
+        <location filename="../qml/pages/Settings.qml" line="599"/>
         <source>Test captcha</source>
         <extracomment>Settings page, test captcha button</extracomment>
         <translation>Testi-captcha</translation>
     </message>
     <message id="whisperfish-settings-stats-section">
-        <location filename="../qml/pages/Settings.qml" line="626"/>
+        <location filename="../qml/pages/Settings.qml" line="610"/>
         <source>Statistics</source>
         <extracomment>Settings page stats section</extracomment>
         <translation>Käyttötiedot</translation>
     </message>
     <message id="whisperfish-settings-websocket">
-        <location filename="../qml/pages/Settings.qml" line="631"/>
+        <location filename="../qml/pages/Settings.qml" line="615"/>
         <source>Websocket Status</source>
         <extracomment>Settings page websocket status</extracomment>
         <translation>Yhteyden tila</translation>
     </message>
     <message id="whisperfish-settings-connected">
-        <location filename="../qml/pages/Settings.qml" line="635"/>
+        <location filename="../qml/pages/Settings.qml" line="619"/>
         <source>Connected</source>
         <extracomment>Settings page connected message</extracomment>
         <translation>Yhdistetty</translation>
     </message>
     <message id="whisperfish-settings-disconnected">
-        <location filename="../qml/pages/Settings.qml" line="638"/>
+        <location filename="../qml/pages/Settings.qml" line="622"/>
         <source>Disconnected</source>
         <extracomment>Settings page disconnected message</extracomment>
         <translation>Ei yhdistetty</translation>
     </message>
     <message id="whisperfish-settings-unsent-messages">
-        <location filename="../qml/pages/Settings.qml" line="643"/>
+        <location filename="../qml/pages/Settings.qml" line="627"/>
         <source>Unsent Messages</source>
         <extracomment>Settings page unsent messages</extracomment>
         <translation>Lähettämättömät viestit</translation>
     </message>
     <message id="whisperfish-settings-total-sessions">
-        <location filename="../qml/pages/Settings.qml" line="649"/>
+        <location filename="../qml/pages/Settings.qml" line="633"/>
         <source>Total Sessions</source>
         <extracomment>Settings page total sessions</extracomment>
         <translation>Keskustelujen lukumäärä</translation>
     </message>
     <message id="whisperfish-settings-total-messages">
-        <location filename="../qml/pages/Settings.qml" line="655"/>
+        <location filename="../qml/pages/Settings.qml" line="639"/>
         <source>Total Messages</source>
         <extracomment>Settings page total messages</extracomment>
         <translation>Viestejä yhteensä</translation>
     </message>
     <message id="whisperfish-settings-total-contacts">
-        <location filename="../qml/pages/Settings.qml" line="661"/>
+        <location filename="../qml/pages/Settings.qml" line="645"/>
         <source>Signal Contacts</source>
         <extracomment>Settings page total signal contacts</extracomment>
         <translation>Signal-yhteystietoja</translation>
@@ -1859,19 +1862,19 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Ei käytössä</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db">
-        <location filename="../qml/pages/Settings.qml" line="673"/>
+        <location filename="../qml/pages/Settings.qml" line="657"/>
         <source>Encrypted Database</source>
         <extracomment>Settings page encrypted database</extracomment>
         <translation>Salattu tietokanta</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-enabled">
-        <location filename="../qml/pages/Settings.qml" line="677"/>
+        <location filename="../qml/pages/Settings.qml" line="661"/>
         <source>Enabled</source>
         <extracomment>Settings page encrypted db enabled</extracomment>
         <translation>Käytössä</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-disabled">
-        <location filename="../qml/pages/Settings.qml" line="680"/>
+        <location filename="../qml/pages/Settings.qml" line="664"/>
         <source>Disabled</source>
         <extracomment>Settings page encrypted db disabled</extracomment>
         <translation>Ei käytössä</translation>
@@ -2178,7 +2181,7 @@ Settings page share contacts</extracomment>
         <translation>ei lähettäjää</translation>
     </message>
     <message id="whisperfish-message-deleted-note">
-        <location filename="../qml/cover/CoverPage.qml" line="140"/>
+        <location filename="../qml/cover/CoverPage.qml" line="134"/>
         <location filename="../qml/delegates/MessageDelegate.qml" line="265"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="46"/>
         <source>this message was deleted</source>
@@ -2601,7 +2604,7 @@ Settings page share contacts</extracomment>
         <translation>Signal Captcha</translation>
     </message>
     <message id="whisperfish-cover-unread-label" numerus="yes">
-        <location filename="../qml/cover/CoverPage.qml" line="56"/>
+        <location filename="../qml/cover/CoverPage.qml" line="50"/>
         <source>Unread&lt;br/&gt;message(s)</source>
         <extracomment>Unread messages count cover label. Code requires exact line break tag &quot;&lt;br/&gt;&quot;.</extracomment>
         <translation>

@@ -80,7 +80,7 @@ MouseArea {
 
                 MouseArea {
                     anchors.fill: parent
-                    enabled: attach.can_retry
+                    enabled: attach && attach.can_retry
                     onClicked: {
                         ClientWorker.fetchAttachment(attach.id)
                     }
@@ -88,7 +88,7 @@ MouseArea {
 
                 BusyIndicator {
                     id: downloadingBusyIndicator
-                    running: attach.is_downloading
+                    running: attach && attach.is_downloading
                     anchors.centerIn: parent
                     size: BusyIndicatorSize.Medium
                 }
@@ -96,7 +96,7 @@ MouseArea {
                 Label {
                     id: downloadingLabel
                     visible: downloadingBusyIndicator.running
-                    text: Math.round(attach.downloaded_percentage) + " %"
+                    text: attach ? Math.round(attach.downloaded_percentage) + " %" : ""
                     anchors.centerIn: parent
                     font.pixelSize: Theme.fontSizeExtraSmall
                     color: Theme.highlightColor

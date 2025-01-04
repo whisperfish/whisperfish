@@ -286,6 +286,7 @@ Page {
                     "Stephan Lohse" + "\n" +
                     "Alexander Schlarb" + "\n" +
                     "Simon Hahne" + "\n" +
+                    "Ettore Atalan" + "\n" +
                     "Sebastian Maus" + "\n" +
                     "carlosgonz" + "\n" +
                     "tct123"
@@ -331,6 +332,7 @@ Page {
                     "jmcwine" + "\n" +
                     "Alexander Schlarb" + "\n" +
                     "Elmeri Länsiharju" + "\n" +
+                    "Ricky Tigg" + "\n" +
                     "carlosgonz"
                 }
             }

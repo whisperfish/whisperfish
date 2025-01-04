@@ -17,10 +17,10 @@ BackgroundItem {
     property alias horizontalAlignment: textLabel.horizontalAlignment
     property alias backgroundItem: bgRect
 
-    property bool _hasSpoilers: quotedMessage.messageId > -1 ? quotedMessage.hasSpoilers : false
-    property bool _hasStrikeThrough: quotedMessage.messageId > -1 ? quotedMessage.hasStrikeThrough : false
+    property bool _hasSpoilers: quotedMessage.valid ? quotedMessage.hasSpoilers : false
+    property bool _hasStrikeThrough: quotedMessage.valid ? quotedMessage.hasStrikeThrough : false
 
-    readonly property bool shown: (quotedMessage.valid && visible)
+    readonly property bool shown: quotedMessage.valid && visible
     readonly property bool hasAttachments: quotedMessage.thumbsAttachmentsCount > 0
 
     implicitWidth: shown ? Math.min(Math.max(senderNameLabel.implicitWidth+2*contentPadding,

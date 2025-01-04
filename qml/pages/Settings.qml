@@ -565,33 +565,17 @@ Page {
             }
             IconTextSwitch {
                 anchors.horizontalCenter: parent.horizontalCenter
-                //: Settings page enable verbose logging
-                //% "Verbose logging"
-                text: qsTrId("whisperfish-settings-enable-verbose")
+                //: Settings page, send verbose logs to systemd journal
+                //% "Verbose journal log"
+                text: qsTrId("whisperfish-settings-verbose-journal")
                 //: Settings page enable verbose logging description
-                //% "When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a restart to take effect."
+                //% "When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect."
                 description: qsTrId("whisperfish-settings-enable-verbose-description")
                 checked: SettingsBridge.verbose
                 icon.source: "image://theme/icon-m-about"
                 onCheckedChanged: {
                     if(checked != SettingsBridge.verbose) {
                         SettingsBridge.verbose = checked
-                    }
-                }
-            }
-            IconTextSwitch {
-                anchors.horizontalCenter: parent.horizontalCenter
-                //: Settings page enable logging to a file
-                //% "Enable log file"
-                text: qsTrId("whisperfish-settings-logfile-autostart")
-                //: Settings page enable logfile description
-                //% "When enabled, Whisperfish saves its output to a log file. Requires a restart to take effect."
-                description: qsTrId("whisperfish-settings-enable-logfile-description")
-                checked: SettingsBridge.logfile
-                icon.source: "image://theme/icon-m-downloads"
-                onCheckedChanged: {
-                    if(checked != SettingsBridge.logfile) {
-                        SettingsBridge.logfile = checked
                     }
                 }
             }

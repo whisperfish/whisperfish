@@ -76,10 +76,8 @@ pub struct SignalConfig {
     // cannot set this path by a config file.
     #[serde(skip)]
     share_dir: std::path::PathBuf,
-    /// Verbosity of the logging messages
+    /// Verbosity of messages sent to journal
     pub verbose: bool,
-    /// Enable writing to log file
-    pub logfile: bool,
     /// Enable Tokio console debugging and Tracy support
     pub tracing: bool,
     /// Whether whisperfish was automatically started (probably systemd) or by the user. We do not
@@ -104,7 +102,6 @@ impl Default for SignalConfig {
             device_id: std::sync::Mutex::new(libsignal_service::push_service::DEFAULT_DEVICE_ID),
             share_dir: path.to_path_buf(),
             verbose: false,
-            logfile: false,
             tracing: false,
             autostart: false,
             override_captcha: None,
