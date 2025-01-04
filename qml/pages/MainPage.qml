@@ -271,22 +271,39 @@ Page {
                              : qsTrId("whisperfish-subtitle-archived-conversations")
                 visible: sessionView.count > 0
 
-                IconButton {
+                Icon {
+                    id: statusIcon
                     anchors {
                         left: parent.extraContent.left
-                        top: parent.extraContent.top
-                        margins: Theme.paddingLarge
+                        // top: parent.extraContent.top
+                        // margins: Theme.paddingLarge
+                        leftMargin: parent.leftMargin
+                        verticalCenter: parent.verticalCenter
                     }
                     visible: !ClientWorker.queueEmpty || !ClientWorker.connected
-                    height: parent.height - 2 * Theme.paddingLarge
+                    height: parent.height / 3
                     width: height
 
-                    icon {
-                        source: !ClientWorker.connected ? "image://theme/icon-s-blocked" : "image://theme/icon-m-sync"
-                        color: Theme.highlightColor
-                    }
+                    source: !ClientWorker.connected ? "image://theme/icon-s-blocked" : "image://theme/icon-m-sync"
+                    color: Theme.highlightColor
+                }
 
-                    onClicked: {}
+                Label {
+                    anchors {
+                        left: statusIcon.right
+                        leftMargin: Theme.paddingMedium
+                        verticalCenter: parent.verticalCenter
+                    }
+                    visible: !ClientWorker.queueEmpty || !ClientWorker.connected
+                    text: !ClientWorker.connected
+                            //: Whisperfish connection status message
+                            //% "Disconnected"
+                          ? qsTrId("whisperfish-connection-status-disconnected")
+                            //: Whisperfish connection status message
+                            //% "Synchronizing"
+                          : qsTrId("whisperfish-connection-status-reconnecting")
+                    color: Theme.highlightColor
+                    font.pixelSize: Theme.fontSizeSmall
                 }
             }
 
