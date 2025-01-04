@@ -59,9 +59,9 @@ key_prefix = "$SCCACHE_S3_KEY_PREFIX"
 no_credentials = false
 EOF
 
-MAJOR_VERSION=$(echo $TARGET_VERSION | awk -F. '{print $1 FS $2}')
+MAJOR_VERSION=$(echo $SFOS_VERSION | awk -F. '{print $1 FS $2}')
 
-mb2 -t SailfishOS-$TARGET_VERSION-$MER_ARCH build \
+mb2 -t SailfishOS-$SFOS_VERSION-$MER_ARCH build \
     --enable-debug \
     --no-check \
     -- \

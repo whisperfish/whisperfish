@@ -8,13 +8,18 @@ elfbins.list
 
 RPMS/
 rpmbuilddir/
-vendor/
 moc_*.cpp
 moc_*.go
 moc_*.h
 moc.*
 qml/i18n/whisperfish_*.qm
 harbour-whisperfish.pro.user
+
+# Vendored Rust sources
+vendor/
+rpm/vendor.tar.*
+rpm/vendor.toml
+.cargo/config.toml
 
 whisperfish-store/src/schema.rs.rej
 whisperfish.sql
@@ -43,3 +48,5 @@ coverage/
 # IDEs
 .idea
 *.iml
+
+vendor.tar.gz

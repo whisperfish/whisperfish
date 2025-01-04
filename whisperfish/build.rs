@@ -162,7 +162,7 @@ fn main() {
     };
     let macos_lib_framework = if cfg!(target_os = "macos") { "" } else { "5" };
 
-    let qt_libs = ["OpenGL", "Gui", "Core", "Quick", "Qml"];
+    let qt_libs = ["Gui", "Core", "Quick", "Qml"];
     for lib in &qt_libs {
         println!(
             "cargo:rustc-link-lib{}=Qt{}{}",

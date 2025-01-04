@@ -184,7 +184,6 @@ build:sf:latest:armv7hl:
   variables:
     <<: *variables
     MER_ARCH: armv7hl
-    TARGET_VERSION: $SFOS_VERSION
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
@@ -195,7 +194,6 @@ build:sf:latest:i486:
   variables:
     <<: *variables
     MER_ARCH: i486
-    TARGET_VERSION: $SFOS_VERSION
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
@@ -206,7 +204,6 @@ build:sf:latest:aarch64:
   variables:
     <<: *variables
     MER_ARCH: aarch64
-    TARGET_VERSION: $SFOS_VERSION
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
@@ -218,6 +215,21 @@ build:host:stable:
   script:
     - bash fetch-webrtc.sh
     - cargo build --features bundled-sqlcipher
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - when: on_success
+
+build:host:vendor-tar-gz:stable:
+  <<: *rust-stable
+  stage: build
+  script:
+    - cargo vendor > vendor.toml
+    - tar -czf vendor.tar.gz vendor
+  artifacts:
+    paths:
+      - vendor.tar.gz
+      - vendor.toml
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
@@ -631,6 +643,32 @@ deploy:gitlab:tarball:
           url: ${CI_PROJECT_URL}/-/jobs/${TGZ_JOB_ID}/artifacts/raw/${PACKAGE_NAME}.tar.gz
   only:
     - tags
+
+deploy:chum:
+  stage: deploy
+  image: opensuse/leap
+  only:
+    - tags
+  environment:
+      name: "OBS Chum"
+      url: "https://build.sailfishos.org/package/show/home:rubdos:whisperfish/Whisperfish"
+  needs:
+    - build:host:vendor-tar-gz:stable
+  dependencies:
+    - build:host:vendor-tar-gz:stable
+  script:
+    - echo $OSCRC | base64 -d > ~/.oscrc
+    - zypper install -y osc
+    - sed -i.bak "s/main//" _service
+    - sed -i.bak "s/revision\">/revision\">$CI_COMMIT_TAG/" _service
+    - cat _service
+    - osc ls home:rubdos:whisperfish Whisperfish
+    - osc co home:rubdos:whisperfish Whisperfish
+    - cp vendor.tar.gz _service vendor.toml home:rubdos:whisperfish/Whisperfish/
+    - cd home:rubdos:whisperfish/Whisperfish
+    - osc ci -m "Resources for Whisperfish $CI_COMMIT_TAG"
+    # osc submitrequest sailfishos:chum:testing
+
 
 dry-run:triage:
   stage: test
