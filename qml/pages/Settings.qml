@@ -570,7 +570,7 @@ Page {
                 text: qsTrId("whisperfish-settings-verbose-journal")
                 //: Settings page enable verbose logging description
                 //% "When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect."
-                description: qsTrId("whisperfish-settings-enable-verbose-description")
+                description: qsTrId("whisperfish-settings-verbose-journal-description")
                 checked: SettingsBridge.verbose
                 icon.source: "image://theme/icon-m-about"
                 onCheckedChanged: {
