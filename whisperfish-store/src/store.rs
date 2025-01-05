@@ -2340,7 +2340,7 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self, service_address), fields(service_address = service_address.service_id_string()))]
-    pub fn mark_recipient_registered(&self, service_address: ServiceId, registered: bool) -> bool {
+    pub fn mark_recipient_registered(&self, service_address: ServiceId, registered: bool) {
         use schema::recipients::dsl::*;
 
         let rid: Option<i32> = match service_address.kind() {
@@ -2368,17 +2368,9 @@ impl<O: Observable> Storage<O> {
             .expect("mark recipient (un)registered"),
         };
 
-        let Some(rid) = rid else {
-            tracing::trace!(
-                "Registration of {:?} not updated in database",
-                service_address
-            );
-            return false;
-        };
-
-        self.observe_update(schema::recipients::table, rid);
-
-        true
+        if let Some(rid) = rid {
+            self.observe_update(schema::recipients::table, rid);
+        }
     }
 
     #[tracing::instrument(skip(self))]

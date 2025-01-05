@@ -142,19 +142,8 @@ impl ClientActor {
                 "Recipient {} doesn't have a profile on the server, assuming unregistered user",
                 recipient.e164_or_address()
             );
-            let mut db = storage.db();
 
-            use diesel::prelude::*;
-            use whisperfish_store::schema::recipients::dsl::*;
-
-            diesel::update(recipients)
-                .set((
-                    last_profile_fetch.eq(Utc::now().naive_utc()),
-                    is_registered.eq(false),
-                ))
-                .filter(uuid.eq(recipient.uuid.unwrap().to_string()))
-                .execute(&mut *db)
-                .expect("db");
+            storage.mark_recipient_registered(recipient.to_service_address().unwrap(), false);
 
             // If updating self, invalidate the cache
             if Some(Uuid::from(recipient_aci)) == self.config.get_aci() {
