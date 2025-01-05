@@ -95,6 +95,7 @@ impl ClientActor {
                 anyhow::anyhow!("could not find recipient for which we fetched a profile")
             })?;
         let key = &recipient.profile_key;
+        let service_address = recipient.to_service_address().unwrap();
 
         if let Some(profile) = profile {
             let cipher = if let Some(key) = key {
@@ -136,6 +137,8 @@ impl ClientActor {
                 r_key: recipient.profile_key,
             };
 
+            storage.mark_recipient_registered(service_address, true);
+
             ctx.notify(ProfileCreated(profile_data));
         } else {
             tracing::trace!(
@@ -143,7 +146,7 @@ impl ClientActor {
                 recipient.e164_or_address()
             );
 
-            storage.mark_recipient_registered(recipient.to_service_address().unwrap(), false);
+            storage.mark_recipient_registered(service_address, false);
 
             // If updating self, invalidate the cache
             if Some(Uuid::from(recipient_aci)) == self.config.get_aci() {
