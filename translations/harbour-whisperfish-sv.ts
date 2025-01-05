@@ -175,45 +175,45 @@
         <translation>Arkiverade konversationer</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text-237">
-        <location filename="../qml/pages/MainPage.qml" line="294"/>
+        <location filename="../qml/pages/MainPage.qml" line="329"/>
         <source>Start a new conversation through a linked device, or let someone message you</source>
         <extracomment>No messages found, hint on what to do</extracomment>
         <translation>Starta en ny konversation via en länkad enhet, eller låt någon skicka ett meddelande till dig</translation>
     </message>
     <message id="whisperfish-no-archived-messages-hint-text">
-        <location filename="../qml/pages/MainPage.qml" line="304"/>
+        <location filename="../qml/pages/MainPage.qml" line="339"/>
         <source>No archived conversations</source>
         <extracomment>Showing archived conversations, but the list is empty</extracomment>
         <translation>Inga arkiverade konversationer</translation>
     </message>
     <message id="whisperfish-session-section-pinned">
-        <location filename="../qml/pages/MainPage.qml" line="322"/>
+        <location filename="../qml/pages/MainPage.qml" line="357"/>
         <source>Pinned</source>
         <extracomment>Session section label for pinned messages</extracomment>
         <translation>Fast nålade</translation>
     </message>
     <message id="whisperfish-session-section-never">
-        <location filename="../qml/pages/MainPage.qml" line="342"/>
+        <location filename="../qml/pages/MainPage.qml" line="377"/>
         <source>No messages</source>
         <extracomment>Session section label for never (i.e. no messages, no timestamp)</extracomment>
         <translation>Inga meddelanden</translation>
     </message>
     <message id="whisperfish-session-section-today">
         <location filename="../qml/pages/LinkedDevices.qml" line="117"/>
-        <location filename="../qml/pages/MainPage.qml" line="327"/>
+        <location filename="../qml/pages/MainPage.qml" line="362"/>
         <source>Today</source>
         <extracomment>Session section label for today</extracomment>
         <translation>Idag</translation>
     </message>
     <message id="whisperfish-session-section-yesterday">
         <location filename="../qml/pages/LinkedDevices.qml" line="120"/>
-        <location filename="../qml/pages/MainPage.qml" line="332"/>
+        <location filename="../qml/pages/MainPage.qml" line="367"/>
         <source>Yesterday</source>
         <extracomment>Session section label for yesterday</extracomment>
         <translation>Igår</translation>
     </message>
     <message id="whisperfish-session-section-older">
-        <location filename="../qml/pages/MainPage.qml" line="337"/>
+        <location filename="../qml/pages/MainPage.qml" line="372"/>
         <source>Older</source>
         <extracomment>Session section label for older</extracomment>
         <translation>Äldre</translation>
@@ -642,7 +642,7 @@
         <translation>Ta bort länken</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text">
-        <location filename="../qml/pages/MainPage.qml" line="300"/>
+        <location filename="../qml/pages/MainPage.qml" line="335"/>
         <source>Pull down to start a new conversation.</source>
         <extracomment>No messages found, hint on what to do</extracomment>
         <translation>Dra neråt för att starta en ny konversation.</translation>
@@ -688,14 +688,26 @@
         <extracomment>Whisperfish new message menu item</extracomment>
         <translation>Nytt meddelande</translation>
     </message>
+    <message id="whisperfish-connection-status-disconnected">
+        <location filename="../qml/pages/MainPage.qml" line="301"/>
+        <source>Disconnected</source>
+        <extracomment>Whisperfish connection status message</extracomment>
+        <translation type="unfinished">Inte ansluten</translation>
+    </message>
+    <message id="whisperfish-connection-status-reconnecting">
+        <location filename="../qml/pages/MainPage.qml" line="304"/>
+        <source>Synchronizing</source>
+        <extracomment>Whisperfish connection status message</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-registration-required-message">
-        <location filename="../qml/pages/MainPage.qml" line="284"/>
+        <location filename="../qml/pages/MainPage.qml" line="319"/>
         <source>Registration required</source>
         <extracomment>Whisperfish registration required message</extracomment>
         <translation>Registrering krävs</translation>
     </message>
     <message id="whisperfish-locked-message">
-        <location filename="../qml/pages/MainPage.qml" line="288"/>
+        <location filename="../qml/pages/MainPage.qml" line="323"/>
         <source>Locked</source>
         <extracomment>Whisperfish locked message</extracomment>
         <translation>Låst</translation>
@@ -2070,13 +2082,13 @@ Settings page share contacts</extracomment>
         <translation>Delad kontakt</translation>
     </message>
     <message id="whisperfish-voice-note-vorbis-warning">
-        <location filename="../qml/components/ChatTextInput.qml" line="287"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="288"/>
         <source>Incompatible with Signal iOS</source>
         <extracomment>Short warning note that the voice note is being recorded in Vorbis format</extracomment>
         <translation>Ej kompatibel med Signal iOS</translation>
     </message>
     <message id="whisperfish-chat-input-attachment-label" numerus="yes">
-        <location filename="../qml/components/ChatTextInput.qml" line="317"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="318"/>
         <source>%n attachment(s)</source>
         <extracomment>Number of attachments currently selected for sending</extracomment>
         <translation>
@@ -2085,25 +2097,25 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-chat-input-recipient-is-unregistered">
-        <location filename="../qml/components/ChatTextInput.qml" line="326"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="327"/>
         <source>The recipient is not registered</source>
         <extracomment>Chat text input placeholder for deleted/unregistered recipient</extracomment>
         <translation>Mottagaren har inte registrerat sig</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-personal">
-        <location filename="../qml/components/ChatTextInput.qml" line="331"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="332"/>
         <source>Hi %1</source>
         <extracomment>Personalized placeholder for chat input, e.g. &quot;Hi John&quot;</extracomment>
         <translation>Hej, %1</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-default">
-        <location filename="../qml/components/ChatTextInput.qml" line="336"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="337"/>
         <source>Write a message</source>
         <extracomment>Generic placeholder for chat input</extracomment>
         <translation>Skriv ett meddelande</translation>
     </message>
     <message id="whisperfish-select-attachments-page-title">
-        <location filename="../qml/components/ChatTextInput.qml" line="523"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="524"/>
         <source>Select attachments</source>
         <extracomment>Attachment picker page title</extracomment>
         <translation>Välj bilagor</translation>
