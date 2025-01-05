@@ -47,6 +47,7 @@ Item {
 
     readonly property bool quotedMessageShown: quoteItem.messageId >= 0
     readonly property bool canSend: enableSending &&
+                                    ClientWorker.connected &&
                                     (text.trim().length > 0 ||
                                      attachments.length > 0 ||
                                      recorder.isRecording)
@@ -477,7 +478,7 @@ Item {
                 }
                 icon.width: Theme.iconSizeMedium + 2*Theme.paddingSmall
                 icon.height: width
-                icon.source: "image://theme/icon-m-send"
+                icon.source: ClientWorker.connected ? "image://theme/icon-m-send" : "image://theme/icon-s-blocked"
                 enabled: canSend
                 onClicked: {
                     if (canSend /*&& SettingsBridge.send_on_click*/) {

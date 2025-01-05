@@ -66,7 +66,7 @@ Page {
         VerticalScrollDecorator {}
 
         PullDownMenu {
-            busy: !ClientWorker.queueEmpty
+            busy: !ClientWorker.queueEmpty || !ClientWorker.connected
             // NOTE Make sure the pulley menu doesn't have more
             // than four entries. 'New group' and 'New message'
             // can be merged; 'About' and 'Settings' maybe too.
@@ -270,6 +270,41 @@ Page {
                                //% "Archived conversations"
                              : qsTrId("whisperfish-subtitle-archived-conversations")
                 visible: sessionView.count > 0
+
+                Icon {
+                    id: statusIcon
+                    anchors {
+                        left: parent.extraContent.left
+                        // top: parent.extraContent.top
+                        // margins: Theme.paddingLarge
+                        leftMargin: parent.leftMargin
+                        verticalCenter: parent.verticalCenter
+                    }
+                    visible: !ClientWorker.queueEmpty || !ClientWorker.connected
+                    height: parent.height / 3
+                    width: height
+
+                    source: !ClientWorker.connected ? "image://theme/icon-s-blocked" : "image://theme/icon-m-sync"
+                    color: Theme.highlightColor
+                }
+
+                Label {
+                    anchors {
+                        left: statusIcon.right
+                        leftMargin: Theme.paddingMedium
+                        verticalCenter: parent.verticalCenter
+                    }
+                    visible: !ClientWorker.queueEmpty || !ClientWorker.connected
+                    text: !ClientWorker.connected
+                            //: Whisperfish connection status message
+                            //% "Disconnected"
+                          ? qsTrId("whisperfish-connection-status-disconnected")
+                            //: Whisperfish connection status message
+                            //% "Synchronizing"
+                          : qsTrId("whisperfish-connection-status-reconnecting")
+                    color: Theme.highlightColor
+                    font.pixelSize: Theme.fontSizeSmall
+                }
             }
 
             ViewPlaceholder {
