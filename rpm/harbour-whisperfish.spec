@@ -102,6 +102,12 @@ BuildRequires:  zlib-devel
 BuildRequires:  coreutils
 BuildRequires:  perl-IPC-Cmd
 
+%if %{with calling}
+# Ringrtc needs linking against -lssl and -lcrypto;
+# currently no way to link against our vendored openssl
+BuildRequires:  openssl-libs openssl-devel
+%endif
+
 BuildRequires:  pkgconfig(systemd)
 
 BuildRequires:  meego-rpm-config
