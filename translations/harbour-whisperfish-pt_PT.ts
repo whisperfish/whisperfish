@@ -1452,6 +1452,12 @@ Settings page share contacts</extracomment>
         <extracomment>Settings page, send verbose logs to systemd journal</extracomment>
         <translation type="unfinished"></translation>
     </message>
+    <message id="whisperfish-settings-verbose-journal-description">
+        <location filename="../qml/pages/Settings.qml" line="573"/>
+        <source>When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect.</source>
+        <extracomment>Settings page enable verbose logging description</extracomment>
+        <translation type="unfinished">Quando ativado, o Whisperfish devolve dados de saída mais detalhados. Opção útil para execução na linha de comandos. É necessário reiniciar a aplicação para fazer efeito.</translation>
+    </message>
     <message id="whisperfish-settings-gstreamer-version">
         <location filename="../qml/pages/Settings.qml" line="651"/>
         <source>GStreamer version</source>
@@ -1650,11 +1656,10 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Registo detalhado</translation>
     </message>
     <message id="whisperfish-settings-enable-verbose-description">
-        <location filename="../qml/pages/Settings.qml" line="573"/>
         <source>When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect.</source>
         <oldsource>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a restart to take effect.</oldsource>
         <extracomment>Settings page enable verbose logging description</extracomment>
-        <translation type="unfinished">Quando ativado, o Whisperfish devolve dados de saída mais detalhados. Opção útil para execução na linha de comandos. É necessário reiniciar a aplicação para fazer efeito.</translation>
+        <translation type="obsolete">Quando ativado, o Whisperfish devolve dados de saída mais detalhados. Opção útil para execução na linha de comandos. É necessário reiniciar a aplicação para fazer efeito.</translation>
     </message>
     <message id="whisperfish-settings-logfile-autostart">
         <source>Enable log file</source>

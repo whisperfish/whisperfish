@@ -1580,17 +1580,22 @@ Settings page share contacts</extracomment>
         <extracomment>Settings page, send verbose logs to systemd journal</extracomment>
         <translation type="unfinished"></translation>
     </message>
+    <message id="whisperfish-settings-verbose-journal-description">
+        <location filename="../qml/pages/Settings.qml" line="573"/>
+        <source>When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect.</source>
+        <extracomment>Settings page enable verbose logging description</extracomment>
+        <translation type="unfinished">இயக்கப்பட்டால், விச்பர்ஃபிச் வாய்மொழி வெளியீட்டை உருவாக்குகிறது. முனையத்தில் இயங்குவதற்கு பயனுள்ளதாக இருக்கும். நடைமுறைக்கு வர மறுதொடக்கம் தேவை.</translation>
+    </message>
     <message id="whisperfish-settings-enable-verbose">
         <source>Verbose logging</source>
         <extracomment>Settings page enable verbose logging</extracomment>
         <translation type="vanished">சொற்களஞ்சியம் பதிவு</translation>
     </message>
     <message id="whisperfish-settings-enable-verbose-description">
-        <location filename="../qml/pages/Settings.qml" line="573"/>
         <source>When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect.</source>
         <oldsource>When enabled, Whisperfish produces verbose output. Useful for running in terminal. Requires a restart to take effect.</oldsource>
         <extracomment>Settings page enable verbose logging description</extracomment>
-        <translation type="unfinished">இயக்கப்பட்டால், விச்பர்ஃபிச் வாய்மொழி வெளியீட்டை உருவாக்குகிறது. முனையத்தில் இயங்குவதற்கு பயனுள்ளதாக இருக்கும். நடைமுறைக்கு வர மறுதொடக்கம் தேவை.</translation>
+        <translation type="obsolete">இயக்கப்பட்டால், விச்பர்ஃபிச் வாய்மொழி வெளியீட்டை உருவாக்குகிறது. முனையத்தில் இயங்குவதற்கு பயனுள்ளதாக இருக்கும். நடைமுறைக்கு வர மறுதொடக்கம் தேவை.</translation>
     </message>
     <message id="whisperfish-settings-logfile-autostart">
         <source>Enable log file</source>
