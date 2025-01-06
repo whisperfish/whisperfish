@@ -1216,29 +1216,53 @@ impl<O: Observable> Storage<O> {
     pub fn save_profile(&self, profile: StoreProfile) {
         use crate::store::schema::recipients::dsl::*;
         use diesel::prelude::*;
+
+        // Update timestamp separately from the data to get proper changed answer
         diesel::update(recipients)
-            .set((
-                profile_given_name.eq(profile.given_name),
-                profile_family_name.eq(profile.family_name),
-                profile_joined_name.eq(profile.joined_name),
-                about.eq(profile.about_text),
-                about_emoji.eq(profile.emoji),
-                unidentified_access_mode.eq(profile.unidentified),
-                signal_profile_avatar.eq(profile.avatar),
-                last_profile_fetch.eq(profile.last_fetch),
-            ))
+            .set(last_profile_fetch.eq(profile.last_fetch))
             .filter(uuid.nullable().eq(&profile.r_uuid.to_string()))
             .execute(&mut *self.db())
             .expect("db");
 
-        // If updating self, invalidate the cache
-        if Some(profile.r_uuid) == self.config.get_aci() {
-            self.invalidate_self_recipient();
+        let changed_id: Option<i32> = diesel::update(recipients)
+            .set((
+                profile_given_name.eq(profile.given_name.clone()),
+                profile_family_name.eq(profile.family_name.clone()),
+                profile_joined_name.eq(profile.joined_name.clone()),
+                about.eq(profile.about_text.clone()),
+                about_emoji.eq(profile.emoji.clone()),
+                unidentified_access_mode.eq(profile.unidentified),
+                signal_profile_avatar.eq(profile.avatar.clone()),
+            ))
+            .filter(
+                uuid.nullable().eq(&profile.r_uuid.to_string()).and(
+                    profile_given_name
+                        .ne(profile.given_name)
+                        .or(profile_family_name.ne(profile.family_name))
+                        .or(profile_joined_name.ne(profile.joined_name))
+                        .or(about.ne(profile.about_text))
+                        .or(about_emoji.ne(profile.emoji))
+                        .or(unidentified_access_mode.ne(profile.unidentified))
+                        .or(signal_profile_avatar.ne(profile.avatar)),
+                ),
+            )
+            .returning(id)
+            .get_result(&mut *self.db())
+            .optional()
+            .expect("db");
+
+        if changed_id.is_some() {
+            // If updating self, invalidate the cache
+            if Some(profile.r_uuid) == self.config.get_aci() {
+                self.invalidate_self_recipient();
+            }
+
+            tracing::debug!("Updated profile saved to database");
+
+            self.observe_update(schema::recipients::table, profile.r_id);
+        } else {
+            tracing::debug!("Unchanged profile, timestamp updated");
         }
-
-        tracing::trace!("Profile saved to database");
-
-        self.observe_update(schema::recipients::table, profile.r_id);
     }
 
     /// Helper for guaranteed ACI or PNI cases, with or without E.164.
