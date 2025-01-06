@@ -102,6 +102,12 @@ BuildRequires:  zlib-devel
 BuildRequires:  coreutils
 BuildRequires:  perl-IPC-Cmd
 
+%if %{with calling}
+# Ringrtc needs linking against -lssl and -lcrypto;
+# currently no way to link against our vendored openssl
+BuildRequires:  openssl-libs openssl-devel
+%endif
+
 BuildRequires:  pkgconfig(systemd)
 
 BuildRequires:  meego-rpm-config
@@ -301,9 +307,6 @@ BINS="--bin harbour-whisperfish"
 # Workaround a Scratchbox bug - /tmp/[...]/symbols.o not found
 export TMPDIR=${TMPDIR:-$(realpath ".tmp")}
 mkdir -p $TMPDIR
-
-# ringrtc requires an output directory for the WebRTC artifacts
-export OUTPUT_DIR=%{_sourcedir}/../ringrtc/111/${SB2_RUST_TARGET_TRIPLE}
 
 %if 0%{?taskset:1}
 export TASKSET="taskset %{taskset}"
