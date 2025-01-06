@@ -557,7 +557,7 @@ impl<O: Observable> Storage<O> {
         let root = root.as_ref();
 
         let directories = [
-            root.to_path_buf() as PathBuf,
+            root.to_path_buf(),
             root.join("db"),
             root.join("storage"),
             root.join("storage").join("identity"),
