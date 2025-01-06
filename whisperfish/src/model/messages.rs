@@ -100,6 +100,12 @@ impl EventObserving for Message {
                         self.message_changed();
                     }
                 }
+            } else if event.relation_key_for(schema::receipts::table).is_some() {
+                let storage = ctx.storage();
+                self.augmented_message.as_mut().unwrap().receipts =
+                    storage.fetch_message_receipts(id);
+                // XXX This could also be implemented efficiently
+                self.message_changed();
             } else {
                 self.fetch(ctx.storage(), id);
             }
