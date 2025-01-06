@@ -1514,9 +1514,15 @@ impl<O: Observable> Storage<O> {
         // Find the recipient
         let rcpt = self.merge_and_fetch_recipient_by_address(None, sender, TrustLevel::Certain);
 
-        let num_timestamps = timestamps.len();
+        // Part 1 - mark messages as read
+
         let pointers: Vec<MessagePointer> = diesel::update(messages)
-            .filter(server_timestamp.eq_any(timestamps))
+            .filter(
+                server_timestamp
+                    .eq_any(timestamps.clone())
+                    .and(is_read.ne(true)),
+            )
+            // XXX `is_read` should only be used for "self-has-read", perhaps
             .set(is_read.eq(true))
             .returning((schema::messages::id, schema::messages::session_id))
             .load(&mut *self.db())
@@ -1528,22 +1534,26 @@ impl<O: Observable> Storage<O> {
             })
             .collect();
 
-        if pointers.is_empty() {
-            tracing::warn!(
-                "Received {} read timestamps but found {} messages",
-                num_timestamps,
-                pointers.len()
-            );
-            tracing::warn!(
-                "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
-            );
-            return Vec::new();
-        }
-
         for ptr in pointers.iter() {
             self.observe_update(messages, ptr.message_id)
                 .with_relation(schema::sessions::table, ptr.session_id);
+        }
 
+        // Part 2 - insert/update read receipts
+
+        let pointers: Vec<MessagePointer> = schema::messages::table
+            .select((schema::messages::id, schema::messages::session_id))
+            .filter(server_timestamp.eq_any(timestamps))
+            .load(&mut *self.db())
+            .unwrap()
+            .into_iter()
+            .map(|(m_id, s_id)| MessagePointer {
+                message_id: m_id,
+                session_id: s_id,
+            })
+            .collect();
+
+        for ptr in pointers.iter() {
             // For read receipts, existing row is likely present - try update first
             let mut affected = diesel::update(schema::receipts::table)
                 .filter(
@@ -1675,9 +1685,6 @@ impl<O: Observable> Storage<O> {
         }
 
         for ptr in pointers.iter() {
-            self.observe_update(schema::messages::table, ptr.message_id)
-                .with_relation(schema::sessions::table, ptr.session_id);
-
             // For delivery receipts, existing row is likely absent - try insert first
             let mut affected = diesel::insert_into(schema::receipts::table)
                 .values((
