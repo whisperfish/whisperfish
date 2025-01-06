@@ -1122,9 +1122,10 @@ impl ClientActor {
                         response.r#type(),
                         addr.service_id_string()
                     );
-                    false
+                    return false;
                 }
             }
+            true
         } else if let Some(group_id) = &response.group_id {
             tracing::warn!("Group message request responses are not yet implemented. {:?}. Please upvote bug #327", group_id);
             false
