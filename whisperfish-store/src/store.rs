@@ -1476,30 +1476,27 @@ impl<O: Observable> Storage<O> {
     #[tracing::instrument(skip(self))]
     pub fn mark_message_read(&self, timestamp: NaiveDateTime) -> Option<MessagePointer> {
         use schema::messages::dsl::*;
-        let mut row: Vec<(i32, i32)> = diesel::update(messages)
-            .filter(server_timestamp.eq(timestamp))
+        let pointer: Option<MessagePointer> = diesel::update(messages)
+            .filter(server_timestamp.eq(timestamp).and(is_read.ne(true)))
             .set(is_read.eq(true))
             .returning((schema::messages::id, schema::messages::session_id))
             .load(&mut *self.db())
-            .unwrap();
+            .unwrap()
+            .into_iter()
+            .map(|(m_id, s_id)| MessagePointer {
+                message_id: m_id,
+                session_id: s_id,
+            })
+            .collect::<Vec<MessagePointer>>()
+            .pop();
 
-        if row.is_empty() {
-            tracing::warn!("Could not sync message {} as received", timestamp);
-            tracing::warn!(
-                "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
-            );
-            return None;
+        if let Some(pointer) = pointer {
+            self.observe_update(messages, pointer.message_id)
+                .with_relation(schema::sessions::table, pointer.session_id);
+            Some(pointer)
+        } else {
+            None
         }
-
-        let pointer = row.pop()?;
-        let pointer = MessagePointer {
-            message_id: pointer.0,
-            session_id: pointer.1,
-        };
-
-        self.observe_update(messages, pointer.message_id)
-            .with_relation(schema::sessions::table, pointer.session_id);
-        Some(pointer)
     }
 
     /// Marks the messages with the certain timestamps as read by a certain person.
