@@ -1079,15 +1079,12 @@ impl<O: Observable> Storage<O> {
     #[tracing::instrument(skip(self))]
     pub fn update_expiration_timer(
         &self,
-        session_id: i32,
+        session: &orm::Session,
         timer: Option<u32>,
         version: Option<u32>,
     ) -> i32 {
         // Carry out the update only if the timer changes
         use crate::schema::sessions::dsl::*;
-        let session = self
-            .fetch_session_by_id(session_id)
-            .expect("existing session for expiration update");
         let new_version = if session.is_group() {
             1
         } else if let Some(version) = version {
@@ -1100,14 +1097,25 @@ impl<O: Observable> Storage<O> {
                 expiring_message_timeout.eq(timer.map(|i| i as i32)),
                 expire_timer_version.eq(new_version),
             ))
-            .filter(id.eq(session_id))
+            .filter(
+                id.eq(session.id).and(
+                    expiring_message_timeout
+                        .ne(timer.map(|i| i as i32))
+                        .or(expire_timer_version.ne(new_version)),
+                ),
+            )
             .returning(expire_timer_version)
             .load(&mut *self.db())
             .expect("existing record updated");
-        if affected_rows.len() != 1 {
+
+        if affected_rows.len() == 1 {
+            self.observe_update(sessions, session.id);
+            affected_rows.pop().unwrap()
+        } else if affected_rows.is_empty() {
+            new_version
+        } else {
             panic!("Message expiry update should only have changed a single session")
         }
-        affected_rows.pop().unwrap()
     }
 
     #[tracing::instrument(
