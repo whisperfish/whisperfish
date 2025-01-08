@@ -692,13 +692,13 @@
         <location filename="../qml/pages/MainPage.qml" line="301"/>
         <source>Disconnected</source>
         <extracomment>Whisperfish connection status message</extracomment>
-        <translation type="unfinished">Inte ansluten</translation>
+        <translation>Inte ansluten</translation>
     </message>
     <message id="whisperfish-connection-status-reconnecting">
         <location filename="../qml/pages/MainPage.qml" line="304"/>
         <source>Synchronizing</source>
         <extracomment>Whisperfish connection status message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Synkroniserar</translation>
     </message>
     <message id="whisperfish-registration-required-message">
         <location filename="../qml/pages/MainPage.qml" line="319"/>
@@ -1580,13 +1580,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="570"/>
         <source>Verbose journal log</source>
         <extracomment>Settings page, send verbose logs to systemd journal</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Utförlig journallogg</translation>
     </message>
     <message id="whisperfish-settings-verbose-journal-description">
         <location filename="../qml/pages/Settings.qml" line="573"/>
         <source>When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect.</source>
         <extracomment>Settings page enable verbose logging description</extracomment>
-        <translation type="unfinished">När detta är aktiverat, producerar Whisperfish utförlig utdata. Nyttigt för att köra i terminalen. Kräver omstart för att träda i kraft.</translation>
+        <translation>När det är aktiverat skickar Whisperfish utförlig utdata till systemd-journalen. Kräver omstart för att träda i kraft.</translation>
     </message>
     <message id="whisperfish-settings-gstreamer-version">
         <location filename="../qml/pages/Settings.qml" line="651"/>
