@@ -20,7 +20,7 @@ Page {
     property string detailedDescription: ""  // optional details below all content
     property bool squashDetails: false  // show details in a smaller font
 
-    property url iconSource: "../../icons/172x172/harbour-whisperfish.png"
+    property url iconSource: "/usr/share/icons/hicolor/172x172/apps/harbour-whisperfish.png"
     // default a bit larger than BusyIndicatorSize.Large, which is quite large
     // only set this to a smaller value if the derived page will never set busy=true
     property real iconSize: 1.2*Theme.itemSizeExtraLarge
