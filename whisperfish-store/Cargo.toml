@@ -19,9 +19,9 @@ bincode = "1.2.1"
 cbc = "0.1"
 cipher = "0.4"
 chrono = "0.4"
-diesel = { version = "2.0", features = ["sqlite", "chrono", "returning_clauses_for_sqlite_3_35", "64-column-tables"] }
-diesel_migrations = "2.0"
-diesel-derive-enum = { version = "2.1.0", features = ["sqlite"] }
+diesel = { version = "=2.1", features = ["sqlite", "chrono", "returning_clauses_for_sqlite_3_35", "64-column-tables"] }
+diesel_migrations = "=2.1"
+diesel-derive-enum = { version = "=2.1", features = ["sqlite"] }
 dirs = "5.0"
 fs_extra = "1.2.0"
 hex = "0.4"

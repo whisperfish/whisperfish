@@ -57,8 +57,8 @@ itertools = "0.12"
 qrencode = "0.14"
 image = { version = "0.24", default-features = false, features = ["png"] }
 
-diesel = { version = "2.0", features = ["sqlite", "chrono"] }
-diesel_migrations = "2.0"
+diesel = { version = "=2.1", features = ["sqlite", "chrono"] }
+diesel_migrations = "=2.1"
 libsqlite3-sys = { version = "0.27", features = ["sqlcipher"] }
 
 serde = { version = "1.0", features = ["derive"] }
