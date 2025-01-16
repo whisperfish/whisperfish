@@ -583,7 +583,7 @@
         <location filename="../qml/pages/MainPage.qml" line="304"/>
         <source>Synchronizing</source>
         <extracomment>Whisperfish connection status message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Synchroniseren</translation>
     </message>
     <message id="whisperfish-registration-required-message">
         <location filename="../qml/pages/MainPage.qml" line="319"/>
@@ -1462,13 +1462,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="570"/>
         <source>Verbose journal log</source>
         <extracomment>Settings page, send verbose logs to systemd journal</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Uitgebreide journal logging</translation>
     </message>
     <message id="whisperfish-settings-verbose-journal-description">
         <location filename="../qml/pages/Settings.qml" line="573"/>
         <source>When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect.</source>
         <extracomment>Settings page enable verbose logging description</extracomment>
-        <translation type="unfinished">Ingeschakeld produceert Whisperfish uitgebreide logboeken. Nuttig voor gebruik in een terminal. Vereist een herstart om in effect te treden.</translation>
+        <translation>Ingeschakeld produceert Whisperfish uitgebreide logboeken in het systemd journal. Vereist een herstart om in effect te treden.</translation>
     </message>
     <message id="whisperfish-settings-gstreamer-version">
         <location filename="../qml/pages/Settings.qml" line="651"/>
