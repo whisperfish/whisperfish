@@ -48,10 +48,13 @@ impl Handler<CheckMasterKey> for ClientActor {
                         Ok(mut sender) => {
                             let addr = Aci::from(config.get_aci().unwrap());
                             let req = RequestType::Keys;
-                            sender
-                                .send_sync_message_request(&addr.into(), req)
-                                .await
-                                .unwrap();
+                            if let Err(e) =
+                                sender.send_sync_message_request(&addr.into(), req).await
+                            {
+                                tracing::error!("Error fetching master key: {e:?}; continuing...");
+                                return Ok(true);
+                                // return Ok(false);
+                            }
                             Ok(true)
                         }
                         Err(e) => {
