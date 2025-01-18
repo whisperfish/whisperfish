@@ -238,6 +238,11 @@ export AR_aarch64_unknown_linux_gnu=aarch64-meego-linux-gnu-ar
 # Hack for qmetaobject on QT_SELECT=5 platforms
 # export QMAKE=rpm/qmake-sailfish
 
+# qttypes tries to call qmake6 first, which results in
+# an error something else than io::ErrorKind::NotFound,
+# so we'll have to point it straight to qmake.
+export QMAKE=/usr/bin/qmake
+
 # Hack for cross linking against dbus
 export PKG_CONFIG_ALLOW_CROSS_i686_unknown_linux_gnu=1
 export PKG_CONFIG_ALLOW_CROSS_armv7_unknown_linux_gnueabihf=1
