@@ -11,14 +11,14 @@ whisperfish = { path = "../whisperfish" }
 dbus = "0.9"
 single-instance = "0.3.3"
 tracing = { version = "0.1", features = ["log"] }
-tracing-journald = "0.3.0"
+tracing-journald = "0.3.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-time = "0.3.30"
+time = "0.3.37"
 anyhow = "1.0"
 clap = { version = "3.2", features = ["derive"] }
 chrono = "0.4"
-regex = "1.7"
-signal-hook = "0.3.15"
+regex = "1.11"
+signal-hook = "0.3.17"
 
 # Profiling and debugging
 console-subscriber = { version = "0.2", optional = true }

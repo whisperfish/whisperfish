@@ -2946,7 +2946,7 @@ impl<O: Observable> Storage<O> {
                 let mut reactions = reactions.into_iter().peekable();
                 let receipts = receipts
                     .into_iter()
-                    .group_by(|(receipt, _recipient)| receipt.message_id);
+                    .chunk_by(|(receipt, _recipient)| receipt.message_id);
                 let mut receipts = receipts.into_iter().peekable();
 
                 for message in messages {

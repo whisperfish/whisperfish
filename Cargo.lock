@@ -2197,9 +2197,9 @@ dependencies = [
 
 [[package]]
 name = "libsqlite3-sys"
-version = "0.27.0"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf4e226dcd58b4be396f7bd3c20da8fdee2911400705297ba7d2d7cc2c30f716"
+checksum = "0c10584274047cb335c23d3e61bcef8e323adae7c5c8c760540f73610177fc3f"
 dependencies = [
  "cc",
  "openssl-sys",
@@ -3713,9 +3713,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.135"
+version = "1.0.136"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b0d7ba2887406110130a978386c4e1befb98c674b4fba677954e4db976630d9"
+checksum = "336a0c23cf42a38d9eaa7cd22c7040d04e1228a19a933890805ffd00a16437d2"
 dependencies = [
  "itoa",
  "memchr",
@@ -5011,7 +5011,7 @@ dependencies = [
  "gstreamer",
  "hex",
  "image",
- "itertools 0.12.1",
+ "itertools 0.13.0",
  "libsignal-protocol",
  "libsignal-service",
  "libsqlite3-sys",
@@ -5040,7 +5040,7 @@ dependencies = [
  "serde_yaml",
  "sha2",
  "tempfile",
- "thiserror 1.0.69",
+ "thiserror 2.0.11",
  "time",
  "tokio",
  "tracing",
@@ -5068,7 +5068,7 @@ dependencies = [
  "aes",
  "anyhow",
  "async-trait",
- "base64 0.21.7",
+ "base64 0.22.1",
  "bincode",
  "cbc",
  "chrono",
@@ -5082,7 +5082,7 @@ dependencies = [
  "futures",
  "hex",
  "hmac",
- "itertools 0.12.1",
+ "itertools 0.13.0",
  "libsignal-service",
  "libsqlite3-sys",
  "linkify",
