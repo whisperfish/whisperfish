@@ -577,13 +577,13 @@
         <location filename="../qml/pages/MainPage.qml" line="301"/>
         <source>Disconnected</source>
         <extracomment>Whisperfish connection status message</extracomment>
-        <translation type="unfinished">Connectie verbroken</translation>
+        <translation>Connectie verbroken</translation>
     </message>
     <message id="whisperfish-connection-status-reconnecting">
         <location filename="../qml/pages/MainPage.qml" line="304"/>
         <source>Synchronizing</source>
         <extracomment>Whisperfish connection status message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Synchroniseren</translation>
     </message>
     <message id="whisperfish-registration-required-message">
         <location filename="../qml/pages/MainPage.qml" line="319"/>
@@ -1462,13 +1462,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="570"/>
         <source>Verbose journal log</source>
         <extracomment>Settings page, send verbose logs to systemd journal</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Uitgebreid journaallog</translation>
     </message>
     <message id="whisperfish-settings-verbose-journal-description">
         <location filename="../qml/pages/Settings.qml" line="573"/>
         <source>When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect.</source>
         <extracomment>Settings page enable verbose logging description</extracomment>
-        <translation type="unfinished">Hiermee produceert Whisperfish gedetailleerde logs. Handig as ge ’t in nen terminal uitvoert. Hiervoôr moete Whisperfish wel herstarten.</translation>
+        <translation>Hiermee schrijft Whisperfish gedetailleerde logs in ’t systemd-journaal. Hiervoôr moete Whisperfish wel herstarten.</translation>
     </message>
     <message id="whisperfish-settings-gstreamer-version">
         <location filename="../qml/pages/Settings.qml" line="651"/>
