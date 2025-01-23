@@ -577,7 +577,7 @@
         <location filename="../qml/pages/MainPage.qml" line="301"/>
         <source>Disconnected</source>
         <extracomment>Whisperfish connection status message</extracomment>
-        <translation type="unfinished">Verbinding verbroken</translation>
+        <translation>Verbinding verbroken</translation>
     </message>
     <message id="whisperfish-connection-status-reconnecting">
         <location filename="../qml/pages/MainPage.qml" line="304"/>
