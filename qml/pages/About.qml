@@ -206,8 +206,8 @@ Page {
                 horizontalAlignment: TextEdit.Center
                 readOnly: true
                 text: {
-                    "Ruben De Smet" + "\n" +
                     "Nathan" + "\n" +
+                    "Ruben De Smet" + "\n" +
                     "Alexander Schlarb" + "\n" +
                     "J. Lavoie" + "\n" +
                     "carlosgonz"
