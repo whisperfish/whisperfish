@@ -270,6 +270,9 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             AssociatedValue::Link(s) => {
                 segment.link = Some(s);
             }
+            AssociatedValue::Button(b) => {
+                tracing::warn!("Ignoring button {b:?}");
+            }
             _ => {}
         }
     }
