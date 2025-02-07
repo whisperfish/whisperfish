@@ -267,6 +267,9 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
                 assert_eq!(segment.contents, "\u{fffc}");
                 segment.mention = Some(s);
             }
+            AssociatedValue::Link(s) => {
+                segment.link = Some(s);
+            }
             _ => {}
         }
     }
