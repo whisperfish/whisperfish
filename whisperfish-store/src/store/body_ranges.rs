@@ -16,6 +16,17 @@ pub const TOUCHING_SPOILERS: &str =
 pub const LINK_TAG_UNCLICKED: &str = "<a style='background-color: \"white\"; color: \"white\";' ";
 pub const LINK_TAG_CLICKED: &str = "<a ";
 
+use {once_cell::sync::Lazy, regex::Regex};
+
+fn find_geo(haystack: &str) -> impl Iterator<Item = (usize, &str)> {
+    static RE: Lazy<Regex> =
+        Lazy::new(|| Regex::new(r"\<geo:[-0-9.]*,[-0-9.]*(\?z=\d+)?\>").unwrap());
+    RE.find_iter(haystack).map(|m| {
+        let start = m.start();
+        (start, m.as_str())
+    })
+}
+
 pub fn deserialize(message_ranges: &[u8]) -> Vec<database_protos::body_range_list::BodyRange> {
     let message_ranges = database_protos::BodyRangeList::decode(message_ranges as &[u8])
         .expect("valid protobuf in database");
@@ -136,6 +147,27 @@ fn escape(s: &str) -> std::borrow::Cow<'_, str> {
     }
 }
 
+enum BodyRangeType<'a> {
+    SignalBodyRange(&'a BodyRange),
+    Geo(usize, &'a str),
+}
+
+impl<'a> BodyRangeType<'a> {
+    fn len(&self) -> usize {
+        match self {
+            BodyRangeType::SignalBodyRange(range) => range.length as usize,
+            BodyRangeType::Geo(_, s) => s.len(),
+        }
+    }
+
+    fn start(&self) -> usize {
+        match self {
+            BodyRangeType::SignalBodyRange(range) => range.start as usize,
+            BodyRangeType::Geo(start, _) => *start,
+        }
+    }
+}
+
 /// Returns a styled message, with ranges for bold, italic, links, quotes, etc.
 #[tracing::instrument(level = "debug", skip(mention_lookup))]
 pub fn to_styled<'a, S: AsRef<str> + 'a>(
@@ -249,8 +281,14 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
         })
         .collect();
 
+    let mut geo_ranges = find_geo(message).peekable();
+
     // If there are no segments, ranges or special characters we can just return the message without reallocating.
-    if segments.len() == 1 && segments[0].link.is_none() && ranges.is_empty() {
+    if segments.len() == 1
+        && segments[0].link.is_none()
+        && ranges.is_empty()
+        && geo_ranges.peek().is_none()
+    {
         return escape(message);
     }
 
@@ -278,21 +316,32 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
     }
 
     // Every BodyRange splits one or two segments into two, and adds a style to the affected segment.
-    for range in ranges {
-        let _span = tracing::debug_span!("processing range", ?range, segments=?segments).entered();
+    for range in ranges
+        .iter()
+        .map(BodyRangeType::SignalBodyRange)
+        .chain(geo_ranges.map(|(begin, s)| BodyRangeType::Geo(begin, s)))
+    {
+        let _span = match range {
+            BodyRangeType::SignalBodyRange(range) => {
+                tracing::debug_span!("processing range", ?range, segments=?segments).entered()
+            }
+            BodyRangeType::Geo(begin, s) => {
+                tracing::debug_span!("processing geo link", ?s, begin).entered()
+            }
+        };
         // XXX Just skip the range if necessary, that's healthier than panicking.
-        let end = (range.start + range.length) as usize;
+        let end = range.start() + range.len();
 
         if end > message.encode_utf16().count() {
-            tracing::warn!(range=?range, "range end out of bounds");
+            tracing::warn!("range end out of bounds");
             return std::borrow::Cow::Borrowed(message);
         }
 
         let left = segments
             .binary_search_by(|segment| {
-                if segment.end() <= range.start as usize {
+                if segment.end() <= range.start() {
                     std::cmp::Ordering::Less
-                } else if segment.start > range.start as usize {
+                } else if segment.start > range.start() {
                     std::cmp::Ordering::Greater
                 } else {
                     std::cmp::Ordering::Equal
@@ -301,11 +350,13 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             .unwrap_or_else(|e| {
                 panic!(
                     "range ({} -> {}) start in segment Err({})",
-                    range.start, range.length, e
+                    range.start(),
+                    range.len(),
+                    e
                 )
             });
 
-        let left_split_at = range.start as usize - segments[left].start;
+        let left_split_at = range.start() - segments[left].start;
         if left_split_at != 0 {
             segments.splice(left..=left, segments[left].split_at(left_split_at));
         }
@@ -323,7 +374,9 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             .unwrap_or_else(|e| {
                 panic!(
                     "range ({} -> {}) end in segment Err({})",
-                    range.start, range.length, e
+                    range.start(),
+                    range.len(),
+                    e
                 )
             });
 
@@ -334,7 +387,14 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
 
         let left = if left_split_at != 0 { left + 1 } else { left };
         for segment in &mut segments[left..=right] {
-            annotate(segment, range.associated_value.as_ref());
+            match range {
+                BodyRangeType::SignalBodyRange(range) => {
+                    annotate(segment, range.associated_value.as_ref());
+                }
+                BodyRangeType::Geo(_start, s) => {
+                    segment.link = Some(s);
+                }
+            }
         }
     }
 
@@ -718,5 +778,25 @@ mod tests {
         println!("{ranges:?}");
         // This paniced
         let _styled = to_styled(text, &ranges, no_mentions);
+    }
+
+    #[test]
+    fn geo() {
+        let pairs = [
+            (
+                "geo:25.245470,51.454009",
+                "<a href=\"geo:25.245470,51.454009\">geo:25.245470,51.454009</a>",
+            ),
+            (
+                "geo:25.245470,51.454009?z=10",
+                "<a href=\"geo:25.245470,51.454009?z=10\">geo:25.245470,51.454009?z=10</a>",
+            ),
+        ];
+
+        for (input, expected) in &pairs {
+            let styled = to_styled(input, &[], no_mentions);
+
+            assert_eq!(styled, *expected);
+        }
     }
 }
