@@ -21,7 +21,7 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="59"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>语音消息</translation>
     </message>
     <message id="whisperfish-session-delete-all">
         <location filename="../qml/delegates/SessionDelegate.qml" line="122"/>
@@ -67,13 +67,13 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="382"/>
         <source>Unpin</source>
         <extracomment>&apos;Unpin&apos; conversation from the top of the view</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>取消置顶</translation>
     </message>
     <message id="whisperfish-session-mark-pinned">
         <location filename="../qml/delegates/SessionDelegate.qml" line="385"/>
         <source>Pin to top</source>
         <extracomment>&apos;Pin&apos; conversation to the top of the view</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>置顶</translation>
     </message>
     <message id="whisperfish-session-mark-unmuted">
         <location filename="../qml/delegates/SessionDelegate.qml" line="394"/>
@@ -87,7 +87,7 @@
         <source>Mute conversation</source>
         <oldsource>Mark as muted</oldsource>
         <extracomment>Mark conversation as muted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>已静音</translation>
     </message>
     <message id="whisperfish-session-mark-unarchived">
         <location filename="../qml/delegates/SessionDelegate.qml" line="405"/>
@@ -111,13 +111,13 @@
         <location filename="../qml/harbour-whisperfish-main.qml" line="235"/>
         <source>Missed voice call</source>
         <extracomment>Notification text for missed call notification</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>未接来电</translation>
     </message>
     <message id="whisperfish-notification-missed-video-call">
         <location filename="../qml/harbour-whisperfish-main.qml" line="239"/>
         <source>Missed video call</source>
         <extracomment>Notification text for missed call notification</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>未接视频电话</translation>
     </message>
     <message id="whisperfish-notification-default-message">
         <location filename="../qml/harbour-whisperfish-main.qml" line="306"/>
@@ -160,13 +160,13 @@
         <location filename="../qml/pages/MainPage.qml" line="131"/>
         <source>Return to conversations</source>
         <extracomment>Menu item for returning to &quot;inbox&quot; from archived sessions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>返回对话</translation>
     </message>
     <message id="whisperfish-subtitle-active-conversations">
         <location filename="../qml/pages/MainPage.qml" line="268"/>
         <source>Conversations</source>
         <extracomment>Whisperfish subtitle for active conversations aka. &quot;inbox&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>对话</translation>
     </message>
     <message id="whisperfish-subtitle-archived-conversations">
         <location filename="../qml/pages/MainPage.qml" line="271"/>
@@ -190,13 +190,13 @@
         <location filename="../qml/pages/MainPage.qml" line="357"/>
         <source>Pinned</source>
         <extracomment>Session section label for pinned messages</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>置顶</translation>
     </message>
     <message id="whisperfish-session-section-never">
         <location filename="../qml/pages/MainPage.qml" line="377"/>
         <source>No messages</source>
         <extracomment>Session section label for never (i.e. no messages, no timestamp)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>无消息</translation>
     </message>
     <message id="whisperfish-session-section-today">
         <location filename="../qml/pages/LinkedDevices.qml" line="117"/>
