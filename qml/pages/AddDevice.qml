@@ -6,7 +6,7 @@ import Amber.QrFilter 1.0
 Dialog {
     id: addDeviceDialog
     objectName: "addDeviceDialog"
-    canAccept: false
+    canAccept: urlField.acceptableInput && camera.status !== Camera.ActiveStatus
     readonly property bool active: Qt.application.active
 
     onActiveChanged: {
@@ -52,8 +52,10 @@ Dialog {
             height: parent.width - Theme.paddingLarge * 2
             anchors.horizontalCenter: parent.horizontalCenter
 
+            visible: camera.status === Camera.ActiveStatus
+
             filters: [ qrFilter ]
-            
+
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
@@ -66,7 +68,7 @@ Dialog {
         QrFilter {
             id: qrFilter
             onResultChanged: {
-                if (result.length > 0 && 
+                if (result.length > 0 &&
                     (result.indexOf("tsdevice:") == 0 || result.indexOf("sgnl:") == 0)) {
                     addDevice(result)
                     addDeviceDialog.close()
@@ -83,6 +85,63 @@ Dialog {
             font.pixelSize: Theme.fontSizeSmall
             color: Theme.highlightColor
 
+            visible: camera.status === Camera.ActiveStatus
+
+            anchors {
+                left: parent.left
+                leftMargin: Theme.horizontalPageMargin
+                right: parent.right
+                rightMargin: Theme.horizontalPageMargin
+            }
+        }
+
+        TextField {
+            id: urlField
+            width: parent.width
+            inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhPreferLowercase
+            validator: RegExpValidator{ regExp: /(tsdevice|sgnl):\/\/?.*/;}
+            //: Device URL, text input for pasting the QR-scanned code
+            //% "Device URL"
+            label: qsTrId("whisperfish-device-url")
+            placeholderText: "sgnl://[...]"
+            horizontalAlignment: TextInput.AlignLeft
+            EnterKey.onClicked: parent.focus = true
+
+            visible: camera.status !== Camera.ActiveStatus
+
+            errorHighlight: !(urlField.text.length > 0 && urlField.acceptableInput)
+
+            Component.onCompleted: {
+                if(urlField.rightItem !== undefined) {
+                    _urlFieldLoader.active = true
+                    urlField.rightItem = _urlFieldLoader.item
+                    urlField.errorHighlight = false
+                }
+            }
+
+            Loader {
+                id: _urlFieldLoader
+                active: false
+                sourceComponent: Image {
+                    width: urlField.font.pixelSize
+                    height: urlField.font.pixelSize
+                    source: "image://theme/icon-s-checkmark?" + urlField.color
+                    opacity: urlField.text.length > 0 && urlField.acceptableInput ? 1.0 : 0.01
+                    Behavior on opacity { FadeAnimation {} }
+                }
+            }
+        }
+
+        Label {
+            width: parent.width
+            wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+            //: Instructions on how to scan QR code for device linking
+            //% "Install Signal Desktop. Use e.g. the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here."
+            text: qsTrId("whisperfish-device-link-instructions")
+            font.pixelSize: Theme.fontSizeSmall
+            color: Theme.highlightColor
+
+            visible: camera.status !== Camera.ActiveStatus
 
             anchors {
                 left: parent.left
