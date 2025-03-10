@@ -1,15 +1,19 @@
 import QtQuick 2.2
 import Sailfish.Silica 1.0
-import QtMultimedia 5.6
-import Amber.QrFilter 1.0
 
 Dialog {
     id: addDeviceDialog
     objectName: "addDeviceDialog"
-    canAccept: urlField.acceptableInput && camera.status !== Camera.ActiveStatus
+    canAccept: urlField.acceptableInput && !camera.active
     readonly property bool active: Qt.application.active
 
+    property alias camera: cameraLoader.item
+
     onActiveChanged: {
+        if (cameraLoader.status !== Loader.Ready) {
+            return;
+        }
+
         if(active) {
             camera.stop()
         }
@@ -20,6 +24,10 @@ Dialog {
     }
 
     onStatusChanged: {
+        if (cameraLoader.status !== Loader.Ready) {
+            return;
+        }
+
         if(status === PageStatus.Active) {
             camera.start()
             camera.unlock()
@@ -42,37 +50,28 @@ Dialog {
             title: qsTrId("whisperfish-add-device")
         }
 
+        // Load "AddDeviceQrScanner.qml"
+        Loader {
+            id: cameraLoader
+            source: "../components/AddDeviceQrScanner.qml"
+            width: parent.width
+            visible: camera.active
 
-        VideoOutput {
-            id: videoOutput
-            source: camera
-            fillMode: VideoOutput.PreserveAspectFit
-            z: -1
-            width: parent.width - Theme.paddingLarge * 2
-            height: parent.width - Theme.paddingLarge * 2
-            anchors.horizontalCenter: parent.horizontalCenter
-
-            visible: camera.status === Camera.ActiveStatus
-
-            filters: [ qrFilter ]
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
+            onLoaded: {
+                if (addDeviceDialog.active) {
+                    camera.start()
                     camera.unlock()
-                    camera.searchAndLock()
                 }
             }
         }
 
-        QrFilter {
-            id: qrFilter
-            onResultChanged: {
-                if (result.length > 0 &&
-                    (result.indexOf("tsdevice:") == 0 || result.indexOf("sgnl:") == 0)) {
-                    addDevice(result)
-                    addDeviceDialog.close()
-                }
+        Connections {
+            // enabled: cameraLoader.status === Loader.Ready
+
+            target: cameraLoader.item
+            onResultFound: {
+                addDevice(tsurl)
+                addDeviceDialog.close()
             }
         }
 
@@ -85,7 +84,7 @@ Dialog {
             font.pixelSize: Theme.fontSizeSmall
             color: Theme.highlightColor
 
-            visible: camera.status === Camera.ActiveStatus
+            visible: camera != null && camera.active
 
             anchors {
                 left: parent.left
@@ -107,7 +106,7 @@ Dialog {
             horizontalAlignment: TextInput.AlignLeft
             EnterKey.onClicked: parent.focus = true
 
-            visible: camera.status !== Camera.ActiveStatus
+            visible: camera == null || !camera.active
 
             errorHighlight: !(urlField.text.length > 0 && urlField.acceptableInput)
 
@@ -141,44 +140,13 @@ Dialog {
             font.pixelSize: Theme.fontSizeSmall
             color: Theme.highlightColor
 
-            visible: camera.status !== Camera.ActiveStatus
+            visible: camera == null || !camera.active
 
             anchors {
                 left: parent.left
                 leftMargin: Theme.horizontalPageMargin
                 right: parent.right
                 rightMargin: Theme.horizontalPageMargin
-            }
-        }
-    }
-
-    Camera {
-        id: camera
-        position: Camera.BackFace
-        captureMode: Camera.CaptureStillImage
-
-        exposure {
-            exposureMode: Camera.ExposureAuto
-        }
-
-        flash.mode: Camera.FlashOff
-
-        onCameraStatusChanged: {
-            if (cameraStatus === Camera.ActiveStatus) {
-                var resolutions = camera.supportedViewfinderResolutions()
-                var selectedResolution
-                if (resolutions.length > 0) {
-                    for (var i = 0; i < resolutions.length; i++) {
-                        var resolution = resolutions[i]
-                        // Looking for the largest square that will fit the width
-                        if (resolution.height === resolution.width && resolution.width  <= Screen.width) {
-                            selectedResolution = resolution
-                        }
-                    }
-                }
-                if (selectedResolution) {
-                    camera.viewfinder.resolution = Qt.size(selectedResolution.width, selectedResolution.height)
-                }
             }
         }
     }

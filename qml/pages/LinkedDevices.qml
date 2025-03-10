@@ -17,12 +17,7 @@ Page {
                 //% "Add"
                 text: qsTrId("whisperfish-add-linked-device")
                 onClicked: {
-                    var d
-                    if (addDeviceLoader.status == Loader.Ready) {
-                        d = pageStack.push(addDeviceLoader.item)
-                    } else {
-                        d = pageStack.push(Qt.resolvedUrl("OldAddDevice.qml"))
-                    }
+                    var d = pageStack.push(Qt.resolvedUrl("AddDevice.qml"))
                     d.addDevice.connect(function(tsurl) {
                         console.log("Add device: "+tsurl)
                         // TODO: handle errors
