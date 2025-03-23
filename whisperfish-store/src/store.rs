@@ -3647,4 +3647,72 @@ impl<O: Observable> Storage<O> {
             None
         }
     }
+
+    /// Add a member to a group. Does not trigger observer update.
+    pub fn add_group_v2_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        aci: Aci,
+        next_role: Role,
+        profile_key: &ProfileKey,
+        join_revision: i32,
+    ) {
+        let recipient = self.fetch_or_insert_recipient_by_address(&aci.into());
+        let (recipient, _was_changed) = self.update_profile_key(
+            recipient.e164.clone(),
+            recipient.to_service_address(),
+            &profile_key.get_bytes(),
+            TrustLevel::Uncertain,
+        );
+        if let Some((_, r)) = self
+            .fetch_group_members_by_group_v2_id(&group_v2.id)
+            .into_iter()
+            .find(|(_, r)| r.id == recipient.id)
+        {
+            use crate::schema::group_v2_members::dsl::*;
+            match diesel::update(
+                crate::schema::group_v2_members::table
+                    .filter(group_v2_id.eq(&group_v2.id).and(recipient_id.eq(r.id))),
+            )
+            .set((
+                crate::schema::group_v2_members::role.eq(next_role as i32),
+                crate::schema::group_v2_members::joined_at_revision.eq(join_revision),
+            ))
+            .execute(&mut *self.db())
+            {
+                Ok(affected_rows) => {
+                    assert!(
+                        affected_rows == 1,
+                        "Did not update exactly one group member. Dazed and confused."
+                    );
+                }
+                Err(e) => {
+                    tracing::error!("Could not add (update) group member: {:?}", e);
+                }
+            }
+        } else {
+            use crate::schema::group_v2_members::dsl::*;
+
+            match diesel::insert_into(group_v2_members)
+                .values((
+                    group_v2_id.eq(&group_v2.id),
+                    recipient_id.eq(recipient.id),
+                    // TODO: member_since -- it's not now()
+                    joined_at_revision.eq(join_revision),
+                    role.eq(next_role as i32),
+                ))
+                .execute(&mut *self.db())
+            {
+                Ok(affected_rows) => {
+                    assert!(
+                        affected_rows == 1,
+                        "Did not insert exactly one group member. Dazed and confused."
+                    );
+                }
+                Err(e) => {
+                    tracing::error!("Could not add (insert) group member: {:?}", e);
+                }
+            }
+        }
+    }
 }
