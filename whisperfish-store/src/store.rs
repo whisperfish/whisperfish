@@ -3576,4 +3576,14 @@ impl<O: Observable> Storage<O> {
             .execute(&mut *self.db())
             .expect("db");
     }
+
+    /// Update group title (name). Does not trigger observer update.
+    pub fn update_group_v2_title(&self, group_v2: &orm::GroupV2, next_title: &String) {
+        use crate::schema::group_v2s::dsl::*;
+
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(name.eq(next_title))
+            .execute(&mut *self.db())
+            .expect("db");
+    }
 }

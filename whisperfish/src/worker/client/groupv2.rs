@@ -553,7 +553,9 @@ impl Handler<GroupV2Update> for ClientActor {
                                 handled = true;
                             }
                             GroupChange::Title(title) => {
-                                tracing::info!("Title: {:?}", title);
+                                tracing::debug!("Title: {:?}", title);
+                                storage.update_group_v2_title(session.unwrap_group_v2(), &title);
+                                handled = true;
                             }
                         }
                     }
