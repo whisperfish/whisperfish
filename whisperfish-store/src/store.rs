@@ -1126,6 +1126,12 @@ impl<O: Observable> Storage<O> {
         let recipient =
             self.merge_and_fetch_recipient_by_address(rcpt_e164, addr.unwrap(), trust_level);
 
+        let self_recipient = self.fetch_self_recipient().expect("self recipient");
+        if self_recipient.uuid == recipient.uuid && trust_level != TrustLevel::Certain {
+            tracing::warn!("Ignoring uncertain self profile key update");
+            return (recipient, false);
+        }
+
         if new_profile_key.len() != PROFILE_KEY_LEN {
             tracing::error!(
                 "Profile key is not {} but {} bytes long",
