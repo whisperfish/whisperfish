@@ -457,7 +457,9 @@ impl Handler<GroupV2Update> for ClientActor {
         let service_ids = self.service_ids().expect("whoami");
         ctx.spawn(
             async move {
-                let mut triggers: Vec<GroupV2Trigger> = Vec::new();
+                let mut db_triggers: Vec<GroupV2Trigger> = Vec::new();
+                let mut ctx_triggers: Vec<GroupV2Trigger> = Vec::new();
+
                 let mut credential_cache = storage.credential_cache_mut().await;
                 let gm =
                     GroupsManager::new(service_ids, service, &mut *credential_cache, zk_params);
@@ -483,6 +485,7 @@ impl Handler<GroupV2Update> for ClientActor {
                     for change in changes {
                         match change {
                             GroupChange::AnnouncementOnly(announcement_only) => {
+                                // TODO: Database migration (announcement_only)
                                 tracing::info!("Announcement: {}", announcement_only);
                             }
                             GroupChange::AttributeAccess(access) => {
@@ -491,7 +494,7 @@ impl Handler<GroupV2Update> for ClientActor {
                             GroupChange::Avatar(avatar) => {
                                 tracing::debug!("Avatar: {:?}", avatar);
                                 storage.update_group_v2_avatar(&group_v2, Some(&avatar));
-                                triggers.push(GroupV2Trigger::Avatar(group_v2.id.clone()));
+                                ctx_triggers.push(GroupV2Trigger::Avatar(group_v2.id.clone()));
                             }
                             GroupChange::AddBannedMember(banned_member) => {
                                 tracing::info!("Add banned member: {:?}", banned_member);
@@ -502,19 +505,21 @@ impl Handler<GroupV2Update> for ClientActor {
                             GroupChange::DeleteMember(uuid) => {
                                 tracing::debug!("Delete member: {:?}", uuid);
                                 storage.delete_group_v2_member(&group_v2, uuid.into());
-                                triggers.push(GroupV2Trigger::ObserveUpdate);
+                                db_triggers.push(GroupV2Trigger::ObserveUpdate);
                             }
                             GroupChange::DeletePendingMember(member) => {
+                                // TODO: Database migration (status)
                                 tracing::info!("Delete pending member: {:?}", member);
                             }
                             GroupChange::DeleteRequestingMember(member) => {
+                                // TODO: Database migration (status)
                                 tracing::info!("Delete requesting member: {:?}", member);
                             }
                             GroupChange::Description(description) => {
                                 tracing::debug!("Description: {:?}", description);
                                 storage
                                     .update_group_v2_description(&group_v2, description.as_ref());
-                                triggers.push(GroupV2Trigger::ObserveUpdate);
+                                db_triggers.push(GroupV2Trigger::ObserveUpdate);
                             }
                             GroupChange::InviteLinkAccess(access) => {
                                 tracing::info!("Invite link access: {:?}", access);
@@ -539,9 +544,11 @@ impl Handler<GroupV2Update> for ClientActor {
                                 tracing::info!("New member: {:?}", member);
                             }
                             GroupChange::NewPendingMember(member) => {
+                                // TODO: Database migration (status)
                                 tracing::info!("New pending member: {:?}", member);
                             }
                             GroupChange::NewRequestingMember(member) => {
+                                // TODO: Database migration (status)
                                 tracing::info!("New requesting member: {:?}", member);
                             }
                             GroupChange::PromotePendingPniAciMemberProfileKey(promoted_member) => {
@@ -570,20 +577,33 @@ impl Handler<GroupV2Update> for ClientActor {
                                     timer.map(|t| t.duration),
                                     None,
                                 );
-                                triggers.push(GroupV2Trigger::ObserveUpdate);
+                                db_triggers.push(GroupV2Trigger::ObserveUpdate);
                             }
                             GroupChange::Title(title) => {
                                 tracing::debug!("Title: {:?}", title);
                                 storage.update_group_v2_title(group_v2, &title);
-                                triggers.push(GroupV2Trigger::ObserveUpdate);
+                                db_triggers.push(GroupV2Trigger::ObserveUpdate);
                             }
                         }
                     }
-                    if triggers.contains(&GroupV2Trigger::ObserveUpdate) {
-                        storage.update_group_v2_revision(&group_v2, revision as i32);
+
+                    for trigger in db_triggers {
+                        match trigger {
+                            GroupV2Trigger::ObserveUpdate => {
+                                storage.update_group_v2_revision(&group_v2, revision as i32);
+                                break;
+                            }
+                            _ => {
+                                tracing::error!(
+                                    "Unexpected trigger in database triggers, ignoring: {:?}",
+                                    trigger
+                                );
+                                continue;
+                            }
+                        }
                     }
 
-                    Ok((triggers, session.id))
+                    Ok((ctx_triggers, session.id))
                 } else {
                     tracing::warn!("Group change message with no changes");
                     Ok((Vec::new(), session.id))
@@ -601,13 +621,16 @@ impl Handler<GroupV2Update> for ClientActor {
                         } else {
                             for trigger in triggers {
                                 match trigger {
-                                    GroupV2Trigger::ObserveUpdate => {
-                                        // Handled by storage.observe_update above
-                                    }
                                     GroupV2Trigger::Avatar(group_v2_id) => {
                                         ctx.notify(RefreshGroupAvatar(group_v2_id));
                                     }
-                                }
+                                    GroupV2Trigger::ObserveUpdate | GroupV2Trigger::Recipient(_) => {
+                                        tracing::error!(
+                                            "Unexpected trigger in context triggers, ignoring: {:?}",
+                                            trigger
+                                        );
+                                    }
+                            }
                             }
                         }
                     }
