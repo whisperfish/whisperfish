@@ -27,7 +27,7 @@ use diesel::result::*;
 use diesel::sql_types::{Bool, Timestamp};
 use diesel_migrations::EmbeddedMigrations;
 use itertools::Itertools;
-use libsignal_service::groups_v2::InMemoryCredentialsCache;
+use libsignal_service::groups_v2::{InMemoryCredentialsCache, Role};
 use libsignal_service::proto::{attachment_pointer, data_message::Reaction, DataMessage};
 use libsignal_service::protocol::{self, *};
 use libsignal_service::zkgroup::api::groups::GroupSecretParams;
@@ -3614,5 +3614,37 @@ impl<O: Observable> Storage<O> {
         } else {
             tracing::error!("No such user {:?} (delete from group)", aci);
         };
+    }
+
+    /// Update the role of the group member. Does not trigger observer update.
+    pub fn update_group_v2_member_role(
+        &self,
+        group_v2: &orm::GroupV2,
+        aci: Aci,
+        next_role: Role,
+    ) -> Option<orm::Recipient> {
+        use crate::schema::group_v2_members::dsl::*;
+
+        if let Some(recipient) = self.fetch_recipient(&aci.into()) {
+            let updated = diesel::update(
+                group_v2_members.filter(
+                    group_v2_id
+                        .eq(&group_v2.id)
+                        .and(recipient_id.eq(recipient.id)),
+                ),
+            )
+            .set(role.eq(next_role as i32))
+            .execute(&mut *self.db())
+            .expect("db");
+            if updated == 0 {
+                tracing::warn!("No such member {:?} in group (update role)", aci);
+                None
+            } else {
+                Some(recipient)
+            }
+        } else {
+            tracing::error!("No such user {:?} (update role)", aci);
+            None
+        }
     }
 }

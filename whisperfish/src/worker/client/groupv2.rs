@@ -434,6 +434,7 @@ enum GroupV2Trigger {
     ObserveUpdate,
     /// Avatar(GroupV2Id)
     Avatar(String),
+    Recipient(Uuid),
 }
 
 /// Handle an incoming group change message
@@ -537,8 +538,11 @@ impl Handler<GroupV2Update> for ClientActor {
                                     profile_key
                                 );
                             }
-                            GroupChange::ModifyMemberRole { uuid, role } => {
-                                tracing::info!("Modify member role: {:?} {:?}", uuid, role);
+                            GroupChange::ModifyMemberRole { aci, role } => {
+                                tracing::debug!("Modify member role: {:?} {:?}", aci, role);
+                                if let Some(updated) = storage.update_group_v2_member_role(group_v2, aci, role) {
+                                    db_triggers.push(GroupV2Trigger::Recipient(updated.uuid.unwrap()));
+                                }
                             }
                             GroupChange::NewMember(member) => {
                                 tracing::info!("New member: {:?}", member);
@@ -589,6 +593,24 @@ impl Handler<GroupV2Update> for ClientActor {
 
                     for trigger in db_triggers {
                         match trigger {
+                            GroupV2Trigger::Recipient(uuid) => {
+                                let aci: Aci = uuid.into();
+                                let service_id: ServiceId = aci.into();
+                                let recipient = storage.fetch_recipient(&service_id).unwrap();
+                                storage.observe_update(
+                                    whisperfish_store::schema::recipients::table,
+                                    recipient.id,
+                                );
+                                storage
+                                    .observe_update(
+                                        whisperfish_store::schema::sessions::table,
+                                        session.id,
+                                    )
+                                    .with_relation(
+                                        whisperfish_store::schema::recipients::table,
+                                        recipient.id,
+                                    );
+                            }
                             GroupV2Trigger::ObserveUpdate => {
                                 storage.update_group_v2_revision(&group_v2, revision as i32);
                                 break;
