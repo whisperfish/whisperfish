@@ -3596,4 +3596,23 @@ impl<O: Observable> Storage<O> {
             .execute(&mut *self.db())
             .expect("db");
     }
+
+    /// Delete a proper member of a group. Does not trigger observer update.
+    pub fn delete_group_v2_member(&self, group_v2: &orm::GroupV2, aci: Aci) {
+        use crate::schema::group_v2_members::dsl::*;
+
+        if let Some(recipient) = self.fetch_recipient(&aci.into()) {
+            diesel::delete(
+                group_v2_members.filter(
+                    group_v2_id
+                        .eq(&group_v2.id)
+                        .and(recipient_id.eq(recipient.id)),
+                ),
+            )
+            .execute(&mut *self.db())
+            .expect("db");
+        } else {
+            tracing::error!("No such user {:?} (delete from group)", aci);
+        };
+    }
 }

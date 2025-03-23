@@ -500,7 +500,9 @@ impl Handler<GroupV2Update> for ClientActor {
                                 tracing::info!("Delete banned member: {:?}", uuid);
                             }
                             GroupChange::DeleteMember(uuid) => {
-                                tracing::info!("Delete member: {:?}", uuid);
+                                tracing::debug!("Delete member: {:?}", uuid);
+                                storage.delete_group_v2_member(&group_v2, uuid.into());
+                                triggers.push(GroupV2Trigger::ObserveUpdate);
                             }
                             GroupChange::DeletePendingMember(member) => {
                                 tracing::info!("Delete pending member: {:?}", member);
