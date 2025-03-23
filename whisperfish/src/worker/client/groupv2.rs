@@ -422,3 +422,150 @@ impl Handler<GroupAvatarFetched> for ClientActor {
         )
     }
 }
+
+/// Handle an incoming group change message
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct GroupV2Update(pub GroupContextV2, pub orm::Session);
+
+impl Handler<GroupV2Update> for ClientActor {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        GroupV2Update(group_v2_ctx, session): GroupV2Update,
+        ctx: &mut Self::Context,
+    ) {
+        let storage = self.storage.clone().unwrap();
+        let _span = tracing::info_span!("handle GroupV2Update for session", session.id).entered();
+
+        let service = self.authenticated_service();
+        let zk_params = self.service_cfg().zkgroup_server_public_params;
+        let service_ids = self.service_ids().expect("whoami");
+        ctx.spawn(
+            async move {
+                let handled = false;
+                let mut credential_cache = storage.credential_cache_mut().await;
+                let gm =
+                    GroupsManager::new(service_ids, service, &mut *credential_cache, zk_params);
+
+                let changes = gm.decrypt_group_context(group_v2_ctx);
+                if changes.is_err() {
+                    return Err(changes.unwrap_err());
+                }
+
+                if let Some(GroupChanges {
+                    editor: _editor,
+                    revision: _revision,
+                    changes,
+                }) = changes.unwrap()
+                {
+                    tracing::info!("Group {} has updates", changes.len());
+                    for change in changes {
+                        match change {
+                            GroupChange::AnnouncementOnly(announcement_only) => {
+                                tracing::info!("Announcement: {}", announcement_only);
+                            }
+                            GroupChange::AttributeAccess(access) => {
+                                tracing::info!("Attribute access: {:?}", access);
+                            }
+                            GroupChange::Avatar(avatar) => {
+                                tracing::info!("Avatar: {:?}", avatar);
+                            }
+                            GroupChange::AddBannedMember(banned_member) => {
+                                tracing::info!("Add banned member: {:?}", banned_member);
+                            }
+                            GroupChange::DeleteBannedMember(uuid) => {
+                                tracing::info!("Delete banned member: {:?}", uuid);
+                            }
+                            GroupChange::DeleteMember(uuid) => {
+                                tracing::info!("Delete member: {:?}", uuid);
+                            }
+                            GroupChange::DeletePendingMember(member) => {
+                                tracing::info!("Delete pending member: {:?}", member);
+                            }
+                            GroupChange::DeleteRequestingMember(member) => {
+                                tracing::info!("Delete requesting member: {:?}", member);
+                            }
+                            GroupChange::Description(description) => {
+                                tracing::info!("Description: {:?}", description);
+                            }
+                            GroupChange::InviteLinkAccess(access) => {
+                                tracing::info!("Invite link access: {:?}", access);
+                            }
+                            GroupChange::InviteLinkPassword(password) => {
+                                tracing::info!("Invite link password: {:?}", password);
+                            }
+                            GroupChange::MemberAccess(access) => {
+                                tracing::info!("Member access: {:?}", access);
+                            }
+                            GroupChange::ModifyMemberProfileKey { uuid, profile_key } => {
+                                tracing::info!(
+                                    "Modify member profile key: {:?} {:?}",
+                                    uuid,
+                                    profile_key
+                                );
+                            }
+                            GroupChange::ModifyMemberRole { uuid, role } => {
+                                tracing::info!("Modify member role: {:?} {:?}", uuid, role);
+                            }
+                            GroupChange::NewMember(member) => {
+                                tracing::info!("New member: {:?}", member);
+                            }
+                            GroupChange::NewPendingMember(member) => {
+                                tracing::info!("New pending member: {:?}", member);
+                            }
+                            GroupChange::NewRequestingMember(member) => {
+                                tracing::info!("New requesting member: {:?}", member);
+                            }
+                            GroupChange::PromotePendingPniAciMemberProfileKey(promoted_member) => {
+                                tracing::info!(
+                                    "Promote pending PNI member profile key: {:?}",
+                                    promoted_member
+                                );
+                            }
+                            GroupChange::PromotePendingMember {
+                                address,
+                                profile_key,
+                            } => {
+                                tracing::info!(
+                                    "Promote pending member: {:?} {:?}",
+                                    address,
+                                    profile_key
+                                );
+                            }
+                            GroupChange::PromoteRequestingMember { aci, role } => {
+                                tracing::info!("Promote requesting member: {:?} {:?}", aci, role);
+                            }
+                            GroupChange::Timer(timer) => {
+                                tracing::info!("Timer: {:?}", timer);
+                            }
+                            GroupChange::Title(title) => {
+                                tracing::info!("Title: {:?}", title);
+                            }
+                        }
+                    }
+                    Ok((handled, session.id))
+                } else {
+                    tracing::warn!("Group change message with no changes");
+                    Ok((false, session.id))
+                }
+            }
+            .instrument(tracing::info_span!(""))
+            .into_actor(self)
+            .map(|res, _act, ctx| {
+                match res {
+                    Ok((handled, s_id)) => {
+                        // XXX handle group.group_change like a real client
+                        if !handled {
+                            ctx.notify(RequestGroupV2InfoBySessionId(s_id));
+                        }
+                    }
+                    Err(e) => {
+                        tracing::error!("{}", e);
+                    }
+                };
+            }),
+        );
+    }
+}

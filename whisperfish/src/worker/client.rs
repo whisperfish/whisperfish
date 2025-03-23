@@ -852,14 +852,14 @@ impl ClientActor {
                 revision: group.revision(),
             };
 
-            // XXX handle group.group_change like a real client
-            if let Some(_change) = group.group_change.as_ref() {
-                tracing::error!(
-                    "Group change messages are not supported yet. Please upvote bug #706"
-                );
-                tracing::warn!("Let's trigger a group refresh for now.");
-                ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
-            } else if !storage.group_v2_exists(&store_v2) {
+            let existing_group = storage.group_v2_exists(&store_v2);
+            let session = storage.fetch_or_insert_session_by_group_v2(&store_v2);
+
+            if existing_group {
+                if group.group_change.is_some() {
+                    ctx.notify(GroupV2Update(group.clone(), session));
+                }
+            } else {
                 tracing::info!(
                     "We don't know this group. We'll request it's structure from the server."
                 );
