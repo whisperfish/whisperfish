@@ -67,7 +67,7 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="382"/>
         <source>Unpin</source>
         <extracomment>&apos;Unpin&apos; conversation from the top of the view</extracomment>
-        <translation>Unpin</translation>
+        <translation>முள்நீக்கு</translation>
     </message>
     <message id="whisperfish-session-mark-pinned">
         <location filename="../qml/delegates/SessionDelegate.qml" line="385"/>
@@ -549,7 +549,7 @@
         <location filename="../qml/pages/MainPage.qml" line="78"/>
         <source>Reconnect</source>
         <extracomment>Whisperfish main menu item: restart websocket/reconnect</extracomment>
-        <translation type="unfinished">மீண்டும் இணைக்கவும்</translation>
+        <translation>மீண்டும்இணை</translation>
     </message>
     <message id="whisperfish-reconnecting">
         <location filename="../qml/pages/MainPage.qml" line="81"/>
@@ -572,13 +572,13 @@
         <location filename="../qml/pages/MainPage.qml" line="301"/>
         <source>Disconnected</source>
         <extracomment>Whisperfish connection status message</extracomment>
-        <translation type="unfinished">துண்டிக்கப்பட்டது</translation>
+        <translation>துண்டிக்கப்பட்டது</translation>
     </message>
     <message id="whisperfish-connection-status-reconnecting">
         <location filename="../qml/pages/MainPage.qml" line="304"/>
         <source>Synchronizing</source>
         <extracomment>Whisperfish connection status message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ஒத்தியக்கும்</translation>
     </message>
     <message id="whisperfish-registration-required-message">
         <location filename="../qml/pages/MainPage.qml" line="319"/>
@@ -1535,7 +1535,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="492"/>
         <source>Whisperfish does not have the permission to change the autostart settings. You can enable or disable autostart manually from the command line by running &apos;systemctl --user enable harbour-whisperfish.service&apos; or &apos;systemctl --user disable harbour-whisperfish.service&apos;</source>
         <extracomment>Settings page info how to enable autostart manually</extracomment>
-        <translation>ஆட்டோச்டார்ட் அமைப்புகளை மாற்றுவதற்கான இசைவு விச்பர்ஃபிசுக்கு இல்லை. &apos;Systemctl --user ஐ இயக்குவதன் மூலம் கட்டளை வரியிலிருந்து ஆட்டோச்டார்ட்டை கைமுறையாக இயக்கலாம் அல்லது முடக்கலாம்.</translation>
+        <translation>ஆட்டோச்டார்ட் அமைப்புகளை மாற்றுவதற்கான இசைவு விச்பர்ஃபிசுக்கு இல்லை. &apos;Systemctl --user ஐ இயக்குவதன் மூலம் கட்டளை வரியிலிருந்து ஆட்டோச்டார்ட்டை கைமுறையாக இயக்கலாம் அல்லது முடக்கலாம்</translation>
     </message>
     <message id="whisperfish-settings-quit-button">
         <location filename="../qml/pages/Settings.qml" line="519"/>
@@ -1578,13 +1578,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="570"/>
         <source>Verbose journal log</source>
         <extracomment>Settings page, send verbose logs to systemd journal</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>விரிவான குறிப்பேடு பதிவு</translation>
     </message>
     <message id="whisperfish-settings-verbose-journal-description">
         <location filename="../qml/pages/Settings.qml" line="573"/>
         <source>When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect.</source>
         <extracomment>Settings page enable verbose logging description</extracomment>
-        <translation type="unfinished">இயக்கப்பட்டால், விச்பர்ஃபிச் வாய்மொழி வெளியீட்டை உருவாக்குகிறது. முனையத்தில் இயங்குவதற்கு பயனுள்ளதாக இருக்கும். நடைமுறைக்கு வர மறுதொடக்கம் தேவை.</translation>
+        <translation>இயக்கப்பட்டால், விச்பர்ஃபிச் வாய்மொழி வெளியீட்டை உருவாக்கி systemd இதழுக்கு அனுப்பும். நடைமுறைக்கு வர மறுதொடக்கம் தேவை.</translation>
     </message>
     <message id="whisperfish-settings-enable-verbose">
         <source>Verbose logging</source>
@@ -2316,8 +2316,8 @@ Settings page share contacts</extracomment>
         <source>Clear selection</source>
         <extracomment>Message action description, shown if one or more messages are selected</extracomment>
         <translation>
-            <numerusform>தெளிவான தேர்வு</numerusform>
-            <numerusform>தெளிவான தேர்வு</numerusform>
+            <numerusform>தேர்வு துடை</numerusform>
+            <numerusform>தேர்வு துடை</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-action-copy" numerus="yes">
@@ -2423,7 +2423,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/MessageInfoPage.qml" line="50"/>
         <source>Message Info</source>
         <extracomment>Page title for message info/details page</extracomment>
-        <translation>செய்தி செய்தி</translation>
+        <translation>செய்தி தகவல்</translation>
     </message>
     <message id="whisperfish-message-message-id">
         <location filename="../qml/pages/MessageInfoPage.qml" line="88"/>
@@ -2601,7 +2601,7 @@ Settings page share contacts</extracomment>
         <source>seconds</source>
         <extracomment>Time unit: seconds</extracomment>
         <translation>
-            <numerusform>நொடிகள்</numerusform>
+            <numerusform>நொடி</numerusform>
             <numerusform>நொடிகள்</numerusform>
         </translation>
     </message>
@@ -2610,7 +2610,7 @@ Settings page share contacts</extracomment>
         <source>minutes</source>
         <extracomment>Time unit: minutes</extracomment>
         <translation>
-            <numerusform>நிமிடங்கள்</numerusform>
+            <numerusform>நிமிடம்</numerusform>
             <numerusform>நிமிடங்கள்</numerusform>
         </translation>
     </message>
@@ -2628,7 +2628,7 @@ Settings page share contacts</extracomment>
         <source>days</source>
         <extracomment>Time unit: days</extracomment>
         <translation>
-            <numerusform>நாட்கள்</numerusform>
+            <numerusform>நாள்</numerusform>
             <numerusform>நாட்கள்</numerusform>
         </translation>
     </message>
@@ -2637,7 +2637,7 @@ Settings page share contacts</extracomment>
         <source>weeks</source>
         <extracomment>Time unit: weeks</extracomment>
         <translation>
-            <numerusform>வாரங்கள்</numerusform>
+            <numerusform>வாரம்</numerusform>
             <numerusform>வாரங்கள்</numerusform>
         </translation>
     </message>
