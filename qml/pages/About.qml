@@ -308,6 +308,7 @@ Page {
                     "J. Lavoie" + "\n" +
                     "Alexander Schlarb" + "\n" +
                     "Bérenger" + "\n" +
+                    "Antoine BEAUJOT" + "\n" +
                     "Eric" + "\n" +
                     "Thibaut Vandervelden" + "\n" +
                     "carlosgonz"
@@ -410,6 +411,7 @@ Page {
                     "dashinfantry" + "\n" +
                     "Alexander Schlarb" + "\n" +
                     "Rui Kon" + "\n" +
+                    "A. Wang" + "\n" +
                     "carlosgonz"
                 }
             }
