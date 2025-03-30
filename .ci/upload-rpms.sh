@@ -22,9 +22,8 @@ if [ -n "$CI_COMMIT_TAG" ] || [[ "$CI_COMMIT_BRANCH" == "main" ]]; then
         echo Posting to $URL
 
         # Upload to Gitlab
-        # Gitlab suggests `--fail-with-body`, but we don't have that option yet
         curl \
-             --fail \
+             --fail-with-body \
              --header "JOB-TOKEN: $CI_JOB_TOKEN" \
              --upload-file "$RPM_PATH" \
              $URL
