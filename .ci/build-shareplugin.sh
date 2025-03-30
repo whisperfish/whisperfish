@@ -8,8 +8,8 @@ echo_t() {
 
 echo_t "Building for $SFOS_VERSION"
 
-echo_t "Adding $PWD as safe directory in git..."
-git config --global --add safe.directory "$PWD"
+echo_t "Adding \"*\" as safe directory in git..."
+git config --global --add safe.directory "*"
 
 # The MB2 image comes with a default user.
 # We need to copy the source over, because of that.
