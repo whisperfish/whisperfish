@@ -2,19 +2,26 @@
 
 set -e
 
-echo "Building for $SFOS_VERSION"
+echo_t() {
+    echo "[$(date +%H:%M:%S)]" "$@"
+}
 
+echo_t "Building for $SFOS_VERSION"
+
+echo_t "Install dependencies on host..."
 sudo zypper install -y \
     zlib-devel \
 
 # Tooling-side dependencies used in build.rs
-sdk-manage tooling maintain SailfishOS-$SFOS_VERSION \
+echo_t "Install zlib-devel to tooling..."
+sdk-manage tooling maintain "SailfishOS-$SFOS_VERSION" \
     zypper install -y \
         zlib-devel \
 
-echo adding $PWD as safe directory in git
-git config --global --add safe.directory $PWD
+echo_t "Adding $PWD as safe directory in git..."
+git config --global --add safe.directory "$PWD"
 
+echo_t "Determine Whisperfish version..."
 if [ -z "$CI_COMMIT_TAG" ]; then
     CARGO_VERSION="$(grep -m1 -e '^version\s=\s"' whisperfish/Cargo.toml | sed -e 's/.*"\(.*-dev\).*"/\1/')"
     GIT_REF="$(git rev-parse --short HEAD)"
@@ -23,19 +30,22 @@ else
     # Strip leading v in v0.6.0- ...
     VERSION=$(echo "$CI_COMMIT_TAG" | sed -e 's/^v//g')
 fi
+echo_t "Whisperfish version: $VERSION"
 
 # The MB2 image comes with a default user.
 # We need to copy the source over, because of that.
 
+echo_t "Cloning Whisperfish..."
 git clone . ~/whisperfish-build
 pushd ~/whisperfish-build
 
+echo_t "Fetching WebRTC..."
 bash fetch-webrtc.sh
 
 # We also need to move the cache, and afterwards move it back.
 if [ -e "$CI_PROJECT_DIR/cargo" ]; then
-    sudo mv $CI_PROJECT_DIR/cargo ~/cargo
-    sudo chown -R $USER:$USER ~/cargo
+    sudo mv "$CI_PROJECT_DIR/cargo" ~/cargo
+    sudo chown -R "$USER":"$USER" ~/cargo
 fi
 
 git status
@@ -45,9 +55,10 @@ rm -f RPMS/*.rpm
 
 # Set this for sccache.  Sccache is testing out compilers, and host-cc fails here.
 TMPDIR2="$TMPDIR"
-export TMPDIR=$PWD/tmp/
-mkdir $TMPDIR
+export TMPDIR="$PWD/tmp/"
+mkdir "$TMPDIR"
 
+echo_t "Configure sccache..."
 mkdir -p ~/.config/sccache
 cat > ~/.config/sccache/config << EOF
 [cache.s3]
@@ -59,9 +70,8 @@ key_prefix = "$SCCACHE_S3_KEY_PREFIX"
 no_credentials = false
 EOF
 
-MAJOR_VERSION=$(echo $SFOS_VERSION | awk -F. '{print $1 FS $2}')
-
-mb2 -t SailfishOS-$SFOS_VERSION-$MER_ARCH build \
+echo_t "Building Whisperfish for SailfishOS-$SFOS_VERSION-$MER_ARCH..."
+mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" build \
     --enable-debug \
     --no-check \
     -- \
@@ -71,7 +81,7 @@ mb2 -t SailfishOS-$SFOS_VERSION-$MER_ARCH build \
     --with tools \
     --with calling \
 
-rm -rf $TMPDIR
+rm -rf "$TMPDIR"
 export TMPDIR="$TMPDIR2"
 
 
@@ -83,6 +93,6 @@ mkdir -p RPMS target
 sudo cp -ar ~/whisperfish-build/RPMS/* RPMS/
 sudo cp -ar ~/whisperfish-build/target/* target/
 
-sudo mv ~/cargo $CI_PROJECT_DIR/cargo
+sudo mv ~/cargo "$CI_PROJECT_DIR/cargo"
 
 .ci/upload-rpms.sh
