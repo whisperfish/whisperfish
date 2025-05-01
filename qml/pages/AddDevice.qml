@@ -37,6 +37,13 @@ Dialog {
         }
     }
 
+
+    onDone: {
+        if (result == DialogResult.Accepted) {
+            addDevice(urlField.text)
+        }
+    }
+
     signal addDevice(string tsurl)
 
     Column {
