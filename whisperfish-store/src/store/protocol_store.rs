@@ -692,7 +692,7 @@ impl<T: Identity<O>, O: Observable> PreKeysStore for IdentityStorage<T, O> {
         use diesel::dsl::*;
         use diesel::prelude::*;
 
-        let signed_prekey_max: Option<i32> = {
+        let signed_prekey_max: Option<SignedPreKeyId> = {
             use crate::schema::signed_prekeys::dsl::*;
 
             signed_prekeys
@@ -700,8 +700,9 @@ impl<T: Identity<O>, O: Observable> PreKeysStore for IdentityStorage<T, O> {
                 .filter(identity.eq(self.1.identity()))
                 .first(&mut *self.0.db())
                 .expect("db")
+                .map(|x| (x as u32).into())
         };
-        Ok(signed_prekey_max.map(|x| SignedPreKeyId::from(x as u32)))
+        Ok(signed_prekey_max)
     }
 
     #[tracing::instrument(level = "trace", skip(self))]
