@@ -711,7 +711,7 @@ impl<T: Identity<O>, O: Observable> PreKeysStore for IdentityStorage<T, O> {
         use diesel::dsl::*;
         use diesel::prelude::*;
 
-        let kyber_max: Option<i32> = {
+        let kyber_max: Option<KyberPreKeyId> = {
             use crate::schema::kyber_prekeys::dsl::*;
 
             kyber_prekeys
@@ -719,8 +719,9 @@ impl<T: Identity<O>, O: Observable> PreKeysStore for IdentityStorage<T, O> {
                 .filter(is_last_resort.eq(true).and(identity.eq(self.1.identity())))
                 .first(&mut *self.0.db())
                 .expect("db")
+                .map(|x| (x as u32).into())
         };
-        Ok(kyber_max.map(|x| KyberPreKeyId::from(x as u32)))
+        Ok(kyber_max)
     }
 }
 
