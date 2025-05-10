@@ -63,6 +63,8 @@ var version = '0.4.0'
 var dataBaseDirectory = '' // e.g. $HOME/.local/share; base path to emoji sources
 var emojiSubDirectory = 'sailor-emoji' // subdirectory below DataBaseDirectory
 
+var pathErrorShown = false
+
 // Emoji styles: emojis can be in raster or vector format. Raster emojis are
 // required in multiple resolutions.
 // Path: base/subdir/<key>/<version>/[if type==r: <resolution>/]<codepoint>.<ext>
@@ -244,7 +246,10 @@ function getStylePath(style, rasterSize, noCache) {
     }
   }
 
-  console.error("no emoji style found");
+  if (!pathErrorShown) {
+    pathErrorShown = true;
+    console.error("no emoji style found");
+  }
   return notFound;
 }
 
