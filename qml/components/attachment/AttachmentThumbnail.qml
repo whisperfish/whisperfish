@@ -10,7 +10,7 @@ MouseArea {
     property int index: 0
     property var attach: thumbsAttachments.get(index)
     property var attachments: null
-    property var message: null
+    property QtObject message
     property bool highlighted: containsPress
     property bool _hasAttach: attach != null
     property bool _isAnimated: _hasAttach ? /\.(gif)$/i.test(attach.data) : false

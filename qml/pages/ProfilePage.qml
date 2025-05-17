@@ -7,7 +7,7 @@ Page {
     id: profilePage
     objectName: "profilePage"
 
-    property var session: null
+    property QtObject session
     property string profilePicture: ""
 
     property bool editingProfile: false

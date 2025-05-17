@@ -8,7 +8,7 @@ Page {
     id: root
     objectName: "messageInfoPage"
 
-    property var message
+    property QtObject message
 
     // For new message notifications
     property int sessionId

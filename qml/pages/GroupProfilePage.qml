@@ -11,7 +11,7 @@ Page {
     // should show them somewhere, somehow nonetheless - just not as
     // a background image. A group admin should be able to change it, too.
 
-    property var session
+    property QtObject session
     property var groupId
     property QtObject group: Group {
         id: group

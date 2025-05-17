@@ -8,8 +8,8 @@ Page {
     objectName: "recipientProfilePage"
 
     property string profilePicture: ""
-    property var session: null
-    property var recipient: null
+    property QtObject session
+    property QtObject recipient
 
     // For new message notifications
     property int sessionId: session ? session.sessionId : -1
