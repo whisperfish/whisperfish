@@ -12,6 +12,7 @@ Page {
 
     // For new message notifications
     property int sessionId
+    property bool isInGroup
 
     // Proxy some more used properties
     readonly property bool outgoing: message.outgoing
@@ -74,6 +75,7 @@ Page {
                     MessageDelegate {
                         id: messageDelegate
                         modelData: message
+                        isInGroup: isInGroup
                         //menu: messageContextMenu
                         // set explicitly because attached properties are not available
                         // inside the loaded component

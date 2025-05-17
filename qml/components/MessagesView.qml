@@ -31,6 +31,9 @@ import "message"
 SilicaListView {
     id: messagesView
 
+    property QtObject session
+    property QtObject recipient
+
     // TODO verify: date->string is always ISO formatted?
     // TODO Use a custom property for sections. It should contain
     // at least 1) date, 2) unread boundary, 3) ...
@@ -49,8 +52,6 @@ SilicaListView {
     property bool hideSelected: false
     property bool appearDeleted: false
     property var __running_remorse: null
-
-    property QtObject recipient
 
     signal replyTriggered(var index, var modelData)
     signal quoteClicked(var clickedIndex, var quotedData)
@@ -207,7 +208,8 @@ SilicaListView {
             if (selectedMessages.hasOwnProperty(i)) {
                 pageStack.push(Qt.resolvedUrl("../pages/MessageInfoPage.qml"), {
                     message: selectedMessages[i],
-                    sessionId: session.sessionId
+                    sessionId: session.sessionId,
+                    isInGroup: session.isGroup
                 })
                 return
             }
@@ -336,6 +338,7 @@ SilicaListView {
             MessageDelegate {
                 // necessary to make implicit properties available
                 modelData: model
+                isInGroup: session.isGroup
                 menu: messageContextMenu
                 // set explicitly because attached properties are not available
                 // inside the loaded component

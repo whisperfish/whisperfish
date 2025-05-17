@@ -142,6 +142,11 @@ Page {
 
     MessagesView {
         id: messages
+
+        model: session.messages
+        session: session
+        recipient: recipient
+
         focus: true
         contentHeight: height
         Behavior on anchors.top { AnchorAnimation { } }
@@ -151,8 +156,6 @@ Page {
             left: parent.left;
             right: parent.right
         }
-        model: session.messages
-        recipient: recipient
         clip: true // to prevent the view from flowing through the page header
         headerPositioning: ListView.InlineHeader
         header: Item {

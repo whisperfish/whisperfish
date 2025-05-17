@@ -17,6 +17,8 @@ ListItem {
 
     // REQUIRED PROPERTIES
     property QtObject modelData
+    property bool isInGroup
+
     // TODO the quoted message should be a notifyable object from a model
     // TODO we need a way to get a valid index from a message id
     //      (we must rely on the message's id instead of its index, as the latter may change)
@@ -90,7 +92,6 @@ ListItem {
     readonly property bool hasText: hasData && _message !== ''
     readonly property bool unidentifiedSender: modelData.unidentifiedSender !== undefined ? modelData.unidentifiedSender : true
     readonly property bool isOutbound: hasData && (modelData.outgoing === true)
-    readonly property bool isInGroup: session.isGroup
     readonly property bool isEmpty: !hasText && !hasAttachments
     readonly property bool isRemoteDeleted: hasData && ((isSelected && listView.appearDeleted) || modelData.remoteDeleted)
     property bool isExpanded: false
@@ -120,7 +121,11 @@ ListItem {
             // TODO Cache the page object, so we can return to the
             // same scroll position where the user left the page.
             // It is not possible to re-use the returned object from pageStack.push().
-            pageStack.push("../pages/ExpandedMessagePage.qml", { 'modelData': modelData, 'contactName': contactName })
+            pageStack.push("../pages/ExpandedMessagePage.qml", {
+                modelData: modelData,
+                contactName: contactName,
+                isInGroup: isInGroup
+            })
         } else {
             isExpanded = !isExpanded
             // We make sure the list item is visible immediately
@@ -170,10 +175,7 @@ ListItem {
         anchors { bottom: parent.bottom; top: parent.top }
         width: parent.width/2
         sourceComponent: Component {
-            ReplyArea {
-                // 'listView' doesn't exist in MessageInfoPage -- always disabled
-                enabled: root.enabled && (listView ? !listView.isSelecting : false)
-            }
+            ReplyArea { enabled: root.enabled && !listView.isSelecting }
         }
     }
 
@@ -271,8 +273,8 @@ ListItem {
                             (isEmpty ? qsTrId("whisperfish-message-empty-note") :
                             ((needsRichText ? cssStyle : '') + (isExpanded ? _message : _message.substr(0, shortenThreshold) + (showExpand ? ' ...' : ''))))
                 bypassLinking: true
-                needsRichText: model.hasStrikeThrough || model.hasSpoilers
-                hasSpoilers: model.hasSpoilers // Set to 'false' when text is clicked
+                needsRichText: modelData.hasStrikeThrough || modelData.hasSpoilers
+                hasSpoilers: modelData.hasSpoilers // Set to 'false' when text is clicked
                 font.italic: isRemoteDeleted
                 wrapMode: Text.Wrap
                 anchors { left: parent.left; right: parent.right }
