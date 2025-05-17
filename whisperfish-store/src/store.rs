@@ -2691,9 +2691,12 @@ impl<O: Observable> Storage<O> {
             }
         }
 
-        // Mark the session as non-archived
-        // TODO: Do this only when necessary
-        self.mark_session_archived(session, false);
+        // Don't un-archive the session if it's muted
+        if let Some(s) = self.fetch_session_by_id(session) {
+            if s.is_muted && !s.is_archived {
+                self.mark_session_archived(s.id, false);
+            }
+        }
 
         tracing::trace!("Inserted message id {}", latest_message.id);
 
