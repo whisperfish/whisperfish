@@ -15,6 +15,9 @@ Page {
     // If entering from a group setting, don't expose direct message controls
     property bool groupContext: false
 
+    // For new message notifications
+    property alias sessionId: session.sessionId
+
     onStatusChanged: {
         if (editingProfile && status === PageStatus.Inactive) {
             cancelEditing()
@@ -138,7 +141,7 @@ Page {
                 //% "Set message expiry"
                 text: qsTrId("whisperfish-save-message-expiry")
                 visible: !groupContext && session != null && expiringMessages.newDuration !== session.expiringMessageTimeout
-                onClicked: MessageModel.createExpiryUpdate(session.sessionId, expiringMessages.newDuration)
+                onClicked: MessageModel.createExpiryUpdate(sessionId, expiringMessages.newDuration)
             }
         }
 

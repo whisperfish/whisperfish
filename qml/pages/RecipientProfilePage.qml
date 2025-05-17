@@ -11,6 +11,9 @@ Page {
     property var session: null
     property var recipient: null
 
+    // For new message notifications
+    property int sessionId: session ? session.sessionId : -1
+
     Component.onCompleted: recipient.fingerprintNeeded = true
 
     // If entering from a group setting, don't expose direct message controls
@@ -109,7 +112,7 @@ Page {
                 // Translation in ProfilePage.qml
                 text: qsTrId("whisperfish-save-message-expiry")
                 visible: !groupContext && session != null && expiringMessages.newDuration !== session.expiringMessageTimeout
-                onClicked: MessageModel.createExpiryUpdate(session.sessionId, expiringMessages.newDuration)
+                onClicked: MessageModel.createExpiryUpdate(sessionId, expiringMessages.newDuration)
             }
         }
 

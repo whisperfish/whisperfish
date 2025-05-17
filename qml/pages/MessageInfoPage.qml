@@ -10,6 +10,9 @@ Page {
 
     property var message
 
+    // For new message notifications
+    property int sessionId
+
     // Proxy some more used properties
     readonly property bool outgoing: message.outgoing
     readonly property var debugMode: SettingsBridge.debug_mode
@@ -93,7 +96,7 @@ Page {
                 //: Label for session id of the message (in database)
                 //% "Session ID"
                 label: qsTrId("whisperfish-message-session-id")
-                value: message.sessionId
+                value: sessionId
             }
 
             // TIMESTAMP

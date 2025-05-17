@@ -206,7 +206,8 @@ SilicaListView {
         for (var i in selectedMessages) {
             if (selectedMessages.hasOwnProperty(i)) {
                 pageStack.push(Qt.resolvedUrl("../pages/MessageInfoPage.qml"), {
-                    message: selectedMessages[i]
+                    message: selectedMessages[i],
+                    sessionId: session.sessionId
                 })
                 return
             }

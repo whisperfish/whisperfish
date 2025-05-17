@@ -170,7 +170,10 @@ ListItem {
         anchors { bottom: parent.bottom; top: parent.top }
         width: parent.width/2
         sourceComponent: Component {
-            ReplyArea { enabled: root.enabled && !listView.isSelecting }
+            ReplyArea {
+                // 'listView' doesn't exist in MessageInfoPage -- always disabled
+                enabled: root.enabled && (listView ? !listView.isSelecting : false)
+            }
         }
     }
 

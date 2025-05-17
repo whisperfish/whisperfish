@@ -283,7 +283,7 @@ ApplicationWindow
     function newMessageNotification(sid, mid, sessionName, senderName, senderIdentifier, senderUuid, message, isGroup) {
         console.log("New message notification for session", sid, "from", senderIdentifier, "with message", message)
 
-        // Only ConversationPage.qml has `sessionId` property.
+        // Only ConversationPage.qml (and its subpages) have `sessionId` property.
         if(Qt.application.state == Qt.ApplicationActive &&
            (pageStack.currentPage.sessionId == sid)) {
             console.log("Quiet notification for session " + sid)
