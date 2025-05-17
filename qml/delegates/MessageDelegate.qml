@@ -87,7 +87,7 @@ ListItem {
 
     readonly property bool hasData: modelData !== null && modelData !== undefined
     readonly property bool hasReactions: hasData && modelData.reactions > 0
-    readonly property bool hasQuotedMessage: !!modelData.quotedMessageId && modelData.quotedMessageId != -1 && !isRemoteDeleted
+    readonly property bool hasQuotedMessage: modelData.quotedMessageId != -1 && !isRemoteDeleted
     readonly property bool hasAttachments: hasData && modelData.attachments > 0 && !isRemoteDeleted
     readonly property bool hasText: hasData && _message !== ''
     readonly property bool unidentifiedSender: modelData.unidentifiedSender !== undefined ? modelData.unidentifiedSender : true
@@ -228,7 +228,7 @@ ListItem {
                     showCloseButton: false
                     showBackground: true
                     highlighted: down || root.highlighted
-                    messageId: modelData.quotedMessageId ? modelData.quotedMessageId : -1
+                    messageId: modelData.quotedMessageId
                     backgroundItem.roundedCorners: backgroundItem.bottomLeft |
                                                    backgroundItem.bottomRight |
                                                    (isOutbound ? backgroundItem.topRight :
