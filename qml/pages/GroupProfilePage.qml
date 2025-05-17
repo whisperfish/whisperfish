@@ -12,7 +12,8 @@ Page {
     // a background image. A group admin should be able to change it, too.
 
     property QtObject session
-    property var groupId
+    property int groupId
+
     property QtObject group: Group {
         id: group
         app: AppState

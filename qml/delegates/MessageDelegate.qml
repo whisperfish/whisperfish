@@ -85,7 +85,7 @@ ListItem {
     property bool showQuotedMessage: hasQuotedMessage && !isRemoteDeleted
     property bool showExpand: !isEmpty && !isRemoteDeleted && _message.length > shortenThreshold
 
-    readonly property bool hasData: modelData !== null && modelData !== undefined
+    readonly property bool hasData: modelData != null
     readonly property bool hasReactions: hasData && modelData.reactions > 0
     readonly property bool hasQuotedMessage: modelData.quotedMessageId != -1 && !isRemoteDeleted
     readonly property bool hasAttachments: hasData && modelData.attachments > 0 && !isRemoteDeleted

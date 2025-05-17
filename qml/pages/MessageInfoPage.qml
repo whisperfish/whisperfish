@@ -15,7 +15,6 @@ Page {
     property bool isInGroup
 
     // Proxy some more used properties
-    readonly property bool outgoing: message.outgoing
     readonly property var debugMode: SettingsBridge.debug_mode
     readonly property var deliveryReceipts: message.deliveredReceipts
     readonly property var readReceipts: message.readReceipts

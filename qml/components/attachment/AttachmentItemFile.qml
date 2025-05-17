@@ -6,7 +6,7 @@ import be.rubdos.whisperfish 1.0
 
 AttachmentItemBase {
     id: item
-    property var recipientId: -1
+    property int recipientId: -1
 
     Recipient {
         id: recipient

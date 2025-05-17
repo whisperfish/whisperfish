@@ -8,7 +8,7 @@ import be.rubdos.whisperfish 1.0
 // TODO distinguish between voice notes and attached audio files
 AttachmentItemBase {
     id: item
-    property var recipientId: -1
+    property int recipientId: -1
 
     Recipient {
         id: recipient

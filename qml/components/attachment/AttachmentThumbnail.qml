@@ -45,7 +45,7 @@ MouseArea {
             var _viewPage = _isVideo ? '../../pages/ViewVideoPage.qml' : '../../pages/ViewImagePage.qml'
 
             pageStack.push(Qt.resolvedUrl(_viewPage, {sessionId: session.sessionId}), {
-                'title': message ? recipient.name : "",
+                'title': recipient.name,
                 // TODO don't show the file path once attachments work reliably (#many)
                 //      and attachments are saved in a WF-controlled directory (#253)
                 'subtitle': attach.original_name != null && attach.original_name.length > 0
