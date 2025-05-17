@@ -282,8 +282,6 @@ ApplicationWindow
 
     function newMessageNotification(sid, mid, sessionName, senderName, senderIdentifier, senderUuid, message, isGroup) {
         console.log("New message notification for session", sid, "from", senderIdentifier, "with message", message)
-        var name = getRecipientName(senderIdentifier, undefined, senderName) // FIXME
-        var contactName = isGroup ? sessionName : name
 
         // Only ConversationPage.qml has `sessionId` property.
         if(Qt.application.state == Qt.ApplicationActive &&
@@ -297,28 +295,36 @@ ApplicationWindow
 
         var m = messageNotification.createObject(null)
         m.itemCount = 1
-        var setting = SettingsBridge.notification_privacy.toString();
-        if(setting === "complete") {
+
+        var notification_privacy = SettingsBridge.notification_privacy.toString();
+        switch (notification_privacy) {
+        case "complete":
             m.body = message
-        } else if(setting === "minimal" || setting === "sender-only") {
+            break;
+        case "minimal":
+        case "sender-only":
             //: Default label for new message notification
             //% "New Message"
             m.body = qsTrId("whisperfish-notification-default-message")
-        } else if(setting === "off") {
+            break;
+        case "off":
             return;
-        } else {
-            console.error("Unrecognised notification privacy setting " + setting);
+        default:
+            console.error("Unrecognised notification privacy setting:", notification_privacy);
             return;
         }
 
-        var isReplacement = SettingsBridge.minimise_notify && (sid in notificationMap);
-        if (isReplacement) {
+        // Does this notification replace an existing one?
+        if (SettingsBridge.minimise_notify && (sid in notificationMap)) {
             var first_message = notificationMap[sid][0]
             m.replacesId = first_message.replacesId
             m.itemCount = first_message.itemCount + 1
         }
 
-        if(setting === "complete" || setting === "sender-only") {
+        var name = getRecipientName(senderIdentifier, undefined, senderName) // FIXME (add e164 perhaps..?)
+        var contactName = isGroup ? sessionName : name
+
+        if(notification_privacy === "complete" || notification_privacy === "sender-only") {
             m.previewSummary = name
             m.summary = name
             if(m.subText !== undefined) {
