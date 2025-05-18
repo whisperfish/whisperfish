@@ -98,14 +98,16 @@ ApplicationWindow
     }
 
     function getGroupAvatar(groupId) {
-        if(!groupId || groupId === '') {
-            return ''
+        if(!groupId) {
+            return ""
         }
 
-        var group_avatar = "file://" + SettingsBridge.avatar_dir + "/" + groupId
-        var group_avatar_ok = SettingsBridge.avatarExists(groupId)
+        if (SettingsBridge.avatarExists(groupId)) {
+            return "file://" + SettingsBridge.avatar_dir + "/" + groupId
+        } else {
+            return ""
+        }
 
-        return group_avatar_ok ? group_avatar : ''
     }
 
     // Return peer contacts avatar or Signal profile avatar based on

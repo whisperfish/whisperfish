@@ -193,7 +193,7 @@ ListItem {
             onPressAndHold: delegate.openMenu()
             onClicked: {
                 if (isGroup) {
-                    pageStack.push(Qt.resolvedUrl("../pages/GroupProfilePage.qml"), { session: model, groupId: model.groupId })
+                    pageStack.push(Qt.resolvedUrl("../pages/GroupProfilePage.qml"), { session: model })
                 } else {
                     if (model.recipientUuid === SetupWorker.uuid) {
                         pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"), { session: model } )

@@ -54,11 +54,11 @@ Page {
     Group {
         id: group
         app: AppState
-        groupId: root.isGroup && root.isValid ? session.groupId : -1
+        groupId: root.isGroup && root.isValid ? session.groupId : ""
         onValidChanged: if (valid) {
             maybeShowPanel()
-            if (groupId != -1) {
-                pageStack.pushAttached(Qt.resolvedUrl("GroupProfilePage.qml"), { session: session, group: group })
+            if (!!groupId) {
+                pageStack.pushAttached(Qt.resolvedUrl("GroupProfilePage.qml"), { session: session })
             }
         }
     }

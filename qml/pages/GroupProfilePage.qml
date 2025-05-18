@@ -12,12 +12,11 @@ Page {
     // a background image. A group admin should be able to change it, too.
 
     property QtObject session
-    property int groupId
 
-    property QtObject group: Group {
+    Group {
         id: group
         app: AppState
-        groupId: groupProfile.groupId != null ? groupProfile.groupId : (session != null ? session.groupId : -1)
+        groupId: session ? session.groupId : ""
     }
 
     // For new message notifications
@@ -110,8 +109,8 @@ Page {
                 width: height
                 highlighted: false
                 labelsHighlighted: false
-                imageSource: group.groupId !== -1
-                    ? SettingsBridge.avatar_dir + "/" + group.groupId
+                imageSource: !!session.groupId
+                    ? SettingsBridge.avatar_dir + "/" + session.groupId
                     : ''
                 isGroup: true
                 showInfoMark: infoMarkSource !== ''
