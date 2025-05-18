@@ -147,5 +147,14 @@ Page {
                 }
             }
         }
+        ViewPlaceholder {
+            enabled: listView.count == 0
+            //: Placeholder when no linked device yet
+            //% "No linked device"
+            text: qsTrId("whisperfish-device-placeholder")
+            //: Placeholder hint when no linked device yet
+            //% "Pull down to link Whisperfish to another device"
+            hintText: qsTrId("whisperfish-device-placeholder-hint")
+        }
     }
 }
