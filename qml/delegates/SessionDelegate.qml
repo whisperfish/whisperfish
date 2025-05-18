@@ -31,8 +31,8 @@ ListItem {
     property bool hasSpoilers: hasLastMessage ? lastMessage.hasSpoilers : false
     property bool hasStrikeThrough: hasLastMessage ? lastMessage.hasStrikeThrough : false
     property int expiringMessages: hasLastMessage && model.expiringMessageTimeout != -1
-    property string name: model.isGroup ? model.groupName : (recipient.status == Loader.Ready ? getRecipientName(recipient.item.e164, recipient.item.externalId, recipient.item.name, true) : '')
-    property string emoji: model.isGroup ? '' : (recipient.status == Loader.Ready ? (recipient.item.emoji != null ? recipient.item.emoji : '') : '')
+    property string name: isGroup ? model.groupName : (recipient.status == Loader.Ready ? getRecipientName(recipient.item.e164, recipient.item.externalId, recipient.item.name, true) : '')
+    property string emoji: isGroup ? '' : (recipient.status == Loader.Ready ? (recipient.item.emoji != null ? recipient.item.emoji : '') : '')
     property string message: {
         var text = ""
 
@@ -108,7 +108,7 @@ ListItem {
 
     Loader {
         id: recipient
-        active: !model.isGroup
+        active: !isGroup
         asynchronous: true
         sourceComponent: Recipient {
             app: AppState
@@ -214,7 +214,7 @@ ListItem {
             highlighted: _labelsHighlighted
             maximumLineCount: 1
             truncationMode: TruncationMode.Fade
-            text: (_debugMode && !model.isGroup ? "[" + model.recipientId + "] " : "") +
+            text: (_debugMode && !isGroup ? "[" + model.recipientId + "] " : "") +
                 (
                     isNoteToSelf ?
                     //: Name of the conversation with one's own number

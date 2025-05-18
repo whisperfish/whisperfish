@@ -12,17 +12,19 @@ Page {
     // E.g. when starting a new chat.
     property bool editorFocus: false
 
-    property string conversationName: session.isGroup ? session.groupName : getRecipientName(recipient.e164, recipient.externalId, recipient.name, true)
-    property string profilePicture: session.isGroup ? getGroupAvatar(session.groupId) : getRecipientAvatar(recipient.e164, recipient.uuid, recipient.externalId)
+    property bool isGroup: session.isGroup
+    property bool isValid: session.valid
+    property string conversationName: root.isGroup ? session.groupName : getRecipientName(recipient.e164, recipient.externalId, recipient.name, true)
+    property string profilePicture: root.isGroup ? getGroupAvatar(session.groupId) : getRecipientAvatar(recipient.e164, recipient.uuid, recipient.externalId)
     property alias sessionId: session.sessionId
-    property bool expiringMessages: session.valid ? session.expiringMessageTimeout != -1 : false
+    property bool expiringMessages: root.isValid ? session.expiringMessageTimeout != -1 : false
     property DockedPanel activePanel: actionsPanel.open ? actionsPanel : (acceptPanel.open ? acceptPanel : panel)
 
     property int _selectedCount: messages.selectedCount // proxy to avoid some costly lookups
     property bool _showDeleteAll: false
     // XXX handle group.group_change like a real client
-    property bool _accepted: session.isGroup || !recipient.valid ? true : recipient.accepted
-    property bool _blocked: session.isGroup || !recipient.valid ? false : recipient.blocked
+    property bool _accepted: root.isGroup || !recipient.valid ? true : recipient.accepted
+    property bool _blocked: root.isGroup || !recipient.valid ? false : recipient.blocked
     property bool _showInputPanel: true
     on_ShowInputPanelChanged: maybeShowPanel()
 
@@ -52,7 +54,7 @@ Page {
     Group {
         id: group
         app: AppState
-        groupId: session.isGroup && session.valid ? session.groupId : -1
+        groupId: root.isGroup && root.isValid ? session.groupId : -1
         onValidChanged: if (valid) {
             maybeShowPanel()
             if (groupId != -1) {
@@ -64,7 +66,7 @@ Page {
     Recipient {
         id: recipient
         app: AppState
-        recipientId: !session.isGroup && session.valid ? session.recipientId : -1
+        recipientId: !root.isGroup && root.isValid ? session.recipientId : -1
         onValidChanged: if (valid) {
             if (recipientId != -1) {
                 maybeShowPanel()
@@ -92,12 +94,12 @@ Page {
     ConversationPageHeader {
         id: pageHeader
         title: conversationName + (expiringMessages ? "⏱" : "")
-        isGroup: session.valid && session.isGroup
+        isGroup: root.isValid && root.isGroup
         anchors.top: parent.top
         description: {
-            if (!session.valid) {
+            if (!root.isValid) {
                 return "";
-            } else if (session.isGroup) {
+            } else if (root.isGroup) {
                 //: The number of members in a group, you included
                 //% "%n member(s)"
                 return qsTrId("whisperfish-group-n-members", group.member_count)
@@ -292,13 +294,13 @@ Page {
             id: textInput
             width: parent.width
             anchors.bottom: parent.bottom
-            enablePersonalizedPlaceholder: messages.count === 0 && !session.isGroup
+            enablePersonalizedPlaceholder: messages.count === 0 && !root.isGroup
             placeholderContactName: conversationName
             editor.focus: root.editorFocus
             showSeparator: !messages.atYEnd || quotedMessageShown
             editor.onFocusChanged: if (editor.focus) _showInputPanel = true
             dockMoving: panel.moving
-            recipientIsRegistered: session.valid && session.isRegistered // true for any group
+            recipientIsRegistered: root.isValid && session.isRegistered // true for any group
 
             Component.onDestruction: {
                 if(sessionId > -1 && session.draft !== text) {
@@ -546,7 +548,7 @@ Page {
 
             InfoHintLabel {
                 id: acceptInfoLabel
-                defaultMessage: session.isGroup
+                defaultMessage: root.isGroup
                     //: Information about a pending or blocked group
                     //% "Let the group members message with you and let its members see your profile information?"
                     ? qsTrId("whisperfish-group-request-information")
@@ -571,7 +573,7 @@ Page {
                     height: width
                     icon.source: "image://theme/icon-m-cancel"
                     onClicked: {
-                        session.isGroup
+                        root.isGroup
                             ? ClientWorker.handleGroupInvite(group.groupId, "block") // XXX
                             : ClientWorker.handleMessageRequest(recipient.recipientUuid, "block")
                             enabled: false
@@ -587,7 +589,7 @@ Page {
                     height: width
                     icon.source: "image://theme/icon-m-accept"
                     onClicked: {
-                        session.isGroup
+                        root.isGroup
                             ? ClientWorker.handleGroupInvite(group.groupId, "accept") // XXX
                             : ClientWorker.handleMessageRequest(recipient.recipientUuid, "accept")
                         acceptPanel.hide()
