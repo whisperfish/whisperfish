@@ -199,14 +199,14 @@
         <translation>Keine Nachrichten</translation>
     </message>
     <message id="whisperfish-session-section-today">
-        <location filename="../qml/pages/LinkedDevices.qml" line="117"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="112"/>
         <location filename="../qml/pages/MainPage.qml" line="362"/>
         <source>Today</source>
         <extracomment>Session section label for today</extracomment>
         <translation>Heute</translation>
     </message>
     <message id="whisperfish-session-section-yesterday">
-        <location filename="../qml/pages/LinkedDevices.qml" line="120"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="115"/>
         <location filename="../qml/pages/MainPage.qml" line="367"/>
         <source>Yesterday</source>
         <extracomment>Session section label for yesterday</extracomment>
@@ -436,35 +436,34 @@
         <translation>Zusätzliches Urheberrecht</translation>
     </message>
     <message id="whisperfish-add-confirm">
-        <location filename="../qml/pages/OldAddDevice.qml" line="25"/>
         <source>Add</source>
         <extracomment>&quot;Add&quot; message, shown in the link device dialog</extracomment>
-        <translation>Hinzufügen</translation>
+        <translation type="vanished">Hinzufügen</translation>
     </message>
     <message id="whisperfish-add-device">
-        <location filename="../qml/pages/AddDevice.qml" line="42"/>
-        <location filename="../qml/pages/OldAddDevice.qml" line="33"/>
+        <location filename="../qml/pages/AddDevice.qml" line="57"/>
         <source>Add Device</source>
         <extracomment>Add Device, shown as pull-down menu item</extracomment>
         <translation>Gerät hinzufügen</translation>
     </message>
     <message id="whisperfish-qr-scanning-instructions">
-        <location filename="../qml/pages/AddDevice.qml" line="82"/>
+        <location filename="../qml/pages/AddDevice.qml" line="90"/>
         <source>Scan the QR code displayed by the Signal application that you wish to link</source>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
         <translation>Scanne den QR-Code der von der Signal-Anwendung angezeigt wird, die du verknüpfen möchtest</translation>
     </message>
     <message id="whisperfish-device-url">
-        <location filename="../qml/pages/OldAddDevice.qml" line="43"/>
+        <location filename="../qml/pages/AddDevice.qml" line="111"/>
         <source>Device URL</source>
         <extracomment>Device URL, text input for pasting the QR-scanned code</extracomment>
         <translation>Geräte-URL</translation>
     </message>
     <message id="whisperfish-device-link-instructions">
-        <location filename="../qml/pages/OldAddDevice.qml" line="76"/>
-        <source>Install Signal Desktop. Use the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</source>
+        <location filename="../qml/pages/AddDevice.qml" line="146"/>
+        <source>Install Signal Desktop. Use e.g. the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</source>
+        <oldsource>Install Signal Desktop. Use the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</oldsource>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
-        <translation>Installiere Signal Desktop. Nutze einen QR-Code-Scanner, um die URL aus dem dort angezeigten QR-Code hinzuzufügen.</translation>
+        <translation type="unfinished">Installiere Signal Desktop. Nutze einen QR-Code-Scanner, um die URL aus dem dort angezeigten QR-Code hinzuzufügen.</translation>
     </message>
     <message id="whisperfish-select-picture">
         <source>Select picture</source>
@@ -478,50 +477,50 @@
         <translation>Hinzufügen</translation>
     </message>
     <message id="whisperfish-refresh-linked-devices">
-        <location filename="../qml/pages/LinkedDevices.qml" line="36"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="31"/>
         <source>Refresh</source>
         <extracomment>Menu option to refresh linked devices</extracomment>
         <translation>Aktualisieren</translation>
     </message>
     <message id="whisperfish-linked-devices">
-        <location filename="../qml/pages/LinkedDevices.qml" line="45"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="40"/>
         <source>Linked Devices</source>
         <extracomment>Title for Linked Devices page</extracomment>
         <translation>Verbundene Geräte</translation>
     </message>
     <message id="whisperfish-device-unlink-message">
-        <location filename="../qml/pages/LinkedDevices.qml" line="60"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="55"/>
         <source>Unlinked</source>
         <oldsource>Unlinking</oldsource>
         <extracomment>Unlinking remorse info message for unlinking secondary devices (past tense)</extracomment>
         <translation>Nicht verbunden</translation>
     </message>
     <message id="whisperfish-current-device-name">
-        <location filename="../qml/pages/LinkedDevices.qml" line="77"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="72"/>
         <source>Current device (Whisperfish, %1)</source>
         <extracomment>Linked device title for current Whisperfish</extracomment>
         <translation>Aktuelles Gerät (Whisperfish, %1)</translation>
     </message>
     <message id="whisperfish-device-name">
-        <location filename="../qml/pages/LinkedDevices.qml" line="81"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="76"/>
         <source>Device %1</source>
         <extracomment>Linked device name</extracomment>
         <translation>Gerät %1</translation>
     </message>
     <message id="whisperfish-device-link-date">
-        <location filename="../qml/pages/LinkedDevices.qml" line="95"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="90"/>
         <source>Linked: %1</source>
         <extracomment>Linked device date</extracomment>
         <translation>Verbunden: %1</translation>
     </message>
     <message id="whisperfish-device-last-active">
-        <location filename="../qml/pages/LinkedDevices.qml" line="126"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="121"/>
         <source>Last active: %1</source>
         <extracomment>Linked device last active date</extracomment>
         <translation>Letzte Aktivität: %1</translation>
     </message>
     <message id="whisperfish-device-unlink">
-        <location filename="../qml/pages/LinkedDevices.qml" line="148"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="143"/>
         <source>Unlink</source>
         <extracomment>Device unlink menu option</extracomment>
         <translation>Trennen</translation>
