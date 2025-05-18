@@ -904,7 +904,7 @@ impl ClientActor {
 
         let body_ranges = crate::store::body_ranges::serialize(&msg.body_ranges);
 
-        let session = group.unwrap_or_else(|| {
+        let mut session = group.unwrap_or_else(|| {
             let recipient = storage.merge_and_fetch_recipient(
                 source_phonenumber.clone(),
                 source_addr.map(Aci::try_from).transpose().ok().flatten(),
@@ -914,8 +914,8 @@ impl ClientActor {
             storage.fetch_or_insert_session_by_recipient_id(recipient.id)
         });
 
-        let expire_timer_version =
-            storage.update_expiration_timer(session.id, msg.expire_timer, msg.expire_timer_version);
+        session.expire_timer_version =
+            storage.update_expiration_timer(&session, msg.expire_timer, msg.expire_timer_version);
 
         let expires_in = session.expiring_message_timeout;
 
@@ -936,7 +936,7 @@ impl ClientActor {
             is_read: is_sync_sent,
             quote_timestamp: msg.quote.as_ref().and_then(|x| x.id),
             expires_in,
-            expire_timer_version,
+            expire_timer_version: session.expire_timer_version,
             story_type: StoryType::None,
             server_guid: metadata.server_guid,
             body_ranges,
@@ -1122,9 +1122,10 @@ impl ClientActor {
                         response.r#type(),
                         addr.service_id_string()
                     );
-                    false
+                    return false;
                 }
             }
+            true
         } else if let Some(group_id) = &response.group_id {
             tracing::warn!("Group message request responses are not yet implemented. {:?}. Please upvote bug #327", group_id);
             false
@@ -1541,7 +1542,7 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
         );
         let storage = self.storage.as_mut().unwrap();
 
-        let session = storage
+        let mut session = storage
             .fetch_session_by_id(msg.session_id)
             .expect("existing session when sending");
 
@@ -1551,8 +1552,8 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
             return;
         }
 
-        let expire_timer_version = storage.update_expiration_timer(
-            session.id,
+        session.expire_timer_version = storage.update_expiration_timer(
+            &session,
             msg.expires_in.map(|x| x.as_secs() as u32),
             None,
         );
@@ -1561,7 +1562,7 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
             session_id: session.id,
             source_addr: storage.fetch_self_service_address_aci(),
             expires_in: msg.expires_in,
-            expire_timer_version,
+            expire_timer_version: session.expire_timer_version,
             flags: DataMessageFlags::ExpirationTimerUpdate as i32,
             message_type: Some(MessageType::ExpirationTimerUpdate),
             ..crate::store::NewMessage::new_outgoing()
@@ -1804,11 +1805,6 @@ impl Handler<SendMessage> for ClientActor {
                                         };
 
                                         tracing::trace!("Removed {} device session(s)", num);
-                                        if storage.mark_recipient_registered(service_id, false) {
-                                            tracing::trace!("Marked recipient {service_id:?} as unregistered");
-                                        } else {
-                                            tracing::warn!("Could not mark recipient {service_id:?} as unregistered");
-                                        }
                                     },
                                     _ => {
                                         tracing::error!("The above error goes unhandled.");
@@ -2440,9 +2436,13 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
 
         ctx.spawn(
             async move {
+                let mut visited = false;
                 let content = loop {
                     match cipher.open_envelope(msg.clone(), &mut rand::thread_rng()).await {
-                        Ok(Some(content)) => break content,
+                        Ok(Some(content)) => {
+                            storage.mark_recipient_registered(content.metadata.sender, true);
+                            break content;
+                        }
                         Ok(None) => {
                             tracing::warn!("Empty envelope");
                             return None;
@@ -2451,6 +2451,11 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             SignalProtocolError::UntrustedIdentity(dest_protocol_address),
                         )) => {
                             // This branch is the only one that loops, and it *should not* loop more than once.
+                            if visited {
+                                tracing::warn!("ServiceError::SignalProtocolError visited more than once!");
+                            }
+                            visited = true;
+
                             let dest_address = ServiceId::parse_from_service_id_string(dest_protocol_address.name()).expect("valid ACI or PNI UUID in ProtocolAddress");
                             tracing::warn!("Untrusted identity for {}; replacing identity and inserting a warning.", dest_protocol_address);
                             let recipient = storage.fetch_or_insert_recipient_by_address(&dest_address);

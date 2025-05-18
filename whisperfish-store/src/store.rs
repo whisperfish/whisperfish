@@ -548,7 +548,7 @@ impl<O: Observable> Storage<O> {
         let root = root.as_ref();
 
         let directories = [
-            root.to_path_buf() as PathBuf,
+            root.to_path_buf(),
             root.join("db"),
             root.join("storage"),
             root.join("storage").join("identity"),
@@ -908,7 +908,7 @@ impl<O: Observable> Storage<O> {
 
         let affected = diesel::update(recipients)
             .set(needs_pni_signature.eq(val))
-            .filter(id.eq(recipient.id))
+            .filter(id.eq(recipient.id).and(needs_pni_signature.ne(val)))
             .execute(&mut *self.db())
             .expect("db");
 
@@ -968,11 +968,11 @@ impl<O: Observable> Storage<O> {
         &self,
         recipient: &orm::Recipient,
         mode: UnidentifiedAccessMode,
-    ) -> bool {
+    ) {
         use crate::schema::recipients::dsl::*;
         let affected = diesel::update(recipients)
             .set(unidentified_access_mode.eq(mode))
-            .filter(id.eq(recipient.id))
+            .filter(id.eq(recipient.id).and(unidentified_access_mode.ne(mode)))
             .execute(&mut *self.db())
             .expect("existing record updated");
         if affected > 0 {
@@ -982,33 +982,34 @@ impl<O: Observable> Storage<O> {
         if recipient.uuid == self.config.get_aci() {
             self.invalidate_self_recipient();
         }
-        affected > 0
     }
 
     #[tracing::instrument(skip(self, recipient), fields(recipient_uuid = recipient.uuid.as_ref().map(Uuid::to_string)))]
-    pub fn mark_profile_outdated(&self, recipient: &orm::Recipient) -> Option<orm::Recipient> {
+    pub fn mark_profile_outdated(&self, recipient: &orm::Recipient) {
         use crate::schema::recipients::dsl::*;
         if let Some(aci) = recipient.uuid {
-            diesel::update(recipients)
+            let r_id: Option<i32> = diesel::update(recipients)
                 .set(last_profile_fetch.eq(Option::<NaiveDateTime>::None))
-                .filter(uuid.eq(aci.to_string()))
-                .execute(&mut *self.db())
+                .filter(
+                    uuid.eq(aci.to_string())
+                        .and(last_profile_fetch.is_not_null()),
+                )
+                .returning(id)
+                .get_result(&mut *self.db())
+                .optional()
                 .expect("existing record updated");
-            // If updating self, invalidate the cache
-            if recipient.uuid == self.config.get_aci() {
-                self.invalidate_self_recipient();
+            if let Some(r_id) = r_id {
+                // If updating self, invalidate the cache
+                if recipient.uuid == self.config.get_aci() {
+                    self.invalidate_self_recipient();
+                }
+                self.observe_update(recipients, r_id);
             }
-            let recipient = self.fetch_recipient(&Aci::from(aci).into());
-            if let Some(recipient) = &recipient {
-                self.observe_update(recipients, recipient.id);
-            }
-            recipient
         } else {
             tracing::error!(
                 "Recipient without ACI; can't mark outdated: {:?}",
                 recipient
             );
-            None
         }
     }
 
@@ -1036,11 +1037,20 @@ impl<O: Observable> Storage<O> {
             .set((
                 profile_family_name.eq(new_family_name),
                 profile_given_name.eq(new_given_name),
-                profile_joined_name.eq(new_joined_name),
+                profile_joined_name.eq(new_joined_name.clone()),
                 about.eq(new_about),
                 about_emoji.eq(new_emoji),
             ))
-            .filter(id.eq(recipient.id))
+            .filter(
+                id.eq(recipient.id).and(
+                    profile_family_name
+                        .ne(new_family_name)
+                        .or(profile_given_name.ne(new_given_name))
+                        .or(profile_joined_name.ne(new_joined_name))
+                        .or(about.ne(new_about))
+                        .or(about_emoji.ne(new_emoji)),
+                ),
+            )
             .execute(&mut *self.db())
             .expect("existing record updated");
         // If updating self, invalidate the cache
@@ -1060,15 +1070,12 @@ impl<O: Observable> Storage<O> {
     #[tracing::instrument(skip(self))]
     pub fn update_expiration_timer(
         &self,
-        session_id: i32,
+        session: &orm::Session,
         timer: Option<u32>,
         version: Option<u32>,
     ) -> i32 {
         // Carry out the update only if the timer changes
         use crate::schema::sessions::dsl::*;
-        let session = self
-            .fetch_session_by_id(session_id)
-            .expect("existing session for expiration update");
         let new_version = if session.is_group() {
             1
         } else if let Some(version) = version {
@@ -1081,15 +1088,27 @@ impl<O: Observable> Storage<O> {
                 expiring_message_timeout.eq(timer.map(|i| i as i32)),
                 expire_timer_version.eq(new_version),
             ))
-            .filter(id.eq(session_id))
+            .filter(
+                id.eq(session.id).and(
+                    expiring_message_timeout
+                        .ne(timer.map(|i| i as i32))
+                        .or(expire_timer_version.ne(new_version)),
+                ),
+            )
             .returning(expire_timer_version)
             .load(&mut *self.db())
             .expect("existing record updated");
-        if affected_rows.len() != 1 {
+
+        if affected_rows.len() == 1 {
+            self.observe_update(sessions, session.id);
+            affected_rows.pop().unwrap()
+        } else if affected_rows.is_empty() {
+            new_version
+        } else {
             panic!("Message expiry update should only have changed a single session")
         }
-        affected_rows.pop().unwrap()
     }
+
     #[tracing::instrument(
         skip(self, rcpt_e164, new_profile_key),
         fields(
@@ -1097,7 +1116,6 @@ impl<O: Observable> Storage<O> {
                 .as_ref()
                 .map(|p| p.to_string()).as_deref(),
         ))]
-
     pub fn update_profile_key(
         &self,
         rcpt_e164: Option<PhoneNumber>,
@@ -1133,9 +1151,12 @@ impl<O: Observable> Storage<O> {
                 // Key remained the same, but we got an assertion on the profile key, so we will
                 // retry sending unidentified.
                 if recipient.unidentified_access_mode == UnidentifiedAccessMode::Disabled {
-                    let _affected_rows = diesel::update(recipients)
+                    diesel::update(recipients)
                         .set((unidentified_access_mode.eq(UnidentifiedAccessMode::Unknown),))
-                        .filter(id.eq(recipient.id))
+                        .filter(
+                            id.eq(recipient.id)
+                                .and(unidentified_access_mode.ne(UnidentifiedAccessMode::Unknown)),
+                        )
                         .execute(&mut *self.db())
                         .expect("existing record updated");
                 }
@@ -1152,17 +1173,23 @@ impl<O: Observable> Storage<O> {
                     profile_key.eq(new_profile_key),
                     unidentified_access_mode.eq(UnidentifiedAccessMode::Unknown),
                 ))
-                .filter(id.eq(recipient.id))
+                .filter(
+                    id.eq(recipient.id).and(
+                        profile_key
+                            .ne(new_profile_key)
+                            .or(unidentified_access_mode.ne(UnidentifiedAccessMode::Unknown)),
+                    ),
+                )
                 .execute(&mut *self.db())
                 .expect("existing record updated");
             tracing::info!("Updated profile key for {}", recipient.e164_or_address());
 
-            // If updating self, invalidate the cache
-            if recipient.uuid == self.config.get_aci() {
-                self.invalidate_self_recipient();
-            }
-
             if affected_rows > 0 {
+                // If updating self, invalidate the cache
+                if recipient.uuid == self.config.get_aci() {
+                    self.invalidate_self_recipient();
+                }
+
                 self.observe_update(recipients, recipient.id);
             }
         }
@@ -1180,29 +1207,53 @@ impl<O: Observable> Storage<O> {
     pub fn save_profile(&self, profile: StoreProfile) {
         use crate::store::schema::recipients::dsl::*;
         use diesel::prelude::*;
+
+        // Update timestamp separately from the data to get proper changed answer
         diesel::update(recipients)
-            .set((
-                profile_given_name.eq(profile.given_name),
-                profile_family_name.eq(profile.family_name),
-                profile_joined_name.eq(profile.joined_name),
-                about.eq(profile.about_text),
-                about_emoji.eq(profile.emoji),
-                unidentified_access_mode.eq(profile.unidentified),
-                signal_profile_avatar.eq(profile.avatar),
-                last_profile_fetch.eq(profile.last_fetch),
-            ))
+            .set(last_profile_fetch.eq(profile.last_fetch))
             .filter(uuid.nullable().eq(&profile.r_uuid.to_string()))
             .execute(&mut *self.db())
             .expect("db");
 
-        // If updating self, invalidate the cache
-        if Some(profile.r_uuid) == self.config.get_aci() {
-            self.invalidate_self_recipient();
+        let changed_id: Option<i32> = diesel::update(recipients)
+            .set((
+                profile_given_name.eq(profile.given_name.clone()),
+                profile_family_name.eq(profile.family_name.clone()),
+                profile_joined_name.eq(profile.joined_name.clone()),
+                about.eq(profile.about_text.clone()),
+                about_emoji.eq(profile.emoji.clone()),
+                unidentified_access_mode.eq(profile.unidentified),
+                signal_profile_avatar.eq(profile.avatar.clone()),
+            ))
+            .filter(
+                uuid.nullable().eq(&profile.r_uuid.to_string()).and(
+                    profile_given_name
+                        .ne(profile.given_name)
+                        .or(profile_family_name.ne(profile.family_name))
+                        .or(profile_joined_name.ne(profile.joined_name))
+                        .or(about.ne(profile.about_text))
+                        .or(about_emoji.ne(profile.emoji))
+                        .or(unidentified_access_mode.ne(profile.unidentified))
+                        .or(signal_profile_avatar.ne(profile.avatar)),
+                ),
+            )
+            .returning(id)
+            .get_result(&mut *self.db())
+            .optional()
+            .expect("db");
+
+        if changed_id.is_some() {
+            // If updating self, invalidate the cache
+            if Some(profile.r_uuid) == self.config.get_aci() {
+                self.invalidate_self_recipient();
+            }
+
+            tracing::debug!("Updated profile saved to database");
+
+            self.observe_update(schema::recipients::table, profile.r_id);
+        } else {
+            tracing::debug!("Unchanged profile, timestamp updated");
         }
-
-        tracing::trace!("Profile saved to database");
-
-        self.observe_update(schema::recipients::table, profile.r_id);
     }
 
     /// Helper for guaranteed ACI or PNI cases, with or without E.164.
@@ -1416,30 +1467,27 @@ impl<O: Observable> Storage<O> {
     #[tracing::instrument(skip(self))]
     pub fn mark_message_read(&self, timestamp: NaiveDateTime) -> Option<MessagePointer> {
         use schema::messages::dsl::*;
-        let mut row: Vec<(i32, i32)> = diesel::update(messages)
-            .filter(server_timestamp.eq(timestamp))
+        let pointer: Option<MessagePointer> = diesel::update(messages)
+            .filter(server_timestamp.eq(timestamp).and(is_read.ne(true)))
             .set(is_read.eq(true))
             .returning((schema::messages::id, schema::messages::session_id))
             .load(&mut *self.db())
-            .unwrap();
+            .unwrap()
+            .into_iter()
+            .map(|(m_id, s_id)| MessagePointer {
+                message_id: m_id,
+                session_id: s_id,
+            })
+            .collect::<Vec<MessagePointer>>()
+            .pop();
 
-        if row.is_empty() {
-            tracing::warn!("Could not sync message {} as received", timestamp);
-            tracing::warn!(
-                "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
-            );
-            return None;
+        if let Some(pointer) = pointer {
+            self.observe_update(messages, pointer.message_id)
+                .with_relation(schema::sessions::table, pointer.session_id);
+            Some(pointer)
+        } else {
+            None
         }
-
-        let pointer = row.pop()?;
-        let pointer = MessagePointer {
-            message_id: pointer.0,
-            session_id: pointer.1,
-        };
-
-        self.observe_update(messages, pointer.message_id)
-            .with_relation(schema::sessions::table, pointer.session_id);
-        Some(pointer)
     }
 
     /// Marks the messages with the certain timestamps as read by a certain person.
@@ -1457,9 +1505,15 @@ impl<O: Observable> Storage<O> {
         // Find the recipient
         let rcpt = self.merge_and_fetch_recipient_by_address(None, sender, TrustLevel::Certain);
 
-        let num_timestamps = timestamps.len();
+        // Part 1 - mark messages as read
+
         let pointers: Vec<MessagePointer> = diesel::update(messages)
-            .filter(server_timestamp.eq_any(timestamps))
+            .filter(
+                server_timestamp
+                    .eq_any(timestamps.clone())
+                    .and(is_read.ne(true)),
+            )
+            // XXX `is_read` should only be used for "self-has-read", perhaps
             .set(is_read.eq(true))
             .returning((schema::messages::id, schema::messages::session_id))
             .load(&mut *self.db())
@@ -1471,22 +1525,26 @@ impl<O: Observable> Storage<O> {
             })
             .collect();
 
-        if pointers.is_empty() {
-            tracing::warn!(
-                "Received {} read timestamps but found {} messages",
-                num_timestamps,
-                pointers.len()
-            );
-            tracing::warn!(
-                "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
-            );
-            return Vec::new();
-        }
-
         for ptr in pointers.iter() {
             self.observe_update(messages, ptr.message_id)
                 .with_relation(schema::sessions::table, ptr.session_id);
+        }
 
+        // Part 2 - insert/update read receipts
+
+        let pointers: Vec<MessagePointer> = schema::messages::table
+            .select((schema::messages::id, schema::messages::session_id))
+            .filter(server_timestamp.eq_any(timestamps))
+            .load(&mut *self.db())
+            .unwrap()
+            .into_iter()
+            .map(|(m_id, s_id)| MessagePointer {
+                message_id: m_id,
+                session_id: s_id,
+            })
+            .collect();
+
+        for ptr in pointers.iter() {
             // For read receipts, existing row is likely present - try update first
             let mut affected = diesel::update(schema::receipts::table)
                 .filter(
@@ -1541,7 +1599,7 @@ impl<O: Observable> Storage<O> {
 
         // 1) Mark messages as read, if necessary
         let messages_unread: Vec<(i32, i32)> = diesel::update(messages)
-            .filter(id.eq_any(&msg_ids))
+            .filter(id.eq_any(&msg_ids).and(is_read.ne(true)))
             .set(is_read.eq(true))
             .returning((schema::messages::id, schema::messages::session_id))
             .load(&mut *self.db())
@@ -1618,9 +1676,6 @@ impl<O: Observable> Storage<O> {
         }
 
         for ptr in pointers.iter() {
-            self.observe_update(schema::messages::table, ptr.message_id)
-                .with_relation(schema::sessions::table, ptr.session_id);
-
             // For delivery receipts, existing row is likely absent - try insert first
             let mut affected = diesel::insert_into(schema::receipts::table)
                 .values((
@@ -2164,15 +2219,17 @@ impl<O: Observable> Storage<O> {
 
     #[tracing::instrument(skip(self))]
     pub fn start_message_expiry(&self, message_id: i32) {
+        let now = Some(chrono::Utc::now().naive_utc());
         let affected_rows = diesel::update(
             schema::messages::table.filter(
                 schema::messages::id
                     .eq(message_id)
                     .and(schema::messages::expiry_started.is_null())
-                    .and(schema::messages::message_type.is_null()),
+                    .and(schema::messages::message_type.is_null())
+                    .and(schema::messages::expiry_started.ne(now)),
             ),
         )
-        .set(schema::messages::expiry_started.eq(Some(chrono::Utc::now().naive_utc())))
+        .set(schema::messages::expiry_started.eq(now))
         .execute(&mut *self.db())
         .expect("set message expiry");
 
@@ -2295,10 +2352,11 @@ impl<O: Observable> Storage<O> {
     pub fn mark_session_muted(&self, session_id: i32, muted: bool) {
         use schema::sessions::dsl::*;
 
-        let affected_rows = diesel::update(sessions.filter(id.eq(session_id)))
-            .set((is_muted.eq(muted),))
-            .execute(&mut *self.db())
-            .expect("mark session (un)muted");
+        let affected_rows =
+            diesel::update(sessions.filter(id.eq(session_id).and(is_muted.ne(muted))))
+                .set((is_muted.eq(muted),))
+                .execute(&mut *self.db())
+                .expect("mark session (un)muted");
         if affected_rows > 0 {
             self.observe_update(schema::sessions::table, session_id);
         }
@@ -2308,10 +2366,11 @@ impl<O: Observable> Storage<O> {
     pub fn mark_session_archived(&self, session_id: i32, archived: bool) {
         use schema::sessions::dsl::*;
 
-        let affected_rows = diesel::update(sessions.filter(id.eq(session_id)))
-            .set((is_archived.eq(archived),))
-            .execute(&mut *self.db())
-            .expect("mark session (un)archived");
+        let affected_rows =
+            diesel::update(sessions.filter(id.eq(session_id).and(is_archived.ne(archived))))
+                .set((is_archived.eq(archived),))
+                .execute(&mut *self.db())
+                .expect("mark session (un)archived");
         if affected_rows > 0 {
             self.observe_update(schema::sessions::table, session_id);
         }
@@ -2321,81 +2380,88 @@ impl<O: Observable> Storage<O> {
     pub fn mark_session_pinned(&self, session_id: i32, pinned: bool) {
         use schema::sessions::dsl::*;
 
-        let affected_rows = diesel::update(sessions.filter(id.eq(session_id)))
-            .set((is_pinned.eq(pinned),))
-            .execute(&mut *self.db())
-            .expect("mark session (un)pinned");
+        let affected_rows =
+            diesel::update(sessions.filter(id.eq(session_id).and(is_pinned.ne(pinned))))
+                .set((is_pinned.eq(pinned),))
+                .execute(&mut *self.db())
+                .expect("mark session (un)pinned");
         if affected_rows > 0 {
             self.observe_update(schema::sessions::table, session_id);
         }
     }
 
     #[tracing::instrument(skip(self, service_address), fields(service_address = service_address.service_id_string()))]
-    pub fn mark_recipient_registered(&self, service_address: ServiceId, registered: bool) -> bool {
+    pub fn mark_recipient_registered(&self, service_address: ServiceId, registered: bool) {
         use schema::recipients::dsl::*;
 
         let rid: Option<i32> = match service_address.kind() {
-            ServiceIdKind::Aci => {
-                diesel::update(recipients.filter(uuid.eq(service_address.raw_uuid().to_string())))
-                    .set(is_registered.eq(registered))
-                    .returning(id)
-                    .get_result(&mut *self.db())
-                    .optional()
-                    .expect("mark recipient (un)registered")
-            }
-            ServiceIdKind::Pni => {
-                diesel::update(recipients.filter(pni.eq(service_address.raw_uuid().to_string())))
-                    .set(is_registered.eq(registered))
-                    .returning(id)
-                    .get_result(&mut *self.db())
-                    .optional()
-                    .expect("mark recipient (un)registered")
-            }
+            ServiceIdKind::Aci => diesel::update(
+                recipients.filter(
+                    uuid.eq(service_address.raw_uuid().to_string())
+                        .and(is_registered.ne(registered)),
+                ),
+            )
+            .set(is_registered.eq(registered))
+            .returning(id)
+            .get_result(&mut *self.db())
+            .optional()
+            .expect("mark recipient (un)registered"),
+            ServiceIdKind::Pni => diesel::update(
+                recipients.filter(
+                    pni.eq(service_address.raw_uuid().to_string())
+                        .and(is_registered.ne(registered)),
+                ),
+            )
+            .set(is_registered.eq(registered))
+            .returning(id)
+            .get_result(&mut *self.db())
+            .optional()
+            .expect("mark recipient (un)registered"),
         };
 
-        let Some(rid) = rid else {
-            tracing::trace!(
-                "Registration of {:?} not updated in database",
-                service_address
-            );
-            return false;
-        };
-
-        self.observe_update(schema::recipients::table, rid);
-
-        true
+        if let Some(rid) = rid {
+            self.observe_update(schema::recipients::table, rid);
+        }
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn mark_recipient_accepted(&self, service_address: &ServiceId) -> bool {
+    pub fn mark_recipient_accepted(&self, service_address: &ServiceId) {
         use schema::recipients::dsl::*;
 
         let rcpt = self.fetch_or_insert_recipient_by_address(service_address);
 
-        let affected_rows = diesel::update(recipients.filter(id.eq(rcpt.id)))
-            .set((is_accepted.eq(true), is_blocked.eq(false)))
-            .execute(&mut *self.db())
-            .expect("mark recipient (un)accepted");
+        let affected_rows = diesel::update(
+            recipients.filter(
+                id.eq(rcpt.id)
+                    .and(is_accepted.ne(true).or(is_blocked.ne(false))),
+            ),
+        )
+        .set((is_accepted.eq(true), is_blocked.eq(false)))
+        .execute(&mut *self.db())
+        .expect("mark recipient (un)accepted");
         if affected_rows > 0 {
             self.observe_update(schema::recipients::table, rcpt.id);
         }
-        affected_rows > 0
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn mark_recipient_blocked(&self, service_address: &ServiceId) -> bool {
+    pub fn mark_recipient_blocked(&self, service_address: &ServiceId) {
         use schema::recipients::dsl::*;
 
         let rcpt = self.fetch_or_insert_recipient_by_address(service_address);
 
-        let affected_rows = diesel::update(recipients.filter(id.eq(rcpt.id)))
-            .set((is_accepted.eq(false), is_blocked.eq(true)))
-            .execute(&mut *self.db())
-            .expect("mark recipient (un)blocked");
+        let affected_rows = diesel::update(
+            recipients.filter(
+                id.eq(rcpt.id)
+                    .and(is_accepted.ne(false).or(is_blocked.ne(true))),
+            ),
+        )
+        .set((is_accepted.eq(false), is_blocked.eq(true)))
+        .execute(&mut *self.db())
+        .expect("mark recipient (un)blocked");
         if affected_rows > 0 {
             self.observe_update(schema::recipients::table, rcpt.id);
         }
-        affected_rows > 0
     }
 
     #[tracing::instrument(skip(self))]
@@ -3166,7 +3232,11 @@ impl<O: Observable> Storage<O> {
     #[tracing::instrument(skip(self))]
     pub fn fail_message(&self, message_id: i32) {
         diesel::update(schema::messages::table)
-            .filter(schema::messages::id.eq(message_id))
+            .filter(
+                schema::messages::id
+                    .eq(message_id)
+                    .and(schema::messages::sending_has_failed.ne(true)),
+            )
             .set(schema::messages::sending_has_failed.eq(true))
             .execute(&mut *self.db())
             .unwrap();
@@ -3316,12 +3386,12 @@ impl<O: Observable> Storage<O> {
             .execute(&mut *self.db())
             .expect("db");
 
-        // If updating self, invalidate the cache
-        if rcpt_id == self.fetch_self_recipient_id() {
-            self.invalidate_self_recipient();
-        }
-
         if affected > 0 {
+            // If updating self, invalidate the cache
+            if rcpt_id == self.fetch_self_recipient_id() {
+                self.invalidate_self_recipient();
+            }
+
             tracing::debug!("Recipient {} external ID changed to {:?}", rcpt_id, ext_id);
             self.observe_update(recipients, rcpt_id);
         }

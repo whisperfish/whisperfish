@@ -150,12 +150,12 @@ impl SessionListModel {
                             }
                         }
                     }
-                    if session_id.is_none() && message_id.is_none() && attachment_id.is_none() {
-                        return;
-                    }
                     for idx in updates {
                         let idx = self.row_index(idx as i32);
                         self.data_changed(idx, idx);
+                    }
+                    if session_id.is_none() && message_id.is_none() && attachment_id.is_none() {
+                        return;
                     }
                 }
             }

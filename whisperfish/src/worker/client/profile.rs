@@ -95,6 +95,7 @@ impl ClientActor {
                 anyhow::anyhow!("could not find recipient for which we fetched a profile")
             })?;
         let key = &recipient.profile_key;
+        let service_address = recipient.to_service_address().unwrap();
 
         if let Some(profile) = profile {
             let cipher = if let Some(key) = key {
@@ -136,23 +137,16 @@ impl ClientActor {
                 r_key: recipient.profile_key,
             };
 
+            storage.mark_recipient_registered(service_address, true);
+
             ctx.notify(ProfileCreated(profile_data));
         } else {
-            // XXX: We came here through 404 error, can that mean unregistered user?
             tracing::trace!(
-                "Recipient {} doesn't have a profile on the server",
+                "Recipient {} doesn't have a profile on the server, assuming unregistered user",
                 recipient.e164_or_address()
             );
-            let mut db = storage.db();
 
-            use diesel::prelude::*;
-            use whisperfish_store::schema::recipients::dsl::*;
-
-            diesel::update(recipients)
-                .set((last_profile_fetch.eq(Utc::now().naive_utc()),))
-                .filter(uuid.nullable().eq(&Uuid::from(recipient_aci).to_string()))
-                .execute(&mut *db)
-                .expect("db");
+            storage.mark_recipient_registered(service_address, false);
 
             // If updating self, invalidate the cache
             if Some(Uuid::from(recipient_aci)) == self.config.get_aci() {

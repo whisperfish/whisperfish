@@ -70,7 +70,7 @@ Page {
             MenuItem {
                 // Translation in ProfilePage.qml
                 text: qsTrId("whisperfish-refresh-profile-menu")
-                visible: SettingsBridge.debug_mode
+                visible: SettingsBridge.debug_mode || !recipient.isRegistered
                 onClicked: {
                     ClientWorker.refresh_profile(recipient.recipientId)
                 }

@@ -52,15 +52,11 @@ impl OutdatedProfileStream {
         let out_of_date_profiles: Vec<Recipient> = recipients
             .filter(
                 // Keep this filter in sync with the one below
-                profile_key
-                    .is_not_null()
-                    .and(uuid.is_not_null())
-                    .and(is_registered.eq(true))
-                    .and(
-                        last_profile_fetch
-                            .is_null()
-                            .or(last_profile_fetch.le(last_fetch_threshold.naive_utc())),
-                    ),
+                profile_key.is_not_null().and(uuid.is_not_null()).and(
+                    last_profile_fetch.is_null().or(last_profile_fetch
+                        .le(last_fetch_threshold.naive_utc())
+                        .and(is_registered.eq(true))),
+                ),
             )
             .order_by(last_profile_fetch.asc())
             .load(&mut *db)
@@ -106,25 +102,23 @@ impl OutdatedProfileStream {
         use whisperfish_store::schema::recipients::dsl::*;
 
         let mut db = self.storage.db();
-        let next_wake: Option<Recipient> = recipients
+        let next_wake: Option<Option<NaiveDateTime>> = recipients
+            .select(last_profile_fetch)
             .filter(
                 // Keep this filter in sync with the one above
                 profile_key
                     .is_not_null()
                     .and(uuid.is_not_null())
-                    .and(is_registered.eq(true))
-                    .and(last_profile_fetch.is_not_null()),
+                    .and(last_profile_fetch.is_null().or(is_registered.eq(true))),
             )
             .order_by(last_profile_fetch.asc())
             .first(&mut *db)
             .optional()
             .expect("db");
-        if let Some(recipient) = next_wake {
-            let time = recipient
-                .last_profile_fetch
-                .expect("recipient with last_profile_fetch==null should be in ignore set");
-            let time = chrono::offset::Utc.from_utc_datetime(&time);
-            let delta = Utc::now() - time;
+
+        if let Some(time) = next_wake {
+            let time = time.unwrap_or_else(|| Utc::now().naive_utc() + chrono::Duration::days(1));
+            let delta = Utc::now() - chrono::offset::Utc.from_utc_datetime(&time);
             self.next_wake = Some(Box::pin(tokio::time::sleep(
                 delta.to_std().unwrap_or(REYIELD_DELAY),
             )));
