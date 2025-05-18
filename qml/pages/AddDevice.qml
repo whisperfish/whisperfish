@@ -1,15 +1,19 @@
 import QtQuick 2.2
 import Sailfish.Silica 1.0
-import QtMultimedia 5.6
-import Amber.QrFilter 1.0
 
 Dialog {
     id: addDeviceDialog
     objectName: "addDeviceDialog"
-    canAccept: false
+    canAccept: urlField.acceptableInput && !camera.active
     readonly property bool active: Qt.application.active
 
+    property alias camera: cameraLoader.item
+
     onActiveChanged: {
+        if (cameraLoader.status !== Loader.Ready) {
+            return;
+        }
+
         if(active) {
             camera.stop()
         }
@@ -20,12 +24,23 @@ Dialog {
     }
 
     onStatusChanged: {
+        if (cameraLoader.status !== Loader.Ready) {
+            return;
+        }
+
         if(status === PageStatus.Active) {
             camera.start()
             camera.unlock()
         }
         else {
             camera.stop()
+        }
+    }
+
+
+    onDone: {
+        if (result == DialogResult.Accepted) {
+            addDevice(urlField.text)
         }
     }
 
@@ -42,35 +57,28 @@ Dialog {
             title: qsTrId("whisperfish-add-device")
         }
 
+        // Load "AddDeviceQrScanner.qml"
+        Loader {
+            id: cameraLoader
+            source: "../components/AddDeviceQrScanner.qml"
+            width: parent.width
+            visible: camera.active
 
-        VideoOutput {
-            id: videoOutput
-            source: camera
-            fillMode: VideoOutput.PreserveAspectFit
-            z: -1
-            width: parent.width - Theme.paddingLarge * 2
-            height: parent.width - Theme.paddingLarge * 2
-            anchors.horizontalCenter: parent.horizontalCenter
-
-            filters: [ qrFilter ]
-            
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
+            onLoaded: {
+                if (addDeviceDialog.active) {
+                    camera.start()
                     camera.unlock()
-                    camera.searchAndLock()
                 }
             }
         }
 
-        QrFilter {
-            id: qrFilter
-            onResultChanged: {
-                if (result.length > 0 && 
-                    (result.indexOf("tsdevice:") == 0 || result.indexOf("sgnl:") == 0)) {
-                    addDevice(result)
-                    addDeviceDialog.close()
-                }
+        Connections {
+            // enabled: cameraLoader.status === Loader.Ready
+
+            target: cameraLoader.item
+            onResultFound: {
+                addDevice(tsurl)
+                addDeviceDialog.close()
             }
         }
 
@@ -83,6 +91,7 @@ Dialog {
             font.pixelSize: Theme.fontSizeSmall
             color: Theme.highlightColor
 
+            visible: camera != null && camera.active
 
             anchors {
                 left: parent.left
@@ -91,35 +100,60 @@ Dialog {
                 rightMargin: Theme.horizontalPageMargin
             }
         }
-    }
 
-    Camera {
-        id: camera
-        position: Camera.BackFace
-        captureMode: Camera.CaptureStillImage
+        TextField {
+            id: urlField
+            width: parent.width
+            inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhPreferLowercase
+            validator: RegExpValidator{ regExp: /(tsdevice|sgnl):\/\/?.*/;}
+            //: Device URL, text input for pasting the QR-scanned code
+            //% "Device URL"
+            label: qsTrId("whisperfish-device-url")
+            placeholderText: "sgnl://[...]"
+            horizontalAlignment: TextInput.AlignLeft
+            EnterKey.onClicked: parent.focus = true
 
-        exposure {
-            exposureMode: Camera.ExposureAuto
+            visible: camera == null || !camera.active
+
+            errorHighlight: !(urlField.text.length > 0 && urlField.acceptableInput)
+
+            Component.onCompleted: {
+                if(urlField.rightItem !== undefined) {
+                    _urlFieldLoader.active = true
+                    urlField.rightItem = _urlFieldLoader.item
+                    urlField.errorHighlight = false
+                }
+            }
+
+            Loader {
+                id: _urlFieldLoader
+                active: false
+                sourceComponent: Image {
+                    width: urlField.font.pixelSize
+                    height: urlField.font.pixelSize
+                    source: "image://theme/icon-s-checkmark?" + urlField.color
+                    opacity: urlField.text.length > 0 && urlField.acceptableInput ? 1.0 : 0.01
+                    Behavior on opacity { FadeAnimation {} }
+                }
+            }
         }
 
-        flash.mode: Camera.FlashOff
+        Label {
+            width: parent.width
+            wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+            //: Instructions on how to scan QR code for device linking
+            //% "Install Signal Desktop. Use e.g. the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here."
+            text: qsTrId("whisperfish-device-link-instructions")
+            font.pixelSize: Theme.fontSizeSmall
+            color: Theme.highlightColor
 
-        onCameraStatusChanged: {
-            if (cameraStatus === Camera.ActiveStatus) {
-                var resolutions = camera.supportedViewfinderResolutions()
-                var selectedResolution
-                if (resolutions.length > 0) {
-                    for (var i = 0; i < resolutions.length; i++) {
-                        var resolution = resolutions[i]
-                        // Looking for the largest square that will fit the width
-                        if (resolution.height === resolution.width && resolution.width  <= Screen.width) {
-                            selectedResolution = resolution
-                        }
-                    }
-                }
-                if (selectedResolution) {
-                    camera.viewfinder.resolution = Qt.size(selectedResolution.width, selectedResolution.height)
-                }
+            visible: camera == null || !camera.active
+
+            anchors {
+                left: parent.left
+                leftMargin: Theme.horizontalPageMargin
+                right: parent.right
+                rightMargin: Theme.horizontalPageMargin
             }
         }
     }
