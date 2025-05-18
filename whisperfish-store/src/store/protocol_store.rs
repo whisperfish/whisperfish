@@ -686,6 +686,40 @@ impl<T: Identity<O>, O: Observable> PreKeysStore for IdentityStorage<T, O> {
 
         Ok(kyber_prekey_count as usize)
     }
+
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn signed_prekey_id(&self) -> Result<Option<SignedPreKeyId>, SignalProtocolError> {
+        use crate::schema::signed_prekeys::dsl::*;
+        use diesel::dsl::*;
+        use diesel::prelude::*;
+
+        let signed_prekey_max: Option<SignedPreKeyId> = signed_prekeys
+            .select(max(id))
+            .filter(identity.eq(self.1.identity()))
+            .first::<Option<i32>>(&mut *self.0.db())
+            .expect("db")
+            .map(|x| (x as u32).into());
+
+        Ok(signed_prekey_max)
+    }
+
+    #[tracing::instrument(level = "trace", skip(self))]
+    async fn last_resort_kyber_prekey_id(
+        &self,
+    ) -> Result<Option<KyberPreKeyId>, SignalProtocolError> {
+        use crate::schema::kyber_prekeys::dsl::*;
+        use diesel::dsl::*;
+        use diesel::prelude::*;
+
+        let kyber_max: Option<KyberPreKeyId> = kyber_prekeys
+            .select(max(id))
+            .filter(is_last_resort.eq(true).and(identity.eq(self.1.identity())))
+            .first::<Option<i32>>(&mut *self.0.db())
+            .expect("db")
+            .map(|x| (x as u32).into());
+
+        Ok(kyber_max)
+    }
 }
 
 impl<T: Identity<O>, O: Observable> IdentityStorage<T, O> {
