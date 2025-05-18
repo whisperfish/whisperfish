@@ -47,7 +47,7 @@ ListItem {
     Loader {
         id: sender
         active: showSender
-        asynchronous: true
+        asynchronous: false
         sourceComponent: Component {
             Recipient {
                 app: AppState
@@ -91,7 +91,7 @@ ListItem {
     readonly property bool hasAttachments: hasData && modelData.attachments > 0 && !isRemoteDeleted
     readonly property bool hasText: hasData && _message !== ''
     readonly property bool unidentifiedSender: modelData.unidentifiedSender !== undefined ? modelData.unidentifiedSender : true
-    readonly property bool isOutbound: hasData && (modelData.outgoing === true)
+    readonly property bool isOutbound: hasData && modelData.outgoing
     readonly property bool isEmpty: !hasText && !hasAttachments
     readonly property bool isRemoteDeleted: hasData && ((isSelected && listView.appearDeleted) || modelData.remoteDeleted)
     property bool isExpanded: false
@@ -100,7 +100,7 @@ ListItem {
     Loader {
         id: reactions
         active: hasReactions
-        asynchronous: true
+        asynchronous: false
         sourceComponent: Component {
             GroupedReactions {
                 app: AppState
@@ -218,7 +218,7 @@ ListItem {
         Loader {
             id: quoteItem
             active: showQuotedMessage
-            asynchronous: true
+            asynchronous: false
             sourceComponent: Component {
                 QuotedMessagePreview {
                     // id: quoteItem
@@ -312,17 +312,11 @@ ListItem {
                 id: emojiItem
                 reactions: reactions.status === Loader.Ready ? reactions.item.groupedReactions : ""
                 anchors.top: parent.top
-                anchors.left: isOutbound ? parent.left : undefined
-                anchors.right: isOutbound ? undefined : parent.right
             }
-            Loader {
+            InfoItem {
                 id: infoItem
                 height: Theme.fontSizeExtraSmall
-                asynchronous: true
-                sourceComponent: Component { InfoItem { } }
                 anchors.bottom: parent.bottom
-                anchors.left: isOutbound ?  undefined : parent.left
-                anchors.right: isOutbound ? parent.right : undefined
             }
         }
     }
@@ -332,11 +326,15 @@ ListItem {
             name: "outbound"; when: isOutbound
             AnchorChanges { target: contentContainer; anchors.right: parent.right }
             AnchorChanges { target: replyArea; anchors.left: parent.left }
+            AnchorChanges { target: emojiItem; anchors.left: parent.left; anchors.right: undefined }
+            AnchorChanges { target: infoItem; anchors.left: undefined; anchors.right: parent.right }
         },
         State {
             name: "inbound"; when: !isOutbound
             AnchorChanges { target: contentContainer; anchors.left: parent.left }
             AnchorChanges { target: replyArea; anchors.right: parent.right }
+            AnchorChanges { target: emojiItem; anchors.left: undefined; anchors.right: parent.right }
+            AnchorChanges { target: infoItem; anchors.left: parent.left; anchors.right: undefined }
         }
     ]
 }
