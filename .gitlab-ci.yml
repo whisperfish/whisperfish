@@ -313,6 +313,8 @@ fmt:stable:
 coverage:stable:
   <<: *rust-stable
   image: xd009642/tarpaulin
+  # ASLR disable failed: EPERM: Operation not permitted
+  allow_failure: true
   stage: format
   needs:
     - test:stable
