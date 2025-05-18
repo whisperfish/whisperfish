@@ -1,7 +1,0 @@
-.sfdk
-*.so
-*.o
-moc_*
-Makefile
-RPMS/
-documentation.list
