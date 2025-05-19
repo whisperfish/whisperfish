@@ -1,6 +1,8 @@
 import QtQuick 2.2
 import Sailfish.Silica 1.0
 import be.rubdos.whisperfish 1.0
+import "../components"
+import "../delegates"
 
 CoverBackground {
     property bool rightToLeft: Qt.application.layoutDirection === Qt.RightToLeft
@@ -97,16 +99,16 @@ CoverBackground {
         spacing: Theme.paddingSmall
 
         delegate: Item {
-            width: sessionList.width
-            height: model.isArchived ? 0 : messageLabel.height + recipientLabel.height
             enabled: !model.isArchived
-            visible: !model.isArchived
+            visible: enabled
+            width: sessionList.width
+            height: enabled ? messageLabel.height + recipientLabel.height : 0
 
             Message {
                 id: lastMessage
                 app: AppState
                 messageId: model.messageId
-                property bool hasText: lastMessage.message !== undefined && lastMessage.message !== ''
+                property bool hasText: lastMessage.valid && lastMessage.messageId > -1 && lastMessage.message !== undefined && lastMessage.message !== ''
             }
 
             Recipient {
@@ -115,31 +117,51 @@ CoverBackground {
                 recipientId: model.recipientId
             }
 
-            Label {
+            // Note: This is a delegate, which is loaded when needed
+            // and uses Message above as modelData.
+            Loader {
+                id: serviceMessage
+                active: recipient.recipientId > -1 && lastMessage.messageType != null
+                asynchronous: true
+                sourceComponent: ServiceMessageDelegate {
+                    modelData: lastMessage
+                    peerName: name
+                    visible: false
+                    enabled: false
+                }
+            }
+
+            LinkedEmojiLabel {
                 id: messageLabel
                 anchors {
                     top: parent.top
                     left: parent.left
                     right: parent.right
                 }
-                width: parent.width
+                enabled: false
                 font.pixelSize: Theme.fontSizeExtraSmall
+                font.italic: lastMessage.hasText && lastMessage.remoteDeleted
                 color: Theme.primaryColor
-                truncationMode: TruncationMode.Fade
-                text: {
-                    var newText = ""
-
-                    if (lastMessage.RemoteDeleted) {
+                clip: true
+                wrapMode: Text.NoWrap
+                bypassLinking: true
+                needsRichText: serviceMessage.active || /<(a |b>|i>|s>|span)/.test(messageText) // XXX Use Rust for this
+                plainText: (needsRichText ? cssStyle : '') +
+                           model.draft.length > 0
+                           ? // Translation in SessionDelegate.qml
+                             qsTrId("whisperfish-message-preview-draft").arg(model.draft)
+                           : messageText
+                property string messageText: {
+                    if (lastMessage.remoteDeleted) {
                         // SessionDelegate.qml defines this
                         return qsTrId("whisperfish-message-deleted-note")
                     }
 
-                    if (lastMessage.messageType != null) {
-                        //: Placeholder note for a service message (expiry, profile key...)
-                        //% "Service Message"
-                        return "⚙️ " + qsTrId("whisperfish-cover-service-message")
+                    if (serviceMessage.active) {
+                        return "<i>" + serviceMessage.item._message + "</i>"
                     }
 
+                    var newText = ""
                     if (lastMessage.attachments.count > 0) {
                         if (lastMessage.isVoiceNote) {
                             newText += "🎤 "
@@ -163,6 +185,14 @@ CoverBackground {
                 } // end text
             }
 
+            OpacityRampEffect {
+                offset: 0.8
+                slope: 5
+                // XXX sourceItem: lastMessage.width > [...] ? lastMessage : null
+                sourceItem: messageLabel
+                direction: OpacityRamp.LeftToRight
+            }
+
             Label {
                 id: recipientLabel
                 anchors {
@@ -177,6 +207,7 @@ CoverBackground {
             }
         }
     }
+
     OpacityRampEffect {
         offset: 0.8
         slope: 5
