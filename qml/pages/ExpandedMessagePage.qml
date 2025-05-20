@@ -8,6 +8,7 @@ Page {
     objectName: "expandedMessagePage"
 
     property QtObject modelData
+    property bool isInGroup
     property string messageText: ""
     property string contactName: ""
 
@@ -67,6 +68,7 @@ Page {
             MessageDelegate {
                 id: delegate
                 modelData: root.modelData
+                isInGroup: session.isGroup
                 enabled: false
                 delegateContentWidth: root.width - 4*Theme.horizontalPageMargin
                 isExpanded: true

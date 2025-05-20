@@ -11,13 +11,16 @@ Page {
     // should show them somewhere, somehow nonetheless - just not as
     // a background image. A group admin should be able to change it, too.
 
-    property var session
-    property var groupId
-    property QtObject group: Group {
+    property QtObject session
+
+    Group {
         id: group
         app: AppState
-        groupId: groupProfile.groupId != null ? groupProfile.groupId : (session != null ? session.groupId : -1)
+        groupId: session ? session.groupId : ""
     }
+
+    // For new message notifications
+    property int sessionId: !!session ? session.sessionId : -1
 
     property bool youAreAdmin: false
     // This variable is needed because MenuItem doesn't see inside SilicaListView.header container
@@ -39,8 +42,8 @@ Page {
                 //% "Refresh group"
                 text: qsTrId("whisperfish-group-refresh")
                 onClicked: {
-                    console.log("Refreshing group for session", session.sessionId)
-                    ClientWorker.refresh_group_v2(session.sessionId)
+                    console.log("Refreshing group for session", sessionId)
+                    ClientWorker.refresh_group_v2(sessionId)
                 }
             }
             MenuItem {
@@ -58,7 +61,7 @@ Page {
                                     function() {
                                         console.log("Leaving group")
                                         MessageModel.leaveGroup()
-                                        SessionModel.remove(session.sessionId)
+                                        SessionModel.remove(sessionId)
                                         mainWindow.showMainPage()
                                     })
                 }
@@ -83,7 +86,7 @@ Page {
                 // Translation in ProfilePage.qml
                 text: qsTrId("whisperfish-save-message-expiry")
                 visible: youAreAdmin && session != null && groupProfile.newDuration !== session.expiringMessageTimeout
-                onClicked: MessageModel.createExpiryUpdate(session.sessionId, groupProfile.newDuration)
+                onClicked: MessageModel.createExpiryUpdate(sessionId, groupProfile.newDuration)
             }
         }
 
@@ -106,8 +109,8 @@ Page {
                 width: height
                 highlighted: false
                 labelsHighlighted: false
-                imageSource: group.groupId !== -1
-                    ? SettingsBridge.avatar_dir + "/" + group.groupId
+                imageSource: !!session.groupId
+                    ? SettingsBridge.avatar_dir + "/" + session.groupId
                     : ''
                 isGroup: true
                 showInfoMark: infoMarkSource !== ''

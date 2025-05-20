@@ -979,8 +979,13 @@ impl ClientActor {
             .borrow_mut()
             .messageReceived(session.id, message.id);
 
-        // XXX If from ourselves, skip
-        if !is_sync_sent && !session.is_muted {
+        let self_recipient = storage.fetch_self_recipient().expect("self recipient");
+
+        if !is_sync_sent
+            && !session.is_muted
+            && self.settings.get_notification_privacy() != "off"
+            && sender_recipient.as_ref().map(|x| x.id) != Some(self_recipient.id)
+        {
             let session_name: Cow<'_, str> = match &session.r#type {
                 SessionType::GroupV1(group) => Cow::from(&group.name),
                 SessionType::GroupV2(group) => Cow::from(&group.name),

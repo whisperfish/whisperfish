@@ -8,10 +8,13 @@ Page {
     id: root
     objectName: "messageInfoPage"
 
-    property var message
+    property QtObject message
+
+    // For new message notifications
+    property int sessionId
+    property bool isInGroup
 
     // Proxy some more used properties
-    readonly property bool outgoing: message.outgoing
     readonly property var debugMode: SettingsBridge.debug_mode
     readonly property var deliveryReceipts: message.deliveredReceipts
     readonly property var readReceipts: message.readReceipts
@@ -71,6 +74,7 @@ Page {
                     MessageDelegate {
                         id: messageDelegate
                         modelData: message
+                        isInGroup: isInGroup
                         //menu: messageContextMenu
                         // set explicitly because attached properties are not available
                         // inside the loaded component
@@ -93,7 +97,7 @@ Page {
                 //: Label for session id of the message (in database)
                 //% "Session ID"
                 label: qsTrId("whisperfish-message-session-id")
-                value: message.sessionId
+                value: sessionId
             }
 
             // TIMESTAMP

@@ -6,7 +6,7 @@ import Sailfish.Silica 1.0
 Item {
     id: root
     property string source: ''
-    property var recipient
+    property QtObject recipient
     property bool outbound: false
     property bool isInGroup: false
     property real maximumWidth: metrics.width

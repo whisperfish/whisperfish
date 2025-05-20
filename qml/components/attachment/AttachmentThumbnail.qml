@@ -10,7 +10,7 @@ MouseArea {
     property int index: 0
     property var attach: thumbsAttachments.get(index)
     property var attachments: null
-    property var message: null
+    property QtObject message
     property bool highlighted: containsPress
     property bool _hasAttach: attach != null
     property bool _isAnimated: _hasAttach ? /\.(gif)$/i.test(attach.data) : false
@@ -44,8 +44,8 @@ MouseArea {
             var _debugMode = SettingsBridge.debug_mode
             var _viewPage = _isVideo ? '../../pages/ViewVideoPage.qml' : '../../pages/ViewImagePage.qml'
 
-            pageStack.push(Qt.resolvedUrl(_viewPage), {
-                'title': message ? recipient.name : "",
+            pageStack.push(Qt.resolvedUrl(_viewPage, {sessionId: session.sessionId}), {
+                'title': recipient.name,
                 // TODO don't show the file path once attachments work reliably (#many)
                 //      and attachments are saved in a WF-controlled directory (#253)
                 'subtitle': attach.original_name != null && attach.original_name.length > 0

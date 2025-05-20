@@ -408,7 +408,7 @@ define_model_roles! {
         StyledMessage(fn styled_message(&self) via qstring_from_cow): "styledMessage",
         Timestamp(server_timestamp via qdatetime_from_naive): "timestamp",
 
-        SenderRecipientId(sender_recipient_id via qvariant_from_option): "senderRecipientId",
+        SenderRecipientId(sender_recipient_id via int_from_i32_option): "senderRecipientId",
 
         Delivered(fn delivered(&self)):                       "delivered",
         Read(fn read(&self)):                                 "read", // How many recipient have received the message
@@ -428,7 +428,7 @@ define_model_roles! {
         RemoteDeleted(is_remote_deleted):                     "remoteDeleted",
 
         Unidentified(use_unidentified):                       "unidentifiedSender",
-        QuotedMessageId(quote_id via qvariant_from_option):   "quotedMessageId",
+        QuotedMessageId(quote_id via int_from_i32_option):    "quotedMessageId",
         HasSpoilers(fn has_spoilers(&self)):                  "hasSpoilers",
         HasStrikeThrough(fn has_strike_through(&self)):       "hasStrikeThrough",
 

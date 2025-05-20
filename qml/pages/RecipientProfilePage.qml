@@ -8,8 +8,11 @@ Page {
     objectName: "recipientProfilePage"
 
     property string profilePicture: ""
-    property var session: null
-    property var recipient: null
+    property QtObject session
+    property QtObject recipient
+
+    // For new message notifications
+    property int sessionId: session ? session.sessionId : -1
 
     Component.onCompleted: recipient.fingerprintNeeded = true
 
@@ -109,7 +112,7 @@ Page {
                 // Translation in ProfilePage.qml
                 text: qsTrId("whisperfish-save-message-expiry")
                 visible: !groupContext && session != null && expiringMessages.newDuration !== session.expiringMessageTimeout
-                onClicked: MessageModel.createExpiryUpdate(session.sessionId, expiringMessages.newDuration)
+                onClicked: MessageModel.createExpiryUpdate(sessionId, expiringMessages.newDuration)
             }
         }
 

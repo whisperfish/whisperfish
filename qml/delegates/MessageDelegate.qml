@@ -17,6 +17,8 @@ ListItem {
 
     // REQUIRED PROPERTIES
     property QtObject modelData
+    property bool isInGroup
+
     // TODO the quoted message should be a notifyable object from a model
     // TODO we need a way to get a valid index from a message id
     //      (we must rely on the message's id instead of its index, as the latter may change)
@@ -45,7 +47,7 @@ ListItem {
     Loader {
         id: sender
         active: showSender
-        asynchronous: true
+        asynchronous: false
         sourceComponent: Component {
             Recipient {
                 app: AppState
@@ -83,14 +85,13 @@ ListItem {
     property bool showQuotedMessage: hasQuotedMessage && !isRemoteDeleted
     property bool showExpand: !isEmpty && !isRemoteDeleted && _message.length > shortenThreshold
 
-    readonly property bool hasData: modelData !== null && modelData !== undefined
+    readonly property bool hasData: modelData != null
     readonly property bool hasReactions: hasData && modelData.reactions > 0
-    readonly property bool hasQuotedMessage: !!modelData.quotedMessageId && modelData.quotedMessageId != -1 && !isRemoteDeleted
+    readonly property bool hasQuotedMessage: modelData.quotedMessageId != -1 && !isRemoteDeleted
     readonly property bool hasAttachments: hasData && modelData.attachments > 0 && !isRemoteDeleted
     readonly property bool hasText: hasData && _message !== ''
     readonly property bool unidentifiedSender: modelData.unidentifiedSender !== undefined ? modelData.unidentifiedSender : true
-    readonly property bool isOutbound: hasData && (modelData.outgoing === true)
-    readonly property bool isInGroup: session.isGroup
+    readonly property bool isOutbound: hasData && modelData.outgoing
     readonly property bool isEmpty: !hasText && !hasAttachments
     readonly property bool isRemoteDeleted: hasData && ((isSelected && listView.appearDeleted) || modelData.remoteDeleted)
     property bool isExpanded: false
@@ -99,7 +100,7 @@ ListItem {
     Loader {
         id: reactions
         active: hasReactions
-        asynchronous: true
+        asynchronous: false
         sourceComponent: Component {
             GroupedReactions {
                 app: AppState
@@ -120,7 +121,11 @@ ListItem {
             // TODO Cache the page object, so we can return to the
             // same scroll position where the user left the page.
             // It is not possible to re-use the returned object from pageStack.push().
-            pageStack.push("../pages/ExpandedMessagePage.qml", { 'modelData': modelData, 'contactName': contactName })
+            pageStack.push("../pages/ExpandedMessagePage.qml", {
+                modelData: modelData,
+                contactName: contactName,
+                isInGroup: isInGroup
+            })
         } else {
             isExpanded = !isExpanded
             // We make sure the list item is visible immediately
@@ -213,7 +218,7 @@ ListItem {
         Loader {
             id: quoteItem
             active: showQuotedMessage
-            asynchronous: true
+            asynchronous: false
             sourceComponent: Component {
                 QuotedMessagePreview {
                     // id: quoteItem
@@ -223,7 +228,7 @@ ListItem {
                     showCloseButton: false
                     showBackground: true
                     highlighted: down || root.highlighted
-                    messageId: modelData.quotedMessageId ? modelData.quotedMessageId : -1
+                    messageId: modelData.quotedMessageId
                     backgroundItem.roundedCorners: backgroundItem.bottomLeft |
                                                    backgroundItem.bottomRight |
                                                    (isOutbound ? backgroundItem.topRight :
@@ -268,8 +273,8 @@ ListItem {
                             (isEmpty ? qsTrId("whisperfish-message-empty-note") :
                             ((needsRichText ? cssStyle : '') + (isExpanded ? _message : _message.substr(0, shortenThreshold) + (showExpand ? ' ...' : ''))))
                 bypassLinking: true
-                needsRichText: model.hasStrikeThrough || model.hasSpoilers
-                hasSpoilers: model.hasSpoilers // Set to 'false' when text is clicked
+                needsRichText: modelData.hasStrikeThrough || modelData.hasSpoilers
+                hasSpoilers: modelData.hasSpoilers // Set to 'false' when text is clicked
                 font.italic: isRemoteDeleted
                 wrapMode: Text.Wrap
                 anchors { left: parent.left; right: parent.right }
@@ -307,17 +312,11 @@ ListItem {
                 id: emojiItem
                 reactions: reactions.status === Loader.Ready ? reactions.item.groupedReactions : ""
                 anchors.top: parent.top
-                anchors.left: isOutbound ? parent.left : undefined
-                anchors.right: isOutbound ? undefined : parent.right
             }
-            Loader {
+            InfoItem {
                 id: infoItem
                 height: Theme.fontSizeExtraSmall
-                asynchronous: true
-                sourceComponent: Component { InfoItem { } }
                 anchors.bottom: parent.bottom
-                anchors.left: isOutbound ?  undefined : parent.left
-                anchors.right: isOutbound ? parent.right : undefined
             }
         }
     }
@@ -327,11 +326,15 @@ ListItem {
             name: "outbound"; when: isOutbound
             AnchorChanges { target: contentContainer; anchors.right: parent.right }
             AnchorChanges { target: replyArea; anchors.left: parent.left }
+            AnchorChanges { target: emojiItem; anchors.left: parent.left; anchors.right: undefined }
+            AnchorChanges { target: infoItem; anchors.left: undefined; anchors.right: parent.right }
         },
         State {
             name: "inbound"; when: !isOutbound
             AnchorChanges { target: contentContainer; anchors.left: parent.left }
             AnchorChanges { target: replyArea; anchors.right: parent.right }
+            AnchorChanges { target: emojiItem; anchors.left: undefined; anchors.right: parent.right }
+            AnchorChanges { target: infoItem; anchors.left: parent.left; anchors.right: undefined }
         }
     ]
 }

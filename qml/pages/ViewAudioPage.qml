@@ -6,6 +6,9 @@ Page {
     id: page
     objectName: "viewAudioPage"
 
+    // For new message notifications
+    property int sessionId
+
     allowedOrientations: Orientation.All
     property alias title: header.title
     property alias subtitle: header.description

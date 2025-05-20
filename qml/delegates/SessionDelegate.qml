@@ -28,11 +28,9 @@ ListItem {
     property bool isRemoteDeleted: hasLastMessage && lastMessage.remoteDeleted
     property bool hasText: lastMessage.message !== undefined && lastMessage.message !== ''
     property bool hasLastMessage: lastMessage.valid && lastMessage.messageId > 0
-    property bool hasSpoilers: hasLastMessage ? lastMessage.hasSpoilers : false
-    property bool hasStrikeThrough: hasLastMessage ? lastMessage.hasStrikeThrough : false
     property int expiringMessages: hasLastMessage && model.expiringMessageTimeout != -1
-    property string name: model.isGroup ? model.groupName : (recipient.status == Loader.Ready ? getRecipientName(recipient.item.e164, recipient.item.externalId, recipient.item.name, true) : '')
-    property string emoji: model.isGroup ? '' : (recipient.status == Loader.Ready ? (recipient.item.emoji != null ? recipient.item.emoji : '') : '')
+    property string name: isGroup ? model.groupName : (recipient.status == Loader.Ready ? getRecipientName(recipient.item.e164, recipient.item.externalId, recipient.item.name, true) : '')
+    property string emoji: isGroup ? '' : (recipient.status == Loader.Ready ? (recipient.item.emoji != null ? recipient.item.emoji : '') : '')
     property string message: {
         var text = ""
 
@@ -108,7 +106,7 @@ ListItem {
 
     Loader {
         id: recipient
-        active: !model.isGroup
+        active: !isGroup
         asynchronous: true
         sourceComponent: Recipient {
             app: AppState
@@ -193,7 +191,7 @@ ListItem {
             onPressAndHold: delegate.openMenu()
             onClicked: {
                 if (isGroup) {
-                    pageStack.push(Qt.resolvedUrl("../pages/GroupProfilePage.qml"), { session: model, groupId: model.groupId })
+                    pageStack.push(Qt.resolvedUrl("../pages/GroupProfilePage.qml"), { session: model })
                 } else {
                     if (model.recipientUuid === SetupWorker.uuid) {
                         pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"), { session: model } )
@@ -214,7 +212,7 @@ ListItem {
             highlighted: _labelsHighlighted
             maximumLineCount: 1
             truncationMode: TruncationMode.Fade
-            text: (_debugMode && !model.isGroup ? "[" + model.recipientId + "] " : "") +
+            text: (_debugMode && !isGroup ? "[" + model.recipientId + "] " : "") +
                 (
                     isNoteToSelf ?
                     //: Name of the conversation with one's own number
@@ -246,8 +244,7 @@ ListItem {
                       qsTrId("whisperfish-message-preview-draft").arg(draft) :
                       message)
             bypassLinking: true
-            needsRichText: hasStrikeThrough || hasSpoilers
-            hasSpoilers: hasSpoilers // Set to 'false' when text is clicked
+            needsRichText: serviceMessage.active || /<(a |b>|i>|s>|span)/.test(message) // XXX Use Rust for this
             highlighted: _labelsHighlighted
             verticalAlignment: Text.AlignTop
         }

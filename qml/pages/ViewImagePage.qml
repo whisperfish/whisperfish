@@ -15,6 +15,9 @@ Page {
     id: page
     objectName: "viewImagePage"
 
+    // For new message notifications
+    property int sessionId
+
     allowedOrientations: Orientation.All
     property alias title: _titleOverlayItem.title
     property alias subtitle: _titleOverlayItem.subtitle
