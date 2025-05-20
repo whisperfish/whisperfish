@@ -407,8 +407,9 @@ Page {
                 spacing: Theme.paddingLarge
                 anchors.horizontalCenter: parent.horizontalCenter
                 IconButton {
-                    width: Theme.itemSizeSmall; height: width
                     icon.source: "image://theme/icon-m-clear"
+                    icon.width: width
+                    icon.height: height
                     //: Message action description, shown if one or more messages are selected
                     //% "Clear selection"
                     onPressedChanged: infoLabel.toggleHint(
@@ -416,8 +417,9 @@ Page {
                     onClicked: messages.resetSelection()
                 }
                 IconButton {
-                    width: Theme.itemSizeSmall; height: width
                     icon.source: "../../icons/icon-m-copy.png"
+                    icon.width: width
+                    icon.height: height
                     //: Message action description
                     //% "Copy %n message(s)"
                     onPressedChanged: infoLabel.toggleHint(
@@ -425,8 +427,9 @@ Page {
                     onClicked: messages.messageAction(messages.copySelected)
                 }
                 IconButton {
-                    width: Theme.itemSizeSmall; height: width
                     icon.source: "image://theme/icon-m-about"
+                    icon.width: width
+                    icon.height: height
                     //: Message action description (only available if n==1)
                     //% "Show message info"
                     onPressedChanged: infoLabel.toggleHint(qsTrId("whisperfish-message-action-info"))
@@ -436,8 +439,9 @@ Page {
 
                 // Show the buttons of the second row in the first row only in landscape mode.
                 IconButton {
-                    width: Theme.itemSizeSmall; height: width
                     icon.source: "image://theme/icon-m-delete"
+                    icon.width: width
+                    icon.height: height
                     //: Message action description
                     //% "Locally delete %n message(s)"
                     onPressedChanged: infoLabel.toggleHint(
@@ -448,8 +452,9 @@ Page {
                 }
                 IconButton {
                     id: deleteAllPortrait
-                    width: Theme.itemSizeSmall; height: width
                     icon.source: "../../icons/icon-m-delete-all.png"
+                    icon.width: width
+                    icon.height: height
                     //: Message action description
                     //% "Delete %n message(s) for all"
                     onPressedChanged: infoLabel.toggleHint(
@@ -457,6 +462,33 @@ Page {
                     onClicked: messages.messageAction(messages.deleteSelectedForAll)
                     enabled: _showDeleteAll
                     visible: root.isLandscape
+                }
+                // TODO find a way to count failed messages in the current selection
+                IconButton {
+                    //width: visible ? Theme.itemSizeSmall : 0
+                    icon.source: "image://theme/icon-m-refresh"
+                    icon.width: height
+                    icon.height: height
+                    //: Message action description
+                    //% "Retry sending (the) failed message(s)"
+                    onPressedChanged: infoLabel.toggleHint(
+                                          qsTrId("whisperfish-message-action-resend", _selectedCount))
+                    visible: root.isLandscape && false // TODO show if at least one message is failed
+                                   // NOTE this action should be *hidden* if it is not applicable
+                    onClicked: messages.messageAction(messages.resendSelected)
+                }
+
+                IconButton {
+                    //width: visible ? Theme.itemSizeSmall : 0
+                    icon.source: "image://theme/icon-m-file-note-dark"
+                    icon.width: height
+                    icon.height: height
+                    //: Message action description
+                    //% "Transcribe %n message(s)"
+                    onPressedChanged: infoLabel.toggleHint(
+                                          qsTrId("whisperfish-message-action-resend", _selectedCount))
+                    visible: root.isLandscape && dbusSpeechInterface.available
+                    onClicked: messages.messageAction(messages.transcribeSelected)
                 }
             }
             Row {
@@ -468,8 +500,9 @@ Page {
                 spacing: Theme.paddingLarge
                 anchors.horizontalCenter: parent.horizontalCenter
                 IconButton {
-                    width: Theme.itemSizeSmall; height: width
                     icon.source: "image://theme/icon-m-delete"
+                    icon.width: width
+                    icon.height: height
                     //: Message action description
                     //% "Locally delete %n message(s)"
                     onPressedChanged: infoLabel.toggleHint(
@@ -478,8 +511,9 @@ Page {
                 }
                 IconButton {
                     id: deleteAllLandscape
-                    width: Theme.itemSizeSmall; height: width
                     icon.source: "../../icons/icon-m-delete-all.png"
+                    icon.width: width
+                    icon.height: height
                     //: Message action description
                     //% "Delete %n message(s) for all"
                     onPressedChanged: infoLabel.toggleHint(
@@ -490,8 +524,10 @@ Page {
 
                 // TODO find a way to count failed messages in the current selection
                 IconButton {
-                    width: visible ? Theme.itemSizeSmall : 0; height: width
+                    //width: visible ? Theme.itemSizeSmall : 0
                     icon.source: "image://theme/icon-m-refresh"
+                    icon.width: height
+                    icon.height: height
                     //: Message action description
                     //% "Retry sending (the) failed message(s)"
                     onPressedChanged: infoLabel.toggleHint(
@@ -502,8 +538,10 @@ Page {
                 }
 
                 IconButton {
-                    width: visible ? Theme.itemSizeSmall : 0; height: width
+                    //width: visible ? Theme.itemSizeSmall : 0
                     icon.source: "image://theme/icon-m-file-note-dark"
+                    icon.width: height
+                    icon.height: height
                     //: Message action description
                     //% "Transcribe %n message(s)"
                     onPressedChanged: infoLabel.toggleHint(
