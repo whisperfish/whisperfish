@@ -110,14 +110,13 @@ BackgroundItem {
         SenderNameLabel {
             id: senderNameLabel
             enabled: false
-            source: quotedMessage.outgoing ?
-                // Reused from main.qml; "You"
-                qsTrId("whisperfish-sender-name-label-outgoing") :
-                (sender.valid ?
-                    getRecipientName(sender.e164, sender.externalId, sender.name, false) :
-                    //: Text shown on quotes when the sender of a quote is unknown
-                    //% "Unknown sender"
-                    qsTrId("whisperfish-quoted-message-unknown-sender"))
+            source: quotedMessage.outgoing
+                ? // Reused from main.qml; "You"
+                  qsTrId("whisperfish-sender-name-label-outgoing")
+                : sender.valid
+                  ? getRecipientName(sender.e164, sender.externalId, sender.name, false)
+                  : // Translated in SessionDelegate.qml
+                    qsTrId("whisperfish-recipient-no-name")
             anchors {
                 left: parent.left
                 right: parent.right

@@ -93,7 +93,11 @@ Page {
 
     ConversationPageHeader {
         id: pageHeader
-        title: conversationName + (expiringMessages ? "⏱" : "")
+        title: (conversationName.length > 0
+                ? conversationName
+                : // Translated in SessionDelegate.qml
+                 qsTrId("whisperfish-recipient-no-name"))
+               + (expiringMessages ? "⏱" : "")
         isGroup: root.isValid && root.isGroup
         anchors.top: parent.top
         description: {

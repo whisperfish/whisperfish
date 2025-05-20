@@ -198,11 +198,11 @@ ListItem {
             id: senderNameLabel
             enabled: listView !== null && !listView.isSelecting
             visible: showSender
-            source: contactNameValid ?
-                      contactName :
-                      //: Label shown if a message doesn't have a sender.
-                      //% "no sender"
-                      qsTrId("whisperfish-sender-label-empty")
+            source: contactNameValid
+                    ? contactName
+                    : // Translated in SessionDelegate.qml
+                      qsTrId("whisperfish-recipient-no-name")
+
             recipient: sender.item
             isInGroup: isInGroup
             outbound: root.isOutbound

@@ -29,7 +29,14 @@ ListItem {
     property bool hasText: lastMessage.message !== undefined && lastMessage.message !== ''
     property bool hasLastMessage: lastMessage.valid && lastMessage.messageId > 0
     property int expiringMessages: hasLastMessage && model.expiringMessageTimeout != -1
-    property string name: isGroup ? model.groupName : (recipient.status == Loader.Ready ? getRecipientName(recipient.item.e164, recipient.item.externalId, recipient.item.name, true) : '')
+    property string _name: !isGroup && recipient.status == Loader.Ready ? getRecipientName(recipient.item.e164, recipient.item.externalId, recipient.item.name, true) : ''
+    property string name: isGroup
+                          ? model.groupName
+                          : _name.length > 0
+                            ? _name
+                            : //: Placeholder name for a recipient who has no name available
+                              //% "(no name)"
+                              qsTrId("whisperfish-recipient-no-name")
     property string emoji: isGroup ? '' : (recipient.status == Loader.Ready ? (recipient.item.emoji != null ? recipient.item.emoji : '') : '')
     property string message: {
         var text = ""
@@ -203,7 +210,7 @@ ListItem {
         }
 
         Label {
-            id: upperLabel
+            id: nameLabel
             anchors {
                 top: parent.top; topMargin: Theme.paddingMedium
                 left: profilePicContainer.right; leftMargin: Theme.paddingLarge
@@ -223,11 +230,11 @@ ListItem {
         }
 
         LinkedEmojiLabel {
-            id: lowerLabel
+            id: messageLabel
             enabled: false
             anchors {
-                left: upperLabel.left; right: unreadBackground.left
-                top: upperLabel.bottom
+                left: nameLabel.left; right: unreadBackground.left
+                top: nameLabel.bottom
             }
             height: fontMetrics.height + fontMetrics.lineSpacing + fontMetrics.descent/2
             wrapMode: Text.Wrap
@@ -252,15 +259,15 @@ ListItem {
         OpacityRampEffect {
             offset: 0.8
             slope: 5
-            sourceItem: lowerLabel
-            enabled: lowerLabel.contentHeight > lowerLabel.height
+            sourceItem: messageLabel
+            enabled: messageLabel.contentHeight > messageLabel.height
             direction: OpacityRamp.LeftToRight
         }
 
         FontMetrics {
             id: fontMetrics
-            font.family: lowerLabel.font.family
-            font.pixelSize: lowerLabel.font.pixelSize
+            font.family: messageLabel.font.family
+            font.pixelSize: messageLabel.font.pixelSize
         }
 
         Row {
@@ -268,7 +275,7 @@ ListItem {
             anchors {
                 leftMargin: Theme.paddingSmall
                 right: parent.right; rightMargin: Theme.horizontalPageMargin
-                verticalCenter: upperLabel.verticalCenter
+                verticalCenter: nameLabel.verticalCenter
             }
 
             HighlightImage {
@@ -298,7 +305,7 @@ ListItem {
             anchors {
                 leftMargin: Theme.paddingSmall
                 right: parent.right; rightMargin: Theme.horizontalPageMargin
-                verticalCenter: lowerLabel.verticalCenter
+                verticalCenter: messageLabel.verticalCenter
             }
             visible: isUnread && unreadCount > 0
             width: isUnread ? unreadLabel.width+Theme.paddingSmall : 0

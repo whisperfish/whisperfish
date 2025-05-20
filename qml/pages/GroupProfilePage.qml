@@ -246,7 +246,7 @@ Page {
             property bool isSelf: recipient.recipientUuid == SetupWorker.uuid
             property string profilePicture: getRecipientAvatar(recipient.e164, recipient.uuid, recipient.externalId)
             property string name: getRecipientName(recipient.e164, recipient.externalId, recipient.name, false)
-            property bool isUnknownContact: name == recipient.e164
+            property bool isUnknownContact: name.length == 0
 
             onClicked: {
                 if (recipient.uuid === SetupWorker.uuid) {
@@ -386,13 +386,12 @@ Page {
                         id: nameLabel
                         font.pixelSize: Theme.fontSizeMedium
                         text: item.isSelf
-                            //: Title for the user's entry in a list of group members
-                            //% "You"
-                            ? qsTrId("whisperfish-group-member-name-self")
+                            ? //: Title for the user's entry in a list of group members
+                              //% "You"
+                              qsTrId("whisperfish-group-member-name-self")
                             : item.isUnknownContact
-                                //: Unknown contact in group member list
-                                //% "Unknown"
-                                ? qsTrId("whisperfish-unknown-contact")
+                                ? // Translated in SessionDelegate.qml
+                                  qsTrId("whisperfish-recipient-no-name")
                                 : name
                     }
                 }
