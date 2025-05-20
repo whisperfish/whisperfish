@@ -8,7 +8,7 @@ import "../components/message"
 
 ListItem {
     id: root
-    width: parent.width
+
     contentHeight: contentContainer.height
     highlighted: down || menuOpen || replyArea.pressed || isSelected
     _backgroundColor: "transparent"
@@ -73,7 +73,7 @@ ListItem {
                                                           messageLabel.font.pixelSize, infoRow.minContentWidth) +
                                                  Theme.paddingMedium, maxMessageWidth)
     property real maxMessageWidth: parent.width - 6*Theme.horizontalPageMargin
-    property real minMessageWidth: Math.max(showSender ? senderNameLabel.implicitWidth : 0,
+    property real minMessageWidth: Math.max(senderNameLabel.visible ? senderNameLabel.implicitWidth : 0,
                                             showQuotedMessage ? quoteItem.implicitWidth : 0,
                                             showExpand ? maxMessageWidth : infoRow.minContentWidth)
     property int shortenThreshold: 600 // in characters
@@ -196,6 +196,7 @@ ListItem {
 
         SenderNameLabel {
             id: senderNameLabel
+            enabled: listView !== null && !listView.isSelecting
             visible: showSender
             source: contactNameValid ?
                       contactName :
@@ -206,14 +207,11 @@ ListItem {
             isInGroup: isInGroup
             outbound: root.isOutbound
             maximumWidth: maxMessageWidth
+            minimumWidth: _unexpandedWidth
             highlighted: down || root.highlighted
-            width: delegateContentWidth
             backgroundGrow: contentPadding/2
-            backgroundItem.radius: backgroundCornerRadius
-            enabled: listView !== null && !listView.isSelecting
+            radius: backgroundCornerRadius
         }
-
-        Item { width: 1; height: showSender ? senderNameLabel.backgroundGrow+Theme.paddingSmall : 0 }
 
         Loader {
             id: quoteItem
@@ -225,7 +223,6 @@ ListItem {
                     visible: showQuotedMessage
                     width: delegateContentWidth
                     maximumWidth: maxMessageWidth
-                    showCloseButton: false
                     showBackground: true
                     highlighted: down || root.highlighted
                     messageId: modelData.quotedMessageId
