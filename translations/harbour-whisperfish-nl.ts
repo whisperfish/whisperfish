@@ -463,7 +463,7 @@
         <source>Install Signal Desktop. Use e.g. the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</source>
         <oldsource>Install Signal Desktop. Use the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</oldsource>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
-        <translation type="unfinished">Installeer Signal Desktop. Gebruik de app CodeReader om de QR-code te scannen die wordt weergegeven op Signal Desktop, en kopieer en plak de URL hier.</translation>
+        <translation>Installeer Signal Desktop. Gebruik de app CodeReader om de QR-code te scannen die wordt weergegeven op Signal Desktop, en kopieer en plak de URL hier.</translation>
     </message>
     <message id="whisperfish-select-picture">
         <source>Select picture</source>
@@ -529,13 +529,13 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="154"/>
         <source>No linked device</source>
         <extracomment>Placeholder when no linked device yet</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Geen gekoppelde apparaten</translation>
     </message>
     <message id="whisperfish-device-placeholder-hint">
         <location filename="../qml/pages/LinkedDevices.qml" line="157"/>
         <source>Pull down to link Whisperfish to another device</source>
         <extracomment>Placeholder hint when no linked device yet</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Trek omlaag om Whisperfish aan een ander apparaat te koppelen</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text">
         <location filename="../qml/pages/MainPage.qml" line="335"/>
