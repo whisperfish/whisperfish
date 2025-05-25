@@ -3532,4 +3532,31 @@ impl<O: Observable> Storage<O> {
             .execute(&mut *self.db())
             .expect("db");
     }
+
+    pub fn update_group_v2_revision(&self, group_v2: &orm::GroupV2, next_revision: i32) {
+        use crate::schema::group_v2s::dsl::*;
+
+        if group_v2.revision >= next_revision {
+            tracing::warn!(
+                "GroupV2 revision {} is already greater than or equal to {}",
+                group_v2.revision,
+                next_revision
+            );
+            // XXX Trigger full group refresh?
+            return;
+        }
+
+        let updated =
+            diesel::update(group_v2s.filter(id.eq(&group_v2.id).and(revision.lt(next_revision))))
+                .set(revision.eq(next_revision))
+                .execute(&mut *self.db())
+                .expect("db");
+
+        if updated == 0 {
+            // TODO: Better handling?
+            tracing::warn!("GroupV2 revision not updated");
+        } else {
+            self.observe_update(group_v2s, group_v2.id.clone());
+        }
+    }
 }
