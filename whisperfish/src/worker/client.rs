@@ -501,8 +501,7 @@ impl ClientActor {
 
     fn message_sender(
         &self,
-    ) -> impl Future<Output = Result<MessageSender<AciOrPniStorage, rand::rngs::ThreadRng>, ServiceError>>
-    {
+    ) -> impl Future<Output = Result<MessageSender<AciOrPniStorage>, ServiceError>> {
         let storage = self.storage.clone().unwrap();
         let service = self.authenticated_service();
         let mut u_service = self.unauthenticated_service();
@@ -544,7 +543,6 @@ impl ClientActor {
                 u_ws,
                 service,
                 cipher,
-                rand::thread_rng(),
                 storage.aci_or_pni(ServiceIdKind::Aci), // In what cases do we use the
                 local_aci,
                 local_pni,
@@ -1723,7 +1721,7 @@ impl Handler<SendMessage> for ClientActor {
                         caption: attachment.caption,
                         blur_hash: attachment.visual_hash,
                     };
-                    let ptr = match sender.upload_attachment(spec, contents).await {
+                    let ptr = match sender.upload_attachment(spec, contents, &mut rand::thread_rng()).await {
                         Ok(v) => v,
                         Err(e) => {
                             anyhow::bail!("Failed to upload attachment: {}", e);

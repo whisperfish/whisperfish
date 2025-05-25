@@ -125,7 +125,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         group
                             .requesting_members
                             .iter()
-                            .map(|member| (Aci::from(member.uuid).into(), Some(&member.profile_key))),
+                            .map(|member| (member.aci.into(), Some(&member.profile_key))),
                     );
 
                 // We need all the profile keys and UUIDs in the database.

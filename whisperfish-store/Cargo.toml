@@ -52,7 +52,7 @@ mime_classifier = "0.0.1"
 
 tracing = "0.1"
 
-libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main" }
+libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "whisperfork" }
 
 [build-dependencies]
 anyhow = "1.0"
