@@ -111,6 +111,7 @@ pub struct GroupV2 {
 
     pub avatar: Option<String>,
     pub description: Option<String>,
+    pub announcement_only: bool,
 }
 
 impl Display for GroupV2 {
@@ -1704,6 +1705,7 @@ mod tests {
             access_required_for_members: 0,
             avatar: None,
             description: Some("desc".into()),
+            announcement_only: false,
         }
     }
 

@@ -2149,6 +2149,7 @@ impl<O: Observable> Storage<O> {
 
             avatar: None,
             description: Some("Group is being updated".into()),
+            announcement_only: false,
         };
 
         // Group does not exist, insert first.
