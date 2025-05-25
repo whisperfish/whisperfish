@@ -3721,4 +3721,25 @@ impl<O: Observable> Storage<O> {
             }
         }
     }
+
+    /// Update the group's access control.
+    /// Empty password signals unset password.
+    ///
+    /// Does not trigger observer update.
+    pub fn update_group_v2_invite_link_password(
+        &self,
+        group_v2: &orm::GroupV2,
+        next_password: &String,
+    ) {
+        use crate::schema::group_v2s::dsl::*;
+
+        let bytes = next_password.as_bytes();
+
+        // TODO: Stub -- needs to consider access level and modifiers access level
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(invite_link_password.eq(Some(bytes)))
+            .execute(&mut *self.db())
+            .expect("db");
+    }
+
 }

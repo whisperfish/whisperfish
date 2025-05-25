@@ -526,7 +526,10 @@ impl Handler<GroupV2Update> for ClientActor {
                                 tracing::info!("Invite link access: {:?}", access);
                             }
                             GroupChange::InviteLinkPassword(password) => {
-                                tracing::info!("Invite link password: {:?}", password);
+                                tracing::debug!("Invite link password: {:?}", password);
+                                storage.update_group_v2_invite_link_password(&group_v2, &password);
+                                // TODO: Reftect in UI
+                                db_triggers.push(GroupV2Trigger::ObserveUpdate);
                             }
                             GroupChange::MemberAccess(access) => {
                                 tracing::info!("Member access: {:?}", access);
