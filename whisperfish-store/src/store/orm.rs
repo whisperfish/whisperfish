@@ -104,7 +104,7 @@ pub enum MessageType {
     ProfileKeyUpdate,
     EndSession,
     IdentityKeyChange,
-    GroupChange,
+    GroupChange, // Deprecated
     Payment,
     GroupCallUpdate,
     ExpirationTimerUpdate,

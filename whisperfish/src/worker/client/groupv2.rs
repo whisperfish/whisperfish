@@ -444,7 +444,7 @@ impl Handler<GroupV2Update> for ClientActor {
         let service_ids = self.service_ids().expect("whoami");
         ctx.spawn(
             async move {
-                let handled = false;
+                let mut handled = false;
                 let mut credential_cache = storage.credential_cache_mut().await;
                 let gm =
                     GroupsManager::new(service_ids, service, &mut *credential_cache, zk_params);
@@ -455,8 +455,9 @@ impl Handler<GroupV2Update> for ClientActor {
                 }
 
                 if let Some(GroupChanges {
+                    // TODO: Propagate editor to QML
                     editor: _editor,
-                    revision: _revision,
+                    revision,
                     changes,
                 }) = changes.unwrap()
                 {
@@ -538,13 +539,25 @@ impl Handler<GroupV2Update> for ClientActor {
                                 tracing::info!("Promote requesting member: {:?} {:?}", aci, role);
                             }
                             GroupChange::Timer(timer) => {
-                                tracing::info!("Timer: {:?}", timer);
+                                tracing::debug!("Timer: {:?}", timer);
+                                storage.update_expiration_timer(
+                                    &session,
+                                    timer.map(|t| t.duration),
+                                    None,
+                                );
+                                handled = true;
                             }
                             GroupChange::Title(title) => {
                                 tracing::info!("Title: {:?}", title);
                             }
                         }
                     }
+
+                    if handled {
+                        storage
+                            .update_group_v2_revision(session.unwrap_group_v2(), revision as i32);
+                    }
+
                     Ok((handled, session.id))
                 } else {
                     tracing::warn!("Group change message with no changes");
