@@ -401,7 +401,12 @@ impl Handler<GroupAvatarFetched> for ClientActor {
                 let mut f = tokio::fs::File::create(out_path).await?;
                 f.write_all(&bytes).await?;
 
-                storage.observe_update(whisperfish_store::schema::group_v2s::table, group_id);
+                use whisperfish_store::schema;
+                storage.observe_update(schema::group_v2s::table, group_id.clone());
+                let session_id = storage.fetch_session_by_group_v2_id(&group_id).unwrap().id;
+                storage
+                    .observe_update(schema::sessions::table, session_id)
+                    .with_relation(schema::group_v2s::table, group_id);
 
                 Ok(())
             }
@@ -484,7 +489,9 @@ impl Handler<GroupV2Update> for ClientActor {
                                 tracing::info!("Attribute access: {:?}", access);
                             }
                             GroupChange::Avatar(avatar) => {
-                                tracing::info!("Avatar: {:?}", avatar);
+                                tracing::debug!("Avatar: {:?}", avatar);
+                                storage.update_group_v2_avatar(&group_v2, Some(&avatar));
+                                triggers.push(GroupV2Trigger::Avatar(group_v2.id.clone()));
                             }
                             GroupChange::AddBannedMember(banned_member) => {
                                 tracing::info!("Add banned member: {:?}", banned_member);

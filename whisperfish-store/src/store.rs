@@ -3586,4 +3586,14 @@ impl<O: Observable> Storage<O> {
             .execute(&mut *self.db())
             .expect("db");
     }
+
+    /// Update group avatar. Does not trigger observer update.
+    pub fn update_group_v2_avatar(&self, group_v2: &orm::GroupV2, next_avatar: Option<&String>) {
+        use crate::schema::group_v2s::dsl::*;
+
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(avatar.eq(next_avatar))
+            .execute(&mut *self.db())
+            .expect("db");
+    }
 }
