@@ -522,7 +522,10 @@ impl Handler<GroupV2Update> for ClientActor {
                                 }
                             }
                             GroupChange::DeleteBannedMember(uuid) => {
-                                tracing::info!("Delete banned member: {:?}", uuid);
+                                tracing::debug!("Delete banned member: {:?}", uuid);
+                                if storage.delete_group_v2_banned_member(&group_v2, uuid.into()) {
+                                    ctx_triggers.push(GroupV2Trigger::Recipient(uuid.into()));
+                                }
                             }
                             GroupChange::DeleteMember(uuid) => {
                                 tracing::debug!("Delete member: {:?}", uuid);

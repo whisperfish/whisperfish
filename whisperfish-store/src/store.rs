@@ -3826,4 +3826,38 @@ impl<O: Observable> Storage<O> {
         }
     }
 
+    /// Remove a banned member ban from GroupV2.
+    /// Returns true if the member was removed from the group.
+    /// Does not check if we're un-banning self or not.
+    ///
+    /// Does not trigger observer update.
+    pub fn delete_group_v2_banned_member(&self, group_v2: &orm::GroupV2, aci: Aci) -> bool {
+        use crate::schema::group_v2_members::dsl::*;
+
+        let b_uuid = Some(aci.into());
+
+        let Some(b_recipient) = self
+            .fetch_group_members_by_group_v2_id(&group_v2.id)
+            .into_iter()
+            .find(|(_, r)| r.uuid == b_uuid)
+            .map(|(_, r)| r)
+        else {
+            tracing::debug!(
+                "No such banned member {} in group '{}'",
+                aci.service_id_string(),
+                group_v2.id
+            );
+            return false;
+        };
+
+        diesel::delete(group_v2_members)
+            .filter(
+                group_v2_id
+                    .eq(&group_v2.id)
+                    .and(recipient_id.eq(b_recipient.id)),
+            )
+            .execute(&mut *self.db())
+            .expect("remove banned groupv2 member");
+        return true;
+    }
 }
