@@ -3858,7 +3858,7 @@ impl<O: Observable> Storage<O> {
             )
             .execute(&mut *self.db())
             .expect("remove banned groupv2 member");
-        return true;
+        true
     }
 
     /// Update GroupV2 invite link access.
