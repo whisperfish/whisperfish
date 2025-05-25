@@ -489,7 +489,12 @@ impl Handler<GroupV2Update> for ClientActor {
                                 tracing::info!("Delete requesting member: {:?}", member);
                             }
                             GroupChange::Description(description) => {
-                                tracing::info!("Description: {:?}", description);
+                                tracing::debug!("Description: {:?}", description);
+                                storage.update_group_v2_description(
+                                    session.unwrap_group_v2(),
+                                    description.as_ref(),
+                                );
+                                handled = true;
                             }
                             GroupChange::InviteLinkAccess(access) => {
                                 tracing::info!("Invite link access: {:?}", access);
@@ -571,6 +576,7 @@ impl Handler<GroupV2Update> for ClientActor {
                     Ok((handled, s_id)) => {
                         // XXX handle group.group_change like a real client
                         if !handled {
+                            tracing::warn!("Unhandled group change, fallback to full refresh");
                             ctx.notify(RequestGroupV2InfoBySessionId(s_id));
                         }
                     }

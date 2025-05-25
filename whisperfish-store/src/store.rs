@@ -3533,6 +3533,9 @@ impl<O: Observable> Storage<O> {
             .expect("db");
     }
 
+    // GroupV2 update functions
+
+    /// Update group revision number, if it is higher than the current one.
     pub fn update_group_v2_revision(&self, group_v2: &orm::GroupV2, next_revision: i32) {
         use crate::schema::group_v2s::dsl::*;
 
@@ -3558,5 +3561,19 @@ impl<O: Observable> Storage<O> {
         } else {
             self.observe_update(group_v2s, group_v2.id.clone());
         }
+    }
+
+    /// Update group description. Does not trigger observer update.
+    pub fn update_group_v2_description(
+        &self,
+        group_v2: &orm::GroupV2,
+        next_description: Option<&String>,
+    ) {
+        use crate::schema::group_v2s::dsl::*;
+
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(description.eq(next_description))
+            .execute(&mut *self.db())
+            .expect("db");
     }
 }
