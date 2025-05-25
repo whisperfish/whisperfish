@@ -3742,4 +3742,19 @@ impl<O: Observable> Storage<O> {
             .expect("db");
     }
 
+    /// Update the group's announcement-only status.
+    ///
+    /// Does not trigger observer update.
+    pub fn update_group_v2_announcement_only(
+        &self,
+        group_v2: &orm::GroupV2,
+        next_announcement_only: bool,
+    ) {
+        use crate::schema::group_v2s::dsl::*;
+
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(announcement_only.eq(next_announcement_only)) // TODO: migration
+            .execute(&mut *self.db())
+            .expect("db");
+    }
 }

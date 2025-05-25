@@ -486,8 +486,15 @@ impl Handler<GroupV2Update> for ClientActor {
                     for change in changes {
                         match change {
                             GroupChange::AnnouncementOnly(announcement_only) => {
-                                // TODO: Database migration (announcement_only)
-                                tracing::info!("Announcement: {}", announcement_only);
+                                tracing::debug!(
+                                    "Announcement only: {}",
+                                    if announcement_only { "true" } else { "false" }
+                                );
+                                storage.update_group_v2_announcement_only(
+                                    &group_v2,
+                                    announcement_only,
+                                );
+                                db_triggers.push(GroupV2Trigger::ObserveUpdate);
                             }
                             GroupChange::AttributeAccess(access) => {
                                 tracing::info!("Attribute access: {:?}", access);
