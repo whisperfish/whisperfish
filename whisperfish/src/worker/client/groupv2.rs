@@ -423,6 +423,14 @@ impl Handler<GroupAvatarFetched> for ClientActor {
     }
 }
 
+/// Types of post-GroupV2-update message types.
+#[derive(PartialEq, Debug)]
+enum GroupV2Trigger {
+    ObserveUpdate,
+    /// Avatar(GroupV2Id)
+    Avatar(String),
+}
+
 /// Handle an incoming group change message
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -444,7 +452,7 @@ impl Handler<GroupV2Update> for ClientActor {
         let service_ids = self.service_ids().expect("whoami");
         ctx.spawn(
             async move {
-                let mut handled = false;
+                let mut triggers: Vec<GroupV2Trigger> = Vec::new();
                 let mut credential_cache = storage.credential_cache_mut().await;
                 let gm =
                     GroupsManager::new(service_ids, service, &mut *credential_cache, zk_params);
@@ -461,7 +469,12 @@ impl Handler<GroupV2Update> for ClientActor {
                     changes,
                 }) = changes.unwrap()
                 {
-                    tracing::info!("Group {} has updates", changes.len());
+                    tracing::debug!(
+                        "Group (session {}) has {} update(s)",
+                        session.id,
+                        changes.len()
+                    );
+                    let group_v2 = session.unwrap_group_v2();
                     for change in changes {
                         match change {
                             GroupChange::AnnouncementOnly(announcement_only) => {
@@ -490,11 +503,9 @@ impl Handler<GroupV2Update> for ClientActor {
                             }
                             GroupChange::Description(description) => {
                                 tracing::debug!("Description: {:?}", description);
-                                storage.update_group_v2_description(
-                                    session.unwrap_group_v2(),
-                                    description.as_ref(),
-                                );
-                                handled = true;
+                                storage
+                                    .update_group_v2_description(&group_v2, description.as_ref());
+                                triggers.push(GroupV2Trigger::ObserveUpdate);
                             }
                             GroupChange::InviteLinkAccess(access) => {
                                 tracing::info!("Invite link access: {:?}", access);
@@ -550,36 +561,45 @@ impl Handler<GroupV2Update> for ClientActor {
                                     timer.map(|t| t.duration),
                                     None,
                                 );
-                                handled = true;
+                                triggers.push(GroupV2Trigger::ObserveUpdate);
                             }
                             GroupChange::Title(title) => {
                                 tracing::debug!("Title: {:?}", title);
-                                storage.update_group_v2_title(session.unwrap_group_v2(), &title);
-                                handled = true;
+                                storage.update_group_v2_title(group_v2, &title);
+                                triggers.push(GroupV2Trigger::ObserveUpdate);
                             }
                         }
                     }
-
-                    if handled {
-                        storage
-                            .update_group_v2_revision(session.unwrap_group_v2(), revision as i32);
+                    if triggers.contains(&GroupV2Trigger::ObserveUpdate) {
+                        storage.update_group_v2_revision(&group_v2, revision as i32);
                     }
 
-                    Ok((handled, session.id))
+                    Ok((triggers, session.id))
                 } else {
                     tracing::warn!("Group change message with no changes");
-                    Ok((false, session.id))
+                    Ok((Vec::new(), session.id))
                 }
             }
             .instrument(tracing::info_span!(""))
             .into_actor(self)
             .map(|res, _act, ctx| {
                 match res {
-                    Ok((handled, s_id)) => {
+                    Ok((triggers, s_id)) => {
                         // XXX handle group.group_change like a real client
-                        if !handled {
+                        if triggers.is_empty() {
                             tracing::warn!("Unhandled group change, fallback to full refresh");
                             ctx.notify(RequestGroupV2InfoBySessionId(s_id));
+                        } else {
+                            for trigger in triggers {
+                                match trigger {
+                                    GroupV2Trigger::ObserveUpdate => {
+                                        // Handled by storage.observe_update above
+                                    }
+                                    GroupV2Trigger::Avatar(group_v2_id) => {
+                                        ctx.notify(RefreshGroupAvatar(group_v2_id));
+                                    }
+                                }
+                            }
                         }
                     }
                     Err(e) => {
