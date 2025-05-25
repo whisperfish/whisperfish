@@ -3757,4 +3757,20 @@ impl<O: Observable> Storage<O> {
             .execute(&mut *self.db())
             .expect("db");
     }
+
+    /// Update the group's access control.
+    ///
+    /// Does not trigger observer update.
+    pub fn update_group_v2_attribute_access(
+        &self,
+        group_v2: &orm::GroupV2,
+        next_attribute_access: AttributeAccess, // TODO: &orm::AccessRequired
+    ) {
+        use crate::schema::group_v2s::dsl::*;
+
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(attribute_access.eq(next_attribute_access.into())) // TODO: migration
+            .execute(&mut *self.db())
+            .expect("db");
+    }
 }

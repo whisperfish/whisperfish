@@ -497,7 +497,12 @@ impl Handler<GroupV2Update> for ClientActor {
                                 db_triggers.push(GroupV2Trigger::ObserveUpdate);
                             }
                             GroupChange::AttributeAccess(access) => {
-                                tracing::info!("Attribute access: {:?}", access);
+                                tracing::debug!("Attribute access: {:?}", access);
+                                storage.update_group_v2_attribute_access(
+                                    &group_v2,
+                                    access,
+                                );
+                                db_triggers.push(GroupV2Trigger::ObserveUpdate);
                             }
                             GroupChange::Avatar(avatar) => {
                                 tracing::debug!("Avatar: {:?}", avatar);
