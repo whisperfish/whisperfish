@@ -510,7 +510,16 @@ impl Handler<GroupV2Update> for ClientActor {
                                 ctx_triggers.push(GroupV2Trigger::Avatar(group_v2.id.clone()));
                             }
                             GroupChange::AddBannedMember(banned_member) => {
-                                tracing::info!("Add banned member: {:?}", banned_member);
+                                tracing::debug!("Add banned member: {:?}", banned_member);
+                                if let Some(recipient) = storage.add_group_v2_banned_member(
+                                    &group_v2,
+                                    banned_member.service_id,
+                                    banned_member.timestamp.try_into().unwrap(),
+                                ) {
+                                    db_triggers.push(GroupV2Trigger::Recipient(
+                                        recipient.uuid.unwrap(),
+                                    ));
+                                }
                             }
                             GroupChange::DeleteBannedMember(uuid) => {
                                 tracing::info!("Delete banned member: {:?}", uuid);

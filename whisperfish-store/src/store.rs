@@ -16,6 +16,7 @@ use self::orm::{AugmentedMessage, MessageType, StoryType, UnidentifiedAccessMode
 use crate::body_ranges::AssociatedValue;
 use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
+use crate::schema::group_v2_members;
 use crate::store::observer::{Observable, PrimaryKey};
 use crate::{config::SignalConfig, millis_to_naive_chrono};
 use crate::{naive_chrono_rounded_down, schema};
@@ -3773,4 +3774,56 @@ impl<O: Observable> Storage<O> {
             .execute(&mut *self.db())
             .expect("db");
     }
+
+    /// Add a banned member ban to GroupV2.
+    /// Returns true if the member was added to the group.
+    /// Does not check if we're un-banning self or not.
+    ///
+    /// Does not trigger observer update.
+    pub fn add_group_v2_banned_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        service_id: ServiceId,
+        _ts: u64,
+    ) -> Option<orm::Recipient> {
+        let r_id = self.fetch_or_insert_recipient_by_address(&service_id).id;
+        let banned: Option<orm::GroupV2Member> = self
+            .fetch_group_members_by_group_v2_id(&group_v2.id)
+            .into_iter()
+            .find(|(_, r)| r.id == r_id)
+            .map(|(m, _)| m);
+        match banned {
+            // TODO: migration
+            // if m.banned_at.is_some()
+            Some(_) => {
+                tracing::debug!(
+                    "Member {} already banned from '{}'",
+                    service_id.service_id_string(),
+                    group_v2.name
+                );
+                None
+            }
+            None => {
+                // TODO: migration
+                tracing::error!(
+                    "Banning member not yet implemented: {} from '{}'",
+                    service_id.service_id_string(),
+                    group_v2.name
+                );
+                // true
+                None
+            } /* unreachable for now
+              _ => {
+                  // TODO: conflict resolution
+                  tracing::error!(
+                      "Member {} already in group '{}', conflict resolution not implemented",
+                      aci.service_id_string(),
+                      group_v2.name
+                  );
+                  None
+              }
+              */
+        }
+    }
+
 }
