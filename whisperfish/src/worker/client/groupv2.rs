@@ -431,9 +431,13 @@ impl Handler<GroupAvatarFetched> for ClientActor {
 /// Types of post-GroupV2-update message types.
 #[derive(PartialEq, Debug)]
 enum GroupV2Trigger {
-    ObserveUpdate,
+    /// For indicating a handled group update
+    None,
+    /// Only update version (which triggers group refresh)
+    Generic,
     /// Avatar(GroupV2Id)
     Avatar(String),
+    /// Changes for a specific recipient in the group
     Recipient(Uuid),
 }
 
@@ -494,7 +498,7 @@ impl Handler<GroupV2Update> for ClientActor {
                                     &group_v2,
                                     announcement_only,
                                 );
-                                db_triggers.push(GroupV2Trigger::ObserveUpdate);
+                                db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::AttributeAccess(access) => {
                                 tracing::debug!("Attribute access: {:?}", access);
@@ -502,7 +506,7 @@ impl Handler<GroupV2Update> for ClientActor {
                                     &group_v2,
                                     access.into(),
                                 );
-                                db_triggers.push(GroupV2Trigger::ObserveUpdate);
+                                db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::Avatar(avatar) => {
                                 tracing::debug!("Avatar: {:?}", avatar);
@@ -523,14 +527,13 @@ impl Handler<GroupV2Update> for ClientActor {
                             }
                             GroupChange::DeleteBannedMember(uuid) => {
                                 tracing::debug!("Delete banned member: {:?}", uuid);
-                                if storage.delete_group_v2_banned_member(&group_v2, uuid.into()) {
-                                    ctx_triggers.push(GroupV2Trigger::Recipient(uuid.into()));
-                                }
+                                storage.delete_group_v2_banned_member(&group_v2, uuid.into());
+                                db_triggers.push(GroupV2Trigger::Recipient(uuid.into()));
                             }
                             GroupChange::DeleteMember(uuid) => {
                                 tracing::debug!("Delete member: {:?}", uuid);
                                 storage.delete_group_v2_member(&group_v2, uuid.into());
-                                db_triggers.push(GroupV2Trigger::ObserveUpdate);
+                                db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::DeletePendingMember(member) => {
                                 // TODO: Database migration (status)
@@ -544,18 +547,18 @@ impl Handler<GroupV2Update> for ClientActor {
                                 tracing::debug!("Description: {:?}", description);
                                 storage
                                     .update_group_v2_description(&group_v2, description.as_ref());
-                                db_triggers.push(GroupV2Trigger::ObserveUpdate);
+                                db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::InviteLinkAccess(access) => {
                                 tracing::debug!("Invite link access: {:?}", access);
                                 storage.update_group_v2_invite_link_access(&group_v2, access.into());
-                                db_triggers.push(GroupV2Trigger::ObserveUpdate);
+                                db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::InviteLinkPassword(password) => {
                                 tracing::debug!("Invite link password: {:?}", password);
                                 storage.update_group_v2_invite_link_password(&group_v2, &password);
                                 // TODO: Reftect in UI
-                                db_triggers.push(GroupV2Trigger::ObserveUpdate);
+                                db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::MemberAccess(access) => {
                                 tracing::info!("Member access: {:?}", access);
@@ -620,26 +623,27 @@ impl Handler<GroupV2Update> for ClientActor {
                                     timer.map(|t| t.duration),
                                     None,
                                 );
-                                db_triggers.push(GroupV2Trigger::ObserveUpdate);
+                                db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::Title(title) => {
                                 tracing::debug!("Title: {:?}", title);
                                 storage.update_group_v2_title(group_v2, &title);
-                                db_triggers.push(GroupV2Trigger::ObserveUpdate);
+                                db_triggers.push(GroupV2Trigger::Generic);
                             }
                         }
                     }
 
-                    for trigger in db_triggers {
+                    if !db_triggers.is_empty() && ctx_triggers.is_empty() {
+                        ctx_triggers.push(GroupV2Trigger::None);
+                    }
+
+                    for trigger in db_triggers.iter() {
                         match trigger {
+                            GroupV2Trigger::Generic => continue,
                             GroupV2Trigger::Recipient(uuid) => {
-                                let aci: Aci = uuid.into();
+                                let aci: Aci = uuid.to_owned().into();
                                 let service_id: ServiceId = aci.into();
                                 let recipient = storage.fetch_recipient(&service_id).unwrap();
-                                storage.observe_update(
-                                    whisperfish_store::schema::recipients::table,
-                                    recipient.id,
-                                );
                                 storage
                                     .observe_update(
                                         whisperfish_store::schema::sessions::table,
@@ -650,10 +654,6 @@ impl Handler<GroupV2Update> for ClientActor {
                                         recipient.id,
                                     );
                             }
-                            GroupV2Trigger::ObserveUpdate => {
-                                storage.update_group_v2_revision(&group_v2, revision as i32);
-                                break;
-                            }
                             _ => {
                                 tracing::error!(
                                     "Unexpected trigger in database triggers, ignoring: {:?}",
@@ -662,6 +662,11 @@ impl Handler<GroupV2Update> for ClientActor {
                                 continue;
                             }
                         }
+                    }
+
+                    if !db_triggers.is_empty() {
+                        // Triggers group update
+                        storage.update_group_v2_revision(&group_v2, revision as i32);
                     }
 
                     Ok((ctx_triggers, session.id))
@@ -682,10 +687,13 @@ impl Handler<GroupV2Update> for ClientActor {
                         } else {
                             for trigger in triggers {
                                 match trigger {
+                                    GroupV2Trigger::None => {
+                                        tracing::debug!("Group updated, no need for refresh.");
+                                    }
                                     GroupV2Trigger::Avatar(group_v2_id) => {
                                         ctx.notify(RefreshGroupAvatar(group_v2_id));
                                     }
-                                    GroupV2Trigger::ObserveUpdate | GroupV2Trigger::Recipient(_) => {
+                                    GroupV2Trigger::Generic | GroupV2Trigger::Recipient(_) => {
                                         tracing::error!(
                                             "Unexpected trigger in context triggers, ignoring: {:?}",
                                             trigger
