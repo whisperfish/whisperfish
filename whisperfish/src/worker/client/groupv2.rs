@@ -500,7 +500,7 @@ impl Handler<GroupV2Update> for ClientActor {
                                 tracing::debug!("Attribute access: {:?}", access);
                                 storage.update_group_v2_attribute_access(
                                     &group_v2,
-                                    access,
+                                    access.into(),
                                 );
                                 db_triggers.push(GroupV2Trigger::ObserveUpdate);
                             }

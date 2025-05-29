@@ -1,6 +1,7 @@
 use super::schema::*;
 use chrono::prelude::*;
 use diesel::sql_types::Integer;
+use libsignal_service::groups_v2::AccessRequired as AccessRequiredProto;
 use libsignal_service::prelude::*;
 use libsignal_service::proto::GroupContextV2;
 use libsignal_service::protocol::{Aci, Pni, ServiceId, ServiceIdKind};
@@ -37,6 +38,61 @@ pub struct GroupV1Member {
     pub group_v1_id: String,
     pub recipient_id: i32,
     pub member_since: Option<NaiveDateTime>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AccessRequired {
+    Unknown,
+    Any,
+    Member,
+    Administrator,
+    Unsatisfiable,
+}
+
+impl From<AccessRequired> for AccessRequiredProto {
+    fn from(value: AccessRequired) -> Self {
+        match value {
+            AccessRequired::Unknown => AccessRequiredProto::Unknown,
+            AccessRequired::Any => AccessRequiredProto::Any,
+            AccessRequired::Member => AccessRequiredProto::Member,
+            AccessRequired::Administrator => AccessRequiredProto::Administrator,
+            AccessRequired::Unsatisfiable => AccessRequiredProto::Unsatisfiable,
+        }
+    }
+}
+
+impl From<AccessRequiredProto> for AccessRequired {
+    fn from(value: AccessRequiredProto) -> Self {
+        match value {
+            AccessRequiredProto::Unknown => AccessRequired::Unknown,
+            AccessRequiredProto::Any => AccessRequired::Any,
+            AccessRequiredProto::Member => AccessRequired::Member,
+            AccessRequiredProto::Administrator => AccessRequired::Administrator,
+            AccessRequiredProto::Unsatisfiable => AccessRequired::Unsatisfiable,
+        }
+    }
+}
+
+impl std::convert::From<i32> for AccessRequired {
+    fn from(value: i32) -> Self {
+        match value {
+            0 => AccessRequired::Unknown,
+            1 => AccessRequired::Any,
+            2 => AccessRequired::Member,
+            3 => AccessRequired::Administrator,
+            4 => AccessRequired::Unsatisfiable,
+            _ => {
+                tracing::error!("Invalid GroupV2Access value {}, fallback to Unknown", value);
+                AccessRequired::Unknown
+            }
+        }
+    }
+}
+
+impl From<AccessRequired> for i32 {
+    fn from(value: AccessRequired) -> Self {
+        value as i32
+    }
 }
 
 #[derive(Queryable, Insertable, Debug, Clone)]

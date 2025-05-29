@@ -16,7 +16,6 @@ use self::orm::{AugmentedMessage, MessageType, StoryType, UnidentifiedAccessMode
 use crate::body_ranges::AssociatedValue;
 use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
-use crate::schema::group_v2_members;
 use crate::store::observer::{Observable, PrimaryKey};
 use crate::{config::SignalConfig, millis_to_naive_chrono};
 use crate::{naive_chrono_rounded_down, schema};
@@ -3765,12 +3764,12 @@ impl<O: Observable> Storage<O> {
     pub fn update_group_v2_attribute_access(
         &self,
         group_v2: &orm::GroupV2,
-        next_attribute_access: AttributeAccess, // TODO: &orm::AccessRequired
+        next_access: orm::AccessRequired,
     ) {
         use crate::schema::group_v2s::dsl::*;
 
         diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
-            .set(attribute_access.eq(next_attribute_access.into())) // TODO: migration
+            .set(access_required_for_attributes.eq(i32::from(next_access)))
             .execute(&mut *self.db())
             .expect("db");
     }
@@ -3859,5 +3858,21 @@ impl<O: Observable> Storage<O> {
             .execute(&mut *self.db())
             .expect("remove banned groupv2 member");
         return true;
+    }
+
+    /// Update GroupV2 invite link access.
+    ///
+    /// Does not trigger observer update.
+    pub fn update_group_v2_invite_link_access(
+        &self,
+        group_v2: &orm::GroupV2,
+        next_access: orm::AccessRequired,
+    ) {
+        use crate::schema::group_v2s::dsl::*;
+
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(access_required_for_add_from_invite_link.eq(i32::from(next_access)))
+            .execute(&mut *self.db())
+            .expect("db");
     }
 }
