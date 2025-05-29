@@ -1177,6 +1177,7 @@ impl<O: Observable> Storage<O> {
                     id.eq(recipient.id).and(
                         profile_key
                             .ne(new_profile_key)
+                            .or(profile_key.is_null())
                             .or(unidentified_access_mode.ne(UnidentifiedAccessMode::Unknown)),
                     ),
                 )
