@@ -5,7 +5,7 @@
     <name></name>
     <message id="whisperfish-session-has-attachment">
         <location filename="../qml/cover/CoverPage.qml" line="176"/>
-        <location filename="../qml/delegates/SessionDelegate.qml" line="64"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="71"/>
         <source>Attachment</source>
         <extracomment>Session contains an attachment label</extracomment>
         <translation>இணைப்பு</translation>
@@ -17,13 +17,13 @@
     </message>
     <message id="whisperfish-session-is-voice-note">
         <location filename="../qml/cover/CoverPage.qml" line="170"/>
-        <location filename="../qml/delegates/SessionDelegate.qml" line="57"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="64"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
         <translation>குரல் செய்தி</translation>
     </message>
     <message id="whisperfish-session-delete-all">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="120"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="127"/>
         <source>All messages deleted</source>
         <oldsource>Deleting all messages</oldsource>
         <extracomment>Delete all messages from session (past tense)</extracomment>
@@ -48,7 +48,7 @@
         <translation>%1 மற்றும் %n மற்றவர்கள் தட்டச்சு செய்கிறார்கள்</translation>
     </message>
     <message id="whisperfish-session-note-to-self">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="220"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="227"/>
         <location filename="../qml/harbour-whisperfish-main.qml" line="163"/>
         <location filename="../qml/pages/ShareDestinationV1.qml" line="106"/>
         <location filename="../qml/pages/ShareDestinationV2.qml" line="105"/>
@@ -58,51 +58,51 @@
     </message>
     <message id="whisperfish-message-preview-draft">
         <location filename="../qml/cover/CoverPage.qml" line="152"/>
-        <location filename="../qml/delegates/SessionDelegate.qml" line="244"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="251"/>
         <source>Draft: %1</source>
         <extracomment>Message preview for a saved, unsent message</extracomment>
         <translation>வரைவு: %1</translation>
     </message>
     <message id="whisperfish-session-mark-unpinned">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="379"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="386"/>
         <source>Unpin</source>
         <extracomment>&apos;Unpin&apos; conversation from the top of the view</extracomment>
         <translation>முள்நீக்கு</translation>
     </message>
     <message id="whisperfish-session-mark-pinned">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="382"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="389"/>
         <source>Pin to top</source>
         <extracomment>&apos;Pin&apos; conversation to the top of the view</extracomment>
         <translation>மேலே முள்</translation>
     </message>
     <message id="whisperfish-session-mark-unmuted">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="391"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="398"/>
         <source>Unmute conversation</source>
         <oldsource>Mark as unmuted</oldsource>
         <extracomment>Mark conversation as unmuted</extracomment>
         <translation>மாறாத உரையாடல்</translation>
     </message>
     <message id="whisperfish-session-mark-muted">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="394"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="401"/>
         <source>Mute conversation</source>
         <oldsource>Mark as muted</oldsource>
         <extracomment>Mark conversation as muted</extracomment>
         <translation>முடக்கு உரையாடல்</translation>
     </message>
     <message id="whisperfish-session-mark-unarchived">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="402"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="409"/>
         <source>Restore to inbox</source>
         <extracomment>Show archived messages again in the main page</extracomment>
         <translation>இன்பாக்சுக்கு மீட்டமைக்கவும்</translation>
     </message>
     <message id="whisperfish-session-mark-archived">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="405"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="412"/>
         <source>Archive conversation</source>
         <extracomment>Move the conversation to archived conversations</extracomment>
         <translation>காப்பக உரையாடல்</translation>
     </message>
     <message id="whisperfish-session-delete">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="412"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="419"/>
         <source>Delete conversation</source>
         <extracomment>Delete all messages from session menu</extracomment>
         <translation>உரையாடலை நீக்கு</translation>
@@ -1718,10 +1718,9 @@ Settings page share contacts</extracomment>
         <translation>உறுப்பினரைச் சேர்க்கவும்</translation>
     </message>
     <message id="whisperfish-unknown-contact">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="395"/>
         <source>Unknown</source>
         <extracomment>Unknown contact in group member list</extracomment>
-        <translation>தெரியவில்லை</translation>
+        <translation type="vanished">தெரியவில்லை</translation>
     </message>
     <message id="whisperfish-group-not-updated-to-groupv2">
         <location filename="../qml/pages/GroupProfilePage.qml" line="101"/>
@@ -1961,18 +1960,27 @@ Settings page share contacts</extracomment>
         <translation>மேலும் காட்டு</translation>
     </message>
     <message id="whisperfish-sender-name-label-outgoing">
-        <location filename="../qml/components/QuotedMessagePreview.qml" line="109"/>
-        <location filename="../qml/components/SenderNameLabel.qml" line="67"/>
+        <location filename="../qml/components/QuotedMessagePreview.qml" line="115"/>
+        <location filename="../qml/components/SenderNameLabel.qml" line="40"/>
         <location filename="../qml/harbour-whisperfish-main.qml" line="167"/>
         <source>You</source>
         <extracomment>Name shown when replying to own messages</extracomment>
         <translation>நீங்கள்</translation>
     </message>
+    <message id="whisperfish-recipient-no-name">
+        <location filename="../qml/components/QuotedMessagePreview.qml" line="119"/>
+        <location filename="../qml/delegates/MessageDelegate.qml" line="204"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="39"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="99"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="394"/>
+        <source>(no name)</source>
+        <extracomment>Placeholder name for a recipient who has no name available</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-quoted-message-unknown-sender">
-        <location filename="../qml/components/QuotedMessagePreview.qml" line="114"/>
         <source>Unknown sender</source>
         <extracomment>Text shown on quotes when the sender of a quote is unknown</extracomment>
-        <translation>தெரியாத அனுப்புநர்</translation>
+        <translation type="vanished">தெரியாத அனுப்புநர்</translation>
     </message>
     <message id="whisperfish-quoted-message-preview-voice-note">
         <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="72"/>
@@ -1984,27 +1992,26 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-quoted-message-preview-attachment">
         <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="74"/>
         <location filename="../qml/components/attachment/AttachmentItemFile.qml" line="22"/>
-        <location filename="../qml/components/QuotedMessagePreview.qml" line="140"/>
+        <location filename="../qml/components/QuotedMessagePreview.qml" line="147"/>
         <source>Attachment</source>
         <extracomment>Placeholder text if quoted message preview contains no text, only attachments</extracomment>
         <translation>இணைப்பு</translation>
     </message>
     <message id="whisperfish-sender-label-empty">
-        <location filename="../qml/delegates/MessageDelegate.qml" line="204"/>
         <source>no sender</source>
         <extracomment>Label shown if a message doesn&apos;t have a sender.</extracomment>
-        <translation>அனுப்புநர் இல்லை</translation>
+        <translation type="vanished">அனுப்புநர் இல்லை</translation>
     </message>
     <message id="whisperfish-message-deleted-note">
         <location filename="../qml/cover/CoverPage.qml" line="157"/>
-        <location filename="../qml/delegates/MessageDelegate.qml" line="270"/>
-        <location filename="../qml/delegates/SessionDelegate.qml" line="44"/>
+        <location filename="../qml/delegates/MessageDelegate.qml" line="267"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="51"/>
         <source>this message was deleted</source>
         <extracomment>Placeholder note for a deleted message</extracomment>
         <translation>இந்த செய்தி நீக்கப்பட்டது</translation>
     </message>
     <message id="whisperfish-message-empty-note">
-        <location filename="../qml/delegates/MessageDelegate.qml" line="273"/>
+        <location filename="../qml/delegates/MessageDelegate.qml" line="270"/>
         <source>this message is empty</source>
         <extracomment>Placeholder note if an empty message is encountered.</extracomment>
         <translation>இந்த செய்தி காலியாக உள்ளது</translation>
@@ -2295,7 +2302,7 @@ Settings page share contacts</extracomment>
         <translation>விளையாடத் தவறிவிட்டது</translation>
     </message>
     <message id="whisperfish-group-n-members" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="105"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="109"/>
         <source>%n member(s)</source>
         <extracomment>The number of members in a group, you included</extracomment>
         <translation>
@@ -2304,7 +2311,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-chat-n-messages" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="114"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="118"/>
         <source>%n message(s)</source>
         <extracomment>The number of messages in a conversation, displayed in page header</extracomment>
         <translation>
@@ -2313,7 +2320,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-actions-info-label" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="388"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="392"/>
         <source>%n message(s) selected</source>
         <oldsource>%1 message(s) selected</oldsource>
         <extracomment>Info label shown while selecting messages</extracomment>
@@ -2323,7 +2330,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-clear-selection" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="411"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="416"/>
         <source>Clear selection</source>
         <extracomment>Message action description, shown if one or more messages are selected</extracomment>
         <translation>
@@ -2332,7 +2339,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-copy" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="420"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="426"/>
         <source>Copy %n message(s)</source>
         <oldsource>Copy %1 message(s)</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2342,14 +2349,14 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-info">
-        <location filename="../qml/pages/ConversationPage.qml" line="428"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="435"/>
         <source>Show message info</source>
         <extracomment>Message action description (only available if n==1)</extracomment>
         <translation>செய்தி தகவலைக் காட்டு</translation>
     </message>
     <message id="whisperfish-message-action-delete-for-self" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="440"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="472"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="448"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="509"/>
         <source>Locally delete %n message(s)</source>
         <oldsource>Delete %1 message(s) for me</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2359,8 +2366,8 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-delete-for-all" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="452"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="482"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="461"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="520"/>
         <source>Delete %n message(s) for all</source>
         <oldsource>Delete %1 message(s) for all</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2370,7 +2377,8 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-resend" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="494"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="475"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="534"/>
         <source>Retry sending (the) failed message(s)</source>
         <extracomment>Message action description</extracomment>
         <translation>
@@ -2379,13 +2387,13 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-group-request-information">
-        <location filename="../qml/pages/ConversationPage.qml" line="554"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="596"/>
         <source>Let the group members message with you and let its members see your profile information?</source>
         <extracomment>Information about a pending or blocked group</extracomment>
         <translation>குழு உறுப்பினர்கள் உங்களுடன் செய்தி அனுப்பட்டும், அதன் உறுப்பினர்கள் உங்கள் சுயவிவரத் தகவலைப் பார்க்கட்டும்?</translation>
     </message>
     <message id="whisperfish-message-request-information">
-        <location filename="../qml/pages/ConversationPage.qml" line="557"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="599"/>
         <source>Let the contact message with you and let them see your profile information?</source>
         <extracomment>Information about a pending or blocked recipient</extracomment>
         <translation>தொடர்பு செய்தியை உங்களுடன் அனுமதித்து, உங்கள் சுயவிவரத் தகவலைப் பார்க்கட்டும்?</translation>
