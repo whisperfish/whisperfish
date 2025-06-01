@@ -463,7 +463,7 @@
         <source>Install Signal Desktop. Use e.g. the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</source>
         <oldsource>Install Signal Desktop. Use the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</oldsource>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
-        <translation type="unfinished">சிக்னல் டெச்க்டாப்பை நிறுவவும். சிக்னல் டெச்க்டாப்பில் காட்டப்படும் QR குறியீட்டை ச்கேன் செய்ய கோட்ரேடர் பயன்பாட்டைப் பயன்படுத்தவும் மற்றும் இங்கே முகவரி ஐ நகலெடுத்து ஒட்டவும்.</translation>
+        <translation>சிக்னல் டெஸ்க்டாப்பை நிறுவவும். உதாரணமாக, CodeReader பயன்பாட்டைப் பயன்படுத்தி சிக்னல் டெஸ்க்டாப்பில் காட்டப்படும் QR குறியீட்டை ஸ்கேன் செய்து, URL ஐ நகலெடுத்து இங்கே ஒட்டவும்.</translation>
     </message>
     <message id="whisperfish-add-linked-device">
         <location filename="../qml/pages/LinkedDevices.qml" line="18"/>
@@ -524,13 +524,13 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="154"/>
         <source>No linked device</source>
         <extracomment>Placeholder when no linked device yet</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>இணைக்கப்பட்ட சாதனம் இல்லை</translation>
     </message>
     <message id="whisperfish-device-placeholder-hint">
         <location filename="../qml/pages/LinkedDevices.qml" line="157"/>
         <source>Pull down to link Whisperfish to another device</source>
         <extracomment>Placeholder hint when no linked device yet</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>விஸ்பர்ஃபிஷை வேறொரு சாதனத்துடன் இணைக்கக் கீழே இழு</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text">
         <location filename="../qml/pages/MainPage.qml" line="335"/>
@@ -1975,7 +1975,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/GroupProfilePage.qml" line="394"/>
         <source>(no name)</source>
         <extracomment>Placeholder name for a recipient who has no name available</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>(பெயர் இல்லை)</translation>
     </message>
     <message id="whisperfish-quoted-message-unknown-sender">
         <source>Unknown sender</source>
