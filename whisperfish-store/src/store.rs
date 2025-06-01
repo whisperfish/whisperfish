@@ -1092,7 +1092,7 @@ impl<O: Observable> Storage<O> {
                 id.eq(session.id).and(
                     expiring_message_timeout
                         .ne(timer.map(|i| i as i32))
-                        .or(expire_timer_version.ne(new_version)),
+                        .or(expire_timer_version.lt(new_version)),
                 ),
             )
             .returning(expire_timer_version)
@@ -1177,6 +1177,7 @@ impl<O: Observable> Storage<O> {
                     id.eq(recipient.id).and(
                         profile_key
                             .ne(new_profile_key)
+                            .or(profile_key.is_null())
                             .or(unidentified_access_mode.ne(UnidentifiedAccessMode::Unknown)),
                     ),
                 )
@@ -1612,9 +1613,9 @@ impl<O: Observable> Storage<O> {
                     .and(schema::messages::expires_in.is_not_null())
                     .and(schema::messages::expires_in.gt(0))
                     .and(schema::messages::expiry_started.is_null())
-                    .and(schema::messages::message_type.eq::<Option<MessageType>>(None)),
+                    .and(schema::messages::message_type.is_null()),
             )
-            .set(schema::messages::expiry_started.eq(Some(chrono::Utc::now().naive_utc())))
+            .set(schema::messages::expiry_started.eq(chrono::Utc::now().naive_utc()))
             .returning((schema::messages::id, schema::messages::session_id))
             .load(&mut *self.db())
             .expect("set message expiry");
@@ -2219,14 +2220,13 @@ impl<O: Observable> Storage<O> {
 
     #[tracing::instrument(skip(self))]
     pub fn start_message_expiry(&self, message_id: i32) {
-        let now = Some(chrono::Utc::now().naive_utc());
+        let now = chrono::Utc::now().naive_utc();
         let affected_rows = diesel::update(
             schema::messages::table.filter(
                 schema::messages::id
                     .eq(message_id)
                     .and(schema::messages::expiry_started.is_null())
-                    .and(schema::messages::message_type.is_null())
-                    .and(schema::messages::expiry_started.ne(now)),
+                    .and(schema::messages::message_type.is_null()),
             ),
         )
         .set(schema::messages::expiry_started.eq(now))

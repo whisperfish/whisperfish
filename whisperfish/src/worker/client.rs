@@ -914,10 +914,13 @@ impl ClientActor {
             storage.fetch_or_insert_session_by_recipient_id(recipient.id)
         });
 
-        session.expire_timer_version =
+        // Group expiry timer handled via GroupChanges
+        if session.is_dm() {
             storage.update_expiration_timer(&session, msg.expire_timer, msg.expire_timer_version);
-
-        let expires_in = session.expiring_message_timeout;
+            session.expire_timer_version = msg.expire_timer_version() as i32;
+            session.expiring_message_timeout =
+                msg.expire_timer.map(|v| Duration::from_secs(v as u64));
+        }
 
         let new_message = crate::store::NewMessage {
             source_addr,
@@ -935,7 +938,7 @@ impl ClientActor {
             session_id: session.id,
             is_read: is_sync_sent,
             quote_timestamp: msg.quote.as_ref().and_then(|x| x.id),
-            expires_in,
+            expires_in: session.expiring_message_timeout,
             expire_timer_version: session.expire_timer_version,
             story_type: StoryType::None,
             server_guid: metadata.server_guid,
