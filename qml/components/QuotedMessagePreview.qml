@@ -9,8 +9,8 @@ BackgroundItem {
     id: root
     // 'attachments' is expected as a list of objects: [{data: path, type: mimetype}, ...]
     property alias messageId: quotedMessage.messageId
-    property bool showCloseButton: true
-    property bool showBackground: false
+    property bool showCloseButton
+    property bool showBackground
     property real contentPadding: Theme.paddingMedium
 
     property alias maximumWidth: senderNameLabel.maximumWidth
@@ -64,6 +64,8 @@ BackgroundItem {
         horizontalAlignment: Image.AlignHCenter
         verticalAlignment: Image.AlignVCenter
         source: "../../icons/icon-s-close.png"
+        color: Theme.primaryColor
+        highlightColor: Theme.highlightColor
         highlighted: closeButtonArea.pressed || root.down
 
         MouseArea {
@@ -100,24 +102,29 @@ BackgroundItem {
             rightMargin: contentPadding
         }
 
-        Item { height: 1; width: parent.width } // spacing
+        Item {
+            width: parent.width
+            height: Theme.paddingSmall
+        }
 
         SenderNameLabel {
             id: senderNameLabel
-            source: quotedMessage.outgoing ?
-                // Reused from main.qml; "You"
-                qsTrId("whisperfish-sender-name-label-outgoing") :
-                (sender.valid ?
-                    getRecipientName(sender.e164, sender.externalId, sender.name, false) :
-                    //: Text shown on quotes when the sender of a quote is unknown
-                    //% "Unknown sender"
-                    qsTrId("whisperfish-quoted-message-unknown-sender"))
-            defaultClickAction: false
-            anchors { left: parent.left; right: parent.right }
+            enabled: false
+            source: quotedMessage.outgoing
+                ? // Reused from main.qml; "You"
+                  qsTrId("whisperfish-sender-name-label-outgoing")
+                : sender.valid
+                  ? getRecipientName(sender.e164, sender.externalId, sender.name, false)
+                  : // Translated in SessionDelegate.qml
+                    qsTrId("whisperfish-recipient-no-name")
+            anchors {
+                left: parent.left
+                right: parent.right
+            }
             maximumWidth: parent.width
+            minimumWidth: parent.width
             horizontalAlignment: root.horizontalAlignment
             highlighted: root.highlighted
-            enableBackground: false
         }
 
         // Extra Item required for Column containing LinkedEmojiLabel <- OpacityRampEffect
