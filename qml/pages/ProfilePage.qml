@@ -16,7 +16,7 @@ Page {
     property bool groupContext: false
 
     // For new message notifications
-    property alias sessionId: session.sessionId
+    property int sessionId: session ? session.sessionId : -1
 
     onStatusChanged: {
         if (editingProfile && status === PageStatus.Inactive) {
