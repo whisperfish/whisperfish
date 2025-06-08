@@ -4135,4 +4135,48 @@ impl<O: Observable> Storage<O> {
             ),
         }
     }
+
+    /// Delete a requesting member from a GroupV2.
+    ///
+    /// Returns true if the member was deleted, false if it did not exist.
+    ///
+    /// Does not trigger observer update.
+    pub fn delete_group_v2_requesting_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        requesting_aci: Aci,
+    ) -> Option<orm::Recipient> {
+        use crate::schema::group_v2_requesting_members::dsl::*;
+
+        let aci_string = requesting_aci.service_id_string();
+
+        match diesel::delete(
+            group_v2_requesting_members
+                .filter(group_v2_id.eq(&group_v2.id).and(aci.eq(&aci_string))),
+        )
+        .execute(&mut *self.db())
+        .unwrap()
+        {
+            1 => {
+                tracing::debug!(
+                    "Deleted requesting member {} from group '{}'",
+                    aci_string,
+                    group_v2.name
+                );
+                self.fetch_recipient(&ServiceId::Aci(requesting_aci))
+            }
+            0 => {
+                tracing::debug!(
+                    "No such requesting member {} in group '{}'",
+                    aci_string,
+                    group_v2.name
+                );
+                None
+            }
+            n => unreachable!(
+                "Deleted {} requesting members from group '{}', expected 0 or 1",
+                n, group_v2.name
+            ),
+        }
+    }
 }
