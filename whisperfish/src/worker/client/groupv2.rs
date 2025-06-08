@@ -611,7 +611,15 @@ impl Handler<GroupV2Update> for ClientActor {
                                 }
                             }
                             GroupChange::NewPendingMember(member) => {
-                                tracing::info!("New pending member: {:?}", member);
+                                tracing::debug!("New pending member: {:?}", member);
+                                storage.add_group_v2_pending_member(
+                                    group_v2,
+                                    member.address,
+                                    member.added_by_aci,
+                                    member.role.into(), // TODO: strong type
+                                    millis_to_naive_chrono(member.timestamp),
+                                );
+                                db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::NewRequestingMember(member) => {
                                 tracing::info!("New requesting member: {:?}", member);

@@ -4179,4 +4179,93 @@ impl<O: Observable> Storage<O> {
             ),
         }
     }
+
+    /// Add a new pending member to a GroupV2.
+    ///
+    /// Does not trigger observer update.
+    pub fn add_group_v2_pending_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        new_service_id: ServiceId,
+        added_by: Aci,
+        new_role: Role,
+        ts: NaiveDateTime,
+    ) -> Option<orm::GroupV2PendingMember> {
+        use crate::schema::group_v2_pending_members::dsl::*;
+
+        // Check thet there is no such actual member
+        if match new_service_id.kind() {
+            ServiceIdKind::Aci => {
+                let aci = Some(new_service_id.raw_uuid());
+                self.fetch_group_members_by_group_v2_id(&group_v2.id)
+                    .into_iter()
+                    .any(|(_, r)| r.uuid == aci)
+            }
+            ServiceIdKind::Pni => {
+                let pni = Some(new_service_id.raw_uuid());
+                self.fetch_group_members_by_group_v2_id(&group_v2.id)
+                    .into_iter()
+                    .any(|(_, r)| r.pni == pni)
+            }
+        } {
+            tracing::debug!(
+                "Member {:?} already exists in group '{}'",
+                new_service_id,
+                group_v2.name
+            );
+            return None;
+        }
+
+        // Check that there is no pending member
+        if match new_service_id.kind() {
+            ServiceIdKind::Aci => self
+                .fetch_group_v2_pending_member(
+                    &group_v2.id,
+                    Some(Aci::try_from(new_service_id.raw_uuid()).unwrap()),
+                    None,
+                )
+                .is_some(),
+            ServiceIdKind::Pni => self
+                .fetch_group_v2_pending_member(
+                    &group_v2.id,
+                    None,
+                    Some(Pni::try_from(new_service_id.raw_uuid()).unwrap()),
+                )
+                .is_some(),
+        } {
+            tracing::debug!(
+                "Pending member {:?} already exists in group '{}'",
+                new_service_id,
+                group_v2.name
+            );
+            return None;
+        }
+
+        let new_pending_member = orm::GroupV2PendingMember {
+            group_v2_id: group_v2.id.clone(),
+            service_id: new_service_id.service_id_string(),
+            added_by_aci: added_by.service_id_string(),
+            role: new_role.into(),
+            timestamp: ts,
+        };
+
+        match diesel::insert_into(group_v2_pending_members)
+            .values(&new_pending_member)
+            .execute(&mut *self.db())
+            .expect("insert pending group member")
+        {
+            1 => {
+                tracing::debug!(
+                    "Added a new pending member {} to group '{}'",
+                    new_pending_member.service_id,
+                    group_v2.name
+                );
+                Some(new_pending_member)
+            }
+            x => {
+                tracing::error!("Expected to insert 1 pending group member, got {}", x);
+                None
+            }
+        }
+    }
 }
