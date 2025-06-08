@@ -536,7 +536,10 @@ impl Handler<GroupV2Update> for ClientActor {
                                 db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::DeletePendingMember(member) => {
-                                tracing::info!("Delete pending member: {:?}", member);
+                                tracing::debug!("Delete pending member: {:?}", member);
+                                if let Some(deleted) = storage.delete_group_v2_pending_member(group_v2, member) {
+                                    db_triggers.push(GroupV2Trigger::Recipient(deleted.uuid.unwrap()));
+                                }
                             }
                             GroupChange::DeleteRequestingMember(member) => {
                                 tracing::info!("Delete requesting member: {:?}", member);

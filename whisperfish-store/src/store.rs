@@ -4023,4 +4023,63 @@ impl<O: Observable> Storage<O> {
             None
         }
     }
+
+    /// Delete a pending member from a GroupV2.
+    ///
+    /// Returns true if the member was deleted, false if it did not exist.
+    ///
+    /// Does not trigger observer update.
+    pub fn delete_group_v2_pending_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        pending_service_id: ServiceId,
+    ) -> Option<orm::Recipient> {
+        use crate::schema::group_v2_pending_members::dsl::*;
+
+        let existing = match pending_service_id.kind() {
+            ServiceIdKind::Aci => self.fetch_group_v2_pending_member(
+                &group_v2.id,
+                Some(Aci::try_from(pending_service_id.raw_uuid()).unwrap()),
+                None,
+            ),
+            ServiceIdKind::Pni => self.fetch_group_v2_pending_member(
+                &group_v2.id,
+                None,
+                Some(Pni::try_from(pending_service_id.raw_uuid()).unwrap()),
+            ),
+        };
+
+        if existing.is_none() {
+            tracing::debug!(
+                "No such pending member {} in group '{}'",
+                pending_service_id.service_id_string(),
+                group_v2.name
+            );
+            return None;
+        }
+
+        let member = existing.unwrap();
+        let affected = diesel::delete(
+            group_v2_pending_members.filter(
+                group_v2_id
+                    .eq(&group_v2.id)
+                    .and(service_id.eq(&member.service_id)),
+            ),
+        );
+        match affected.execute(&mut *self.db()).unwrap() {
+            1 => {
+                tracing::debug!(
+                    "Deleted pending member {} from group '{}'",
+                    member.service_id,
+                    group_v2.name
+                );
+                // Return the recipient, so we can update the profile key
+                self.fetch_recipient(&pending_service_id)
+            }
+            n => unreachable!(
+                "Deleted {} pending members from group '{}', expected 1",
+                n, group_v2.name
+            ),
+        }
+    }
 }
