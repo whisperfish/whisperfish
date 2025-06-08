@@ -121,7 +121,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                             .iter()
                             .filter_map(|member| {
                                 match member.address.kind() {
-                                    ServiceIdKind::Aci =>Some((Aci::try_from(member.address.raw_uuid()).unwrap(), None)),
+                                    ServiceIdKind::Aci =>Some((Aci::from(member.address.raw_uuid()), None)),
                                     x => {
                                     tracing::warn!("Adding to group requires Aci, got {:?} instead", x);
                                     None
@@ -133,7 +133,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         group
                             .requesting_members
                             .iter()
-                            .map(|member| (member.aci.into(), Some(&member.profile_key))),
+                            .map(|member| (member.aci, Some(&member.profile_key))),
                     );
 
                 // We need all the profile keys and UUIDs in the database.
@@ -587,19 +587,18 @@ fn json_from_update(group_change: &GroupChange) -> Option<String> {
         }
     };
 
-    match change {
-        None => None,
-        Some(change) => Some(format!(
+    change.map(|change| {
+        format!(
             "{{ \"change\": \"{}\", \"value\": {}, \"aci\": \"{}\", \"pni\": \"{}\" }}",
             change,
             value.map_or_else(
                 || "null".into(),
-                |val| format!("\"{}\"", val.replace("\"", "\\\""))
+                |val| format!("\"{}\"", val.replace('\"', "\\\""))
             ),
             target_aci.map_or_else(|| "null".into(), |aci| format!("\"{}\"", aci)),
             target_pni.map_or_else(|| "null".into(), |pni| format!("\"{}\"", pni)),
-        )),
-    }
+        )
+    })
 }
 
 /// Handle an incoming group change message
@@ -632,8 +631,9 @@ impl Handler<GroupV2Update> for ClientActor {
                     GroupsManager::new(service_ids, service, &mut *credential_cache, zk_params);
 
                 let changes = gm.decrypt_group_context(group_v2_ctx);
-                if changes.is_err() {
-                    return Err(changes.unwrap_err());
+                #[allow(clippy::question_mark)] // Fixing this messes up `ret` type inferrence
+                if let Err(e) = changes {
+                    return Err(e);
                 }
                 let mut group_v2 = session.unwrap_group_v2().to_owned();
 
@@ -711,13 +711,13 @@ impl Handler<GroupV2Update> for ClientActor {
                             }
                             GroupChange::DeletePendingMember(member) => {
                                 tracing::debug!("Delete pending member: {:?}", member);
-                                if let Some(deleted) = storage.delete_group_v2_pending_member(group_v2, member) {
+                                if let Some(deleted) = storage.delete_group_v2_pending_member(&group_v2, member) {
                                     db_triggers.push(GroupV2Trigger::Recipient(deleted.uuid.unwrap()));
                                 }
                             }
                             GroupChange::DeleteRequestingMember(aci) => {
                                 tracing::debug!("Delete requesting member: {:?}", aci);
-                                if let Some(deleted) = storage.delete_group_v2_requesting_member(group_v2, aci) {
+                                if let Some(deleted) = storage.delete_group_v2_requesting_member(&group_v2, aci) {
                                     db_triggers.push(GroupV2Trigger::Recipient(deleted.uuid.unwrap()));
                                 }
                             }
@@ -750,7 +750,7 @@ impl Handler<GroupV2Update> for ClientActor {
                                     profile_key
                                 );
                                 if let Some(recipient) = storage.update_group_v2_member_profile_key(
-                                    group_v2,
+                                    &group_v2,
                                     aci,
                                     &profile_key,
                                 ) {
@@ -759,7 +759,7 @@ impl Handler<GroupV2Update> for ClientActor {
                             }
                             GroupChange::ModifyMemberRole { aci, role } => {
                                 tracing::debug!("Modify member role: {:?} {:?}", aci, role);
-                                if let Some(updated) = storage.update_group_v2_member_role(group_v2, aci, role) {
+                                if let Some(updated) = storage.update_group_v2_member_role(&group_v2, aci, role) {
                                     db_triggers.push(GroupV2Trigger::Recipient(updated.uuid.unwrap()));
                                 }
                             }
@@ -780,10 +780,10 @@ impl Handler<GroupV2Update> for ClientActor {
                             GroupChange::NewPendingMember(member) => {
                                 tracing::debug!("New pending member: {:?}", member);
                                 storage.add_group_v2_pending_member(
-                                    group_v2,
+                                    &group_v2,
                                     member.address,
                                     member.added_by_aci,
-                                    member.role.into(), // TODO: strong type
+                                    member.role,
                                     millis_to_naive_chrono(member.timestamp),
                                 );
                                 db_triggers.push(GroupV2Trigger::Generic);
@@ -791,7 +791,7 @@ impl Handler<GroupV2Update> for ClientActor {
                             GroupChange::NewRequestingMember(member) => {
                                 tracing::debug!("New requesting member: {:?}", member);
                                 if let Some((_, added)) = storage.add_group_v2_requesting_member(
-                                    group_v2,
+                                    &group_v2,
                                     member.aci,
                                     member.profile_key,
                                     millis_to_naive_chrono(member.timestamp),
@@ -822,7 +822,7 @@ impl Handler<GroupV2Update> for ClientActor {
                                     address,
                                 );
                                 if let Some((_, recipient)) = storage.promote_group_v2_pending_member(
-                                    group_v2,
+                                    &group_v2,
                                     address,
                                     &profile_key,
                                 ) {
@@ -831,7 +831,7 @@ impl Handler<GroupV2Update> for ClientActor {
                             }
                             GroupChange::PromoteRequestingMember { aci, role } => {
                                 tracing::debug!("Promote requesting member: {:?} {:?}", aci, role);
-                                if let Some((_, recipient)) = storage.promote_group_v2_requesting_member(group_v2, aci, role) {
+                                if let Some((_, recipient)) = storage.promote_group_v2_requesting_member(&group_v2, aci, role) {
                                     db_triggers.push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
                                 }
                             }
@@ -846,7 +846,7 @@ impl Handler<GroupV2Update> for ClientActor {
                             }
                             GroupChange::Title(title) => {
                                 tracing::debug!("Title: {:?}", title);
-                                storage.update_group_v2_title(group_v2, &title);
+                                storage.update_group_v2_title(&group_v2, &title);
                                 db_triggers.push(GroupV2Trigger::Generic);
                             }
                         }

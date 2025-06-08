@@ -4063,10 +4063,10 @@ impl<O: Observable> Storage<O> {
         pni: Pni,
         profile_key: ProfileKey,
     ) -> Option<orm::Recipient> {
-        if let Some(_) = self
+        if self
             .fetch_group_v2_pending_member(&group_v2.id, Some(aci), Some(pni))
             .into_iter()
-            .find(|pm| {
+            .any(|pm| {
                 pm.service_id == aci.service_id_string() || pm.service_id == pni.service_id_string()
             })
         {
@@ -4118,13 +4118,13 @@ impl<O: Observable> Storage<O> {
         let existing = match pending_service_id.kind() {
             ServiceIdKind::Aci => self.fetch_group_v2_pending_member(
                 &group_v2.id,
-                Some(Aci::try_from(pending_service_id.raw_uuid()).unwrap()),
+                Some(Aci::from(pending_service_id.raw_uuid())),
                 None,
             ),
             ServiceIdKind::Pni => self.fetch_group_v2_pending_member(
                 &group_v2.id,
                 None,
-                Some(Pni::try_from(pending_service_id.raw_uuid()).unwrap()),
+                Some(Pni::from(pending_service_id.raw_uuid())),
             ),
         };
 
@@ -4247,7 +4247,7 @@ impl<O: Observable> Storage<O> {
             ServiceIdKind::Aci => self
                 .fetch_group_v2_pending_member(
                     &group_v2.id,
-                    Some(Aci::try_from(new_service_id.raw_uuid()).unwrap()),
+                    Some(Aci::from(new_service_id.raw_uuid())),
                     None,
                 )
                 .is_some(),
@@ -4255,7 +4255,7 @@ impl<O: Observable> Storage<O> {
                 .fetch_group_v2_pending_member(
                     &group_v2.id,
                     None,
-                    Some(Pni::try_from(new_service_id.raw_uuid()).unwrap()),
+                    Some(Pni::from(new_service_id.raw_uuid())),
                 )
                 .is_some(),
         } {
@@ -4312,7 +4312,7 @@ impl<O: Observable> Storage<O> {
         if self
             .fetch_group_members_by_group_v2_id(&group_v2.id)
             .into_iter()
-            .any(|(_, r)| r.uuid == Some(Uuid::try_from(new_aci).unwrap()))
+            .any(|(_, r)| r.uuid == Some(Uuid::from(new_aci)))
         {
             tracing::debug!(
                 "Member {} already exists in group '{}'",
@@ -4378,7 +4378,7 @@ impl<O: Observable> Storage<O> {
             ServiceIdKind::Aci => self
                 .fetch_group_v2_pending_member(
                     &group_v2.id,
-                    Some(Aci::try_from(service_id.raw_uuid()).unwrap()),
+                    Some(Aci::from(service_id.raw_uuid())),
                     None,
                 )
                 .expect("pending member not found"),
@@ -4386,7 +4386,7 @@ impl<O: Observable> Storage<O> {
                 .fetch_group_v2_pending_member(
                     &group_v2.id,
                     None,
-                    Some(Pni::try_from(service_id.raw_uuid()).unwrap()),
+                    Some(Pni::from(service_id.raw_uuid())),
                 )
                 .expect("pending member not found"),
         };
@@ -4395,9 +4395,9 @@ impl<O: Observable> Storage<O> {
 
         if let Some(added) = self.add_group_v2_member(
             group_v2,
-            Aci::try_from(recipient.uuid.unwrap()).unwrap(),
+            Aci::from(recipient.uuid.unwrap()),
             Role::try_from(pending_member.role).unwrap(),
-            &profile_key,
+            profile_key,
             group_v2.revision,
             None,
         ) {
