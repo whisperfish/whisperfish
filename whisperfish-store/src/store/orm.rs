@@ -179,6 +179,26 @@ impl Display for GroupV2PendingMember {
     }
 }
 
+#[derive(Queryable, Insertable, Debug, Clone)]
+pub struct GroupV2RequestingMember {
+    pub group_v2_id: String,
+    pub aci: String, // Aci
+    pub profile_key: Vec<u8>,
+    pub timestamp: NaiveDateTime,
+}
+
+impl Display for GroupV2RequestingMember {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(
+            f,
+            "GroupV2RequestingMember {{ group_v2_id: \"{}\", aci: \"{}\", timestamp: \"{}\" }}",
+            shorten(&self.group_v2_id, 12),
+            shorten(&self.aci, 9),
+            &self.timestamp
+        )
+    }
+}
+
 #[derive(diesel_derive_enum::DbEnum, Debug, Clone, PartialEq, Eq)]
 pub enum MessageType {
     Unsupported,

@@ -539,7 +539,6 @@ impl Handler<GroupV2Update> for ClientActor {
                                 tracing::info!("Delete pending member: {:?}", member);
                             }
                             GroupChange::DeleteRequestingMember(member) => {
-                                // TODO: Database migration (status)
                                 tracing::info!("Delete requesting member: {:?}", member);
                             }
                             GroupChange::Description(description) => {
@@ -594,7 +593,6 @@ impl Handler<GroupV2Update> for ClientActor {
                                 tracing::info!("New pending member: {:?}", member);
                             }
                             GroupChange::NewRequestingMember(member) => {
-                                // TODO: Database migration (status)
                                 tracing::info!("New requesting member: {:?}", member);
                             }
                             GroupChange::PromotePendingPniAciMemberProfileKey(promoted_member) => {
