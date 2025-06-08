@@ -3671,7 +3671,11 @@ impl<O: Observable> Storage<O> {
     }
 
     /// Delete a proper member of a group. Does not trigger observer update.
-    pub fn delete_group_v2_member(&self, group_v2: &orm::GroupV2, aci: Aci) {
+    pub fn delete_group_v2_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        aci: Aci,
+    ) -> Option<orm::Recipient> {
         use crate::schema::group_v2_members::dsl::*;
 
         if let Some(recipient) = self.fetch_recipient(&aci.into()) {
@@ -3684,9 +3688,11 @@ impl<O: Observable> Storage<O> {
             )
             .execute(&mut *self.db())
             .expect("db");
+            Some(recipient)
         } else {
             tracing::error!("No such user {:?} (delete from group)", aci);
-        };
+            None
+        }
     }
 
     /// Update the role of the group member. Does not trigger observer update.
@@ -3912,7 +3918,7 @@ impl<O: Observable> Storage<O> {
         &self,
         group_v2: &orm::GroupV2,
         service_id: ServiceId,
-    ) -> bool {
+    ) -> Option<orm::Recipient> {
         use crate::schema::group_v2_members::dsl::*;
 
         let uuid = service_id.raw_uuid();
@@ -3933,24 +3939,24 @@ impl<O: Observable> Storage<O> {
                         uuid.to_string(),
                         group_v2.id
                     );
-                    return false;
+                    return None;
                 }
             }
             ServiceIdKind::Pni => {
-                if let Some(r) = self
+                if let Some(recipient) = self
                     .fetch_group_members_by_group_v2_id(&group_v2.id)
                     .into_iter()
                     .find(|(_, r)| r.pni == Some(uuid))
                     .map(|(_, r)| r)
                 {
-                    r
+                    recipient
                 } else {
                     tracing::debug!(
                         "No such banned member {} in group '{}'",
                         uuid.to_string(),
                         group_v2.id
                     );
-                    return false;
+                    return None;
                 }
             }
         };
@@ -3970,7 +3976,7 @@ impl<O: Observable> Storage<O> {
                     service_id.service_id_string(),
                     group_v2.name
                 );
-                true
+                Some(banned_recipient)
             }
             0 => {
                 tracing::debug!(
@@ -3978,7 +3984,7 @@ impl<O: Observable> Storage<O> {
                     service_id.service_id_string(),
                     group_v2.name
                 );
-                false
+                None
             }
             n => {
                 tracing::error!(
@@ -3986,7 +3992,7 @@ impl<O: Observable> Storage<O> {
                     n,
                     group_v2.name
                 );
-                false
+                None
             }
         }
     }
