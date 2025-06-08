@@ -3972,4 +3972,55 @@ impl<O: Observable> Storage<O> {
         }
     }
 
+    /// Complete a pending GroupV2 member recipient with Aci, Pni and ProfileKey.
+    ///
+    /// Returns the updated recipient, or None if the pending member does not exist.
+    ///
+    /// Does not trigger observer update.
+    pub fn promote_pending_pni_aci_member_profile_key(
+        &self,
+        group_v2: &orm::GroupV2,
+        aci: Aci,
+        pni: Pni,
+        profile_key: ProfileKey,
+    ) -> Option<orm::Recipient> {
+        if let Some(_) = self
+            .fetch_group_v2_pending_member(&group_v2.id, Some(aci), Some(pni))
+            .into_iter()
+            .find(|pm| {
+                pm.service_id == aci.service_id_string() || pm.service_id == pni.service_id_string()
+            })
+        {
+            let recipient =
+                self.merge_and_fetch_recipient(None, Some(aci), Some(pni), TrustLevel::Uncertain);
+            let (recipient, was_changed) = self.update_profile_key(
+                recipient.e164.clone(),
+                recipient.to_service_address(),
+                &profile_key.get_bytes(),
+                TrustLevel::Uncertain,
+            );
+
+            if was_changed {
+                tracing::debug!(
+                    "Updated profile key for {} by group update",
+                    recipient.uuid.unwrap()
+                );
+                self.observe_update(schema::group_v2_members::table, recipient.id)
+                    .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
+            } else {
+                tracing::trace!(
+                    "Profile key for {} already up-to-date",
+                    recipient.uuid.unwrap()
+                );
+            }
+            Some(recipient)
+        } else {
+            tracing::error!(
+                "No such pending member {} in group '{}' for profile key promotion",
+                aci.service_id_string(),
+                group_v2.name
+            );
+            None
+        }
+    }
 }

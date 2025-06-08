@@ -603,10 +603,18 @@ impl Handler<GroupV2Update> for ClientActor {
                                 tracing::info!("New requesting member: {:?}", member);
                             }
                             GroupChange::PromotePendingPniAciMemberProfileKey(promoted_member) => {
-                                tracing::info!(
+                                tracing::debug!(
                                     "Promote pending PNI member profile key: {:?}",
                                     promoted_member
                                 );
+                                if let Some(recipient) = storage.promote_pending_pni_aci_member_profile_key(
+                                    group_v2,
+                                    promoted_member.aci,
+                                    promoted_member.pni,
+                                    promoted_member.profile_key,
+                                ) {
+                                    db_triggers.push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
+                                }
                             }
                             GroupChange::PromotePendingMember {
                                 address,
