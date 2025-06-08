@@ -481,6 +481,7 @@ impl Handler<GroupV2Update> for ClientActor {
                 if changes.is_err() {
                     return Err(changes.unwrap_err());
                 }
+                let mut group_v2 = session.unwrap_group_v2().to_owned();
 
                 if let Some(GroupChanges {
                     // TODO: Propagate editor to QML
@@ -494,7 +495,11 @@ impl Handler<GroupV2Update> for ClientActor {
                         session.id,
                         changes.len()
                     );
-                    let group_v2 = session.unwrap_group_v2();
+
+                    // TODO: This is ugly. Pass revision to functions in match arms below instead.
+                    let original_revision = group_v2.revision;
+                    group_v2.revision = revision as i32;
+
                     for change in changes {
                         match change {
                             GroupChange::AnnouncementOnly(announcement_only) => {
@@ -688,6 +693,7 @@ impl Handler<GroupV2Update> for ClientActor {
                             }
                         }
                     }
+                    group_v2.revision = original_revision;
 
                     if !db_triggers.is_empty() && ctx_triggers.is_empty() {
                         ctx_triggers.push(GroupV2Trigger::None);
