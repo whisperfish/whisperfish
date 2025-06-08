@@ -1986,6 +1986,23 @@ impl<O: Observable> Storage<O> {
         return None;
     }
 
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_group_v2_requesting_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        aci: Aci,
+    ) -> Option<orm::GroupV2RequestingMember> {
+        schema::group_v2_requesting_members::table
+            .filter(
+                schema::group_v2_requesting_members::group_v2_id
+                    .eq(&group_v2.id)
+                    .and(schema::group_v2_requesting_members::aci.eq(aci.service_id_string())),
+            )
+            .first(&mut *self.db())
+            .optional()
+            .expect("db")
+    }
+
     #[tracing::instrument(skip(self, e164), fields(e164 = %e164))]
     pub fn fetch_or_insert_session_by_phonenumber(&self, e164: &PhoneNumber) -> orm::Session {
         if let Some(session) = self.fetch_session_by_phonenumber(e164) {
@@ -4386,6 +4403,33 @@ impl<O: Observable> Storage<O> {
             None,
         ) {
             self.delete_group_v2_pending_member(group_v2, service_id);
+            Some(added)
+        } else {
+            None
+        }
+    }
+
+    /// Promote a requesting GroupV2 member to an actual member.
+    ///
+    /// Does not trigger observer update.
+    pub fn promote_group_v2_requesting_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        aci: Aci,
+        role: Role,
+    ) -> Option<(orm::GroupV2Member, orm::Recipient)> {
+        let requesting_member = self
+            .fetch_group_v2_requesting_member(group_v2, aci)
+            .expect("requesting member not found");
+
+        let mut key = [0u8; 32];
+        key.copy_from_slice(&requesting_member.profile_key);
+        let profile_key = ProfileKey::create(key);
+
+        if let Some(added) =
+            self.add_group_v2_member(group_v2, aci, role, &profile_key, group_v2.revision, None)
+        {
+            self.delete_group_v2_requesting_member(group_v2, aci);
             Some(added)
         } else {
             None

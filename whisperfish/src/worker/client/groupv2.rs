@@ -663,7 +663,10 @@ impl Handler<GroupV2Update> for ClientActor {
                                 }
                             }
                             GroupChange::PromoteRequestingMember { aci, role } => {
-                                tracing::info!("Promote requesting member: {:?} {:?}", aci, role);
+                                tracing::debug!("Promote requesting member: {:?} {:?}", aci, role);
+                                if let Some((_, recipient)) = storage.promote_group_v2_requesting_member(group_v2, aci, role) {
+                                    db_triggers.push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
+                                }
                             }
                             GroupChange::Timer(timer) => {
                                 tracing::debug!("Timer: {:?}", timer);
