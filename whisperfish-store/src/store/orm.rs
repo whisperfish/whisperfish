@@ -155,6 +155,30 @@ impl Display for GroupV2Member {
     }
 }
 
+#[derive(Queryable, Insertable, Debug, Clone)]
+pub struct GroupV2PendingMember {
+    pub group_v2_id: String,
+    pub service_id: String, // Aci or Pni
+    pub role: i32,
+    pub added_by_aci: String, // Aci
+    pub timestamp: NaiveDateTime,
+}
+
+impl Display for GroupV2PendingMember {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(
+            f,
+            "GroupV2PendingMember {{ group_v2_id: \"{}\", service_id: \"{}\", role: {}, added_by_aci: \"{}\", timestamp: \"{}\" }}",
+            shorten(&self.group_v2_id, 12),
+            shorten(&self.service_id, 9),
+            // TODO: repr
+            &self.role,
+            shorten(&self.added_by_aci, 9),
+            &self.timestamp
+        )
+    }
+}
+
 #[derive(diesel_derive_enum::DbEnum, Debug, Clone, PartialEq, Eq)]
 pub enum MessageType {
     Unsupported,

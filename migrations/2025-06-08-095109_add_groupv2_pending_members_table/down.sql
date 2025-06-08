@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS group_v2_pending_members;

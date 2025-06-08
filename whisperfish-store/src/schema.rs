@@ -111,6 +111,16 @@ diesel::table! {
 }
 
 diesel::table! {
+    group_v2_pending_members (group_v2_id, service_id) {
+        group_v2_id -> Text,
+        service_id -> Text,
+        role -> Integer,
+        added_by_aci -> Text,
+        timestamp -> Timestamp,
+    }
+}
+
+diesel::table! {
     group_v2s (id) {
         id -> Text,
         name -> Text,
@@ -276,6 +286,7 @@ diesel::joinable!(group_v1_members -> group_v1s (group_v1_id));
 diesel::joinable!(group_v1_members -> recipients (recipient_id));
 diesel::joinable!(group_v2_members -> group_v2s (group_v2_id));
 diesel::joinable!(group_v2_members -> recipients (recipient_id));
+diesel::joinable!(group_v2_pending_members -> group_v2s (group_v2_id));
 diesel::joinable!(messages -> recipients (sender_recipient_id));
 diesel::joinable!(messages -> sessions (session_id));
 diesel::joinable!(reactions -> messages (message_id));
@@ -297,6 +308,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     group_v1_members,
     group_v1s,
     group_v2_members,
+    group_v2_pending_members,
     group_v2s,
     messages,
     reactions,

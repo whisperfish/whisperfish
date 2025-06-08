@@ -536,7 +536,6 @@ impl Handler<GroupV2Update> for ClientActor {
                                 db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::DeletePendingMember(member) => {
-                                // TODO: Database migration (status)
                                 tracing::info!("Delete pending member: {:?}", member);
                             }
                             GroupChange::DeleteRequestingMember(member) => {
@@ -592,7 +591,6 @@ impl Handler<GroupV2Update> for ClientActor {
                                 }
                             }
                             GroupChange::NewPendingMember(member) => {
-                                // TODO: Database migration (status)
                                 tracing::info!("New pending member: {:?}", member);
                             }
                             GroupChange::NewRequestingMember(member) => {
