@@ -199,6 +199,25 @@ impl Display for GroupV2RequestingMember {
     }
 }
 
+#[derive(Queryable, Insertable, Debug, Clone)]
+pub struct GroupV2BannedMember {
+    pub group_v2_id: String,
+    pub service_id: String, // Aci or Pni
+    pub banned_at: NaiveDateTime,
+}
+
+impl Display for GroupV2BannedMember {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(
+            f,
+            "GroupV2BannedMember {{ group_v2_id: \"{}\", service_id: \"{}\", blobanned_atcked_at: \"{}\" }}",
+            shorten(&self.group_v2_id, 12),
+            shorten(&self.service_id, 9),
+            &self.banned_at
+        )
+    }
+}
+
 #[derive(diesel_derive_enum::DbEnum, Debug, Clone, PartialEq, Eq)]
 pub enum MessageType {
     Unsupported,

@@ -101,6 +101,14 @@ diesel::table! {
 }
 
 diesel::table! {
+    group_v2_banned_members (group_v2_id, service_id) {
+        group_v2_id -> Text,
+        service_id -> Text,
+        banned_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     group_v2_members (group_v2_id, recipient_id) {
         group_v2_id -> Text,
         recipient_id -> Integer,
@@ -293,6 +301,7 @@ diesel::joinable!(distribution_list_members -> sessions (session_id));
 diesel::joinable!(distribution_lists -> sessions (session_id));
 diesel::joinable!(group_v1_members -> group_v1s (group_v1_id));
 diesel::joinable!(group_v1_members -> recipients (recipient_id));
+diesel::joinable!(group_v2_banned_members -> group_v2s (group_v2_id));
 diesel::joinable!(group_v2_members -> group_v2s (group_v2_id));
 diesel::joinable!(group_v2_members -> recipients (recipient_id));
 diesel::joinable!(group_v2_pending_members -> group_v2s (group_v2_id));
@@ -317,6 +326,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     distribution_lists,
     group_v1_members,
     group_v1s,
+    group_v2_banned_members,
     group_v2_members,
     group_v2_pending_members,
     group_v2_requesting_members,

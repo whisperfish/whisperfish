@@ -29,7 +29,7 @@
          timestamp -> Timestamp,
          ringer -> Integer,
          deletion_timestamp -> Nullable<Timestamp>,
-@@ -121,6 +127,9 @@ diesel::table! {
+@@ -148,6 +154,9 @@ diesel::table! {
  }
  
  diesel::table! {
@@ -39,7 +39,7 @@
      messages (id) {
          id -> Integer,
          session_id -> Integer,
-@@ -146,7 +155,7 @@ diesel::table! {
+@@ -173,7 +182,7 @@ diesel::table! {
          latest_revision_id -> Nullable<Integer>,
          original_message_id -> Nullable<Integer>,
          revision_number -> Integer,
