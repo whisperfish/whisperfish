@@ -650,11 +650,17 @@ impl Handler<GroupV2Update> for ClientActor {
                                 address,
                                 profile_key,
                             } => {
-                                tracing::info!(
-                                    "Promote pending member: {:?} {:?}",
+                                tracing::debug!(
+                                    "Promote pendin member: {:?}",
                                     address,
-                                    profile_key
                                 );
+                                if let Some((_, recipient)) = storage.promote_group_v2_pending_member(
+                                    group_v2,
+                                    address,
+                                    &profile_key,
+                                ) {
+                                    db_triggers.push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
+                                }
                             }
                             GroupChange::PromoteRequestingMember { aci, role } => {
                                 tracing::info!("Promote requesting member: {:?} {:?}", aci, role);

@@ -3712,7 +3712,8 @@ impl<O: Observable> Storage<O> {
         next_role: Role,
         profile_key: &ProfileKey,
         join_revision: i32,
-    ) {
+        joined_at: Option<NaiveDateTime>,
+    ) -> Option<(orm::GroupV2Member, orm::Recipient)> {
         let recipient = self.fetch_or_insert_recipient_by_address(&aci.into());
         let (recipient, _was_changed) = self.update_profile_key(
             recipient.e164.clone(),
@@ -3720,11 +3721,13 @@ impl<O: Observable> Storage<O> {
             &profile_key.get_bytes(),
             TrustLevel::Uncertain,
         );
-        if let Some((_, r)) = self
+        let joined_at = joined_at.unwrap_or_else(|| chrono::Utc::now().naive_utc());
+        if let Some((gm, r)) = self
             .fetch_group_members_by_group_v2_id(&group_v2.id)
             .into_iter()
             .find(|(_, r)| r.id == recipient.id)
         {
+            // XXX This is really fetch_or_insert_group_v2_member...
             use crate::schema::group_v2_members::dsl::*;
             match diesel::update(
                 crate::schema::group_v2_members::table
@@ -3733,6 +3736,7 @@ impl<O: Observable> Storage<O> {
             .set((
                 crate::schema::group_v2_members::role.eq(next_role as i32),
                 crate::schema::group_v2_members::joined_at_revision.eq(join_revision),
+                crate::schema::group_v2_members::member_since.eq(joined_at),
             ))
             .execute(&mut *self.db())
             {
@@ -3741,9 +3745,11 @@ impl<O: Observable> Storage<O> {
                         affected_rows == 1,
                         "Did not update exactly one group member. Dazed and confused."
                     );
+                    Some((gm, r))
                 }
                 Err(e) => {
                     tracing::error!("Could not add (update) group member: {:?}", e);
+                    None
                 }
             }
         } else {
@@ -3753,9 +3759,9 @@ impl<O: Observable> Storage<O> {
                 .values((
                     group_v2_id.eq(&group_v2.id),
                     recipient_id.eq(recipient.id),
-                    // TODO: member_since -- it's not now()
                     joined_at_revision.eq(join_revision),
                     role.eq(next_role as i32),
+                    member_since.eq(joined_at),
                 ))
                 .execute(&mut *self.db())
             {
@@ -3764,9 +3770,14 @@ impl<O: Observable> Storage<O> {
                         affected_rows == 1,
                         "Did not insert exactly one group member. Dazed and confused."
                     );
+                    self.fetch_group_members_by_group_v2_id(&group_v2.id)
+                        .iter()
+                        .find(|(_, r)| r.uuid == recipient.uuid)
+                        .cloned()
                 }
                 Err(e) => {
                     tracing::error!("Could not add (insert) group member: {:?}", e);
+                    None
                 }
             }
         }
@@ -4335,6 +4346,49 @@ impl<O: Observable> Storage<O> {
                 tracing::error!("Expected to insert 1 requesting group member, got {}", x);
                 None
             }
+        }
+    }
+
+    /// Promote a pending GroupV2 member to an actual member.
+    ///
+    /// Does not trigger observer update.
+    pub fn promote_group_v2_pending_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        service_id: ServiceId,
+        profile_key: &ProfileKey,
+    ) -> Option<(orm::GroupV2Member, orm::Recipient)> {
+        let pending_member = match service_id.kind() {
+            ServiceIdKind::Aci => self
+                .fetch_group_v2_pending_member(
+                    &group_v2.id,
+                    Some(Aci::try_from(service_id.raw_uuid()).unwrap()),
+                    None,
+                )
+                .expect("pending member not found"),
+            ServiceIdKind::Pni => self
+                .fetch_group_v2_pending_member(
+                    &group_v2.id,
+                    None,
+                    Some(Pni::try_from(service_id.raw_uuid()).unwrap()),
+                )
+                .expect("pending member not found"),
+        };
+
+        let recipient = self.fetch_or_insert_recipient_by_address(&service_id);
+
+        if let Some(added) = self.add_group_v2_member(
+            group_v2,
+            Aci::try_from(recipient.uuid.unwrap()).unwrap(),
+            Role::try_from(pending_member.role).unwrap(),
+            &profile_key,
+            group_v2.revision,
+            None,
+        ) {
+            self.delete_group_v2_pending_member(group_v2, service_id);
+            Some(added)
+        } else {
+            None
         }
     }
 }
