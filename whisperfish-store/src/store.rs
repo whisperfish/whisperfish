@@ -18,7 +18,7 @@ use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
 use crate::store::observer::{Observable, PrimaryKey};
 use crate::{config::SignalConfig, millis_to_naive_chrono};
-use crate::{naive_chrono_rounded_down, schema};
+use crate::{naive_chrono_rounded_down, naive_chrono_to_millis, schema};
 use anyhow::Context;
 use chrono::prelude::*;
 use diesel::dsl::sql;
@@ -2003,6 +2003,26 @@ impl<O: Observable> Storage<O> {
             .expect("db")
     }
 
+    #[tracing::instrument(skip(self, group_v2))]
+    pub fn fetch_group_v2_banned_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        service_id: &ServiceId,
+    ) -> Option<orm::GroupV2BannedMember> {
+        schema::group_v2_banned_members::table
+            .filter(
+                schema::group_v2_banned_members::group_v2_id
+                    .eq(&group_v2.id)
+                    .and(
+                        schema::group_v2_banned_members::service_id
+                            .eq(service_id.service_id_string()),
+                    ),
+            )
+            .first(&mut *self.db())
+            .optional()
+            .expect("db")
+    }
+
     #[tracing::instrument(skip(self, e164), fields(e164 = %e164))]
     pub fn fetch_or_insert_session_by_phonenumber(&self, e164: &PhoneNumber) -> orm::Session {
         if let Some(session) = self.fetch_session_by_phonenumber(e164) {
@@ -3866,134 +3886,70 @@ impl<O: Observable> Storage<O> {
     pub fn add_group_v2_banned_member(
         &self,
         group_v2: &orm::GroupV2,
-        service_id: ServiceId,
-        _ts: u64,
-    ) -> Option<orm::Recipient> {
-        let r_id = self.fetch_or_insert_recipient_by_address(&service_id).id;
-        let banned: Option<orm::GroupV2Member> = self
-            .fetch_group_members_by_group_v2_id(&group_v2.id)
-            .into_iter()
-            .find(|(_, r)| r.id == r_id)
-            .map(|(m, _)| m);
-        match banned {
-            // TODO: migration
-            // if m.banned_at.is_some()
-            Some(_) => {
-                tracing::debug!(
-                    "Member {} already banned from '{}'",
-                    service_id.service_id_string(),
-                    group_v2.name
-                );
-                None
-            }
-            None => {
-                // TODO: migration
-                tracing::error!(
-                    "Banning member not yet implemented: {} from '{}'",
-                    service_id.service_id_string(),
-                    group_v2.name
-                );
-                // true
-                None
-            } /* unreachable for now
-              _ => {
-                  // TODO: conflict resolution
-                  tracing::error!(
-                      "Member {} already in group '{}', conflict resolution not implemented",
-                      aci.service_id_string(),
-                      group_v2.name
-                  );
-                  None
-              }
-              */
-        }
+        service_id: &ServiceId,
+        ts: u64,
+    ) -> (Option<orm::GroupV2BannedMember>, Option<orm::Recipient>) {
+        diesel::insert_into(crate::schema::group_v2_banned_members::table)
+            .values((
+                crate::schema::group_v2_banned_members::group_v2_id.eq(&group_v2.id),
+                crate::schema::group_v2_banned_members::service_id
+                    .eq(service_id.service_id_string()),
+                crate::schema::group_v2_banned_members::banned_at.eq(millis_to_naive_chrono(ts)),
+            ))
+            .execute(&mut *self.db())
+            .expect("add groupv2 banned member");
+
+        let recipient = self.fetch_recipient(service_id);
+        let banned_member = self.fetch_group_v2_banned_member(group_v2, service_id);
+        (banned_member, recipient)
     }
 
     /// Remove a banned member ban from GroupV2.
-    /// Returns true if the member was removed from the group.
+    /// Returns the recipient, if the ban was removed and the recipient exists.
+    ///
     /// Does not check if we're un-banning self or not.
     ///
     /// Does not trigger observer update.
     pub fn delete_group_v2_banned_member(
         &self,
         group_v2: &orm::GroupV2,
-        service_id: ServiceId,
+        delete_service_id: ServiceId,
     ) -> Option<orm::Recipient> {
-        use crate::schema::group_v2_members::dsl::*;
+        use crate::schema::group_v2_banned_members::dsl::*;
 
-        let uuid = service_id.raw_uuid();
-
-        // TODO: Database doesn't recognize banned members yet
-        let banned_recipient = match service_id.kind() {
-            ServiceIdKind::Aci => {
-                if let Some(r) = self
-                    .fetch_group_members_by_group_v2_id(&group_v2.id)
-                    .into_iter()
-                    .find(|(_, r)| r.uuid == Some(uuid))
-                    .map(|(_, r)| r)
-                {
-                    r
-                } else {
-                    tracing::debug!(
-                        "No such banned member Aci({}) in group '{}'",
-                        uuid.to_string(),
-                        group_v2.id
-                    );
-                    return None;
-                }
-            }
-            ServiceIdKind::Pni => {
-                if let Some(recipient) = self
-                    .fetch_group_members_by_group_v2_id(&group_v2.id)
-                    .into_iter()
-                    .find(|(_, r)| r.pni == Some(uuid))
-                    .map(|(_, r)| r)
-                {
-                    recipient
-                } else {
-                    tracing::debug!(
-                        "No such banned member {} in group '{}'",
-                        uuid.to_string(),
-                        group_v2.id
-                    );
-                    return None;
-                }
-            }
-        };
-
-        match diesel::delete(group_v2_members)
-            .filter(
+        let affected = diesel::delete(
+            group_v2_banned_members.filter(
                 group_v2_id
                     .eq(&group_v2.id)
-                    .and(recipient_id.eq(banned_recipient.id)),
-            )
-            .execute(&mut *self.db())
-            .expect("remove banned groupv2 member")
-        {
-            1 => {
-                tracing::debug!(
-                    "Removed banned member {} from group '{}'",
-                    service_id.service_id_string(),
-                    group_v2.name
-                );
-                Some(banned_recipient)
-            }
-            0 => {
-                tracing::debug!(
-                    "No such banned member {} in group '{}'",
-                    service_id.service_id_string(),
-                    group_v2.name
-                );
-                None
-            }
-            n => {
-                tracing::error!(
-                    "Deleted {} banned members from group '{}', expected 0 or 1",
-                    n,
-                    group_v2.name
-                );
-                None
-            }
+                    .and(service_id.eq(delete_service_id.service_id_string())),
+            ),
+        )
+        .execute(&mut *self.db())
+        .expect("db");
+
+        if affected == 1 {
+            tracing::debug!(
+                "Removed banned member {} from group '{}'",
+                delete_service_id.service_id_string(),
+                group_v2.name
+            );
+            self.fetch_recipient(&delete_service_id)
+        } else if affected == 0 {
+            tracing::warn!(
+                "No such banned member {} in group '{}'",
+                delete_service_id.service_id_string(),
+                group_v2.name
+            );
+            None
+        } else {
+            // dazed and confused
+            tracing::error!(
+                "Deleted {} banned members with service ID {} in group '{}', expected 0 or 1",
+                affected,
+                delete_service_id.service_id_string(),
+                group_v2.name
+            );
+            None
         }
     }
 
