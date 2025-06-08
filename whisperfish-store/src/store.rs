@@ -3880,34 +3880,87 @@ impl<O: Observable> Storage<O> {
     /// Does not check if we're un-banning self or not.
     ///
     /// Does not trigger observer update.
-    pub fn delete_group_v2_banned_member(&self, group_v2: &orm::GroupV2, aci: Aci) -> bool {
+    pub fn delete_group_v2_banned_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        service_id: ServiceId,
+    ) -> bool {
         use crate::schema::group_v2_members::dsl::*;
 
-        let b_uuid = Some(aci.into());
+        let uuid = service_id.raw_uuid();
 
-        let Some(b_recipient) = self
-            .fetch_group_members_by_group_v2_id(&group_v2.id)
-            .into_iter()
-            .find(|(_, r)| r.uuid == b_uuid)
-            .map(|(_, r)| r)
-        else {
-            tracing::debug!(
-                "No such banned member {} in group '{}'",
-                aci.service_id_string(),
-                group_v2.id
-            );
-            return false;
+        // TODO: Database doesn't recognize banned members yet
+        let banned_recipient = match service_id.kind() {
+            ServiceIdKind::Aci => {
+                if let Some(r) = self
+                    .fetch_group_members_by_group_v2_id(&group_v2.id)
+                    .into_iter()
+                    .find(|(_, r)| r.uuid == Some(uuid))
+                    .map(|(_, r)| r)
+                {
+                    r
+                } else {
+                    tracing::debug!(
+                        "No such banned member Aci({}) in group '{}'",
+                        uuid.to_string(),
+                        group_v2.id
+                    );
+                    return false;
+                }
+            }
+            ServiceIdKind::Pni => {
+                if let Some(r) = self
+                    .fetch_group_members_by_group_v2_id(&group_v2.id)
+                    .into_iter()
+                    .find(|(_, r)| r.pni == Some(uuid))
+                    .map(|(_, r)| r)
+                {
+                    r
+                } else {
+                    tracing::debug!(
+                        "No such banned member {} in group '{}'",
+                        uuid.to_string(),
+                        group_v2.id
+                    );
+                    return false;
+                }
+            }
         };
 
-        diesel::delete(group_v2_members)
+        match diesel::delete(group_v2_members)
             .filter(
                 group_v2_id
                     .eq(&group_v2.id)
-                    .and(recipient_id.eq(b_recipient.id)),
+                    .and(recipient_id.eq(banned_recipient.id)),
             )
             .execute(&mut *self.db())
-            .expect("remove banned groupv2 member");
-        true
+            .expect("remove banned groupv2 member")
+        {
+            1 => {
+                tracing::debug!(
+                    "Removed banned member {} from group '{}'",
+                    service_id.service_id_string(),
+                    group_v2.name
+                );
+                true
+            }
+            0 => {
+                tracing::debug!(
+                    "No such banned member {} in group '{}'",
+                    service_id.service_id_string(),
+                    group_v2.name
+                );
+                false
+            }
+            n => {
+                tracing::error!(
+                    "Deleted {} banned members from group '{}', expected 0 or 1",
+                    n,
+                    group_v2.name
+                );
+                false
+            }
+        }
     }
 
     /// Update GroupV2 invite link access.

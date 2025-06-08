@@ -525,10 +525,10 @@ impl Handler<GroupV2Update> for ClientActor {
                                     ));
                                 }
                             }
-                            GroupChange::DeleteBannedMember(uuid) => {
-                                tracing::debug!("Delete banned member: {:?}", uuid);
-                                storage.delete_group_v2_banned_member(&group_v2, uuid.into());
-                                db_triggers.push(GroupV2Trigger::Recipient(uuid.into()));
+                            GroupChange::DeleteBannedMember(service_id) => {
+                                tracing::debug!("Delete banned member: {:?}", service_id);
+                                storage.delete_group_v2_banned_member(&group_v2, service_id);
+                                db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::DeleteMember(uuid) => {
                                 tracing::debug!("Delete member: {:?}", uuid);
