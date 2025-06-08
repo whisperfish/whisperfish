@@ -546,15 +546,16 @@ impl Handler<GroupV2Update> for ClientActor {
                             }
                             GroupChange::NewMember(member) => {
                                 tracing::debug!("New member: {:?}", member);
-                                storage.add_group_v2_member(
+                                if let Some((_, added)) = storage.add_group_v2_member(
                                     &group_v2,
                                     member.uuid.into(),
                                     member.role,
                                     &member.profile_key,
                                     member.joined_at_revision as i32,
-                                );
-                                db_triggers.push(GroupV2Trigger::ObserveUpdate);
-                                ctx_triggers.push(GroupV2Trigger::Recipient(member.uuid));
+                                    None,
+                                ) {
+                                    db_triggers.push(GroupV2Trigger::Recipient(added.uuid.unwrap()));
+                                }
                             }
                             GroupChange::NewPendingMember(member) => {
                                 // TODO: Database migration (status)
