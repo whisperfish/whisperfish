@@ -18,7 +18,7 @@ use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
 use crate::store::observer::{Observable, PrimaryKey};
 use crate::{config::SignalConfig, millis_to_naive_chrono};
-use crate::{naive_chrono_rounded_down, naive_chrono_to_millis, schema};
+use crate::{naive_chrono_rounded_down, schema};
 use anyhow::Context;
 use chrono::prelude::*;
 use diesel::dsl::sql;
@@ -894,6 +894,30 @@ impl<O: Observable> Storage<O> {
         }
 
         query.first(&mut *self.db()).optional().expect("db")
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_blocked_numbers(&self) -> Vec<String> {
+        use crate::schema::recipients::dsl::*;
+        recipients
+            .filter(is_blocked.eq(true))
+            .load(&mut *self.db())
+            .expect("db")
+            .into_iter()
+            .filter_map(|r: orm::Recipient| r.e164.map(|e| e.to_string()))
+            .collect()
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_blocked_acis(&self) -> Vec<String> {
+        use crate::schema::recipients::dsl::*;
+        recipients
+            .filter(is_blocked.eq(true))
+            .load(&mut *self.db())
+            .expect("db")
+            .into_iter()
+            .filter_map(|r: orm::Recipient| r.uuid.map(|u| u.to_string()))
+            .collect()
     }
 
     #[tracing::instrument(skip(self))]

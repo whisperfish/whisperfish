@@ -23,6 +23,7 @@ use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
 use libsignal_service::proto::sync_message::message_request_response::Type as MessageRequestAction;
+use libsignal_service::proto::sync_message::Blocked;
 use libsignal_service::proto::sync_message::Configuration;
 use libsignal_service::proto::sync_message::Keys;
 use libsignal_service::proto::sync_message::MessageRequestResponse;
@@ -1080,8 +1081,18 @@ impl ClientActor {
                     let storage_service = storage.fetch_storage_service_key();
                     sender.send_keys(&local_addr.into(), Keys { master: master.map(|k| k.into()), storage_service: storage_service.map(|k| k.into()) }).await?;
                 }
-                // Type::Blocked
-                // Type::PniIdentity
+                RequestType::Blocked => {
+                    sender.send_blocked(
+                        &local_addr.into(),
+                        Blocked {
+                            numbers: storage.fetch_blocked_numbers(),
+                            acis: storage.fetch_blocked_acis(),
+                            group_ids: Vec::new(), // Group V1
+                        },
+                    ).await?;
+                }
+                // RequestType::PniIdentity // RESERVED
+                // RequestType::Groups // RESERVED
                 _ => {
                     tracing::trace!("Unimplemented sync request: {:#?}", req);
                     anyhow::bail!("Unimplemented sync request type: {:?}", req.r#type());
