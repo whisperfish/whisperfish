@@ -114,12 +114,20 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                 let members_to_assert = group
                     .members
                     .iter()
-                    .map(|member| (Aci::from(member.uuid).into(), Some(&member.profile_key)))
+                    .map(|member| (member.aci, Some(&member.profile_key)))
                     .chain(
                         group
                             .pending_members
                             .iter()
-                            .map(|member| (member.address, None)),
+                            .filter_map(|member| {
+                                match member.address.kind() {
+                                    ServiceIdKind::Aci =>Some((Aci::try_from(member.address.raw_uuid()).unwrap(), None)),
+                                    x => {
+                                    tracing::warn!("Adding to group requires Aci, got {:?} instead", x);
+                                    None
+                                }
+                            }
+                            })
                     )
                     .chain(
                         group
@@ -130,7 +138,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
 
                 // We need all the profile keys and UUIDs in the database.
                 for (addr, profile_key) in members_to_assert {
-                    let recipient = storage.fetch_or_insert_recipient_by_address(&addr);
+                    let recipient = storage.fetch_or_insert_recipient_by_address(&ServiceId::Aci(addr));
                     if let Some(profile_key) = profile_key {
                         let (recipient, _was_changed) = storage.update_profile_key(recipient.e164.clone(), recipient.to_service_address(), &profile_key.get_bytes(), TrustLevel::Uncertain);
                         match recipient.profile_key {
@@ -153,7 +161,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                 // 1. Delete all existing memberships.
                 // 2. Insert all memberships from the DecryptedGroup.
                 let uuids = group.members.iter().map(|member| {
-                    member.uuid.to_string()
+                    member.aci.service_id_string()
                 });
                 storage.db().transaction::<(), diesel::result::Error, _>(|db| {
                     use whisperfish_store::schema::{group_v2_members, recipients, group_v2s};
@@ -192,7 +200,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         // XXX there's a bit of duplicate work going on here.
                         // XXX What about PNI?
                         let recipient =
-                            storage.fetch_or_insert_recipient_by_address(&Aci::from(member.uuid).into());
+                            storage.fetch_or_insert_recipient_by_address(&ServiceId::Aci(member.aci));
                         let _span = tracing::trace_span!(
                             "Asserting member of the group",
                             %recipient
@@ -569,15 +577,15 @@ impl Handler<GroupV2Update> for ClientActor {
                                 storage.update_group_v2_member_access(&group_v2, access.into());
                                 db_triggers.push(GroupV2Trigger::Generic);
                             }
-                            GroupChange::ModifyMemberProfileKey { uuid, profile_key } => {
+                            GroupChange::ModifyMemberProfileKey { aci, profile_key } => {
                                 tracing::debug!(
                                     "Modify member profile key: {:?} {:?}",
-                                    uuid,
+                                    aci,
                                     profile_key
                                 );
                                 if let Some(recipient) = storage.update_group_v2_member_profile_key(
                                     group_v2,
-                                    uuid.into(),
+                                    aci,
                                     &profile_key,
                                 ) {
                                     db_triggers.push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
@@ -593,7 +601,7 @@ impl Handler<GroupV2Update> for ClientActor {
                                 tracing::debug!("New member: {:?}", member);
                                 if let Some((_, added)) = storage.add_group_v2_member(
                                     &group_v2,
-                                    member.uuid.into(),
+                                    member.aci,
                                     member.role,
                                     &member.profile_key,
                                     member.joined_at_revision as i32,
