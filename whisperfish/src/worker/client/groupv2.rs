@@ -622,7 +622,15 @@ impl Handler<GroupV2Update> for ClientActor {
                                 db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::NewRequestingMember(member) => {
-                                tracing::info!("New requesting member: {:?}", member);
+                                tracing::debug!("New requesting member: {:?}", member);
+                                if let Some((_, added)) = storage.add_group_v2_requesting_member(
+                                    group_v2,
+                                    member.aci,
+                                    member.profile_key,
+                                    millis_to_naive_chrono(member.timestamp),
+                                ) {
+                                    db_triggers.push(GroupV2Trigger::Recipient(added.uuid.unwrap()));
+                                }
                             }
                             GroupChange::PromotePendingPniAciMemberProfileKey(promoted_member) => {
                                 tracing::debug!(

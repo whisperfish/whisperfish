@@ -4268,4 +4268,73 @@ impl<O: Observable> Storage<O> {
             }
         }
     }
+
+    /// Add a new requesting member to a GroupV2.
+    ///
+    /// Does not trigger observer update.
+    pub fn add_group_v2_requesting_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        new_aci: Aci,
+        new_profile_key: ProfileKey,
+        ts: NaiveDateTime,
+    ) -> Option<(orm::GroupV2RequestingMember, orm::Recipient)> {
+        use crate::schema::group_v2_requesting_members::dsl::*;
+
+        // Check that there is no such actual member
+        if self
+            .fetch_group_members_by_group_v2_id(&group_v2.id)
+            .into_iter()
+            .any(|(_, r)| r.uuid == Some(Uuid::try_from(new_aci).unwrap()))
+        {
+            tracing::debug!(
+                "Member {} already exists in group '{}'",
+                new_aci.service_id_string(),
+                group_v2.name
+            );
+            return None;
+        }
+
+        // Check that there is no pending member
+        if self
+            .fetch_group_v2_pending_member(&group_v2.id, Some(new_aci), None)
+            .is_some()
+        {
+            tracing::debug!(
+                "Pending member {} already exists in group '{}'",
+                new_aci.service_id_string(),
+                group_v2.name
+            );
+            return None;
+        }
+
+        let new_requesting_member = orm::GroupV2RequestingMember {
+            group_v2_id: group_v2.id.to_owned(),
+            aci: new_aci.service_id_string(),
+            profile_key: new_profile_key.get_bytes().into(),
+            timestamp: ts,
+        };
+
+        match diesel::insert_into(group_v2_requesting_members)
+            .values(&new_requesting_member)
+            .execute(&mut *self.db())
+            .expect("insert requesting group member")
+        {
+            1 => {
+                tracing::debug!(
+                    "Added a new requesting member {} to group '{}'",
+                    new_requesting_member.aci,
+                    group_v2.name
+                );
+                Some((
+                    new_requesting_member,
+                    self.fetch_or_insert_recipient_by_address(&ServiceId::Aci(new_aci)),
+                ))
+            }
+            x => {
+                tracing::error!("Expected to insert 1 requesting group member, got {}", x);
+                None
+            }
+        }
+    }
 }
