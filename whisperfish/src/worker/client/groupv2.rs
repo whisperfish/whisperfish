@@ -564,11 +564,18 @@ impl Handler<GroupV2Update> for ClientActor {
                                 db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::ModifyMemberProfileKey { uuid, profile_key } => {
-                                tracing::info!(
+                                tracing::debug!(
                                     "Modify member profile key: {:?} {:?}",
                                     uuid,
                                     profile_key
                                 );
+                                if let Some(recipient) = storage.update_group_v2_member_profile_key(
+                                    group_v2,
+                                    uuid.into(),
+                                    &profile_key,
+                                ) {
+                                    db_triggers.push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
+                                }
                             }
                             GroupChange::ModifyMemberRole { aci, role } => {
                                 tracing::debug!("Modify member role: {:?} {:?}", aci, role);

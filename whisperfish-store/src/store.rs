@@ -1937,6 +1937,55 @@ impl<O: Observable> Storage<O> {
             .unwrap()
     }
 
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_group_v2_pending_member(
+        &self,
+        id: &str,
+        aci: Option<Aci>,
+        pni: Option<Pni>,
+    ) -> Option<orm::GroupV2PendingMember> {
+        if aci.is_none() && pni.is_none() {
+            tracing::error!("Neither ACI nor PNI provided for group_v2_pending_member fetch");
+            return None;
+        }
+
+        if let Some(aci) = aci {
+            let pending_member: Option<orm::GroupV2PendingMember> =
+                schema::group_v2_pending_members::table
+                    .filter(schema::group_v2_pending_members::group_v2_id.eq(id).and(
+                        schema::group_v2_pending_members::service_id.eq(aci.service_id_string()),
+                    ))
+                    .load(&mut *self.db())
+                    .unwrap()
+                    .pop();
+            if pending_member.is_some() {
+                return pending_member;
+            }
+        }
+
+        if let Some(pni) = pni {
+            let pending_member: Option<orm::GroupV2PendingMember> =
+                schema::group_v2_pending_members::table
+                    .filter(schema::group_v2_pending_members::group_v2_id.eq(id).and(
+                        schema::group_v2_pending_members::service_id.eq(pni.service_id_string()),
+                    ))
+                    .load(&mut *self.db())
+                    .unwrap()
+                    .pop();
+            if pending_member.is_some() {
+                return pending_member;
+            }
+        }
+
+        tracing::error!(
+            "No such pending member: aci: {:?}, pni: {:?}, group_v2_id: {}",
+            aci,
+            pni,
+            id
+        );
+        return None;
+    }
+
     #[tracing::instrument(skip(self, e164), fields(e164 = %e164))]
     pub fn fetch_or_insert_session_by_phonenumber(&self, e164: &PhoneNumber) -> orm::Session {
         if let Some(session) = self.fetch_session_by_phonenumber(e164) {
@@ -3891,6 +3940,36 @@ impl<O: Observable> Storage<O> {
             .set(access_required_for_members.eq(i32::from(next_access)))
             .execute(&mut *self.db())
             .expect("db");
+    }
+
+    /// Update the profile key of a GroupV2 member.
+    ///
+    /// Does not trigger observer update.
+    pub fn update_group_v2_member_profile_key(
+        &self,
+        group_v2: &orm::GroupV2,
+        aci: Aci,
+        profile_key: &ProfileKey,
+    ) -> Option<orm::Recipient> {
+        if let Some(_pending) = self.fetch_group_v2_pending_member(&group_v2.id, Some(aci), None) {
+            let recipient = self.fetch_or_insert_recipient_by_address(&aci.into());
+            let (recipient, _was_changed) = self.update_profile_key(
+                recipient.e164.clone(),
+                recipient.to_service_address(),
+                &profile_key.get_bytes(),
+                TrustLevel::Uncertain,
+            );
+            self.observe_update(schema::group_v2_members::table, recipient.id)
+                .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
+            Some(recipient)
+        } else {
+            tracing::error!(
+                "No such pending member {} in group '{}' for profile key update",
+                aci.service_id_string(),
+                group_v2.name
+            );
+            None
+        }
     }
 
 }
