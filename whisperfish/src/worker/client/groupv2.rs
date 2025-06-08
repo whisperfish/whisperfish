@@ -561,7 +561,9 @@ impl Handler<GroupV2Update> for ClientActor {
                                 db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::MemberAccess(access) => {
-                                tracing::info!("Member access: {:?}", access);
+                                tracing::debug!("Member access: {:?}", access);
+                                storage.update_group_v2_member_access(&group_v2, access.into());
+                                db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::ModifyMemberProfileKey { uuid, profile_key } => {
                                 tracing::info!(

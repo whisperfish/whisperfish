@@ -3876,4 +3876,21 @@ impl<O: Observable> Storage<O> {
             .execute(&mut *self.db())
             .expect("db");
     }
+
+    /// Update GroupV2 required member access level.
+    ///
+    /// Does not trigger observer update.
+    pub fn update_group_v2_member_access(
+        &self,
+        group_v2: &orm::GroupV2,
+        next_access: orm::AccessRequired,
+    ) {
+        use crate::schema::group_v2s::dsl::*;
+
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(access_required_for_members.eq(i32::from(next_access)))
+            .execute(&mut *self.db())
+            .expect("db");
+    }
+
 }
