@@ -1247,7 +1247,7 @@ impl<O: Observable> Storage<O> {
             .optional()
             .expect("db");
 
-        if changed_id.is_some() {
+        if let Some(rid) = changed_id {
             // If updating self, invalidate the cache
             if Some(profile.r_uuid) == self.config.get_aci() {
                 self.invalidate_self_recipient();
@@ -1255,7 +1255,7 @@ impl<O: Observable> Storage<O> {
 
             tracing::debug!("Updated profile saved to database");
 
-            self.observe_update(schema::recipients::table, profile.r_id);
+            self.observe_update(schema::recipients::table, rid);
         } else {
             tracing::debug!("Unchanged profile, timestamp updated");
         }
