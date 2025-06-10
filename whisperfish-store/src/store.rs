@@ -1210,11 +1210,15 @@ impl<O: Observable> Storage<O> {
         use diesel::prelude::*;
 
         // Update timestamp separately from the data to get proper changed answer
-        diesel::update(recipients)
+        let changes = diesel::update(recipients)
             .set(last_profile_fetch.eq(profile.last_fetch))
             .filter(uuid.nullable().eq(&profile.r_uuid.to_string()))
             .execute(&mut *self.db())
             .expect("db");
+        if changes == 0 {
+            tracing::warn!("timestamp not updated");
+            return;
+        }
 
         let changed_id: Option<i32> = diesel::update(recipients)
             .set((
