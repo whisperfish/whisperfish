@@ -1222,24 +1222,24 @@ impl<O: Observable> Storage<O> {
 
         let changed_id: Option<i32> = diesel::update(recipients)
             .set((
-                profile_given_name.eq(profile.given_name.clone()),
-                profile_family_name.eq(profile.family_name.clone()),
-                profile_joined_name.eq(profile.joined_name.clone()),
-                about.eq(profile.about_text.clone()),
-                about_emoji.eq(profile.emoji.clone()),
-                unidentified_access_mode.eq(profile.unidentified),
-                signal_profile_avatar.eq(profile.avatar.clone()),
+                profile_given_name.eq(&profile.given_name),
+                profile_family_name.eq(&profile.family_name),
+                profile_joined_name.eq(&profile.joined_name),
+                about.eq(&profile.about_text),
+                about_emoji.eq(&profile.emoji),
+                unidentified_access_mode.eq(&profile.unidentified),
+                signal_profile_avatar.eq(&profile.avatar),
             ))
             .filter(
                 uuid.nullable().eq(&profile.r_uuid.to_string()).and(
                     profile_given_name
-                        .ne(profile.given_name)
-                        .or(profile_family_name.ne(profile.family_name))
-                        .or(profile_joined_name.ne(profile.joined_name))
-                        .or(about.ne(profile.about_text))
-                        .or(about_emoji.ne(profile.emoji))
-                        .or(unidentified_access_mode.ne(profile.unidentified))
-                        .or(signal_profile_avatar.ne(profile.avatar)),
+                        .ne(&profile.given_name)
+                        .or(profile_family_name.ne(&profile.family_name))
+                        .or(profile_joined_name.ne(&profile.joined_name))
+                        .or(about.ne(&profile.about_text))
+                        .or(about_emoji.ne(&profile.emoji))
+                        .or(unidentified_access_mode.ne(&profile.unidentified))
+                        .or(signal_profile_avatar.ne(&profile.avatar)),
                 ),
             )
             .returning(id)
