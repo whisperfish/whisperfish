@@ -200,7 +200,7 @@ impl NewMessage<'_> {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct StoreProfile {
     pub given_name: Option<String>,
     pub family_name: Option<String>,
@@ -1204,60 +1204,87 @@ impl<O: Observable> Storage<O> {
 
     /// Save profile data to db and trigger GUI update.
     /// Assumes the avatar image has been saved/deleted in advance.
+    /// Assumes that the recipient exists. Compares but doesn't update ACI.
+    ///
+    /// Returns `Some(true)` if the profile was updated, `Some(false)` if update wasn't needed,
+    /// and `None` if there was some trouble updating the profile.
     #[tracing::instrument(skip(self))]
     pub fn save_profile(&self, profile: StoreProfile) {
         use crate::store::schema::recipients::dsl::*;
         use diesel::prelude::*;
 
         // Update timestamp separately from the data to get proper changed answer
-        let changes = diesel::update(recipients)
+        let changed_id = diesel::update(recipients)
             .set(last_profile_fetch.eq(profile.last_fetch))
-            .filter(uuid.nullable().eq(&profile.r_uuid.to_string()))
-            .execute(&mut *self.db())
-            .expect("db");
-        if changes == 0 {
-            tracing::warn!("timestamp not updated");
-            return;
-        }
-
-        let changed_id: Option<i32> = diesel::update(recipients)
-            .set((
-                profile_given_name.eq(&profile.given_name),
-                profile_family_name.eq(&profile.family_name),
-                profile_joined_name.eq(&profile.joined_name),
-                about.eq(&profile.about_text),
-                about_emoji.eq(&profile.emoji),
-                unidentified_access_mode.eq(&profile.unidentified),
-                signal_profile_avatar.eq(&profile.avatar),
-            ))
             .filter(
                 uuid.nullable().eq(&profile.r_uuid.to_string()).and(
-                    profile_given_name
-                        .ne(&profile.given_name)
-                        .or(profile_family_name.ne(&profile.family_name))
-                        .or(profile_joined_name.ne(&profile.joined_name))
-                        .or(about.ne(&profile.about_text))
-                        .or(about_emoji.ne(&profile.emoji))
-                        .or(unidentified_access_mode.ne(&profile.unidentified))
-                        .or(signal_profile_avatar.ne(&profile.avatar)),
+                    last_profile_fetch
+                        .ne(profile.last_fetch)
+                        .or(last_profile_fetch.is_null()),
                 ),
             )
             .returning(id)
-            .get_result(&mut *self.db())
+            .get_result::<i32>(&mut *self.db())
             .optional()
             .expect("db");
 
-        if let Some(rid) = changed_id {
-            // If updating self, invalidate the cache
-            if Some(profile.r_uuid) == self.config.get_aci() {
-                self.invalidate_self_recipient();
+        if let Some(changed_id) = changed_id {
+            let old_profile = schema::recipients::table
+                .filter(schema::recipients::id.eq(changed_id))
+                .first::<orm::Recipient>(&mut *self.db())
+                .ok();
+
+            let old_profile = old_profile
+                .map(|recipient| {
+                    StoreProfile {
+                        given_name: recipient.profile_given_name,
+                        family_name: recipient.profile_family_name,
+                        joined_name: recipient.profile_joined_name,
+                        about_text: recipient.about,
+                        emoji: recipient.about_emoji,
+                        avatar: recipient.signal_profile_avatar,
+                        unidentified: recipient.unidentified_access_mode,
+                        // "Ignore" fields that are not updated
+                        last_fetch: profile.last_fetch,
+                        r_uuid: profile.r_uuid,
+                        r_id: profile.r_id,
+                        r_key: profile.r_key.to_owned(),
+                    }
+                })
+                .unwrap();
+
+            if old_profile == profile {
+                tracing::debug!("Profile contents unchanged, no need to update");
+                return;
             }
 
-            tracing::debug!("Updated profile saved to database");
-
-            self.observe_update(schema::recipients::table, rid);
+            if let Some(changed_id) = diesel::update(recipients)
+                .set((
+                    profile_given_name.eq(&profile.given_name),
+                    profile_family_name.eq(&profile.family_name),
+                    profile_joined_name.eq(&profile.joined_name),
+                    about.eq(&profile.about_text),
+                    about_emoji.eq(&profile.emoji),
+                    unidentified_access_mode.eq(&profile.unidentified),
+                    signal_profile_avatar.eq(&profile.avatar),
+                ))
+                .filter(uuid.nullable().eq(&profile.r_uuid.to_string()))
+                .returning(id)
+                .get_result::<i32>(&mut *self.db())
+                .optional()
+                .expect("updating profile")
+            {
+                // If updating self, invalidate the cache
+                if Some(profile.r_uuid) == self.config.get_aci() {
+                    self.invalidate_self_recipient();
+                }
+                self.observe_update(schema::recipients::table, changed_id);
+                tracing::info!("Profile for {} saved", profile.r_uuid);
+            } else {
+                tracing::error!("Profile should have been updated, but no changes were made");
+            }
         } else {
-            tracing::debug!("Unchanged profile, timestamp updated");
+            tracing::warn!("Profile timestamp unchanged, no need to update");
         }
     }
 
