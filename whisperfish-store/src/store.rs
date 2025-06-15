@@ -1067,39 +1067,36 @@ impl<O: Observable> Storage<O> {
         timer: Option<u32>,
         version: Option<u32>,
     ) -> i32 {
+        // TODO: update function signature?
+        let version: i32 = version.map(|n| n as _).unwrap_or(1);
+        let timer: Option<std::time::Duration> =
+            timer.map(|t| std::time::Duration::from_secs(t as _));
+
         // Carry out the update only if the timer changes
         use crate::schema::sessions::dsl::*;
         let new_version = if session.is_group() {
             1
-        } else if let Some(version) = version {
-            version as i32
+        } else if version > session.expire_timer_version {
+            version
         } else {
             session.expire_timer_version + 1
         };
-        let mut affected_rows: Vec<i32> = diesel::update(sessions)
+        if session.expire_timer_version == version && session.expiring_message_timeout == timer {
+            tracing::debug!("Expiry timer and version unchanged, no need to update");
+            return new_version;
+        }
+
+        diesel::update(sessions)
             .set((
-                expiring_message_timeout.eq(timer.map(|i| i as i32)),
+                expiring_message_timeout.eq(timer.map(|t| t.as_secs() as i32)),
                 expire_timer_version.eq(new_version),
             ))
-            .filter(
-                id.eq(session.id).and(
-                    expiring_message_timeout
-                        .ne(timer.map(|i| i as i32))
-                        .or(expire_timer_version.lt(new_version)),
-                ),
-            )
-            .returning(expire_timer_version)
-            .load(&mut *self.db())
+            .filter(id.eq(session.id))
+            .execute(&mut *self.db())
             .expect("existing record updated");
 
-        if affected_rows.len() == 1 {
-            self.observe_update(sessions, session.id);
-            affected_rows.pop().unwrap()
-        } else if affected_rows.is_empty() {
-            new_version
-        } else {
-            panic!("Message expiry update should only have changed a single session")
-        }
+        self.observe_update(sessions, session.id);
+        new_version
     }
 
     #[tracing::instrument(
