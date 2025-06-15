@@ -2368,7 +2368,7 @@ impl<O: Observable> Storage<O> {
                     .and(schema::messages::is_read.eq(false)),
             ),
         )
-        .set((schema::messages::is_read.eq(true),))
+        .set(schema::messages::is_read.eq(true))
         .returning(schema::messages::id)
         .load(&mut *self.db())
         .expect("mark session read");
@@ -2385,7 +2385,7 @@ impl<O: Observable> Storage<O> {
 
         let affected_rows =
             diesel::update(sessions.filter(id.eq(session_id).and(is_muted.ne(muted))))
-                .set((is_muted.eq(muted),))
+                .set(is_muted.eq(muted))
                 .execute(&mut *self.db())
                 .expect("mark session (un)muted");
         if affected_rows > 0 {
@@ -2399,7 +2399,7 @@ impl<O: Observable> Storage<O> {
 
         let affected_rows =
             diesel::update(sessions.filter(id.eq(session_id).and(is_archived.ne(archived))))
-                .set((is_archived.eq(archived),))
+                .set(is_archived.eq(archived))
                 .execute(&mut *self.db())
                 .expect("mark session (un)archived");
         if affected_rows > 0 {
@@ -2413,7 +2413,7 @@ impl<O: Observable> Storage<O> {
 
         let affected_rows =
             diesel::update(sessions.filter(id.eq(session_id).and(is_pinned.ne(pinned))))
-                .set((is_pinned.eq(pinned),))
+                .set(is_pinned.eq(pinned))
                 .execute(&mut *self.db())
                 .expect("mark session (un)pinned");
         if affected_rows > 0 {
