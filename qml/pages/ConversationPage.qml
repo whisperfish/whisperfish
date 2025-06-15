@@ -45,8 +45,6 @@ Page {
             // because the validity flag might trigger multiple times
             if (session.draft && session.draft != "") {
                 textInput.text = session.draft
-                // XXX session.draft = ""
-                SessionModel.saveDraft(sessionId, "")
             }
         }
     }
