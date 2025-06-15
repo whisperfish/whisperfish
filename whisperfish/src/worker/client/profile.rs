@@ -209,16 +209,15 @@ impl Handler<ProfileCreated> for ClientActor {
                     },
                 };
 
-                let uuid = store_profile.r_uuid.to_owned();
                 storage.save_profile(store_profile);
-                Ok(uuid)
+
+                Ok(())
             }
             .into_actor(self)
             .map(|res: anyhow::Result<_>, _act, _ctx| {
-                match res {
-                    Ok(uuid) => tracing::info!("Profile for {} saved!", uuid),
-                    Err(e) => tracing::error!("Error fetching profile avatar: {}", e),
-                };
+                if let Err(e) = res {
+                    tracing::error!("Error fetching profile avatar: {}", e);
+                }
             }),
         );
     }
