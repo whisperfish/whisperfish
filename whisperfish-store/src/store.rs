@@ -1033,7 +1033,10 @@ impl<O: Observable> Storage<O> {
             .fetch_recipient(&Aci::from(*profile_uuid).into())
             .unwrap();
         use crate::schema::recipients::dsl::*;
-        let affected_rows = diesel::update(recipients)
+
+        // This is update to own profile from QML,
+        // so checking if something actually changed it's not worth it.
+        diesel::update(recipients)
             .set((
                 profile_family_name.eq(new_family_name),
                 profile_given_name.eq(new_given_name),
@@ -1041,25 +1044,15 @@ impl<O: Observable> Storage<O> {
                 about.eq(new_about),
                 about_emoji.eq(new_emoji),
             ))
-            .filter(
-                id.eq(recipient.id).and(
-                    profile_family_name
-                        .ne(new_family_name)
-                        .or(profile_given_name.ne(new_given_name))
-                        .or(profile_joined_name.ne(new_joined_name))
-                        .or(about.ne(new_about))
-                        .or(about_emoji.ne(new_emoji)),
-                ),
-            )
+            .filter(id.eq(recipient.id))
             .execute(&mut *self.db())
             .expect("existing record updated");
+
         // If updating self, invalidate the cache
         if recipient.uuid == self.config.get_aci() {
             self.invalidate_self_recipient();
         }
-        if affected_rows > 0 {
-            self.observe_update(recipients, recipient.id);
-        }
+        self.observe_update(recipients, recipient.id);
     }
 
     #[tracing::instrument(skip(self))]
