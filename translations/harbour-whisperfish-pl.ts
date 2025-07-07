@@ -866,25 +866,25 @@
         <translation>Pokaż odcisk klucza</translation>
     </message>
     <message id="whisperfish-numeric-fingerprint-directions">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="346"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="347"/>
         <source>If you wish to verify the security of your end-to-end encryption with %1, compare the numbers above with the numbers on their device.</source>
         <extracomment>Numeric fingerprint instructions</extracomment>
         <translation>Celem weryfikacji bezpieczeństwa szyfrowania końcowego z %1, porównaj numery powyżej z numerami na urządzeniu odbiorcy.</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="356"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="357"/>
         <source>Post-quantum keys in use</source>
         <extracomment>Profile page: whether a contact has post-quantum secure sessions</extracomment>
         <translation>Używane są klucze postkwantowe</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled-description">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="359"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="360"/>
         <source>If checked, this session was initialized with post-quantum secure cryptography.</source>
         <extracomment>Profile page: description for post-quantum secure sessions</extracomment>
         <translation>Jeśli zaznaczone to ta sesja została zainicjowana z zastosowaniem kryptografii postkwantowej</translation>
     </message>
     <message id="whisperfish-kyber-click-explanation">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="369"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="370"/>
         <source>Session reset for post-quantum upgrade</source>
         <extracomment>Upgrading the session to Kyber remorse popup, past tense</extracomment>
         <translation>Reset sesji w celu aktualizacji postkwantowej</translation>

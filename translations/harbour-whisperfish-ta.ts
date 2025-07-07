@@ -854,25 +854,25 @@
         <translation>கைரேகை காட்டு</translation>
     </message>
     <message id="whisperfish-numeric-fingerprint-directions">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="346"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="347"/>
         <source>If you wish to verify the security of your end-to-end encryption with %1, compare the numbers above with the numbers on their device.</source>
         <extracomment>Numeric fingerprint instructions</extracomment>
         <translation>உங்கள் இறுதி முதல் இறுதி குறியாக்கத்தின் பாதுகாப்பை %1 உடன் சரிபார்க்க விரும்பினால், மேலே உள்ள எண்களை அவற்றின் சாதனத்தில் உள்ள எண்களுடன் ஒப்பிடுக.</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="356"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="357"/>
         <source>Post-quantum keys in use</source>
         <extracomment>Profile page: whether a contact has post-quantum secure sessions</extracomment>
         <translation>பயன்பாட்டில் பிந்தைய அளவு விசைகள்</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled-description">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="359"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="360"/>
         <source>If checked, this session was initialized with post-quantum secure cryptography.</source>
         <extracomment>Profile page: description for post-quantum secure sessions</extracomment>
         <translation>சரிபார்க்கப்பட்டால், இந்த அமர்வு பிந்தைய குவாண்டம் பாதுகாப்பான குறியாக்கவியலுடன் தொடங்கப்பட்டது.</translation>
     </message>
     <message id="whisperfish-kyber-click-explanation">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="369"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="370"/>
         <source>Session reset for post-quantum upgrade</source>
         <extracomment>Upgrading the session to Kyber remorse popup, past tense</extracomment>
         <translation>பிந்தைய அளவு மேம்படுத்தலுக்கான அமர்வு மீட்டமைப்பு</translation>

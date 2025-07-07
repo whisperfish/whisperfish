@@ -977,25 +977,25 @@
         <translation>Parmak izini göster</translation>
     </message>
     <message id="whisperfish-numeric-fingerprint-directions">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="346"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="347"/>
         <source>If you wish to verify the security of your end-to-end encryption with %1, compare the numbers above with the numbers on their device.</source>
         <extracomment>Numeric fingerprint instructions</extracomment>
         <translation>%1 ile uçtan uca şifrelemenizin güvenliğini doğrulamak istiyorsanız, yukarıdaki sayıları aygıtlarındaki sayılarla karşılaştırın.</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="356"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="357"/>
         <source>Post-quantum keys in use</source>
         <extracomment>Profile page: whether a contact has post-quantum secure sessions</extracomment>
         <translation>Kuantum sonrası anahtarlar kullanılıyor</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled-description">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="359"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="360"/>
         <source>If checked, this session was initialized with post-quantum secure cryptography.</source>
         <extracomment>Profile page: description for post-quantum secure sessions</extracomment>
         <translation>İşaretliyse, bu oturum kuantum sonrası güvenli kriptografi ile başlatılmıştır.</translation>
     </message>
     <message id="whisperfish-kyber-click-explanation">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="369"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="370"/>
         <source>Session reset for post-quantum upgrade</source>
         <extracomment>Upgrading the session to Kyber remorse popup, past tense</extracomment>
         <translation>Kuantum sonrası yükseltme için oturum sıfırlama</translation>

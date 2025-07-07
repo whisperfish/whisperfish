@@ -1986,25 +1986,25 @@ Settings page share contacts</extracomment>
         <translation>Afficher l&apos;empreinte digitale</translation>
     </message>
     <message id="whisperfish-numeric-fingerprint-directions">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="346"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="347"/>
         <source>If you wish to verify the security of your end-to-end encryption with %1, compare the numbers above with the numbers on their device.</source>
         <extracomment>Numeric fingerprint instructions</extracomment>
         <translation>Si vous souhaitez vérifier la fiabilité de votre chiffrement de bout en bout avec %1, comparez les chiffres ci-dessus avec les chiffres sur votre appareil.</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="356"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="357"/>
         <source>Post-quantum keys in use</source>
         <extracomment>Profile page: whether a contact has post-quantum secure sessions</extracomment>
         <translation>Les clés post-quantum utilisées</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled-description">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="359"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="360"/>
         <source>If checked, this session was initialized with post-quantum secure cryptography.</source>
         <extracomment>Profile page: description for post-quantum secure sessions</extracomment>
         <translation>Si ceci est coché, cette session a été initialisée avec une cryptographie post-quantique sécurisée.</translation>
     </message>
     <message id="whisperfish-kyber-click-explanation">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="369"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="370"/>
         <source>Session reset for post-quantum upgrade</source>
         <extracomment>Upgrading the session to Kyber remorse popup, past tense</extracomment>
         <translation>Réinitialisation de session pour la mise à niveau post-quantum</translation>
