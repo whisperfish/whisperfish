@@ -303,10 +303,11 @@ Page {
                 text: qsTrId("whisperfish-show-fingerprint")
                 enabled: numericFingerprint.text.length === 0
                 onClicked: {
-                    if(recipient.sessionFingerprint && recipient.sessionFingerprint.length === 60) {
+                    var recipientFingerprintString = recipient.fingerprint.toString()
+                    if(recipient.fingerprint && recipientFingerprintString.length === 60) {
                         var pretty_fp = ""
                         for(var i = 1; i <= 12; ++i) {
-                            pretty_fp += recipient.sessionFingerprint.slice(5*(i-1), (5*i))
+                            pretty_fp += recipientFingerprintString.slice(5*(i-1), (5*i))
                             if(i === 4 || i === 8) {
                                 pretty_fp += "\n"
                             } else if(i < 12) {
