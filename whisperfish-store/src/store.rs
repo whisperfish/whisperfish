@@ -4404,20 +4404,36 @@ impl<O: Observable> Storage<O> {
         aci: Aci,
         role: Role,
     ) -> Option<(orm::GroupV2Member, orm::Recipient)> {
-        let requesting_member = self
-            .fetch_group_v2_requesting_member(group_v2, aci)
-            .expect("requesting member not found");
+        if let Some(requesting_member) = self.fetch_group_v2_requesting_member(group_v2, aci) {
+            let mut key = [0u8; 32];
+            key.copy_from_slice(&requesting_member.profile_key);
+            let profile_key = ProfileKey::create(key);
 
-        let mut key = [0u8; 32];
-        key.copy_from_slice(&requesting_member.profile_key);
-        let profile_key = ProfileKey::create(key);
-
-        if let Some(added) =
-            self.add_group_v2_member(group_v2, aci, role, &profile_key, group_v2.revision, None)
+            if let Some(added) =
+                self.add_group_v2_member(group_v2, aci, role, &profile_key, group_v2.revision, None)
+            {
+                self.delete_group_v2_requesting_member(group_v2, aci);
+                Some(added)
+            } else {
+                None
+            }
+        } else if self
+            .fetch_group_members_by_group_v2_id(&group_v2.id)
+            .iter()
+            .any(|(_, r)| r.uuid == Some(Uuid::from(aci)))
         {
-            self.delete_group_v2_requesting_member(group_v2, aci);
-            Some(added)
+            tracing::debug!(
+                "Member {} already exists in group '{}', no need to promote",
+                aci.service_id_string(),
+                group_v2.name
+            );
+            None
         } else {
+            tracing::error!(
+                "No such requesting member {} in group '{}' for promotion",
+                aci.service_id_string(),
+                group_v2.name
+            );
             None
         }
     }
