@@ -3796,7 +3796,7 @@ impl<O: Observable> Storage<O> {
         {
             // XXX This is really fetch_or_insert_group_v2_member...
             use crate::schema::group_v2_members::dsl::*;
-            match diesel::update(
+            let member = diesel::update(
                 crate::schema::group_v2_members::table
                     .filter(group_v2_id.eq(&group_v2.id).and(recipient_id.eq(r.id))),
             )
@@ -3805,8 +3805,9 @@ impl<O: Observable> Storage<O> {
                 crate::schema::group_v2_members::joined_at_revision.eq(join_revision),
                 crate::schema::group_v2_members::member_since.eq(joined_at),
             ))
-            .execute(&mut *self.db())
-            {
+            .execute(&mut *self.db());
+
+            match member {
                 Ok(affected_rows) => {
                     assert!(
                         affected_rows == 1,
@@ -3822,7 +3823,7 @@ impl<O: Observable> Storage<O> {
         } else {
             use crate::schema::group_v2_members::dsl::*;
 
-            match diesel::insert_into(group_v2_members)
+            let member = diesel::insert_into(group_v2_members)
                 .values((
                     group_v2_id.eq(&group_v2.id),
                     recipient_id.eq(recipient.id),
@@ -3830,8 +3831,9 @@ impl<O: Observable> Storage<O> {
                     role.eq(next_role as i32),
                     member_since.eq(joined_at),
                 ))
-                .execute(&mut *self.db())
-            {
+                .execute(&mut *self.db());
+
+            match member {
                 Ok(affected_rows) => {
                     assert!(
                         affected_rows == 1,
@@ -4164,13 +4166,13 @@ impl<O: Observable> Storage<O> {
 
         let aci_string = requesting_aci.service_id_string();
 
-        match diesel::delete(
+        let deleted = diesel::delete(
             group_v2_requesting_members
                 .filter(group_v2_id.eq(&group_v2.id).and(aci.eq(&aci_string))),
         )
         .execute(&mut *self.db())
-        .unwrap()
-        {
+        .unwrap();
+        match deleted {
             1 => {
                 tracing::debug!(
                     "Deleted requesting member {} from group '{}'",
@@ -4263,11 +4265,12 @@ impl<O: Observable> Storage<O> {
             timestamp: ts,
         };
 
-        match diesel::insert_into(group_v2_pending_members)
+        let inserted = diesel::insert_into(group_v2_pending_members)
             .values(&new_pending_member)
             .execute(&mut *self.db())
-            .expect("insert pending group member")
-        {
+            .expect("insert pending group member");
+
+        match inserted {
             1 => {
                 tracing::debug!(
                     "Added a new pending member {} to group '{}'",

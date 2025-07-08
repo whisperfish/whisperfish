@@ -608,14 +608,15 @@ impl Handler<GroupV2Update> for ClientActor {
                             }
                             GroupChange::NewMember(member) => {
                                 tracing::debug!("New member: {:?}", member);
-                                if let Some((_, added)) = storage.add_group_v2_member(
+                                let result = storage.add_group_v2_member(
                                     &group_v2,
                                     member.aci,
                                     member.role,
                                     &member.profile_key,
                                     member.joined_at_revision as i32,
                                     None,
-                                ) {
+                                );
+                                if let Some((_, added)) = result {
                                     db_triggers.push(GroupV2Trigger::Recipient(added.uuid.unwrap()));
                                 }
                             }
