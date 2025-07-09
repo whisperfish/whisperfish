@@ -89,6 +89,34 @@ ListItem {
             return qsTrId("whisperfish-service-message-expiry-in-seconds", Math.floor(secs))
     }
 
+    function expiryMessage(outgoing, rcptName, seconds) {
+        if (seconds > 0) {
+            return outgoing
+            //: Service message, %1 time
+            //% "You set expiring messages timeout to %1."
+            ? qsTrId("whisperfish-service-message-expiry-update-self").arg(timeFormat(seconds))
+            //: Service message, %1 is a name, %2 is time
+            //% "%1 set expiring messages timeout to %2."
+            : qsTrId("whisperfish-service-message-expiry-update-peer").arg(rcptName).arg(timeFormat(seconds))
+        } else if (_data.value === 0) {
+            return outgoing
+            //: Service message
+            //% "You disabled expiring messages."
+            ? qsTrId("whisperfish-service-message-expiry-disable-self")
+            //: Service message, %1 is a name
+            //% "%1 disabled expiring messages."
+            : qsTrId("whisperfish-service-message-expiry-disable-peer").arg(rcptName)
+        } else {
+            return outgoing
+            //: Service message
+            //% "You set or disabled expiring messages timeout."
+            ? qsTrId("whisperfish-service-message-expiry-unknown-self")
+            //: Service message, %1 is a name
+            //% "%1 set or disabled expiring messages timeout."
+            : qsTrId("whisperfish-service-message-expiry-unknown-peer").arg(rcptName)
+        }                        //: Group change: message expiry was changed
+    }
+
     property string _message: switch (_type) {
         case "expiration_timer_update":
             // We didn't save the expiresIn for the service messages themselves,
@@ -103,31 +131,7 @@ ListItem {
                 }
             }
 
-            if (secs > 0) {
-                return _outgoing
-                //: Service message, %1 time
-                //% "You set expiring messages timeout to %1."
-                ? qsTrId("whisperfish-service-message-expiry-update-self").arg(timeFormat(secs))
-                //: Service message, %1 is a name, %2 is time
-                //% "%1 set expiring messages timeout to %2."
-                : qsTrId("whisperfish-service-message-expiry-update-peer").arg(peerName).arg(timeFormat(secs))
-            } else if (secs === 0) {
-                return _outgoing
-                //: Service message
-                //% "You disabled expiring messages."
-                ? qsTrId("whisperfish-service-message-expiry-disable-self")
-                //: Service message, %1 is a name
-                //% "%1 disabled expiring messages."
-                : qsTrId("whisperfish-service-message-expiry-disable-peer").arg(peerName)
-            } else {
-                return _outgoing
-                //: Service message
-                //% "You set or disabled expiring messages timeout."
-                ? qsTrId("whisperfish-service-message-expiry-unknown-self")
-                //: Service message, %1 is a name
-                //% "%1 set or disabled expiring messages timeout."
-                : qsTrId("whisperfish-service-message-expiry-unknown-peer").arg(peerName)
-            }
+            return expiryMessage(_outgoing, peerName, secs)
         case "profile_key_update": // incoming only
             //: Service message for profile (key) update. %1 is a name
             //% "%1 updated their profile."
@@ -214,9 +218,7 @@ ListItem {
                         //% "%1 accepted %2 into the group"
                         return qsTrId("whisperfish-service-message-group-change-promote-requesting-member").arg(peerName).arg(_data.aci)
                     case "timer":
-                        //: Group change: message expiry was changed
-                        //% "%1 changed message expiry to %2"
-                        return qsTrId("whisperfish-service-message-group-change-timer").arg(peerName).arg(_data.value)
+                        return expiryMessage(_outgoing, peerName, _data.value)
                     case "title":
                         //: Group change: title
                         //% "%1 changed the group title to '%2'"
