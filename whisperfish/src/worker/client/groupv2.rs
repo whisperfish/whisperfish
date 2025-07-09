@@ -449,6 +449,159 @@ enum GroupV2Trigger {
     Recipient(Uuid),
 }
 
+fn access_to_string(access: &AccessRequired) -> String {
+    match access {
+        AccessRequired::Unknown => "unknown".into(),
+        AccessRequired::Any => "any".into(),
+        AccessRequired::Member => "member".into(),
+        AccessRequired::Administrator => "administrator".into(),
+        AccessRequired::Unsatisfiable => "unsatisfyable".into(),
+    }
+}
+
+fn role_to_string(role: &Role) -> String {
+    match role {
+        Role::Unknown => "unknown".into(),
+        Role::Default => "default".into(), // i.e. "member"
+        Role::Administrator => "administrator".into(),
+    }
+}
+
+fn json_from_update(group_change: &GroupChange) -> Option<String> {
+    let mut change: Option<String> = None;
+    let mut value: Option<String> = None;
+    let mut target_aci: Option<String> = None;
+    let mut target_pni: Option<String> = None;
+    match group_change {
+        GroupChange::AddBannedMember(member) => {
+            change = Some("add_banned_member".into());
+            match member.service_id.kind() {
+                ServiceIdKind::Aci => {
+                    target_aci = Some(member.service_id.raw_uuid().to_string());
+                }
+                ServiceIdKind::Pni => {
+                    target_pni = Some(member.service_id.raw_uuid().to_string());
+                }
+            };
+        }
+        GroupChange::AnnouncementOnly(announcement) => {
+            change = Some("announcement_only".into());
+            value = if *announcement {
+                Some("enabled".into())
+            } else {
+                Some("diabled".into())
+            };
+        }
+        GroupChange::AttributeAccess(access) => {
+            change = Some("attribute_access".into());
+            value = Some(access_to_string(access));
+        }
+        GroupChange::Avatar(_) => {
+            change = Some("avatar".into());
+        }
+        GroupChange::DeleteBannedMember(_) => {}
+        GroupChange::DeleteMember(deleted) => {
+            change = Some("banned_member".into());
+            target_aci = Some(deleted.service_id_string());
+        }
+        GroupChange::DeletePendingMember(_) => {}
+        GroupChange::DeleteRequestingMember(_) => {}
+        GroupChange::Description(desc) => {
+            change = Some("description".into());
+            value = desc.to_owned();
+        }
+        GroupChange::InviteLinkAccess(access) => {
+            change = Some("invite_link_access".into());
+            value = Some(access_to_string(access));
+        }
+        GroupChange::InviteLinkPassword(_password) => {
+            change = Some("invite_link_password".into());
+            // value = Some(password.to_owned());
+        }
+        GroupChange::MemberAccess(access) => {
+            change = Some("member_access".into());
+            value = Some(access_to_string(access));
+        }
+        GroupChange::ModifyMemberProfileKey {
+            aci: _,
+            profile_key: _,
+        } => {}
+        GroupChange::ModifyMemberRole { aci, role } => {
+            change = Some("modify_member_role".into());
+            target_aci = Some(aci.service_id_string());
+            value = Some(role_to_string(role));
+        }
+        GroupChange::NewMember(member) => {
+            change = Some("new_member".into());
+            target_aci = Some(member.aci.service_id_string());
+            value = Some(role_to_string(&member.role));
+        }
+        GroupChange::NewPendingMember(member) => {
+            change = Some("new_pending_member".into());
+            match member.address.kind() {
+                ServiceIdKind::Aci => {
+                    target_aci = Some(member.address.raw_uuid().to_string());
+                }
+                ServiceIdKind::Pni => {
+                    target_pni = Some(member.address.raw_uuid().to_string());
+                }
+            }
+            value = Some(role_to_string(&member.role));
+            // added_by_aci: seems redundant here?
+            // timestamp: meh.
+        }
+        GroupChange::NewRequestingMember(member) => {
+            change = Some("new_requesting_member".into());
+            target_aci = Some(member.aci.service_id_string());
+        }
+        GroupChange::PromotePendingMember {
+            address,
+            profile_key: _,
+        } => {
+            change = Some("promote_pending_member".into());
+            match address.kind() {
+                ServiceIdKind::Aci => {
+                    target_aci = Some(address.raw_uuid().to_string());
+                }
+                ServiceIdKind::Pni => {
+                    target_pni = Some(address.raw_uuid().to_string());
+                }
+            }
+        }
+        GroupChange::PromotePendingPniAciMemberProfileKey(_) => {}
+        GroupChange::PromoteRequestingMember { aci, role } => {
+            change = Some("promote_requesting_member".into());
+            target_aci = Some(aci.service_id_string());
+            value = Some(role_to_string(role));
+        }
+        GroupChange::Timer(timer) => {
+            change = Some("timer".into());
+            value = Some(match timer {
+                Some(t) => format!("{}", t.duration),
+                None => "0".into(),
+            });
+        }
+        GroupChange::Title(title) => {
+            change = Some("title".into());
+            value = Some(title.to_owned());
+        }
+    };
+
+    match change {
+        None => None,
+        Some(change) => Some(format!(
+            "{{ \"change\": \"{}\", \"value\": {}, \"aci\": \"{}\", \"pni\": \"{}\" }}",
+            change,
+            value.map_or_else(
+                || "null".into(),
+                |val| format!("\"{}\"", val.replace("\"", "\\\""))
+            ),
+            target_aci.map_or_else(|| "null".into(), |aci| format!("\"{}\"", aci)),
+            target_pni.map_or_else(|| "null".into(), |pni| format!("\"{}\"", pni)),
+        )),
+    }
+}
+
 /// Handle an incoming group change message
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -472,6 +625,7 @@ impl Handler<GroupV2Update> for ClientActor {
             async move {
                 let mut db_triggers: Vec<GroupV2Trigger> = Vec::new();
                 let mut ctx_triggers: Vec<GroupV2Trigger> = Vec::new();
+                let mut svc_messages: Vec<GroupChangeServiceMessage> = Vec::new();
 
                 let mut credential_cache = storage.credential_cache_mut().await;
                 let gm =
@@ -485,7 +639,7 @@ impl Handler<GroupV2Update> for ClientActor {
 
                 if let Some(GroupChanges {
                     // TODO: Propagate editor to QML
-                    editor: _editor,
+                    editor,
                     revision,
                     changes,
                 }) = changes.unwrap()
@@ -501,6 +655,9 @@ impl Handler<GroupV2Update> for ClientActor {
                     group_v2.revision = revision as i32;
 
                     for change in changes {
+                        if let Some(message) = json_from_update(&change) {
+                            svc_messages.push(GroupChangeServiceMessage { message, editor, group_id: group_v2.id.to_owned() });
+                        }
                         match change {
                             GroupChange::AnnouncementOnly(announcement_only) => {
                                 tracing::debug!(
@@ -526,12 +683,12 @@ impl Handler<GroupV2Update> for ClientActor {
                                 storage.update_group_v2_avatar(&group_v2, Some(&avatar));
                                 ctx_triggers.push(GroupV2Trigger::Avatar(group_v2.id.clone()));
                             }
-                            GroupChange::AddBannedMember(banned_member) => {
-                                tracing::debug!("Add banned member: {:?}", banned_member);
+                            GroupChange::AddBannedMember(member) => {
+                                tracing::debug!("Add banned member: {:?}", member);
                                 if let (_, Some(recipient)) = storage.add_group_v2_banned_member(
                                     &group_v2,
-                                    &banned_member.service_id,
-                                    banned_member.timestamp,
+                                    &member.service_id,
+                                    member.timestamp,
                                 ) {
                                     db_triggers.push(GroupV2Trigger::Recipient(
                                         recipient.uuid.unwrap(),
@@ -544,9 +701,9 @@ impl Handler<GroupV2Update> for ClientActor {
                                         db_triggers.push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
                                 }
                             }
-                            GroupChange::DeleteMember(uuid) => {
-                                tracing::debug!("Delete member: {:?}", uuid);
-                                if let Some(deleted) = storage.delete_group_v2_member(&group_v2, uuid.into()) {
+                            GroupChange::DeleteMember(aci) => {
+                                tracing::debug!("Delete member: {:?}", aci);
+                                if let Some(deleted) = storage.delete_group_v2_member(&group_v2, aci) {
                                     // TODO: Does this affect sending message in a group?
                                     // TODO: Should we ignore messages from blocked members?
                                     db_triggers.push(GroupV2Trigger::Recipient(deleted.uuid.unwrap()));
@@ -642,16 +799,16 @@ impl Handler<GroupV2Update> for ClientActor {
                                     db_triggers.push(GroupV2Trigger::Recipient(added.uuid.unwrap()));
                                 }
                             }
-                            GroupChange::PromotePendingPniAciMemberProfileKey(promoted_member) => {
+                            GroupChange::PromotePendingPniAciMemberProfileKey(member) => {
                                 tracing::debug!(
                                     "Promote pending PNI member profile key: {:?}",
-                                    promoted_member
+                                    member
                                 );
                                 if let Some(recipient) = storage.promote_pending_pni_aci_member_profile_key(
-                                    group_v2,
-                                    promoted_member.aci,
-                                    promoted_member.pni,
-                                    promoted_member.profile_key,
+                                    &group_v2,
+                                    member.aci,
+                                    member.pni,
+                                    member.profile_key,
                                 ) {
                                     db_triggers.push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
                                 }
@@ -732,17 +889,17 @@ impl Handler<GroupV2Update> for ClientActor {
                         storage.update_group_v2_revision(&group_v2, revision as i32);
                     }
 
-                    Ok((ctx_triggers, session.id))
+                    Ok((ctx_triggers, session.id, svc_messages))
                 } else {
                     tracing::warn!("Group change message with no changes");
-                    Ok((Vec::new(), session.id))
+                    Ok((Vec::new(), session.id, svc_messages))
                 }
             }
             .instrument(tracing::info_span!(""))
             .into_actor(self)
             .map(|res, _act, ctx| {
                 match res {
-                    Ok((triggers, s_id)) => {
+                    Ok((triggers, s_id, svc_messages)) => {
                         // XXX handle group.group_change like a real client
                         if triggers.is_empty() {
                             tracing::warn!("Unhandled group change, fallback to full refresh");
@@ -762,7 +919,10 @@ impl Handler<GroupV2Update> for ClientActor {
                                             trigger
                                         );
                                     }
+                                }
                             }
+                            for msg in svc_messages {
+                                ctx.notify(msg);
                             }
                         }
                     }
@@ -772,5 +932,39 @@ impl Handler<GroupV2Update> for ClientActor {
                 };
             }),
         );
+    }
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+/// Publish a new group change specific ServiceMessage
+pub struct GroupChangeServiceMessage {
+    pub message: String,
+    pub editor: Aci,
+    pub group_id: String,
+}
+
+impl Handler<GroupChangeServiceMessage> for ClientActor {
+    type Result = ();
+
+    fn handle(&mut self, ch: GroupChangeServiceMessage, _ctx: &mut Self::Context) -> Self::Result {
+        let storage = self.storage.as_mut().unwrap().clone();
+        let session = storage.fetch_session_by_group_v2_id(&ch.group_id);
+        if session.is_none() {
+            tracing::error!("No session for group \"{}\"", ch.group_id);
+            return;
+        }
+        let session = session.unwrap();
+
+        let new_message = NewMessage {
+            source_addr: Some(ch.editor.into()),
+            is_read: true,
+            message_type: Some(MessageType::GroupChange),
+            text: ch.message, // JSON data
+            session_id: session.id,
+            ..NewMessage::new_incoming()
+        };
+
+        storage.create_message(&new_message);
     }
 }

@@ -32,7 +32,7 @@ SilicaListView {
     id: messagesView
 
     property QtObject session
-    property QtObject recipient
+    property QtObject recipient // initialized for DM only
 
     // TODO verify: date->string is always ISO formatted?
     // TODO Use a custom property for sections. It should contain
@@ -360,8 +360,6 @@ SilicaListView {
             ServiceMessageDelegate {
                 // necessary to make implicit properties available
                 modelData: model
-                // TODO: Don't query recipient name for each message separately
-                peerName: model.outgoing ? '' : getRecipientName(recipient.e164, recipient.externalId, recipient.name)
             }
         }
     }

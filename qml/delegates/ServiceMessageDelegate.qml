@@ -3,6 +3,7 @@
 
 import QtQuick 2.6
 import Sailfish.Silica 1.0
+import be.rubdos.whisperfish 1.0
 // import "../components"
 
 ListItem {
@@ -13,11 +14,26 @@ ListItem {
     onClicked: showDetails()
 
     property QtObject modelData
-    property string peerName
+    property int recipientId // the individual message sender, "editor"
+    // TODO: Don't query Recipient for every service message
+    //       (Then again, the service messages are few and far between...)
+    property QtObject recipient: Recipient {
+        app: AppState
+        recipientId: modelData.senderRecipientId
+    }
+    property string peerName: recipient.valid ? getRecipientName(recipient.e164, recipient.externalId, recipient.name, true) : ""
 
     property var _type: modelData.messageType
 
     property string _outgoing: modelData.outgoing === true
+
+    property var _json: _type == "group_change" && modelData.message && modelData.message[0] === "{" ? JSON.parse(modelData.message) : undefined
+    property var _data: (_type == "group_change" && _json) ? _json : null
+    on_DataChanged: {
+        if (_data != null) {
+            console.warn("Service message data: with data:", JSON.stringify(_data))
+        }
+    }
 
     property bool _canShowDetails: (_type === "identity_reset" || _type === "session_reset") ? true : false
     property real _fontSize: Theme.fontSizeExtraSmall
@@ -125,9 +141,88 @@ ListItem {
             //% "%1 ended the session with you."
             : qsTrId("whisperfish-service-message-end-session-peer").arg(peerName)
         case "group_change":
-            //: Service message
-            //% "The group was updated."
-            return qsTrId("whisperfish-service-message-changed-group")
+            if (_data == null) {
+                //: Service message
+                //% "The group was updated."
+                return qsTrId("whisperfish-service-message-changed-group")
+            } else {
+                switch (_data.change) {
+                    case "add_banned_member":
+                        //: Group change: add banned member
+                        //% "%1 banned %2"
+                    return qsTrId("whisperfish-service-message-group-change-add-banned-member").arg(peerName).arg(_data.value)
+                    case "announcement_only":
+                        return _data.value == "on" ?
+                        //: Group change: only admins can send messages
+                        //% "%1 restricted sending messages to administrators only"
+                        qsTrId("whisperfish-service-message-group-change-announcement-only-on").arg(peerName).arg(_data.value) :
+                        //: Group change: all members can send messages
+                        //% "%1 allowed everyone send messages"
+                        qsTrId("whisperfish-service-message-group-change-announcement-only-off").arg(peerName).arg(_data.value)
+                    case "attribute_access":
+                        // TODO: Better translations
+                        //: Group change: permissions to change group properties
+                        //% "%1 set group change permissions to '%2'"
+                        return qsTrId("whisperfish-service-message-group-change-attribute-access").arg(peerName).arg(_data.value)
+                    case "avatar":
+                        //: Group change: title
+                        //% "%1 changed the group avatar"
+                        return qsTrId("whisperfish-service-message-group-change-avatar").arg(peerName)
+                    case "delete_member":
+                        //: Group change: delete member
+                        //% "%1 removed %2 from the group"
+                        return qsTrId("whisperfish-service-message-group-change-delete-member").arg(peerName).arg(_data.value)
+                    case "description":
+                        //: Group change: desctiption changed
+                        //% "%1 changed the group description to '%2'"
+                        return qsTrId("whisperfish-service-message-group-change-description").arg(peerName).arg(_data.value)
+                    case "invite_link_access":
+                        // TODO: Better translations
+                        //: Group change: joining group via invite link setting
+                        //% "%1 set invite link setting to '%2'"
+                        return qsTrId("whisperfish-service-message-group-change-invite-link-access").arg(peerName).arg(_data.value)
+                    case "invite_link_password":
+                        //: Group change: set/change invite link password
+                        //% "%1 changed the invite link password"
+                        return qsTrId("whisperfish-service-message-group-change-invite-link-password").arg(peerName)
+                    case "member_access":
+                        //: Group change: change members joining setting
+                        //% "%1 allowed '%2' add new members"
+                        return qsTrId("whisperfish-service-message-group-change-member-access").arg(peerName).arg(_data.value)
+                    case "modify_member_role":
+                        //: Group change: change member "power level"
+                        //% "%1 changed %2 to %3"
+                        return qsTrId("whisperfish-service-message-group-change-modify-member-role").arg(peerName).arg(_data.aci).arg(_data.value)
+                    case "new_member":
+                        //: Group change: new member
+                        //% "%1 added %2 to group"
+                        return qsTrId("whisperfish-service-message-group-change-new-member").arg(peerName).arg(_data.aci)
+                    case "new_pending_member":
+                        //: Group change: new pending member
+                        //% "%1 was invited to join the group"
+                        return qsTrId("whisperfish-service-message-group-change-new-pending-member").arg(peerName).arg(_data.aci)
+                    case "new_requesting_member":
+                        //: Group change: new requesting member
+                        //% "%1 would like to join the group"
+                        return qsTrId("whisperfish-service-message-group-change-new-requesting-member").arg(peerName).arg(_data.aci)
+                    case "promote_pending_member":
+                        //: Group change: pending member was accepted
+                        //% "%1 accepted %2 into the group"
+                        return qsTrId("whisperfish-service-message-group-change-promote-pending-member").arg(peerName).arg(_data.aci)
+                    case "promote_requesting_member":
+                        //: Group change: requesting member was accepted
+                        //% "%1 accepted %2 into the group"
+                        return qsTrId("whisperfish-service-message-group-change-promote-requesting-member").arg(peerName).arg(_data.aci)
+                    case "timer":
+                        //: Group change: message expiry was changed
+                        //% "%1 changed message expiry to %2"
+                        return qsTrId("whisperfish-service-message-group-change-timer").arg(peerName).arg(_data.value)
+                    case "title":
+                        //: Group change: title
+                        //% "%1 changed the group title to '%2'"
+                        return qsTrId("whisperfish-service-message-group-change-title").arg(peerName).arg(_data.value)
+                }
+            }
         case "joined_group":
             return _outgoing
             //: Service message

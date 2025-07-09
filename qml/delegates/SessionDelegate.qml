@@ -73,7 +73,10 @@ ListItem {
             }
         }
 
-        if (hasText) {
+        if (serviceMessage != null && serviceMessage._message != null) {
+            text += serviceMessage._message
+        }
+        else if (hasText) {
             text += lastMessage.styledMessage
         }
 
@@ -105,7 +108,6 @@ ListItem {
         asynchronous: true
         sourceComponent: ServiceMessageDelegate {
             modelData: lastMessage
-            peerName: name
             visible: false
             enabled: false
         }

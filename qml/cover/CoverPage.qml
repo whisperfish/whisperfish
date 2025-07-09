@@ -125,7 +125,6 @@ CoverBackground {
                 asynchronous: true
                 sourceComponent: ServiceMessageDelegate {
                     modelData: lastMessage
-                    peerName: name
                     visible: false
                     enabled: false
                 }
@@ -178,8 +177,11 @@ CoverBackground {
                         }
                     }
 
-                    if (lastMessage.hasText) {
-                        newText += lastMessage.styledMessage
+                    if (serviceMessage != null && serviceMessage._message != null) {
+                        text += serviceMessage._message
+                    }
+                    else if (lastMessage.hasText) {
+                        text += lastMessage.styledMessage
                     }
                     return newText
                 } // end text
