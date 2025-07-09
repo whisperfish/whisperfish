@@ -3883,7 +3883,7 @@ impl<O: Observable> Storage<O> {
         use crate::schema::group_v2s::dsl::*;
 
         diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
-            .set(announcement_only.eq(next_announcement_only)) // TODO: migration
+            .set(announcement_only.eq(next_announcement_only))
             .execute(&mut *self.db())
             .expect("db");
     }
@@ -3915,6 +3915,16 @@ impl<O: Observable> Storage<O> {
         service_id: &ServiceId,
         ts: u64,
     ) -> (Option<orm::GroupV2BannedMember>, Option<orm::Recipient>) {
+        let banned_member = self.fetch_group_v2_banned_member(group_v2, service_id);
+        if banned_member.is_some() {
+            tracing::info!(
+                "Member {:?} already banned from group '{}'",
+                service_id.service_id_string(),
+                group_v2.name
+            );
+            return (banned_member, self.fetch_recipient(service_id));
+        }
+
         diesel::insert_into(crate::schema::group_v2_banned_members::table)
             .values((
                 crate::schema::group_v2_banned_members::group_v2_id.eq(&group_v2.id),
