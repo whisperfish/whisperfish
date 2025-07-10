@@ -236,7 +236,7 @@ pub struct ClientWorker {
     promptResetPeerIdentity: qt_signal!(),
     messageSent: qt_signal!(sid: i32, mid: i32, message: QString),
     messageNotSent: qt_signal!(sid: i32, mid: i32),
-    messageDeleted: qt_signal!(sid: i32, mid: i32),
+    closeNotification: qt_signal!(sid: i32, mid: i32),
     proofRequested: qt_signal!(token: QString, kind: QString),
     proofCaptchaResult: qt_signal!(success: bool),
 
@@ -831,7 +831,7 @@ impl ClientActor {
                     self.inner
                         .pinned()
                         .borrow_mut()
-                        .messageDeleted(db_message.session_id, db_message.id);
+                        .closeNotification(db_message.session_id, db_message.id);
                 } else {
                     tracing::warn!("Received a delete message from a different user, ignoring it.");
                 }
@@ -993,6 +993,17 @@ impl ClientActor {
                 SessionType::GroupV1(group) => Cow::from(&group.name),
                 SessionType::GroupV2(group) => Cow::from(&group.name),
                 SessionType::DirectMessage(recipient) => recipient.name(),
+            };
+
+            if let Some(original_message) = original_message {
+                self.inner
+                    .pinned()
+                    .borrow_mut()
+                    .closeNotification(original_message.session_id, original_message.id);
+
+                for (rct, rcp) in storage.fetch_reactions_for_message(original_message.id) {
+                    storage.save_reaction(message.id, rcp.id, rct.emoji, rct.sent_time);
+                }
             };
 
             self.inner.pinned().borrow_mut().notifyMessage(
