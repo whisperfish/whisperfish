@@ -1000,6 +1000,10 @@ impl ClientActor {
                     .pinned()
                     .borrow_mut()
                     .closeNotification(original_message.session_id, original_message.id);
+
+                for (rct, rcp) in storage.fetch_reactions_for_message(original_message.id) {
+                    storage.save_reaction(message.id, rcp.id, rct.emoji, rct.sent_time);
+                }
             };
 
             self.inner.pinned().borrow_mut().notifyMessage(
