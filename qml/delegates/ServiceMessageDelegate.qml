@@ -168,7 +168,7 @@ ListItem {
                         //% "%1 banned %2"
                     return qsTrId("whisperfish-service-message-group-change-add-banned-member").arg(recipientName).arg(targetName)
                     case "announcement_only":
-                        return _data.value == "on" ?
+                        return _data.value == "enabled" ?
                         //: Group change: only admins can send messages
                         //% "%1 restricted sending messages to administrators only"
                         qsTrId("whisperfish-service-message-group-change-announcement-only-on").arg(recipientName) :
