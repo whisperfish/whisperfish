@@ -305,6 +305,7 @@ Page {
             dockMoving: panel.moving
             enableSending: root.isValid && session.isRegistered && (!root.isGroup || group.hasSelfAsMember)
             isGroup: root.isGroup
+            announcementOnlyBlock: session.isAnnouncementOnlyBlocked
 
             Component.onDestruction: {
                 if(sessionId > -1 && session.draft !== text) {
