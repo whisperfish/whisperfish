@@ -404,7 +404,7 @@ pub struct ClientActor {
 
 fn whisperfish_device_capabilities() -> DeviceCapabilities {
     DeviceCapabilities {
-        announcement_group: false,
+        announcement_group: true,
         storage: false,
         sender_key: true,
         change_number: false,
