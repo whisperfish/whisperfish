@@ -280,6 +280,9 @@ pub struct Session {
     #[qt_property(READ: messages, NOTIFY: messages_changed)]
     messages: QVariant,
 
+    #[qt_property(READ: session_is_group, NOTIFY: session_changed)]
+    sessionIsGroup: bool,
+
     #[qt_property(READ: is_announcement_only_blocked, NOTIFY: session_changed)]
     isAnnouncementOnlyBlocked: bool,
 
@@ -402,6 +405,11 @@ impl Session {
     fn messages(&self, _ctx: Option<ModelContext<Self>>) -> QVariant {
         self.message_list.pinned().into()
     }
+
+    fn session_is_group(&self, _ctx: Option<ModelContext<Self>>) -> bool {
+        self.session.as_ref().is_some_and(|a| a.is_group_v2())
+    }
+
     pub fn is_announcement_only_blocked(&self, _ctx: Option<ModelContext<Self>>) -> bool {
         self.session.as_ref().is_some_and(|a| {
             a.is_group_v2()
