@@ -14,6 +14,7 @@ Page {
 
     property bool isGroup: group.groupId != ""
     property bool isValid: session.valid
+    property bool isAnnouncementOnlyBlocked: session.isAnnouncementOnlyBlocked
     property string conversationName: root.isGroup ? session.groupName : getRecipientName(recipient.e164, recipient.externalId, recipient.name, true)
     property string profilePicture: root.isGroup ? getGroupAvatar(session.groupId) : getRecipientAvatar(recipient.e164, recipient.uuid, recipient.externalId)
     property alias sessionId: session.sessionId
