@@ -2037,7 +2037,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-no-timestamp">
-        <location filename="../qml/components/message/InfoItem.qml" line="99"/>
+        <location filename="../qml/components/message/InfoItem.qml" line="102"/>
         <source>no time</source>
         <extracomment>Placeholder note if a message doesn&apos;t have a timestamp (which must not happen).</extracomment>
         <translation>geen tijdstip</translation>
