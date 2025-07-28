@@ -4342,11 +4342,11 @@ impl<O: Observable> Storage<O> {
             timestamp: ts,
         };
 
-        match diesel::insert_into(group_v2_requesting_members)
+        let added_count = diesel::insert_into(group_v2_requesting_members)
             .values(&new_requesting_member)
             .execute(&mut *self.db())
-            .expect("insert requesting group member")
-        {
+            .expect("insert requesting group member");
+        match added_count {
             1 => {
                 tracing::debug!(
                     "Added a new requesting member {} to group '{}'",
