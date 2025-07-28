@@ -1,75 +1,72 @@
 // SPDX-FileCopyrightText: 2023 Matti Viljanen
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import QtQuick 2.5
+import Sailfish.Silica 1.0
 
-Canvas {
+Rectangle {
+    id: root
+
     property real expiresIn: -1 // in seconds
+    readonly property int expiresInMs: expiresIn > 0 ? expiresIn * 1000 : 0
+    readonly property bool isRunning: root.expiresIn > 0 && expiryStarted !== undefined
     property var expiryStarted: undefined // Date()
-    property var color: "#ffffff"
+    property alias itemColor: expiryBar.color
 
-    property var running: true // for external timer
+    readonly property real unit: height / 14
 
-    property bool _shouldPaint: Qt.application.active && expiresIn != -1
+    color: "transparent"
+    border.width: unit
+    border.color: expiryBar.color
 
-    property real _now               // current timestamp in milliseconds
-    property real _expiryStarted: -1 // expiry started timestamp in milliseconds (defaults to _now)
-    property real _expires           // expiration timestamp in milliseconds
-    property real _duration          // expiration period in milliseconds
-    property bool _cleared: false    // is the canvas cleared or "dirty"
-    property bool _isExpiring: true  // is the expiration in progress
-    property real _endAngle          // the end angle of the "pie chart" (0...2*pi)
-    property real _prevAngle: 7.0    // what the previous angle was to reduce frequent drawing (initially >2*pi)
+    property real barHeight: progress * 10 * unit
+    property real progress: 0.0
+    radius: unit * 2
 
-    renderStrategy: Canvas.Threaded
-    renderTarget: Canvas.FramebufferObject
-    onPaint: {
-        if (!_shouldPaint || expiryStarted == null) return
+    Component.onCompleted: update()
+    onExpiresInChanged: update()
+    onExpiryStartedChanged: update()
 
-        var ctx = getContext("2d")
+    Rectangle {
+        id: expiryBar
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 2 * unit
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: parent.width - 4 * unit
+        height: barHeight
+    }
 
-        // Origin to the center, 0 degrees is up
-        ctx.setTransform(1, 0, 0, 1, width/2, width/2)
-
-        // Get timestamps in milliseconds
-        _now = (new Date()).valueOf()
-        if (_expiryStarted == -1) {
-            if (expiryStarted == null) {
-                _expiryStarted = _now
-            } else {
-                _expiryStarted = expiryStarted.valueOf()
-            }
-        }
-        _expires = expiresIn * 1000 + _expiryStarted
-        _duration = _expires - _now
-        // If expiration is in the past, we're done
-        if (_duration < 0) {
-            _shouldPaint = false
-            running = false
-            ctx.clearRect(-width/2,-width/2,width,width)
+    function update() {
+        if (expiresIn < 0 || !expiryStarted) {
+            progress = 0.0
             return
         }
 
-        _endAngle = Math.min(Math.max(0, _duration), (expiresIn * 1000)) / (expiresIn * 1000) * Math.PI*2
-        if(_prevAngle - _endAngle < 0.1) { // ~6° or one second's worth
+        var now = (new Date()).valueOf()
+        var remainingMs = (expiryStarted.valueOf() + expiresInMs) - now
+
+        if (remainingMs <= 0) {
+            progress = 0.0
             return
         }
-        _prevAngle = _endAngle
 
-        ctx.clearRect(-width/2,-width/2,width,width)
-        ctx.rotate(-Math.PI/2)
+        var next = remainingMs / expiresInMs
+        if (next > 1.0) {
+            next = 1.0
+        }
+        if (next <= 0.0) {
+            next = 0.0
+        }
+        progress = next
+    }
 
-        ctx.beginPath()
-
-        ctx.fillStyle = color
-        ctx.strokeStyle = color
-        ctx.lineWidth = 1;
-
-        ctx.moveTo(0, 0)
-        ctx.arc(0, 0, width / 3, 0, _endAngle, false)
-        ctx.moveTo(0, 0)
-
-        ctx.fill()
-        ctx.stroke()
-        _cleared = false
+    Timer {
+        id: timer
+        running: root.isRunning
+        repeat: true
+        interval: Math.max(500, expiresInMs / 25)
+        onTriggered: {
+            update()
+            console.log("update", modelData.id)
+        }
     }
 }

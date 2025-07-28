@@ -47,25 +47,28 @@ Row {
     }
 
     ExpirationIndicator {
-        id: expirationIcon
-        visible: width > 0
-        width: expiresIn > 0 && running ? infoLabel.height : 0
-        height: infoLabel.height
-        color: Theme.rgba(Theme.highlightColor, Theme.opacityOverlay)
+        id: expityIndicator
+        anchors.verticalCenter: parent.verticalCenter
+        height: infoLabel.height * 0.75
+        width: isRunning ? 0.65 * height : 0.0
+        visible: width > 0.0
+
+        Behavior on width { NumberAnimation { duration: 150 } }
 
         expiresIn: modelData.expiresIn != null ? modelData.expiresIn : -1
         expiryStarted: modelData.expiryStarted
 
-        Behavior on width { NumberAnimation { duration: 150 } }
+        itemColor: isOutbound ?
+                   (highlighted ? Theme.secondaryHighlightColor :
+                                  Theme.secondaryHighlightColor) :
+                   (highlighted ? Theme.secondaryHighlightColor :
+                                  Theme.secondaryColor)
+    }
 
-        Timer {
-            running: expirationIcon.expiresIn > 0 && expirationIcon.running
-            repeat: true
-            interval: 1000
-            onTriggered: {
-                expirationIcon.requestPaint()
-            }
-        }
+    Item {
+        visible: !statusIcon.visible && expityIndicator.visible
+        height: infoLabel.height
+        width: Theme.paddingSmall
     }
 
     HighlightImage {
