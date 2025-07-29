@@ -2074,7 +2074,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/QuotedMessagePreview.qml" line="119"/>
         <location filename="../qml/delegates/MessageDelegate.qml" line="204"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="39"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="99"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="97"/>
         <location filename="../qml/pages/GroupProfilePage.qml" line="394"/>
         <source>(no name)</source>
         <extracomment>Placeholder name for a recipient who has no name available</extracomment>
@@ -2420,7 +2420,7 @@ Settings page share contacts</extracomment>
         <translation>Nie udało się odtworzyć</translation>
     </message>
     <message id="whisperfish-group-n-members" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="109"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="107"/>
         <source>%n member(s)</source>
         <extracomment>The number of members in a group, you included</extracomment>
         <translation>
@@ -2430,7 +2430,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-chat-n-messages" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="118"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="116"/>
         <source>%n message(s)</source>
         <extracomment>The number of messages in a conversation, displayed in page header</extracomment>
         <translation>
@@ -2440,7 +2440,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-actions-info-label" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="392"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="390"/>
         <source>%n message(s) selected</source>
         <oldsource>%1 message(s) selected</oldsource>
         <extracomment>Info label shown while selecting messages</extracomment>
@@ -2451,7 +2451,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-clear-selection" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="416"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="414"/>
         <source>Clear selection</source>
         <extracomment>Message action description, shown if one or more messages are selected</extracomment>
         <translation>
@@ -2461,7 +2461,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-copy" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="426"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="424"/>
         <source>Copy %n message(s)</source>
         <oldsource>Copy %1 message(s)</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2472,14 +2472,14 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-info">
-        <location filename="../qml/pages/ConversationPage.qml" line="435"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="433"/>
         <source>Show message info</source>
         <extracomment>Message action description (only available if n==1)</extracomment>
         <translation>Pokaż informacje o wiadomości</translation>
     </message>
     <message id="whisperfish-message-action-delete-for-self" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="448"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="509"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="446"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="507"/>
         <source>Locally delete %n message(s)</source>
         <oldsource>Delete %1 message(s) for me</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2490,8 +2490,8 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-delete-for-all" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="461"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="520"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="459"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="518"/>
         <source>Delete %n message(s) for all</source>
         <oldsource>Delete %1 message(s) for all</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2502,8 +2502,8 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-resend" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="475"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="534"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="473"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="532"/>
         <source>Retry sending (the) failed message(s)</source>
         <extracomment>Message action description</extracomment>
         <translation>
@@ -2513,13 +2513,13 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-group-request-information">
-        <location filename="../qml/pages/ConversationPage.qml" line="596"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="594"/>
         <source>Let the group members message with you and let its members see your profile information?</source>
         <extracomment>Information about a pending or blocked group</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-message-request-information">
-        <location filename="../qml/pages/ConversationPage.qml" line="599"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="597"/>
         <source>Let the contact message with you and let them see your profile information?</source>
         <extracomment>Information about a pending or blocked recipient</extracomment>
         <translation type="unfinished"></translation>
