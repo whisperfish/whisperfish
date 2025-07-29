@@ -51,7 +51,7 @@ ListItem {
             return text + qsTrId("whisperfish-message-deleted-note")
         }
 
-        if (serviceMessage.active) {
+        if (lastMessage.messageType != null) {
            return text + "<i>" + serviceMessage.item._message + "</i>"
         }
 
@@ -73,10 +73,7 @@ ListItem {
             }
         }
 
-        if (serviceMessage != null && serviceMessage._message != null) {
-            text += serviceMessage._message
-        }
-        else if (hasText) {
+        if (hasText) {
             text += lastMessage.styledMessage
         }
 
@@ -104,7 +101,7 @@ ListItem {
     // and uses Message above as modelData.
     Loader {
         id: serviceMessage
-        active: recipient.status == Loader.Ready && lastMessage.messageType != null
+        active: lastMessage.messageType != null
         asynchronous: true
         sourceComponent: ServiceMessageDelegate {
             modelData: lastMessage
