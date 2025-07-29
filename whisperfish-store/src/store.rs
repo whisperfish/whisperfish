@@ -1033,7 +1033,10 @@ impl<O: Observable> Storage<O> {
             .fetch_recipient(&Aci::from(*profile_uuid).into())
             .unwrap();
         use crate::schema::recipients::dsl::*;
-        let affected_rows = diesel::update(recipients)
+
+        // This is update to own profile from QML,
+        // so checking if something actually changed it's not worth it.
+        diesel::update(recipients)
             .set((
                 profile_family_name.eq(new_family_name),
                 profile_given_name.eq(new_given_name),
@@ -1041,25 +1044,15 @@ impl<O: Observable> Storage<O> {
                 about.eq(new_about),
                 about_emoji.eq(new_emoji),
             ))
-            .filter(
-                id.eq(recipient.id).and(
-                    profile_family_name
-                        .ne(new_family_name)
-                        .or(profile_given_name.ne(new_given_name))
-                        .or(profile_joined_name.ne(new_joined_name))
-                        .or(about.ne(new_about))
-                        .or(about_emoji.ne(new_emoji)),
-                ),
-            )
+            .filter(id.eq(recipient.id))
             .execute(&mut *self.db())
             .expect("existing record updated");
+
         // If updating self, invalidate the cache
         if recipient.uuid == self.config.get_aci() {
             self.invalidate_self_recipient();
         }
-        if affected_rows > 0 {
-            self.observe_update(recipients, recipient.id);
-        }
+        self.observe_update(recipients, recipient.id);
     }
 
     #[tracing::instrument(skip(self))]
@@ -1074,39 +1067,36 @@ impl<O: Observable> Storage<O> {
         timer: Option<u32>,
         version: Option<u32>,
     ) -> i32 {
+        // TODO: update function signature?
+        let version: i32 = version.map(|n| n as _).unwrap_or(1);
+        let timer: Option<std::time::Duration> =
+            timer.map(|t| std::time::Duration::from_secs(t as _));
+
         // Carry out the update only if the timer changes
         use crate::schema::sessions::dsl::*;
         let new_version = if session.is_group() {
             1
-        } else if let Some(version) = version {
-            version as i32
+        } else if version > session.expire_timer_version {
+            version
         } else {
             session.expire_timer_version + 1
         };
-        let mut affected_rows: Vec<i32> = diesel::update(sessions)
+        if session.expire_timer_version == version && session.expiring_message_timeout == timer {
+            tracing::debug!("Expiry timer and version unchanged, no need to update");
+            return new_version;
+        }
+
+        diesel::update(sessions)
             .set((
-                expiring_message_timeout.eq(timer.map(|i| i as i32)),
+                expiring_message_timeout.eq(timer.map(|t| t.as_secs() as i32)),
                 expire_timer_version.eq(new_version),
             ))
-            .filter(
-                id.eq(session.id).and(
-                    expiring_message_timeout
-                        .ne(timer.map(|i| i as i32))
-                        .or(expire_timer_version.lt(new_version)),
-                ),
-            )
-            .returning(expire_timer_version)
-            .load(&mut *self.db())
+            .filter(id.eq(session.id))
+            .execute(&mut *self.db())
             .expect("existing record updated");
 
-        if affected_rows.len() == 1 {
-            self.observe_update(sessions, session.id);
-            affected_rows.pop().unwrap()
-        } else if affected_rows.is_empty() {
-            new_version
-        } else {
-            panic!("Message expiry update should only have changed a single session")
-        }
+        self.observe_update(sessions, session.id);
+        new_version
     }
 
     #[tracing::instrument(
@@ -2368,7 +2358,7 @@ impl<O: Observable> Storage<O> {
                     .and(schema::messages::is_read.eq(false)),
             ),
         )
-        .set((schema::messages::is_read.eq(true),))
+        .set(schema::messages::is_read.eq(true))
         .returning(schema::messages::id)
         .load(&mut *self.db())
         .expect("mark session read");
@@ -2385,7 +2375,7 @@ impl<O: Observable> Storage<O> {
 
         let affected_rows =
             diesel::update(sessions.filter(id.eq(session_id).and(is_muted.ne(muted))))
-                .set((is_muted.eq(muted),))
+                .set(is_muted.eq(muted))
                 .execute(&mut *self.db())
                 .expect("mark session (un)muted");
         if affected_rows > 0 {
@@ -2399,7 +2389,7 @@ impl<O: Observable> Storage<O> {
 
         let affected_rows =
             diesel::update(sessions.filter(id.eq(session_id).and(is_archived.ne(archived))))
-                .set((is_archived.eq(archived),))
+                .set(is_archived.eq(archived))
                 .execute(&mut *self.db())
                 .expect("mark session (un)archived");
         if affected_rows > 0 {
@@ -2413,7 +2403,7 @@ impl<O: Observable> Storage<O> {
 
         let affected_rows =
             diesel::update(sessions.filter(id.eq(session_id).and(is_pinned.ne(pinned))))
-                .set((is_pinned.eq(pinned),))
+                .set(is_pinned.eq(pinned))
                 .execute(&mut *self.db())
                 .expect("mark session (un)pinned");
         if affected_rows > 0 {
