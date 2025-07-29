@@ -682,7 +682,7 @@ impl ClientActor {
         sync_sent: Option<Sent>,
         metadata: &Metadata,
         edit: Option<NaiveDateTime>,
-    ) -> Option<i32> {
+    ) {
         let timestamp = metadata.timestamp;
         let dest_identity = metadata.destination.kind();
         let is_sync_sent = sync_sent.is_some();
@@ -876,7 +876,7 @@ impl ClientActor {
             body
         } else {
             tracing::debug!("Message without (alt) body, not inserting");
-            return None;
+            return;
         };
 
         let is_unidentified = if let (Some(sent), Some(source_addr)) = (&sync_sent, &source_addr) {
@@ -1026,12 +1026,6 @@ impl ClientActor {
                 message.text.as_deref().unwrap_or("").into(),
                 session.is_group(),
             );
-        }
-        if msg.body.is_some() {
-            // Only return message_id if we inserted a real message.
-            Some(message.id)
-        } else {
-            None
         }
     }
 
@@ -1186,7 +1180,7 @@ impl ClientActor {
                 tracing::trace!("Ignoring NullMessage");
             }
             ContentBody::DataMessage(message) => {
-                let message_id = self.handle_message(
+                self.handle_message(
                     ctx,
                     None,
                     Some(metadata.sender),
@@ -1196,15 +1190,11 @@ impl ClientActor {
                     None,
                 );
                 if metadata.needs_receipt {
-                    // XXX Is this guard correct? If the recipient requests a delivery receipt,
-                    //     we may have to send it even if we don't have a message_id.
-                    if let Some(_message_id) = message_id {
-                        self.handle_needs_delivery_receipt(ctx, &message, &metadata);
-                    }
+                    self.handle_needs_delivery_receipt(ctx, &message, &metadata);
                 }
 
                 // XXX Maybe move this if test (and the one for edit) into handle_message?
-                if !metadata.unidentified_sender && message_id.is_some() {
+                if !metadata.unidentified_sender {
                     self.handle_message_not_sealed(metadata.sender);
                 }
             }
@@ -1213,7 +1203,7 @@ impl ClientActor {
                     .data_message
                     .as_ref()
                     .expect("edit message contains data");
-                let message_id = self.handle_message(
+                self.handle_message(
                     ctx,
                     None,
                     Some(metadata.sender),
@@ -1227,12 +1217,10 @@ impl ClientActor {
                 );
 
                 if metadata.needs_receipt {
-                    if let Some(_message_id) = message_id {
-                        self.handle_needs_delivery_receipt(ctx, message, &metadata);
-                    }
+                    self.handle_needs_delivery_receipt(ctx, message, &metadata);
                 }
 
-                if !metadata.unidentified_sender && message_id.is_some() {
+                if !metadata.unidentified_sender {
                     self.handle_message_not_sealed(metadata.sender);
                 }
             }
