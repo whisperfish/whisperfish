@@ -785,9 +785,8 @@ impl ClientActor {
             ..
         }) = msg.group_v2
         {
-            // TODO: Make sure we have a sender - it's not always there.
             message_type = Some(MessageType::GroupChange);
-            Some("".into())
+            None
         } else if !msg.attachments.is_empty() {
             tracing::trace!("Received an attachment without body, replacing with empty text.");
             Some("".into())
@@ -919,6 +918,10 @@ impl ClientActor {
             session.expire_timer_version = msg.expire_timer_version() as i32;
             session.expiring_message_timeout =
                 msg.expire_timer.map(|v| Duration::from_secs(v as u64));
+        }
+
+        if message_type == Some(MessageType::GroupChange) {
+            tracing::warn!("Inserting a generic GroupChange message after handling it. This should not happen.");
         }
 
         let new_message = crate::store::NewMessage {
