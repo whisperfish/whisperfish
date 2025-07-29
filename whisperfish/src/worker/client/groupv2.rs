@@ -84,6 +84,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                             access_required_for_attributes.eq(i32::from(acl.attributes)),
                             access_required_for_members.eq(i32::from(acl.members)),
                             access_required_for_add_from_invite_link.eq(i32::from(acl.add_from_invite_link)),
+                            announcement_only.eq(group.announcements_only),
                         ))
                         .filter(id.eq(&group_id_hex))
                         .execute(&mut *storage.db())
@@ -111,6 +112,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                 // We know the group's members.
                 // First assert their existence in the database.
                 // We can assert existence for members, pending members, and requesting members.
+                // Note: banned members handled later
                 let members_to_assert = group
                     .members
                     .iter()
@@ -246,7 +248,26 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                     }
                 }
 
-                // XXX there's more stuff to store from the DecryptedGroup.
+                {
+                    use whisperfish_store::schema::group_v2_banned_members::{self, *};
+                    let deleted = diesel::delete(group_v2_banned_members::table)
+                        .filter(group_v2_id.eq(&group_id_hex))
+                        .execute(&mut *storage.db())?;
+                    if deleted != group.banned_members.len() {
+                        tracing::warn!("Expected {} deleted banned members, got {} instead. Continuing anyway.", group.banned_members.len(), deleted)
+                    } else {
+                        tracing::debug!("Deleted {} banned members, inserting {} new", deleted, group.banned_members.len());
+                    }
+                    for member in &group.banned_members {
+                        diesel::insert_or_ignore_into(group_v2_banned_members::table)
+                            .values((
+                                group_v2_id.eq(&group_id_hex),
+                                service_id.eq(member.service_id.service_id_string()),
+                                banned_at.eq(millis_to_naive_chrono(member.timestamp)),
+                            ))
+                            .execute(&mut *storage.db())?;
+                    }
+                }
 
                 let session = storage.fetch_session_by_group_v2_id(&group_id_hex).unwrap();
 
