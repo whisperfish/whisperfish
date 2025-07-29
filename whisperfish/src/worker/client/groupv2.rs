@@ -642,6 +642,7 @@ impl Handler<GroupV2Update> for ClientActor {
                     editor,
                     revision,
                     changes,
+                    change_epoch: _,
                 }) = changes.unwrap()
                 {
                     tracing::debug!(
