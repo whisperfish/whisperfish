@@ -274,34 +274,38 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                     }
                 }
 
-                {
-                    use whisperfish_store::schema::group_v2_banned_members::{self, *};
-                    let deleted = diesel::delete(group_v2_banned_members::table)
-                        .filter(group_v2_id.eq(&group_id_hex))
-                        .execute(&mut *storage.db())?;
-                    if deleted != group.banned_members.len() {
-                        tracing::warn!(
-                            "Expected {} deleted banned members, got {}.",
-                            group.banned_members.len(),
-                            deleted
-                        )
-                    } else {
-                        tracing::debug!(
-                            "Deleted {} banned members, inserting {} new",
-                            deleted,
-                            group.banned_members.len()
-                        );
-                    }
-                    for member in &group.banned_members {
-                        diesel::insert_or_ignore_into(group_v2_banned_members::table)
-                            .values((
-                                group_v2_id.eq(&group_id_hex),
-                                service_id.eq(member.service_id.service_id_string()),
-                                banned_at.eq(millis_to_naive_chrono(member.timestamp)),
-                            ))
-                            .execute(&mut *storage.db())?;
-                    }
-                }
+                storage
+                    .db()
+                    .transaction::<(), diesel::result::Error, _>(|db| {
+                        use whisperfish_store::schema::group_v2_banned_members::{self, *};
+                        let deleted = diesel::delete(group_v2_banned_members::table)
+                            .filter(group_v2_id.eq(&group_id_hex))
+                            .execute(db)?;
+                        if deleted != group.banned_members.len() {
+                            tracing::warn!(
+                                "Expected {} deleted banned members, got {}.",
+                                group.banned_members.len(),
+                                deleted
+                            )
+                        } else {
+                            tracing::debug!(
+                                "Deleted {} banned members, inserting {} new",
+                                deleted,
+                                group.banned_members.len()
+                            );
+                        }
+                        for member in &group.banned_members {
+                            diesel::insert_or_ignore_into(group_v2_banned_members::table)
+                                .values((
+                                    group_v2_id.eq(&group_id_hex),
+                                    service_id.eq(member.service_id.service_id_string()),
+                                    banned_at.eq(millis_to_naive_chrono(member.timestamp)),
+                                ))
+                                .execute(db)?;
+                        }
+                        Ok(())
+                    })
+                    .expect("dropping stale members");
 
                 let session = storage.fetch_session_by_group_v2_id(&group_id_hex).unwrap();
 
