@@ -55,9 +55,15 @@ impl Handler<RequestGroupV2Info> for ClientActor {
         Box::pin(
             async move {
                 let mut credential_cache = storage.credential_cache_mut().await;
-                let mut gm =
-                    GroupsManager::new(service_ids, authenticated_service, &mut *credential_cache, zk_params);
-                let group = gm.fetch_encrypted_group(&mut rand::thread_rng(), &master_key).await?;
+                let mut gm = GroupsManager::new(
+                    service_ids,
+                    authenticated_service,
+                    &mut *credential_cache,
+                    zk_params,
+                );
+                let group = gm
+                    .fetch_encrypted_group(&mut rand::thread_rng(), &master_key)
+                    .await?;
                 let group = groups_v2::decrypt_group(&master_key, group)?;
                 // let group = gm.decrypt_
                 // We now know the group's name and properties
@@ -83,7 +89,8 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                             invite_link_password.eq(&group.invite_link_password),
                             access_required_for_attributes.eq(i32::from(acl.attributes)),
                             access_required_for_members.eq(i32::from(acl.members)),
-                            access_required_for_add_from_invite_link.eq(i32::from(acl.add_from_invite_link)),
+                            access_required_for_add_from_invite_link
+                                .eq(i32::from(acl.add_from_invite_link)),
                             announcement_only.eq(group.announcements_only),
                         ))
                         .filter(id.eq(&group_id_hex))
@@ -92,7 +99,9 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                 }
 
                 if !group.avatar.is_empty() {
-                    client.send(RefreshGroupAvatar(group_id_hex.clone())).await?;
+                    client
+                        .send(RefreshGroupAvatar(group_id_hex.clone()))
+                        .await?;
                 }
 
                 {
@@ -107,7 +116,10 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         .execute(&mut *storage.db())
                         .expect("update session disappearing_messages_timer");
                 }
-                storage.observe_update(whisperfish_store::schema::group_v2s::table, group_id_hex.clone());
+                storage.observe_update(
+                    whisperfish_store::schema::group_v2s::table,
+                    group_id_hex.clone(),
+                );
 
                 // We know the group's members.
                 // First assert their existence in the database.
@@ -117,20 +129,17 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                     .members
                     .iter()
                     .map(|member| (member.aci, Some(&member.profile_key)))
-                    .chain(
-                        group
-                            .pending_members
-                            .iter()
-                            .filter_map(|member| {
-                                match member.address.kind() {
-                                    ServiceIdKind::Aci =>Some((Aci::from(member.address.raw_uuid()), None)),
-                                    x => {
-                                    tracing::warn!("Adding to group requires Aci, got {:?} instead", x);
-                                    None
-                                }
+                    .chain(group.pending_members.iter().filter_map(|member| {
+                        match member.address.kind() {
+                            ServiceIdKind::Aci => {
+                                Some((Aci::from(member.address.raw_uuid()), None))
                             }
-                            })
-                    )
+                            x => {
+                                tracing::warn!("Adding to group requires Aci, got {:?} instead", x);
+                                None
+                            }
+                        }
+                    }))
                     .chain(
                         group
                             .requesting_members
@@ -140,20 +149,28 @@ impl Handler<RequestGroupV2Info> for ClientActor {
 
                 // We need all the profile keys and UUIDs in the database.
                 for (addr, profile_key) in members_to_assert {
-                    let recipient = storage.fetch_or_insert_recipient_by_address(&ServiceId::Aci(addr));
+                    let recipient =
+                        storage.fetch_or_insert_recipient_by_address(&ServiceId::Aci(addr));
                     if let Some(profile_key) = profile_key {
-                        let (recipient, _was_changed) = storage.update_profile_key(recipient.e164.clone(), recipient.to_service_address(), &profile_key.get_bytes(), TrustLevel::Uncertain);
+                        let (recipient, _was_changed) = storage.update_profile_key(
+                            recipient.e164.clone(),
+                            recipient.to_service_address(),
+                            &profile_key.get_bytes(),
+                            TrustLevel::Uncertain,
+                        );
                         match recipient.profile_key {
                             Some(key) if key == profile_key.get_bytes() => {
                                 tracing::trace!("Profile key matches server-stored profile key");
                             }
                             Some(_key) => {
                                 // XXX trigger a profile key update message
-                                tracing::warn!("Profile key does not match server-stored profile key.");
+                                tracing::warn!(
+                                    "Profile key does not match server-stored profile key."
+                                );
                             }
                             None => {
-                                tracing::error!("Profile key None but tried to set.  This will probably crash a bit later.");
-                            },
+                                tracing::error!("Profile key None but tried to set.");
+                            }
                         }
                     }
                 }
@@ -162,47 +179,52 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                 // Let's link them with the group in two steps (in one migration):
                 // 1. Delete all existing memberships.
                 // 2. Insert all memberships from the DecryptedGroup.
-                let uuids = group.members.iter().map(|member| {
-                    member.aci.service_id_string()
-                });
-                storage.db().transaction::<(), diesel::result::Error, _>(|db| {
-                    use whisperfish_store::schema::{group_v2_members, recipients, group_v2s};
-                    let stale_members: Vec<i32> = group_v2_members::table
-                        .select(group_v2_members::recipient_id)
-                        .inner_join(recipients::table)
-                        .filter(
-                            recipients::uuid
-                                .ne_all(uuids)
-                                .and(group_v2_members::group_v2_id.eq(&group_id_hex)),
-                        )
-                        .load(db)?;
-                    tracing::trace!("Have {} stale members", stale_members.len());
-                    let dropped = diesel::delete(group_v2_members::table)
-                        .filter(
-                            group_v2_members::group_v2_id
-                                .eq(&group_id_hex)
-                                .and(group_v2_members::recipient_id.eq_any(&stale_members)),
-                        )
-                        .execute(db)?;
-                    assert_eq!(
-                        stale_members.len(),
-                        dropped,
-                        "didn't drop all stale members"
-                    );
-                    if dropped > 0 {
-                        storage.observe_delete(group_v2_members::table, PrimaryKey::Unknown)
-                            .with_relation(group_v2s::table, group_id_hex.clone());
-                    }
-                    Ok(())
-                }).expect("dropping stale members");
+                let uuids = group
+                    .members
+                    .iter()
+                    .map(|member| member.aci.service_id_string());
+                storage
+                    .db()
+                    .transaction::<(), diesel::result::Error, _>(|db| {
+                        use whisperfish_store::schema::{group_v2_members, group_v2s, recipients};
+                        let stale_members: Vec<i32> = group_v2_members::table
+                            .select(group_v2_members::recipient_id)
+                            .inner_join(recipients::table)
+                            .filter(
+                                recipients::uuid
+                                    .ne_all(uuids)
+                                    .and(group_v2_members::group_v2_id.eq(&group_id_hex)),
+                            )
+                            .load(db)?;
+                        tracing::trace!("Have {} stale members", stale_members.len());
+                        let dropped = diesel::delete(group_v2_members::table)
+                            .filter(
+                                group_v2_members::group_v2_id
+                                    .eq(&group_id_hex)
+                                    .and(group_v2_members::recipient_id.eq_any(&stale_members)),
+                            )
+                            .execute(db)?;
+                        assert_eq!(
+                            stale_members.len(),
+                            dropped,
+                            "didn't drop all stale members"
+                        );
+                        if dropped > 0 {
+                            storage
+                                .observe_delete(group_v2_members::table, PrimaryKey::Unknown)
+                                .with_relation(group_v2s::table, group_id_hex.clone());
+                        }
+                        Ok(())
+                    })
+                    .expect("dropping stale members");
 
                 {
-                    use whisperfish_store::schema::{group_v2_members, recipients, group_v2s};
+                    use whisperfish_store::schema::{group_v2_members, group_v2s, recipients};
                     for member in &group.members {
                         // XXX there's a bit of duplicate work going on here.
                         // XXX What about PNI?
-                        let recipient =
-                            storage.fetch_or_insert_recipient_by_address(&ServiceId::Aci(member.aci));
+                        let recipient = storage
+                            .fetch_or_insert_recipient_by_address(&ServiceId::Aci(member.aci));
                         let _span = tracing::trace_span!(
                             "Asserting member of the group",
                             %recipient
@@ -227,7 +249,8 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                                         .and(group_v2_members::group_v2_id.eq(&group_id_hex)),
                                 )
                                 .execute(&mut *storage.db())?;
-                            storage.observe_update(group_v2_members::table, PrimaryKey::Unknown)
+                            storage
+                                .observe_update(group_v2_members::table, PrimaryKey::Unknown)
                                 .with_relation(group_v2s::table, group_id_hex.clone())
                                 .with_relation(recipients::table, recipient.id);
                         } else {
@@ -241,7 +264,8 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                                     group_v2_members::role.eq(member.role as i32),
                                 ))
                                 .execute(&mut *storage.db())?;
-                            storage.observe_insert(group_v2_members::table, PrimaryKey::Unknown)
+                            storage
+                                .observe_insert(group_v2_members::table, PrimaryKey::Unknown)
                                 .with_relation(group_v2s::table, group_id_hex.clone())
                                 .with_relation(recipients::table, recipient.id);
                         }
@@ -254,9 +278,17 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         .filter(group_v2_id.eq(&group_id_hex))
                         .execute(&mut *storage.db())?;
                     if deleted != group.banned_members.len() {
-                        tracing::warn!("Expected {} deleted banned members, got {} instead. Continuing anyway.", group.banned_members.len(), deleted)
+                        tracing::warn!(
+                            "Expected {} deleted banned members, got {}.",
+                            group.banned_members.len(),
+                            deleted
+                        )
                     } else {
-                        tracing::debug!("Deleted {} banned members, inserting {} new", deleted, group.banned_members.len());
+                        tracing::debug!(
+                            "Deleted {} banned members, inserting {} new",
+                            deleted,
+                            group.banned_members.len()
+                        );
                     }
                     for member in &group.banned_members {
                         diesel::insert_or_ignore_into(group_v2_banned_members::table)
@@ -694,10 +726,7 @@ impl Handler<GroupV2Update> for ClientActor {
                             }
                             GroupChange::AttributeAccess(access) => {
                                 tracing::debug!("Attribute access: {:?}", access);
-                                storage.update_group_v2_attribute_access(
-                                    &group_v2,
-                                    access.into(),
-                                );
+                                storage.update_group_v2_attribute_access(&group_v2, access.into());
                                 db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::Avatar(avatar) => {
@@ -712,35 +741,46 @@ impl Handler<GroupV2Update> for ClientActor {
                                     &member.service_id,
                                     member.timestamp,
                                 ) {
-                                    db_triggers.push(GroupV2Trigger::Recipient(
-                                        recipient.uuid.unwrap(),
-                                    ));
+                                    db_triggers
+                                        .push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
                                 }
                             }
                             GroupChange::DeleteBannedMember(service_id) => {
                                 tracing::debug!("Delete banned member: {:?}", service_id);
-                                if let Some(recipient) = storage.delete_group_v2_banned_member(&group_v2, service_id) {
-                                        db_triggers.push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
+                                if let Some(recipient) =
+                                    storage.delete_group_v2_banned_member(&group_v2, service_id)
+                                {
+                                    db_triggers
+                                        .push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
                                 }
                             }
                             GroupChange::DeleteMember(aci) => {
                                 tracing::debug!("Delete member: {:?}", aci);
-                                if let Some(deleted) = storage.delete_group_v2_member(&group_v2, aci) {
+                                if let Some(deleted) =
+                                    storage.delete_group_v2_member(&group_v2, aci)
+                                {
                                     // TODO: Does this affect sending message in a group?
                                     // TODO: Should we ignore messages from blocked members?
-                                    db_triggers.push(GroupV2Trigger::Recipient(deleted.uuid.unwrap()));
+                                    db_triggers
+                                        .push(GroupV2Trigger::Recipient(deleted.uuid.unwrap()));
                                 }
                             }
                             GroupChange::DeletePendingMember(member) => {
                                 tracing::debug!("Delete pending member: {:?}", member);
-                                if let Some(deleted) = storage.delete_group_v2_pending_member(&group_v2, member) {
-                                    db_triggers.push(GroupV2Trigger::Recipient(deleted.uuid.unwrap()));
+                                if let Some(deleted) =
+                                    storage.delete_group_v2_pending_member(&group_v2, member)
+                                {
+                                    db_triggers
+                                        .push(GroupV2Trigger::Recipient(deleted.uuid.unwrap()));
                                 }
                             }
                             GroupChange::DeleteRequestingMember(aci) => {
                                 tracing::debug!("Delete requesting member: {:?}", aci);
-                                if let Some(deleted) = storage.delete_group_v2_requesting_member(&group_v2, aci) {
-                                    db_triggers.push(GroupV2Trigger::Recipient(deleted.uuid.unwrap()));
+                                if let Some(deleted) =
+                                    storage.delete_group_v2_requesting_member(&group_v2, aci)
+                                {
+                                    db_triggers
+                                        .push(GroupV2Trigger::Recipient(deleted.uuid.unwrap()));
                                 }
                             }
                             GroupChange::Description(description) => {
@@ -751,7 +791,8 @@ impl Handler<GroupV2Update> for ClientActor {
                             }
                             GroupChange::InviteLinkAccess(access) => {
                                 tracing::debug!("Invite link access: {:?}", access);
-                                storage.update_group_v2_invite_link_access(&group_v2, access.into());
+                                storage
+                                    .update_group_v2_invite_link_access(&group_v2, access.into());
                                 db_triggers.push(GroupV2Trigger::Generic);
                             }
                             GroupChange::InviteLinkPassword(password) => {
@@ -776,13 +817,17 @@ impl Handler<GroupV2Update> for ClientActor {
                                     aci,
                                     &profile_key,
                                 ) {
-                                    db_triggers.push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
+                                    db_triggers
+                                        .push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
                                 }
                             }
                             GroupChange::ModifyMemberRole { aci, role } => {
                                 tracing::debug!("Modify member role: {:?} {:?}", aci, role);
-                                if let Some(updated) = storage.update_group_v2_member_role(&group_v2, aci, role) {
-                                    db_triggers.push(GroupV2Trigger::Recipient(updated.uuid.unwrap()));
+                                if let Some(updated) =
+                                    storage.update_group_v2_member_role(&group_v2, aci, role)
+                                {
+                                    db_triggers
+                                        .push(GroupV2Trigger::Recipient(updated.uuid.unwrap()));
                                 }
                             }
                             GroupChange::NewMember(member) => {
@@ -796,7 +841,8 @@ impl Handler<GroupV2Update> for ClientActor {
                                     None,
                                 );
                                 if let Some((_, added)) = result {
-                                    db_triggers.push(GroupV2Trigger::Recipient(added.uuid.unwrap()));
+                                    db_triggers
+                                        .push(GroupV2Trigger::Recipient(added.uuid.unwrap()));
                                 }
                             }
                             GroupChange::NewPendingMember(member) => {
@@ -818,7 +864,8 @@ impl Handler<GroupV2Update> for ClientActor {
                                     member.profile_key,
                                     millis_to_naive_chrono(member.timestamp),
                                 ) {
-                                    db_triggers.push(GroupV2Trigger::Recipient(added.uuid.unwrap()));
+                                    db_triggers
+                                        .push(GroupV2Trigger::Recipient(added.uuid.unwrap()));
                                 }
                             }
                             GroupChange::PromotePendingPniAciMemberProfileKey(member) => {
@@ -826,35 +873,41 @@ impl Handler<GroupV2Update> for ClientActor {
                                     "Promote pending PNI member profile key: {:?}",
                                     member
                                 );
-                                if let Some(recipient) = storage.promote_pending_pni_aci_member_profile_key(
-                                    &group_v2,
-                                    member.aci,
-                                    member.pni,
-                                    member.profile_key,
-                                ) {
-                                    db_triggers.push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
+                                if let Some(recipient) = storage
+                                    .promote_pending_pni_aci_member_profile_key(
+                                        &group_v2,
+                                        member.aci,
+                                        member.pni,
+                                        member.profile_key,
+                                    )
+                                {
+                                    db_triggers
+                                        .push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
                                 }
                             }
                             GroupChange::PromotePendingMember {
                                 address,
                                 profile_key,
                             } => {
-                                tracing::debug!(
-                                    "Promote pendin member: {:?}",
-                                    address,
-                                );
-                                if let Some((_, recipient)) = storage.promote_group_v2_pending_member(
-                                    &group_v2,
-                                    address,
-                                    &profile_key,
-                                ) {
-                                    db_triggers.push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
+                                tracing::debug!("Promote pending member: {:?}", address,);
+                                if let Some((_, recipient)) = storage
+                                    .promote_group_v2_pending_member(
+                                        &group_v2,
+                                        address,
+                                        &profile_key,
+                                    )
+                                {
+                                    db_triggers
+                                        .push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
                                 }
                             }
                             GroupChange::PromoteRequestingMember { aci, role } => {
                                 tracing::debug!("Promote requesting member: {:?} {:?}", aci, role);
-                                if let Some((_, recipient)) = storage.promote_group_v2_requesting_member(&group_v2, aci, role) {
-                                    db_triggers.push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
+                                if let Some((_, recipient)) =
+                                    storage.promote_group_v2_requesting_member(&group_v2, aci, role)
+                                {
+                                    db_triggers
+                                        .push(GroupV2Trigger::Recipient(recipient.uuid.unwrap()));
                                 }
                             }
                             GroupChange::Timer(timer) => {
