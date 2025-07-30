@@ -29,11 +29,6 @@ ListItem {
 
     property var _json: _type == "group_change" && modelData.message && modelData.message[0] === "{" ? JSON.parse(modelData.message) : undefined
     property var _data: (_type == "group_change" && _json) ? _json : null
-    on_DataChanged: {
-        if (_data != null) {
-            console.warn("Service message data: with data:", JSON.stringify(_data))
-        }
-    }
 
     property bool _canShowDetails: (_type === "identity_reset" || _type === "session_reset") ? true : false
     property real _fontSize: Theme.fontSizeExtraSmall
