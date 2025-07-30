@@ -2,7 +2,10 @@ use super::*;
 use crate::store::{observer::PrimaryKey, GroupV2, TrustLevel};
 use actix::prelude::*;
 use diesel::prelude::*;
-use libsignal_service::groups_v2::{self, *};
+use libsignal_service::{
+    groups_v2::{self, *},
+    ServiceIdExt,
+};
 use qmeta_async::with_executor;
 use tokio::io::AsyncWriteExt;
 use whisperfish_store::NewMessage;
@@ -128,29 +131,28 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                 let members_to_assert = group
                     .members
                     .iter()
-                    .map(|member| (member.aci, Some(&member.profile_key)))
+                    .map(|member| ((Some(member.aci)), None, Some(&member.profile_key)))
                     .chain(group.pending_members.iter().filter_map(|member| {
                         match member.address.kind() {
-                            ServiceIdKind::Aci => {
-                                Some((Aci::from(member.address.raw_uuid()), None))
-                            }
-                            x => {
-                                tracing::warn!("Adding to group requires Aci, got {:?} instead", x);
-                                None
-                            }
+                            ServiceIdKind::Aci => Some((member.address.aci(), None, None)),
+                            ServiceIdKind::Pni => Some((None, member.address.pni(), None)),
                         }
                     }))
                     .chain(
                         group
                             .requesting_members
                             .iter()
-                            .map(|member| (member.aci, Some(&member.profile_key))),
+                            .map(|member| (Some(member.aci), None, Some(&member.profile_key))),
                     );
 
                 // We need all the profile keys and UUIDs in the database.
-                for (addr, profile_key) in members_to_assert {
-                    let recipient =
-                        storage.fetch_or_insert_recipient_by_address(&ServiceId::Aci(addr));
+                for (aci, pni, profile_key) in members_to_assert {
+                    let addr = match (aci, pni) {
+                        (Some(aci), _) => ServiceId::Aci(aci),
+                        (_, Some(pni)) => ServiceId::Pni(pni),
+                        _ => continue, // unreachable
+                    };
+                    let recipient = storage.fetch_or_insert_recipient_by_address(&addr);
                     if let Some(profile_key) = profile_key {
                         let (recipient, _was_changed) = storage.update_profile_key(
                             recipient.e164.clone(),
