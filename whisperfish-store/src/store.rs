@@ -4228,21 +4228,17 @@ impl<O: Observable> Storage<O> {
     ) -> Option<orm::GroupV2PendingMember> {
         use crate::schema::group_v2_pending_members::dsl::*;
 
-        // Check thet there is no such actual member
-        if match new_service_id.kind() {
-            ServiceIdKind::Aci => {
-                let aci = Some(new_service_id.raw_uuid());
-                self.fetch_group_members_by_group_v2_id(&group_v2.id)
-                    .into_iter()
-                    .any(|(_, r)| r.uuid == aci)
-            }
-            ServiceIdKind::Pni => {
-                let pni = Some(new_service_id.raw_uuid());
-                self.fetch_group_members_by_group_v2_id(&group_v2.id)
-                    .into_iter()
-                    .any(|(_, r)| r.pni == pni)
-            }
-        } {
+        // Check that there is no such member already
+        let members = self.fetch_group_members_by_group_v2_id(&group_v2.id);
+        let member = match new_service_id.kind() {
+            ServiceIdKind::Aci => members
+                .into_iter()
+                .find(|m| m.1.uuid == Some(new_service_id.raw_uuid())),
+            ServiceIdKind::Pni => members
+                .into_iter()
+                .find(|m| m.1.pni == Some(new_service_id.raw_uuid())),
+        };
+        if member.is_some() {
             tracing::debug!(
                 "Member {:?} already exists in group '{}'",
                 new_service_id,
@@ -4252,22 +4248,19 @@ impl<O: Observable> Storage<O> {
         }
 
         // Check that there is no pending member
-        if match new_service_id.kind() {
-            ServiceIdKind::Aci => self
-                .fetch_group_v2_pending_member(
-                    &group_v2.id,
-                    Some(Aci::from(new_service_id.raw_uuid())),
-                    None,
-                )
-                .is_some(),
-            ServiceIdKind::Pni => self
-                .fetch_group_v2_pending_member(
-                    &group_v2.id,
-                    None,
-                    Some(Pni::from(new_service_id.raw_uuid())),
-                )
-                .is_some(),
-        } {
+        let pending = match new_service_id.kind() {
+            ServiceIdKind::Aci => self.fetch_group_v2_pending_member(
+                &group_v2.id,
+                Some(Aci::from(new_service_id.raw_uuid())),
+                None,
+            ),
+            ServiceIdKind::Pni => self.fetch_group_v2_pending_member(
+                &group_v2.id,
+                None,
+                Some(Pni::from(new_service_id.raw_uuid())),
+            ),
+        };
+        if pending.is_some() {
             tracing::debug!(
                 "Pending member {:?} already exists in group '{}'",
                 new_service_id,
