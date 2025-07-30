@@ -966,14 +966,12 @@ impl Handler<GroupV2Update> for ClientActor {
                         // Triggers group update
                         storage.update_group_v2_revision(&group_v2, revision as i32);
                     }
-
-                    Ok((ctx_triggers, session.id, svc_messages))
                 } else {
                     tracing::warn!("Group change message with no changes");
-                    Ok((Vec::new(), session.id, svc_messages))
                 }
+
+                Ok((ctx_triggers, session.id, svc_messages))
             }
-            .instrument(tracing::info_span!(""))
             .into_actor(self)
             .map(|res, _act, ctx| {
                 match res {
