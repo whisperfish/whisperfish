@@ -498,13 +498,12 @@ impl Handler<GroupAvatarFetched> for ClientActor {
 /// Types of post-GroupV2-update message types.
 #[derive(PartialEq, Debug)]
 enum GroupV2Trigger {
-    /// For indicating a handled group update
-    None,
-    /// Only update version (which triggers group refresh)
-    Generic,
+    /// Only revision update is needed, which updates the full group.
+    Revision,
     /// Avatar(GroupV2Id)
+    /// Requires a fetch from server, which is handled separately.
     Avatar(String),
-    /// Changes for a specific recipient in the group
+    /// Changes for a specific recipient in the group.
     Recipient(Uuid),
 }
 
@@ -728,12 +727,12 @@ impl Handler<GroupV2Update> for ClientActor {
                                     &group_v2,
                                     announcement_only,
                                 );
-                                db_triggers.push(GroupV2Trigger::Generic);
+                                db_triggers.push(GroupV2Trigger::Revision);
                             }
                             GroupChange::AttributeAccess(access) => {
                                 tracing::debug!("Attribute access: {:?}", access);
                                 storage.update_group_v2_attribute_access(&group_v2, access.into());
-                                db_triggers.push(GroupV2Trigger::Generic);
+                                db_triggers.push(GroupV2Trigger::Revision);
                             }
                             GroupChange::Avatar(avatar) => {
                                 tracing::debug!("Avatar: {:?}", avatar);
@@ -793,24 +792,24 @@ impl Handler<GroupV2Update> for ClientActor {
                                 tracing::debug!("Description: {:?}", description);
                                 storage
                                     .update_group_v2_description(&group_v2, description.as_ref());
-                                db_triggers.push(GroupV2Trigger::Generic);
+                                db_triggers.push(GroupV2Trigger::Revision);
                             }
                             GroupChange::InviteLinkAccess(access) => {
                                 tracing::debug!("Invite link access: {:?}", access);
                                 storage
                                     .update_group_v2_invite_link_access(&group_v2, access.into());
-                                db_triggers.push(GroupV2Trigger::Generic);
+                                db_triggers.push(GroupV2Trigger::Revision);
                             }
                             GroupChange::InviteLinkPassword(password) => {
                                 tracing::debug!("Invite link password: {:?}", password);
                                 storage.update_group_v2_invite_link_password(&group_v2, &password);
                                 // TODO: Reftect in UI
-                                db_triggers.push(GroupV2Trigger::Generic);
+                                db_triggers.push(GroupV2Trigger::Revision);
                             }
                             GroupChange::MemberAccess(access) => {
                                 tracing::debug!("Member access: {:?}", access);
                                 storage.update_group_v2_member_access(&group_v2, access.into());
-                                db_triggers.push(GroupV2Trigger::Generic);
+                                db_triggers.push(GroupV2Trigger::Revision);
                             }
                             GroupChange::ModifyMemberProfileKey { aci, profile_key } => {
                                 tracing::debug!(
@@ -860,7 +859,7 @@ impl Handler<GroupV2Update> for ClientActor {
                                     member.role,
                                     millis_to_naive_chrono(member.timestamp),
                                 );
-                                db_triggers.push(GroupV2Trigger::Generic);
+                                db_triggers.push(GroupV2Trigger::Revision);
                             }
                             GroupChange::NewRequestingMember(member) => {
                                 tracing::debug!("New requesting member: {:?}", member);
@@ -923,24 +922,23 @@ impl Handler<GroupV2Update> for ClientActor {
                                     timer.map(|t| t.duration),
                                     None,
                                 );
-                                db_triggers.push(GroupV2Trigger::Generic);
+                                db_triggers.push(GroupV2Trigger::Revision);
                             }
                             GroupChange::Title(title) => {
                                 tracing::debug!("Title: {:?}", title);
                                 storage.update_group_v2_title(&group_v2, &title);
-                                db_triggers.push(GroupV2Trigger::Generic);
+                                db_triggers.push(GroupV2Trigger::Revision);
                             }
                         }
                     }
                     group_v2.revision = original_revision;
 
                     if !db_triggers.is_empty() && ctx_triggers.is_empty() {
-                        ctx_triggers.push(GroupV2Trigger::None);
+                        ctx_triggers.push(GroupV2Trigger::Revision);
                     }
 
                     for trigger in db_triggers.iter() {
                         match trigger {
-                            GroupV2Trigger::Generic => continue,
                             GroupV2Trigger::Recipient(uuid) => {
                                 let aci: Aci = uuid.to_owned().into();
                                 let service_id: ServiceId = aci.into();
@@ -955,13 +953,8 @@ impl Handler<GroupV2Update> for ClientActor {
                                         recipient.id,
                                     );
                             }
-                            _ => {
-                                tracing::error!(
-                                    "Unexpected trigger in database triggers, ignoring: {:?}",
-                                    trigger
-                                );
-                                continue;
-                            }
+                            GroupV2Trigger::Revision => continue,
+                            GroupV2Trigger::Avatar(_) => continue,
                         }
                     }
 
@@ -980,31 +973,25 @@ impl Handler<GroupV2Update> for ClientActor {
             .into_actor(self)
             .map(|res, _act, ctx| {
                 match res {
-                    Ok((triggers, s_id, svc_messages)) => {
+                    Ok((ctx_triggers, s_id, svc_messages)) => {
                         // XXX handle group.group_change like a real client
-                        if triggers.is_empty() {
+                        if ctx_triggers.is_empty() {
                             tracing::warn!("Unhandled group change, fallback to full refresh");
                             ctx.notify(RequestGroupV2InfoBySessionId(s_id));
                         } else {
-                            for trigger in triggers {
+                            for trigger in ctx_triggers {
                                 match trigger {
-                                    GroupV2Trigger::None => {
-                                        tracing::debug!("Group updated, no need for refresh.");
-                                    }
                                     GroupV2Trigger::Avatar(group_v2_id) => {
-                                        ctx.notify(RefreshGroupAvatar(group_v2_id));
+                                        ctx.notify(RefreshGroupAvatar(group_v2_id))
                                     }
-                                    GroupV2Trigger::Generic | GroupV2Trigger::Recipient(_) => {
-                                        tracing::error!(
-                                            "Unexpected trigger in context triggers, ignoring: {:?}",
-                                            trigger
-                                        );
-                                    }
+                                    GroupV2Trigger::Revision => continue,
+                                    GroupV2Trigger::Recipient(_) => continue,
                                 }
                             }
                             for msg in svc_messages {
                                 ctx.notify(msg);
                             }
+                            tracing::debug!("Group updated");
                         }
                     }
                     Err(e) => {
