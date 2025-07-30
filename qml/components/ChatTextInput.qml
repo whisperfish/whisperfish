@@ -24,11 +24,11 @@ Item {
     property int maxHeight: 3*Theme.itemSizeLarge // TODO adapt based on screen size
     property bool showSeparator: false
     property bool clearAfterSend: true
-    property bool enableSending: recipientIsRegistered
+    property bool enableSending: true
     property bool enableAttachments: true
     property bool dockMoving
     property bool enableTypingIndicators: SettingsBridge.enable_typing_indicators
-    property bool recipientIsRegistered: true
+    property bool isGroup
 
     property bool isVoiceNote: false
     property var voiceNoteStartTime: null
@@ -320,18 +320,22 @@ Item {
                 hideLabelOnEmptyField: false
                 textRightMargin: 0
                 font.pixelSize: Theme.fontSizeSmall
-                enabled: (recipientIsRegistered || text.length > 0) && !isVoiceNote
-                placeholderText: if (!recipientIsRegistered) {
-                        //: Chat text input placeholder for deleted/unregistered recipient
-                        //% "The recipient is not registered"
-                        qsTrId("whisperfish-chat-input-recipient-is-unregistered")
-                    }
-                    else if ((enablePersonalizedPlaceholder || isLandscape) && placeholderContactName.length > 0) {
+                enabled: (enableSending || text.length > 0) && !isVoiceNote
+                placeholderText: if (!enableSending) {
+                        if (isGroup) {
+                            //: Chat text input placeholder for not being a member of the group
+                            //% "You are not member of the group"
+                            qsTrId("whisperfish-chat-input-not-group-member")
+                        } else {
+                            //: Chat text input placeholder for deleted/unregistered recipient
+                            //% "The recipient is not registered"
+                            qsTrId("whisperfish-chat-input-recipient-is-unregistered")
+                        }
+                    } else if ((enablePersonalizedPlaceholder || isLandscape) && placeholderContactName.length > 0) {
                         //: Personalized placeholder for chat input, e.g. "Hi John"
                         //% "Hi %1"
                         qsTrId("whisperfish-chat-input-placeholder-personal").arg(placeholderContactName)
-                    }
-                    else {
+                    } else {
                         //: Generic placeholder for chat input
                         //% "Write a message"
                         qsTrId("whisperfish-chat-input-placeholder-default")

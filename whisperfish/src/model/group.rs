@@ -8,6 +8,7 @@ use crate::store::orm::{GroupV1Member, GroupV2Member};
 use crate::store::Storage;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
+use uuid::Uuid;
 use whisperfish_store::schema;
 use whisperfish_store::store::orm;
 
@@ -40,10 +41,15 @@ pub struct Group {
     #[qt_property(READ: member_count, NOTIFY: group_changed)]
     member_count: i32,
 
+    #[qt_property(READ: has_self_as_member, NOTIFY: group_changed)]
+    hasSelfAsMember: bool,
+
     membership_list: QObjectBox<GroupMembershipListModel>,
 
     group_changed: qt_signal!(),
     members_model_changed: qt_signal!(),
+
+    own_aci: Option<Uuid>,
 }
 
 impl EventObserving for Group {
@@ -115,6 +121,20 @@ impl Group {
         self.membership_list.pinned().into()
     }
 
+    /// Check if the self recipient is a member of the group.
+    fn has_self_as_member(&self, _ctx: Option<ModelContext<Self>>) -> bool {
+        if self.own_aci.is_some() {
+            self.membership_list
+                .pinned()
+                .borrow()
+                .content
+                .iter()
+                .any(|(_, r)| r.uuid == self.own_aci)
+        } else {
+            false
+        }
+    }
+
     #[with_executor]
     #[tracing::instrument(skip(self, ctx))]
     fn set_group_id(&mut self, ctx: Option<ModelContext<Self>>, id: QString) {
@@ -126,6 +146,7 @@ impl Group {
 
     fn init(&mut self, ctx: ModelContext<Self>) {
         let storage = ctx.storage();
+        self.own_aci = storage.fetch_self_recipient().and_then(|r| r.uuid);
         if let Some(id) = &self.id {
             self.group_v1 = None;
             self.group_v2 = None;
