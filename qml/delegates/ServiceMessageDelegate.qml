@@ -21,13 +21,30 @@ ListItem {
         app: AppState
         recipientId: modelData.senderRecipientId
     }
-    property string peerName: recipient.valid ? getRecipientName(recipient.e164, recipient.externalId, recipient.name, true) : ""
+    property QtObject target: Recipient {
+        app: AppState
+    }
+    property string recipientName: recipient.valid ? getRecipientName(recipient.e164, recipient.externalId, recipient.name, undefined) : ""
+    property string targetName: target.valid ? getRecipientName(target.e164, target.externalId, target.name, undefined) : ""
 
     property var _type: modelData.messageType
 
     property string _outgoing: modelData.outgoing === true
 
-    property var _json: _type == "group_change" && modelData.message && modelData.message[0] === "{" ? JSON.parse(modelData.message) : undefined
+    property var _json: try {
+        if (_type == "group_change" && modelData.message && modelData.message[0] === "{") {
+            var json = JSON.parse(modelData.message)
+            if (json != null && json.aci != null) {
+                target.recipientUuid = json.aci
+                // XXX What about PNI?
+            }
+            json
+        }
+    } catch (err) {
+        console.error(err, modelData.message)
+    }
+
+    // _type == "group_change" && modelData.message && modelData.message[0] === "{" ? JSON.parse(modelData.message) : undefined
     property var _data: (_type == "group_change" && _json) ? _json : null
 
     property bool _canShowDetails: (_type === "identity_reset" || _type === "session_reset") ? true : false
@@ -126,19 +143,19 @@ ListItem {
                 }
             }
 
-            return expiryMessage(_outgoing, peerName, secs)
+            return expiryMessage(_outgoing, recipientName, secs)
         case "profile_key_update": // incoming only
             //: Service message for profile (key) update. %1 is a name
             //% "%1 updated their profile."
-            return qsTrId("whisperfish-service-message-profile-key-update-peer").arg(peerName)
+            return qsTrId("whisperfish-service-message-profile-key-update-peer").arg(recipientName)
         case "end_session":
             return _outgoing
             //: Service message, %1 is a name
             //% "You ended the session with %1."
-            ? qsTrId("whisperfish-service-message-end-session-self").arg(peerName)
+            ? qsTrId("whisperfish-service-message-end-session-self").arg(recipientName)
             //: Service message, %1 is a name
             //% "%1 ended the session with you."
-            : qsTrId("whisperfish-service-message-end-session-peer").arg(peerName)
+            : qsTrId("whisperfish-service-message-end-session-peer").arg(recipientName)
         case "group_change":
             if (_data == null) {
                 //: Service message
@@ -149,75 +166,75 @@ ListItem {
                     case "add_banned_member":
                         //: Group change: add banned member
                         //% "%1 banned %2"
-                    return qsTrId("whisperfish-service-message-group-change-add-banned-member").arg(peerName).arg(_data.value)
+                    return qsTrId("whisperfish-service-message-group-change-add-banned-member").arg(recipientName).arg(targetName)
                     case "announcement_only":
                         return _data.value == "on" ?
                         //: Group change: only admins can send messages
                         //% "%1 restricted sending messages to administrators only"
-                        qsTrId("whisperfish-service-message-group-change-announcement-only-on").arg(peerName).arg(_data.value) :
+                        qsTrId("whisperfish-service-message-group-change-announcement-only-on").arg(recipientName) :
                         //: Group change: all members can send messages
                         //% "%1 allowed everyone send messages"
-                        qsTrId("whisperfish-service-message-group-change-announcement-only-off").arg(peerName).arg(_data.value)
+                        qsTrId("whisperfish-service-message-group-change-announcement-only-off").arg(recipientName)
                     case "attribute_access":
                         // TODO: Better translations
                         //: Group change: permissions to change group properties
                         //% "%1 set group change permissions to '%2'"
-                        return qsTrId("whisperfish-service-message-group-change-attribute-access").arg(peerName).arg(_data.value)
+                        return qsTrId("whisperfish-service-message-group-change-attribute-access").arg(recipientName).arg(_data.value)
                     case "avatar":
                         //: Group change: title
                         //% "%1 changed the group avatar"
-                        return qsTrId("whisperfish-service-message-group-change-avatar").arg(peerName)
+                        return qsTrId("whisperfish-service-message-group-change-avatar").arg(recipientName)
                     case "delete_member":
                         //: Group change: delete member
                         //% "%1 removed %2 from the group"
-                        return qsTrId("whisperfish-service-message-group-change-delete-member").arg(peerName).arg(_data.value)
+                        return qsTrId("whisperfish-service-message-group-change-delete-member").arg(recipientName).arg(targetName)
                     case "description":
                         //: Group change: desctiption changed
                         //% "%1 changed the group description to '%2'"
-                        return qsTrId("whisperfish-service-message-group-change-description").arg(peerName).arg(_data.value)
+                        return qsTrId("whisperfish-service-message-group-change-description").arg(recipientName).arg(_data.value)
                     case "invite_link_access":
                         // TODO: Better translations
                         //: Group change: joining group via invite link setting
                         //% "%1 set invite link setting to '%2'"
-                        return qsTrId("whisperfish-service-message-group-change-invite-link-access").arg(peerName).arg(_data.value)
+                        return qsTrId("whisperfish-service-message-group-change-invite-link-access").arg(recipientName).arg(_data.value)
                     case "invite_link_password":
                         //: Group change: set/change invite link password
                         //% "%1 changed the invite link password"
-                        return qsTrId("whisperfish-service-message-group-change-invite-link-password").arg(peerName)
+                        return qsTrId("whisperfish-service-message-group-change-invite-link-password").arg(recipientName)
                     case "member_access":
                         //: Group change: change members joining setting
                         //% "%1 allowed '%2' add new members"
-                        return qsTrId("whisperfish-service-message-group-change-member-access").arg(peerName).arg(_data.value)
+                        return qsTrId("whisperfish-service-message-group-change-member-access").arg(recipientName).arg(_data.value)
                     case "modify_member_role":
                         //: Group change: change member "power level"
                         //% "%1 changed %2 to %3"
-                        return qsTrId("whisperfish-service-message-group-change-modify-member-role").arg(peerName).arg(_data.aci).arg(_data.value)
+                        return qsTrId("whisperfish-service-message-group-change-modify-member-role").arg(recipientName).arg(targetName).arg(_data.value)
                     case "new_member":
                         //: Group change: new member
                         //% "%1 added %2 to group"
-                        return qsTrId("whisperfish-service-message-group-change-new-member").arg(peerName).arg(_data.aci)
+                        return qsTrId("whisperfish-service-message-group-change-new-member").arg(recipientName).arg(targetName)
                     case "new_pending_member":
                         //: Group change: new pending member
                         //% "%1 was invited to join the group"
-                        return qsTrId("whisperfish-service-message-group-change-new-pending-member").arg(peerName).arg(_data.aci)
+                        return qsTrId("whisperfish-service-message-group-change-new-pending-member").arg(recipientName).arg(targetName)
                     case "new_requesting_member":
                         //: Group change: new requesting member
                         //% "%1 would like to join the group"
-                        return qsTrId("whisperfish-service-message-group-change-new-requesting-member").arg(peerName).arg(_data.aci)
+                        return qsTrId("whisperfish-service-message-group-change-new-requesting-member").arg(recipientName).arg(targetName)
                     case "promote_pending_member":
                         //: Group change: pending member was accepted
                         //% "%1 accepted %2 into the group"
-                        return qsTrId("whisperfish-service-message-group-change-promote-pending-member").arg(peerName).arg(_data.aci)
+                        return qsTrId("whisperfish-service-message-group-change-promote-pending-member").arg(recipientName).arg(targetName)
                     case "promote_requesting_member":
                         //: Group change: requesting member was accepted
                         //% "%1 accepted %2 into the group"
-                        return qsTrId("whisperfish-service-message-group-change-promote-requesting-member").arg(peerName).arg(_data.aci)
+                        return qsTrId("whisperfish-service-message-group-change-promote-requesting-member").arg(recipientName).arg(targetName)
                     case "timer":
-                        return expiryMessage(_outgoing, peerName, _data.value)
+                        return expiryMessage(_outgoing, recipientName, _data.value)
                     case "title":
                         //: Group change: title
                         //% "%1 changed the group title to '%2'"
-                        return qsTrId("whisperfish-service-message-group-change-title").arg(peerName).arg(_data.value)
+                        return qsTrId("whisperfish-service-message-group-change-title").arg(recipientName).arg(_data.value)
                 }
             }
         case "joined_group":
@@ -227,7 +244,7 @@ ListItem {
             ? qsTrId("whisperfish-service-message-joined-group-self")
             //: Service message, %1 is a name
             //% "%1 joined the group."
-            : qsTrId("whisperfish-service-message-joined-group-peer").arg(peerName)
+            : qsTrId("whisperfish-service-message-joined-group-peer").arg(recipientName)
         case "left_group":
             return _outgoing
             //: Service message, %1 is a name
@@ -235,7 +252,7 @@ ListItem {
             ? qsTrId("whisperfish-service-message-left-group-self")
             //: Service message, %1 is a name
             //% "%1 left the group."
-            : qsTrId("whisperfish-service-message-left-group-peer").arg(peerName)
+            : qsTrId("whisperfish-service-message-left-group-peer").arg(recipientName)
         case "group_call":
             return _outgoing
             //: Service message
@@ -243,52 +260,52 @@ ListItem {
             ? qsTrId("whisperfish-service-message-call-group-self")
             //: Service message, %1 is the person initiating the call.
             //% "%1 had a group call with you."
-            : qsTrId("whisperfish-service-message-call-group-peer").arg(peerName)
+            : qsTrId("whisperfish-service-message-call-group-peer").arg(recipientName)
         case "missed_audio_call":
             return _outgoing
             //: Service message, %1 is a name
             //% "You missed a voice call from %1."
-            ? qsTrId("whisperfish-service-message-missed-call-voice-self").arg(peerName)
+            ? qsTrId("whisperfish-service-message-missed-call-voice-self").arg(recipientName)
             //: Service message, %1 is a name
             //% "You tried to voice call %1."
-            : qsTrId("whisperfish-service-message-missed-call-voice-peer").arg(peerName)
+            : qsTrId("whisperfish-service-message-missed-call-voice-peer").arg(recipientName)
         case "missed_video_call":
             return _outgoing
             //: Service message, %1 is a name
             //% "You missed a video call from %1."
-            ? qsTrId("whisperfish-service-message-missed-call-video-self").arg(peerName)
+            ? qsTrId("whisperfish-service-message-missed-call-video-self").arg(recipientName)
             //: Service message, %1 is a name
             //% "You tried to video call %1."
-            : qsTrId("whisperfish-service-message-missed-call-video-peer").arg(peerName)
+            : qsTrId("whisperfish-service-message-missed-call-video-peer").arg(recipientName)
         case "outgoing_video_call":
             //: Service message, %1 is a name
             //% "You had a video call with %1."
-            return qsTrId("whisperfish-service-message-call-video-self").arg(peerName)
+            return qsTrId("whisperfish-service-message-call-video-self").arg(recipientName)
         case "incoming_video_call":
             //: Service message, %1 is a name
             //% "%1 had a video call with you."
-            return qsTrId("whisperfish-service-message-call-video-peer").arg(peerName)
+            return qsTrId("whisperfish-service-message-call-video-peer").arg(recipientName)
         case "outgoing_audio_call":
             //: Service message, %1 is a name
             //% "You had a voice call with %1."
-            return qsTrId("whisperfish-service-message-call-voice-self").arg(peerName)
+            return qsTrId("whisperfish-service-message-call-voice-self").arg(recipientName)
         case "incoming_audio_call":
             //: Service message, %1 is a name
             //% "%1 had a voice call with you."
-            return qsTrId("whisperfish-service-message-call-voice-peer").arg(peerName)
+            return qsTrId("whisperfish-service-message-call-voice-peer").arg(recipientName)
         case "identity_reset":
             //: Service message, %1 is a name
             //% "Your safety number with %1 has changed. "
             //% "Swipe right to verify the new number."
-            return qsTrId("whisperfish-service-message-fingerprint-changed").arg(peerName)
+            return qsTrId("whisperfish-service-message-fingerprint-changed").arg(recipientName)
         case "session_reset":
             return _outgoing
             //: Service message, %1 is a name
             //% "You reset the secure session with %1."
-            ? qsTrId("whisperfish-service-message-session-reset-self").arg(peerName)
+            ? qsTrId("whisperfish-service-message-session-reset-self").arg(recipientName)
             //: Service message, %1 is a name
             //% "%1 reset the secure session with you."
-            : qsTrId("whisperfish-service-message-session-reset-peer").arg(peerName)
+            : qsTrId("whisperfish-service-message-session-reset-peer").arg(recipientName)
         default:
             //: Service message, %1 is an integer, %2 is a word, %3 is the message text (if any)
             console.warn("Unsupported service message: id", modelData.id, "flags", modelData.flags, "type", _type, "text", modelData.message)
