@@ -897,26 +897,31 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn fetch_blocked_numbers(&self) -> Vec<String> {
+    pub fn fetch_blocked_numbers(&self) -> Vec<PhoneNumber> {
         use crate::schema::recipients::dsl::*;
-        recipients
-            .filter(is_blocked.eq(true))
+        use std::str::FromStr;
+        let e164s: Vec<String> = schema::recipients::table
+            .select(e164.assume_not_null())
+            .filter(is_blocked.eq(true).and(e164.is_not_null()))
             .load(&mut *self.db())
-            .expect("db")
+            .unwrap();
+        e164s
             .into_iter()
-            .filter_map(|r: orm::Recipient| r.e164.map(|e| e.to_string()))
+            .filter_map(|s| PhoneNumber::from_str(&s).ok())
             .collect()
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn fetch_blocked_acis(&self) -> Vec<String> {
+    pub fn fetch_blocked_acis(&self) -> Vec<Uuid> {
         use crate::schema::recipients::dsl::*;
-        recipients
-            .filter(is_blocked.eq(true))
+        use std::str::FromStr;
+        let acis: Vec<String> = schema::recipients::table
+            .select(uuid.assume_not_null())
+            .filter(is_blocked.eq(true).and(uuid.is_not_null()))
             .load(&mut *self.db())
-            .expect("db")
-            .into_iter()
-            .filter_map(|r: orm::Recipient| r.uuid.map(|u| u.to_string()))
+            .unwrap();
+        acis.into_iter()
+            .filter_map(|s| Uuid::from_str(&s).ok())
             .collect()
     }
 

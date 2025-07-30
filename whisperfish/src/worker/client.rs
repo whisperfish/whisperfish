@@ -19,6 +19,7 @@ pub use self::profile_upload::*;
 use self::unidentified::UnidentifiedCertificates;
 use attachment::FetchAttachment;
 use image::GenericImageView;
+use itertools::Itertools;
 use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
@@ -1082,8 +1083,8 @@ impl ClientActor {
                     sender.send_blocked(
                         &local_addr.into(),
                         Blocked {
-                            numbers: storage.fetch_blocked_numbers(),
-                            acis: storage.fetch_blocked_acis(),
+                            numbers: storage.fetch_blocked_numbers().into_iter().map(|e| e.to_string()).collect_vec(),
+                            acis: storage.fetch_blocked_acis().into_iter().map(|e| e.to_string()).collect_vec(),
                             group_ids: Vec::new(), // Group V1
                         },
                     ).await?;
