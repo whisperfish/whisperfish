@@ -224,7 +224,7 @@ pub enum MessageType {
     ProfileKeyUpdate,
     EndSession,
     IdentityKeyChange,
-    GroupChange, // Deprecated
+    GroupChange,
     Payment,
     GroupCallUpdate,
     ExpirationTimerUpdate,
