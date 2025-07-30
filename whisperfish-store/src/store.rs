@@ -4060,7 +4060,7 @@ impl<O: Observable> Storage<O> {
     ///
     /// Returns the updated recipient, or None if the pending member does not exist.
     ///
-    /// Does not trigger observer update.
+    /// On success, observes update on the group member list.
     pub fn promote_pending_pni_aci_member_profile_key(
         &self,
         group_v2: &orm::GroupV2,
@@ -4109,7 +4109,7 @@ impl<O: Observable> Storage<O> {
     ///
     /// Returns true if the member was deleted, false if it did not exist.
     ///
-    /// Does not trigger observer update.
+    /// On success, observes update on the group pending members list.
     pub fn delete_group_v2_pending_member(
         &self,
         group_v2: &orm::GroupV2,
@@ -4130,38 +4130,45 @@ impl<O: Observable> Storage<O> {
             ),
         };
 
-        if existing.is_none() {
+        if let Some(member) = existing {
+            let affected = diesel::delete(
+                group_v2_pending_members.filter(
+                    group_v2_id
+                        .eq(&group_v2.id)
+                        .and(service_id.eq(&member.service_id)),
+                ),
+            )
+            .execute(&mut *self.db())
+            .unwrap();
+            match affected {
+                0 => tracing::error!(
+                    "Did not delete any pending members from group '{}'",
+                    group_v2.name
+                ),
+                n => {
+                    tracing::debug!(
+                        "Deleted {} pending members matching {} from group '{}'",
+                        n,
+                        member.service_id,
+                        group_v2.name
+                    );
+                    self.observe_update(
+                        schema::group_v2_pending_members::table,
+                        pending_service_id.service_id_string(),
+                    )
+                    .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
+                    // Return the recipient, so we can update the profile key
+                    return self.fetch_recipient(&pending_service_id);
+                }
+            }
+        } else {
             tracing::debug!(
                 "No such pending member {} in group '{}'",
                 pending_service_id.service_id_string(),
                 group_v2.name
             );
-            return None;
         }
-
-        let member = existing.unwrap();
-        let affected = diesel::delete(
-            group_v2_pending_members.filter(
-                group_v2_id
-                    .eq(&group_v2.id)
-                    .and(service_id.eq(&member.service_id)),
-            ),
-        );
-        match affected.execute(&mut *self.db()).unwrap() {
-            1 => {
-                tracing::debug!(
-                    "Deleted pending member {} from group '{}'",
-                    member.service_id,
-                    group_v2.name
-                );
-                // Return the recipient, so we can update the profile key
-                self.fetch_recipient(&pending_service_id)
-            }
-            n => unreachable!(
-                "Deleted {} pending members from group '{}', expected 1",
-                n, group_v2.name
-            ),
-        }
+        None
     }
 
     /// Delete a requesting member from a GroupV2.
