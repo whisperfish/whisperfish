@@ -4070,10 +4070,7 @@ impl<O: Observable> Storage<O> {
     ) -> Option<orm::Recipient> {
         if self
             .fetch_group_v2_pending_member(&group_v2.id, Some(aci), Some(pni))
-            .into_iter()
-            .any(|pm| {
-                pm.service_id == aci.service_id_string() || pm.service_id == pni.service_id_string()
-            })
+            .is_some()
         {
             let recipient =
                 self.merge_and_fetch_recipient(None, Some(aci), Some(pni), TrustLevel::Uncertain);
