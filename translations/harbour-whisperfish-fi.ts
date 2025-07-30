@@ -596,13 +596,13 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="154"/>
         <source>No linked device</source>
         <extracomment>Placeholder when no linked device yet</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ei linkitettyjä laitteita</translation>
     </message>
     <message id="whisperfish-device-placeholder-hint">
         <location filename="../qml/pages/LinkedDevices.qml" line="157"/>
         <source>Pull down to link Whisperfish to another device</source>
         <extracomment>Placeholder hint when no linked device yet</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Linkitä laite Whisperfishiin vetämällä alas</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text">
         <location filename="../qml/pages/MainPage.qml" line="335"/>
@@ -2188,7 +2188,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/GroupProfilePage.qml" line="394"/>
         <source>(no name)</source>
         <extracomment>Placeholder name for a recipient who has no name available</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>(ei nimeä)</translation>
     </message>
     <message id="whisperfish-quoted-message-unknown-sender">
         <source>Unknown sender</source>
