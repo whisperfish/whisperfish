@@ -216,11 +216,11 @@ ListItem {
                     case "new_pending_member":
                         //: Group change: new pending member
                         //% "%1 was invited to join the group"
-                        return qsTrId("whisperfish-service-message-group-change-new-pending-member").arg(recipientName).arg(targetName)
+                        return qsTrId("whisperfish-service-message-group-change-new-pending-member").arg(targetName)
                     case "new_requesting_member":
                         //: Group change: new requesting member
                         //% "%1 would like to join the group"
-                        return qsTrId("whisperfish-service-message-group-change-new-requesting-member").arg(recipientName).arg(targetName)
+                        return qsTrId("whisperfish-service-message-group-change-new-requesting-member").arg(targetName)
                     case "promote_pending_member":
                         //: Group change: pending member was accepted
                         //% "%1 accepted %2 into the group"
