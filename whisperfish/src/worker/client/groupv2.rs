@@ -645,18 +645,19 @@ fn group_change_to_service_message_json(group_change: &GroupChange) -> Option<St
         }
     };
 
-    change.map(|change| {
-        format!(
-            "{{ \"change\": \"{}\", \"value\": {}, \"aci\": \"{}\", \"pni\": \"{}\" }}",
-            change,
-            value.map_or_else(
-                || "null".into(),
-                |val| format!("\"{}\"", val.replace('\"', "\\\""))
-            ),
-            target_aci.map_or_else(|| "null".into(), |aci| format!("\"{}\"", aci)),
-            target_pni.map_or_else(|| "null".into(), |pni| format!("\"{}\"", pni)),
+    if change.is_some() {
+        Some(
+            serde_json::json!({
+                "change": change,
+                "value": value,
+                "aci": target_aci,
+                "pni": target_pni
+            })
+            .to_string(),
         )
-    })
+    } else {
+        None
+    }
 }
 
 /// Handle an incoming group change message
