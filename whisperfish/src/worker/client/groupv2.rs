@@ -525,7 +525,7 @@ fn role_to_string(role: &Role) -> String {
     }
 }
 
-fn json_from_update(group_change: &GroupChange) -> Option<String> {
+fn group_change_to_service_message_json(group_change: &GroupChange) -> Option<String> {
     let mut change: Option<String> = None;
     let mut value: Option<String> = None;
     let mut target_aci: Option<String> = None;
@@ -714,8 +714,12 @@ impl Handler<GroupV2Update> for ClientActor {
                     group_v2.revision = revision as i32;
 
                     for change in changes {
-                        if let Some(message) = json_from_update(&change) {
-                            svc_messages.push(GroupChangeServiceMessage { message, editor, group_id: group_v2.id.to_owned() });
+                        if let Some(message) = group_change_to_service_message_json(&change) {
+                            svc_messages.push(GroupChangeServiceMessage {
+                                message,
+                                editor,
+                                group_id: group_v2.id.to_owned(),
+                            });
                         }
                         match change {
                             GroupChange::AnnouncementOnly(announcement_only) => {
