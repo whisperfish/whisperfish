@@ -19,7 +19,7 @@ cd "shareplugin_v$SHAREPLUGIN_VERSION"
 # -f to ignore non-existent files
 rm -f RPMS/*.rpm
 
-mb2 -t SailfishOS-$SFOS_VERSION-$MER_ARCH build \
+mb2 -t SailfishOS-$SFOS_VERSION-$MER_ARCH --no-snapshot=force build \
     --enable-debug \
     --no-check
 

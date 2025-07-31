@@ -71,7 +71,7 @@ no_credentials = false
 EOF
 
 echo_t "Building Whisperfish for SailfishOS-$SFOS_VERSION-$MER_ARCH..."
-mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" build \
+mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" --no-snapshot=force build \
     --enable-debug \
     --no-check \
     -- \
