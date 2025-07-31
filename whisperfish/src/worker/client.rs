@@ -21,6 +21,7 @@ use anyhow::anyhow;
 use attachment::FetchAttachment;
 use image::GenericImageView;
 use itertools::Itertools;
+use libsignal_service::groups_v2::Role;
 use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
@@ -1629,6 +1630,9 @@ impl Handler<SendMessage> for ClientActor {
                     let Some(self_member) = storage.fetch_group_v2_self_member(&gv2.id) else {
                         return Err(anyhow!("Not member of the group '{}', will not send message", gv2.name));
                     };
+                    if gv2.announcement_only && self_member.role < (Role::Administrator as i32) {
+                        return Err(anyhow!("Only administrators can send messages in group '{}'", gv2.name));
+                    }
                 }
 
                 let timestamp = naive_chrono_to_millis(msg.server_timestamp);
