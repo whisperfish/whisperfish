@@ -306,8 +306,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                                 .execute(db)?;
                         }
                         Ok(())
-                    })
-                    .expect("dropping stale members");
+                    })?;
 
                 let session = storage.fetch_session_by_group_v2_id(&group_id_hex).unwrap();
 
