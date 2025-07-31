@@ -3729,7 +3729,9 @@ impl<O: Observable> Storage<O> {
             .expect("db");
     }
 
-    /// Delete a proper member of a group. Does not trigger observer update.
+    /// Delete a proper member of a group.
+    ///
+    /// Triggers observer update on group members list.
     pub fn delete_group_v2_member(
         &self,
         group_v2: &orm::GroupV2,
@@ -3747,6 +3749,8 @@ impl<O: Observable> Storage<O> {
             )
             .execute(&mut *self.db())
             .expect("db");
+            self.observe_delete(schema::group_v2_members::table, recipient.aci())
+                .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
             Some(recipient)
         } else {
             tracing::error!("No such user {:?} (delete from group)", aci);
@@ -3754,7 +3758,9 @@ impl<O: Observable> Storage<O> {
         }
     }
 
-    /// Update the role of the group member. Does not trigger observer update.
+    /// Update the role of the group member.
+    ///
+    /// Triggers observer update on group members list.
     pub fn update_group_v2_member_role(
         &self,
         group_v2: &orm::GroupV2,
@@ -3778,6 +3784,8 @@ impl<O: Observable> Storage<O> {
                 tracing::warn!("No such member {:?} in group (update role)", aci);
                 None
             } else {
+                self.observe_update(schema::group_v2_members::table, recipient.aci())
+                    .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
                 Some(recipient)
             }
         } else {
@@ -3786,7 +3794,11 @@ impl<O: Observable> Storage<O> {
         }
     }
 
-    /// Add a member to a group. Does not trigger observer update.
+    /// Add a member to a group.
+    ///
+    /// Returns the membership and recipient if it was added.
+    ///
+    /// Triggers observer update on group members list.
     pub fn add_group_v2_member(
         &self,
         group_v2: &orm::GroupV2,
@@ -3854,6 +3866,8 @@ impl<O: Observable> Storage<O> {
                         affected_rows == 1,
                         "Did not insert exactly one group member. Dazed and confused."
                     );
+                    self.observe_insert(schema::group_v2_members::table, recipient.aci())
+                        .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
                     self.fetch_group_members_by_group_v2_id(&group_v2.id)
                         .iter()
                         .find(|(_, r)| r.uuid == recipient.uuid)
@@ -3923,7 +3937,7 @@ impl<O: Observable> Storage<O> {
     /// Returns true if the member was added to the group.
     /// Does not check if we're un-banning self or not.
     ///
-    /// Does not trigger observer update.
+    /// Triggers observer update on banned members list.
     pub fn add_group_v2_banned_member(
         &self,
         group_v2: &orm::GroupV2,
@@ -3952,6 +3966,15 @@ impl<O: Observable> Storage<O> {
 
         let recipient = self.fetch_recipient(service_id);
         let banned_member = self.fetch_group_v2_banned_member(group_v2, service_id);
+
+        if let Some(service_id) = banned_member
+            .as_ref()
+            .and_then(|m| Some(m.service_id.to_owned()))
+        {
+            self.observe_insert(schema::group_v2_banned_members::table, service_id)
+                .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
+        }
+
         (banned_member, recipient)
     }
 
@@ -3960,7 +3983,7 @@ impl<O: Observable> Storage<O> {
     ///
     /// Does not check if we're un-banning self or not.
     ///
-    /// Does not trigger observer update.
+    /// Triggers update on banned members list.
     pub fn delete_group_v2_banned_member(
         &self,
         group_v2: &orm::GroupV2,
@@ -3984,6 +4007,11 @@ impl<O: Observable> Storage<O> {
                 delete_service_id.service_id_string(),
                 group_v2.name
             );
+            self.observe_delete(
+                schema::group_v2_banned_members::table,
+                delete_service_id.service_id_string(),
+            )
+            .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
             self.fetch_recipient(&delete_service_id)
         } else if affected == 0 {
             tracing::warn!(
@@ -4038,7 +4066,7 @@ impl<O: Observable> Storage<O> {
 
     /// Update the profile key of a GroupV2 member.
     ///
-    /// Does not trigger observer update.
+    /// Triggers observer update on members list.
     pub fn update_group_v2_member_profile_key(
         &self,
         group_v2: &orm::GroupV2,
@@ -4070,7 +4098,7 @@ impl<O: Observable> Storage<O> {
     ///
     /// Returns the updated recipient, or None if the pending member does not exist.
     ///
-    /// On success, observes update on the group member list.
+    /// Triggers observer update on pending members list.
     pub fn promote_pending_pni_aci_member_profile_key(
         &self,
         group_v2: &orm::GroupV2,
@@ -4096,7 +4124,7 @@ impl<O: Observable> Storage<O> {
                     "Updated profile key for {} by group update",
                     recipient.uuid.unwrap()
                 );
-                self.observe_update(schema::group_v2_members::table, recipient.id)
+                self.observe_update(schema::group_v2_pending_members::table, recipient.aci())
                     .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
             } else {
                 tracing::trace!(
@@ -4119,7 +4147,7 @@ impl<O: Observable> Storage<O> {
     ///
     /// Returns true if the member was deleted, false if it did not exist.
     ///
-    /// On success, observes update on the group pending members list.
+    /// Triggers observer update on pending members list.
     pub fn delete_group_v2_pending_member(
         &self,
         group_v2: &orm::GroupV2,
@@ -4162,7 +4190,7 @@ impl<O: Observable> Storage<O> {
                         member.service_id,
                         group_v2.name
                     );
-                    self.observe_update(
+                    self.observe_delete(
                         schema::group_v2_pending_members::table,
                         pending_service_id.service_id_string(),
                     )
@@ -4183,9 +4211,9 @@ impl<O: Observable> Storage<O> {
 
     /// Delete a requesting member from a GroupV2.
     ///
-    /// Returns true if the member was deleted, false if it did not exist.
+    /// Returns Option<Recipient> if the member was removed from group.
     ///
-    /// Does not trigger observer update.
+    /// Triggers observer update on requesting members list.
     pub fn delete_group_v2_requesting_member(
         &self,
         group_v2: &orm::GroupV2,
@@ -4208,6 +4236,11 @@ impl<O: Observable> Storage<O> {
                     aci_string,
                     group_v2.name
                 );
+                self.observe_delete(
+                    schema::group_v2_requesting_members::table,
+                    requesting_aci.service_id_string(),
+                )
+                .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
                 self.fetch_recipient(&ServiceId::Aci(requesting_aci))
             }
             0 => {
@@ -4227,7 +4260,7 @@ impl<O: Observable> Storage<O> {
 
     /// Add a new pending member to a GroupV2.
     ///
-    /// Does not trigger observer update.
+    /// Triggers observer update on pending members list.
     pub fn add_group_v2_pending_member(
         &self,
         group_v2: &orm::GroupV2,
@@ -4299,6 +4332,11 @@ impl<O: Observable> Storage<O> {
                     new_pending_member.service_id,
                     group_v2.name
                 );
+                self.observe_insert(
+                    schema::group_v2_pending_members::table,
+                    new_pending_member.service_id.to_owned(),
+                )
+                .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
                 Some(new_pending_member)
             }
             x => {
@@ -4310,7 +4348,7 @@ impl<O: Observable> Storage<O> {
 
     /// Add a new requesting member to a GroupV2.
     ///
-    /// Does not trigger observer update.
+    /// Triggers observer update on requesting members list.
     pub fn add_group_v2_requesting_member(
         &self,
         group_v2: &orm::GroupV2,
@@ -4365,6 +4403,11 @@ impl<O: Observable> Storage<O> {
                     new_requesting_member.aci,
                     group_v2.name
                 );
+                self.observe_insert(
+                    schema::group_v2_requesting_members::table,
+                    new_requesting_member.aci.to_string(),
+                )
+                .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
                 Some((
                     new_requesting_member,
                     self.fetch_or_insert_recipient_by_address(&ServiceId::Aci(new_aci)),
@@ -4379,7 +4422,7 @@ impl<O: Observable> Storage<O> {
 
     /// Promote a pending GroupV2 member to an actual member.
     ///
-    /// Does not trigger observer update.
+    /// Indirectly triggers observer update on pending members list.
     pub fn promote_group_v2_pending_member(
         &self,
         group_v2: &orm::GroupV2,
@@ -4422,7 +4465,7 @@ impl<O: Observable> Storage<O> {
 
     /// Promote a requesting GroupV2 member to an actual member.
     ///
-    /// Does not trigger observer update.
+    /// Indirectly triggers observer updates on requesting members list.
     pub fn promote_group_v2_requesting_member(
         &self,
         group_v2: &orm::GroupV2,
