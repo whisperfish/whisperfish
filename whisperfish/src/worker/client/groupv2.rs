@@ -150,6 +150,8 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                     let addr = match (aci, pni) {
                         (Some(aci), _) => ServiceId::Aci(aci),
                         (_, Some(pni)) => ServiceId::Pni(pni),
+                        // XXX: In case both are set, fetch_or_insert below should be fed both, but that's currently not possible.
+                        //      Fix after https://github.com/whisperfish/libsignal-service-rs/issues/369
                         _ => continue, // unreachable
                     };
                     let recipient = storage.fetch_or_insert_recipient_by_address(&addr);
