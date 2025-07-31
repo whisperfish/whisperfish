@@ -146,7 +146,9 @@ impl Group {
 
     fn init(&mut self, ctx: ModelContext<Self>) {
         let storage = ctx.storage();
-        self.own_aci = storage.fetch_self_recipient().and_then(|r| r.uuid);
+        self.own_aci = storage
+            .fetch_self_service_address_aci()
+            .map(|s| s.raw_uuid());
         if let Some(id) = &self.id {
             self.group_v1 = None;
             self.group_v2 = None;
