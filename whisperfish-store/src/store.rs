@@ -1967,6 +1967,16 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
+    pub fn fetch_group_v2_self_member(&self, gv2_id: &str) -> Option<orm::GroupV2Member> {
+        let self_id = self.fetch_self_recipient_id();
+        schema::group_v2_members::table
+            .filter(schema::group_v2_members::recipient_id.eq(self_id))
+            .first(&mut *self.db())
+            .optional()
+            .unwrap()
+    }
+
+    #[tracing::instrument(skip(self))]
     pub fn fetch_group_v2_pending_member(
         &self,
         id: &str,

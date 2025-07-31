@@ -17,6 +17,7 @@ pub use self::linked_devices::*;
 use self::migrations::MigrationCondVar;
 pub use self::profile_upload::*;
 use self::unidentified::UnidentifiedCertificates;
+use anyhow::anyhow;
 use attachment::FetchAttachment;
 use image::GenericImageView;
 use itertools::Itertools;
@@ -1623,6 +1624,12 @@ impl Handler<SendMessage> for ClientActor {
                     tracing::error!("Cannot send to Group V1 anymore.");
                 }
                 let group_v2 = session.group_context_v2();
+                if session.is_group_v2() {
+                    let gv2 = session.unwrap_group_v2();
+                    let Some(self_member) = storage.fetch_group_v2_self_member(&gv2.id) else {
+                        return Err(anyhow!("Not member of the group '{}', will not send message", gv2.name));
+                    };
+                }
 
                 let timestamp = naive_chrono_to_millis(msg.server_timestamp);
 
