@@ -4,7 +4,7 @@
 <context>
     <name></name>
     <message id="whisperfish-session-has-attachment">
-        <location filename="../qml/cover/CoverPage.qml" line="176"/>
+        <location filename="../qml/cover/CoverPage.qml" line="175"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="71"/>
         <source>Attachment</source>
         <extracomment>Session contains an attachment label</extracomment>
@@ -16,14 +16,14 @@
         <translation type="vanished">Palveluviesti</translation>
     </message>
     <message id="whisperfish-session-is-voice-note">
-        <location filename="../qml/cover/CoverPage.qml" line="170"/>
+        <location filename="../qml/cover/CoverPage.qml" line="169"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="64"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
         <translation>Ääniviesti</translation>
     </message>
     <message id="whisperfish-session-delete-all">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="127"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="126"/>
         <source>All messages deleted</source>
         <oldsource>Deleting all messages</oldsource>
         <extracomment>Delete all messages from session (past tense)</extracomment>
@@ -48,7 +48,7 @@
         <translation>%1 ja %n muuta kirjoittavat</translation>
     </message>
     <message id="whisperfish-session-note-to-self">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="227"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="226"/>
         <location filename="../qml/harbour-whisperfish-main.qml" line="163"/>
         <location filename="../qml/pages/ShareDestinationV1.qml" line="106"/>
         <location filename="../qml/pages/ShareDestinationV2.qml" line="105"/>
@@ -57,52 +57,52 @@
         <translation>Omat viestit</translation>
     </message>
     <message id="whisperfish-message-preview-draft">
-        <location filename="../qml/cover/CoverPage.qml" line="152"/>
-        <location filename="../qml/delegates/SessionDelegate.qml" line="251"/>
+        <location filename="../qml/cover/CoverPage.qml" line="151"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="250"/>
         <source>Draft: %1</source>
         <extracomment>Message preview for a saved, unsent message</extracomment>
         <translation>Luonnos: %1</translation>
     </message>
     <message id="whisperfish-session-mark-unpinned">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="386"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="385"/>
         <source>Unpin</source>
         <extracomment>&apos;Unpin&apos; conversation from the top of the view</extracomment>
         <translation>Vapauta kiinnitys</translation>
     </message>
     <message id="whisperfish-session-mark-pinned">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="389"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="388"/>
         <source>Pin to top</source>
         <extracomment>&apos;Pin&apos; conversation to the top of the view</extracomment>
         <translation>Kiinnitä</translation>
     </message>
     <message id="whisperfish-session-mark-unmuted">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="398"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="397"/>
         <source>Unmute conversation</source>
         <oldsource>Mark as unmuted</oldsource>
         <extracomment>Mark conversation as unmuted</extracomment>
         <translation>Poista mykistys</translation>
     </message>
     <message id="whisperfish-session-mark-muted">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="401"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="400"/>
         <source>Mute conversation</source>
         <oldsource>Mark as muted</oldsource>
         <extracomment>Mark conversation as muted</extracomment>
         <translation>Mykistä</translation>
     </message>
     <message id="whisperfish-session-mark-unarchived">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="409"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="408"/>
         <source>Restore to inbox</source>
         <extracomment>Show archived messages again in the main page</extracomment>
         <translation>Palauta arkistosta</translation>
     </message>
     <message id="whisperfish-session-mark-archived">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="412"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="411"/>
         <source>Archive conversation</source>
         <extracomment>Move the conversation to archived conversations</extracomment>
         <translation>Arkistoi keskustelu</translation>
     </message>
     <message id="whisperfish-session-delete">
-        <location filename="../qml/delegates/SessionDelegate.qml" line="419"/>
+        <location filename="../qml/delegates/SessionDelegate.qml" line="418"/>
         <source>Delete conversation</source>
         <extracomment>Delete all messages from session menu</extracomment>
         <translation>Poista keskustelu</translation>
@@ -120,32 +120,32 @@
         <translation>Vastaamaton videopuhelu</translation>
     </message>
     <message id="whisperfish-notification-default-message">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="310"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="311"/>
         <source>New Message</source>
         <extracomment>Default label for new message notification</extracomment>
         <translation>Uusi viesti</translation>
     </message>
     <message id="whisperfish-fatal-error-setup-client">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="432"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="433"/>
         <source>Failed to setup Signal client</source>
         <extracomment>Failed to setup signal client error message</extracomment>
         <translation>Signal-sovelluksen määritys epäonnistui</translation>
     </message>
     <message id="whisperfish-fatal-error-invalid-datastore">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="437"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="438"/>
         <source>Failed to setup data storage</source>
         <oldsource>Failed to setup datastore</oldsource>
         <extracomment>Failed to setup datastore error message</extracomment>
         <translation>Tietovaraston määritys epäonnistui</translation>
     </message>
     <message id="permission-la-data">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="626"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="627"/>
         <source>Whisperfish data storage</source>
         <extracomment>Permission for Whisperfish data storage</extracomment>
         <translation>Whisperfish tallennustila</translation>
     </message>
     <message id="permission-la-data_description">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="630"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="631"/>
         <source>Store configuration and messages</source>
         <extracomment>Permission description for Whisperfish data storage</extracomment>
         <translation>Tallenna asetukset ja viestit</translation>
@@ -748,31 +748,31 @@
         </translation>
     </message>
     <message id="whisperfish-copy-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="470"/>
+        <location filename="../qml/components/MessagesView.qml" line="468"/>
         <source>Copy</source>
         <extracomment>Copy message menu item</extracomment>
         <translation>Kopioi</translation>
     </message>
     <message id="whisperfish-forward-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="477"/>
+        <location filename="../qml/components/MessagesView.qml" line="475"/>
         <source>Forward</source>
         <extracomment>Forward message menu item</extracomment>
         <translation>Lähetä edelleen</translation>
     </message>
     <message id="whisperfish-transcribe-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="484"/>
+        <location filename="../qml/components/MessagesView.qml" line="482"/>
         <source>Transcribe</source>
         <extracomment>Transcribe message menu item</extracomment>
         <translation>Litteroi</translation>
     </message>
     <message id="whisperfish-select-or-options-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="491"/>
+        <location filename="../qml/components/MessagesView.qml" line="489"/>
         <source>Select • more</source>
         <extracomment>&quot;Select and show more options&quot; message menu item</extracomment>
         <translation>Valitse • lisävalikko</translation>
     </message>
     <message id="whisperfish-resend-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="463"/>
+        <location filename="../qml/components/MessagesView.qml" line="461"/>
         <source>Retry sending</source>
         <oldsource>Resend</oldsource>
         <extracomment>Resend message menu item</extracomment>
@@ -2111,26 +2111,32 @@ Settings page share contacts</extracomment>
             <numerusform>%n liitettä</numerusform>
         </translation>
     </message>
+    <message id="whisperfish-chat-input-not-group-member">
+        <location filename="../qml/components/ChatTextInput.qml" line="328"/>
+        <source>You are not member of the group</source>
+        <extracomment>Chat text input placeholder for not being a member of the group</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-chat-input-recipient-is-unregistered">
-        <location filename="../qml/components/ChatTextInput.qml" line="327"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="332"/>
         <source>The recipient is not registered</source>
         <extracomment>Chat text input placeholder for deleted/unregistered recipient</extracomment>
         <translation>Vastaanottaja ei ole rekisteröitynyt</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-personal">
-        <location filename="../qml/components/ChatTextInput.qml" line="332"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="337"/>
         <source>Hi %1</source>
         <extracomment>Personalized placeholder for chat input, e.g. &quot;Hi John&quot;</extracomment>
         <translation>Hei, %1</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-default">
-        <location filename="../qml/components/ChatTextInput.qml" line="337"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="341"/>
         <source>Write a message</source>
         <extracomment>Generic placeholder for chat input</extracomment>
         <translation>Kirjoita viesti</translation>
     </message>
     <message id="whisperfish-select-attachments-page-title">
-        <location filename="../qml/components/ChatTextInput.qml" line="524"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="528"/>
         <source>Select attachments</source>
         <extracomment>Attachment picker page title</extracomment>
         <translation>Valitse liitteet</translation>
@@ -2216,7 +2222,7 @@ Settings page share contacts</extracomment>
         <translation type="vanished">ei lähettäjää</translation>
     </message>
     <message id="whisperfish-message-deleted-note">
-        <location filename="../qml/cover/CoverPage.qml" line="157"/>
+        <location filename="../qml/cover/CoverPage.qml" line="156"/>
         <location filename="../qml/delegates/MessageDelegate.qml" line="267"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="51"/>
         <source>this message was deleted</source>
@@ -2230,26 +2236,26 @@ Settings page share contacts</extracomment>
         <translation>viesti on tyhjä</translation>
     </message>
     <message id="whisperfish-service-message-joined-group-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="135"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="244"/>
         <source>You joined the group.</source>
         <oldsource>You joined the group “%1”.</oldsource>
         <extracomment>Service message</extracomment>
         <translation>Liityit ryhmään.</translation>
     </message>
     <message id="whisperfish-service-message-left-group-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="143"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="252"/>
         <source>You left the group.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Poistuit ryhmästä.</translation>
     </message>
     <message id="whisperfish-service-message-joined-group-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="138"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="247"/>
         <source>%1 joined the group.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 liittyi ryhmään.</translation>
     </message>
     <message id="whisperfish-service-message-left-group-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="146"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="255"/>
         <source>%1 left the group.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 poistui ryhmästä.</translation>
@@ -2265,35 +2271,35 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Vastaamaton videopuhelu: %1</translation>
     </message>
     <message id="whisperfish-service-message-call-voice-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="182"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="291"/>
         <source>You had a voice call with %1.</source>
         <oldsource>You called %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Soitit puhelun käyttäjälle %1.</translation>
     </message>
     <message id="whisperfish-service-message-call-video-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="174"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="283"/>
         <source>You had a video call with %1.</source>
         <oldsource>You started a video call with %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Soitit videopuhelun käyttäjälle %1.</translation>
     </message>
     <message id="whisperfish-service-message-call-voice-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="186"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="295"/>
         <source>%1 had a voice call with you.</source>
         <oldsource>%1 called you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 soitti sinulle puhelun.</translation>
     </message>
     <message id="whisperfish-service-message-call-video-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="178"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="287"/>
         <source>%1 had a video call with you.</source>
         <oldsource>%1 started a video call with you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 soitti sinulle videopuhelun.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-weeks" numerus="yes">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="57"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="85"/>
         <source>%n week(s)</source>
         <oldsource>%1 week(s)</oldsource>
         <extracomment>Expiring message timeout in weeks. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
@@ -2303,7 +2309,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-days" numerus="yes">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="61"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="89"/>
         <source>%n day(s)</source>
         <oldsource>%1 day(s)</oldsource>
         <extracomment>Expiring message timeout in days. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
@@ -2313,7 +2319,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-hours" numerus="yes">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="65"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="93"/>
         <source>%n hour(s)</source>
         <oldsource>%1 hour(s)</oldsource>
         <extracomment>Expiring message timeout in hours. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
@@ -2323,7 +2329,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-minutes" numerus="yes">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="69"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="97"/>
         <source>%n minute(s)</source>
         <oldsource>%1 minute(s)</oldsource>
         <extracomment>Expiring message timeout in minutes. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
@@ -2333,7 +2339,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-in-seconds" numerus="yes">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="73"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="101"/>
         <source>%n second(s)</source>
         <oldsource>%1 second(s)</oldsource>
         <extracomment>Expiring message timeout in seconds. Used in whisperfish-service-message-expiry-update-[self|peer]</extracomment>
@@ -2343,37 +2349,37 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-service-message-expiry-update-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="94"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="109"/>
         <source>You set expiring messages timeout to %1.</source>
         <extracomment>Service message, %1 time</extracomment>
         <translation>Asetit viestien vanhenemisajaksi %1.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-update-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="97"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="112"/>
         <source>%1 set expiring messages timeout to %2.</source>
         <extracomment>Service message, %1 is a name, %2 is time</extracomment>
         <translation>%1 asetti viestien vanhenemisajaksi %2.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-disable-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="102"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="117"/>
         <source>You disabled expiring messages.</source>
         <extracomment>Service message</extracomment>
         <translation>Poistit viestien vanhentumisen käytöstä.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-disable-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="105"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="120"/>
         <source>%1 disabled expiring messages.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 poisti viestien vanhentumisen käytöstä.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-unknown-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="110"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="125"/>
         <source>You set or disabled expiring messages timeout.</source>
         <extracomment>Service message</extracomment>
         <translation>Poistit tai muutit viestien vanhenemisaikaa.</translation>
     </message>
     <message id="whisperfish-service-message-expiry-unknown-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="113"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="128"/>
         <source>%1 set or disabled expiring messages timeout.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 poisti tai muutti viestien vanhenemisaikaa.</translation>
@@ -2384,94 +2390,196 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Päivitit profiiliavaimesi käyttäjän %1 kanssa.</translation>
     </message>
     <message id="whisperfish-service-message-profile-key-update-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="118"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="150"/>
         <source>%1 updated their profile.</source>
         <oldsource>%1 updated their profile key with you.</oldsource>
         <extracomment>Service message for profile (key) update. %1 is a name</extracomment>
         <translation>%1 päivitti profiilinsa.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="123"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="155"/>
         <source>You ended the session with %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Päätit keskuskelun käyttäjän %1 kanssa.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="126"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="158"/>
         <source>%1 ended the session with you.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 päätti keskustelun kanssasi.</translation>
     </message>
     <message id="whisperfish-service-message-changed-group">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="130"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="163"/>
         <source>The group was updated.</source>
         <extracomment>Service message</extracomment>
         <translation>Ryhmää muutettiin.</translation>
     </message>
+    <message id="whisperfish-service-message-group-change-add-banned-member">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="169"/>
+        <source>%1 banned %2</source>
+        <extracomment>Group change: add banned member</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-change-announcement-only-on">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="174"/>
+        <source>%1 restricted sending messages to administrators only</source>
+        <extracomment>Group change: only admins can send messages</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-change-announcement-only-off">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="177"/>
+        <source>%1 allowed everyone send messages</source>
+        <extracomment>Group change: all members can send messages</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-change-attribute-access">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="182"/>
+        <source>%1 set group change permissions to &apos;%2&apos;</source>
+        <extracomment>Group change: permissions to change group properties</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-change-avatar">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="186"/>
+        <source>%1 changed the group avatar</source>
+        <extracomment>Group change: title</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-change-delete-member">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="190"/>
+        <source>%1 removed %2 from the group</source>
+        <extracomment>Group change: delete member</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-change-description">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="194"/>
+        <source>%1 changed the group description to &apos;%2&apos;</source>
+        <extracomment>Group change: desctiption changed</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-change-invite-link-access">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="199"/>
+        <source>%1 set invite link setting to &apos;%2&apos;</source>
+        <extracomment>Group change: joining group via invite link setting</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-change-invite-link-password">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="203"/>
+        <source>%1 changed the invite link password</source>
+        <extracomment>Group change: set/change invite link password</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-change-member-access">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="207"/>
+        <source>%1 allowed &apos;%2&apos; add new members</source>
+        <extracomment>Group change: change members joining setting</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-change-modify-member-role">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="211"/>
+        <source>%1 changed %2 to %3</source>
+        <extracomment>Group change: change member &quot;power level&quot;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-change-new-member">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="215"/>
+        <source>%1 added %2 to group</source>
+        <extracomment>Group change: new member</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-change-new-pending-member">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="219"/>
+        <source>%1 was invited to join the group</source>
+        <extracomment>Group change: new pending member</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-change-new-requesting-member">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="223"/>
+        <source>%1 would like to join the group</source>
+        <extracomment>Group change: new requesting member</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-change-promote-pending-member">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="227"/>
+        <source>%1 accepted %2 into the group</source>
+        <extracomment>Group change: pending member was accepted</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-change-promote-requesting-member">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="231"/>
+        <source>%1 accepted %2 into the group</source>
+        <extracomment>Group change: requesting member was accepted</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-change-title">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="237"/>
+        <source>%1 changed the group title to &apos;%2&apos;</source>
+        <extracomment>Group change: title</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-service-message-call-group-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="151"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="260"/>
         <source>You had a group call.</source>
         <extracomment>Service message</extracomment>
         <translation>Osallistuit ryhmäpuheluun.</translation>
     </message>
     <message id="whisperfish-service-message-call-group-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="154"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="263"/>
         <source>%1 had a group call with you.</source>
         <extracomment>Service message, %1 is the person initiating the call.</extracomment>
         <translation>Olit käyttäjän %1 aloittamassa ryhmäpuhelussa.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="159"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="268"/>
         <source>You missed a voice call from %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 yritti soittaa sinulle puhelun.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="162"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="271"/>
         <source>You tried to voice call %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Yritit soittaa puhelun käyttäjälle %1.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-video-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="167"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="276"/>
         <source>You missed a video call from %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 yritti soittaa sinulle videopuhelun.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-video-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="170"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="279"/>
         <source>You tried to video call %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Yritit soittaa videopuhelun käyttäjälle %1.</translation>
     </message>
     <message id="whisperfish-service-message-fingerprint-changed">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="191"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="300"/>
         <source>Your safety number with %1 has changed. Swipe right to verify the new number.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Turvanumero käyttäjän %1 kanssa on vaihtunut. Pyyhkäise oikealle varmistaaksesi uuden numeron.</translation>
     </message>
     <message id="whisperfish-service-message-session-reset-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="196"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="305"/>
         <source>You reset the secure session with %1.</source>
         <oldsource>You have reset the secure session with %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Alustit suojatun istunnon käyttäjän %1 kanssa.</translation>
     </message>
     <message id="whisperfish-service-message-session-reset-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="199"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="308"/>
         <source>%1 reset the secure session with you.</source>
         <oldsource>%1 has reset the secure session with you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 alusti suojatun istunnon kanssasi.</translation>
     </message>
     <message id="whisperfish-service-message-not-supported">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="205"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="314"/>
         <source>This service message of is not yet supported by Whisperfish. Please file a bug report. (Flags: %1, Type: %2, Contents: &quot;%3&quot;)</source>
         <oldsource>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: %1)</oldsource>
         <translation>Whisperfish ei vielä tue tätä järjestelmäviestiä. Ole hyvä ja tee vikailmoitus. (Liput: %1, Tyyppi: %2, Sisältö: &quot;%3&quot;)</translation>
     </message>
     <message id="whisperfish-service-message-more-info">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="261"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="370"/>
         <source>more information</source>
         <translation>lisätietoja</translation>
     </message>
@@ -2548,7 +2656,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-actions-info-label" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="390"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="391"/>
         <source>%n message(s) selected</source>
         <oldsource>%1 message(s) selected</oldsource>
         <extracomment>Info label shown while selecting messages</extracomment>
@@ -2558,7 +2666,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-clear-selection" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="414"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="415"/>
         <source>Clear selection</source>
         <extracomment>Message action description, shown if one or more messages are selected</extracomment>
         <translation>
@@ -2567,7 +2675,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-copy" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="424"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="425"/>
         <source>Copy %n message(s)</source>
         <oldsource>Copy %1 message(s)</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2577,14 +2685,14 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-info">
-        <location filename="../qml/pages/ConversationPage.qml" line="433"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="434"/>
         <source>Show message info</source>
         <extracomment>Message action description (only available if n==1)</extracomment>
         <translation>Näytä viestin tiedot</translation>
     </message>
     <message id="whisperfish-message-action-delete-for-self" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="446"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="507"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="447"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="508"/>
         <source>Locally delete %n message(s)</source>
         <oldsource>Delete %1 message(s) for me</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2594,8 +2702,8 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-delete-for-all" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="459"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="518"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="460"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="519"/>
         <source>Delete %n message(s) for all</source>
         <oldsource>Delete %1 message(s) for all</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2605,8 +2713,8 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-resend" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="473"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="532"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="474"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="533"/>
         <source>Retry sending (the) failed message(s)</source>
         <extracomment>Message action description</extracomment>
         <translation>
@@ -2615,13 +2723,13 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-group-request-information">
-        <location filename="../qml/pages/ConversationPage.qml" line="594"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="595"/>
         <source>Let the group members message with you and let its members see your profile information?</source>
         <extracomment>Information about a pending or blocked group</extracomment>
         <translation>Sallitaanko ryhmän jäsenten kommunikoida kanssasi ja ryhmän jäsenten nähdä käyttääprofiilisi?</translation>
     </message>
     <message id="whisperfish-message-request-information">
-        <location filename="../qml/pages/ConversationPage.qml" line="597"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="598"/>
         <source>Let the contact message with you and let them see your profile information?</source>
         <extracomment>Information about a pending or blocked recipient</extracomment>
         <translation>Sallitaanko yhteystiedon kommunikoida kanssasi ja nähdä profiilisi?</translation>
