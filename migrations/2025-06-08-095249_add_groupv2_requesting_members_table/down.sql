@@ -1,0 +1,1 @@
+DROP TABLE group_v2_requesting_members;

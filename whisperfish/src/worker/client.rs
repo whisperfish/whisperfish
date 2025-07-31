@@ -17,12 +17,15 @@ pub use self::linked_devices::*;
 use self::migrations::MigrationCondVar;
 pub use self::profile_upload::*;
 use self::unidentified::UnidentifiedCertificates;
+use anyhow::anyhow;
 use attachment::FetchAttachment;
 use image::GenericImageView;
+use itertools::Itertools;
 use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
 use libsignal_service::proto::sync_message::message_request_response::Type as MessageRequestAction;
+use libsignal_service::proto::sync_message::Blocked;
 use libsignal_service::proto::sync_message::Configuration;
 use libsignal_service::proto::sync_message::Keys;
 use libsignal_service::proto::sync_message::MessageRequestResponse;
@@ -501,8 +504,7 @@ impl ClientActor {
 
     fn message_sender(
         &self,
-    ) -> impl Future<Output = Result<MessageSender<AciOrPniStorage, rand::rngs::ThreadRng>, ServiceError>>
-    {
+    ) -> impl Future<Output = Result<MessageSender<AciOrPniStorage>, ServiceError>> {
         let storage = self.storage.clone().unwrap();
         let service = self.authenticated_service();
         let mut u_service = self.unauthenticated_service();
@@ -544,7 +546,6 @@ impl ClientActor {
                 u_ws,
                 service,
                 cipher,
-                rand::thread_rng(),
                 storage.aci_or_pni(ServiceIdKind::Aci), // In what cases do we use the
                 local_aci,
                 local_pni,
@@ -683,7 +684,7 @@ impl ClientActor {
         sync_sent: Option<Sent>,
         metadata: &Metadata,
         edit: Option<NaiveDateTime>,
-    ) -> Option<i32> {
+    ) {
         let timestamp = metadata.timestamp;
         let dest_identity = metadata.destination.kind();
         let is_sync_sent = sync_sent.is_some();
@@ -786,9 +787,8 @@ impl ClientActor {
             ..
         }) = msg.group_v2
         {
-            // TODO: Make sure we have a sender - it's not always there.
             message_type = Some(MessageType::GroupChange);
-            Some("".into())
+            None
         } else if !msg.attachments.is_empty() {
             tracing::trace!("Received an attachment without body, replacing with empty text.");
             Some("".into())
@@ -854,14 +854,14 @@ impl ClientActor {
                 revision: group.revision(),
             };
 
-            // XXX handle group.group_change like a real client
-            if let Some(_change) = group.group_change.as_ref() {
-                tracing::error!(
-                    "Group change messages are not supported yet. Please upvote bug #706"
-                );
-                tracing::warn!("Let's trigger a group refresh for now.");
-                ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
-            } else if !storage.group_v2_exists(&store_v2) {
+            let existing_group = storage.group_v2_exists(&store_v2);
+            let session = storage.fetch_or_insert_session_by_group_v2(&store_v2);
+
+            if existing_group {
+                if group.group_change.is_some() {
+                    ctx.notify(GroupV2Update(group.clone(), session));
+                }
+            } else {
                 tracing::info!(
                     "We don't know this group. We'll request it's structure from the server."
                 );
@@ -878,7 +878,7 @@ impl ClientActor {
             body
         } else {
             tracing::debug!("Message without (alt) body, not inserting");
-            return None;
+            return;
         };
 
         let is_unidentified = if let (Some(sent), Some(source_addr)) = (&sync_sent, &source_addr) {
@@ -920,6 +920,10 @@ impl ClientActor {
             session.expire_timer_version = msg.expire_timer_version() as i32;
             session.expiring_message_timeout =
                 msg.expire_timer.map(|v| Duration::from_secs(v as u64));
+        }
+
+        if message_type == Some(MessageType::GroupChange) {
+            tracing::warn!("Inserting a generic GroupChange message after handling it. This should not happen.");
         }
 
         let new_message = crate::store::NewMessage {
@@ -1025,12 +1029,6 @@ impl ClientActor {
                 session.is_group(),
             );
         }
-        if msg.body.is_some() {
-            // Only return message_id if we inserted a real message.
-            Some(message.id)
-        } else {
-            None
-        }
     }
 
     fn handle_sync_request(&mut self, meta: Metadata, req: SyncRequest) {
@@ -1082,8 +1080,18 @@ impl ClientActor {
                     let storage_service = storage.fetch_storage_service_key();
                     sender.send_keys(&local_addr.into(), Keys { master: master.map(|k| k.into()), storage_service: storage_service.map(|k| k.into()) }).await?;
                 }
-                // Type::Blocked
-                // Type::PniIdentity
+                RequestType::Blocked => {
+                    sender.send_blocked(
+                        &local_addr.into(),
+                        Blocked {
+                            numbers: storage.fetch_blocked_numbers().into_iter().map(|e| e.to_string()).collect_vec(),
+                            acis: storage.fetch_blocked_acis().into_iter().map(|e| e.to_string()).collect_vec(),
+                            group_ids: Vec::new(), // Group V1
+                        },
+                    ).await?;
+                }
+                // RequestType::PniIdentity // RESERVED
+                // RequestType::Groups // RESERVED
                 _ => {
                     tracing::trace!("Unimplemented sync request: {:#?}", req);
                     anyhow::bail!("Unimplemented sync request type: {:?}", req.r#type());
@@ -1174,7 +1182,7 @@ impl ClientActor {
                 tracing::trace!("Ignoring NullMessage");
             }
             ContentBody::DataMessage(message) => {
-                let message_id = self.handle_message(
+                self.handle_message(
                     ctx,
                     None,
                     Some(metadata.sender),
@@ -1184,15 +1192,11 @@ impl ClientActor {
                     None,
                 );
                 if metadata.needs_receipt {
-                    // XXX Is this guard correct? If the recipient requests a delivery receipt,
-                    //     we may have to send it even if we don't have a message_id.
-                    if let Some(_message_id) = message_id {
-                        self.handle_needs_delivery_receipt(ctx, &message, &metadata);
-                    }
+                    self.handle_needs_delivery_receipt(ctx, &message, &metadata);
                 }
 
                 // XXX Maybe move this if test (and the one for edit) into handle_message?
-                if !metadata.unidentified_sender && message_id.is_some() {
+                if !metadata.unidentified_sender {
                     self.handle_message_not_sealed(metadata.sender);
                 }
             }
@@ -1201,7 +1205,7 @@ impl ClientActor {
                     .data_message
                     .as_ref()
                     .expect("edit message contains data");
-                let message_id = self.handle_message(
+                self.handle_message(
                     ctx,
                     None,
                     Some(metadata.sender),
@@ -1215,12 +1219,10 @@ impl ClientActor {
                 );
 
                 if metadata.needs_receipt {
-                    if let Some(_message_id) = message_id {
-                        self.handle_needs_delivery_receipt(ctx, message, &metadata);
-                    }
+                    self.handle_needs_delivery_receipt(ctx, message, &metadata);
                 }
 
-                if !metadata.unidentified_sender && message_id.is_some() {
+                if !metadata.unidentified_sender {
                     self.handle_message_not_sealed(metadata.sender);
                 }
             }
@@ -1622,6 +1624,12 @@ impl Handler<SendMessage> for ClientActor {
                     tracing::error!("Cannot send to Group V1 anymore.");
                 }
                 let group_v2 = session.group_context_v2();
+                if session.is_group_v2() {
+                    let gv2 = session.unwrap_group_v2();
+                    let Some(self_member) = storage.fetch_group_v2_self_member(&gv2.id) else {
+                        return Err(anyhow!("Not member of the group '{}', will not send message", gv2.name));
+                    };
+                }
 
                 let timestamp = naive_chrono_to_millis(msg.server_timestamp);
 
@@ -1723,7 +1731,7 @@ impl Handler<SendMessage> for ClientActor {
                         caption: attachment.caption,
                         blur_hash: attachment.visual_hash,
                     };
-                    let ptr = match sender.upload_attachment(spec, contents).await {
+                    let ptr = match sender.upload_attachment(spec, contents, &mut rand::thread_rng()).await {
                         Ok(v) => v,
                         Err(e) => {
                             anyhow::bail!("Failed to upload attachment: {}", e);

@@ -27,7 +27,7 @@ use diesel::result::*;
 use diesel::sql_types::{Bool, Timestamp};
 use diesel_migrations::EmbeddedMigrations;
 use itertools::Itertools;
-use libsignal_service::groups_v2::InMemoryCredentialsCache;
+use libsignal_service::groups_v2::{InMemoryCredentialsCache, Role};
 use libsignal_service::proto::{attachment_pointer, data_message::Reaction, DataMessage};
 use libsignal_service::protocol::{self, *};
 use libsignal_service::zkgroup::api::groups::GroupSecretParams;
@@ -897,6 +897,35 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
+    pub fn fetch_blocked_numbers(&self) -> Vec<PhoneNumber> {
+        use crate::schema::recipients::dsl::*;
+        use std::str::FromStr;
+        let e164s: Vec<String> = schema::recipients::table
+            .select(e164.assume_not_null())
+            .filter(is_blocked.eq(true).and(e164.is_not_null()))
+            .load(&mut *self.db())
+            .unwrap();
+        e164s
+            .into_iter()
+            .filter_map(|s| PhoneNumber::from_str(&s).ok())
+            .collect()
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_blocked_acis(&self) -> Vec<Uuid> {
+        use crate::schema::recipients::dsl::*;
+        use std::str::FromStr;
+        let acis: Vec<String> = schema::recipients::table
+            .select(uuid.assume_not_null())
+            .filter(is_blocked.eq(true).and(uuid.is_not_null()))
+            .load(&mut *self.db())
+            .unwrap();
+        acis.into_iter()
+            .filter_map(|s| Uuid::from_str(&s).ok())
+            .collect()
+    }
+
+    #[tracing::instrument(skip(self))]
     pub fn mark_recipient_needs_pni_signature(&self, recipient: &orm::Recipient, val: bool) {
         use crate::schema::recipients::dsl::*;
 
@@ -1115,6 +1144,12 @@ impl<O: Observable> Storage<O> {
     ) -> (orm::Recipient, bool) {
         let recipient =
             self.merge_and_fetch_recipient_by_address(rcpt_e164, addr.unwrap(), trust_level);
+
+        let self_recipient = self.fetch_self_recipient().expect("self recipient");
+        if self_recipient.uuid == recipient.uuid && trust_level != TrustLevel::Certain {
+            tracing::warn!("Ignoring uncertain self profile key update");
+            return (recipient, false);
+        }
 
         if new_profile_key.len() != PROFILE_KEY_LEN {
             tracing::error!(
@@ -1921,6 +1956,102 @@ impl<O: Observable> Storage<O> {
             .unwrap()
     }
 
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_group_v2_self_member(&self, gv2_id: &str) -> Option<orm::GroupV2Member> {
+        let self_id = self.fetch_self_recipient_id();
+        schema::group_v2_members::table
+            .filter(schema::group_v2_members::recipient_id.eq(self_id))
+            .first(&mut *self.db())
+            .optional()
+            .unwrap()
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_group_v2_pending_member(
+        &self,
+        id: &str,
+        aci: Option<Aci>,
+        pni: Option<Pni>,
+    ) -> Option<orm::GroupV2PendingMember> {
+        if aci.is_none() && pni.is_none() {
+            tracing::error!("Neither ACI nor PNI provided for group_v2_pending_member fetch");
+            return None;
+        }
+
+        if let Some(aci) = aci {
+            let pending_member: Option<orm::GroupV2PendingMember> =
+                schema::group_v2_pending_members::table
+                    .filter(schema::group_v2_pending_members::group_v2_id.eq(id).and(
+                        schema::group_v2_pending_members::service_id.eq(aci.service_id_string()),
+                    ))
+                    .load(&mut *self.db())
+                    .unwrap()
+                    .pop();
+            if pending_member.is_some() {
+                return pending_member;
+            }
+        }
+
+        if let Some(pni) = pni {
+            let pending_member: Option<orm::GroupV2PendingMember> =
+                schema::group_v2_pending_members::table
+                    .filter(schema::group_v2_pending_members::group_v2_id.eq(id).and(
+                        schema::group_v2_pending_members::service_id.eq(pni.service_id_string()),
+                    ))
+                    .load(&mut *self.db())
+                    .unwrap()
+                    .pop();
+            if pending_member.is_some() {
+                return pending_member;
+            }
+        }
+
+        tracing::error!(
+            "No such pending member: aci: {:?}, pni: {:?}, group_v2_id: {}",
+            aci,
+            pni,
+            id
+        );
+        return None;
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_group_v2_requesting_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        aci: Aci,
+    ) -> Option<orm::GroupV2RequestingMember> {
+        schema::group_v2_requesting_members::table
+            .filter(
+                schema::group_v2_requesting_members::group_v2_id
+                    .eq(&group_v2.id)
+                    .and(schema::group_v2_requesting_members::aci.eq(aci.service_id_string())),
+            )
+            .first(&mut *self.db())
+            .optional()
+            .expect("db")
+    }
+
+    #[tracing::instrument(skip(self, group_v2))]
+    pub fn fetch_group_v2_banned_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        service_id: &ServiceId,
+    ) -> Option<orm::GroupV2BannedMember> {
+        schema::group_v2_banned_members::table
+            .filter(
+                schema::group_v2_banned_members::group_v2_id
+                    .eq(&group_v2.id)
+                    .and(
+                        schema::group_v2_banned_members::service_id
+                            .eq(service_id.service_id_string()),
+                    ),
+            )
+            .first(&mut *self.db())
+            .optional()
+            .expect("db")
+    }
+
     #[tracing::instrument(skip(self, e164), fields(e164 = %e164))]
     pub fn fetch_or_insert_session_by_phonenumber(&self, e164: &PhoneNumber) -> orm::Session {
         if let Some(session) = self.fetch_session_by_phonenumber(e164) {
@@ -2133,6 +2264,7 @@ impl<O: Observable> Storage<O> {
 
             avatar: None,
             description: Some("Group is being updated".into()),
+            announcement_only: false,
         };
 
         // Group does not exist, insert first.
@@ -3521,5 +3653,846 @@ impl<O: Observable> Storage<O> {
         diesel::delete(settings.filter(key.eq(key_name)))
             .execute(&mut *self.db())
             .expect("db");
+    }
+
+    // GroupV2 update functions
+
+    /// Update group revision number, if it is higher than the current one.
+    pub fn update_group_v2_revision(&self, group_v2: &orm::GroupV2, next_revision: i32) {
+        use crate::schema::group_v2s::dsl::*;
+
+        if group_v2.revision >= next_revision {
+            tracing::warn!(
+                "GroupV2 revision {} is already greater than or equal to {}",
+                group_v2.revision,
+                next_revision
+            );
+            // XXX Trigger full group refresh?
+            return;
+        }
+
+        let updated =
+            diesel::update(group_v2s.filter(id.eq(&group_v2.id).and(revision.lt(next_revision))))
+                .set(revision.eq(next_revision))
+                .execute(&mut *self.db())
+                .expect("db");
+
+        if updated == 0 {
+            // TODO: Better handling?
+            tracing::warn!("GroupV2 revision not updated");
+        } else {
+            self.observe_update(group_v2s, group_v2.id.clone());
+        }
+    }
+
+    /// Update group description. Does not trigger observer update.
+    pub fn update_group_v2_description(
+        &self,
+        group_v2: &orm::GroupV2,
+        next_description: Option<&String>,
+    ) {
+        use crate::schema::group_v2s::dsl::*;
+
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(description.eq(next_description))
+            .execute(&mut *self.db())
+            .expect("db");
+    }
+
+    /// Update group title (name). Does not trigger observer update.
+    pub fn update_group_v2_title(&self, group_v2: &orm::GroupV2, next_title: &String) {
+        use crate::schema::group_v2s::dsl::*;
+
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(name.eq(next_title))
+            .execute(&mut *self.db())
+            .expect("db");
+    }
+
+    /// Update group avatar. Does not trigger observer update.
+    pub fn update_group_v2_avatar(&self, group_v2: &orm::GroupV2, next_avatar: Option<&String>) {
+        use crate::schema::group_v2s::dsl::*;
+
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(avatar.eq(next_avatar))
+            .execute(&mut *self.db())
+            .expect("db");
+    }
+
+    /// Delete a proper member of a group.
+    ///
+    /// Triggers observer update on group members list.
+    pub fn delete_group_v2_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        aci: Aci,
+    ) -> Option<orm::Recipient> {
+        use crate::schema::group_v2_members::dsl::*;
+
+        if let Some(recipient) = self.fetch_recipient(&aci.into()) {
+            diesel::delete(
+                group_v2_members.filter(
+                    group_v2_id
+                        .eq(&group_v2.id)
+                        .and(recipient_id.eq(recipient.id)),
+                ),
+            )
+            .execute(&mut *self.db())
+            .expect("db");
+            self.observe_delete(schema::group_v2_members::table, recipient.aci())
+                .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
+            Some(recipient)
+        } else {
+            tracing::error!("No such user {:?} (delete from group)", aci);
+            None
+        }
+    }
+
+    /// Update the role of the group member.
+    ///
+    /// Triggers observer update on group members list.
+    pub fn update_group_v2_member_role(
+        &self,
+        group_v2: &orm::GroupV2,
+        aci: Aci,
+        next_role: Role,
+    ) -> Option<orm::Recipient> {
+        use crate::schema::group_v2_members::dsl::*;
+
+        if let Some(recipient) = self.fetch_recipient(&aci.into()) {
+            let updated = diesel::update(
+                group_v2_members.filter(
+                    group_v2_id
+                        .eq(&group_v2.id)
+                        .and(recipient_id.eq(recipient.id)),
+                ),
+            )
+            .set(role.eq(next_role as i32))
+            .execute(&mut *self.db())
+            .expect("db");
+            if updated == 0 {
+                tracing::warn!("No such member {:?} in group (update role)", aci);
+                None
+            } else {
+                self.observe_update(schema::group_v2_members::table, recipient.aci())
+                    .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
+                Some(recipient)
+            }
+        } else {
+            tracing::error!("No such user {:?} (update role)", aci);
+            None
+        }
+    }
+
+    /// Add a member to a group.
+    ///
+    /// Returns the membership and recipient if it was added.
+    ///
+    /// Triggers observer update on group members list.
+    pub fn add_group_v2_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        aci: Aci,
+        next_role: Role,
+        profile_key: &ProfileKey,
+        join_revision: i32,
+        joined_at: Option<NaiveDateTime>,
+    ) -> Option<(orm::GroupV2Member, orm::Recipient)> {
+        let recipient = self.fetch_or_insert_recipient_by_address(&aci.into());
+        let (recipient, _was_changed) = self.update_profile_key(
+            recipient.e164.clone(),
+            recipient.to_service_address(),
+            &profile_key.get_bytes(),
+            TrustLevel::Uncertain,
+        );
+        let joined_at = joined_at.unwrap_or_else(|| chrono::Utc::now().naive_utc());
+        if let Some((gm, r)) = self
+            .fetch_group_members_by_group_v2_id(&group_v2.id)
+            .into_iter()
+            .find(|(_, r)| r.id == recipient.id)
+        {
+            // XXX This is really fetch_or_insert_group_v2_member...
+            use crate::schema::group_v2_members::dsl::*;
+            let member = diesel::update(
+                crate::schema::group_v2_members::table
+                    .filter(group_v2_id.eq(&group_v2.id).and(recipient_id.eq(r.id))),
+            )
+            .set((
+                crate::schema::group_v2_members::role.eq(next_role as i32),
+                crate::schema::group_v2_members::joined_at_revision.eq(join_revision),
+                crate::schema::group_v2_members::member_since.eq(joined_at),
+            ))
+            .execute(&mut *self.db());
+
+            match member {
+                Ok(affected_rows) => {
+                    assert!(
+                        affected_rows == 1,
+                        "Did not update exactly one group member. Dazed and confused."
+                    );
+                    Some((gm, r))
+                }
+                Err(e) => {
+                    tracing::error!("Could not add (update) group member: {:?}", e);
+                    None
+                }
+            }
+        } else {
+            use crate::schema::group_v2_members::dsl::*;
+
+            let member = diesel::insert_into(group_v2_members)
+                .values((
+                    group_v2_id.eq(&group_v2.id),
+                    recipient_id.eq(recipient.id),
+                    joined_at_revision.eq(join_revision),
+                    role.eq(next_role as i32),
+                    member_since.eq(joined_at),
+                ))
+                .execute(&mut *self.db());
+
+            match member {
+                Ok(affected_rows) => {
+                    assert!(
+                        affected_rows == 1,
+                        "Did not insert exactly one group member. Dazed and confused."
+                    );
+                    self.observe_insert(schema::group_v2_members::table, recipient.aci())
+                        .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
+                    self.fetch_group_members_by_group_v2_id(&group_v2.id)
+                        .iter()
+                        .find(|(_, r)| r.uuid == recipient.uuid)
+                        .cloned()
+                }
+                Err(e) => {
+                    tracing::error!("Could not add (insert) group member: {:?}", e);
+                    None
+                }
+            }
+        }
+    }
+
+    /// Update the group's access control.
+    /// Empty password signals unset password.
+    ///
+    /// Does not trigger observer update.
+    pub fn update_group_v2_invite_link_password(
+        &self,
+        group_v2: &orm::GroupV2,
+        next_password: &String,
+    ) {
+        use crate::schema::group_v2s::dsl::*;
+
+        let bytes = next_password.as_bytes();
+
+        // TODO: Stub -- needs to consider access level and modifiers access level
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(invite_link_password.eq(Some(bytes)))
+            .execute(&mut *self.db())
+            .expect("db");
+    }
+
+    /// Update the group's announcement-only status.
+    ///
+    /// Does not trigger observer update.
+    pub fn update_group_v2_announcement_only(
+        &self,
+        group_v2: &orm::GroupV2,
+        next_announcement_only: bool,
+    ) {
+        use crate::schema::group_v2s::dsl::*;
+
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(announcement_only.eq(next_announcement_only))
+            .execute(&mut *self.db())
+            .expect("db");
+    }
+
+    /// Update the group's access control.
+    ///
+    /// Does not trigger observer update.
+    pub fn update_group_v2_attribute_access(
+        &self,
+        group_v2: &orm::GroupV2,
+        next_access: orm::AccessRequired,
+    ) {
+        use crate::schema::group_v2s::dsl::*;
+
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(access_required_for_attributes.eq(i32::from(next_access)))
+            .execute(&mut *self.db())
+            .expect("db");
+    }
+
+    /// Add a banned member ban to GroupV2.
+    /// Returns true if the member was added to the group.
+    /// Does not check if we're un-banning self or not.
+    ///
+    /// Triggers observer update on banned members list.
+    pub fn add_group_v2_banned_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        service_id: &ServiceId,
+        ts: u64,
+    ) -> (Option<orm::GroupV2BannedMember>, Option<orm::Recipient>) {
+        let banned_member = self.fetch_group_v2_banned_member(group_v2, service_id);
+        if banned_member.is_some() {
+            tracing::info!(
+                "Member {:?} already banned from group '{}'",
+                service_id.service_id_string(),
+                group_v2.name
+            );
+            return (banned_member, self.fetch_recipient(service_id));
+        }
+
+        diesel::insert_into(crate::schema::group_v2_banned_members::table)
+            .values((
+                crate::schema::group_v2_banned_members::group_v2_id.eq(&group_v2.id),
+                crate::schema::group_v2_banned_members::service_id
+                    .eq(service_id.service_id_string()),
+                crate::schema::group_v2_banned_members::banned_at.eq(millis_to_naive_chrono(ts)),
+            ))
+            .execute(&mut *self.db())
+            .expect("add groupv2 banned member");
+
+        let recipient = self.fetch_recipient(service_id);
+        let banned_member = self.fetch_group_v2_banned_member(group_v2, service_id);
+
+        if let Some(service_id) = banned_member
+            .as_ref()
+            .and_then(|m| Some(m.service_id.to_owned()))
+        {
+            self.observe_insert(schema::group_v2_banned_members::table, service_id)
+                .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
+        }
+
+        (banned_member, recipient)
+    }
+
+    /// Remove a banned member ban from GroupV2.
+    /// Returns the recipient, if the ban was removed and the recipient exists.
+    ///
+    /// Does not check if we're un-banning self or not.
+    ///
+    /// Triggers update on banned members list.
+    pub fn delete_group_v2_banned_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        delete_service_id: ServiceId,
+    ) -> Option<orm::Recipient> {
+        use crate::schema::group_v2_banned_members::dsl::*;
+
+        let affected = diesel::delete(
+            group_v2_banned_members.filter(
+                group_v2_id
+                    .eq(&group_v2.id)
+                    .and(service_id.eq(delete_service_id.service_id_string())),
+            ),
+        )
+        .execute(&mut *self.db())
+        .expect("db");
+
+        if affected == 1 {
+            tracing::debug!(
+                "Removed banned member {} from group '{}'",
+                delete_service_id.service_id_string(),
+                group_v2.name
+            );
+            self.observe_delete(
+                schema::group_v2_banned_members::table,
+                delete_service_id.service_id_string(),
+            )
+            .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
+            self.fetch_recipient(&delete_service_id)
+        } else if affected == 0 {
+            tracing::warn!(
+                "No such banned member {} in group '{}'",
+                delete_service_id.service_id_string(),
+                group_v2.name
+            );
+            None
+        } else {
+            // dazed and confused
+            tracing::error!(
+                "Deleted {} banned members with service ID {} in group '{}', expected 0 or 1",
+                affected,
+                delete_service_id.service_id_string(),
+                group_v2.name
+            );
+            None
+        }
+    }
+
+    /// Update GroupV2 invite link access.
+    ///
+    /// Does not trigger observer update.
+    pub fn update_group_v2_invite_link_access(
+        &self,
+        group_v2: &orm::GroupV2,
+        next_access: orm::AccessRequired,
+    ) {
+        use crate::schema::group_v2s::dsl::*;
+
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(access_required_for_add_from_invite_link.eq(i32::from(next_access)))
+            .execute(&mut *self.db())
+            .expect("db");
+    }
+
+    /// Update GroupV2 required member access level.
+    ///
+    /// Does not trigger observer update.
+    pub fn update_group_v2_member_access(
+        &self,
+        group_v2: &orm::GroupV2,
+        next_access: orm::AccessRequired,
+    ) {
+        use crate::schema::group_v2s::dsl::*;
+
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(access_required_for_members.eq(i32::from(next_access)))
+            .execute(&mut *self.db())
+            .expect("db");
+    }
+
+    /// Update the profile key of a GroupV2 member.
+    ///
+    /// Triggers observer update on members list.
+    pub fn update_group_v2_member_profile_key(
+        &self,
+        group_v2: &orm::GroupV2,
+        aci: Aci,
+        profile_key: &ProfileKey,
+    ) -> Option<orm::Recipient> {
+        if let Some(_pending) = self.fetch_group_v2_pending_member(&group_v2.id, Some(aci), None) {
+            let recipient = self.fetch_or_insert_recipient_by_address(&aci.into());
+            let (recipient, _was_changed) = self.update_profile_key(
+                recipient.e164.clone(),
+                recipient.to_service_address(),
+                &profile_key.get_bytes(),
+                TrustLevel::Uncertain,
+            );
+            self.observe_update(schema::group_v2_members::table, recipient.id)
+                .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
+            Some(recipient)
+        } else {
+            tracing::error!(
+                "No such pending member {} in group '{}' for profile key update",
+                aci.service_id_string(),
+                group_v2.name
+            );
+            None
+        }
+    }
+
+    /// Complete a pending GroupV2 member recipient with Aci, Pni and ProfileKey.
+    ///
+    /// Returns the updated recipient, or None if the pending member does not exist.
+    ///
+    /// Triggers observer update on pending members list.
+    pub fn promote_pending_pni_aci_member_profile_key(
+        &self,
+        group_v2: &orm::GroupV2,
+        aci: Aci,
+        pni: Pni,
+        profile_key: ProfileKey,
+    ) -> Option<orm::Recipient> {
+        if self
+            .fetch_group_v2_pending_member(&group_v2.id, Some(aci), Some(pni))
+            .is_some()
+        {
+            let recipient =
+                self.merge_and_fetch_recipient(None, Some(aci), Some(pni), TrustLevel::Uncertain);
+            let (recipient, was_changed) = self.update_profile_key(
+                recipient.e164.clone(),
+                recipient.to_service_address(),
+                &profile_key.get_bytes(),
+                TrustLevel::Uncertain,
+            );
+
+            if was_changed {
+                tracing::debug!(
+                    "Updated profile key for {} by group update",
+                    recipient.uuid.unwrap()
+                );
+                self.observe_update(schema::group_v2_pending_members::table, recipient.aci())
+                    .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
+            } else {
+                tracing::trace!(
+                    "Profile key for {} already up-to-date",
+                    recipient.uuid.unwrap()
+                );
+            }
+            Some(recipient)
+        } else {
+            tracing::error!(
+                "No such pending member {} in group '{}' for profile key promotion",
+                aci.service_id_string(),
+                group_v2.name
+            );
+            None
+        }
+    }
+
+    /// Delete a pending member from a GroupV2.
+    ///
+    /// Returns true if the member was deleted, false if it did not exist.
+    ///
+    /// Triggers observer update on pending members list.
+    pub fn delete_group_v2_pending_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        pending_service_id: ServiceId,
+    ) -> Option<orm::Recipient> {
+        use crate::schema::group_v2_pending_members::dsl::*;
+
+        let existing = match pending_service_id.kind() {
+            ServiceIdKind::Aci => self.fetch_group_v2_pending_member(
+                &group_v2.id,
+                Some(Aci::from(pending_service_id.raw_uuid())),
+                None,
+            ),
+            ServiceIdKind::Pni => self.fetch_group_v2_pending_member(
+                &group_v2.id,
+                None,
+                Some(Pni::from(pending_service_id.raw_uuid())),
+            ),
+        };
+
+        if let Some(member) = existing {
+            let affected = diesel::delete(
+                group_v2_pending_members.filter(
+                    group_v2_id
+                        .eq(&group_v2.id)
+                        .and(service_id.eq(&member.service_id)),
+                ),
+            )
+            .execute(&mut *self.db())
+            .unwrap();
+            match affected {
+                0 => tracing::error!(
+                    "Did not delete any pending members from group '{}'",
+                    group_v2.name
+                ),
+                n => {
+                    tracing::debug!(
+                        "Deleted {} pending members matching {} from group '{}'",
+                        n,
+                        member.service_id,
+                        group_v2.name
+                    );
+                    self.observe_delete(
+                        schema::group_v2_pending_members::table,
+                        pending_service_id.service_id_string(),
+                    )
+                    .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
+                    // Return the recipient, so we can update the profile key
+                    return self.fetch_recipient(&pending_service_id);
+                }
+            }
+        } else {
+            tracing::debug!(
+                "No such pending member {} in group '{}'",
+                pending_service_id.service_id_string(),
+                group_v2.name
+            );
+        }
+        None
+    }
+
+    /// Delete a requesting member from a GroupV2.
+    ///
+    /// Returns Option<Recipient> if the member was removed from group.
+    ///
+    /// Triggers observer update on requesting members list.
+    pub fn delete_group_v2_requesting_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        requesting_aci: Aci,
+    ) -> Option<orm::Recipient> {
+        use crate::schema::group_v2_requesting_members::dsl::*;
+
+        let aci_string = requesting_aci.service_id_string();
+
+        let deleted = diesel::delete(
+            group_v2_requesting_members
+                .filter(group_v2_id.eq(&group_v2.id).and(aci.eq(&aci_string))),
+        )
+        .execute(&mut *self.db())
+        .unwrap();
+        match deleted {
+            1 => {
+                tracing::debug!(
+                    "Deleted requesting member {} from group '{}'",
+                    aci_string,
+                    group_v2.name
+                );
+                self.observe_delete(
+                    schema::group_v2_requesting_members::table,
+                    requesting_aci.service_id_string(),
+                )
+                .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
+                self.fetch_recipient(&ServiceId::Aci(requesting_aci))
+            }
+            0 => {
+                tracing::debug!(
+                    "No such requesting member {} in group '{}'",
+                    aci_string,
+                    group_v2.name
+                );
+                None
+            }
+            n => unreachable!(
+                "Deleted {} requesting members from group '{}', expected 0 or 1",
+                n, group_v2.name
+            ),
+        }
+    }
+
+    /// Add a new pending member to a GroupV2.
+    ///
+    /// Triggers observer update on pending members list.
+    pub fn add_group_v2_pending_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        new_service_id: ServiceId,
+        added_by: Aci,
+        new_role: Role,
+        ts: NaiveDateTime,
+    ) -> Option<orm::GroupV2PendingMember> {
+        use crate::schema::group_v2_pending_members::dsl::*;
+
+        // Check that there is no such member already
+        let members = self.fetch_group_members_by_group_v2_id(&group_v2.id);
+        let member = match new_service_id.kind() {
+            ServiceIdKind::Aci => members
+                .into_iter()
+                .find(|m| m.1.uuid == Some(new_service_id.raw_uuid())),
+            ServiceIdKind::Pni => members
+                .into_iter()
+                .find(|m| m.1.pni == Some(new_service_id.raw_uuid())),
+        };
+        if member.is_some() {
+            tracing::debug!(
+                "Member {:?} already exists in group '{}'",
+                new_service_id,
+                group_v2.name
+            );
+            return None;
+        }
+
+        // Check that there is no pending member
+        let pending = match new_service_id.kind() {
+            ServiceIdKind::Aci => self.fetch_group_v2_pending_member(
+                &group_v2.id,
+                Some(Aci::from(new_service_id.raw_uuid())),
+                None,
+            ),
+            ServiceIdKind::Pni => self.fetch_group_v2_pending_member(
+                &group_v2.id,
+                None,
+                Some(Pni::from(new_service_id.raw_uuid())),
+            ),
+        };
+        if pending.is_some() {
+            tracing::debug!(
+                "Pending member {:?} already exists in group '{}'",
+                new_service_id,
+                group_v2.name
+            );
+            return None;
+        }
+
+        let new_pending_member = orm::GroupV2PendingMember {
+            group_v2_id: group_v2.id.clone(),
+            service_id: new_service_id.service_id_string(),
+            added_by_aci: added_by.service_id_string(),
+            role: new_role.into(),
+            timestamp: ts,
+        };
+
+        let inserted = diesel::insert_into(group_v2_pending_members)
+            .values(&new_pending_member)
+            .execute(&mut *self.db())
+            .expect("insert pending group member");
+
+        match inserted {
+            1 => {
+                tracing::debug!(
+                    "Added a new pending member {} to group '{}'",
+                    new_pending_member.service_id,
+                    group_v2.name
+                );
+                self.observe_insert(
+                    schema::group_v2_pending_members::table,
+                    new_pending_member.service_id.to_owned(),
+                )
+                .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
+                Some(new_pending_member)
+            }
+            x => {
+                tracing::error!("Expected to insert 1 pending group member, got {}", x);
+                None
+            }
+        }
+    }
+
+    /// Add a new requesting member to a GroupV2.
+    ///
+    /// Triggers observer update on requesting members list.
+    pub fn add_group_v2_requesting_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        new_aci: Aci,
+        new_profile_key: ProfileKey,
+        ts: NaiveDateTime,
+    ) -> Option<(orm::GroupV2RequestingMember, orm::Recipient)> {
+        use crate::schema::group_v2_requesting_members::dsl::*;
+
+        // Check that there is no such actual member
+        if self
+            .fetch_group_members_by_group_v2_id(&group_v2.id)
+            .into_iter()
+            .any(|(_, r)| r.uuid == Some(Uuid::from(new_aci)))
+        {
+            tracing::debug!(
+                "Member {} already exists in group '{}'",
+                new_aci.service_id_string(),
+                group_v2.name
+            );
+            return None;
+        }
+
+        // Check that there is no pending member
+        if self
+            .fetch_group_v2_pending_member(&group_v2.id, Some(new_aci), None)
+            .is_some()
+        {
+            tracing::debug!(
+                "Pending member {} already exists in group '{}'",
+                new_aci.service_id_string(),
+                group_v2.name
+            );
+            return None;
+        }
+
+        let new_requesting_member = orm::GroupV2RequestingMember {
+            group_v2_id: group_v2.id.to_owned(),
+            aci: new_aci.service_id_string(),
+            profile_key: new_profile_key.get_bytes().into(),
+            timestamp: ts,
+        };
+
+        let added_count = diesel::insert_into(group_v2_requesting_members)
+            .values(&new_requesting_member)
+            .execute(&mut *self.db())
+            .expect("insert requesting group member");
+        match added_count {
+            1 => {
+                tracing::debug!(
+                    "Added a new requesting member {} to group '{}'",
+                    new_requesting_member.aci,
+                    group_v2.name
+                );
+                self.observe_insert(
+                    schema::group_v2_requesting_members::table,
+                    new_requesting_member.aci.to_string(),
+                )
+                .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
+                Some((
+                    new_requesting_member,
+                    self.fetch_or_insert_recipient_by_address(&ServiceId::Aci(new_aci)),
+                ))
+            }
+            x => {
+                tracing::error!("Expected to insert 1 requesting group member, got {}", x);
+                None
+            }
+        }
+    }
+
+    /// Promote a pending GroupV2 member to an actual member.
+    ///
+    /// Indirectly triggers observer update on pending members list.
+    pub fn promote_group_v2_pending_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        service_id: ServiceId,
+        profile_key: &ProfileKey,
+    ) -> Option<(orm::GroupV2Member, orm::Recipient)> {
+        let pending_member = match service_id.kind() {
+            ServiceIdKind::Aci => self
+                .fetch_group_v2_pending_member(
+                    &group_v2.id,
+                    Some(Aci::from(service_id.raw_uuid())),
+                    None,
+                )
+                .expect("pending member not found"),
+            ServiceIdKind::Pni => self
+                .fetch_group_v2_pending_member(
+                    &group_v2.id,
+                    None,
+                    Some(Pni::from(service_id.raw_uuid())),
+                )
+                .expect("pending member not found"),
+        };
+
+        let recipient = self.fetch_or_insert_recipient_by_address(&service_id);
+
+        if let Some(added) = self.add_group_v2_member(
+            group_v2,
+            Aci::from(recipient.uuid.unwrap()),
+            Role::try_from(pending_member.role).unwrap(),
+            profile_key,
+            group_v2.revision,
+            None,
+        ) {
+            self.delete_group_v2_pending_member(group_v2, service_id);
+            Some(added)
+        } else {
+            None
+        }
+    }
+
+    /// Promote a requesting GroupV2 member to an actual member.
+    ///
+    /// Indirectly triggers observer updates on requesting members list.
+    pub fn promote_group_v2_requesting_member(
+        &self,
+        group_v2: &orm::GroupV2,
+        aci: Aci,
+        role: Role,
+    ) -> Option<(orm::GroupV2Member, orm::Recipient)> {
+        if let Some(requesting_member) = self.fetch_group_v2_requesting_member(group_v2, aci) {
+            let mut key = [0u8; 32];
+            key.copy_from_slice(&requesting_member.profile_key);
+            let profile_key = ProfileKey::create(key);
+
+            if let Some(added) =
+                self.add_group_v2_member(group_v2, aci, role, &profile_key, group_v2.revision, None)
+            {
+                self.delete_group_v2_requesting_member(group_v2, aci);
+                Some(added)
+            } else {
+                None
+            }
+        } else if self
+            .fetch_group_members_by_group_v2_id(&group_v2.id)
+            .iter()
+            .any(|(_, r)| r.uuid == Some(Uuid::from(aci)))
+        {
+            tracing::debug!(
+                "Member {} already exists in group '{}', no need to promote",
+                aci.service_id_string(),
+                group_v2.name
+            );
+            None
+        } else {
+            tracing::error!(
+                "No such requesting member {} in group '{}' for promotion",
+                aci.service_id_string(),
+                group_v2.name
+            );
+            None
+        }
     }
 }

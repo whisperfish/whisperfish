@@ -121,11 +121,10 @@ CoverBackground {
             // and uses Message above as modelData.
             Loader {
                 id: serviceMessage
-                active: recipient.recipientId > -1 && lastMessage.messageType != null
+                active: lastMessage.messageType != null
                 asynchronous: true
                 sourceComponent: ServiceMessageDelegate {
                     modelData: lastMessage
-                    peerName: name
                     visible: false
                     enabled: false
                 }
@@ -157,8 +156,8 @@ CoverBackground {
                         return qsTrId("whisperfish-message-deleted-note")
                     }
 
-                    if (serviceMessage.active) {
-                        return "<i>" + serviceMessage.item._message + "</i>"
+                    if (lastMessage.messageType != null) {
+                       return "<i>" + serviceMessage.item._message + "</i>"
                     }
 
                     var newText = ""
@@ -179,7 +178,7 @@ CoverBackground {
                     }
 
                     if (lastMessage.hasText) {
-                        newText += lastMessage.styledMessage
+                        text += lastMessage.styledMessage
                     }
                     return newText
                 } // end text

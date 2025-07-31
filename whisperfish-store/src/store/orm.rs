@@ -1,6 +1,7 @@
 use super::schema::*;
 use chrono::prelude::*;
 use diesel::sql_types::Integer;
+use libsignal_service::groups_v2::AccessRequired as AccessRequiredProto;
 use libsignal_service::prelude::*;
 use libsignal_service::proto::GroupContextV2;
 use libsignal_service::protocol::{Aci, Pni, ServiceId, ServiceIdKind};
@@ -39,6 +40,61 @@ pub struct GroupV1Member {
     pub member_since: Option<NaiveDateTime>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AccessRequired {
+    Unknown,
+    Any,
+    Member,
+    Administrator,
+    Unsatisfiable,
+}
+
+impl From<AccessRequired> for AccessRequiredProto {
+    fn from(value: AccessRequired) -> Self {
+        match value {
+            AccessRequired::Unknown => AccessRequiredProto::Unknown,
+            AccessRequired::Any => AccessRequiredProto::Any,
+            AccessRequired::Member => AccessRequiredProto::Member,
+            AccessRequired::Administrator => AccessRequiredProto::Administrator,
+            AccessRequired::Unsatisfiable => AccessRequiredProto::Unsatisfiable,
+        }
+    }
+}
+
+impl From<AccessRequiredProto> for AccessRequired {
+    fn from(value: AccessRequiredProto) -> Self {
+        match value {
+            AccessRequiredProto::Unknown => AccessRequired::Unknown,
+            AccessRequiredProto::Any => AccessRequired::Any,
+            AccessRequiredProto::Member => AccessRequired::Member,
+            AccessRequiredProto::Administrator => AccessRequired::Administrator,
+            AccessRequiredProto::Unsatisfiable => AccessRequired::Unsatisfiable,
+        }
+    }
+}
+
+impl std::convert::From<i32> for AccessRequired {
+    fn from(value: i32) -> Self {
+        match value {
+            0 => AccessRequired::Unknown,
+            1 => AccessRequired::Any,
+            2 => AccessRequired::Member,
+            3 => AccessRequired::Administrator,
+            4 => AccessRequired::Unsatisfiable,
+            _ => {
+                tracing::error!("Invalid GroupV2Access value {}, fallback to Unknown", value);
+                AccessRequired::Unknown
+            }
+        }
+    }
+}
+
+impl From<AccessRequired> for i32 {
+    fn from(value: AccessRequired) -> Self {
+        value as i32
+    }
+}
+
 #[derive(Queryable, Insertable, Debug, Clone)]
 pub struct GroupV2 {
     pub id: String,
@@ -55,6 +111,7 @@ pub struct GroupV2 {
 
     pub avatar: Option<String>,
     pub description: Option<String>,
+    pub announcement_only: bool,
 }
 
 impl Display for GroupV2 {
@@ -94,6 +151,69 @@ impl Display for GroupV2Member {
             shorten(&self.group_v2_id, 12),
             &self.recipient_id,
             &self.member_since
+        )
+    }
+}
+
+#[derive(Queryable, Insertable, Debug, Clone)]
+pub struct GroupV2PendingMember {
+    pub group_v2_id: String,
+    pub service_id: String, // Aci or Pni
+    pub role: i32,
+    pub added_by_aci: String, // Aci
+    pub timestamp: NaiveDateTime,
+}
+
+impl Display for GroupV2PendingMember {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(
+            f,
+            "GroupV2PendingMember {{ group_v2_id: \"{}\", service_id: \"{}\", role: {}, added_by_aci: \"{}\", timestamp: \"{}\" }}",
+            shorten(&self.group_v2_id, 12),
+            shorten(&self.service_id, 9),
+            // TODO: repr
+            &self.role,
+            shorten(&self.added_by_aci, 9),
+            &self.timestamp
+        )
+    }
+}
+
+#[derive(Queryable, Insertable, Debug, Clone)]
+pub struct GroupV2RequestingMember {
+    pub group_v2_id: String,
+    pub aci: String, // Aci
+    pub profile_key: Vec<u8>,
+    pub timestamp: NaiveDateTime,
+}
+
+impl Display for GroupV2RequestingMember {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(
+            f,
+            "GroupV2RequestingMember {{ group_v2_id: \"{}\", aci: \"{}\", timestamp: \"{}\" }}",
+            shorten(&self.group_v2_id, 12),
+            shorten(&self.aci, 9),
+            &self.timestamp
+        )
+    }
+}
+
+#[derive(Queryable, Insertable, Debug, Clone)]
+pub struct GroupV2BannedMember {
+    pub group_v2_id: String,
+    pub service_id: String, // Aci or Pni
+    pub banned_at: NaiveDateTime,
+}
+
+impl Display for GroupV2BannedMember {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(
+            f,
+            "GroupV2BannedMember {{ group_v2_id: \"{}\", service_id: \"{}\", blobanned_atcked_at: \"{}\" }}",
+            shorten(&self.group_v2_id, 12),
+            shorten(&self.service_id, 9),
+            &self.banned_at
         )
     }
 }
@@ -1648,6 +1768,7 @@ mod tests {
             access_required_for_members: 0,
             avatar: None,
             description: Some("desc".into()),
+            announcement_only: false,
         }
     }
 

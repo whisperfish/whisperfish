@@ -138,16 +138,6 @@ fn qstring_from_option(opt: Option<impl AsRef<str>>) -> QVariant {
     }
 }
 
-fn qvariant_from_option<T>(val: Option<T>) -> QVariant
-where
-    T: Into<QVariant>,
-{
-    match val {
-        Some(s) => s.into(),
-        None => QVariant::default(),
-    }
-}
-
 fn int_from_i32_option(val: Option<i32>) -> i32 {
     val.unwrap_or(-1)
 }
@@ -220,15 +210,6 @@ mod tests {
         assert_eq!(s.to_qstring().to_string(), String::from("test"));
 
         let s = qstring_from_option(None::<&str>);
-        assert_eq!(s.to_qstring().to_string(), String::from(""));
-    }
-
-    #[test]
-    fn test_qvariant_from_option() {
-        let s = qvariant_from_option(Some(QString::from("test")));
-        assert_eq!(s.to_qstring().to_string(), String::from("test"));
-
-        let s = qvariant_from_option(None::<&QString>);
         assert_eq!(s.to_qstring().to_string(), String::from(""));
     }
 }

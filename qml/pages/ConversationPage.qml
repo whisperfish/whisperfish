@@ -12,7 +12,7 @@ Page {
     // E.g. when starting a new chat.
     property bool editorFocus: false
 
-    property bool isGroup: session.isGroup
+    property bool isGroup: group.groupId != ""
     property bool isValid: session.valid
     property string conversationName: root.isGroup ? session.groupName : getRecipientName(recipient.e164, recipient.externalId, recipient.name, true)
     property string profilePicture: root.isGroup ? getGroupAvatar(session.groupId) : getRecipientAvatar(recipient.e164, recipient.uuid, recipient.externalId)
@@ -52,7 +52,7 @@ Page {
     Group {
         id: group
         app: AppState
-        groupId: root.isGroup && root.isValid ? session.groupId : ""
+        groupId: session.valid && session.groupId != null ? session.groupId : ""
         onValidChanged: if (valid) {
             maybeShowPanel()
             if (!!groupId) {
@@ -64,7 +64,7 @@ Page {
     Recipient {
         id: recipient
         app: AppState
-        recipientId: !root.isGroup && root.isValid ? session.recipientId : -1
+        recipientId: session.valid ? session.recipientId : -1
         onValidChanged: if (valid) {
             if (recipientId != -1) {
                 maybeShowPanel()
@@ -302,7 +302,8 @@ Page {
             showSeparator: !messages.atYEnd || quotedMessageShown
             editor.onFocusChanged: if (editor.focus) _showInputPanel = true
             dockMoving: panel.moving
-            recipientIsRegistered: root.isValid && session.isRegistered // true for any group
+            enableSending: root.isValid && session.isRegistered && (!root.isGroup || group.hasSelfAsMember)
+            isGroup: root.isGroup
 
             Component.onDestruction: {
                 if(sessionId > -1 && session.draft !== text) {

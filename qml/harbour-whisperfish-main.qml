@@ -301,6 +301,7 @@ ApplicationWindow
         var notification_privacy = SettingsBridge.notification_privacy.toString();
         switch (notification_privacy) {
         case "complete":
+            // TODO: Service messages show up as empty message (instead of even raw JSON)
             m.body = message
             break;
         case "minimal":
