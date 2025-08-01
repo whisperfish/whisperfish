@@ -30,10 +30,9 @@ cpp! {{
         ~RustleGraphImageProvider() {
             rust!(WF_rustlegraph_destructor [
                 ctx: *mut VizualizerMap as "void *"
-            ] -> i32 as "int" {
+            ] {
                 // Explicit drop because of must_use
                 drop(Box::<VizualizerMap>::from_raw(ctx));
-                0
             });
         }
 
