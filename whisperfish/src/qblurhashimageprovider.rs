@@ -41,7 +41,7 @@ cpp! {{
             width = img.width();
             height = img.height();
 
-            rust!(WF_decode_blurhash [
+            int ret = rust!(WF_decode_blurhash [
                 id : &QString as "const QString &",
                 buf : *mut u8 as "uchar *",
                 width : u32 as "int",
@@ -51,6 +51,7 @@ cpp! {{
                 let id = id.to_string();
                 // XXX We might want some *real* error handling at some point.
                 if id == "null" {
+                    tracing::warn!("Received 'null' as blurhash ID. Returning transparent image.");
                     return -1;
                 }
                 let id = match percent_encoding::percent_decode_str(&id).decode_utf8() {
@@ -69,6 +70,10 @@ cpp! {{
                 }
                 0
             });
+
+            if (ret != 0) {
+                img.fill(Qt::transparent);
+            }
 
             return img;
         }
