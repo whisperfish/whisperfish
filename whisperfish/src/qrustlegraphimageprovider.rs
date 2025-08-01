@@ -44,13 +44,16 @@ cpp! {{
             int *widthp = &width;
             int *heightp = &height;
 
-            rust!(WF_rustlegraph_compute_dims [
+            int ret;
+
+            ret = rust!(WF_rustlegraph_compute_dims [
                 id : &QString as "const QString &",
                 widthp : &mut i32 as "int *",
                 heightp : &mut i32 as "int *"
             ] -> i32 as "int" {
                 let id = id.to_string();
                 if id.is_empty() {
+                    tracing::warn!("Received empty RustleGraph ID. Returning transparent image.");
                     return -1;
                 }
 
@@ -63,6 +66,10 @@ cpp! {{
 
                 0
             });
+
+            if (ret != 0) {
+                return QImage();
+            }
 
             width = requestedSize.width() > 0 ? requestedSize.width() : width;
             height = requestedSize.height() > 0 ? requestedSize.height() : height;
@@ -81,7 +88,7 @@ cpp! {{
             size_t size_in_bytes = img.byteCount();
             #endif
 
-            rust!(WF_inject_rustlegraph [
+            ret = rust!(WF_inject_rustlegraph [
                 id : &QString as "const QString &",
                 buf : *mut u8 as "uchar *",
                 width : u32 as "int",
@@ -91,6 +98,7 @@ cpp! {{
             ] -> i32 as "int" {
                 let id = id.to_string();
                 if id.is_empty() {
+                    tracing::warn!("Received empty RustleGraph ID. Returning transparent image.");
                     return -1;
                 }
                 let (id, time) = id.rsplit_once(':').unwrap();
@@ -117,6 +125,10 @@ cpp! {{
 
                 0
             });
+
+            if (ret != 0) {
+                img.fill(Qt::transparent);
+            }
 
             return img;
         }
