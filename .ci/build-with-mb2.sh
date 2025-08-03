@@ -30,7 +30,7 @@ git clone . ~/whisperfish-build
 pushd ~/whisperfish-build
 
 echo_t "Fetching WebRTC..."
-bash fetch-webrtc.sh
+bash fetch-webrtc.sh $MER_ARCH
 
 # We also need to move the cache, and afterwards move it back.
 if [ -e "$CI_PROJECT_DIR/cargo" ]; then

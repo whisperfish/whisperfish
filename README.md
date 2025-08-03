@@ -162,9 +162,9 @@ Another thing about the `vendor.*` files: they are currently excluded from the g
 ### Voice and video calls
 
 For voice and video calling, Whisperfish requires the RingRTC library,
-including Signal's custom WebRTC implementation.  You can download pre-built artifacts with the following command:
+including Signal's custom WebRTC implementation.  You can download pre-built artifacts for your architecture of choice with the following command:
 
-    bash fetch-webrtc.sh
+    bash fetch-webrtc.sh [aarch64|armv7hl|i486|x86_64]
 
 See <https://www.rubdos.be/2024/09/08/building-ringrtc-for-whisperfish.html> for how to build these artifacts.
 
@@ -180,7 +180,7 @@ Building Whisperfish on your host machine is also possible. This is useful for d
 
 The RPM automatically selects the `sailfish` feature flag, which will not compile outside of SailfishOS.  This feature flag is *not* enabled by default, so it doesn't sit in the way.
 
-You'll have to manually set the `OUTPUT_DIR` variable, which contains the output of the `webrtc` build.  The `fetch-webrtc.sh` script fetches `libwebrtc.a` pre-built for all four architectures, and for the two major versions of OpenSSL (3.x, and 1.1.1).
+You'll have to manually set the `OUTPUT_DIR` variable, which contains the output of the `webrtc` build.  The `fetch-webrtc.sh` script fetches `libwebrtc.a` pre-built for all four architectures by default, and for the two major versions of OpenSSL (3.x, and 1.1.1).
 
     bash fetch-webrtc.sh
     OUTPUT_DIR=$PWD/ringrtc/322/x86_64-unknown-linux-gnu/ cargo build --features bundled-sqlcipher

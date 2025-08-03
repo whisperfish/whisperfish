@@ -18,20 +18,28 @@ WEBRTC_HASHES[111_x64]="337860360916a03c0a0da3e44f002f9cf3083c38ad4b4de9a9052a6f
 WEBRTC_HASHES[111_x86]="89143eb3464547263770cffc66bb741e4407366ac4a21e695510fb3474ddef4b5bf30eb5b1abac3060b1d9b562c6cbab"
 
 declare -A ARCHS
-ARCHS[arm]="armv7-unknown-linux-gnueabihf"
-ARCHS[arm64]="aarch64-unknown-linux-gnu"
-ARCHS[x64]="x86_64-unknown-linux-gnu"
-ARCHS[x86]="i686-unknown-linux-gnu"
+if [ "$1" == "aarch64" ] || [ -z "$1" ]; then
+    ARCHS[arm64]="aarch64-unknown-linux-gnu"
+fi
+if [ "$1" == "armv7hl" ] || [ -z "$1" ]; then
+    ARCHS[arm]="armv7-unknown-linux-gnueabihf"
+fi
+if [ "$1" == "i486" ] || [ -z "$1" ]; then
+    ARCHS[x86]="i686-unknown-linux-gnu"
+fi
+if [ "$1" == "x86_64" ] || [ -z "$1" ]; then
+    ARCHS[x64]="x86_64-unknown-linux-gnu"
+fi
 
 for arch in "${!ARCHS[@]}"; do
     for version in 111 322; do
         hash=${WEBRTC_HASHES[${version}_${arch}]}
-        target="ringrtc/$version/${ARCHS[${arch}]}/release/obj/"
-        debug_target="ringrtc/$version/${ARCHS[${arch}]}/debug/obj/"
+        target="ringrtc/$version/${ARCHS[${arch}]}/release/obj"
+        debug_target="ringrtc/$version/${ARCHS[${arch}]}/debug/obj"
         mkdir -p "${target}" "${debug_target}"
 
         if [ -f "${target}/libwebrtc.a" ]; then
-            echo "$hash  ${target}/libwebrtc.a" | sha384sum -c && continue || echo "Hash mismatch, refetching..."
+            echo "${hash} ${target}/libwebrtc.a" | sha384sum -c >/dev/null && continue || echo "Hash mismatch, refetching..."
         fi
 
         echo "Fetching WebRTC (OpenSSL ${version}) for ${arch}..."
