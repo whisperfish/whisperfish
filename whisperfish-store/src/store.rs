@@ -3974,10 +3974,7 @@ impl<O: Observable> Storage<O> {
         let recipient = self.fetch_recipient(service_id);
         let banned_member = self.fetch_group_v2_banned_member(group_v2, service_id);
 
-        if let Some(service_id) = banned_member
-            .as_ref()
-            .and_then(|m| Some(m.service_id.to_owned()))
-        {
+        if let Some(service_id) = banned_member.as_ref().map(|m| m.service_id.to_owned()) {
             self.observe_insert(schema::group_v2_banned_members::table, service_id)
                 .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
         }
