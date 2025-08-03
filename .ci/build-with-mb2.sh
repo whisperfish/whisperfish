@@ -8,16 +8,6 @@ echo_t() {
 
 echo_t "Building for $SFOS_VERSION"
 
-echo_t "Install dependencies on host..."
-sudo zypper install -y \
-    zlib-devel \
-
-# Tooling-side dependencies used in build.rs
-echo_t "Install zlib-devel to tooling..."
-sdk-manage tooling maintain "SailfishOS-$SFOS_VERSION" \
-    zypper install -y \
-        zlib-devel \
-
 echo_t "Adding $PWD as safe directory in git..."
 git config --global --add safe.directory "$PWD"
 
