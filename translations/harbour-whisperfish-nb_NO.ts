@@ -4,14 +4,14 @@
 <context>
     <name></name>
     <message id="whisperfish-session-has-attachment">
-        <location filename="../qml/cover/CoverPage.qml" line="175"/>
+        <location filename="../qml/cover/CoverPage.qml" line="174"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="71"/>
         <source>Attachment</source>
         <extracomment>Session contains an attachment label</extracomment>
         <translation>Vedlegg</translation>
     </message>
     <message id="whisperfish-session-is-voice-note">
-        <location filename="../qml/cover/CoverPage.qml" line="169"/>
+        <location filename="../qml/cover/CoverPage.qml" line="168"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="64"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
@@ -52,7 +52,7 @@
         <translation type="unfinished">Melding til meg selv</translation>
     </message>
     <message id="whisperfish-message-preview-draft">
-        <location filename="../qml/cover/CoverPage.qml" line="151"/>
+        <location filename="../qml/cover/CoverPage.qml" line="150"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="250"/>
         <source>Draft: %1</source>
         <extracomment>Message preview for a saved, unsent message</extracomment>
@@ -2050,7 +2050,7 @@ Settings page share contacts</extracomment>
         <translation type="unfinished">Vedlegg</translation>
     </message>
     <message id="whisperfish-message-deleted-note">
-        <location filename="../qml/cover/CoverPage.qml" line="156"/>
+        <location filename="../qml/cover/CoverPage.qml" line="155"/>
         <location filename="../qml/delegates/MessageDelegate.qml" line="267"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="51"/>
         <source>this message was deleted</source>
