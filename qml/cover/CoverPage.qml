@@ -144,12 +144,11 @@ CoverBackground {
                 clip: true
                 wrapMode: Text.NoWrap
                 bypassLinking: true
-                needsRichText: serviceMessage.active || /<(a |b>|i>|s>|span)/.test(messageText) // XXX Use Rust for this
-                plainText: (needsRichText ? cssStyle : '') +
-                           model.draft.length > 0
+                needsRichText: serviceMessage.active || /<(a |b>|i>|s>|span)/.test(lastMessage.styledMessage) // XXX Use Rust for this
+                plainText: model.draft.length > 0
                            ? // Translation in SessionDelegate.qml
                              qsTrId("whisperfish-message-preview-draft").arg(model.draft)
-                           : messageText
+                           : (needsRichText ? cssStyle + messageText : messageText)
                 property string messageText: {
                     if (lastMessage.remoteDeleted) {
                         // SessionDelegate.qml defines this
