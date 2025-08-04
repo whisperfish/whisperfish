@@ -2115,7 +2115,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ChatTextInput.qml" line="328"/>
         <source>You are not member of the group</source>
         <extracomment>Chat text input placeholder for not being a member of the group</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Et ole ryhmän jäsen</translation>
     </message>
     <message id="whisperfish-chat-input-recipient-is-unregistered">
         <location filename="../qml/components/ChatTextInput.qml" line="332"/>
@@ -2418,7 +2418,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="169"/>
         <source>%1 banned %2</source>
         <extracomment>Group change: add banned member</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 esti käyttäjän %2</translation>
     </message>
     <message id="whisperfish-service-message-group-change-announcement-only-on">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="174"/>
