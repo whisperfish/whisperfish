@@ -8,16 +8,6 @@ echo_t() {
 
 echo_t "Building for $SFOS_VERSION"
 
-echo_t "Install dependencies on host..."
-sudo zypper install -y \
-    zlib-devel \
-
-# Tooling-side dependencies used in build.rs
-echo_t "Install zlib-devel to tooling..."
-sdk-manage tooling maintain "SailfishOS-$SFOS_VERSION" \
-    zypper install -y \
-        zlib-devel \
-
 echo_t "Adding $PWD as safe directory in git..."
 git config --global --add safe.directory "$PWD"
 
@@ -40,7 +30,7 @@ git clone . ~/whisperfish-build
 pushd ~/whisperfish-build
 
 echo_t "Fetching WebRTC..."
-bash fetch-webrtc.sh
+bash fetch-webrtc.sh $MER_ARCH
 
 # We also need to move the cache, and afterwards move it back.
 if [ -e "$CI_PROJECT_DIR/cargo" ]; then
@@ -71,7 +61,7 @@ no_credentials = false
 EOF
 
 echo_t "Building Whisperfish for SailfishOS-$SFOS_VERSION-$MER_ARCH..."
-mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" build \
+mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" --no-snapshot=force build \
     --enable-debug \
     --no-check \
     -- \

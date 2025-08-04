@@ -131,7 +131,7 @@ build:host:stable:
   <<: *rust-stable
   stage: build
   script:
-    - bash fetch-webrtc.sh
+    - bash fetch-webrtc.sh x86_64
     - cargo build --features bundled-sqlcipher
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -162,7 +162,7 @@ build:host:nightly:
     # in https://gitlab.com/whisperfish/whisperfish/-/merge_requests/202
     - build:host:stable
   script:
-    - bash fetch-webrtc.sh
+    - bash fetch-webrtc.sh x86_64
     - cargo build --features bundled-sqlcipher
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -175,7 +175,7 @@ build:host:stable:docs:
   needs:
     - build:host:stable
   script:
-    - bash fetch-webrtc.sh
+    - bash fetch-webrtc.sh x86_64
     - cargo doc --no-deps --document-private-items -p harbour-whisperfish -p libsignal-service -p libsignal-protocol -p zkgroup  -p whisperfish
   artifacts:
     paths:
@@ -242,7 +242,7 @@ test:stable:
   needs:
     - build:host:stable
   script:
-    - bash fetch-webrtc.sh
+    - bash fetch-webrtc.sh x86_64
     - cargo test --features whisperfish/bundled-sqlcipher
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -323,7 +323,7 @@ coverage:stable:
     # Not needed anymore after the Tarpaulin image is on Debian Bullseye
     QT_SELECT: qt5
   script:
-    - bash fetch-webrtc.sh
+    - bash fetch-webrtc.sh x86_64
     # Add --all-features and --all-targets some time in the future. Tarpaulin
     # runs only at linux-x86 and would need the whisperfish sdk to build all
     # features.
@@ -358,7 +358,7 @@ clippy:stable:
   script:
     - rustup override set 1.82.0
     - rustup component add clippy
-    - bash fetch-webrtc.sh
+    - bash fetch-webrtc.sh x86_64
     # the following command should be used but needs sailfish SDK
     # - cargo clippy --all-targets --all-features -- -D warnings
     #
@@ -380,7 +380,7 @@ clippy:stable-warnings:
     - test:stable
   script:
     - rustup component add clippy
-    - bash fetch-webrtc.sh
+    - bash fetch-webrtc.sh x86_64
     # the following command should be used but needs sailfish SDK
     # - cargo clippy --all-targets --all-features -- -D warnings
     #
