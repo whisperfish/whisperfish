@@ -42,8 +42,7 @@ stages:
   image: rust
   cache:
     <<: *rust-cache
-    key:
-      prefix: rust-stable
+    key: rust-stable
 
 .rust-nightly: &rust-nightly
   <<: *rust
@@ -54,8 +53,7 @@ stages:
   allow_failure: true
   cache:
     <<: *rust-cache
-    key:
-      prefix: rust-nightly
+    key: rust-nightly
 
 .build-sailfishos: &build-sailfishos
   image: registry.gitlab.com/whisperfish/sailo-rs/rust-$MER_ARCH-$SFOS_VERSION:latest
@@ -180,8 +178,7 @@ build:host:stable:docs:
   # build job and don't interfere with later tests jobs.
   cache:
     <<: *rust-cache
-    key:
-      prefix: rust-stable
+    key: rust-stable
     policy: pull
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -210,8 +207,7 @@ build:host:stable:tarball:
       dotenv: build.env
   cache:
     <<: *rust-cache
-    key:
-      prefix: rust-stable
+    key: rust-stable
     policy: pull
   only:
     - tags
@@ -333,8 +329,7 @@ coverage:stable:
   # cache.
   cache:
     <<: *rust-cache
-    key:
-      prefix: rust-stable-tarpaulin
+    key: rust-stable-tarpaulin
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
