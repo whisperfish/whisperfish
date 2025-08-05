@@ -1997,7 +1997,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ChatTextInput.qml" line="328"/>
         <source>You are not member of the group</source>
         <extracomment>Chat text input placeholder for not being a member of the group</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ge zij’ geê lid van de groep</translation>
     </message>
     <message id="whisperfish-chat-input-recipient-is-unregistered">
         <location filename="../qml/components/ChatTextInput.qml" line="332"/>
@@ -2076,7 +2076,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/GroupProfilePage.qml" line="394"/>
         <source>(no name)</source>
         <extracomment>Placeholder name for a recipient who has no name available</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>(gêne naam)</translation>
     </message>
     <message id="whisperfish-quoted-message-unknown-sender">
         <source>Unknown sender</source>
@@ -2295,19 +2295,19 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="169"/>
         <source>%1 banned %2</source>
         <extracomment>Group change: add banned member</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 hee %2 gebannen</translation>
     </message>
     <message id="whisperfish-service-message-group-change-announcement-only-on">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="174"/>
         <source>%1 restricted sending messages to administrators only</source>
         <extracomment>Group change: only admins can send messages</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 heed ingesteld da alleên beheerders berichten kunnen sturen</translation>
     </message>
     <message id="whisperfish-service-message-group-change-announcement-only-off">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="177"/>
         <source>%1 allowed everyone send messages</source>
         <extracomment>Group change: all members can send messages</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 heed ingesteld da iedereên berichten kan sturen</translation>
     </message>
     <message id="whisperfish-service-message-group-change-attribute-access">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="182"/>
