@@ -44,8 +44,6 @@ stages:
     <<: *rust-cache
     key:
       prefix: rust-stable
-      files:
-        - Cargo.lock
 
 .rust-nightly: &rust-nightly
   <<: *rust
@@ -58,8 +56,6 @@ stages:
     <<: *rust-cache
     key:
       prefix: rust-nightly
-      files:
-        - Cargo.lock
 
 .build-sailfishos: &build-sailfishos
   image: registry.gitlab.com/whisperfish/sailo-rs/rust-$MER_ARCH-$SFOS_VERSION:latest
@@ -186,8 +182,6 @@ build:host:stable:docs:
     <<: *rust-cache
     key:
       prefix: rust-stable
-      files:
-        - Cargo.lock
     policy: pull
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -218,8 +212,6 @@ build:host:stable:tarball:
     <<: *rust-cache
     key:
       prefix: rust-stable
-      files:
-        - Cargo.lock
     policy: pull
   only:
     - tags
@@ -343,8 +335,6 @@ coverage:stable:
     <<: *rust-cache
     key:
       prefix: rust-stable-tarpaulin
-      files:
-        - Cargo.lock
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
