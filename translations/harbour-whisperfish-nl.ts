@@ -2300,7 +2300,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="169"/>
         <source>%1 banned %2</source>
         <extracomment>Group change: add banned member</extracomment>
-        <translation>%1 heeft %2 geband</translation>
+        <translation>%1 heeft %2 gebannen</translation>
     </message>
     <message id="whisperfish-service-message-group-change-announcement-only-on">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="174"/>
