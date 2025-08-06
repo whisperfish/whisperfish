@@ -2313,97 +2313,97 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="182"/>
         <source>%1 set group change permissions to &apos;%2&apos;</source>
         <extracomment>Group change: permissions to change group properties</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 hee’ de machtigingen voôr groepswijzigingen ingesteld op ‘%2’</translation>
     </message>
     <message id="whisperfish-service-message-group-change-avatar">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="186"/>
         <source>%1 changed the group avatar</source>
         <extracomment>Group change: title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 hee ’t fotooke van de groep aangepast</translation>
     </message>
     <message id="whisperfish-service-message-group-change-delete-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="190"/>
         <source>%1 removed %2 from the group</source>
         <extracomment>Group change: delete member</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 hee %2 verwijderd uit de groep</translation>
     </message>
     <message id="whisperfish-service-message-group-change-description">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="194"/>
         <source>%1 changed the group description to &apos;%2&apos;</source>
         <extracomment>Group change: desctiption changed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 hee’ de beschrijving van de groep aangepast naar ‘%2’</translation>
     </message>
     <message id="whisperfish-service-message-group-change-invite-link-access">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="199"/>
         <source>%1 set invite link setting to &apos;%2&apos;</source>
         <extracomment>Group change: joining group via invite link setting</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 hee’ d’uitnôdigingskoppelingsinstelling aangepast naar ‘%2’</translation>
     </message>
     <message id="whisperfish-service-message-group-change-invite-link-password">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="203"/>
         <source>%1 changed the invite link password</source>
         <extracomment>Group change: set/change invite link password</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 hee ’t paswoord van d’uitnôdigingskoppeling veranderd</translation>
     </message>
     <message id="whisperfish-service-message-group-change-member-access">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="207"/>
         <source>%1 allowed &apos;%2&apos; add new members</source>
         <extracomment>Group change: change members joining setting</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 hee ‘%2’ toegelaten van nieve leden toe te voegen</translation>
     </message>
     <message id="whisperfish-service-message-group-change-modify-member-role">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="211"/>
         <source>%1 changed %2 to %3</source>
         <extracomment>Group change: change member &quot;power level&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 hee %2 veranderd in %3</translation>
     </message>
     <message id="whisperfish-service-message-group-change-new-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="215"/>
         <source>%1 added %2 to group</source>
         <extracomment>Group change: new member</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 hee %2 toegevoegd aan de groep</translation>
     </message>
     <message id="whisperfish-service-message-group-change-new-pending-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="219"/>
         <source>%1 was invited to join the group</source>
         <extracomment>Group change: new pending member</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 is uitgenôdigd in de groep</translation>
     </message>
     <message id="whisperfish-service-message-group-change-new-requesting-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="223"/>
         <source>%1 would like to join the group</source>
         <extracomment>Group change: new requesting member</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 wilt oôk in de groep zitten</translation>
     </message>
     <message id="whisperfish-service-message-group-change-promote-pending-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="227"/>
         <source>%1 accepted %2 into the group</source>
         <extracomment>Group change: pending member was accepted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 hee %2 aanvèèrd in de groep</translation>
     </message>
     <message id="whisperfish-service-message-group-change-promote-requesting-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="231"/>
         <source>%1 accepted %2 into the group</source>
         <extracomment>Group change: requesting member was accepted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 hee %2 aanvèèrd in de groep</translation>
     </message>
     <message id="whisperfish-service-message-group-change-title">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="237"/>
         <source>%1 changed the group title to &apos;%2&apos;</source>
         <extracomment>Group change: title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 hee’ de naam van de groep veranderd in ‘%2’</translation>
     </message>
     <message id="whisperfish-service-message-call-group-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="260"/>
         <source>You had a group call.</source>
         <extracomment>Service message</extracomment>
-        <translation>G’had e groepsgesprek.</translation>
+        <translation>G’hed e groepsgesprek gehad.</translation>
     </message>
     <message id="whisperfish-service-message-call-group-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="263"/>
         <source>%1 had a group call with you.</source>
         <extracomment>Service message, %1 is the person initiating the call.</extracomment>
-        <translation>%1 had e groepsgesprek me u.</translation>
+        <translation>%1 heed e groepsgesprek me u gehad.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="268"/>
