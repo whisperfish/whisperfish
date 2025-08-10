@@ -8,7 +8,21 @@ Make sure to [trigger a Weblate commit](https://hosted.weblate.org/commit/whispe
 Updating the translations will happen *outside* of any merge request, in order to avoid conflicts with Weblate.
 "
 
-lupdate qml/ -ts translations/*.ts
+# lupdate doesn't fail on errors/warnings, so filter the output manually.
+# Every not known good row is considered an error.
+
+LOG=$(mktemp)
+lupdate qml/ -ts translations/*.ts 2>&1 | tee "$LOG"
+LINES=$(sed -E '/^Scanning|^Updating|^    Found|^Removed plural forms|^If this sounds wrong/d' "$LOG" | wc -l)
+rm "$LOG"
+
+if [ "$LINES" -gt 0 ]; then
+    echo "qmllint reported errors or warnings"
+    exit 1
+else
+    echo "qmllint did not report errors or warnings"
+fi
+
 if git diff --exit-code; then
     echo "No translation update needed";
 else
