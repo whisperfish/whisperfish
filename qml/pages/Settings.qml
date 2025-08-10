@@ -340,8 +340,6 @@ Page {
                 //: Settings page notification privacy
                 //% "Notification privacy"
                 label: qsTrId("whisperfish-settings-notification-privacy")
-                //: Settings page notification privacy description
-                //% "Select how Whisperfish produces notifications"
                 description: currentItem.description
                 // Sync this in three places: the menu, here, and settings.rs
                 currentIndex: ["off", "minimal", "sender-only", "complete"].indexOf(SettingsBridge.notification_privacy.toString())

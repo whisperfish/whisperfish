@@ -126,7 +126,7 @@ ListItem {
             //: Service message, %1 is a name
             //% "%1 set or disabled expiring messages timeout."
             : qsTrId("whisperfish-service-message-expiry-unknown-peer").arg(rcptName)
-        }                        //: Group change: message expiry was changed
+        }
     }
 
     property string _message: switch (_type) {
@@ -307,8 +307,8 @@ ListItem {
             //% "%1 reset the secure session with you."
             : qsTrId("whisperfish-service-message-session-reset-peer").arg(recipientName)
         default:
-            //: Service message, %1 is an integer, %2 is a word, %3 is the message text (if any)
             console.warn("Unsupported service message: id", modelData.id, "flags", modelData.flags, "type", _type, "text", modelData.message)
+            //: Service message, %1 is an integer, %2 is a word, %3 is the message text (if any)
             //% "This service message of is not yet supported by Whisperfish. "
             //% "Please file a bug report. (Flags: %1, Type: %2, Contents: \"%3\")"
             return qsTrId("whisperfish-service-message-not-supported").arg(modelData.flags).arg(_type).arg(modelData.message != null ? modelData.message : "NULL")

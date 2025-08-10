@@ -78,6 +78,8 @@ Page {
                 text: qsTrId("whisperfish-reconnect")
                 onClicked: {
                     ClientWorker.reconnect();
+                    //: Main page notification message when Whisperfish is trying to reconnect
+                    //% "Reconnecting..."
                     notification.show(qsTrId("whisperfish-reconnecting"), "image://theme/icon-m-reload");
                 }
             }
