@@ -409,29 +409,33 @@ Page {
                     icon.source: "image://theme/icon-m-clear"
                     icon.width: width
                     icon.height: height
-                    //: Message action description, shown if one or more messages are selected
-                    //% "Clear selection"
                     onPressedChanged: infoLabel.toggleHint(
-                                          qsTrId("whisperfish-message-action-clear-selection", _selectedCount))
+                                        //: Message action description, shown if one or more messages are selected
+                                        //% "Clear selection"
+                                        qsTrId("whisperfish-message-action-clear-selection")
+                                    )
                     onClicked: messages.resetSelection()
                 }
                 IconButton {
                     icon.source: "../../icons/icon-m-copy.png"
                     icon.width: width
                     icon.height: height
-                    //: Message action description
-                    //% "Copy %n message(s)"
                     onPressedChanged: infoLabel.toggleHint(
-                                          qsTrId("whisperfish-message-action-copy", _selectedCount))
+                                        //: Message action description
+                                        //% "Copy %n message(s)"
+                                        qsTrId("whisperfish-message-action-copy", _selectedCount)
+                                    )
                     onClicked: messages.messageAction(messages.copySelected)
                 }
                 IconButton {
                     icon.source: "image://theme/icon-m-about"
                     icon.width: width
                     icon.height: height
-                    //: Message action description (only available if n==1)
-                    //% "Show message info"
-                    onPressedChanged: infoLabel.toggleHint(qsTrId("whisperfish-message-action-info"))
+                    onPressedChanged: infoLabel.toggleHint(
+                                        //: Message action description (only available if n==1)
+                                        //% "Show message info"
+                                        qsTrId("whisperfish-message-action-info")
+                                    )
                     enabled: _selectedCount === 1
                     onClicked: messages.messageAction(messages.showMessageInfo)
                 }
@@ -441,10 +445,11 @@ Page {
                     icon.source: "image://theme/icon-m-delete"
                     icon.width: width
                     icon.height: height
-                    //: Message action description
-                    //% "Locally delete %n message(s)"
                     onPressedChanged: infoLabel.toggleHint(
-                                          qsTrId("whisperfish-message-action-delete-for-self", _selectedCount))
+                                        //: Message action description
+                                        //% "Locally delete %n message(s)"
+                                        qsTrId("whisperfish-message-action-delete-for-self", _selectedCount)
+                                    )
                     onClicked: messages.messageAction(messages.deleteSelectedForSelf)
                     enabled: root.isLandscape
                     visible: root.isLandscape
@@ -454,10 +459,11 @@ Page {
                     icon.source: "../../icons/icon-m-delete-all.png"
                     icon.width: width
                     icon.height: height
-                    //: Message action description
-                    //% "Delete %n message(s) for all"
                     onPressedChanged: infoLabel.toggleHint(
-                                          qsTrId("whisperfish-message-action-delete-for-all", _selectedCount))
+                                        //: Message action description
+                                        //% "Delete %n message(s) for all"
+                                        qsTrId("whisperfish-message-action-delete-for-all", _selectedCount)
+                                    )
                     onClicked: messages.messageAction(messages.deleteSelectedForAll)
                     enabled: _showDeleteAll
                     visible: root.isLandscape
@@ -468,10 +474,11 @@ Page {
                     icon.source: "image://theme/icon-m-refresh"
                     icon.width: height
                     icon.height: height
-                    //: Message action description
-                    //% "Retry sending (the) failed message(s)"
                     onPressedChanged: infoLabel.toggleHint(
-                                          qsTrId("whisperfish-message-action-resend", _selectedCount))
+                                        //: Message action description
+                                        //% "Retry sending %n failed message(s)"
+                                        qsTrId("whisperfish-message-action-resend", _selectedCount)
+                                    )
                     visible: root.isLandscape && false // TODO show if at least one message is failed
                                    // NOTE this action should be *hidden* if it is not applicable
                     onClicked: messages.messageAction(messages.resendSelected)
@@ -482,10 +489,11 @@ Page {
                     icon.source: "image://theme/icon-m-file-note-dark"
                     icon.width: height
                     icon.height: height
-                    //: Message action description
-                    //% "Transcribe %n message(s)"
                     onPressedChanged: infoLabel.toggleHint(
-                                          qsTrId("whisperfish-message-action-resend", _selectedCount))
+                                        //: Message action description
+                                        //% "Transcribe %n message(s)"
+                                        qsTrId("whisperfish-message-action-transcribe", _selectedCount)
+                                    )
                     visible: root.isLandscape && dbusSpeechInterface.available
                     onClicked: messages.messageAction(messages.transcribeSelected)
                 }
@@ -502,10 +510,11 @@ Page {
                     icon.source: "image://theme/icon-m-delete"
                     icon.width: width
                     icon.height: height
-                    //: Message action description
-                    //% "Locally delete %n message(s)"
                     onPressedChanged: infoLabel.toggleHint(
-                                          qsTrId("whisperfish-message-action-delete-for-self", _selectedCount))
+                                        //: Message action description
+                                        //% "Locally delete %n message(s)"
+                                        qsTrId("whisperfish-message-action-delete-for-self", _selectedCount)
+                                    )
                     onClicked: messages.messageAction(messages.deleteSelectedForSelf)
                 }
                 IconButton {
@@ -513,10 +522,11 @@ Page {
                     icon.source: "../../icons/icon-m-delete-all.png"
                     icon.width: width
                     icon.height: height
-                    //: Message action description
-                    //% "Delete %n message(s) for all"
                     onPressedChanged: infoLabel.toggleHint(
-                                          qsTrId("whisperfish-message-action-delete-for-all", _selectedCount))
+                                        //: Message action description
+                                        //% "Delete %n message(s) for all"
+                                        qsTrId("whisperfish-message-action-delete-for-all", _selectedCount)
+                                    )
                     onClicked: messages.messageAction(messages.deleteSelectedForAll)
                     enabled: _showDeleteAll
                 }
@@ -527,10 +537,10 @@ Page {
                     icon.source: "image://theme/icon-m-refresh"
                     icon.width: height
                     icon.height: height
-                    //: Message action description
-                    //% "Retry sending (the) failed message(s)"
                     onPressedChanged: infoLabel.toggleHint(
-                                          qsTrId("whisperfish-message-action-resend", _selectedCount))
+                                        // Translation defined above
+                                        qsTrId("whisperfish-message-action-resend", _selectedCount)
+                                    )
                     visible: false // TODO show if at least one message is failed
                                    // NOTE this action should be *hidden* if it is not applicable
                     onClicked: messages.messageAction(messages.resendSelected)
@@ -541,10 +551,10 @@ Page {
                     icon.source: "image://theme/icon-m-file-note-dark"
                     icon.width: height
                     icon.height: height
-                    //: Message action description
-                    //% "Transcribe %n message(s)"
                     onPressedChanged: infoLabel.toggleHint(
-                                          qsTrId("whisperfish-message-action-resend", _selectedCount))
+                                        // Translation defined above
+                                        qsTrId("whisperfish-message-action-transcribe", _selectedCount)
+                                    )
                     visible: dbusSpeechInterface.available
                     onClicked: messages.messageAction(messages.transcribeSelected)
                 }
@@ -589,13 +599,13 @@ Page {
 
             InfoHintLabel {
                 id: acceptInfoLabel
-                defaultMessage: root.isGroup
+                defaultMessage: root.isGroup ?
                     //: Information about a pending or blocked group
                     //% "Let the group members message with you and let its members see your profile information?"
-                    ? qsTrId("whisperfish-group-request-information")
+                    qsTrId("whisperfish-group-request-information") :
                     //: Information about a pending or blocked recipient
                     //% "Let the contact message with you and let them see your profile information?"
-                    : qsTrId("whisperfish-message-request-information")
+                    qsTrId("whisperfish-message-request-information")
                 fontSizeMode: Text.FixedSize
                 wrapMode: Text.Wrap
             }
