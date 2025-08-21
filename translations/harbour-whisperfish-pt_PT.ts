@@ -584,7 +584,7 @@
         <location filename="../qml/pages/GroupProfilePage.qml" line="278"></location>
         <source>Open Note to Self</source>
         <extracomment>Menu item to open the conversation with oneself</extracomment>
-        <translation>Nota para mim</translation>
+        <translation>Abrir nota pessoal</translation>
     </message>
     <message id="whisperfish-group-member-menu-direct-message">
         <location filename="../qml/pages/GroupProfilePage.qml" line="281"></location>
@@ -1659,7 +1659,7 @@ Settings page share contacts</extracomment>
         <source>Show debugging information and controls in the user interface.</source>
         <oldsource>Show debugging information in the user interface.</oldsource>
         <extracomment>Settings page: debug info toggle extended description</extracomment>
-        <translation>Mostra informação e controlos para depuração no interface do utilizador.</translation>
+        <translation>Mostra informação e controlos para depuração na interface do utilizador.</translation>
     </message>
     <message id="whisperfish-settings-enable-verbose">
         <source>Verbose logging</source>
@@ -1769,7 +1769,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="659"></location>
         <source>Enabled</source>
         <extracomment>Settings page encrypted db enabled</extracomment>
-        <translation>Ligado</translation>
+        <translation>Ativa</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-disabled">
         <location filename="../qml/pages/Settings.qml" line="662"></location>
@@ -1808,7 +1808,7 @@ Settings page share contacts</extracomment>
         <source>Secure session reset</source>
         <oldsource>Resetting secure session</oldsource>
         <extracomment>Reset secure session remorse message (past tense)</extracomment>
-        <translation>Repor a sessão segura</translation>
+        <translation>Sessão segura reposta</translation>
     </message>
     <message id="whisperfish-refresh-profile-menu">
         <location filename="../qml/pages/ProfilePage.qml" line="114"></location>
@@ -1999,7 +1999,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="360"></location>
         <source>If checked, this session was initialized with post-quantum secure cryptography.</source>
         <extracomment>Profile page: description for post-quantum secure sessions</extracomment>
-        <translation>Se assinalado, esta sessão foi inicializada com criptografia segura pós-quântica.</translation>
+        <translation>Se indicado, esta sessão foi inicializada com criptografia segura pós-quântica.</translation>
     </message>
     <message id="whisperfish-kyber-click-explanation">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="370"></location>
