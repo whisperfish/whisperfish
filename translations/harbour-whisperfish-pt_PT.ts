@@ -1594,7 +1594,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="401"></location>
         <source>Show the phone number of the recipient in the conversation page header.</source>
         <extracomment>Settings page, show recipient phone number in conversation view description</extracomment>
-        <translation>Mostrar o número do destinatário no cabeçalho de conversas</translation>
+        <translation>Mostrar o número do destinatário no cabeçalho de conversas.</translation>
     </message>
     <message id="whisperfish-settings-enable-autostart-description">
         <location filename="../qml/pages/Settings.qml" line="430"></location>
