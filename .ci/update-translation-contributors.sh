@@ -35,7 +35,6 @@ for key in "${!languages[@]}"; do
 
     FIRST=true
     while IFS= read -r contributor; do
-        count=$(echo -n $contributor | awk '{ print $1 }');
         contributor=$(echo -n $contributor | awk '{sub($1 OFS, "")}1');
 
         while IFS= read -r non_contributor; do

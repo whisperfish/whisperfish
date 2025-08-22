@@ -1,6 +1,9 @@
 use anyhow::Context;
 use secrecy::ExposeSecret;
 
+const AES_BLOCK_SIZE: usize = 16;
+
+// XXX This crypto module should use libsodium in the future!
 /// Functions to encrypt and decrypt storage files
 ///
 /// This module collects cryptography functions that are tied to the storage module. Internally the
@@ -8,10 +11,6 @@ use secrecy::ExposeSecret;
 /// of the `block_modes` crate for more information
 /// (<https://docs.rs/block-modes/0.8.1/block_modes/trait.BlockMode.html#method.encrypt>) and to the
 /// corresponding RFC (<https://datatracker.ietf.org/doc/html/rfc5652#section-6.3>).
-// XXX This crypto module should use libsodium in the future!
-
-const AES_BLOCK_SIZE: usize = 16;
-
 #[derive(Debug, Clone)]
 pub struct StorageEncryption {
     /// Key for local files

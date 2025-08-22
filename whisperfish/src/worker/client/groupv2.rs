@@ -132,12 +132,12 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                     .members
                     .iter()
                     .map(|member| ((Some(member.aci)), None, Some(&member.profile_key)))
-                    .chain(group.pending_members.iter().map(|member| {
+                    .chain(group.pending_members.iter().map(|member|
                         match member.address.kind() {
                             ServiceIdKind::Aci => (member.address.aci(), None, None),
                             ServiceIdKind::Pni => (None, member.address.pni(), None),
                         }
-                    }))
+                    ))
                     .chain(
                         group
                             .requesting_members

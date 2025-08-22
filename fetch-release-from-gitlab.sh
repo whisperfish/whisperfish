@@ -14,7 +14,9 @@ done
 mkdir -p releases
 for arch in $archs; do
     unzip -od "$version-$arch" $version-$arch.zip
-    mv $(fd -I harbour-whisperfish $version-$arch) releases/
+    for F in $(fd -I harbour-whisperfish $version-$arch); do
+        mv "$F" releases/
+    done
 done
 
 # Cleanup

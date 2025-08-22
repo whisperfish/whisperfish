@@ -840,7 +840,7 @@ impl<O: Observable> Storage<O> {
         let recipient = self
             .fetch_self_recipient()
             .expect("no self recipient to retreive profile key from");
-        return recipient.profile_key;
+        recipient.profile_key
     }
 
     #[tracing::instrument(skip(self))]
@@ -855,7 +855,7 @@ impl<O: Observable> Storage<O> {
         let recipient = self
             .fetch_self_recipient()
             .expect("no self recipient to retrieve db id from");
-        return recipient.id;
+        recipient.id
     }
 
     #[tracing::instrument(skip(self))]
@@ -2022,7 +2022,7 @@ impl<O: Observable> Storage<O> {
             pni,
             id
         );
-        return None;
+        None
     }
 
     #[tracing::instrument(skip(self))]
