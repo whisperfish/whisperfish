@@ -45,21 +45,21 @@ qmeta-async = { git = "https://gitlab.com/rubdos/qmeta-async.git" }
 time = "0.3.37"
 scrypt = { version = "0.11.0", default-features = false, features = ["std"] }
 
-getrandom = "0.2"
+getrandom = "0.3"
 
 cpp = "0.5"
-dirs = "5.0"
+dirs = "6.0"
 anyhow = "1.0"
 thiserror = "2"
 hex = "0.4"
 phonenumber = "0.3.7"
-itertools = "0.13"
+itertools = "0.14"
 qrencode = "0.14"
 image = { version = "0.24", default-features = false, features = ["png"] }
 
-diesel = { version = "=2.1", features = ["sqlite", "chrono"] }
-diesel_migrations = "=2.1"
-libsqlite3-sys = { version = "0.28", features = ["sqlcipher"] }
+diesel = { version = "2.2", features = ["sqlite", "chrono"] }
+diesel_migrations = "=2.2"
+libsqlite3-sys = { version = "0.35", features = ["sqlcipher"] }
 
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.85"
@@ -73,8 +73,8 @@ rustlegraph = { git = "https://gitlab.com/whisperfish/rustlegraph", branch = "ma
 
 regex = "1.11.1"
 
-gstreamer = "0.23"
-glib = "0.20"
+gstreamer = "0.24"
+glib = "0.21"
 
 ringrtc = { git = "https://github.com/whisperfish/ringrtc", branch = "whisperfork", version = "2.46.2", features = ["native", "system_ssl"], optional = true }
 
@@ -97,9 +97,9 @@ hex = "0.4"
 
 [dev-dependencies]
 actix-rt = "2.10.0"
-criterion = "0.5"
-rstest = "0.18"
-rstest_reuse = "0.6.0"
+criterion = "0.7"
+rstest = "0.26"
+rstest_reuse = "0.7.0"
 
 [features]
 bundled-sqlcipher = [
