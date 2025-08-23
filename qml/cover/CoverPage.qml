@@ -177,7 +177,7 @@ CoverBackground {
                     }
 
                     if (lastMessage.hasText) {
-                        text += lastMessage.styledMessage
+                        newText += lastMessage.styledMessage
                     }
                     return newText
                 } // end text
