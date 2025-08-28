@@ -165,6 +165,43 @@ Page {
                 duration: session.expiringMessageTimeout
                 onNewDurationChanged: groupProfile.newDuration = newDuration
             }
+
+            ComboBox {
+                // XXX Consider separate settings sub-page
+                //: Announcements only setting label
+                //% "Message sending allowed"
+                label: qsTrId("whisperfish-announcements-switch-label")
+                value: currentIndex == 1
+                    ? qsTrId("whisperfish-announcements-admins-only")
+                    : qsTrId("whisperfish-announcements-all-useres")
+                property bool announcementsOnly: group.isAnnouncementsOnly
+                currentIndex: announcementsOnly ? 1 : 0
+                menu: ContextMenu {
+                    MenuItem {
+                        //: Message sending allowed for all users
+                        //% "All users"
+                        text: qsTrId("whisperfish-announcements-all-useres")
+                    }
+                    MenuItem {
+                        //: Message sending allowed for admins only
+                        //% "Administrators only"
+                        text: qsTrId("whisperfish-announcements-admins-only")
+                    }
+                }
+                onCurrentIndexChanged: {
+                    if ((currentIndex == 1) != group.isAnnouncementsOnly) {
+                        // XXX: sending group updates is not implemented
+                        console.log("announcements only mode", currentIndex == 1 ? "enabled" : "disabled")
+                    }
+                }
+                onAnnouncementsOnlyChanged: {
+                    if (announcementsOnly) {
+                        currentIndex = 1
+                    } else {
+                        currentIndex = 0
+                    }
+                }
+            }
         }
 
         GroupMemberListView {
