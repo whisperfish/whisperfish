@@ -1960,7 +1960,11 @@ impl<O: Observable> Storage<O> {
     pub fn fetch_group_v2_self_member(&self, gv2_id: &str) -> Option<orm::GroupV2Member> {
         let self_id = self.fetch_self_recipient_id();
         schema::group_v2_members::table
-            .filter(schema::group_v2_members::recipient_id.eq(self_id))
+            .filter(
+                schema::group_v2_members::recipient_id
+                    .eq(self_id)
+                    .and(schema::group_v2_members::group_v2_id.eq(gv2_id)),
+            )
             .first(&mut *self.db())
             .optional()
             .unwrap()
