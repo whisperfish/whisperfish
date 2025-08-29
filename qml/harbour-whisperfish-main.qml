@@ -58,7 +58,7 @@ ApplicationWindow
     Component {
         id: messageNotification
         Notification {
-            property int mid
+            property int messageId
             appIcon: "harbour-whisperfish"
             appName: "Whisperfish"
             category: "harbour-whisperfish-message"
@@ -185,25 +185,25 @@ ApplicationWindow
         }
     }
 
-    function closeMessageNotification(sid, mid) {
-        console.log("Closing message notification for session", sid, "and message", mid)
-        if(sid in notificationMap) {
-            for(var i in notificationMap[sid]) {
+    function closeMessageNotification(sessionId, messageId) {
+        console.log("Closing message notification for session", sessionId, "and message", messageId)
+        if(sessionId in notificationMap) {
+            for(var i in notificationMap[sessionId]) {
                 // This needs to be a loose comparison for some reason
-                if(notificationMap[sid][i].mid == mid) {
-                    notificationMap[sid][i].close()
-                    delete notificationMap[sid][i]
-                    notificationMap[sid].splice(i, 1)
+                if(notificationMap[sessionId][i].messageId == messageId) {
+                    notificationMap[sessionId][i].close()
+                    delete notificationMap[sessionId][i]
+                    notificationMap[sessionId].splice(i, 1)
 
-                    if(notificationMap[sid].length === 0) {
-                        delete notificationMap[sid]
+                    if(notificationMap[sessionId].length === 0) {
+                        delete notificationMap[sessionId]
                     }
                     break
                 }
             }
         }
         for(var i in notificationQueue) {
-            if(notificationQueue[i].mid == mid) {
+            if(notificationQueue[i].messageId == messageId) {
                 console.log("Removing from queue")
                 delete notificationQueue[i]
                 notificationQueue.splice(i, 1)
@@ -212,13 +212,13 @@ ApplicationWindow
         }
     }
 
-    function newMissedCallNotification(sid, sessionName, senderName, senderIdentifier, senderUuid, isVideo, isGroup) {
-        var name = getRecipientName(senderIdentifier, undefined, senderName) // FIXME
-        var contactName = isGroup ? sessionName : name
+    function newMissedCallNotification(data) {
+        var senderName = getRecipientName(data.senderE164, undefined, data.senderName)
+        var contactName = data.isGroup ? data.sessionName : senderName
 
         // Only ConversationPage.qml has `sessionId` property.
         if(Qt.application.state == Qt.ApplicationActive &&
-           (pageStack.currentPage == _mainPage || pageStack.currentPage.sessionId == sid)) {
+           (pageStack.currentPage == _mainPage || pageStack.currentPage.sessionId == data.sessionId)) {
             if(quietMessageNotification.isSupported) {
                 quietMessageNotification.publish()
             }
@@ -231,7 +231,7 @@ ApplicationWindow
         if(setting === "off") {
             return;
         } else {
-            if (!isVideo) {
+            if (!data.isVideoCall) {
                 //: Notification text for missed call notification
                 //% "Missed voice call"
                 m.body = qsTrId("whisperfish-notification-missed-voice-call")
@@ -243,8 +243,8 @@ ApplicationWindow
         }
 
         if(setting === "complete" || setting === "sender-only") {
-            m.previewSummary = name
-            m.summary = name
+            m.previewSummary = senderName
+            m.summary = senderName
             if(m.subText !== undefined) {
                 m.subText = contactName
             }
@@ -252,10 +252,10 @@ ApplicationWindow
 
         m.previewBody = m.body
         m.clicked.connect(function() {
-            console.log("Activating session: " + sid)
+            console.log("Activating session: " + data.sessionId)
             mainWindow.activate()
             showMainPage()
-            pageStack.push(Qt.resolvedUrl("pages/ConversationPage.qml"), { sessionId: sid }, PageStackAction.Immediate)
+            pageStack.push(Qt.resolvedUrl("pages/ConversationPage.qml"), { sessionId: data.sessionId }, PageStackAction.Immediate)
         })
         // This is needed to call default action
         m.remoteActions = [ {
@@ -268,10 +268,10 @@ ApplicationWindow
             "path": "/message",
             "iface": "org.whisperfish.session",
             "method": "showConversation",
-            "arguments": [ "sid", sid ]
+            "arguments": [ "sessionId", data.sessionId ]
         } ]
         m.publish()
-        m.sid = sid
+        m.sessionId = data.sessionId
     }
 
     function flushNotifications() {
@@ -282,13 +282,11 @@ ApplicationWindow
         notificationQueue = []
     }
 
-    function newMessageNotification(sid, mid, sessionName, senderName, senderIdentifier, senderUuid, message, isGroup) {
-        console.log("New message notification for session", sid, "from", senderIdentifier, "with message", message)
-
+    function newMessageNotification(data) {
         // Only ConversationPage.qml (and its subpages) have `sessionId` property.
         if(Qt.application.state == Qt.ApplicationActive &&
-           (pageStack.currentPage.sessionId == sid)) {
-            console.log("Quiet notification for session " + sid)
+           (pageStack.currentPage.sessionId == data.sessionId)) {
+            console.log("Quiet notification for session " + data.sessionId)
             if(quietMessageNotification.isSupported) {
                 quietMessageNotification.publish()
             }
@@ -302,7 +300,7 @@ ApplicationWindow
         switch (notification_privacy) {
         case "complete":
             // TODO: Service messages show up as empty message (instead of even raw JSON)
-            m.body = message
+            m.body = data.message
             break;
         case "minimal":
         case "sender-only":
@@ -318,18 +316,18 @@ ApplicationWindow
         }
 
         // Does this notification replace an existing one?
-        if (SettingsBridge.minimise_notify && (sid in notificationMap)) {
-            var first_message = notificationMap[sid][0]
+        if (SettingsBridge.minimise_notify && (data.sessionId in notificationMap)) {
+            var first_message = notificationMap[data.sessionId][0]
             m.replacesId = first_message.replacesId
             m.itemCount = first_message.itemCount + 1
         }
 
-        var name = getRecipientName(senderIdentifier, undefined, senderName) // FIXME (add e164 perhaps..?)
-        var contactName = isGroup ? sessionName : name
+        var name = getRecipientName(data.senderE164, undefined, data.senderName)
+        var contactName = data.isGroup ? data.sessionName : name
 
         if(notification_privacy === "complete" || notification_privacy === "sender-only") {
-            m.previewSummary = name
-            m.summary = name
+            m.previewSummary = data.senderName
+            m.summary = data.senderName
             if(m.subText !== undefined) {
                 m.subText = contactName
             }
@@ -338,10 +336,10 @@ ApplicationWindow
 
         m.previewBody = m.body
         m.clicked.connect(function() {
-            console.log("Activating session: " + sid)
+            console.log("Activating session: " + data.sessionId)
             mainWindow.activate()
             showMainPage()
-            pageStack.push(Qt.resolvedUrl("pages/ConversationPage.qml"), { sessionId: sid }, PageStackAction.Immediate)
+            pageStack.push(Qt.resolvedUrl("pages/ConversationPage.qml"), { sessionId: data.sessionId }, PageStackAction.Immediate)
         })
         // This is needed to call default action
         m.remoteActions = [ {
@@ -354,7 +352,7 @@ ApplicationWindow
             "path": "/message",
             "iface": "org.whisperfish.session",
             "method": "showConversation",
-            "arguments": [ "sid", sid ]
+            "arguments": [ "sessionId", data.sessionId ]
         } ]
         if (!ClientWorker.queueEmpty) {
             console.log("Adding to queue")
@@ -363,11 +361,11 @@ ApplicationWindow
             console.log("Publishing immediately")
             m.publish()
         }
-        m.mid = mid
-        if(sid in notificationMap && !SettingsBridge.minimise_notify) {
-              notificationMap[sid].push(m)
+        m.messageId = data.messageId
+        if(data.sessionId in notificationMap && !SettingsBridge.minimise_notify) {
+              notificationMap[data.sessionId].push(m)
         } else {
-              notificationMap[sid] = [m]
+              notificationMap[data.sessionId] = [m]
         }
     }
 
@@ -393,15 +391,18 @@ ApplicationWindow
             }
         }
         onNotifyMessage: {
-            newMessageNotification(sid, mid, sessionName, senderName, senderIdentifier, senderUuid, message, isGroup)
+            if (data.message !== undefined) {
+                newMessageNotification(data)
+            } else if (data.isVideoCall !== undefined) {
+                newMissedCallNotification(data)
+            } else {
+                console.error("Unhandled message notification request:", JSON.stringify(data))
+            }
         }
         onQueueEmptyChanged: {
             if (ClientWorker.queueEmpty) {
                 flushNotifications()
             }
-        }
-        onMissedCall: {
-            newMissedCallNotification(sid, sessionName, senderName, senderIdentifier, senderUuid, isVideo, isGroup)
         }
         onMessageNotSent: { }
         onProofRequested: {
@@ -578,14 +579,14 @@ ApplicationWindow
         iface: "be.rubdos.whisperfish.shareClient"
     }
 
-    function clearNotifications(sid) {
+    function clearNotifications(sessionId) {
         // Close out any existing notifications for the session
-        if(sid in notificationMap) {
-            for(var i in notificationMap[sid]) {
-                notificationMap[sid][i].close()
-                delete notificationMap[sid][i]
+        if(sessionId in notificationMap) {
+            for(var i in notificationMap[sessionId]) {
+                notificationMap[sessionId][i].close()
+                delete notificationMap[sessionId][i]
             }
-            delete notificationMap[sid]
+            delete notificationMap[sessionId]
         }
     }
 
