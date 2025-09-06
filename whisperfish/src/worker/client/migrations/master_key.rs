@@ -1,6 +1,6 @@
 use super::*;
 use actix::prelude::*;
-use libsignal_service::{protocol::Aci, push_service::DEFAULT_DEVICE_ID};
+use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -26,7 +26,6 @@ impl Handler<CheckMasterKey> for ClientActor {
             ));
         };
 
-        let config = self.config.clone();
         let sender = self.message_sender();
         let is_primary = self.config.as_ref().get_device_id() == DEFAULT_DEVICE_ID.into();
         let ctx_addr = ctx.address();
@@ -46,11 +45,13 @@ impl Handler<CheckMasterKey> for ClientActor {
 
                     match sender.await {
                         Ok(mut sender) => {
-                            let addr = Aci::from(config.get_aci().unwrap());
-                            let req = RequestType::Keys;
-                            if let Err(e) =
-                                sender.send_sync_message_request(&addr.into(), req).await
-                            {
+                            let request_keys = SyncMessage {
+                                request: Some(sync_message::Request {
+                                    r#type: Some(RequestType::Keys.into()),
+                                }),
+                                ..SyncMessage::with_padding(&mut rand::thread_rng())
+                            };
+                            if let Err(e) = sender.send_sync_message(request_keys).await {
                                 tracing::error!("Error fetching master key: {e:?}; continuing...");
                                 return Ok(true);
                                 // return Ok(false);
