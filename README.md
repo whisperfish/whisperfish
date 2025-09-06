@@ -52,6 +52,7 @@ In current releases the paths have changed:
 - [ ] Contact Discovery
 - [x] Direct messages
 - [x] Group messages
+- [ ] Editing messages
 - [x] Sealed sending
 - [x] Storing conversations
 - [x] Sending attachments
