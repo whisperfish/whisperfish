@@ -571,7 +571,7 @@
         <location filename="../qml/pages/MainPage.qml" line="83"/>
         <source>Reconnecting...</source>
         <extracomment>Main page notification message when Whisperfish is trying to reconnect</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Opnieuw verbinden…</translation>
     </message>
     <message id="whisperfish-settings-menu">
         <location filename="../qml/pages/MainPage.qml" line="100"/>
@@ -2553,7 +2553,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="415"/>
         <source>Clear selection</source>
         <extracomment>Message action description, shown if one or more messages are selected</extracomment>
-        <translation type="unfinished">Selectie wissen</translation>
+        <translation>Selectie wissen</translation>
     </message>
     <message id="whisperfish-message-action-copy" numerus="yes">
         <location filename="../qml/pages/ConversationPage.qml" line="426"/>
@@ -2599,9 +2599,9 @@ Settings page share contacts</extracomment>
         <source>Retry sending %n failed message(s)</source>
         <oldsource>Retry sending (the) failed message(s)</oldsource>
         <extracomment>Message action description</extracomment>
-        <translation type="unfinished">
-            <numerusform>Mislukt bericht opnieuw verzenden</numerusform>
-            <numerusform>Mislukte berichten opnieuw verzenden</numerusform>
+        <translation>
+            <numerusform>%n mislukt bericht opnieuw verzenden</numerusform>
+            <numerusform>%n mislukte berichten opnieuw verzenden</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-action-transcribe" numerus="yes">
@@ -2609,9 +2609,9 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="556"/>
         <source>Transcribe %n message(s)</source>
         <extracomment>Message action description</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n bericht transcriberen</numerusform>
+            <numerusform>%n berichten transcriberen</numerusform>
         </translation>
     </message>
     <message id="whisperfish-group-request-information">
