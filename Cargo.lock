@@ -2151,7 +2151,7 @@ dependencies = [
 [[package]]
 name = "libsignal-service"
 version = "0.1.0"
-source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=whisperfork#be05791f0fa284a3c996b885a68dea8d157c9354"
+source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=whisperfork#fec2606fe846e16ba86cf6c2844f8fae714fa2e6"
 dependencies = [
  "aes",
  "aes-gcm",
@@ -2957,7 +2957,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "81bddcdb20abf9501610992b6759a4c888aef7d1a7247ef75e2404275ac24af1"
 dependencies = [
  "anyhow",
- "itertools 0.12.1",
+ "itertools 0.10.5",
  "proc-macro2",
  "quote",
  "syn 2.0.96",

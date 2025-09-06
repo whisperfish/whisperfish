@@ -29,7 +29,9 @@ use libsignal_service::proto::sync_message::Blocked;
 use libsignal_service::proto::sync_message::Configuration;
 use libsignal_service::proto::sync_message::Keys;
 use libsignal_service::proto::sync_message::MessageRequestResponse;
+use libsignal_service::proto::sync_message::Read;
 use libsignal_service::proto::sync_message::Sent;
+use libsignal_service::proto::SyncMessage;
 use libsignal_service::protocol::ServiceIdKind;
 use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
@@ -179,6 +181,10 @@ struct DeliverMessage<T> {
     for_story: bool,
     session_type: SessionType,
 }
+
+#[derive(Message)]
+#[rtype(result = "Result<(), MessageSenderError>")]
+struct DeliverSyncMessage(SyncMessage);
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
@@ -608,13 +614,13 @@ impl ClientActor {
         Some(())
     }
 
-    /// Send read receipts to recipients.
-    ///
-    /// Assumes that read receipts setting is enabled.
+    /// Sync read receipt messages to other devices.
+    /// Send `ReceiptMessage` to recipients, if the option is enabled in settings
     pub fn handle_needs_read_receipts(
         &mut self,
         ctx: &mut <Self as Actor>::Context,
         message_ids: Vec<i32>,
+        read_receipts_enabled: bool,
     ) {
         let storage = self.storage.as_ref().unwrap();
         let mut messages = storage.fetch_messages_by_ids(message_ids);
@@ -637,25 +643,52 @@ impl ClientActor {
             sessions.len()
         );
 
-        for (session_id, session) in sessions {
-            let timestamp: Vec<u64> = messages
-                .iter()
-                .filter(|m| m.session_id == session_id)
-                .map(|m| m.server_timestamp.and_utc().timestamp_millis() as u64)
-                .collect();
+        // Synchronize to other own devices (if any)
+        let read: Vec<Read> = messages
+            .iter()
+            .filter_map(|m| {
+                if let Some(r_id) = m.sender_recipient_id {
+                    // XXX database query in a loop
+                    if let Some(recipient) = storage.fetch_recipient_by_id(r_id) {
+                        Some(Read {
+                            sender_aci: recipient.uuid.map(|u| u.to_string()),
+                            timestamp: Some(m.server_timestamp.and_utc().timestamp_millis() as u64),
+                        })
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect();
+        let sync = SyncMessage {
+            read,
+            ..SyncMessage::with_padding(&mut rand::thread_rng())
+        };
+        ctx.notify(DeliverSyncMessage(sync));
 
-            let content = ReceiptMessage {
-                r#type: Some(ReceiptType::Read as _),
-                timestamp,
-            };
+        if read_receipts_enabled {
+            for (session_id, session) in sessions {
+                let timestamp: Vec<u64> = messages
+                    .iter()
+                    .filter(|m| m.session_id == session_id)
+                    .map(|m| m.server_timestamp.and_utc().timestamp_millis() as u64)
+                    .collect();
 
-            ctx.notify(DeliverMessage {
-                content,
-                timestamp: Utc::now().timestamp_millis() as u64,
-                session_type: session.r#type,
-                online: false,
-                for_story: false,
-            });
+                let content = ReceiptMessage {
+                    r#type: Some(ReceiptType::Read as _),
+                    timestamp,
+                };
+
+                ctx.notify(DeliverMessage {
+                    content,
+                    timestamp: Utc::now().timestamp_millis() as u64,
+                    session_type: session.r#type,
+                    online: false,
+                    for_story: false,
+                });
+            }
         }
     }
 
@@ -1073,22 +1106,21 @@ impl ClientActor {
                     sender.send_contact_details(&local_addr.into(), None, contacts, false, true).await?;
                 },
                 RequestType::Configuration => {
-                    sender.send_configuration(&local_addr.into(), configuration).await?;
+                    sender.send_sync_message(SyncMessage {configuration: Some(configuration), ..SyncMessage::with_padding(&mut rand::thread_rng())}).await?;
                 },
                 RequestType::Keys => {
                     let master = storage.fetch_master_key();
                     let storage_service = storage.fetch_storage_service_key();
-                    sender.send_keys(&local_addr.into(), Keys { master: master.map(|k| k.into()), storage_service: storage_service.map(|k| k.into()) }).await?;
+                    let keys = Some(Keys { master: master.map(|k| k.into()), storage_service: storage_service.map(|k| k.into()) });
+                    sender.send_sync_message(SyncMessage {keys, ..SyncMessage::with_padding(&mut rand::thread_rng())}).await?;
                 }
                 RequestType::Blocked => {
-                    sender.send_blocked(
-                        &local_addr.into(),
-                        Blocked {
-                            numbers: storage.fetch_blocked_numbers().into_iter().map(|e| e.to_string()).collect_vec(),
-                            acis: storage.fetch_blocked_acis().into_iter().map(|e| e.to_string()).collect_vec(),
-                            group_ids: Vec::new(), // Group V1
-                        },
-                    ).await?;
+                    let blocked = Some(Blocked {
+                        numbers: storage.fetch_blocked_numbers().into_iter().map(|e| e.to_string()).collect_vec(),
+                        acis: storage.fetch_blocked_acis().into_iter().map(|e| e.to_string()).collect_vec(),
+                        group_ids: Vec::new(), // Group V1
+                    });
+                    sender.send_sync_message(SyncMessage {blocked, ..SyncMessage::with_padding(&mut rand::thread_rng())}).await?;
                 }
                 // RequestType::PniIdentity // RESERVED
                 // RequestType::Groups // RESERVED
@@ -2225,6 +2257,22 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
     }
 }
 
+impl Handler<DeliverSyncMessage> for ClientActor {
+    type Result = ResponseFuture<Result<(), MessageSenderError>>;
+
+    fn handle(&mut self, sync: DeliverSyncMessage, _ctx: &mut Self::Context) -> Self::Result {
+        let sync = sync.0;
+        let sender = self.message_sender();
+
+        Box::pin(async move {
+            let mut sender = sender
+                .await
+                .expect("message sender when sending a sync message");
+            sender.send_sync_message(sync).await
+        })
+    }
+}
+
 impl Handler<StorageReady> for ClientActor {
     type Result = ResponseActFuture<Self, ()>;
 
@@ -3066,7 +3114,7 @@ impl ClientWorker {
 
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {
-            if let Err(e) = actor.send(MarkMessagesRead { message_ids }).await {
+            if let Err(e) = actor.send(MarkMessagesRead(message_ids)).await {
                 tracing::error!("{:?}", e);
             }
         });
@@ -3209,23 +3257,20 @@ impl Handler<CompactDb> for ClientActor {
 
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct MarkMessagesRead {
-    pub message_ids: Vec<i32>,
-}
+pub struct MarkMessagesRead(Vec<i32>);
 
 impl Handler<MarkMessagesRead> for ClientActor {
     type Result = ResponseFuture<()>;
 
     fn handle(&mut self, read: MarkMessagesRead, ctx: &mut Self::Context) -> Self::Result {
+        let read = read.0;
         let storage = self.storage.clone().unwrap();
         let handle = self.message_expiry_notification_handle.clone().unwrap();
-        if self.settings.get_enable_read_receipts() {
-            tracing::trace!("Sending read receipts");
-            self.handle_needs_read_receipts(ctx, read.message_ids.clone());
-        };
+        let send_receipts = self.settings.get_enable_read_receipts();
+        self.handle_needs_read_receipts(ctx, read.clone(), send_receipts);
         Box::pin(
             async move {
-                storage.mark_messages_read_in_ui(read.message_ids);
+                storage.mark_messages_read_in_ui(read);
                 handle.send(()).expect("send messages expiry notification");
             }
             .instrument(tracing::debug_span!("mark messages read")),
@@ -3538,13 +3583,16 @@ impl Handler<SendConfiguration> for ClientActor {
             return;
         };
         let sender = self.message_sender();
-        let local_addr = self.config.get_addr().unwrap();
-        let configuration = self.get_configuration();
+        let configuration = SyncMessage {
+            configuration: Some(self.get_configuration()),
+            ..SyncMessage::with_padding(&mut rand::thread_rng())
+        };
 
         actix::spawn(async move {
             let mut sender = sender.await.unwrap();
+
             sender
-                .send_configuration(&local_addr, configuration)
+                .send_sync_message(configuration)
                 .await
                 .expect("send configuration");
         });
