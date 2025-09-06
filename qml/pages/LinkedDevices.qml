@@ -104,7 +104,6 @@ Page {
                 id: lastSeen
                 function lastSeenTime() {
                     var diff = (new Date()).valueOf() - model.lastSeen.valueOf()
-                    console.log(model.lastSeen.toString())
 
                     var ls = ""
                     if(diff < 86400000) {
@@ -138,11 +137,21 @@ Page {
                     id: menu
                     width: parent ? parent.width : Screen.width
                     MenuItem {
+                        //: Rename the linked or primary device menu option
+                        //% "Rename"
+                        text: qsTrId("whisperfish-device-rename")
+                        onClicked: pageStack.push(Qt.resolvedUrl("RenameDevicePage.qml"), {
+                            device_id: model.id,
+                            device_name: model.name
+                        })
+                    }
+                    MenuItem {
                         //: Device unlink menu option
                         //% "Unlink"
                         text: qsTrId("whisperfish-device-unlink")
                         onClicked: remove(menu.parent)
                         enabled: model.id != 1
+                        visible: enabled
                     }
                 }
             }
