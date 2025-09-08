@@ -590,7 +590,7 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="142"/>
         <source>Rename</source>
         <extracomment>Rename the linked or primary device menu option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nimeä uudelleen</translation>
     </message>
     <message id="whisperfish-device-unlink">
         <location filename="../qml/pages/LinkedDevices.qml" line="151"/>
@@ -662,7 +662,7 @@
         <location filename="../qml/pages/MainPage.qml" line="90"/>
         <source>Reconnecting...</source>
         <extracomment>Main page notification message when Whisperfish is trying to reconnect</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Yhdistetään...</translation>
     </message>
     <message id="whisperfish-show-inbox-menu">
         <location filename="../qml/pages/MainPage.qml" line="140"/>
@@ -1981,21 +1981,21 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/GroupProfilePage.qml" line="175"/>
         <source>Message sending allowed</source>
         <extracomment>Announcements only setting label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Viestien lähetys sallittu</translation>
     </message>
     <message id="whisperfish-announcements-admins-only">
         <location filename="../qml/pages/GroupProfilePage.qml" line="177"/>
         <location filename="../qml/pages/GroupProfilePage.qml" line="190"/>
         <source>Administrators only</source>
         <extracomment>Message sending allowed for admins only</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Vain ylläpitäjät</translation>
     </message>
     <message id="whisperfish-announcements-all-useres">
         <location filename="../qml/pages/GroupProfilePage.qml" line="178"/>
         <location filename="../qml/pages/GroupProfilePage.qml" line="185"/>
         <source>All users</source>
         <extracomment>Message sending allowed for all users</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kaikki käyttäjät</translation>
     </message>
     <message id="whisperfish-group-member-admin">
         <location filename="../qml/components/GroupMemberListView.qml" line="19"/>
@@ -2160,7 +2160,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ChatTextInput.qml" line="343"/>
         <source>Only administrators can send messages</source>
         <extracomment>Placeholder for administrators-only group</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Vain järjestelmänvalvojat voivat lähettää viestejä</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-default">
         <location filename="../qml/components/ChatTextInput.qml" line="347"/>
@@ -2457,97 +2457,97 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="174"/>
         <source>%1 restricted sending messages to administrators only</source>
         <extracomment>Group change: only admins can send messages</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 rajoitti viestien lähetyksen vain ylläpitäjille</translation>
     </message>
     <message id="whisperfish-service-message-group-change-announcement-only-off">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="177"/>
         <source>%1 allowed everyone send messages</source>
         <extracomment>Group change: all members can send messages</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 salli kaikkien käyttäjien lähettää viestejä</translation>
     </message>
     <message id="whisperfish-service-message-group-change-attribute-access">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="182"/>
         <source>%1 set group change permissions to &apos;%2&apos;</source>
         <extracomment>Group change: permissions to change group properties</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 asetti ryhmän päivitysoikeudeksi &apos;%2&apos;</translation>
     </message>
     <message id="whisperfish-service-message-group-change-avatar">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="186"/>
         <source>%1 changed the group avatar</source>
         <extracomment>Group change: title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 vaihtoi ryhmän kuvakkeen</translation>
     </message>
     <message id="whisperfish-service-message-group-change-delete-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="190"/>
         <source>%1 removed %2 from the group</source>
         <extracomment>Group change: delete member</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 poisti käyttäjän %2 ryhmästä</translation>
     </message>
     <message id="whisperfish-service-message-group-change-description">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="194"/>
         <source>%1 changed the group description to &apos;%2&apos;</source>
         <extracomment>Group change: desctiption changed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 asetti ryhmän kuvaukseksi &apos;%2&apos;</translation>
     </message>
     <message id="whisperfish-service-message-group-change-invite-link-access">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="199"/>
         <source>%1 set invite link setting to &apos;%2&apos;</source>
         <extracomment>Group change: joining group via invite link setting</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 asetti kutsulinkin käytännöksi &apos;%2&apos;</translation>
     </message>
     <message id="whisperfish-service-message-group-change-invite-link-password">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="203"/>
         <source>%1 changed the invite link password</source>
         <extracomment>Group change: set/change invite link password</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 päivitti kutsulinkin salasanan</translation>
     </message>
     <message id="whisperfish-service-message-group-change-member-access">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="207"/>
         <source>%1 allowed &apos;%2&apos; add new members</source>
         <extracomment>Group change: change members joining setting</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 salli &apos;%2&apos; lisätä käyttäjiä ryhmään</translation>
     </message>
     <message id="whisperfish-service-message-group-change-modify-member-role">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="211"/>
         <source>%1 changed %2 to %3</source>
         <extracomment>Group change: change member &quot;power level&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 asetti käyttäjän %2 tasoksi %3</translation>
     </message>
     <message id="whisperfish-service-message-group-change-new-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="215"/>
         <source>%1 added %2 to group</source>
         <extracomment>Group change: new member</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 lisäsi käyttäjän %2 ryhmään</translation>
     </message>
     <message id="whisperfish-service-message-group-change-new-pending-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="219"/>
         <source>%1 was invited to join the group</source>
         <extracomment>Group change: new pending member</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 kutsuttiin ryhmään</translation>
     </message>
     <message id="whisperfish-service-message-group-change-new-requesting-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="223"/>
         <source>%1 would like to join the group</source>
         <extracomment>Group change: new requesting member</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 pyytää liittyä ryhmään</translation>
     </message>
     <message id="whisperfish-service-message-group-change-promote-pending-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="227"/>
         <source>%1 accepted %2 into the group</source>
         <extracomment>Group change: pending member was accepted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 hyväksyi käyttäjän %2 ryhmään</translation>
     </message>
     <message id="whisperfish-service-message-group-change-promote-requesting-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="231"/>
         <source>%1 accepted %2 into the group</source>
         <extracomment>Group change: requesting member was accepted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 hyväksyi käyttäjän %2 ryhmään</translation>
     </message>
     <message id="whisperfish-service-message-group-change-title">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="237"/>
         <source>%1 changed the group title to &apos;%2&apos;</source>
         <extracomment>Group change: title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 muutti ryhmän nimeksi &apos;%2&apos;</translation>
     </message>
     <message id="whisperfish-service-message-call-group-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="260"/>
@@ -2703,7 +2703,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="417"/>
         <source>Clear selection</source>
         <extracomment>Message action description, shown if one or more messages are selected</extracomment>
-        <translation type="unfinished">Tyhjennä valinta</translation>
+        <translation>Tyhjennä valinta</translation>
     </message>
     <message id="whisperfish-message-action-copy" numerus="yes">
         <location filename="../qml/pages/ConversationPage.qml" line="428"/>
@@ -2759,9 +2759,9 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="558"/>
         <source>Transcribe %n message(s)</source>
         <extracomment>Message action description</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Litteroi %1 viesti</numerusform>
+            <numerusform>Litteroi %n viestiä</numerusform>
         </translation>
     </message>
     <message id="whisperfish-group-request-information">
@@ -3083,13 +3083,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RenameDevicePage.qml" line="28"/>
         <source>New device name</source>
         <extracomment>Short description for rename device input field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Laitteen uusi nimi</translation>
     </message>
     <message id="whisperfish-rename-device-input-desc">
         <location filename="../qml/pages/RenameDevicePage.qml" line="31"/>
         <source>Rename device &quot;%1&quot;</source>
         <extracomment>Description for rename device input field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nimeä uudelleen laite &apos;%1&apos;</translation>
     </message>
 </context>
 </TS>
