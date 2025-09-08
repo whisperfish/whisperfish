@@ -46,6 +46,10 @@ pub struct SettingsBridge {
     voice_note_dir: qt_property!(String; READ get_voice_note_dir WRITE set_voice_note_dir NOTIFY voice_note_dir_changed),
     plaintext_password: qt_property!(String; READ get_plaintext_password WRITE set_plaintext_password NOTIFY plaintext_password_changed),
 
+    // Update notification values
+    last_version: qt_property!(String; READ get_last_version WRITE set_last_version NOTIFY last_version_changed),
+    next_update_time: qt_property!(String; READ get_next_update_time WRITE set_next_update_time NOTIFY next_update_time_changed),
+
     debug_mode_changed: qt_signal!(value: bool),
     enable_typing_indicators_changed: qt_signal!(value: bool),
     enable_read_receipts_changed: qt_signal!(value: bool),
@@ -71,6 +75,8 @@ pub struct SettingsBridge {
     voice_note_dir_changed: qt_signal!(value: String),
     plaintext_password_changed: qt_signal!(value: String),
     transcribe_voice_notes_changed: qt_signal!(value: bool),
+    last_version_changed: qt_signal!(value: String),
+    next_update_time_changed: qt_signal!(value: String),
 }
 
 impl Default for SettingsBridge {
@@ -118,6 +124,9 @@ impl Default for SettingsBridge {
             voice_note_dir: Default::default(),
             plaintext_password: Default::default(),
 
+            last_version: Default::default(),
+            next_update_time: Default::default(),
+
             debug_mode_changed: Default::default(),
             enable_typing_indicators_changed: Default::default(),
             enable_read_receipts_changed: Default::default(),
@@ -142,6 +151,9 @@ impl Default for SettingsBridge {
             transcribe_voice_notes_changed: Default::default(),
 
             verbose_changed: Default::default(),
+
+            last_version_changed: Default::default(),
+            next_update_time_changed: Default::default(),
         }
     }
 }
@@ -301,6 +313,14 @@ impl SettingsBridge {
         self.get_string("plaintext_password")
     }
 
+    pub fn get_last_version(&self) -> String {
+        self.get_string("last_version")
+    }
+
+    pub fn get_next_update_time(&self) -> String {
+        self.get_string("next_update_time")
+    }
+
     pub fn set_notification_privacy(&mut self, value: String) {
         self.set_string("notification_privacy", &value);
         self.notification_privacy_changed(value);
@@ -414,6 +434,16 @@ impl SettingsBridge {
     pub fn set_plaintext_password(&mut self, value: String) {
         self.set_string("plaintext_password", &value);
         self.plaintext_password_changed(value);
+    }
+
+    pub fn set_last_version(&mut self, value: String) {
+        self.set_string("last_version", &value);
+        self.last_version_changed(value);
+    }
+
+    pub fn set_next_update_time(&mut self, value: String) {
+        self.set_string("next_update_time", &value);
+        self.next_update_time_changed(value);
     }
 
     #[allow(non_snake_case)]

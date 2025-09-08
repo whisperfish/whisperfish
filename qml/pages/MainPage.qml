@@ -10,9 +10,6 @@ Page {
     id: main
     objectName: "mainPage"
 
-    readonly property string buildDate: "2022-06-13" // This is a placeholder date, which is updated during build
-    property bool updateBannerDisplayed: false
-
     Notification {
         function show(message, icn) {
             replacesId = 0
@@ -49,14 +46,24 @@ Page {
 
     Component.onCompleted: {
         var now = new Date()
-        var then = Date.parse(buildDate)
-        var ageInDays = Math.floor((now - then) / (1000 * 60 * 60 * 24))
-        // console.log("showUpdateBanner", showUpdateBanner, (now - then), Math.ceil((now - then) / (1000 * 60 * 60 * 24)))
-        console.log("Age", ageInDays)
+        var alertTime = new Date()
+        var ninety_days_ms = 1000*60*60*24*90
+        var one_week_ms = 1000*60*60*24*7
 
-        if(!updateBannerDisplayed && ageInDays >= 90) {
+        // Update detected (or last version not yet initialized)
+        if (SettingsBridge.last_version != LongAppVersion) {
+            alertTime.setTime(now.getTime() + ninety_days_ms);
+            SettingsBridge.next_update_time = String(alertTime.getTime())
+            SettingsBridge.last_version = String(LongAppVersion)
+            return;
+        }
+
+        alertTime.setTime(SettingsBridge.next_update_time)
+        if (alertTime.getTime() < now.getTime()) {
             updateNotification.publish()
-            updateBannerDisplayed = true
+
+            alertTime.setTime(now.getTime() + one_week_ms);
+            SettingsBridge.next_update_time = String(alertTime.getTime())
         }
     }
 
