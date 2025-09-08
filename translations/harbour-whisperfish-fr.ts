@@ -637,21 +637,21 @@
         <translation>Régler l&apos;expiration du message</translation>
     </message>
     <message id="whisperfish-announcements-switch-label">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="173"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="175"/>
         <source>Message sending allowed</source>
         <extracomment>Announcements only setting label</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-announcements-admins-only">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="175"/>
-        <location filename="../qml/pages/GroupProfilePage.qml" line="188"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="177"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="190"/>
         <source>Administrators only</source>
         <extracomment>Message sending allowed for admins only</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-announcements-all-useres">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="176"/>
-        <location filename="../qml/pages/GroupProfilePage.qml" line="183"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="178"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="185"/>
         <source>All users</source>
         <extracomment>Message sending allowed for all users</extracomment>
         <translation type="unfinished"></translation>
