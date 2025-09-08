@@ -1434,6 +1434,7 @@ impl AugmentedMessage {
 pub struct AugmentedSession {
     pub inner: Session,
     pub last_message: Option<AugmentedMessage>,
+    pub group_self_member: Option<GroupV2Member>,
 }
 
 impl Display for AugmentedSession {
@@ -2144,6 +2145,7 @@ mod tests {
         let mut s = AugmentedSession {
             inner: get_dm_session(),
             last_message: Some(get_augmented_message()),
+            group_self_member: None,
         };
         assert_eq!(format!("{}", s), "AugmentedSession { inner: Session { id: 2, _has_draft: false, type: DirectMessage { recipient: Recipient { id: 981, name: \"Nick Name\", e164: \"+35840...\", uuid: \"bff93979-...\", pni: unavailable } } }, last_message: AugmentedMessage { attachments: 2, reactions: 0, _receipts: 1, inner: Message { id: 71, session_id: 66, text: \"msg text\" } } }");
         s.last_message = None;
@@ -2206,6 +2208,7 @@ mod tests {
         let mut a = AugmentedSession {
             inner: get_gv2_session(),
             last_message: Some(get_augmented_message()),
+            group_self_member: None,
         };
         a.inner.is_pinned = true;
 
@@ -2235,6 +2238,7 @@ mod tests {
         a = AugmentedSession {
             inner: get_dm_session(),
             last_message: Some(get_augmented_message()),
+            group_self_member: None,
         };
         a.inner.is_pinned = true;
 

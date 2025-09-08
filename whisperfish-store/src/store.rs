@@ -1808,10 +1808,16 @@ impl<O: Observable> Storage<O> {
     pub fn fetch_session_by_id_augmented(&self, sid: i32) -> Option<orm::AugmentedSession> {
         let session = self.fetch_session_by_id(sid)?;
         let last_message = self.fetch_last_message_by_session_id_augmented(session.id);
+        let group_self_member = if session.is_group_v2() {
+            self.fetch_group_v2_self_member(&session.unwrap_group_v2().id)
+        } else {
+            None
+        };
 
         Some(orm::AugmentedSession {
             inner: session,
             last_message,
+            group_self_member,
         })
     }
 
@@ -3074,9 +3080,16 @@ impl<O: Observable> Storage<O> {
             .into_iter()
             .map(|session| {
                 let last_message = self.fetch_last_message_by_session_id_augmented(session.id);
+                let group_self_member = if session.is_group_v2() {
+                    self.fetch_group_v2_self_member(&session.unwrap_group_v2().id)
+                } else {
+                    None
+                };
+
                 orm::AugmentedSession {
                     inner: session,
                     last_message,
+                    group_self_member,
                 }
             })
             .collect();
@@ -3961,10 +3974,7 @@ impl<O: Observable> Storage<O> {
         let recipient = self.fetch_recipient(service_id);
         let banned_member = self.fetch_group_v2_banned_member(group_v2, service_id);
 
-        if let Some(service_id) = banned_member
-            .as_ref()
-            .and_then(|m| Some(m.service_id.to_owned()))
-        {
+        if let Some(service_id) = banned_member.as_ref().map(|m| m.service_id.to_owned()) {
             self.observe_insert(schema::group_v2_banned_members::table, service_id)
                 .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
         }

@@ -21,6 +21,7 @@ use anyhow::anyhow;
 use attachment::FetchAttachment;
 use image::GenericImageView;
 use itertools::Itertools;
+use libsignal_service::groups_v2::Role;
 use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
@@ -288,6 +289,8 @@ pub struct ClientWorker {
 
     sendConfiguration: qt_method!(fn(&self)),
     handleMessageRequest: qt_method!(fn(&self, recipient_aci: String, action: String)),
+
+    updateAnnouncementsOnlyMode: qt_method!(fn(&self, group_id: String, enabled: bool)),
 }
 
 /// State machine for keeping track of initial envelope delivery
@@ -409,7 +412,7 @@ pub struct ClientActor {
 
 fn whisperfish_device_capabilities() -> DeviceCapabilities {
     DeviceCapabilities {
-        announcement_group: false,
+        announcement_group: true,
         storage: false,
         sender_key: true,
         change_number: false,
@@ -1661,6 +1664,9 @@ impl Handler<SendMessage> for ClientActor {
                     let Some(self_member) = storage.fetch_group_v2_self_member(&gv2.id) else {
                         return Err(anyhow!("Not member of the group '{}', will not send message", gv2.name));
                     };
+                    if gv2.announcement_only && self_member.role < (Role::Administrator as i32) {
+                        return Err(anyhow!("Only administrators can send messages in group '{}'", gv2.name));
+                    }
                 }
 
                 let timestamp = naive_chrono_to_millis(msg.server_timestamp);
@@ -3243,6 +3249,18 @@ impl ClientWorker {
             tracing::warn!("QML requested unparsable ACI for recipient accept/block");
         }
     }
+
+    #[with_executor]
+    #[allow(non_snake_case)]
+    fn updateAnnouncementsOnlyMode(&self, group_id: String, enabled: bool) {
+        actix::spawn(
+            self.actor
+                .as_ref()
+                .unwrap()
+                .send(UpdateAnnouncementsOnly { group_id, enabled })
+                .map(Result::unwrap),
+        );
+    }
 }
 
 impl Handler<CompactDb> for ClientActor {
@@ -3596,6 +3614,45 @@ impl Handler<SendConfiguration> for ClientActor {
                 .await
                 .expect("send configuration");
         });
+    }
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+/// Set or unset group announcements only mode
+pub struct UpdateAnnouncementsOnly {
+    pub group_id: String,
+    pub enabled: bool,
+}
+
+impl Handler<UpdateAnnouncementsOnly> for ClientActor {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        UpdateAnnouncementsOnly { group_id, enabled }: UpdateAnnouncementsOnly,
+        _ctx: &mut Self::Context,
+    ) {
+        let storage = self.storage.as_mut().unwrap().clone();
+        let Some(group_v2) = storage.fetch_group_by_group_v2_id(&group_id) else {
+            tracing::error!("No such group: '{}'", group_id);
+            return;
+        };
+        let Some(self_member) = storage.fetch_group_v2_self_member(&group_id) else {
+            tracing::error!("You are not a member of the group '{}'", group_v2.name);
+            return;
+        };
+        if self_member.role < libsignal_service::proto::member::Role::Administrator as i32 {
+            tracing::error!("You are not admin in the group '{}'", group_v2.name);
+            return;
+        }
+        storage.update_group_v2_announcement_only(&group_v2, enabled);
+        storage.observe_update(
+            whisperfish_store::schema::group_v2s::dsl::group_v2s,
+            group_id,
+        );
+        // TODO: libsignal-service-rs doesn't support sending group updates
+        tracing::warn!("Sending group changes is not yet supported. Changes are local only.");
     }
 }
 

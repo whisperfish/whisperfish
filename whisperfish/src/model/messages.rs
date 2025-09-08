@@ -3,6 +3,7 @@
 use crate::model::*;
 use crate::store::observer::{EventObserving, Interest};
 use crate::store::Storage;
+use libsignal_service::groups_v2::Role;
 use qmetaobject::QObjectBox;
 use qmetaobject::{prelude::*, QMetaType};
 use qttypes::{QVariantList, QVariantMap};
@@ -279,6 +280,12 @@ pub struct Session {
     #[qt_property(READ: messages, NOTIFY: messages_changed)]
     messages: QVariant,
 
+    #[qt_property(READ: session_is_group, NOTIFY: session_changed)]
+    sessionIsGroup: bool,
+
+    #[qt_property(READ: is_announcement_only_blocked, NOTIFY: session_changed)]
+    isAnnouncementOnlyBlocked: bool,
+
     session_changed: qt_signal!(),
     valid_changed: qt_signal!(),
     messages_changed: qt_signal!(),
@@ -397,6 +404,20 @@ impl Session {
 
     fn messages(&self, _ctx: Option<ModelContext<Self>>) -> QVariant {
         self.message_list.pinned().into()
+    }
+
+    fn session_is_group(&self, _ctx: Option<ModelContext<Self>>) -> bool {
+        self.session.as_ref().is_some_and(|a| a.is_group_v2())
+    }
+
+    pub fn is_announcement_only_blocked(&self, _ctx: Option<ModelContext<Self>>) -> bool {
+        self.session.as_ref().is_some_and(|a| {
+            a.is_group_v2()
+                && a.unwrap_group_v2().announcement_only
+                && a.group_self_member
+                    .as_ref()
+                    .is_some_and(|m| m.role < (Role::Administrator as i32))
+        })
     }
 }
 

@@ -44,6 +44,9 @@ pub struct Group {
     #[qt_property(READ: has_self_as_member, NOTIFY: group_changed)]
     hasSelfAsMember: bool,
 
+    #[qt_property(READ: is_announcements_only, NOTIFY: group_changed)]
+    isAnnouncementsOnly: bool,
+
     membership_list: QObjectBox<GroupMembershipListModel>,
 
     group_changed: qt_signal!(),
@@ -133,6 +136,12 @@ impl Group {
         } else {
             false
         }
+    }
+
+    fn is_announcements_only(&self, _ctx: Option<ModelContext<Self>>) -> bool {
+        self.group_v2
+            .as_ref()
+            .map_or(false, |g| g.announcement_only)
     }
 
     #[with_executor]

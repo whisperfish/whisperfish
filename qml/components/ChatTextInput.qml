@@ -31,6 +31,7 @@ Item {
     property bool isGroup
 
     property bool isVoiceNote: false
+    property bool announcementOnlyBlock: false
     property var voiceNoteStartTime: null
     // In seconds
     property var voiceNoteDuration: 0;
@@ -47,6 +48,7 @@ Item {
 
     readonly property bool quotedMessageShown: quoteItem.messageId >= 0
     readonly property bool canSend: enableSending &&
+                                    !announcementOnlyBlock &&
                                     ClientWorker.connected &&
                                     (text.trim().length > 0 ||
                                      attachments.length > 0 ||
@@ -335,6 +337,10 @@ Item {
                         //: Personalized placeholder for chat input, e.g. "Hi John"
                         //% "Hi %1"
                         qsTrId("whisperfish-chat-input-placeholder-personal").arg(placeholderContactName)
+                    } else if (announcementOnlyBlock) {
+                        //: Placeholder for administrators-only group
+                        //% "Only administrators can send messages"
+                        qsTrId("whisperfish-chat-input-placeholder-announcement-only")
                     } else {
                         //: Generic placeholder for chat input
                         //% "Write a message"
@@ -359,7 +365,7 @@ Item {
 
             IconButton {
                 id: moreButton
-                enabled: enableSending && !isVoiceNote
+                enabled: enableSending && !isVoiceNote && !announcementOnlyBlock
                 visible: enableAttachments && !isVoiceNote
                 anchors {
                     right: sendButton.left; rightMargin: Theme.paddingSmall
