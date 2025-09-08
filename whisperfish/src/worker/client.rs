@@ -267,6 +267,8 @@ pub struct ClientWorker {
     link_device: qt_method!(fn(&self, tsurl: String)),
     unlink_device: qt_method!(fn(&self, id: i64)),
     reload_linked_devices: qt_method!(fn(&self)),
+    renameLinkedDevice: qt_method!(fn(&self, device_id: i32, device_name: String)),
+
     compact_db: qt_method!(fn(&self)),
 
     refresh_group_v2: qt_method!(fn(&self, session_id: usize)),

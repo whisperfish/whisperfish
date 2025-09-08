@@ -7,6 +7,7 @@ debugsources.list
 elfbins.list
 
 RPMS/
+installroot/
 rpmbuilddir/
 moc_*.cpp
 moc_*.go
