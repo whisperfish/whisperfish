@@ -167,6 +167,8 @@ Page {
             }
 
             ComboBox {
+                // XXX Sending group updates is not implemented
+                enabled: false
                 // XXX Consider separate settings sub-page
                 //: Announcements only setting label
                 //% "Message sending allowed"
