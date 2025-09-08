@@ -115,32 +115,32 @@
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-notification-default-message">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="311"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="309"/>
         <source>New Message</source>
         <extracomment>Default label for new message notification</extracomment>
         <translation>Nauja žinutė</translation>
     </message>
     <message id="whisperfish-fatal-error-setup-client">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="433"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="434"/>
         <source>Failed to setup Signal client</source>
         <extracomment>Failed to setup signal client error message</extracomment>
         <translation>Nepavyko nustatyti Signal kliento</translation>
     </message>
     <message id="whisperfish-fatal-error-invalid-datastore">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="438"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="439"/>
         <source>Failed to setup data storage</source>
         <oldsource>Failed to setup datastore</oldsource>
         <extracomment>Failed to setup datastore error message</extracomment>
         <translation>Nepavyko nustatyti duomenų saugyklos</translation>
     </message>
     <message id="permission-la-data">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="627"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="628"/>
         <source>Whisperfish data storage</source>
         <extracomment>Permission for Whisperfish data storage</extracomment>
         <translation>Whisperfish duomenų saugykla</translation>
     </message>
     <message id="permission-la-data_description">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="631"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="632"/>
         <source>Store configuration and messages</source>
         <extracomment>Permission description for Whisperfish data storage</extracomment>
         <translation>Saugoti konfigūraciją ir žinutes</translation>
