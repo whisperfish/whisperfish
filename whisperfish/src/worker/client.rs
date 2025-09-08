@@ -38,6 +38,8 @@ use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 use libsignal_service::sender::SendMessageResult;
 use libsignal_service::sender::ThreadIdentifier;
+use qmetaobject::QMetaType;
+use qttypes::QVariantMap;
 use tracing_futures::Instrument;
 use uuid::Uuid;
 use whisperfish_store::millis_to_naive_chrono;
@@ -93,7 +95,6 @@ use phonenumber::PhoneNumber;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
 use qttypes::QVariantList;
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::TryFrom;
@@ -224,25 +225,7 @@ pub struct ClientWorker {
     attachmentDownloadProgress: qt_signal!(sid: i32, mid: i32, progress: usize),
     messageReceipt: qt_signal!(sid: i32, mid: i32),
     queueEmptyChanged: qt_signal!(),
-    notifyMessage: qt_signal!(
-        sid: i32,
-        mid: i32,
-        sessionName: QString,
-        senderName: QString,
-        senderIdentifier: QString,
-        senderUuid: QString,
-        message: QString,
-        isGroup: bool
-    ),
-    missedCall: qt_signal!(
-        sid: i32,
-        sessionName: QString,
-        senderName: QString,
-        senderIdentifier: QString,
-        senderUuid: QString,
-        isVideo: bool,
-        isGroup: bool
-    ),
+    notifyMessage: qt_signal!(data: QVariantMap),
     promptResetPeerIdentity: qt_signal!(),
     messageSent: qt_signal!(sid: i32, mid: i32, message: QString),
     messageNotSent: qt_signal!(sid: i32, mid: i32),
@@ -423,6 +406,85 @@ fn whisperfish_device_capabilities() -> DeviceCapabilities {
         pni: true,
         payment_activation: false,
     }
+}
+
+pub enum Notification {
+    Message,
+    AudioCall,
+    VideoCall,
+}
+
+pub fn message_notification(
+    notification_type: Notification,
+    session: orm::Session,
+    sender_recipient: Option<orm::Recipient>,
+    message_id: Option<i32>,
+    message_text: Option<String>,
+) -> QVariantMap {
+    let (session_name, is_group) = match session.r#type {
+        SessionType::GroupV1(group) => (group.name, true),
+        SessionType::GroupV2(group) => (group.name, true),
+        SessionType::DirectMessage(recipient) => (
+            match recipient.profile_joined_name {
+                Some(name) => name,
+                None => recipient.e164_or_address(),
+            },
+            false,
+        ),
+    };
+    let sender_name = QString::from(
+        sender_recipient
+            .as_ref()
+            .map(|x| x.name().as_ref().to_string())
+            .unwrap_or_default(),
+    );
+    let sender_e164 = QString::from(
+        sender_recipient
+            .as_ref()
+            .map(|x| x.e164_or_address().to_string())
+            .unwrap_or_default(),
+    );
+    let message_text = QString::from(message_text.unwrap_or_default());
+    let message_id = message_id.unwrap_or(-1);
+
+    let mut notification = QVariantMap::default();
+    notification.insert("sessionId".into(), QVariant::from(session.id));
+    notification.insert("messageId".into(), QVariant::from(message_id));
+    notification.insert("sessionName".into(), session_name.to_qvariant());
+    notification.insert("senderName".into(), sender_name.to_qvariant());
+    notification.insert("senderE164".into(), sender_e164.to_qvariant());
+    notification.insert("isGroup".into(), QVariant::from(is_group));
+
+    // JS object contains either "message" or "isVideoCall"
+    match notification_type {
+        Notification::Message => {
+            notification.insert("message".into(), message_text.to_qvariant());
+            tracing::debug!(
+                "New message notification: session {}, sender '{}', message '{}'",
+                session.id,
+                sender_name,
+                message_text
+            );
+        }
+        Notification::AudioCall => {
+            notification.insert("isVideoCall".into(), QVariant::from(false));
+            tracing::debug!(
+                "New missed call notification: session {}, caller '{}'",
+                session.id,
+                sender_name,
+            );
+        }
+        Notification::VideoCall => {
+            notification.insert("isVideoCall".into(), QVariant::from(true));
+            tracing::debug!(
+                "New missed video call notification: session {}, caller '{}'",
+                session.id,
+                sender_name,
+            );
+        }
+    }
+
+    notification
 }
 
 impl ClientActor {
@@ -1031,12 +1093,6 @@ impl ClientActor {
             && self.settings.get_notification_privacy() != "off"
             && sender_recipient.as_ref().map(|x| x.id) != Some(self_recipient.id)
         {
-            let session_name: Cow<'_, str> = match &session.r#type {
-                SessionType::GroupV1(group) => Cow::from(&group.name),
-                SessionType::GroupV2(group) => Cow::from(&group.name),
-                SessionType::DirectMessage(recipient) => recipient.name(),
-            };
-
             if let Some(original_message) = original_message {
                 self.inner
                     .pinned()
@@ -1048,24 +1104,14 @@ impl ClientActor {
                 }
             };
 
-            self.inner.pinned().borrow_mut().notifyMessage(
-                session.id,
-                message.id,
-                session_name.as_ref().into(),
-                sender_recipient
-                    .as_ref()
-                    .map(|x| x.name().as_ref().into())
-                    .unwrap_or_else(|| "".into()),
-                sender_recipient
-                    .as_ref()
-                    .map(|x| x.e164_or_address().into())
-                    .unwrap_or_else(|| "".into()),
-                sender_recipient
-                    .map(|x| x.aci().into())
-                    .unwrap_or_else(|| "".into()),
-                message.text.as_deref().unwrap_or("").into(),
-                session.is_group(),
+            let notification = message_notification(
+                Notification::Message,
+                session,
+                sender_recipient,
+                Some(message.id),
+                message.text,
             );
+            self.inner.pinned().borrow_mut().notifyMessage(notification);
         }
     }
 

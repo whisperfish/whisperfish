@@ -11,7 +11,7 @@ use libsignal_service::{
     ServiceIdExt,
 };
 use ringrtc::{
-    common::CallId,
+    common::{CallId, CallMediaType},
     core::{
         call_manager::CallManager,
         signaling::{
@@ -21,6 +21,8 @@ use ringrtc::{
     lite::http::DelegatingClient,
 };
 use whisperfish_store::millis_to_naive_chrono;
+
+use super::{message_notification, Notification};
 
 mod call_manager;
 
@@ -171,8 +173,8 @@ impl super::ClientActor {
         );
 
         let call_media_type = match offer.r#type() {
-            offer::Type::OfferAudioCall => ringrtc::common::CallMediaType::Audio,
-            offer::Type::OfferVideoCall => ringrtc::common::CallMediaType::Video,
+            offer::Type::OfferAudioCall => CallMediaType::Audio,
+            offer::Type::OfferVideoCall => CallMediaType::Video,
         };
 
         let Some(opaque) = offer.opaque else {
@@ -430,13 +432,13 @@ pub struct HangupCall {
 #[rtype(result = "()")]
 pub struct InitiateCall {
     pub recipient_id: i32,
-    pub r#type: ringrtc::common::CallMediaType,
+    pub r#type: CallMediaType,
 }
 
-fn call_type_from_call_media_type(media_type: &ringrtc::common::CallMediaType) -> orm::CallType {
+fn call_type_from_call_media_type(media_type: &CallMediaType) -> orm::CallType {
     match media_type {
-        ringrtc::common::CallMediaType::Audio => orm::CallType::Audio,
-        ringrtc::common::CallMediaType::Video => orm::CallType::Video,
+        CallMediaType::Audio => orm::CallType::Audio,
+        CallMediaType::Video => orm::CallType::Video,
     }
 }
 
@@ -469,28 +471,16 @@ impl Handler<CallState> for super::ClientActor {
                     false,
                 );
                 let sender_recipient = storage.fetch_recipient_by_id(remote_peer_id);
-                let session_name: std::borrow::Cow<'_, str> = match &session.r#type {
-                    orm::SessionType::GroupV1(group) => std::borrow::Cow::from(&group.name),
-                    orm::SessionType::GroupV2(group) => std::borrow::Cow::from(&group.name),
-                    orm::SessionType::DirectMessage(recipient) => recipient.name(),
+
+                let notification_type = match *media {
+                    CallMediaType::Video => Notification::VideoCall,
+                    CallMediaType::Audio => Notification::AudioCall,
                 };
-                self.inner.pinned().borrow_mut().missedCall(
-                    session.id,
-                    session_name.to_string().into(),
-                    sender_recipient
-                        .as_ref()
-                        .map(|x| x.name().to_string())
-                        .unwrap_or_else(|| "".into())
-                        .into(),
-                    sender_recipient
-                        .as_ref()
-                        .map(|x| x.e164_or_address())
-                        .unwrap_or_default()
-                        .into(),
-                    sender_recipient.map(|x| x.aci()).unwrap_or_default().into(),
-                    *media == ringrtc::common::CallMediaType::Video,
-                    false,
-                );
+
+                let notification =
+                    message_notification(notification_type, session, sender_recipient, None, None);
+
+                self.inner.pinned().borrow_mut().notifyMessage(notification);
             }
             ringrtc::native::CallState::Outgoing(media) => {
                 storage.insert_one_to_one_call(
