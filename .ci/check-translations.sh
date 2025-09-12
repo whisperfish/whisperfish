@@ -13,19 +13,22 @@ Updating the translations will happen *outside* of any merge request, in order t
 
 LOG=$(mktemp)
 lupdate qml/ -ts translations/*.ts 2>&1 | tee "$LOG"
-LINES=$(sed -E '/^Scanning|^Updating|^    Found|^Removed plural forms|^If this sounds wrong/d' "$LOG" | wc -l)
-rm "$LOG"
+sed -E '/^Scanning|^Updating|^    Found|^Removed plural forms|^If this sounds wrong|^Same-text heuristic provided/d' -i "$LOG"
 
-if [ "$LINES" -gt 0 ]; then
-    echo "qmllint reported errors or warnings"
+if [ "$(cat "$LOG" | wc -l)" -gt 0 ]; then
+    echo "qmllint reported errors or warnings:"
+    cat "$LOG"
+    rm "$LOG"
     exit 1
 else
     echo "qmllint did not report errors or warnings"
+    rm "$LOG"
 fi
 
-if git diff --exit-code; then
-    echo "No translation update needed";
+if git diff --exit-code translations/*.ts; then
+    echo "Translations up to date"
 else
+    echo "Translations need updating"
     curl --request POST \
         --header "PRIVATE-TOKEN: $PRIVATE_TOKEN" \
         --form "note=$TRANSLATION_WARNING" \
