@@ -178,7 +178,7 @@ async fn message_searching(storage: impl Future<Output = InMemoryDb>) {
     let mut res;
     let mut iter;
     // case match
-    res = storage.search_messages(&String::from("test"));
+    res = storage.search_messages(&String::from("test"), None);
     iter = res.iter();
     assert_eq!(2, res.len());
     assert_eq!(
@@ -191,7 +191,7 @@ async fn message_searching(storage: impl Future<Output = InMemoryDb>) {
     );
 
     // case insensitive
-    res = storage.search_messages(&String::from("TEST"));
+    res = storage.search_messages(&String::from("TEST"), None);
     iter = res.iter();
     assert_eq!(2, res.len());
     assert_eq!(
@@ -204,11 +204,11 @@ async fn message_searching(storage: impl Future<Output = InMemoryDb>) {
     );
 
     // no matches
-    res = storage.search_messages(&String::from("noting matches"));
+    res = storage.search_messages(&String::from("noting matches"), None);
     assert_eq!(0, res.len());
 
     // use wildcard character %
-    res = storage.search_messages(&String::from("100%"));
+    res = storage.search_messages(&String::from("100%"), None);
     iter = res.iter();
     assert_eq!(1, res.len());
     assert_eq!(
@@ -217,7 +217,7 @@ async fn message_searching(storage: impl Future<Output = InMemoryDb>) {
     );
 
     // use escape character '
-    res = storage.search_messages(&String::from("it's"));
+    res = storage.search_messages(&String::from("it's"), None);
     iter = res.iter();
     assert_eq!(1, res.len());
     assert_eq!(
@@ -226,10 +226,18 @@ async fn message_searching(storage: impl Future<Output = InMemoryDb>) {
     );
 
     // bad actor
-    res = storage.search_messages(&String::from("'; DROP TABLE messages;\n --"));
+    res = storage.search_messages(&String::from("'; DROP TABLE messages;\n --"), None);
     assert_eq!(0, res.len());
-    res = storage.search_messages(&String::from("t"));
+    res = storage.search_messages(&String::from("t"), None);
     assert_eq!(3, res.len());
+
+    // same session
+    res = storage.search_messages(&String::from("t"), Some(sess1.id));
+    assert_eq!(3, res.len());
+
+    // wrong session
+    res = storage.search_messages(&String::from("t"), Some(sess1.id + 1));
+    assert_eq!(0, res.len());
 }
 
 #[rstest]

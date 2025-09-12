@@ -3,9 +3,11 @@
 use crate::model::*;
 use crate::store::observer::{EventObserving, Interest};
 use crate::store::Storage;
-use qmetaobject::prelude::*;
+use qmetaobject::{prelude::*, QMetaType};
+use qttypes::{QVariantList, QVariantMap};
 use std::collections::HashMap;
 use whisperfish_store::observer::Event;
+use whisperfish_store::orm::SessionType;
 use whisperfish_store::schema;
 use whisperfish_store::store::orm;
 
@@ -22,6 +24,8 @@ pub struct Sessions {
 
     #[qt_property(READ: sessions, NOTIFY: model_changed)]
     sessions: QVariant,
+    #[qt_property(READ: session_names, NOTIFY: model_changed)]
+    sessionNames: QVariantList,
     #[qt_property(READ: count, NOTIFY: count_changed)]
     count: usize,
     #[qt_property(READ: unread, NOTIFY: count_changed)]
@@ -42,6 +46,80 @@ impl Sessions {
 
     fn sessions(&self, _ctx: Option<ModelContext<Self>>) -> QVariant {
         self.session_list.pinned().into()
+    }
+
+    // Generate a sorted-by-name list of groups and conv's
+    // from the already fetched SessionListModel.
+    fn session_names(&self, _ctx: Option<ModelContext<Self>>) -> QVariantList {
+        tracing::info!("getting session list...");
+        let qml_session_list = self.session_list.pinned();
+        let session_list = &qml_session_list.borrow().content;
+        if session_list.is_empty() {
+            tracing::info!("Empty list :(");
+            return QVariantList::default();
+        }
+
+        struct SessionLite {
+            id: i32,
+            name: String, // group name or rcpt name/e164/aci
+            is_group: bool,
+            aci: String,
+            e164: String,
+            external_id: String,
+        }
+
+        let mut sessions: Vec<SessionLite> = vec![];
+        for session in session_list {
+            sessions.push(match &session.r#type {
+                SessionType::GroupV1(_) => continue,
+                SessionType::GroupV2(g) => SessionLite {
+                    id: session.id,
+                    name: g.name.to_owned(),
+                    is_group: true,
+                    aci: "".into(),
+                    e164: "".into(),
+                    external_id: "".into(),
+                },
+                SessionType::DirectMessage(r) => SessionLite {
+                    id: session.id,
+                    name: r
+                        .profile_joined_name
+                        .to_owned()
+                        .unwrap_or_else(|| r.e164_or_address()),
+                    is_group: false,
+                    aci: r.uuid.map(|u| u.to_string()).unwrap_or_else(|| "".into()),
+                    e164: r.e164(),
+                    external_id: r.external_id.to_owned().unwrap_or("-1".into()),
+                },
+            });
+        }
+        tracing::info!("Found {} sessions", sessions.len());
+        sessions.sort_by(|a, b| a.name.cmp(&b.name));
+        let mut qvl = QVariantList::default();
+        for session in sessions {
+            let mut qvm = QVariantMap::default();
+            qvm.insert(QString::from("id".to_string()), QVariant::from(session.id));
+            qvm.insert(
+                QString::from("name".to_string()),
+                session.name.to_qvariant(),
+            );
+            qvm.insert(
+                QString::from("isGroup".to_string()),
+                QVariant::from(session.is_group),
+            );
+            qvm.insert(
+                QString::from("e164".to_string()),
+                session.e164.to_qvariant(),
+            );
+            qvm.insert(QString::from("aci".to_string()), session.aci.to_qvariant());
+            qvm.insert(
+                QString::from("externalId".to_string()),
+                session.external_id.to_qvariant(),
+            );
+            qvl.push(qvm.to_qvariant());
+        }
+        tracing::info!("Generated {} QVariantMaps", qvl.len());
+        qvl
     }
 
     fn count(&self, _ctx: Option<ModelContext<Self>>) -> usize {

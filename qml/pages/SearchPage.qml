@@ -1,5 +1,6 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
+import be.rubdos.whisperfish 1.0
 import "../delegates"
 import "../components"
 
@@ -7,12 +8,16 @@ Page {
     id: root
     objectName: "searchPage"
 
+    property int sessionId: -1
+    property var sessions: null
     property bool loading: false
+
+    property int selectedSessionId: -1
 
     function search(text) {
         loading = true
         ClientWorker.clearSearch()
-        ClientWorker.search(searchField.text)
+        ClientWorker.search(searchField.text, selectedSessionId)
     }
 
     Connections {
@@ -26,9 +31,17 @@ Page {
         //% "Message search"
         title: qsTrId("whisperfish-search-title")
     }
+
+    Component.onCompleted: {
+        if (sessionId > -1) {
+            selectedSessionId = sessionId
+        }
+    }
+
     Component.onDestruction: {
         ClientWorker.clearSearch()
     }
+
     Item {
         id: searchHeader
         anchors {
@@ -36,7 +49,7 @@ Page {
             left: parent.left
             right: parent.right
         }
-        height: Math.max(searchField.height, searchButton.height)
+        height: Math.max(searchField.height, searchButton.height) + sessionCombo.height
         TextField {
             id: searchField
 
@@ -71,6 +84,54 @@ Page {
                 anchors.centerIn: parent
                 icon.source: "image://theme/icon-m-search?" + (pressed ? Theme.highlightColor : Theme.primaryColor)
                 onClicked: search(searchField.text)
+            }
+        }
+
+        ComboBox {
+            id: sessionCombo
+
+            width: parent.width
+            anchors.top: searchField.bottom
+
+            property string ownAci: SetupWorker.uuid
+
+            // If session was given, hide the session selector
+            Component.onCompleted: if (sessionId > -1) {
+                sessionCombo.height = 0
+            }
+
+            //: Search page, select session to search from, or all
+            //% "Search from conversation"
+            label: qsTrId("whisperfish-search-select-session")
+
+            menu: ContextMenu {
+                MenuItem {
+                    //: Search page, search from all conversations
+                    //% "All conversations"
+                    text: qsTrId("whisperfish-search-from-all")
+                    onClicked: {
+                        root.selectedSessionId = -1
+                    }
+                }
+                Repeater {
+                    model: sessions ? sessions.sessionNames : []
+                    MenuItem {
+                        Component.onCompleted: console.log(JSON.stringify(modelData))
+                        property string resolvedName: modelData.isGroup ? '' : getRecipientName(modelData.e164, modelData.externalId, modelData.name, true)
+                        property string name: modelData.isGroup ? modelData.name
+                                              : resolvedName.length > 0 ? resolvedName
+                                                : // Translation in SessionDelegate.qml
+                                                  qsTrId("whisperfish-recipient-no-name")
+                        text: sessionCombo.ownAci == modelData.aci ?
+                            // Translation in SessionDelegate.qml
+                            qsTrId("whisperfish-session-note-to-self") :
+                            name
+
+                        onClicked: {
+                            root.selectedSessionId = modelData.id
+                        }
+                    }
+                }
             }
         }
     }

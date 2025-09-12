@@ -123,7 +123,7 @@ Page {
                 //% "Search"
                 text: qsTrId("whisperfish-search-menu")
                 visible: !SetupWorker.locked
-                onClicked: pageStack.push(Qt.resolvedUrl("SearchPage.qml"))
+                onClicked: pageStack.push(Qt.resolvedUrl("SearchPage.qml"),{ sessions:sessions })
             }
             MenuItem {
                 // TODO implement in backend

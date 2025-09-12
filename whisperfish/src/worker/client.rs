@@ -233,12 +233,10 @@ pub struct ClientWorker {
     proofRequested: qt_signal!(token: QString, kind: QString),
     proofCaptchaResult: qt_signal!(success: bool),
 
-    search: qt_method!(fn(&self, search_text: String)),
+    search: qt_method!(fn(&self, search_text: String, session_id: i32)),
     clearSearch: qt_method!(fn(&self)),
     searchResults: qt_property!(QVariantList; NOTIFY searchResultsChanged),
     searchResultsChanged: qt_signal!(),
-    sessionNames: qt_property!(QVariantMap; NOTIFY sessionNamesChanged),
-    sessionNamesChanged: qt_signal!(),
 
     send_typing_notification: qt_method!(fn(&self, id: i32, is_start: bool)),
     submit_proof_captcha: qt_method!(fn(&self, token: String, response: String)),
@@ -3318,12 +3316,22 @@ impl ClientWorker {
     }
 
     #[with_executor]
-    fn search(&self, search_results: String) {
+    fn search(&self, search_string: String, session_id: i32) {
+        let session = if session_id > -1 {
+            Some(session_id)
+        } else {
+            None
+        };
+        let text = if !search_string.is_empty() {
+            Some(search_string)
+        } else {
+            None
+        };
         actix::spawn(
             self.actor
                 .as_ref()
                 .unwrap()
-                .send(Search(search_results))
+                .send(Search(text, session))
                 .map(Result::unwrap),
         );
     }
@@ -3335,7 +3343,7 @@ impl ClientWorker {
             self.actor
                 .as_ref()
                 .unwrap()
-                .send(Search("".into()))
+                .send(Search(None, None))
                 .map(Result::unwrap),
         );
     }
@@ -3796,23 +3804,31 @@ impl Handler<MessageRequestAnswer> for ClientActor {
 
 #[derive(Message)]
 #[rtype(result = "()")]
-/// Set recipient into accepted or blocked state
-pub struct Search(String);
+/// Search with message contents (or clear results if not given),
+/// and from a certain session (or all sessions if not given).
+pub struct Search(Option<String>, Option<i32>);
 
 impl Handler<Search> for ClientActor {
     type Result = ();
 
-    fn handle(&mut self, Search { 0: search_text }: Search, _ctx: &mut Self::Context) {
+    fn handle(
+        &mut self,
+        Search {
+            0: search_text,
+            1: session_id,
+        }: Search,
+        _ctx: &mut Self::Context,
+    ) {
         let mut search_results = QVariantList::default();
 
-        if search_text.is_empty() {
+        let Some(search_text) = search_text else {
             self.inner.pinned().borrow_mut().searchResults = search_results;
             self.inner.pinned().borrow_mut().searchResultsChanged();
             return;
-        }
+        };
 
         let storage = self.storage.as_mut().unwrap().clone();
-        let messages = storage.search_messages(&search_text);
+        let messages = storage.search_messages(&search_text, session_id);
 
         if messages.is_empty() {
             self.inner.pinned().borrow_mut().searchResults = search_results;
