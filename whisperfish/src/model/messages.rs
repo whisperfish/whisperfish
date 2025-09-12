@@ -514,6 +514,8 @@ fn body_ranges_qvariantlist(
 pub struct MessageListModel {
     base: qt_base_class!(trait QAbstractListModel),
     messages: Vec<orm::AugmentedMessage>,
+
+    findMessageIndex: qt_method!(fn(&self, messageId: i32) -> i32),
 }
 
 impl MessageListModel {
@@ -594,6 +596,36 @@ impl MessageListModel {
             event
         );
         self.load_all(storage, session_id);
+    }
+
+    fn findMessageIndex(&self, messageId: i32) -> i32 {
+        if self.messages.is_empty() {
+            return -1;
+        }
+        // We can't rely on binary search here, because
+        // messages are first ordered by a timestamp, second (?) by id :/
+        // It's *fast*, let's try it anyway; it sometimes (often?) finds it!
+        match self.messages.binary_search_by(|msg| messageId.cmp(&msg.id)) {
+            Ok(pos) => pos as _,
+            Err(miss) => {
+                match self
+                    .messages
+                    .iter()
+                    .enumerate()
+                    .find(|(_, msg)| messageId == msg.id)
+                {
+                    Some((pos, _)) => {
+                        tracing::debug!("Binary search failed with index {miss}, linear search found index {pos}");
+                        pos as _
+                    }
+                    None => {
+                        let msg = self.messages.first().unwrap();
+                        tracing::error!("Message id {messageId} not found in {}", msg.session_id);
+                        -1
+                    }
+                }
+            }
+        }
     }
 }
 

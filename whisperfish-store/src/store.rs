@@ -3672,6 +3672,28 @@ impl<O: Observable> Storage<O> {
             .expect("db");
     }
 
+    pub fn search_messages(&self, search_text: &str) -> Vec<orm::Message> {
+        use crate::schema::messages::dsl::*;
+
+        // SQLite uses ' as escape character for strings,
+        // but se have to tell it to SQLite when using .like()
+        let search_text = search_text.replace('\'', "''").replace('%', "'%");
+        messages
+            .filter(
+                message_type.is_null().and(
+                    text.assume_not_null()
+                        .like(format!("%{search_text}%"))
+                        .escape('\''),
+                ),
+            )
+            .order_by((
+                schema::messages::columns::server_timestamp.desc(),
+                schema::messages::columns::id.desc(),
+            ))
+            .load(&mut *self.db())
+            .unwrap()
+    }
+
     // GroupV2 update functions
 
     /// Update group revision number, if it is higher than the current one.

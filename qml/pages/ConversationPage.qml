@@ -18,6 +18,7 @@ Page {
     property string conversationName: root.isGroup ? session.groupName : getRecipientName(recipient.e164, recipient.externalId, recipient.name, true)
     property string profilePicture: root.isGroup ? getGroupAvatar(session.groupId) : getRecipientAvatar(recipient.e164, recipient.uuid, recipient.externalId)
     property alias sessionId: session.sessionId
+    property int targetMessageId: -1
     property bool expiringMessages: root.isValid ? session.expiringMessageTimeout != -1 : false
     property DockedPanel activePanel: actionsPanel.open ? actionsPanel : (acceptPanel.open ? acceptPanel : panel)
 
@@ -181,8 +182,7 @@ Page {
             textInput.forceEditorFocus(true)
         }
         onQuoteClicked: {
-            // TODO use message id instead of index
-            jumpToMessage(quotedData.index)
+            jumpToMessage(messageId)
         }
         onIsSelectingChanged: {
             if (isSelecting && !selectionBlocked) _showInputPanel = true
@@ -210,7 +210,15 @@ Page {
             unreadMessageChecker.shouldRun = true
         }
 
-        onCountChanged: unreadMessageChecker.shouldRun = true
+        onCountChanged: {
+            // When creating ConversationPage, countChanged
+            // first fires with empty messages model - ignore it.
+            if (targetMessageId != -1 && count > 0) {
+                jumpToMessage(targetMessageId)
+                targetMessageId = -1
+            }
+            unreadMessageChecker.shouldRun = true
+        }
 
         Component.onCompleted: unreadMessageChecker.shouldRun = true
 
@@ -314,8 +322,7 @@ Page {
             }
 
             onQuotedMessageClicked: {
-                // TODO use message id instead of index
-                messages.jumpToMessage(index)
+                messages.jumpToMessage(messageId)
             }
             onSendMessage: {
                 console.log(JSON.stringify(attachments))

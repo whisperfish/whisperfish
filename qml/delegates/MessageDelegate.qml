@@ -31,7 +31,7 @@ ListItem {
 
     // The parent view can specify a signal to be emitted when
     // the user clicked on the quoted message.
-    // Signal signature: \c{quoteClickedSignal(var clickedIndex, var quotedData)}.
+    // Signal signature: \c{quoteClickedSignal(var messageId)}.
     property var quoteClickedSignal
 
     // DATA PROPERTIES: bound to modelData, proxied because the delegate is not used directly
@@ -219,7 +219,7 @@ ListItem {
             asynchronous: false
             sourceComponent: Component {
                 QuotedMessagePreview {
-                    // id: quoteItem
+                    id: quoteItem
                     visible: showQuotedMessage
                     width: delegateContentWidth
                     maximumWidth: maxMessageWidth
@@ -232,7 +232,7 @@ ListItem {
                                                                backgroundItem.topLeft)
                     onClicked: {
                         if (listView.isSelecting) root.clicked(mouse)
-                        else quoteClickedSignal(index, messageData)
+                        else quoteClickedSignal(quoteItem.messageId)
                     }
                 }
             }

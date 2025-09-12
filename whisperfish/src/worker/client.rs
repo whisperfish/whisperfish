@@ -233,6 +233,13 @@ pub struct ClientWorker {
     proofRequested: qt_signal!(token: QString, kind: QString),
     proofCaptchaResult: qt_signal!(success: bool),
 
+    search: qt_method!(fn(&self, search_text: String)),
+    clearSearch: qt_method!(fn(&self)),
+    searchResults: qt_property!(QVariantList; NOTIFY searchResultsChanged),
+    searchResultsChanged: qt_signal!(),
+    sessionNames: qt_property!(QVariantMap; NOTIFY sessionNamesChanged),
+    sessionNamesChanged: qt_signal!(),
+
     send_typing_notification: qt_method!(fn(&self, id: i32, is_start: bool)),
     submit_proof_captcha: qt_method!(fn(&self, token: String, response: String)),
 
@@ -3309,6 +3316,29 @@ impl ClientWorker {
                 .map(Result::unwrap),
         );
     }
+
+    #[with_executor]
+    fn search(&self, search_results: String) {
+        actix::spawn(
+            self.actor
+                .as_ref()
+                .unwrap()
+                .send(Search(search_results))
+                .map(Result::unwrap),
+        );
+    }
+
+    #[with_executor]
+    #[allow(non_snake_case)]
+    fn clearSearch(&self) {
+        actix::spawn(
+            self.actor
+                .as_ref()
+                .unwrap()
+                .send(Search("".into()))
+                .map(Result::unwrap),
+        );
+    }
 }
 
 impl Handler<CompactDb> for ClientActor {
@@ -3761,6 +3791,99 @@ impl Handler<MessageRequestAnswer> for ClientActor {
                 tracing::error!("message request response failed: {}", e);
             }
         });
+    }
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+/// Set recipient into accepted or blocked state
+pub struct Search(String);
+
+impl Handler<Search> for ClientActor {
+    type Result = ();
+
+    fn handle(&mut self, Search { 0: search_text }: Search, _ctx: &mut Self::Context) {
+        let mut search_results = QVariantList::default();
+
+        if search_text.is_empty() {
+            self.inner.pinned().borrow_mut().searchResults = search_results;
+            self.inner.pinned().borrow_mut().searchResultsChanged();
+            return;
+        }
+
+        let storage = self.storage.as_mut().unwrap().clone();
+        let messages = storage.search_messages(&search_text);
+
+        if messages.is_empty() {
+            self.inner.pinned().borrow_mut().searchResults = search_results;
+            self.inner.pinned().borrow_mut().searchResultsChanged();
+            return;
+        }
+
+        let sessions = storage.fetch_sessions();
+        let mut s_map: HashMap<i32, orm::Session> = HashMap::with_capacity(sessions.len());
+        for s in sessions {
+            s_map.insert(s.id, s);
+        }
+
+        let self_recipient_id = storage.fetch_self_recipient_id();
+        let recipients = storage.fetch_recipients();
+        let mut r_map: HashMap<i32, orm::Recipient> = HashMap::with_capacity(recipients.len());
+        for r in recipients {
+            r_map.insert(r.id, r);
+        }
+
+        for m in messages {
+            let Some(s) = s_map.get(&m.session_id) else {
+                tracing::error!(
+                    "Session {} for message {} doesn't exist?",
+                    m.session_id,
+                    m.id
+                );
+                continue;
+            };
+            let (group_name, sender_name) = match &s.r#type {
+                SessionType::GroupV1(_) => continue,
+                SessionType::GroupV2(g) => {
+                    let r = r_map
+                        .get(&m.sender_recipient_id.unwrap_or(self_recipient_id))
+                        .unwrap();
+                    (
+                        g.name.to_owned(),
+                        r.profile_joined_name
+                            .to_owned()
+                            .unwrap_or_else(|| r.e164_or_address()),
+                    )
+                }
+                SessionType::DirectMessage(r) => (
+                    "".into(),
+                    r.profile_joined_name
+                        .to_owned()
+                        .unwrap_or_else(|| r.e164_or_address()),
+                ),
+            };
+
+            let mut result = QVariantMap::default();
+            result.insert("messageId".into(), QVariant::from(m.id));
+            result.insert("sessionId".into(), QVariant::from(m.session_id));
+            result.insert(
+                "isOutbound".into(),
+                QVariant::from(match m.sender_recipient_id {
+                    Some(id) => id != self_recipient_id,
+                    None => true,
+                }),
+            );
+            result.insert("groupName".into(), group_name.to_qvariant());
+            result.insert("senderName".into(), sender_name.to_qvariant());
+            result.insert("text".into(), m.text.unwrap().to_qvariant());
+            result.insert(
+                "timestamp".into(),
+                m.server_timestamp.to_string().to_qvariant(),
+            );
+            search_results.push(result.to_qvariant());
+        }
+        self.inner.pinned().borrow_mut().searchResults = search_results;
+        self.inner.pinned().borrow_mut().searchResultsChanged();
     }
 }
 

@@ -118,16 +118,13 @@ Page {
                 onClicked: pageStack.push(Qt.resolvedUrl("BookmarksPage.qml"))
             }
             */
-            /*
             MenuItem {
-                // TODO implement in backend (#13)
                 //: Show search field menu item
                 //% "Search"
                 text: qsTrId("whisperfish-search-menu")
                 visible: !SetupWorker.locked
                 onClicked: pageStack.push(Qt.resolvedUrl("SearchPage.qml"))
             }
-            */
             MenuItem {
                 // TODO implement in backend
                 visible: visualSessionModel.hasArchived || visualSessionModel.filterOnGroup === "archived"
