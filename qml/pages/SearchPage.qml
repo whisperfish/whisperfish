@@ -20,6 +20,15 @@ Page {
         ClientWorker.search(searchField.text, selectedSessionId)
     }
 
+    function goToMessage(targetSessionId, targetMessageId) {
+        var mainPage = pageStack.find(function (page) {
+            return page.objectName == "mainPage";
+        })
+        pageStack.replaceAbove(mainPage, Qt.resolvedUrl("../pages/ConversationPage.qml"), {
+            sessionId: targetSessionId,
+            targetMessageId: targetMessageId
+        })
+    }
     Connections {
         target: ClientWorker
         onSearchResultsChanged: loading = false
@@ -90,6 +99,7 @@ Page {
         ComboBox {
             id: sessionCombo
 
+            clip: true
             width: parent.width
             anchors.top: searchField.bottom
 
@@ -240,11 +250,7 @@ Page {
                 height: 2 * Theme.paddingMedium
             }
 
-            onClicked: pageStack.replace(
-                Qt.resolvedUrl("ConversationPage.qml"), {
-                    sessionId: modelData.sessionId,
-                    targetMessageId: modelData.messageId
-                })
+            onClicked: goToMessage(modelData.sessionId, modelData.messageId)
         }
 
         ViewPlaceholder {

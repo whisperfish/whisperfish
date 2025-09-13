@@ -69,26 +69,16 @@ Page {
                 }
             }
             MenuItem {
-                // TODO implement in backend
-                //: Create invite link menu item
-                //% "Create invitation link"
-                text: qsTrId("whisperfish-group-invite-link-menu")
-                visible: false // TODO
-                onClicked: remorse.execute("Changing group members is not yet implemented.", function () {})
-            }
-            MenuItem {
-                // TODO implement in backend
-                //: Add group member menu item
-                //% "Add Member"
-                text: qsTrId("whisperfish-group-add-member-menu")
-                visible: false // TODO
-                onClicked: remorse.execute("Changing group members is not yet implemented.", function () {})
-            }
-            MenuItem {
                 // Translation in ProfilePage.qml
                 text: qsTrId("whisperfish-save-message-expiry")
                 visible: youAreAdmin && session != null && groupProfile.newDuration !== session.expiringMessageTimeout
                 onClicked: MessageModel.createExpiryUpdate(sessionId, groupProfile.newDuration)
+            }
+            MenuItem {
+                // Translated in MainPage.qml
+                text: qsTrId("whisperfish-search-menu")
+                visible: !SetupWorker.locked
+                onClicked: pageStack.push(Qt.resolvedUrl("SearchPage.qml"),{ sessionId: session.sessionId })
             }
         }
 

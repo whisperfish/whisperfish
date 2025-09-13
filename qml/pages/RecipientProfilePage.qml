@@ -109,6 +109,13 @@ Page {
                     : pageStack.push(Qt.resolvedUrl("LinkContactPage.qml"), { recipient: recipient })
             }
             MenuItem {
+                // Translated in MainPage.qml
+                text: qsTrId("whisperfish-search-menu")
+                visible: !SetupWorker.locked
+                onClicked: pageStack.push(Qt.resolvedUrl("SearchPage.qml"),{ sessionId: session.sessionId })
+            }
+            MenuItem {
+                // TODO: Replace with a remorse timer
                 // Translation in ProfilePage.qml
                 text: qsTrId("whisperfish-save-message-expiry")
                 visible: !groupContext && session != null && expiringMessages.newDuration !== session.expiringMessageTimeout
