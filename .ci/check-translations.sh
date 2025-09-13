@@ -13,7 +13,8 @@ Updating the translations will happen *outside* of any merge request, in order t
 
 LOG=$(mktemp)
 lupdate qml/ -ts translations/*.ts 2>&1 | tee "$LOG"
-sed -E '/^Scanning|^Updating|^    Found|^Removed plural forms|^If this sounds wrong|^Same-text heuristic provided/d' -i "$LOG"
+sed -E '/^Scanning|^Updating|^    Found|^Removed plural forms|^If this sounds wrong|^    Same-text heuristic provided|^    Kept [0-9]+ obsolete/d' -i "$LOG"
+sort -u -o "$LOG" "$LOG"
 
 if [ "$(cat "$LOG" | wc -l)" -gt 0 ]; then
     echo "qmllint reported errors or warnings:"
