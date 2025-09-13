@@ -3677,20 +3677,35 @@ impl<O: Observable> Storage<O> {
         search_text: &str,
         search_session_id: Option<i32>,
     ) -> Vec<orm::Message> {
+        if search_text.len() < 3 {
+            return vec![];
+        }
+
         use crate::schema::messages::dsl::*;
 
         // SQLite uses ' as escape character for strings,
         // but se have to tell it to SQLite when using .like()
         let search_text = search_text.replace('\'', "''").replace('%', "'%");
 
+        // - null message type = regular message
+        // - any text matches = text is implicitly non-null
+        // - only consider the latest edits so we can scroll to it
         if let Some(s_id) = search_session_id {
             messages
                 .filter(
-                    session_id.eq(s_id).and(message_type.is_null()).and(
-                        text.assume_not_null()
-                            .like(format!("%{search_text}%"))
-                            .escape('\''),
-                    ),
+                    session_id
+                        .eq(s_id)
+                        .and(message_type.is_null())
+                        .and(
+                            text.assume_not_null()
+                                .like(format!("%{search_text}%"))
+                                .escape('\''),
+                        )
+                        .and(
+                            latest_revision_id
+                                .is_null()
+                                .or(latest_revision_id.eq(id.nullable())),
+                        ),
                 )
                 .order_by((
                     schema::messages::columns::server_timestamp.desc(),

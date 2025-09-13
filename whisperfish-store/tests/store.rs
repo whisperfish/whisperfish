@@ -228,15 +228,19 @@ async fn message_searching(storage: impl Future<Output = InMemoryDb>) {
     // bad actor
     res = storage.search_messages(&String::from("'; DROP TABLE messages;\n --"), None);
     assert_eq!(0, res.len());
-    res = storage.search_messages(&String::from("t"), None);
-    assert_eq!(3, res.len());
+    res = storage.search_messages(&String::from("fine"), None);
+    assert_eq!(1, res.len());
 
     // same session
-    res = storage.search_messages(&String::from("t"), Some(sess1.id));
-    assert_eq!(3, res.len());
+    res = storage.search_messages(&String::from("bro"), Some(sess1.id));
+    assert_eq!(1, res.len());
 
     // wrong session
-    res = storage.search_messages(&String::from("t"), Some(sess1.id + 1));
+    res = storage.search_messages(&String::from("trust"), Some(sess1.id + 1));
+    assert_eq!(0, res.len());
+
+    // too short string
+    res = storage.search_messages(&String::from("t"), Some(sess1.id));
     assert_eq!(0, res.len());
 }
 
