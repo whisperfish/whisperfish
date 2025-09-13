@@ -20,6 +20,11 @@ Page {
         ClientWorker.search(searchField.text, selectedSessionId)
     }
 
+    function resetSearch() {
+        ClientWorker.clearSearch()
+        searchField.text = ""
+    }
+
     function goToMessage(targetSessionId, targetMessageId) {
         var mainPage = pageStack.find(function (page) {
             return page.objectName == "mainPage";
@@ -120,14 +125,16 @@ Page {
                     //% "All conversations"
                     text: qsTrId("whisperfish-search-from-all")
                     onClicked: {
+                        resetSearch()
                         root.selectedSessionId = -1
                     }
                 }
                 Repeater {
                     model: sessions ? sessions.sessionNames : []
                     MenuItem {
-                        Component.onCompleted: console.log(JSON.stringify(modelData))
-                        property string resolvedName: modelData.isGroup ? '' : getRecipientName(modelData.e164, modelData.externalId, modelData.name, true)
+                        property string resolvedName: modelData.isGroup
+                                                    ? ''
+                                                    : getRecipientName(modelData.e164, modelData.externalId, modelData.name, true)
                         property string name: modelData.isGroup ? modelData.name
                                               : resolvedName.length > 0 ? resolvedName
                                                 : // Translation in SessionDelegate.qml
@@ -138,6 +145,7 @@ Page {
                             name
 
                         onClicked: {
+                            resetSearch()
                             root.selectedSessionId = modelData.id
                         }
                     }
@@ -194,19 +202,21 @@ Page {
 
                     horizontalAlignment: modelData.isOutgoing ? Text.AlignRight : Text.AlignLeft
                     highlighted: message.highlighted
-                    plainText: (modelData.isOutbound
+                    property string maybeGroupOrChat: sessionCombo.currentIndex > 0 ? '' : (" (" + modelData.chatName + ")")
+                    plainText: (
+                        modelData.isOutbound
                             ? //: Name shown when replying to own messages
-                                //% "You"
-                                qsTrId("whisperfish-sender-name-label-outgoing")
-                                : modelData.senderName) +
-                                (modelData.groupName != "" ? " - " + modelData.groupName : "")
+                              //% "You"
+                              qsTrId("whisperfish-sender-name-label-outgoing")
+                            : modelData.senderName
+                        ) + maybeGroupOrChat
                     maximumLineCount: 1
                     wrapMode: Text.NoWrap
                     font.pixelSize: Theme.fontSizeExtraSmall
                     font.bold: true
                     linkColor: color
                     color: Qt.tint(message.highlighted ? Theme.highlightColor : Theme.primaryColor,
-                                '#'+Qt.md5(modelData.senderName).substr(0, 6)+'0F')
+                                '#'+Qt.md5(modelData.isOutbound ? qsTrId("whisperfish-sender-name-label-outgoing") : modelData.senderName).substr(0, 6)+'0F')
                     defaultLinkActions: false
                 }
 

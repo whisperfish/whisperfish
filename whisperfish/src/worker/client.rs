@@ -3858,38 +3858,53 @@ impl Handler<Search> for ClientActor {
                 );
                 continue;
             };
-            let (group_name, sender_name) = match &s.r#type {
+            let (chat_name, sender_name) = match &s.r#type {
                 SessionType::GroupV1(_) => continue,
                 SessionType::GroupV2(g) => {
-                    let r = r_map
+                    let grp_r = r_map
                         .get(&m.sender_recipient_id.unwrap_or(self_recipient_id))
                         .unwrap();
                     (
                         g.name.to_owned(),
-                        r.profile_joined_name
+                        grp_r
+                            .profile_joined_name
                             .to_owned()
-                            .unwrap_or_else(|| r.e164_or_address()),
+                            .unwrap_or_else(|| grp_r.e164_or_address()),
                     )
                 }
-                SessionType::DirectMessage(r) => (
-                    "".into(),
-                    r.profile_joined_name
+                SessionType::DirectMessage(dm_r) => {
+                    let a = dm_r
+                        .profile_joined_name
                         .to_owned()
-                        .unwrap_or_else(|| r.e164_or_address()),
-                ),
+                        .unwrap_or_else(|| dm_r.e164_or_address());
+                    let b = r_map
+                        .get(
+                            &(if m.is_outbound {
+                                m.sender_recipient_id.unwrap()
+                            } else {
+                                self_recipient_id
+                            }),
+                        )
+                        .map(|snd_r| {
+                            snd_r
+                                .profile_joined_name
+                                .to_owned()
+                                .unwrap_or_else(|| snd_r.e164_or_address())
+                        })
+                        .unwrap();
+                    if m.is_outbound {
+                        (a, b)
+                    } else {
+                        (b, a)
+                    }
+                }
             };
 
             let mut result = QVariantMap::default();
             result.insert("messageId".into(), QVariant::from(m.id));
             result.insert("sessionId".into(), QVariant::from(m.session_id));
-            result.insert(
-                "isOutbound".into(),
-                QVariant::from(match m.sender_recipient_id {
-                    Some(id) => id != self_recipient_id,
-                    None => true,
-                }),
-            );
-            result.insert("groupName".into(), group_name.to_qvariant());
+            result.insert("isOutbound".into(), QVariant::from(m.is_outbound));
+            result.insert("chatName".into(), chat_name.to_qvariant());
             result.insert("senderName".into(), sender_name.to_qvariant());
             result.insert("text".into(), m.text.unwrap().to_qvariant());
             result.insert(
