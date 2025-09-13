@@ -258,7 +258,7 @@ test:stable:diesel-schema:
   needs:
     - build:host:stable
   script:
-    - rustup override set 1.82.0
+    - rustup override set 1.89.0
     - rustup component add rustfmt
     # Diesel is not running a long time/often. We don't need the release
     # version here and the debug version is enough. We save a lot of
