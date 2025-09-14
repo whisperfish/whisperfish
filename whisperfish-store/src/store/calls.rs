@@ -5,6 +5,7 @@ use diesel::prelude::*;
 
 impl<O: Observable + Default> super::Storage<O> {
     /// Return (session, call ID)
+    #[allow(clippy::too_many_arguments)]
     #[tracing::instrument(skip(self))]
     pub fn insert_one_to_one_call(
         &self,
