@@ -15,7 +15,7 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="64"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Talemelding</translation>
     </message>
     <message id="whisperfish-session-delete-all">
         <location filename="../qml/delegates/SessionDelegate.qml" line="126"/>
@@ -28,13 +28,13 @@
         <location filename="../qml/components/ConversationPageHeader.qml" line="90"/>
         <source>%1 is typing</source>
         <extracomment>Text shown when one person is typing</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1 skriver...</translation>
     </message>
     <message id="whisperfish-typing-2">
         <location filename="../qml/components/ConversationPageHeader.qml" line="94"/>
         <source>%1 and %2 are typing</source>
         <extracomment>Text shown when two persons are typing</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1 og %2 skriver...</translation>
     </message>
     <message id="whisperfish-typing-3-plus">
         <location filename="../qml/components/ConversationPageHeader.qml" line="98"/>
