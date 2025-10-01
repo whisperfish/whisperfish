@@ -2055,7 +2055,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/harbour-whisperfish-main.qml" line="167"/>
         <source>You</source>
         <extracomment>Name shown when replying to own messages</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Du</translation>
     </message>
     <message id="whisperfish-recipient-no-name">
         <location filename="../qml/components/GroupMemberListView.qml" line="188"/>
