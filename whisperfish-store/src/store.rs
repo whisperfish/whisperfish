@@ -854,7 +854,7 @@ impl<O: Observable> Storage<O> {
 
         let recipient = self
             .fetch_self_recipient()
-            .expect("no self recipient to retreive db id from");
+            .expect("no self recipient to retrieve db id from");
         return recipient.id;
     }
 
