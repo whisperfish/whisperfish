@@ -458,7 +458,7 @@
         <source>Install Signal Desktop. Use e.g. the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</source>
         <oldsource>Install Signal Desktop. Use the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</oldsource>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
-        <translation type="unfinished">Installer Signal for skrivebordet. Bruk QR-kodeleserprogrammet for å skanne QR-koden som vises der og lim inn nettadressen her.</translation>
+        <translation>Installer Signal for skrivebordet. Bruk QR-kodeleserprogrammet for å skanne QR-koden som vises der og lim inn nettadressen her.</translation>
     </message>
     <message id="whisperfish-select-picture">
         <source>Select picture</source>
@@ -488,7 +488,7 @@
         <source>Unlinked</source>
         <oldsource>Unlinking</oldsource>
         <extracomment>Unlinking remorse info message for unlinking secondary devices (past tense)</extracomment>
-        <translation type="unfinished">Oppheving av lenking</translation>
+        <translation>Fjernet kobling</translation>
     </message>
     <message id="whisperfish-current-device-name">
         <location filename="../qml/pages/LinkedDevices.qml" line="72"/>
@@ -536,19 +536,19 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="166"/>
         <source>Pull down to link Whisperfish to another device</source>
         <extracomment>Placeholder hint when no linked device yet</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Dra ned for å koble Whisperfish til en annen enhet</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text">
         <location filename="../qml/pages/MainPage.qml" line="344"/>
         <source>Pull down to start a new conversation.</source>
         <extracomment>No messages found, hint on what to do</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Dra ned for å starte en ny samtale.</translation>
     </message>
     <message id="whisperfish-about-menu">
         <location filename="../qml/pages/MainPage.qml" line="101"/>
         <source>About Whisperfish</source>
         <extracomment>About whisperfish menu item</extracomment>
-        <translation type="unfinished">Om</translation>
+        <translation>Om</translation>
     </message>
     <message id="whisperfish-update-reminder-summary">
         <location filename="../qml/pages/MainPage.qml" line="40"/>
@@ -566,7 +566,7 @@
         <location filename="../qml/pages/MainPage.qml" line="85"/>
         <source>Reconnect</source>
         <extracomment>Whisperfish main menu item: restart websocket/reconnect</extracomment>
-        <translation type="unfinished">Koble til igjen</translation>
+        <translation>Koble til igjen</translation>
     </message>
     <message id="whisperfish-reconnecting">
         <location filename="../qml/pages/MainPage.qml" line="90"/>
@@ -590,7 +590,7 @@
         <location filename="../qml/pages/MainPage.qml" line="310"/>
         <source>Disconnected</source>
         <extracomment>Whisperfish connection status message</extracomment>
-        <translation type="unfinished">Frakoblet</translation>
+        <translation>Frakoblet</translation>
     </message>
     <message id="whisperfish-connection-status-reconnecting">
         <location filename="../qml/pages/MainPage.qml" line="313"/>
@@ -615,9 +615,9 @@
         <source>Locally deleted %n message(s)</source>
         <oldsource>Locally deleted %1 messages</oldsource>
         <extracomment>Remorse: *locally* deleted one or multiple message (past tense)</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Lokalt slettet %n melding</numerusform>
+            <numerusform>Lokalt slettet %n meldinger</numerusform>
         </translation>
     </message>
     <message id="whisperfish-remorse-deleted-messages-globally" numerus="yes">
@@ -639,26 +639,26 @@
         <location filename="../qml/components/MessagesView.qml" line="475"/>
         <source>Forward</source>
         <extracomment>Forward message menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Videresend</translation>
     </message>
     <message id="whisperfish-transcribe-message-menu">
         <location filename="../qml/components/MessagesView.qml" line="482"/>
         <source>Transcribe</source>
         <extracomment>Transcribe message menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transkriber</translation>
     </message>
     <message id="whisperfish-select-or-options-message-menu">
         <location filename="../qml/components/MessagesView.qml" line="489"/>
         <source>Select • more</source>
         <extracomment>&quot;Select and show more options&quot; message menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Velg • mer</translation>
     </message>
     <message id="whisperfish-resend-message-menu">
         <location filename="../qml/components/MessagesView.qml" line="461"/>
         <source>Retry sending</source>
         <oldsource>Resend</oldsource>
         <extracomment>Resend message menu item</extracomment>
-        <translation type="unfinished">Send igjen</translation>
+        <translation>Forsøk å sende igjen</translation>
     </message>
     <message id="whisperfish-reset-identity-menu">
         <location filename="../qml/components/GroupMemberListView.qml" line="118"/>
@@ -666,7 +666,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="31"/>
         <source>Reset identity key</source>
         <extracomment>Reset identity key menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Tilbakestill identitetsnøkkel</translation>
     </message>
     <message id="whisperfish-reset-identity-message">
         <location filename="../qml/components/GroupMemberListView.qml" line="124"/>
@@ -691,7 +691,7 @@
         <source>Secure session reset</source>
         <oldsource>Resetting secure session</oldsource>
         <extracomment>Reset secure session remorse message (past tense)</extracomment>
-        <translation type="unfinished">Tilbakestiller sikker økt</translation>
+        <translation>Tilbakestill sikker økt</translation>
     </message>
     <message id="whisperfish-refresh-profile-menu">
         <location filename="../qml/pages/ProfilePage.qml" line="114"/>
@@ -776,7 +776,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="271"/>
         <source>Sealed sending mode</source>
         <extracomment>Profile, sealed sending mode option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Forseglet sendemodus</translation>
     </message>
     <message id="whisperfish-unidentified-unknown">
         <location filename="../qml/pages/ProfilePage.qml" line="295"/>
@@ -790,7 +790,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="281"/>
         <source>Disabled</source>
         <extracomment>Profile, sealed sending mode, disabled option</extracomment>
-        <translation type="unfinished">Avskrudd</translation>
+        <translation>Avskrudd</translation>
     </message>
     <message id="whisperfish-unidentified-enabled">
         <location filename="../qml/pages/ProfilePage.qml" line="305"/>
@@ -804,7 +804,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="289"/>
         <source>Unrestricted</source>
         <extracomment>Profile, sealed sending mode, unrestricted option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ubegrenset</translation>
     </message>
     <message id="whisperfish-profile-emoji">
         <location filename="../qml/pages/ProfilePage.qml" line="325"/>
@@ -828,13 +828,13 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="103"/>
         <source>Unlink contact</source>
         <extracomment>Menu action to unlink a Signal contact from a Sailfish OS contact</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Fjern kobling til kontakt</translation>
     </message>
     <message id="whisperfish-recipient-link">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="106"/>
         <source>Link contact</source>
         <extracomment>Menu action to pick a Sailfish OS contact to link the Signal user to</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Koble kontakt</translation>
     </message>
     <message id="whisperfish-profile-page-blocked-recipient">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="166"/>
@@ -864,7 +864,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="347"/>
         <source>If you wish to verify the security of your end-to-end encryption with %1, compare the numbers above with the numbers on their device.</source>
         <extracomment>Numeric fingerprint instructions</extracomment>
-        <translation type="unfinished">Sammenlign tallene ovenfor med dem på motpartens enhet for å bekrefte sikkerheten for din ende-til-ende -kryptering med %1.</translation>
+        <translation>Sammenlign tallene ovenfor med dem på motpartens enhet for å bekrefte sikkerheten for din ende-til-ende -kryptering med %1.</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="357"/>
@@ -882,7 +882,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="370"/>
         <source>Session reset for post-quantum upgrade</source>
         <extracomment>Upgrading the session to Kyber remorse popup, past tense</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Tilbakestilling av økt for postkvanteoppgradering</translation>
     </message>
     <message id="whisperfish-own-profile-help-text">
         <location filename="../qml/pages/ProfilePage.qml" line="341"/>
@@ -906,7 +906,7 @@
         <location filename="../qml/pages/NewMessage.qml" line="66"/>
         <source>Please set a country code in the settings, or use the international format.</source>
         <extracomment>invalid recipient phone number: local numbers are not allowed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Vennligst angi en landskode i innstillingene, eller bruk det internasjonale formatet.</translation>
     </message>
     <message id="whisperfish-recipient-number-invalid-unspecified">
         <location filename="../qml/pages/NewMessage.qml" line="70"/>
@@ -1092,14 +1092,14 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <location filename="../qml/pages/SetupPasswordPage.qml" line="26"/>
         <source>Whisperfish stores identity keys, session state, and local message data encrypted on disk. The password you set is not stored anywhere and you will not be able to restore your data if you lose your password. Note: Attachments are currently stored unencrypted. You can disable storing of attachments in the Settings page.</source>
         <extracomment>Whisperfish password informational message</extracomment>
-        <translation type="unfinished">Whisperfish lagrer identitetsnøkler, økttilstand, og lokal meldingsdata kryptert på enheten. Passordet du setter er ikke lagret noensteds hen, og du vil ikke kunne gjenopprette din data hvis du mister det. Merk: Vedlegg lagres for øyeblikket ukryptert. Du kan skru av lagring av vedlegg i innstillingssiden.</translation>
+        <translation>Whisperfish lagrer identitetsnøkler, økttilstand, og lokal meldingsdata kryptert på enheten. Passordet du setter er ikke lagret noen steder, og du vil ikke kunne gjenopprette din data hvis du mister det. Merk: Vedlegg lagres for øyeblikket ukryptert. Du kan skru av lagring av vedlegg under Innstillinger.</translation>
     </message>
     <message id="whisperfish-registration-message">
         <location filename="../qml/pages/RegisterPage.qml" line="20"/>
         <source>Enter the phone number you want to register with Signal.</source>
         <oldsource>Connect with Signal</oldsource>
         <extracomment>registration prompt text</extracomment>
-        <translation type="unfinished">Skriv inn telefonnummeret du ønsker å registrere med Signal.</translation>
+        <translation>Skriv inn telefonnummeret du ønsker å registrere med Signal.</translation>
     </message>
     <message id="whisperfish-registration-country-or-area">
         <location filename="../qml/pages/RegisterPage.qml" line="113"/>
@@ -1139,20 +1139,20 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RegisterPage.qml" line="227"/>
         <source>Use voice verification</source>
         <extracomment>Voice verification</extracomment>
-        <translation type="unfinished">Bruk stemmebekreftelse</translation>
+        <translation>Bruk talebekreftelse</translation>
     </message>
     <message id="whisperfish-use-text-verification">
         <location filename="../qml/pages/RegisterPage.qml" line="222"/>
         <source>Use text verification</source>
         <extracomment>Text verification</extracomment>
-        <translation type="unfinished">Bruk tekstbekreftelse</translation>
+        <translation>Bruk tekstbekreftelse</translation>
     </message>
     <message id="whisperfish-registration-title">
         <location filename="../qml/pages/RegisterPage.qml" line="16"/>
         <location filename="../qml/pages/SetupRegistrationTypePage.qml" line="15"/>
         <source>Register</source>
         <extracomment>registration page title</extracomment>
-        <translation type="unfinished">Registrering</translation>
+        <translation>Registrering</translation>
     </message>
     <message id="whisperfish-registration-retry-message">
         <location filename="../qml/pages/RegisterPage.qml" line="52"/>
@@ -1177,7 +1177,7 @@ Settings page share contacts</extracomment>
         <source>Signal will call you with a 6-digit verification code. Please be ready to write it down.</source>
         <oldsource>Signal will call you with a 6-digit verification code. Please be ready to write this down.</oldsource>
         <extracomment>Registration directions</extracomment>
-        <translation type="unfinished">Signal vil ringe deg med en 6-tegns bekreftelseskode. Vær klar til å skrive den ned.</translation>
+        <translation>Signal vil ringe deg med en 6-tegns bekreftelseskode. Vær klar til å skrive den ned.</translation>
     </message>
     <message id="whisperfish-text-registration-directions">
         <location filename="../qml/pages/RegisterPage.qml" line="216"/>
@@ -1232,14 +1232,14 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ResetPeerIdentity.qml" line="33"/>
         <source>Peer identity is not trusted</source>
         <extracomment>Peer identity not trusted</extracomment>
-        <translation type="unfinished">Likemannsidentitet er ikke betrodd</translation>
+        <translation>Peer-identiteten er ikke betrodd</translation>
     </message>
     <message id="whisperfish-peer-not-trusted-message">
         <location filename="../qml/pages/PeerIdentityChanged.qml" line="43"/>
         <location filename="../qml/pages/ResetPeerIdentity.qml" line="43"/>
         <source>WARNING: %1 identity is no longer trusted. Tap Confirm to reset peer identity.</source>
         <extracomment>Peer identity not trusted message</extracomment>
-        <translation type="unfinished">Advarsel. %1 identitet er ikke lenger betrodd. Trykk «Bekreft» for å tilbakestille likemannsidentitet.</translation>
+        <translation>Advarsel! %1 identitet er ikke lenger betrodd. Trykk «Bekreft» for å tilbakestille peer-identitet.</translation>
     </message>
     <message id="whisperfish-settings-linked-devices-menu">
         <location filename="../qml/pages/Settings.qml" line="51"/>
@@ -1258,7 +1258,7 @@ Settings page share contacts</extracomment>
         <source>Settings</source>
         <oldsource>Whisperfish Settings</oldsource>
         <extracomment>Settings page title</extracomment>
-        <translation type="unfinished">Whisperfish-innstillinger</translation>
+        <translation>Innstillinger</translation>
     </message>
     <message id="whisperfish-settings-identity-section-label">
         <source>My Identity</source>
@@ -1366,46 +1366,46 @@ Settings page share contacts</extracomment>
         <source>Attachments are stored at %1. Currently, when disabled, attachments will not work.</source>
         <oldsource>Attachments are stored at %1</oldsource>
         <extracomment>Settings page save attachments description</extracomment>
-        <translation type="unfinished">Vedlegg lagres i %1</translation>
+        <translation>Vedlegg lagres i %1. For øyeblikket, når deaktivert, vil ikke vedlegg fungere.</translation>
     </message>
     <message id="whisperfish-settings-enable-enter-send">
         <location filename="../qml/pages/Settings.qml" line="276"/>
         <source>Return key send</source>
         <oldsource>EnterKey Send</oldsource>
         <extracomment>Settings page enable enter send</extracomment>
-        <translation type="unfinished">Send med ↩</translation>
+        <translation>Send med retur-tasten</translation>
     </message>
     <message id="whisperfish-settings-enable-enter-send-description">
         <location filename="../qml/pages/Settings.qml" line="279"/>
         <source>When enabled, the return key functions as a send key. Otherwise, the return key can be used for multi-line messages.</source>
         <extracomment>Settings page enable enter send description</extracomment>
-        <translation type="unfinished">Bruker return-tasten som sendingstast. Ellers vil den kun brukes for linjeskift.</translation>
+        <translation>Bruker return-tasten som sendingstast. Ellers vil den kun brukes for linjeskift.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-label">
         <location filename="../qml/pages/Settings.qml" line="292"/>
         <source>Transcribe voice notes</source>
         <extracomment>Settings page auto transcribe voice notes</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transkriber talenotater</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-available">
         <location filename="../qml/pages/Settings.qml" line="296"/>
         <source>Automatically transcribe voice notes to text upon reception using Speech Note.</source>
         <extracomment>Auto transcribe voice notes description, Speech Note installed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transkriber automatisk talenotater til tekst ved mottak med Speech Note.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-unavailable">
         <location filename="../qml/pages/Settings.qml" line="299"/>
         <source>Automatically transcribe voice notes to text upon reception. Configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note installed but not configured.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transkriber automatisk talenotater til tekst ved mottak. Konfigurer en «Automatisk oppdaget»-modell i Speech Note for å bruke denne funksjonen.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-uninstalled">
         <location filename="../qml/pages/Settings.qml" line="302"/>
         <source>Automatically transcribe voice notes to text upon reception. Install and configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note not installed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transkriber automatisk talenotater til tekst ved mottak. Installer og konfigurer en «Automatisk oppdaget»-modell i Speech Note for å bruke denne funksjonen.</translation>
     </message>
     <message id="whisperfish-settings-privacy-section">
         <location filename="../qml/pages/Settings.qml" line="319"/>
@@ -1441,7 +1441,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="453"/>
         <source>Unlock Password</source>
         <extracomment>Settings page autostart password field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Lås opp passord</translation>
     </message>
     <message id="whisperfish-settings-save-password-button">
         <location filename="../qml/pages/Settings.qml" line="464"/>
@@ -1552,7 +1552,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="369"/>
         <source>Sender-only notifications</source>
         <extracomment>Settings page, sender-only notifications</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Varsler viser bare avsender</translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only-description">
         <location filename="../qml/pages/Settings.qml" line="372"/>
@@ -1564,7 +1564,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="378"/>
         <source>Complete notifications</source>
         <extracomment>Settings page, complete notifications</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Fullstendige varsler</translation>
     </message>
     <message id="whisperfish-settings-notifications-complete-description">
         <location filename="../qml/pages/Settings.qml" line="381"/>
@@ -1612,13 +1612,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="430"/>
         <source>When enabled, Whisperfish starts automatically after each boot. If storage encryption is enabled or background-mode is off, the UI will be shown, otherwise the app starts in the background.</source>
         <extracomment>Settings page enable autostart description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Når aktivert, starter Whisperfish automatisk etter hver oppstart. Hvis kryptering av lagring er aktivert eller bakgrunnsmodus er av, vises brukergrensesnittet, ellers starter appen i bakgrunnen.</translation>
     </message>
     <message id="whisperfish-settings-autostart-manual-info">
         <location filename="../qml/pages/Settings.qml" line="490"/>
         <source>Whisperfish does not have the permission to change the autostart settings. You can enable or disable autostart manually from the command line by running &apos;systemctl --user enable harbour-whisperfish.service&apos; or &apos;systemctl --user disable harbour-whisperfish.service&apos;</source>
         <extracomment>Settings page info how to enable autostart manually</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Whisperfish har ikke tillatelse til å endre innstillingene for automatisk start. Du kan aktivere eller deaktivere automatisk start manuelt fra kommandolinjen ved å kjøre &apos;systemctl --user enable harbour-whisperfish.service&apos; eller &apos;systemctl --user disable harbour-whisperfish.service&apos;</translation>
     </message>
     <message id="whisperfish-settings-quit-button">
         <location filename="../qml/pages/Settings.qml" line="517"/>
@@ -1671,14 +1671,14 @@ Settings page share contacts</extracomment>
         <source>Show debugging information and controls in the user interface.</source>
         <oldsource>Show debugging information in the user interface.</oldsource>
         <extracomment>Settings page: debug info toggle extended description</extracomment>
-        <translation type="unfinished">Vis feilsporingsinfo i brukergrensesnittet.</translation>
+        <translation>Vis feilsøkingsinformasjon og kontroller i brukergrensesnittet.</translation>
     </message>
     <message id="whisperfish-settings-compress-db">
         <location filename="../qml/pages/Settings.qml" line="586"/>
         <source>Compact database</source>
         <oldsource>Compress database</oldsource>
         <extracomment>Settings page &apos;Compact database&apos; button: execute &apos;VACUUM&apos; command on SQLite-database</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Komprimer database</translation>
     </message>
     <message id="whisperfish-settings-test-captcha">
         <location filename="../qml/pages/Settings.qml" line="597"/>
@@ -1696,7 +1696,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="613"/>
         <source>Websocket Status</source>
         <extracomment>Settings page websocket status</extracomment>
-        <translation type="unfinished">Websocket-status</translation>
+        <translation>Websocket-status</translation>
     </message>
     <message id="whisperfish-settings-connected">
         <location filename="../qml/pages/Settings.qml" line="617"/>
@@ -1720,13 +1720,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="631"/>
         <source>Total Sessions</source>
         <extracomment>Settings page total sessions</extracomment>
-        <translation type="unfinished">Alle økter</translation>
+        <translation>Alle økter</translation>
     </message>
     <message id="whisperfish-settings-total-messages">
         <location filename="../qml/pages/Settings.qml" line="637"/>
         <source>Total Messages</source>
         <extracomment>Settings page total messages</extracomment>
-        <translation type="unfinished">Alle meldinger</translation>
+        <translation>Alle meldinger</translation>
     </message>
     <message id="whisperfish-settings-total-contacts">
         <location filename="../qml/pages/Settings.qml" line="643"/>
@@ -1824,7 +1824,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/GroupProfilePage.qml" line="175"/>
         <source>Message sending allowed</source>
         <extracomment>Announcements only setting label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sending av meldinger tillatt</translation>
     </message>
     <message id="whisperfish-announcements-admins-only">
         <location filename="../qml/pages/GroupProfilePage.qml" line="177"/>
@@ -1929,96 +1929,96 @@ Settings page share contacts</extracomment>
         <source>Signal should have called you with a 6-digit verification code. Please wait a moment, or restart the process if you have not received a call.</source>
         <oldsource>Signal should have called you with a a 6-digit verification code. Please wait a moment, or restart the process if you have not received a call.</oldsource>
         <extracomment>verify registration instructions: voice</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Signal skal ha ringt deg med en 6-sifret bekreftelseskode. Vent et øyeblikk, eller start prosessen på nytt hvis du ikke har mottatt et anrop.</translation>
     </message>
     <message id="whisperfish-verify-instructions-sms">
         <location filename="../qml/pages/VerifyRegistrationPage.qml" line="27"/>
         <source>Signal should have sent you a 6-digit verification code via text message. Please wait a moment, or restart the process if you have not received a message.</source>
         <extracomment>verify registration instructions: text message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Signal skal ha sendt deg en 6-sifret bekreftelseskode via tekstmelding. Vent et øyeblikk, eller start prosessen på nytt hvis du ikke har mottatt meldingen.</translation>
     </message>
     <message id="whisperfish-verify-retry-prompt">
         <location filename="../qml/pages/VerifyRegistrationPage.qml" line="45"/>
         <source>Please retry with a valid code.</source>
         <extracomment>verification: prompt to retry with a new code</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Vennligst prøv på nytt med en gyldig kode.</translation>
     </message>
     <message id="whisperfish-verify-code-input-label">
         <location filename="../qml/pages/VerifyRegistrationPage.qml" line="86"/>
         <source>Verification code</source>
         <extracomment>verification code input label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Verifikasjonskode</translation>
     </message>
     <message id="whisperfish-verify-code-input-placeholder">
         <location filename="../qml/pages/VerifyRegistrationPage.qml" line="89"/>
         <source>Code</source>
         <extracomment>verification code input placeholder</extracomment>
-        <translation type="unfinished">Kode</translation>
+        <translation>Kode</translation>
     </message>
     <message id="whisperfish-attachment-preview-contact-title">
         <location filename="../qml/components/attachment/AttachmentItemContact.qml" line="22"/>
         <source>Shared contact</source>
         <extracomment>Placeholder shown as title for an attached contact in a message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Delt kontakt</translation>
     </message>
     <message id="whisperfish-voice-note-vorbis-warning">
         <location filename="../qml/components/ChatTextInput.qml" line="290"/>
         <source>Incompatible with Signal iOS</source>
         <extracomment>Short warning note that the voice note is being recorded in Vorbis format</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Inkompatibel med Signal iOS</translation>
     </message>
     <message id="whisperfish-chat-input-attachment-label" numerus="yes">
         <location filename="../qml/components/ChatTextInput.qml" line="320"/>
         <source>%n attachment(s)</source>
         <extracomment>Number of attachments currently selected for sending</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n vedlegg</numerusform>
+            <numerusform>%n vedlegg</numerusform>
         </translation>
     </message>
     <message id="whisperfish-chat-input-not-group-member">
         <location filename="../qml/components/ChatTextInput.qml" line="330"/>
         <source>You are not member of the group</source>
         <extracomment>Chat text input placeholder for not being a member of the group</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Du er ikke medlem av gruppen</translation>
     </message>
     <message id="whisperfish-chat-input-recipient-is-unregistered">
         <location filename="../qml/components/ChatTextInput.qml" line="334"/>
         <source>The recipient is not registered</source>
         <extracomment>Chat text input placeholder for deleted/unregistered recipient</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mottakeren er ikke registrert</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-personal">
         <location filename="../qml/components/ChatTextInput.qml" line="339"/>
         <source>Hi %1</source>
         <extracomment>Personalized placeholder for chat input, e.g. &quot;Hi John&quot;</extracomment>
-        <translation type="unfinished">Hei %1</translation>
+        <translation>Hei %1</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-announcement-only">
         <location filename="../qml/components/ChatTextInput.qml" line="343"/>
         <source>Only administrators can send messages</source>
         <extracomment>Placeholder for administrators-only group</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Bare administratorer kan sende meldinger</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-default">
         <location filename="../qml/components/ChatTextInput.qml" line="347"/>
         <source>Write a message</source>
         <extracomment>Generic placeholder for chat input</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Skriv en melding</translation>
     </message>
     <message id="whisperfish-select-attachments-page-title">
         <location filename="../qml/components/ChatTextInput.qml" line="534"/>
         <source>Select attachments</source>
         <extracomment>Attachment picker page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Velg vedlegg</translation>
     </message>
     <message id="whisperfish-attachments-plus-n" numerus="yes">
         <location filename="../qml/components/message/AttachmentsLoader.qml" line="266"/>
         <source>+%n</source>
         <extracomment>Label hinting at more attachments than are currently shown. Read as &quot;and %n more&quot;.</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>+%n</numerusform>
+            <numerusform>+%n</numerusform>
         </translation>
     </message>
     <message id="whisperfish-attachments-loader-show-more" numerus="yes">
@@ -2026,28 +2026,28 @@ Settings page share contacts</extracomment>
         <source>and %n more</source>
         <oldsource>and %1 more</oldsource>
         <extracomment>Note if some message attachments are hidden instead of being shown inline</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>og %n til</numerusform>
+            <numerusform>og %n flere</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-no-timestamp">
         <location filename="../qml/components/message/InfoItem.qml" line="102"/>
         <source>no time</source>
         <extracomment>Placeholder note if a message doesn&apos;t have a timestamp (which must not happen).</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ingen tidsstempel</translation>
     </message>
     <message id="whisperfish-message-show-less">
         <location filename="../qml/components/message/InfoItem.qml" line="28"/>
         <source>show less</source>
         <extracomment>Hint for very long messages, while expanded</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>vis mindre</translation>
     </message>
     <message id="whisperfish-message-show-more">
         <location filename="../qml/components/message/InfoItem.qml" line="31"/>
         <source>show more</source>
         <extracomment>Hint for very long messages, while not expanded</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>vis mer</translation>
     </message>
     <message id="whisperfish-sender-name-label-outgoing">
         <location filename="../qml/components/QuotedMessagePreview.qml" line="115"/>
@@ -2055,7 +2055,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/harbour-whisperfish-main.qml" line="167"/>
         <source>You</source>
         <extracomment>Name shown when replying to own messages</extracomment>
-        <translation type="unfinished">Du</translation>
+        <translation>Du</translation>
     </message>
     <message id="whisperfish-recipient-no-name">
         <location filename="../qml/components/GroupMemberListView.qml" line="188"/>
@@ -2065,7 +2065,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="98"/>
         <source>(no name)</source>
         <extracomment>Placeholder name for a recipient who has no name available</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>(ingen navn)</translation>
     </message>
     <message id="whisperfish-quoted-message-preview-voice-note">
         <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="72"/>
@@ -2233,20 +2233,20 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="128"/>
         <source>%1 set or disabled expiring messages timeout.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 har satt eller deaktivert tidsavbrudd for selvslettende meldinger.</translation>
     </message>
     <message id="whisperfish-service-message-profile-key-update-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="150"/>
         <source>%1 updated their profile.</source>
         <oldsource>%1 updated their profile key with you.</oldsource>
         <extracomment>Service message for profile (key) update. %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 oppdaterte profilen deres.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="155"/>
         <source>You ended the session with %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Du avsluttet økten med %1.</translation>
     </message>
     <message id="whisperfish-service-message-end-session-peer">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="158"/>
@@ -2282,7 +2282,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="182"/>
         <source>%1 set group change permissions to &apos;%2&apos;</source>
         <extracomment>Group change: permissions to change group properties</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 satte endringstillatelser for gruppen til &apos;%2&apos;</translation>
     </message>
     <message id="whisperfish-service-message-group-change-avatar">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="186"/>
@@ -2423,7 +2423,7 @@ Settings page share contacts</extracomment>
         <source>This service message of is not yet supported by Whisperfish. Please file a bug report. (Flags: %1, Type: %2, Contents: &quot;%3&quot;)</source>
         <oldsource>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: %1)</oldsource>
         <extracomment>Service message, %1 is an integer, %2 is a word, %3 is the message text (if any)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Denne tjenestemeldingen støttes ikke av Whisperfish ennå. Vennligst send inn en feilrapport. (Flagg: %1, Type: %2, Innhold: &quot;%3&quot;)</translation>
     </message>
     <message id="whisperfish-service-message-more-info">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="370"/>
@@ -2516,7 +2516,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="417"/>
         <source>Clear selection</source>
         <extracomment>Message action description, shown if one or more messages are selected</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Fjern utvalget</translation>
     </message>
     <message id="whisperfish-message-action-copy" numerus="yes">
         <location filename="../qml/pages/ConversationPage.qml" line="428"/>
@@ -2540,9 +2540,9 @@ Settings page share contacts</extracomment>
         <source>Locally delete %n message(s)</source>
         <oldsource>Delete %1 message(s) for me</oldsource>
         <extracomment>Message action description</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Slett %n melding lokalt</numerusform>
+            <numerusform>Slett %n meldinger lokalt</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-action-delete-for-all" numerus="yes">
@@ -2562,9 +2562,9 @@ Settings page share contacts</extracomment>
         <source>Retry sending %n failed message(s)</source>
         <oldsource>Retry sending (the) failed message(s)</oldsource>
         <extracomment>Message action description</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Prøv å sende %n mislykket melding på nytt</numerusform>
+            <numerusform>Prøv å sende %n mislykkede meldinger på nytt</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-action-transcribe" numerus="yes">
@@ -2581,13 +2581,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="607"/>
         <source>Let the group members message with you and let its members see your profile information?</source>
         <extracomment>Information about a pending or blocked group</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>La gruppemedlemmene sende deg meldinger og la medlemmene se profilinformasjonen din?</translation>
     </message>
     <message id="whisperfish-message-request-information">
         <location filename="../qml/pages/ConversationPage.qml" line="610"/>
         <source>Let the contact message with you and let them see your profile information?</source>
         <extracomment>Information about a pending or blocked recipient</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>La kontakten sende deg meldinger og la vedkommende se profilinformasjonen din?</translation>
     </message>
     <message id="whisperfish-share-page-title">
         <location filename="../qml/pages/ShareDestinationV1.qml" line="35"/>
@@ -2733,7 +2733,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="64"/>
         <source>Set or disable message destruction after a certain time after reading. Only affects messages sent after changing this option.</source>
         <extracomment>Group/conversation info page, expiring messages description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Angi eller deaktiver sletting av meldinger etter en viss tid etter lesing. Påvirker bare meldinger som sendes etter at dette alternativet er endret.</translation>
     </message>
     <message id="whisperfish-disappearing-messages-off">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="77"/>
@@ -2792,63 +2792,63 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="107"/>
         <source>Other</source>
         <extracomment>Disappearing messages: custom duration</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Annet</translation>
     </message>
     <message id="whisperfish-disappearing-messages-amount">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="152"/>
         <source>Amount</source>
         <extracomment>Disappearing messages, custom &quot;time amount&quot; label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mengde</translation>
     </message>
     <message id="whisperfish-disappearing-messages-time-units">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="175"/>
         <source>Time unit</source>
         <extracomment>Disappearing messages, custom &quot;time length&quot; label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Tidsenhet</translation>
     </message>
     <message id="whisperfish-units-seconds" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="180"/>
         <source>seconds</source>
         <extracomment>Time unit: seconds</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>sekund</numerusform>
+            <numerusform>sekunder</numerusform>
         </translation>
     </message>
     <message id="whisperfish-units-minutes" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="183"/>
         <source>minutes</source>
         <extracomment>Time unit: minutes</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>minutt</numerusform>
+            <numerusform>minutter</numerusform>
         </translation>
     </message>
     <message id="whisperfish-units-hours" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="186"/>
         <source>hours</source>
         <extracomment>Time unit: hours</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>time</numerusform>
+            <numerusform>timer</numerusform>
         </translation>
     </message>
     <message id="whisperfish-units-days" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="189"/>
         <source>days</source>
         <extracomment>Time unit: days</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>dag</numerusform>
+            <numerusform>dager</numerusform>
         </translation>
     </message>
     <message id="whisperfish-units-weeks" numerus="yes">
         <location filename="../qml/components/ExpiringMessagesComboBox.qml" line="192"/>
         <source>weeks</source>
         <extracomment>Time unit: weeks</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>uke</numerusform>
+            <numerusform>uker</numerusform>
         </translation>
     </message>
     <message id="whisperfish-link-contact-page-title">
