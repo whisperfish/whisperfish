@@ -258,6 +258,10 @@ FEATURES="$FEATURES,console-subscriber"
 export RUSTFLAGS="%{?rustflags}"
 %endif
 
+%ifarch aarch64
+export RUSTFLAGS="$RUSTFLAGS -C target-feature=+sha2,+neon"
+%endif
+
 %if %{with tracy}
 FEATURES="$FEATURES,tracy"
 %endif
