@@ -8,8 +8,8 @@ echo_t() {
 
 echo_t "Building for $SFOS_VERSION"
 
-echo_t "Adding $PWD as safe directory in git..."
-git config --global --add safe.directory "$PWD"
+echo_t "Adding \"*\" as safe directory in git..."
+git config --global --add safe.directory "*"
 
 echo_t "Determine Whisperfish version..."
 if [ -z "$CI_COMMIT_TAG" ]; then
@@ -70,6 +70,7 @@ mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" --no-snapshot=force build \
     --with sccache \
     --with tools \
     --with calling \
+    2> >(busybox grep -vE "Path not found for FD")
 
 rm -rf "$TMPDIR"
 export TMPDIR="$TMPDIR2"

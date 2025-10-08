@@ -1,6 +1,9 @@
-# Compiling Whisperfish with Rust 1.75
+# Compiling Whisperfish with a more recent Rust
 
 As of 2024-12-29, (self-compiled) Rust 1.75.0 is available for Sailfish SDK 3.10.4 (Sailfish OS 4.5)! The download links are provided in this readme, until Rust 1.75.0 is officially available from Jolla.
+
+Sometimes, however, we lead Jolla/SailfishOS a bit in Rust version, and then Ruben provides some more recent LLVM/clang/Rust on a repo on his home server.
+The below instructions show how to add this repository.
 
 ## 1) Install Sailfish SDK
 

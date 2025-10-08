@@ -89,9 +89,9 @@ BuildRequires:  pkgconfig(Qt5Quick)
 BuildRequires:  pkgconfig(Qt5Widgets)
 BuildRequires:  libatomic-static
 
-BuildRequires:  rust >= 1.75
-BuildRequires:  rust-std-static >= 1.75
-BuildRequires:  cargo >= 1.75
+BuildRequires:  rust >= 1.89
+BuildRequires:  rust-std-static >= 1.89
+BuildRequires:  cargo >= 1.89
 BuildRequires:  git
 BuildRequires:  protobuf-compiler
 BuildRequires:  nemo-qml-plugin-notifications-qt5-devel
@@ -102,11 +102,11 @@ BuildRequires:  zlib-devel
 BuildRequires:  coreutils
 BuildRequires:  perl-IPC-Cmd
 
-%if %{with calling}
-# Ringrtc needs linking against -lssl and -lcrypto;
-# currently no way to link against our vendored openssl
-BuildRequires:  openssl-libs openssl-devel
-%endif
+# %if %{with calling}
+# # Ringrtc needs linking against -lssl and -lcrypto;
+# # currently no way to link against our vendored openssl
+# BuildRequires:  openssl-libs openssl-devel
+# %endif
 
 BuildRequires:  pkgconfig(systemd)
 
@@ -281,7 +281,7 @@ FEATURES="$FEATURES,diesel-instrumentation"
 %if %{with calling}
 FEATURES="$FEATURES,calling"
 # ringrtc requires an output directory for the WebRTC artifacts
-export OUTPUT_DIR=`realpath .`/ringrtc/111/${SB2_RUST_TARGET_TRIPLE}
+export OUTPUT_DIR=`realpath .`/ringrtc/322/${SB2_RUST_TARGET_TRIPLE}
 %endif
 
 # We could use the %%(version) and %%(release), but SFDK will include a datetime stamp,
@@ -320,7 +320,7 @@ export JOBS="-j 1"
 %endif
 
 $TASKSET cargo build $JOBS \
-          -vv \
+          -v \
           --release \
           --no-default-features \
           $BINS \

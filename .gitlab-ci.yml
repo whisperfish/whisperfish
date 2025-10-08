@@ -1,5 +1,5 @@
 variables: &variables
-  SFOS_VERSION: 4.6.0.13
+  SFOS_VERSION: 5.0.0.43
   GIT_FETCH_EXTRA_FLAGS: --tags
   RUST_BACKTRACE: full
   # Output dir for the webrtc artifacts
