@@ -152,7 +152,7 @@ impl Handler<LinkDevice> for ClientActor {
                 Ok::<_, anyhow::Error>(
                     account_manager
                         .link_device(
-                            &mut rand::thread_rng(),
+                            &mut rand::rng(),
                             url,
                             &store.aci_storage(),
                             &store.pni_storage(),
@@ -237,11 +237,11 @@ impl Handler<RenameDevice> for ClientActor {
             async move {
                 account_manager
                     .update_device_name(
-                        device_id,
+                        device_id.try_into().unwrap(),
                         &device_name,
                         aci.into(),
                         &store.aci_storage(),
-                        &mut rand::thread_rng(),
+                        &mut rand::rng(),
                     )
                     .await
             }

@@ -212,9 +212,9 @@ impl SetupWorker {
             .context("No registration type chosen")?;
 
         // generate a random 24 bytes password
-        use rand::distributions::Alphanumeric;
+        use rand::distr::Alphanumeric;
         use rand::Rng;
-        let rng = rand::thread_rng();
+        let rng = rand::rng();
         let password: String = rng
             .sample_iter(&Alphanumeric)
             .take(24)
@@ -229,7 +229,7 @@ impl SetupWorker {
             use libsignal_service::master_key::MasterKeyStore;
 
             // FIXME: tracing::info doesn't seem to work here - why?
-            let master_key = MasterKey::generate(&mut rand::thread_rng());
+            let master_key = MasterKey::generate(&mut rand::rng());
             let storage_key = StorageServiceKey::from_master_key(&master_key);
             result.storage.store_master_key(Some(&master_key));
             result.storage.store_storage_service_key(Some(&storage_key));
@@ -364,7 +364,7 @@ impl SetupWorker {
                 aci: res.aci,
                 pni: res.pni,
             },
-            device_id: protocol::DeviceId::from(DEFAULT_DEVICE_ID),
+            device_id: *DEFAULT_DEVICE_ID,
             profile_key: None,
         })
     }

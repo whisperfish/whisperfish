@@ -5,7 +5,9 @@ use chrono::prelude::*;
 use libsignal_service::content::Reaction;
 use libsignal_service::proto::DataMessage;
 use libsignal_service::protocol::{Aci, ServiceId};
+use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 use phonenumber::PhoneNumber;
+use rand::distr::Alphanumeric;
 use rstest::rstest;
 use std::future::Future;
 use std::sync::Arc;
@@ -1331,7 +1333,6 @@ async fn settings_table() {
 
 #[tokio::test]
 async fn various_storage_functions() {
-    use rand::distributions::Alphanumeric;
     use rand::Rng;
     use std::str::FromStr;
     use std::time::Duration;
@@ -1339,7 +1340,7 @@ async fn various_storage_functions() {
     use whisperfish_store::{StoreProfile, TrustLevel};
 
     let location = whisperfish_store::temp();
-    let rng = rand::thread_rng();
+    let rng = rand::rng();
 
     // Signaling password for REST API
     let password: String = rng
@@ -1385,7 +1386,7 @@ async fn various_storage_functions() {
     config.set_aci(own_aci);
     config.set_pni(own_pni);
     config.set_tel(own_e164.clone());
-    config.set_device_id(1);
+    config.set_device_id(*DEFAULT_DEVICE_ID);
 
     let own_recipient = storage.merge_and_fetch_self_recipient(
         Some(own_e164.clone()),

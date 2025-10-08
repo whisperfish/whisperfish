@@ -74,7 +74,6 @@ impl Handler<MultideviceSyncProfile> for ClientActor {
                     number: self_recipient.e164.as_ref().map(PhoneNumber::to_string),
                     aci: self_recipient.uuid.as_ref().map(Uuid::to_string),
                     name: self_recipient.profile_joined_name.clone(),
-                    profile_key: self_recipient.profile_key,
                     // XXX other profile stuff
                     ..Default::default()
                 });
@@ -223,7 +222,7 @@ impl Handler<UploadProfile> for ClientActor {
                     })
                     .unwrap_or_else(|| {
                         let _span = tracing::info_span!("generating profile key").entered();
-                        ProfileKey::generate(rand::thread_rng().gen())
+                        ProfileKey::generate(rand::rng().random())
                     });
                 let name = ProfileName {
                     given_name: self_recipient.profile_given_name.as_deref().unwrap_or(""),
@@ -238,7 +237,7 @@ impl Handler<UploadProfile> for ClientActor {
                         self_recipient.about,
                         self_recipient.about_emoji,
                         true,
-                        &mut rand::thread_rng(),
+                        &mut rand::rng(),
                     )
                     .await
                 {

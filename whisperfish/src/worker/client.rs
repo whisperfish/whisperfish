@@ -736,7 +736,7 @@ impl ClientActor {
             .collect();
         let sync = SyncMessage {
             read,
-            ..SyncMessage::with_padding(&mut rand::thread_rng())
+            ..SyncMessage::with_padding(&mut rand::rng())
         };
         ctx.notify(DeliverSyncMessage(sync));
 
@@ -1156,7 +1156,6 @@ impl ClientActor {
                                 number: recipient.e164.as_ref().map(PhoneNumber::to_string),
                                 aci: recipient.uuid.as_ref().map(Uuid::to_string),
                                 name: recipient.profile_joined_name.clone(),
-                                profile_key: recipient.profile_key,
                                 // XXX other profile stuff
                                 ..Default::default()
                             }
@@ -1165,13 +1164,13 @@ impl ClientActor {
                     sender.send_contact_details(&local_addr.into(), None, contacts, false, true).await?;
                 },
                 RequestType::Configuration => {
-                    sender.send_sync_message(SyncMessage {configuration: Some(configuration), ..SyncMessage::with_padding(&mut rand::thread_rng())}).await?;
+                    sender.send_sync_message(SyncMessage {configuration: Some(configuration), ..SyncMessage::with_padding(&mut rand::rng())}).await?;
                 },
                 RequestType::Keys => {
                     let master = storage.fetch_master_key();
-                    let storage_service = storage.fetch_storage_service_key();
-                    let keys = Some(Keys { master: master.map(|k| k.into()), storage_service: storage_service.map(|k| k.into()) });
-                    sender.send_sync_message(SyncMessage {keys, ..SyncMessage::with_padding(&mut rand::thread_rng())}).await?;
+                    // XXX media root backup key, account entropy pool
+                    let keys = Some(Keys { master: master.map(|k| k.into()), account_entropy_pool: None, media_root_backup_key: None });
+                    sender.send_sync_message(SyncMessage {keys, ..SyncMessage::with_padding(&mut rand::rng())}).await?;
                 }
                 RequestType::Blocked => {
                     let blocked = Some(Blocked {
@@ -1179,7 +1178,7 @@ impl ClientActor {
                         acis: storage.fetch_blocked_acis().into_iter().map(|e| e.to_string()).collect_vec(),
                         group_ids: Vec::new(), // Group V1
                     });
-                    sender.send_sync_message(SyncMessage {blocked, ..SyncMessage::with_padding(&mut rand::thread_rng())}).await?;
+                    sender.send_sync_message(SyncMessage {blocked, ..SyncMessage::with_padding(&mut rand::rng())}).await?;
                 }
                 // RequestType::PniIdentity // RESERVED
                 // RequestType::Groups // RESERVED
@@ -1836,7 +1835,7 @@ impl Handler<SendMessage> for ClientActor {
                         caption: attachment.caption,
                         blur_hash: attachment.visual_hash,
                     };
-                    let ptr = match sender.upload_attachment(spec, contents, &mut rand::thread_rng()).await {
+                    let ptr = match sender.upload_attachment(spec, contents, &mut rand::rng()).await {
                         Ok(v) => v,
                         Err(e) => {
                             anyhow::bail!("Failed to upload attachment: {}", e);
@@ -2586,7 +2585,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             async move {
                 let mut visited = false;
                 let content = loop {
-                    match cipher.open_envelope(msg.clone(), &mut rand::thread_rng()).await {
+                    match cipher.open_envelope(msg.clone(), &mut rand::rng()).await {
                         Ok(Some(content)) => {
                             storage.mark_recipient_registered(content.metadata.sender, true);
                             break Some(content);
@@ -2795,8 +2794,8 @@ impl Handler<ConfirmRegistration> for ClientActor {
             confirm_code,
         } = confirm;
 
-        let registration_id = generate_registration_id(&mut rand::thread_rng());
-        let pni_registration_id = generate_registration_id(&mut rand::thread_rng());
+        let registration_id = generate_registration_id(&mut rand::rng());
+        let pni_registration_id = generate_registration_id(&mut rand::rng());
         tracing::trace!("registration_id: {}", registration_id);
         tracing::trace!("pni_registration_id: {}", pni_registration_id);
 
@@ -2868,7 +2867,7 @@ impl Handler<ConfirmRegistration> for ClientActor {
             //      check whether that's what we want!
             let result = account_manager
                 .register_account(
-                    &mut rand::thread_rng(),
+                    &mut rand::rng(),
                     RegistrationMethod::SessionId(&session.id),
                     account_attrs,
                     &mut aci_store,
@@ -2954,7 +2953,7 @@ impl Handler<RegisterLinked> for ClientActor {
                 link_device(
                     &mut aci_store,
                     &mut pni_store,
-                    &mut rand::thread_rng(),
+                    &mut rand::rng(),
                     push_service,
                     &reg.password,
                     &reg.device_name,
@@ -3064,13 +3063,13 @@ impl Handler<RefreshPreKeys> for ClientActor {
 
             // It's tempting to run those two in parallel,
             // but I'm afraid the pre-key counts are going to be mixed up.
-            am.update_pre_key_bundle(&mut aci, ServiceIdKind::Aci, true, &mut rand::thread_rng())
+            am.update_pre_key_bundle(&mut aci, ServiceIdKind::Aci, true, &mut rand::rng())
                 .await
                 .context("refreshing ACI pre keys")?;
 
             let _pni_distribution = pni_distribution.await;
 
-            am.update_pre_key_bundle(&mut pni, ServiceIdKind::Pni, true, &mut rand::thread_rng())
+            am.update_pre_key_bundle(&mut pni, ServiceIdKind::Pni, true, &mut rand::rng())
                 .await
                 .context("refreshing PNI pre keys")?;
             anyhow::Result::<()>::Ok(())
@@ -3698,14 +3697,14 @@ impl Handler<SendConfiguration> for ClientActor {
     type Result = ();
 
     fn handle(&mut self, _: SendConfiguration, _ctx: &mut Self::Context) {
-        if self.config.get_device_id() != DeviceId::from(DEFAULT_DEVICE_ID) {
+        if self.config.get_device_id() != *DEFAULT_DEVICE_ID {
             tracing::info!("Not the primary device, ignoring SendConfiguration request");
             return;
         };
         let sender = self.message_sender();
         let configuration = SyncMessage {
             configuration: Some(self.get_configuration()),
-            ..SyncMessage::with_padding(&mut rand::thread_rng())
+            ..SyncMessage::with_padding(&mut rand::rng())
         };
 
         actix::spawn(async move {

@@ -39,7 +39,7 @@ impl Handler<InitializePni> for ClientActor {
                     return Ok(false);
                 }
 
-                if device_id != DEFAULT_DEVICE_ID.into() {
+                if device_id != *DEFAULT_DEVICE_ID {
                     tracing::info!("Not initializing PNI on linked device");
                     return Ok(false);
                 }
@@ -56,8 +56,7 @@ impl Handler<InitializePni> for ClientActor {
                         });
                 let mut am = AccountManager::new(service.clone(), profile_key);
 
-                let identity_key_pair =
-                    protocol::IdentityKeyPair::generate(&mut rand::thread_rng());
+                let identity_key_pair = protocol::IdentityKeyPair::generate(&mut rand::rng());
                 let mut pni = storage.pni_storage();
                 pni.write_identity_key_pair(identity_key_pair).await?;
 
@@ -68,7 +67,7 @@ impl Handler<InitializePni> for ClientActor {
                         sender.await?,
                         local_addr,
                         local_e164,
-                        &mut rand::thread_rng(),
+                        &mut rand::rng(),
                     )
                     .await
                     .context("initializing linked devices for PNP");

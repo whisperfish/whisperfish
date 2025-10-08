@@ -412,7 +412,7 @@ impl<O: Observable + Default> Storage<O> {
             tracing::info!("Generating salts");
             let mut db_salt = [0u8; 8];
             let mut storage_salt = [0u8; 8];
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             rng.fill_bytes(&mut db_salt);
             rng.fill_bytes(&mut storage_salt);
 
@@ -432,9 +432,9 @@ impl<O: Observable + Default> Storage<O> {
 
         // 3. initialize protocol store
         let aci_identity_key_pair = aci_identity_key_pair
-            .unwrap_or_else(|| protocol::IdentityKeyPair::generate(&mut rand::thread_rng()));
+            .unwrap_or_else(|| protocol::IdentityKeyPair::generate(&mut rand::rng()));
         let pni_identity_key_pair = pni_identity_key_pair
-            .unwrap_or_else(|| protocol::IdentityKeyPair::generate(&mut rand::thread_rng()));
+            .unwrap_or_else(|| protocol::IdentityKeyPair::generate(&mut rand::rng()));
 
         let protocol_store = ProtocolStore::new(
             store_enc.as_ref(),
