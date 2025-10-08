@@ -70,6 +70,7 @@ mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" --no-snapshot=force build \
     --with sccache \
     --with tools \
     --with calling \
+    2> >(busybox grep -vE "Path not found for FD")
 
 rm -rf "$TMPDIR"
 export TMPDIR="$TMPDIR2"
