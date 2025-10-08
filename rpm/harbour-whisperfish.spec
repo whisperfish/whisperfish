@@ -202,7 +202,7 @@ export CXXFLAGS_armv7_unknown_linux_gnueabihf=$CXXFLAGS
 %endif
 %ifarch aarch64
 export SB2_RUST_TARGET_TRIPLE=aarch64-unknown-linux-gnu
-export CFLAGS_aarch64_unknown_linux_gnu=$CFLAGS
+export CFLAGS_aarch64_unknown_linux_gnu="$CFLAGS -march=armv8-a+crypto+fp+simd+lse+sha2"
 export CXXFLAGS_aarch64_unknown_linux_gnu=$CXXFLAGS
 %endif
 %ifarch %ix86
