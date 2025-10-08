@@ -102,11 +102,11 @@ BuildRequires:  zlib-devel
 BuildRequires:  coreutils
 BuildRequires:  perl-IPC-Cmd
 
-%if %{with calling}
-# Ringrtc needs linking against -lssl and -lcrypto;
-# currently no way to link against our vendored openssl
-BuildRequires:  openssl-libs openssl-devel
-%endif
+# %if %{with calling}
+# # Ringrtc needs linking against -lssl and -lcrypto;
+# # currently no way to link against our vendored openssl
+# BuildRequires:  openssl-libs openssl-devel
+# %endif
 
 BuildRequires:  pkgconfig(systemd)
 
@@ -281,7 +281,7 @@ FEATURES="$FEATURES,diesel-instrumentation"
 %if %{with calling}
 FEATURES="$FEATURES,calling"
 # ringrtc requires an output directory for the WebRTC artifacts
-export OUTPUT_DIR=`realpath .`/ringrtc/111/${SB2_RUST_TARGET_TRIPLE}
+export OUTPUT_DIR=`realpath .`/ringrtc/322/${SB2_RUST_TARGET_TRIPLE}
 %endif
 
 # We could use the %%(version) and %%(release), but SFDK will include a datetime stamp,
