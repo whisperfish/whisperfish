@@ -320,7 +320,7 @@ export JOBS="-j 1"
 %endif
 
 $TASKSET cargo build $JOBS \
-          -vv \
+          -v \
           --release \
           --no-default-features \
           $BINS \
