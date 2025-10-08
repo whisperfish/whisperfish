@@ -99,7 +99,7 @@ See here for more information.
 Whisperfish is written in Rust (and QML), and Rust is a bit of a special
 entity in Sailfish OS. Luckily, Jolla has provided a more or less decent
 Rust compiler since Sailfish OS 3.4 (Rust 1.52), and in Sailfish OS 4.6 we have
-a quite recent Rust 1.75, which we can use out-of-the-box. So grab yourself
+a quite recent Rust, which we can use out-of-the-box. So grab yourself
 Sailfish SDK 3.11 or newer (or Platform SDK with said tooling and targets).
 
 **Note:** Only the Docker build engine supports Rust compiling. VirtualBox build engine will not work.
@@ -107,14 +107,17 @@ Sailfish SDK 3.11 or newer (or Platform SDK with said tooling and targets).
 Once you have the SDK up and running and the Whisperfish sources fetched,
 it compiles just like any other native Sailfish OS application.
 
-Set the build target 4.6.0.13 and architecture of your choice. The resulting
+Set the build target 5.0.0.62 and architecture of your choice. The resulting
 packages should also work for several older Sailfish OS releases as well:
 
-    sfdk config target=SailfishOS-4.6.0.13-aarch64 build
+    sfdk config target=SailfishOS-5.0.0.62-aarch64 build
 
 Then just build it:
 
     sfdk build
+
+Sometimes, Whisperfish leads SailfishOS in Rust version requirements. If you get complaints (`rust >= 1.89 is needed by ...`),
+check out `doc/rust-repository.md`.
 
 If you want to also build the sharing plugin for SFOS 4.3+, use this command (note the double double dashes):
 
