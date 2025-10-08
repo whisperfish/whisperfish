@@ -89,9 +89,9 @@ BuildRequires:  pkgconfig(Qt5Quick)
 BuildRequires:  pkgconfig(Qt5Widgets)
 BuildRequires:  libatomic-static
 
-BuildRequires:  rust >= 1.75
-BuildRequires:  rust-std-static >= 1.75
-BuildRequires:  cargo >= 1.75
+BuildRequires:  rust >= 1.89
+BuildRequires:  rust-std-static >= 1.89
+BuildRequires:  cargo >= 1.89
 BuildRequires:  git
 BuildRequires:  protobuf-compiler
 BuildRequires:  nemo-qml-plugin-notifications-qt5-devel
