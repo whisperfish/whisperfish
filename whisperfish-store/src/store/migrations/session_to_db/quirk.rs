@@ -9,7 +9,11 @@
 use libsignal_service::protocol::SignalProtocolError;
 use prost::Message;
 
-include!(concat!(env!("OUT_DIR"), "/textsecure.rs"));
+mod textsecure {
+    #![allow(dead_code)]
+    include!(concat!(env!("OUT_DIR"), "/textsecure.rs"));
+}
+use textsecure::*;
 
 pub const DJB_TYPE: u8 = 0x05;
 
