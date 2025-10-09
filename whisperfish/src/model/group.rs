@@ -139,9 +139,7 @@ impl Group {
     }
 
     fn is_announcements_only(&self, _ctx: Option<ModelContext<Self>>) -> bool {
-        self.group_v2
-            .as_ref()
-            .map_or(false, |g| g.announcement_only)
+        self.group_v2.as_ref().is_some_and(|g| g.announcement_only)
     }
 
     #[with_executor]
