@@ -457,8 +457,7 @@ impl SettingsBridge {
     fn isPrimaryDevice(&mut self) -> bool {
         // XXX There must be easier way to access current device id...
         let config = whisperfish_store::config::SignalConfig::read_from_file();
-        if config.is_ok() {
-            let config = config.unwrap();
+        if let Ok(config) = config {
             config.get_device_id() == DeviceId::from(DEFAULT_DEVICE_ID)
         } else {
             false

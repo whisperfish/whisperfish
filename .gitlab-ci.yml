@@ -341,7 +341,7 @@ clippy:stable:
   needs:
     - test:stable
   script:
-    - rustup override set 1.82.0
+    - rustup override set 1.89.0
     - rustup component add clippy
     - bash fetch-webrtc.sh x86_64
     # the following command should be used but needs sailfish SDK

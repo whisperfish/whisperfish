@@ -13,7 +13,7 @@ fi
 
 echo "Running migrations..."
 
-for UP in $(ls migrations/*/up.sql); do
+for UP in migrations/*/up.sql; do
 	echo "$UP"
 	sqlite3 $DB < $UP
 done

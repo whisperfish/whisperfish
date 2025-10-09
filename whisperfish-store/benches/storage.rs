@@ -1,10 +1,11 @@
 mod common;
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use libsignal_service::{
     proto::AttachmentPointer,
     protocol::{Aci, ServiceId},
 };
+use std::hint::black_box;
 use uuid::Uuid;
 use whisperfish_store::config::SignalConfig;
 use whisperfish_store::{orm, temp, NewMessage, Storage, StorageLocation};

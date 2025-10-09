@@ -394,10 +394,10 @@ pub fn merge_and_fetch_recipient_inner(
         // XXX session switchover event
     }
 
-    return Ok(RecipientResults {
+    Ok(RecipientResults {
         id: Some(rcpt.id),
         ..Default::default()
-    });
+    })
 }
 
 // Inner method because the coverage report is then sensible.

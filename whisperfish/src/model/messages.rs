@@ -522,7 +522,6 @@ impl MessageListModel {
         self.messages = storage
             .fetch_all_messages_augmented(id, true)
             .into_iter()
-            .map(Into::into)
             .collect();
         self.end_reset_model();
     }

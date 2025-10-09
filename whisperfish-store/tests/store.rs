@@ -1149,7 +1149,7 @@ fn test_remove_attachment_filenames() {
         (false, "~/.local/share/commhistory/data/1241/image000000.jpg"),
     ];
 
-    test_data.map(|(deleted, filename)| {
+    let _ = test_data.map(|(deleted, filename)| {
         assert_eq!(
             deleted,
             regex.is_match(filename),

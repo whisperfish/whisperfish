@@ -216,7 +216,7 @@ impl Prompt {
         }
     }
 
-    #[allow(non_snake_case)]
+    #[allow(non_snake_case, clippy::zombie_processes)]
     #[with_executor]
     #[tracing::instrument(skip(self))]
     fn startCaptcha(&mut self) {

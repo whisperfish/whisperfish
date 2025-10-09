@@ -60,7 +60,7 @@ impl Handler<FetchAttachment> for ClientActor {
         let ptr_ext = ptr
             .file_name
             .as_ref()
-            .and_then(|file| file.split('.').last());
+            .and_then(|file| file.split('.').next_back());
 
         // Sailfish and/or Rust needs "image/jpg" and some others need coaching
         // before taking a wild guess

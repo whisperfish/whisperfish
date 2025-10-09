@@ -60,28 +60,6 @@ impl MigrationState {
         }
     }
 
-    /// Signals true if all migrations are complete.
-    #[tracing::instrument(skip(self))]
-    pub fn is_ready(&self) -> bool {
-        tracing::trace!(
-            whoami = %self.whoami,
-            protocol_store_in_db = %self.protocol_store_in_db,
-            gv2_expected_ids = %self.gv2_expected_ids,
-            self_profile_ready = %self.self_profile_ready,
-            reactions_ready = %self.reactions_ready,
-            pni_distributed = %self.pni_distributed,
-            check_master_key = %self.check_master_key,
-            "is_ready",
-        );
-        self.whoami
-            && self.protocol_store_in_db
-            && self.gv2_expected_ids
-            && self.self_profile_ready
-            && self.reactions_ready
-            && self.pni_distributed
-            && self.check_master_key
-    }
-
     /// Signals true if the client is ready to connect.
     #[tracing::instrument(skip(self))]
     pub fn connectable(&self) -> bool {
