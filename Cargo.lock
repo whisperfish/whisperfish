@@ -5211,8 +5211,6 @@ dependencies = [
  "phonenumber",
  "prost 0.14.1",
  "prost-build 0.14.1",
- "qmetaobject",
- "qttypes",
  "rand 0.8.5",
  "regex",
  "rstest",

@@ -6,8 +6,6 @@ use libsignal_service::prelude::*;
 use libsignal_service::proto::GroupContextV2;
 use libsignal_service::protocol::{Aci, Pni, ServiceId, ServiceIdKind};
 use phonenumber::PhoneNumber;
-use qmetaobject::QMetaType;
-use qttypes::{QVariantList, QVariantMap};
 use std::borrow::Cow;
 use std::fmt::{Display, Error, Formatter};
 use std::time::Duration;
@@ -1266,22 +1264,11 @@ impl AugmentedMessage {
             .count() as _
     }
 
-    pub fn delivered_receipts(&self) -> QVariantList {
+    pub fn delivered_receipts(&self) -> Vec<(NaiveDateTime, String)> {
         self.receipts
             .iter()
             .filter(|(r, _)| r.delivered.is_some())
-            .map(|(receipt, recipient)| {
-                let mut item = QVariantMap::default();
-                item.insert(
-                    "timestamp".into(),
-                    receipt.delivered.unwrap().to_string().to_qvariant(),
-                );
-                item.insert(
-                    "recipient".into(),
-                    recipient.name().to_string().to_qvariant(),
-                );
-                item.to_qvariant()
-            })
+            .map(|(receipt, recipient)| (receipt.delivered.unwrap(), recipient.name().to_string()))
             .collect()
     }
 
@@ -1292,22 +1279,11 @@ impl AugmentedMessage {
             .count() as _
     }
 
-    pub fn read_receipts(&self) -> QVariantList {
+    pub fn read_receipts(&self) -> Vec<(NaiveDateTime, String)> {
         self.receipts
             .iter()
             .filter(|(r, _)| r.read.is_some())
-            .map(|(receipt, recipient)| {
-                let mut item = QVariantMap::default();
-                item.insert(
-                    "timestamp".into(),
-                    receipt.read.unwrap().to_string().to_qvariant(),
-                );
-                item.insert(
-                    "recipient".into(),
-                    recipient.name().to_string().to_qvariant(),
-                );
-                item.to_qvariant()
-            })
+            .map(|(receipt, recipient)| (receipt.delivered.unwrap(), recipient.name().to_string()))
             .collect()
     }
 
@@ -1318,22 +1294,11 @@ impl AugmentedMessage {
             .count() as _
     }
 
-    pub fn viewed_receipts(&self) -> QVariantList {
+    pub fn viewed_receipts(&self) -> Vec<(NaiveDateTime, String)> {
         self.receipts
             .iter()
             .filter(|(r, _)| r.viewed.is_some())
-            .map(|(receipt, recipient)| {
-                let mut item = QVariantMap::default();
-                item.insert(
-                    "timestamp".into(),
-                    receipt.viewed.unwrap().to_string().to_qvariant(),
-                );
-                item.insert(
-                    "recipient".into(),
-                    recipient.name().to_string().to_qvariant(),
-                );
-                item.to_qvariant()
-            })
+            .map(|(receipt, recipient)| (receipt.delivered.unwrap(), recipient.name().to_string()))
             .collect()
     }
 

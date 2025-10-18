@@ -436,9 +436,9 @@ define_model_roles! {
         IsRead(is_read):                                      "isRead", // Is the message unread or read by self
         Viewed(fn viewed(&self)):                             "viewed",
 
-        DeliveredReceipts(fn delivered_receipts(&self)):      "deliveredReceipts",
-        ReadReceipts(fn read_receipts(&self)):                "readReceipts",
-        ViewedReceipts(fn viewed_receipts(&self)):            "viewedReceipts",
+        DeliveredReceipts(fn delivered_receipts(&self) via receipts_to_qvlist): "deliveredReceipts",
+        ReadReceipts(fn read_receipts(&self) via receipts_to_qvlist): "readReceipts",
+        ViewedReceipts(fn viewed_receipts(&self) via receipts_to_qvlist): "viewedReceipts",
 
         Sent(fn sent(&self)):                                 "sent",
         Flags(flags):                                         "flags",
@@ -506,6 +506,17 @@ fn body_ranges_qvariantlist(
             }
             qrange.insert("associatedValue".into(), associated_value.to_qvariant());
             qrange.to_qvariant()
+        })
+        .collect()
+}
+
+fn receipts_to_qvlist(list: Vec<(NaiveDateTime, String)>) -> QVariantList {
+    list.iter()
+        .map(|(ts, name)| {
+            let mut item = QVariantMap::default();
+            item.insert("timestamp".into(), ts.to_string().to_qvariant());
+            item.insert("recipient".into(), name.to_qvariant());
+            item.to_qvariant()
         })
         .collect()
 }
