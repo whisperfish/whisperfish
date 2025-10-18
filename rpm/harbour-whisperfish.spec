@@ -102,7 +102,7 @@ BuildRequires:  zlib-devel
 BuildRequires:  coreutils
 BuildRequires:  perl-IPC-Cmd
 
-# %if %{with calling}
+# %if %%{with calling}
 # # Ringrtc needs linking against -lssl and -lcrypto;
 # # currently no way to link against our vendored openssl
 # BuildRequires:  openssl-libs openssl-devel

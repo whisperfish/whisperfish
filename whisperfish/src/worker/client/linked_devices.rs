@@ -70,7 +70,7 @@ impl ClientWorker {
             tracing::error!("invalid device id {device_id}");
             return;
         };
-        if device_name.len() < 1 || device_name.len() > 50 {
+        if device_name.is_empty() || device_name.len() > 50 {
             tracing::error!("expected device length 1..50, {} found", device_name.len());
             return;
         }
