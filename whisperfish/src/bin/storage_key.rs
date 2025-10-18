@@ -1,8 +1,8 @@
 use anyhow::Context;
 
 fn main() -> anyhow::Result<()> {
-    let password = std::env::args().nth(1).context("storage_key [password]")?;
     let salt = std::fs::read("salt").context("execute this program in the `db` subdirectory")?;
+    let password = rpassword::prompt_password("Whisperfish storage password: ").unwrap();
 
     // Derive database key
     let params = scrypt::Params::new(14, 8, 1, 32).unwrap();
