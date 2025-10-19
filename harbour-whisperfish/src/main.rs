@@ -227,13 +227,6 @@ fn main() {
         return;
     }
 
-    if let Err(e) = run_main_app(config) {
-        tracing::error!("Fatal error: {}", e);
-        std::process::exit(1);
-    }
-}
-
-fn run_main_app(config: config::SignalConfig) -> Result<(), anyhow::Error> {
     tracing::info!("Start main app (with autostart = {})", config.autostart);
 
     // Initialise storage here
@@ -250,13 +243,20 @@ fn run_main_app(config: config::SignalConfig) -> Result<(), anyhow::Error> {
     ] {
         let path = std::path::Path::new(dir.trim());
         if !path.exists() {
-            std::fs::create_dir_all(path)
-                .with_context(|| format!("Could not create dir: {}", path.display()))?;
+            if let Err(e) = std::fs::create_dir_all(path)
+                .with_context(|| format!("Could not create dir: {}", path.display()))
+            {
+                tracing::error!("Storage directories: {}", e);
+                std::process::exit(1);
+            }
         }
     }
 
     // This will panic here if feature `sailfish` is not enabled
-    gui::run(config).unwrap();
+    if let Err(e) = gui::run(config) {
+        tracing::error!("Run GUI application: {}", e);
+        std::process::exit(1);
+    }
 
     match config::SignalConfig::read_from_file() {
         Ok(mut config) => {
@@ -269,6 +269,4 @@ fn run_main_app(config: config::SignalConfig) -> Result<(), anyhow::Error> {
     };
 
     tracing::info!("Shut down.");
-
-    Ok(())
 }
