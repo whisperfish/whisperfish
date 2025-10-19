@@ -37,6 +37,32 @@ struct Opts {
     quit: bool,
 }
 
+fn dbus_show_app() -> Result<(), dbus::Error> {
+    tracing::info!("Calling app.show() on DBus.");
+
+    let c = Connection::new_session()?;
+    let proxy = c.with_proxy(
+        "be.rubdos.whisperfish",
+        "/be/rubdos/whisperfish/app",
+        Duration::from_millis(20000),
+    );
+
+    proxy.method_call("be.rubdos.whisperfish.app", "show", ())
+}
+
+fn dbus_quit_app() -> Result<(), dbus::Error> {
+    tracing::info!("Calling app.quit() on DBus.");
+
+    let c = Connection::new_session()?;
+    let proxy = c.with_proxy(
+        "be.rubdos.whisperfish",
+        "/be/rubdos/whisperfish/app",
+        Duration::from_millis(1000),
+    );
+
+    proxy.method_call("be.rubdos.whisperfish.app", "quit", ())
+}
+
 fn main() {
     // Ctrl-C --> graceful shutdown
     if let Ok(mut signals) = Signals::new([SIGINT].iter()) {
@@ -205,32 +231,6 @@ fn main() {
         tracing::error!("Fatal error: {}", e);
         std::process::exit(1);
     }
-}
-
-fn dbus_show_app() -> Result<(), dbus::Error> {
-    tracing::info!("Calling app.show() on DBus.");
-
-    let c = Connection::new_session()?;
-    let proxy = c.with_proxy(
-        "be.rubdos.whisperfish",
-        "/be/rubdos/whisperfish/app",
-        Duration::from_millis(20000),
-    );
-
-    proxy.method_call("be.rubdos.whisperfish.app", "show", ())
-}
-
-fn dbus_quit_app() -> Result<(), dbus::Error> {
-    tracing::info!("Calling app.quit() on DBus.");
-
-    let c = Connection::new_session()?;
-    let proxy = c.with_proxy(
-        "be.rubdos.whisperfish",
-        "/be/rubdos/whisperfish/app",
-        Duration::from_millis(1000),
-    );
-
-    proxy.method_call("be.rubdos.whisperfish.app", "quit", ())
 }
 
 fn run_main_app(config: config::SignalConfig) -> Result<(), anyhow::Error> {
