@@ -5,6 +5,8 @@ use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
 use qttypes::QSettings;
 
+use crate::worker::resize_image::AttachmentQuality;
+
 #[derive(QObject)]
 #[allow(non_snake_case, dead_code)]
 pub struct SettingsBridge {
@@ -28,7 +30,6 @@ pub struct SettingsBridge {
     save_attachments: qt_property!(bool; READ get_save_attachments WRITE set_save_attachments NOTIFY save_attachments_changed),
     share_contacts: qt_property!(bool; READ get_share_contacts WRITE set_share_contacts NOTIFY share_contacts_changed),
     enable_enter_send: qt_property!(bool; READ get_enable_enter_send WRITE set_enable_enter_send NOTIFY enable_enter_send_changed),
-    scale_image_attachments: qt_property!(bool; READ get_scale_image_attachments WRITE set_scale_image_attachments NOTIFY scale_image_attachments_changed),
     attachment_log: qt_property!(bool; READ get_attachment_log WRITE set_attachment_log NOTIFY attachment_log_changed),
     quit_on_ui_close: qt_property!(bool; READ get_quit_on_ui_close WRITE set_quit_on_ui_close NOTIFY quit_on_ui_close_changed),
     show_phone_number: qt_property!(bool; READ get_show_phone_number WRITE set_show_phone_number NOTIFY show_phone_number_changed),
@@ -48,6 +49,7 @@ pub struct SettingsBridge {
     // Update notification values
     last_version: qt_property!(String; READ get_last_version WRITE set_last_version NOTIFY last_version_changed),
     next_update_time: qt_property!(String; READ get_next_update_time WRITE set_next_update_time NOTIFY next_update_time_changed),
+    attachment_quality: qt_property!(String; READ get_attachment_quality WRITE set_attachment_quality NOTIFY attachment_quality_changed),
 
     debug_mode_changed: qt_signal!(value: bool),
     enable_typing_indicators_changed: qt_signal!(value: bool),
@@ -59,7 +61,6 @@ pub struct SettingsBridge {
     save_attachments_changed: qt_signal!(value: bool),
     share_contacts_changed: qt_signal!(value: bool),
     enable_enter_send_changed: qt_signal!(value: bool),
-    scale_image_attachments_changed: qt_signal!(value: bool),
     attachment_log_changed: qt_signal!(value: bool),
     quit_on_ui_close_changed: qt_signal!(value: bool),
     show_phone_number_changed: qt_signal!(value: bool),
@@ -73,6 +74,8 @@ pub struct SettingsBridge {
     camera_dir_changed: qt_signal!(value: String),
     voice_note_dir_changed: qt_signal!(value: String),
     plaintext_password_changed: qt_signal!(value: String),
+    attachment_quality_changed: qt_signal!(value: String),
+
     transcribe_voice_notes_changed: qt_signal!(value: bool),
     last_version_changed: qt_signal!(value: String),
     next_update_time_changed: qt_signal!(value: String),
@@ -107,7 +110,6 @@ impl Default for SettingsBridge {
             save_attachments: true,
             share_contacts: true,
             enable_enter_send: false,
-            scale_image_attachments: false,
             attachment_log: false,
             quit_on_ui_close: true,
             show_phone_number: true,
@@ -136,7 +138,6 @@ impl Default for SettingsBridge {
             save_attachments_changed: Default::default(),
             share_contacts_changed: Default::default(),
             enable_enter_send_changed: Default::default(),
-            scale_image_attachments_changed: Default::default(),
             attachment_log_changed: Default::default(),
             quit_on_ui_close_changed: Default::default(),
             country_code_changed: Default::default(),
@@ -148,6 +149,8 @@ impl Default for SettingsBridge {
             show_phone_number_changed: Default::default(),
             share_phone_number_changed: Default::default(),
             transcribe_voice_notes_changed: Default::default(),
+            attachment_quality_changed: Default::default(),
+            attachment_quality: Default::default(),
 
             verbose_changed: Default::default(),
 
@@ -260,10 +263,6 @@ impl SettingsBridge {
         self.get_bool("enable_enter_send")
     }
 
-    pub fn get_scale_image_attachments(&self) -> bool {
-        self.get_bool("scale_image_attachments")
-    }
-
     pub fn get_attachment_log(&self) -> bool {
         self.get_bool("attachment_log")
     }
@@ -310,6 +309,10 @@ impl SettingsBridge {
 
     pub fn get_plaintext_password(&self) -> String {
         self.get_string("plaintext_password")
+    }
+
+    pub fn get_attachment_quality(&self) -> String {
+        self.get_string("attachment_quality")
     }
 
     pub fn get_last_version(&self) -> String {
@@ -368,11 +371,6 @@ impl SettingsBridge {
     pub fn set_enable_enter_send(&mut self, value: bool) {
         self.set_bool("enable_enter_send", value);
         self.enable_enter_send_changed(value);
-    }
-
-    pub fn set_scale_image_attachments(&mut self, value: bool) {
-        self.set_bool("scale_image_attachments", value);
-        self.scale_image_attachments_changed(value);
     }
 
     pub fn set_attachment_log(&mut self, value: bool) {
@@ -435,6 +433,12 @@ impl SettingsBridge {
         self.plaintext_password_changed(value);
     }
 
+    pub fn set_attachment_quality(&mut self, value: String) {
+        let value = AttachmentQuality::from(value.as_ref()).as_str().to_string();
+        self.set_string("attachment_quality", &value);
+        self.attachment_quality_changed(value);
+    }
+
     pub fn set_last_version(&mut self, value: String) {
         self.set_string("last_version", &value);
         self.last_version_changed(value);
@@ -477,7 +481,6 @@ impl SettingsBridge {
         self.set_bool_if_unset("save_attachments", true);
         self.set_bool_if_unset("share_contacts", true);
         self.set_bool_if_unset("enable_enter_send", false);
-        self.set_bool_if_unset("scale_image_attachments", false);
         self.set_bool_if_unset("attachment_log", false);
         self.set_bool_if_unset("quit_on_ui_close", true);
         self.set_bool_if_unset("transcribe_voice_notes", false);
@@ -510,6 +513,7 @@ impl SettingsBridge {
                 .default_voice_note_dir()
                 .to_string_lossy(),
         );
+        self.set_string_if_unset("attachment_quality", "standard");
     }
 
     pub fn get_string(&self, key: impl AsRef<str>) -> String {

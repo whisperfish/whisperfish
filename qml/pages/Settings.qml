@@ -217,6 +217,55 @@ Page {
                     }
                 }
             }
+            ComboBox {
+                id: attachmentQualityCombo
+                property string attachment_quality: SettingsBridge.attachment_quality.toString()
+                width: parent.width
+                //: Settings page scale image attachments
+                //% "Image attachments quality"
+                label: qsTrId("whisperfish-settings-attachment-quality-text")
+                menu: ContextMenu {
+                    MenuItem {
+                        property string value: "high"
+                        //: Settings page, use high attachment quality
+                        //% "High"
+                        text: qsTrId("whisperfish-settings-attachment-quality-high-text")
+                        //: Settings page, high attachment quality description
+                        //% "Resize images larger than 4096 pixels in width or height or 3.0MB in size. Using this increases data usage."
+                        property string description: qsTrId("whisperfish-settings-attachment-quality-high-description")
+                    }
+                    MenuItem {
+                        property string value: "standard"
+                        //: Settings page, use standard (medium) attachment quality
+                        //% "Standard"
+                        text: qsTrId("whisperfish-settings-attachment-quality-standard-text")
+                        //: Settings page, standard (medium) attachment quality description
+                        //% "Resize images larger than 2048 pixels in width or height or over 1.5MB in size."
+                        property string description: qsTrId("whisperfish-settings-attachment-quality-standard-description")
+                    }
+                    MenuItem {
+                        property string value: "low"
+                        //: Settings page, use low attachment quality
+                        //% "Low"
+                        text: qsTrId("whisperfish-settings-attachment-quality-low-text")
+                        //: Settings page, low attachment quality description
+                        //% "Resize images larger than 2048 pixels in width or height or 1.0MB in size. Recommened for low memory devices or minimizing data usage."
+                        property string description: qsTrId("whisperfish-settings-attachment-quality-low-description")
+                    }
+                }
+                onCurrentItemChanged: {
+                    if (currentItem != null) {
+                        if (attachment_quality != currentItem.value) {
+                            SettingsBridge.attachment_quality = currentItem.value
+                        }
+                        attachmentQualityCombo.description = currentItem.description
+                    }
+                }
+                Component.onCompleted: {
+                    var i = ["high", "standard", "low"].indexOf(attachment_quality)
+                    attachmentQualityCombo.currentIndex = i
+                }
+            }
             IconTextSwitch {
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page save attachments
@@ -527,23 +576,6 @@ Page {
                 //: Settings page advanced section
                 //% "Advanced"
                 text: qsTrId("whisperfish-settings-advanced-section")
-            }
-            IconTextSwitch {
-                visible: false // XXX: Unimplemented
-                anchors.horizontalCenter: parent.horizontalCenter
-                //: Settings page scale image attachments
-                //% "Scale JPEG Attachments"
-                text: qsTrId("whisperfish-settings-scale-image-attachments")
-                //: Settings page scale image attachments description
-                //% "Scale down JPEG attachments to save on bandwidth."
-                description: qsTrId("whisperfish-settings-scale-image-attachments-description")
-                checked: SettingsBridge.scale_image_attachments
-                icon.source: "image://theme/icon-m-data-upload"
-                onCheckedChanged: {
-                    if(checked != SettingsBridge.scale_image_attachments) {
-                        SettingsBridge.scale_image_attachments = checked
-                    }
-                }
             }
             IconTextSwitch {
                 anchors.horizontalCenter: parent.horizontalCenter
