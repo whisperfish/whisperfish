@@ -1,5 +1,3 @@
-use image::codecs::png::PngEncoder;
-use image::ImageEncoder;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
 use std::future::Future;
@@ -136,23 +134,26 @@ impl Prompt {
     }
 
     pub fn show_link_qr(&mut self, url: String) {
-        let code = qrencode::QrCode::new(url.as_str()).expect("to generate qrcode for linking URI");
-        let image_buf = code.render::<image::Luma<u8>>().build();
+        use base64::engine::general_purpose as base64_engine;
+        use base64::write::EncoderStringWriter;
+        use image::codecs::png::PngEncoder;
+        use image::{ExtendedColorType, ImageEncoder, Luma};
+        use qrcode::QrCode;
+
+        let code = QrCode::new(url.as_str()).expect("to generate qrcode for linking URI");
+        let image_buf = code.render::<Luma<u8>>().build();
 
         // Export generate QR code pixmap data into a PNG data:-URI string
         let mut image_uri = String::from("data:image/png;base64,");
         {
-            use base64::engine::general_purpose as engine;
-            let mut image_b64enc = base64::write::EncoderStringWriter::from_consumer(
-                &mut image_uri,
-                &engine::STANDARD,
-            );
-            PngEncoder::new(&mut image_b64enc)
+            let mut image_base64 =
+                EncoderStringWriter::from_consumer(&mut image_uri, &base64_engine::STANDARD);
+            PngEncoder::new(&mut image_base64)
                 .write_image(
                     &image_buf,
                     image_buf.width(),
                     image_buf.height(),
-                    image::ColorType::L8,
+                    ExtendedColorType::L8,
                 )
                 .expect("to write QR code image to data:-URI");
         }
