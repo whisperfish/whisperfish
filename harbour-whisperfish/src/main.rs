@@ -1,4 +1,4 @@
-use anyhow::Context;
+use anyhow::anyhow;
 use clap::Parser;
 use dbus::blocking::Connection;
 use signal_hook::{consts::SIGINT, iterator::Signals};
@@ -66,7 +66,7 @@ fn dbus_quit_app() -> Result<(), dbus::Error> {
     proxy.method_call("be.rubdos.whisperfish.app", "quit", ())
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     // Ctrl-C --> graceful shutdown
     if let Ok(mut signals) = Signals::new([SIGINT].iter()) {
         thread::spawn(move || {
@@ -101,10 +101,7 @@ fn main() {
     let opt: Opts = Parser::parse_from(args);
 
     if opt.quit {
-        if let Err(e) = dbus_quit_app() {
-            eprintln!("{}", e);
-        }
-        return;
+        return dbus_quit_app().map_err(|e| anyhow!(e));
     }
 
     // Migrate the config file from
@@ -113,25 +110,22 @@ fn main() {
     match config::SignalConfig::migrate_config() {
         Ok(()) => (),
         Err(e) => {
-            eprintln!("Could not migrate config file: {}", e);
+            eprintln!("Could not migrate config file: {e}");
         }
     };
 
     // Migrate the QSettings file from
     // ~/.config/harbour-whisperfish/harbour-whisperfish.conf to
     // ~/.config/be.rubdos/harbour-whisperfish/harbour-whisperfish.conf
-    match config::SettingsBridge::migrate_qsettings() {
-        Ok(()) => (),
-        Err(e) => {
-            eprintln!("Could not migrate QSettings file: {}", e);
-        }
+    if let Err(e) = config::SettingsBridge::migrate_qsettings() {
+        eprintln!("Could not migrate QSettings file: {e}");
     };
 
     // Read config file or get a default config
     let mut config = match config::SignalConfig::read_from_file() {
         Ok(x) => x,
         Err(e) => {
-            eprintln!("Config file not found: {}", e);
+            eprintln!("Config file not found: {e}");
             config::SignalConfig::default()
         }
     };
@@ -139,18 +133,13 @@ fn main() {
     // Migrate the db and storage folders from
     // ~/.local/share/harbour-whisperfish/[...] to
     // ~/.local/share/rubdos.be/harbour-whisperfish/[...]
-    match store::Storage::migrate_storage() {
-        Ok(()) => (),
-        Err(e) => {
-            eprintln!("Could not migrate db and storage: {}", e);
-            std::process::exit(1);
-        }
+    if let Err(e) = store::Storage::migrate_storage() {
+        return Err(anyhow!("Could not migrate db and storage: {e}"));
     };
 
     // Write config to initialize a default config
     if let Err(e) = config.write_to_file() {
-        eprintln!("{}", e);
-        std::process::exit(1);
+        return Err(anyhow!("Could not initialize config: {e}"));
     }
 
     if opt.prestart {
@@ -228,10 +217,7 @@ fn main() {
 
     let instance_lock = SingleInstance::new("whisperfish").unwrap();
     if !instance_lock.is_single() {
-        if let Err(e) = dbus_show_app() {
-            tracing::error!("{}", e);
-        }
-        return;
+        return dbus_show_app().map_err(|e| anyhow!(e));
     }
 
     tracing::info!("Start main app (with autostart = {})", config.autostart);
@@ -250,30 +236,30 @@ fn main() {
     ] {
         let path = std::path::Path::new(dir.trim());
         if !path.exists() {
-            if let Err(e) = std::fs::create_dir_all(path)
-                .with_context(|| format!("Could not create dir: {}", path.display()))
-            {
-                tracing::error!("Storage directories: {}", e);
-                std::process::exit(1);
+            if let Err(e) = std::fs::create_dir_all(path) {
+                return Err(anyhow!(
+                    "Could not create storage directory {}: {e}",
+                    path.display(),
+                ));
             }
         }
     }
 
     // This will panic here if feature `sailfish` is not enabled
     if let Err(e) = gui::run(config) {
-        tracing::error!("Run GUI application: {}", e);
-        std::process::exit(1);
+        return Err(anyhow!(e));
     }
 
     match config::SignalConfig::read_from_file() {
         Ok(mut config) => {
             config.verbose = settings.get_verbose();
             if let Err(e) = config.write_to_file() {
-                tracing::error!("Could not save config.yml: {}", e)
+                tracing::error!("Could not save config.yml: {e}")
             };
         }
-        Err(e) => tracing::error!("Could not open config.yml: {}", e),
+        Err(e) => tracing::error!("Could not open config.yml: {e}"),
     };
 
     tracing::info!("Shut down.");
+    Ok(())
 }
