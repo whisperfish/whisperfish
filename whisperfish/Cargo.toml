@@ -83,7 +83,7 @@ whisperfish-store = { path = "../whisperfish-store" }
 whisperfish-model-macro = { path = "../whisperfish-model-macro" }
 
 # These are the dependencies for the Whisperfish helper binaries
-clap = "3"
+clap = { version = "4.5", default-features = false, features = ["std", "help", "usage", "derive"] }
 rpassword = "7.3"
 actix-rt = "2.10"
 

@@ -5,18 +5,18 @@ use whisperfish::{config::SignalConfig, store};
 
 /// Initializes a storage, meant for creating storage migration tests.
 #[derive(Parser, Debug)]
-#[structopt(name = "create-store", author, version, about, long_about = None)]
+#[command(name = "create-store", author, version, about, long_about = None)]
 struct Opts {
     /// Whisperfish storage password
-    #[clap(short, long)]
+    #[arg(short, long)]
     password: Option<String>,
 
     /// Path where the storage will be created
-    #[clap(parse(from_os_str))]
+    #[arg(value_parser)]
     path: PathBuf,
 
     /// Whether to fill the storage with dummy data
-    #[clap(short, long)]
+    #[arg(short, long)]
     fill_dummy: bool,
 }
 
