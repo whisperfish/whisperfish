@@ -54,7 +54,7 @@ SilicaListView {
     property var __running_remorse: null
 
     signal replyTriggered(var index, var modelData)
-    signal quoteClicked(var clickedIndex, var quotedData)
+    signal quoteClicked(var messageId)
     signal itemSelectionToggled(var modelData)
     signal shouldShowDeleteAll(var shouldShow)
 
@@ -399,11 +399,14 @@ SilicaListView {
 
     VerticalScrollDecorator { flickable: messagesView }
 
-    function jumpToMessage(index) {
-        // TODO This should use the message id instead of an index.
-        //      Indices may change, the saved index may become invalid.
-        //      We need a method like MessageModel.indexFromId(mId) to
-        //      get the current and valid index for the quoted message.
+    function jumpToMessage(messageId) {
+        if (messageId === undefined) {
+            return
+        }
+        var index = model.findMessageIndex(messageId)
+        if (index == -1) {
+            return
+        }
         positionViewAtIndex(index, ListView.End)
 
         // We briefly set the current index to the target message. This

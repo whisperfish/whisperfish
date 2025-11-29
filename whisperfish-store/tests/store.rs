@@ -153,6 +153,99 @@ async fn process_message_exists_session_source(storage: impl Future<Output = InM
 
 #[rstest]
 #[tokio::test]
+async fn message_searching(storage: impl Future<Output = InMemoryDb>) {
+    let (storage, _temp_dir) = storage.await;
+
+    let addr1 = ServiceId::from(Aci::from(uuid::Uuid::new_v4()));
+    let sess1 = storage.fetch_or_insert_session_by_address(&addr1);
+
+    let messages = vec!["test", "100% test", "trust me bro it's fine"];
+    for (second, message) in messages.into_iter().enumerate() {
+        let timestamp = Utc.timestamp_opt(second as i64, 0).unwrap().naive_utc();
+
+        let new_message = NewMessage {
+            session_id: sess1.id,
+            source_addr: Some(addr1),
+            text: String::from(message),
+            timestamp,
+            expire_timer_version: sess1.expire_timer_version,
+            ..NewMessage::new_incoming()
+        };
+
+        let _ = storage.create_message(&new_message);
+    }
+
+    let mut res;
+    let mut iter;
+    // case match
+    res = storage.search_messages(&String::from("test"), None);
+    iter = res.iter();
+    assert_eq!(2, res.len());
+    assert_eq!(
+        &String::from("100% test"),
+        iter.next().and_then(|m| m.text.as_ref()).unwrap()
+    );
+    assert_eq!(
+        &String::from("test"),
+        iter.next().and_then(|m| m.text.as_ref()).unwrap()
+    );
+
+    // case insensitive
+    res = storage.search_messages(&String::from("TEST"), None);
+    iter = res.iter();
+    assert_eq!(2, res.len());
+    assert_eq!(
+        &String::from("100% test"),
+        iter.next().and_then(|m| m.text.as_ref()).unwrap()
+    );
+    assert_eq!(
+        &String::from("test"),
+        iter.next().and_then(|m| m.text.as_ref()).unwrap()
+    );
+
+    // no matches
+    res = storage.search_messages(&String::from("noting matches"), None);
+    assert_eq!(0, res.len());
+
+    // use wildcard character %
+    res = storage.search_messages(&String::from("100%"), None);
+    iter = res.iter();
+    assert_eq!(1, res.len());
+    assert_eq!(
+        &String::from("100% test"),
+        iter.next().and_then(|m| m.text.as_ref()).unwrap()
+    );
+
+    // use escape character '
+    res = storage.search_messages(&String::from("it's"), None);
+    iter = res.iter();
+    assert_eq!(1, res.len());
+    assert_eq!(
+        &String::from("trust me bro it's fine"),
+        iter.next().and_then(|m| m.text.as_ref()).unwrap()
+    );
+
+    // bad actor
+    res = storage.search_messages(&String::from("'; DROP TABLE messages;\n --"), None);
+    assert_eq!(0, res.len());
+    res = storage.search_messages(&String::from("fine"), None);
+    assert_eq!(1, res.len());
+
+    // same session
+    res = storage.search_messages(&String::from("bro"), Some(sess1.id));
+    assert_eq!(1, res.len());
+
+    // wrong session
+    res = storage.search_messages(&String::from("trust"), Some(sess1.id + 1));
+    assert_eq!(0, res.len());
+
+    // too short string
+    res = storage.search_messages(&String::from("t"), Some(sess1.id));
+    assert_eq!(0, res.len());
+}
+
+#[rstest]
+#[tokio::test]
 async fn test_two_edits(storage: impl Future<Output = InMemoryDb>) {
     let (storage, _temp_dir) = storage.await;
 

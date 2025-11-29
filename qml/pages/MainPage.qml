@@ -108,26 +108,13 @@ Page {
                 visible: !SetupWorker.locked
                 onClicked: pageStack.push(Qt.resolvedUrl("Settings.qml"))
             }
-            /*
             MenuItem {
-                // TODO implement in backend
-                //: Show list of bookmarked messages, menu item
-                //% "Bookmarks"
-                text: qsTrId("whisperfish-bookmarks-menu")
-                visible: sessions.hasBookmarks
-                onClicked: pageStack.push(Qt.resolvedUrl("BookmarksPage.qml"))
-            }
-            */
-            /*
-            MenuItem {
-                // TODO implement in backend (#13)
                 //: Show search field menu item
                 //% "Search"
                 text: qsTrId("whisperfish-search-menu")
                 visible: !SetupWorker.locked
-                onClicked: pageStack.push(Qt.resolvedUrl("SearchPage.qml"))
+                onClicked: pageStack.push(Qt.resolvedUrl("SearchPage.qml"),{ sessions:sessions })
             }
-            */
             MenuItem {
                 // TODO implement in backend
                 visible: visualSessionModel.hasArchived || visualSessionModel.filterOnGroup === "archived"
@@ -141,24 +128,6 @@ Page {
                 onClicked: visualSessionModel.filterOnGroup = visualSessionModel.filterOnGroup === "archived"
                            ? "active"
                            : "archived"
-            }
-            /* TODO Disabled for now -- see #409
-            MenuItem {
-                // TODO merge "new group" and "new message" as "new conversation"
-                //: Whisperfish new group menu item
-                //% "New Group"
-                text: qsTrId("whisperfish-new-group-menu")
-                visible: !SetupWorker.locked
-                onClicked: pageStack.push(Qt.resolvedUrl("NewGroup.qml"))
-            }
-            */
-            MenuItem {
-                //: Whisperfish new message menu item
-                //% "New Message"
-                text: qsTrId("whisperfish-new-message-menu")
-                // visible: !SetupWorker.locked
-                visible: false
-                onClicked: pageStack.push(Qt.resolvedUrl("NewMessage.qml"))
             }
         }
 

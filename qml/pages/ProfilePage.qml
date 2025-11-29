@@ -137,6 +137,13 @@ Page {
                 onClicked: toggleEditing()
             }
             MenuItem {
+                // Translated in MainPage.qml
+                text: qsTrId("whisperfish-search-menu")
+                visible: !SetupWorker.locked
+                onClicked: pageStack.push(Qt.resolvedUrl("SearchPage.qml"),{ sessionId: profilePage.sessionId })
+            }
+            MenuItem {
+                // TODO This should be a remorse timer
                 //: Save the new value of expiring messages timeout
                 //% "Set message expiry"
                 text: qsTrId("whisperfish-save-message-expiry")
