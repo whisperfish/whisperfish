@@ -45,6 +45,7 @@
     <message id="whisperfish-session-note-to-self">
         <location filename="../qml/delegates/SessionDelegate.qml" line="226"/>
         <location filename="../qml/harbour-whisperfish-main.qml" line="163"/>
+        <location filename="../qml/pages/SearchPage.qml" line="144"/>
         <location filename="../qml/pages/ShareDestinationV1.qml" line="106"/>
         <location filename="../qml/pages/ShareDestinationV2.qml" line="105"/>
         <source>Note to self</source>
@@ -146,69 +147,69 @@
         <translation>Lagre konfigurasjon og meldinger</translation>
     </message>
     <message id="whisperfish-show-archived-menu">
-        <location filename="../qml/pages/MainPage.qml" line="137"/>
+        <location filename="../qml/pages/MainPage.qml" line="124"/>
         <source>Show archived conversations</source>
         <extracomment>Menu item for showing archived conversations</extracomment>
         <translation>Vis arkiverte samtaler</translation>
     </message>
     <message id="whisperfish-show-inbox-menu">
-        <location filename="../qml/pages/MainPage.qml" line="140"/>
+        <location filename="../qml/pages/MainPage.qml" line="127"/>
         <source>Return to conversations</source>
         <extracomment>Menu item for returning to &quot;inbox&quot; from archived sessions</extracomment>
         <translation>Gå tilbake til samtaler</translation>
     </message>
     <message id="whisperfish-subtitle-active-conversations">
-        <location filename="../qml/pages/MainPage.qml" line="277"/>
+        <location filename="../qml/pages/MainPage.qml" line="246"/>
         <source>Conversations</source>
         <extracomment>Whisperfish subtitle for active conversations aka. &quot;inbox&quot;</extracomment>
         <translation>Samtaler</translation>
     </message>
     <message id="whisperfish-subtitle-archived-conversations">
-        <location filename="../qml/pages/MainPage.qml" line="280"/>
+        <location filename="../qml/pages/MainPage.qml" line="249"/>
         <source>Archived conversations</source>
         <extracomment>Whisperfish subtitle for archived conversations</extracomment>
         <translation>Ariverte samtaler</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text-237">
-        <location filename="../qml/pages/MainPage.qml" line="338"/>
+        <location filename="../qml/pages/MainPage.qml" line="307"/>
         <source>Start a new conversation through a linked device, or let someone message you</source>
         <extracomment>No messages found, hint on what to do</extracomment>
         <translation>Start en ny samtale via en tilkoblet enhet, eller la noen sende deg en melding</translation>
     </message>
     <message id="whisperfish-no-archived-messages-hint-text">
-        <location filename="../qml/pages/MainPage.qml" line="348"/>
+        <location filename="../qml/pages/MainPage.qml" line="317"/>
         <source>No archived conversations</source>
         <extracomment>Showing archived conversations, but the list is empty</extracomment>
         <translation>Ingen arkiverte samtaler</translation>
     </message>
     <message id="whisperfish-session-section-pinned">
-        <location filename="../qml/pages/MainPage.qml" line="366"/>
+        <location filename="../qml/pages/MainPage.qml" line="335"/>
         <source>Pinned</source>
         <extracomment>Session section label for pinned messages</extracomment>
         <translation>Festet</translation>
     </message>
     <message id="whisperfish-session-section-never">
-        <location filename="../qml/pages/MainPage.qml" line="386"/>
+        <location filename="../qml/pages/MainPage.qml" line="355"/>
         <source>No messages</source>
         <extracomment>Session section label for never (i.e. no messages, no timestamp)</extracomment>
         <translation>Ingen meldinger</translation>
     </message>
     <message id="whisperfish-session-section-today">
         <location filename="../qml/pages/LinkedDevices.qml" line="111"/>
-        <location filename="../qml/pages/MainPage.qml" line="371"/>
+        <location filename="../qml/pages/MainPage.qml" line="340"/>
         <source>Today</source>
         <extracomment>Session section label for today</extracomment>
         <translation>I dag</translation>
     </message>
     <message id="whisperfish-session-section-yesterday">
         <location filename="../qml/pages/LinkedDevices.qml" line="114"/>
-        <location filename="../qml/pages/MainPage.qml" line="376"/>
+        <location filename="../qml/pages/MainPage.qml" line="345"/>
         <source>Yesterday</source>
         <extracomment>Session section label for yesterday</extracomment>
         <translation>I går</translation>
     </message>
     <message id="whisperfish-session-section-older">
-        <location filename="../qml/pages/MainPage.qml" line="381"/>
+        <location filename="../qml/pages/MainPage.qml" line="350"/>
         <source>Older</source>
         <extracomment>Session section label for older</extracomment>
         <translation>Eldre</translation>
@@ -539,7 +540,7 @@
         <translation>Dra ned for å koble Whisperfish til en annen enhet</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text">
-        <location filename="../qml/pages/MainPage.qml" line="344"/>
+        <location filename="../qml/pages/MainPage.qml" line="313"/>
         <source>Pull down to start a new conversation.</source>
         <extracomment>No messages found, hint on what to do</extracomment>
         <translation>Dra ned for å starte en ny samtale.</translation>
@@ -581,31 +582,30 @@
         <translation>Innstillinger</translation>
     </message>
     <message id="whisperfish-new-message-menu">
-        <location filename="../qml/pages/MainPage.qml" line="158"/>
         <source>New Message</source>
         <extracomment>Whisperfish new message menu item</extracomment>
-        <translation>Ny melding</translation>
+        <translation type="vanished">Ny melding</translation>
     </message>
     <message id="whisperfish-connection-status-disconnected">
-        <location filename="../qml/pages/MainPage.qml" line="310"/>
+        <location filename="../qml/pages/MainPage.qml" line="279"/>
         <source>Disconnected</source>
         <extracomment>Whisperfish connection status message</extracomment>
         <translation>Frakoblet</translation>
     </message>
     <message id="whisperfish-connection-status-reconnecting">
-        <location filename="../qml/pages/MainPage.qml" line="313"/>
+        <location filename="../qml/pages/MainPage.qml" line="282"/>
         <source>Synchronizing</source>
         <extracomment>Whisperfish connection status message</extracomment>
         <translation>Synkroniserer</translation>
     </message>
     <message id="whisperfish-registration-required-message">
-        <location filename="../qml/pages/MainPage.qml" line="328"/>
+        <location filename="../qml/pages/MainPage.qml" line="297"/>
         <source>Registration required</source>
         <extracomment>Whisperfish registration required message</extracomment>
         <translation>Registrering kreves</translation>
     </message>
     <message id="whisperfish-locked-message">
-        <location filename="../qml/pages/MainPage.qml" line="332"/>
+        <location filename="../qml/pages/MainPage.qml" line="301"/>
         <source>Locked</source>
         <extracomment>Whisperfish locked message</extracomment>
         <translation>Låst</translation>
@@ -630,31 +630,31 @@
         </translation>
     </message>
     <message id="whisperfish-copy-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="468"/>
+        <location filename="../qml/components/MessagesView.qml" line="471"/>
         <source>Copy</source>
         <extracomment>Copy message menu item</extracomment>
         <translation>Kopier</translation>
     </message>
     <message id="whisperfish-forward-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="475"/>
+        <location filename="../qml/components/MessagesView.qml" line="478"/>
         <source>Forward</source>
         <extracomment>Forward message menu item</extracomment>
         <translation>Videresend</translation>
     </message>
     <message id="whisperfish-transcribe-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="482"/>
+        <location filename="../qml/components/MessagesView.qml" line="485"/>
         <source>Transcribe</source>
         <extracomment>Transcribe message menu item</extracomment>
         <translation>Transkriber</translation>
     </message>
     <message id="whisperfish-select-or-options-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="489"/>
+        <location filename="../qml/components/MessagesView.qml" line="492"/>
         <source>Select • more</source>
         <extracomment>&quot;Select and show more options&quot; message menu item</extracomment>
         <translation>Velg • mer</translation>
     </message>
     <message id="whisperfish-resend-message-menu">
-        <location filename="../qml/components/MessagesView.qml" line="461"/>
+        <location filename="../qml/components/MessagesView.qml" line="464"/>
         <source>Retry sending</source>
         <oldsource>Resend</oldsource>
         <extracomment>Resend message menu item</extracomment>
@@ -725,89 +725,89 @@
         <translation>Rediger profil</translation>
     </message>
     <message id="whisperfish-profile-page-unregistered-profile">
-        <location filename="../qml/pages/ProfilePage.qml" line="189"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="153"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="196"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="160"/>
         <source>The recipient is not currently registered to Signal, so sending and receiving messages is not possible.</source>
         <extracomment>Profile page, user is not registered warning</extracomment>
         <translation>Mottakeren er for øyeblikket ikke registrert på Signal, så det er ikke mulig å sende og motta meldinger.</translation>
     </message>
     <message id="whisperfish-profile-joined-name">
-        <location filename="../qml/pages/ProfilePage.qml" line="202"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="184"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="209"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="191"/>
         <source>Name</source>
         <extracomment>Profile, name field (first name + last name)</extracomment>
         <translation>Navn</translation>
     </message>
     <message id="whisperfish-profile-given-name">
-        <location filename="../qml/pages/ProfilePage.qml" line="216"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="223"/>
         <source>First name (required)</source>
         <extracomment>Profile, first (given) name field, required</extracomment>
         <translation>Fornavn (påkrevd)</translation>
     </message>
     <message id="whisperfish-profile-family-name">
-        <location filename="../qml/pages/ProfilePage.qml" line="234"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="241"/>
         <source>Last name (optional)</source>
         <extracomment>Profile, last (family) name field, optional</extracomment>
         <translation>Etternavn (valgfritt)</translation>
     </message>
     <message id="whisperfish-profile-uuid">
-        <location filename="../qml/pages/ProfilePage.qml" line="248"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="216"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="255"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="223"/>
         <source>UUID</source>
         <extracomment>Profile UUID field</extracomment>
         <translation>UUID</translation>
     </message>
     <message id="whisperfish-profile-phone-number">
-        <location filename="../qml/pages/ProfilePage.qml" line="260"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="245"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="267"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="252"/>
         <source>Phone number</source>
         <extracomment>Profile phone number field</extracomment>
         <translation>Telefonnummer</translation>
     </message>
     <message id="whisperfish-profile-about">
-        <location filename="../qml/pages/ProfilePage.qml" line="272"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="256"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="279"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="263"/>
         <source>Write something about yourself</source>
         <extracomment>Profile, about you (greeting/status) field</extracomment>
         <translation>Skriv noe om deg selv</translation>
     </message>
     <message id="whisperfish-profile-unidentified">
-        <location filename="../qml/pages/ProfilePage.qml" line="288"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="271"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="295"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="278"/>
         <source>Sealed sending mode</source>
         <extracomment>Profile, sealed sending mode option</extracomment>
         <translation>Forseglet sendemodus</translation>
     </message>
     <message id="whisperfish-unidentified-unknown">
-        <location filename="../qml/pages/ProfilePage.qml" line="295"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="277"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="302"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="284"/>
         <source>Unknown</source>
         <extracomment>Profile, sealed sending mode, unknown option</extracomment>
         <translation>Ukjent</translation>
     </message>
     <message id="whisperfish-unidentified-disabled">
-        <location filename="../qml/pages/ProfilePage.qml" line="300"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="281"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="307"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="288"/>
         <source>Disabled</source>
         <extracomment>Profile, sealed sending mode, disabled option</extracomment>
         <translation>Avskrudd</translation>
     </message>
     <message id="whisperfish-unidentified-enabled">
-        <location filename="../qml/pages/ProfilePage.qml" line="305"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="285"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="312"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="292"/>
         <source>Enabled</source>
         <extracomment>Profile, sealed sending mode, enabled option</extracomment>
         <translation>Påskrudd</translation>
     </message>
     <message id="whisperfish-unidentified-unrestricted">
-        <location filename="../qml/pages/ProfilePage.qml" line="310"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="289"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="317"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="296"/>
         <source>Unrestricted</source>
         <extracomment>Profile, sealed sending mode, unrestricted option</extracomment>
         <translation>Ubegrenset</translation>
     </message>
     <message id="whisperfish-profile-emoji">
-        <location filename="../qml/pages/ProfilePage.qml" line="325"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="332"/>
         <source>A few words about yourself</source>
         <extracomment>Profile, emoji symbol field</extracomment>
         <translation>Noen ord om deg selv</translation>
@@ -837,61 +837,61 @@
         <translation>Koble kontakt</translation>
     </message>
     <message id="whisperfish-profile-page-blocked-recipient">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="166"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="173"/>
         <source>You have blocked the recipient.</source>
         <extracomment>Recipient profile page, blocked recipient into</extracomment>
         <translation>Du har blokkert mottakeren.</translation>
     </message>
     <message id="whisperfish-profile-page-message-request-pending">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="169"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="176"/>
         <source>You can&apos;t communicate with the recipient until you accept their message request.</source>
         <extracomment>Recipient profile page, message request is pending</extracomment>
         <translation>Du kan ikke kommunisere med mottakeren før du godtar meldingsforespørselen deres.</translation>
     </message>
     <message id="whisperfish-profile-uuid-invalid-warning">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="234"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="241"/>
         <source>This user profile is broken and can&apos;t be used.</source>
         <extracomment>Warning about recipient UUID not existing or nil (all zeros)</extracomment>
         <translation>Denne brukerprofilen er ødelagt og kan ikke brukes.</translation>
     </message>
     <message id="whisperfish-show-fingerprint">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="303"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="310"/>
         <source>Show fingerprint</source>
         <extracomment>Show fingerprint button</extracomment>
         <translation>Vis fingeravtrykk</translation>
     </message>
     <message id="whisperfish-numeric-fingerprint-directions">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="347"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="354"/>
         <source>If you wish to verify the security of your end-to-end encryption with %1, compare the numbers above with the numbers on their device.</source>
         <extracomment>Numeric fingerprint instructions</extracomment>
         <translation>Sammenlign tallene ovenfor med dem på motpartens enhet for å bekrefte sikkerheten for din ende-til-ende -kryptering med %1.</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="357"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="364"/>
         <source>Post-quantum keys in use</source>
         <extracomment>Profile page: whether a contact has post-quantum secure sessions</extracomment>
         <translation>Postkvantenøkler i bruk</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled-description">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="360"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="367"/>
         <source>If checked, this session was initialized with post-quantum secure cryptography.</source>
         <extracomment>Profile page: description for post-quantum secure sessions</extracomment>
         <translation>Hvis avkrysset, ble denne økten initialisert med postkvantesikker kryptografi.</translation>
     </message>
     <message id="whisperfish-kyber-click-explanation">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="370"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="377"/>
         <source>Session reset for post-quantum upgrade</source>
         <extracomment>Upgrading the session to Kyber remorse popup, past tense</extracomment>
         <translation>Tilbakestilling av økt for postkvanteoppgradering</translation>
     </message>
     <message id="whisperfish-own-profile-help-text">
-        <location filename="../qml/pages/ProfilePage.qml" line="341"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="348"/>
         <source>Your profile is encrypted. Your profile and changes to it will be visible to your contacts and when you start or accept new chats.</source>
         <extracomment>Signal Profile description / help text</extracomment>
         <translation>Profilen din er kryptert. Profilen din og endringer i den vil være synlige for kontaktene dine, samt når du starter eller godtar nye chatter.</translation>
     </message>
     <message id="whisperfish-own-profile-learn-more-button">
-        <location filename="../qml/pages/ProfilePage.qml" line="348"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="355"/>
         <source>Learn more</source>
         <extracomment>Button to open link to Signal help page about profiles</extracomment>
         <translation>Mer informasjon</translation>
@@ -1768,20 +1768,19 @@ Settings page share contacts</extracomment>
         <translation>Deaktivert</translation>
     </message>
     <message id="whisperfish-verify-contact-identity-title">
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="297"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="304"/>
         <source>Verify safety numbers</source>
         <oldsource>Verify %1</oldsource>
         <extracomment>Verify safety numbers</extracomment>
         <translation>Bekreft sikkerhetstall</translation>
     </message>
     <message id="whisperfish-group-add-member-menu">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="83"/>
         <source>Add Member</source>
         <extracomment>Add group member menu item</extracomment>
-        <translation>Legg til medlem</translation>
+        <translation type="vanished">Legg til medlem</translation>
     </message>
     <message id="whisperfish-group-not-updated-to-groupv2">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="109"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="99"/>
         <source>Not updated to the new group format</source>
         <extracomment>Indicator for not yet updated groups</extracomment>
         <translation>Ikke oppdatert til det nye gruppeformatet</translation>
@@ -1807,35 +1806,43 @@ Settings page share contacts</extracomment>
         <translation>Forlot gruppen og slettet alle meldinger</translation>
     </message>
     <message id="whisperfish-group-invite-link-menu">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="75"/>
         <source>Create invitation link</source>
         <extracomment>Create invite link menu item</extracomment>
-        <translation>Opprett invitasjonslenke</translation>
+        <translation type="vanished">Opprett invitasjonslenke</translation>
     </message>
     <message id="whisperfish-save-message-expiry">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="89"/>
-        <location filename="../qml/pages/ProfilePage.qml" line="142"/>
-        <location filename="../qml/pages/RecipientProfilePage.qml" line="113"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="73"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="149"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="120"/>
         <source>Set message expiry</source>
         <extracomment>Save the new value of expiring messages timeout</extracomment>
         <translation>Angi utløpsdato for melding</translation>
     </message>
+    <message id="whisperfish-search-menu">
+        <location filename="../qml/pages/GroupProfilePage.qml" line="79"/>
+        <location filename="../qml/pages/MainPage.qml" line="114"/>
+        <location filename="../qml/pages/ProfilePage.qml" line="141"/>
+        <location filename="../qml/pages/RecipientProfilePage.qml" line="113"/>
+        <source>Search</source>
+        <extracomment>Show search field menu item</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-announcements-switch-label">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="175"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="165"/>
         <source>Message sending allowed</source>
         <extracomment>Announcements only setting label</extracomment>
         <translation>Sending av meldinger tillatt</translation>
     </message>
     <message id="whisperfish-announcements-admins-only">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="177"/>
-        <location filename="../qml/pages/GroupProfilePage.qml" line="190"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="167"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="180"/>
         <source>Administrators only</source>
         <extracomment>Message sending allowed for admins only</extracomment>
         <translation>Bare for administratorer</translation>
     </message>
     <message id="whisperfish-announcements-all-useres">
-        <location filename="../qml/pages/GroupProfilePage.qml" line="178"/>
-        <location filename="../qml/pages/GroupProfilePage.qml" line="185"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="168"/>
+        <location filename="../qml/pages/GroupProfilePage.qml" line="175"/>
         <source>All users</source>
         <extracomment>Message sending allowed for all users</extracomment>
         <translation>Alle brukere</translation>
@@ -2053,6 +2060,8 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/QuotedMessagePreview.qml" line="115"/>
         <location filename="../qml/components/SenderNameLabel.qml" line="40"/>
         <location filename="../qml/harbour-whisperfish-main.qml" line="167"/>
+        <location filename="../qml/pages/SearchPage.qml" line="210"/>
+        <location filename="../qml/pages/SearchPage.qml" line="219"/>
         <source>You</source>
         <extracomment>Name shown when replying to own messages</extracomment>
         <translation>Du</translation>
@@ -2062,7 +2071,8 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/QuotedMessagePreview.qml" line="119"/>
         <location filename="../qml/delegates/MessageDelegate.qml" line="204"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="39"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="98"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="99"/>
+        <location filename="../qml/pages/SearchPage.qml" line="141"/>
         <source>(no name)</source>
         <extracomment>Placeholder name for a recipient who has no name available</extracomment>
         <translation>(ingen navn)</translation>
@@ -2485,7 +2495,7 @@ Settings page share contacts</extracomment>
         <translation>Kunne ikke spille</translation>
     </message>
     <message id="whisperfish-group-n-members" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="108"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="109"/>
         <source>%n member(s)</source>
         <extracomment>The number of members in a group, you included</extracomment>
         <translation>
@@ -2494,7 +2504,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-chat-n-messages" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="117"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="118"/>
         <source>%n message(s)</source>
         <extracomment>The number of messages in a conversation, displayed in page header</extracomment>
         <translation>
@@ -2503,7 +2513,7 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-actions-info-label" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="393"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="400"/>
         <source>%n message(s) selected</source>
         <oldsource>%1 message(s) selected</oldsource>
         <extracomment>Info label shown while selecting messages</extracomment>
@@ -2513,13 +2523,13 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-clear-selection">
-        <location filename="../qml/pages/ConversationPage.qml" line="417"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="424"/>
         <source>Clear selection</source>
         <extracomment>Message action description, shown if one or more messages are selected</extracomment>
         <translation>Fjern utvalget</translation>
     </message>
     <message id="whisperfish-message-action-copy" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="428"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="435"/>
         <source>Copy %n message(s)</source>
         <oldsource>Copy %1 message(s)</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2529,14 +2539,14 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-info">
-        <location filename="../qml/pages/ConversationPage.qml" line="439"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="446"/>
         <source>Show message info</source>
         <extracomment>Message action description (only available if n==1)</extracomment>
         <translation>Vis meldingsinformasjon</translation>
     </message>
     <message id="whisperfish-message-action-delete-for-self" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="453"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="518"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="460"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="525"/>
         <source>Locally delete %n message(s)</source>
         <oldsource>Delete %1 message(s) for me</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2546,8 +2556,8 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-delete-for-all" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="467"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="530"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="474"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="537"/>
         <source>Delete %n message(s) for all</source>
         <oldsource>Delete %1 message(s) for all</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2557,8 +2567,8 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-resend" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="482"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="544"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="489"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="551"/>
         <source>Retry sending %n failed message(s)</source>
         <oldsource>Retry sending (the) failed message(s)</oldsource>
         <extracomment>Message action description</extracomment>
@@ -2568,8 +2578,8 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-message-action-transcribe" numerus="yes">
-        <location filename="../qml/pages/ConversationPage.qml" line="497"/>
-        <location filename="../qml/pages/ConversationPage.qml" line="558"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="504"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="565"/>
         <source>Transcribe %n message(s)</source>
         <extracomment>Message action description</extracomment>
         <translation>
@@ -2578,13 +2588,13 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-group-request-information">
-        <location filename="../qml/pages/ConversationPage.qml" line="607"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="614"/>
         <source>Let the group members message with you and let its members see your profile information?</source>
         <extracomment>Information about a pending or blocked group</extracomment>
         <translation>La gruppemedlemmene sende deg meldinger og la medlemmene se profilinformasjonen din?</translation>
     </message>
     <message id="whisperfish-message-request-information">
-        <location filename="../qml/pages/ConversationPage.qml" line="610"/>
+        <location filename="../qml/pages/ConversationPage.qml" line="617"/>
         <source>Let the contact message with you and let them see your profile information?</source>
         <extracomment>Information about a pending or blocked recipient</extracomment>
         <translation>La kontakten sende deg meldinger og la vedkommende se profilinformasjonen din?</translation>
@@ -2898,6 +2908,45 @@ Settings page share contacts</extracomment>
         <source>Rename device &quot;%1&quot;</source>
         <extracomment>Description for rename device input field</extracomment>
         <translation>Gi enheten «%1» nytt navn</translation>
+    </message>
+    <message id="whisperfish-search-title">
+        <location filename="../qml/pages/SearchPage.qml" line="46"/>
+        <source>Message search</source>
+        <extracomment>Search page title</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-search-field-label">
+        <location filename="../qml/pages/SearchPage.qml" line="77"/>
+        <source>Search messages by text</source>
+        <extracomment>Search field default text</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-search-field-desc" numerus="yes">
+        <location filename="../qml/pages/SearchPage.qml" line="80"/>
+        <source>%n match(es)</source>
+        <extracomment>Search field description</extracomment>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message id="whisperfish-search-select-session">
+        <location filename="../qml/pages/SearchPage.qml" line="120"/>
+        <source>Search from conversation</source>
+        <extracomment>Search page, select session to search from, or all</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-search-from-all">
+        <location filename="../qml/pages/SearchPage.qml" line="126"/>
+        <source>All conversations</source>
+        <extracomment>Search page, search from all conversations</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-search-results-label">
+        <location filename="../qml/pages/SearchPage.qml" line="270"/>
+        <source>No messages</source>
+        <extracomment>Search results placeholder text</extracomment>
+        <translation type="unfinished">Ingen meldinger</translation>
     </message>
 </context>
 </TS>
