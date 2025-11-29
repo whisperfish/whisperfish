@@ -95,16 +95,13 @@ allow = [
     "BSD-3-Clause",
     "BSD-2-Clause",
 
-    "AGPL-3.0",
-    # Not recognized? Deprecated identifier?
-    # "GPL-3.0", # Not recognized? Deprecated?
-    # Should be compatible: https://www.gnu.org/licenses/license-list.html#MPL-2.0
+    "AGPL-3.0-only",
+    "AGPL-3.0-or-later",
     "MPL-2.0",
 
     "Zlib",
     "ISC",
-    "Unicode-DFS-2016",
-    "OpenSSL",
+    "Unicode-3.0",
 ]
 # The confidence threshold for detecting a license from license text.
 # The higher the value, the more closely the license text must be to the
@@ -156,11 +153,6 @@ expression = "ISC AND OpenSSL AND MIT"
 license-files = [
     { path = "LICENSE", hash = 0xbd0eed23 },
 ]
-
-[[licenses.clarify]]
-name = "libsignal-service-hyper"
-expression = "AGPL-3.0"
-license-files = []
 
 # This section is considered when running `cargo deny check bans`.
 # More documentation about the 'bans' section can be found here:

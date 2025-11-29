@@ -3,7 +3,7 @@ name = "whisperfish-store"
 version = "0.6.0-dev"
 authors = ["Ruben De Smet <ruben.de.smet@rubdos.be>"]
 edition = "2021"
-license = "AGPL-3.0-or-later"
+license = "AGPL-3.0-only"
 description = "Private messaging using Signal for SailfishOS -- core."
 
 [[bench]]
