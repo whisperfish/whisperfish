@@ -19,8 +19,8 @@ bincode = "1.3.3"
 cbc = "0.1"
 cipher = "0.4"
 chrono = "0.4"
-diesel = { version = "2.2", features = ["sqlite", "chrono", "returning_clauses_for_sqlite_3_35", "64-column-tables"] }
-diesel_migrations = "2.2"
+diesel = { version = "2.3", features = ["sqlite", "chrono", "returning_clauses_for_sqlite_3_35", "64-column-tables"] }
+diesel_migrations = "2.3"
 diesel-derive-enum = { version = "2.1", features = ["sqlite"] }
 dirs = "6.0"
 fs_extra = "1.3.0"
@@ -28,23 +28,23 @@ hex = "0.4"
 hmac = "0.12"
 itertools = "0.14"
 libsqlite3-sys = { version = "0.35", features = ["sqlcipher"] }
-once_cell = "1.8"
+once_cell = "1.21"
 pbkdf2 = { version = "0.12", default-features = false }
 phonenumber = "0.3.7"
 prost = "0.14"
 qmetaobject = "0.2.10"
 qttypes = "0.2.12"
 rand = "0.9"
-regex = "1.11"
+regex = "1.12"
 scrypt = { version = "0.11.0", default-features = false, features = ["std"] }
 secrecy = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 sha2 = "0.10"
 sha-1 = "0.10"
-tempfile = { version = "3.15.0", default-features = false }
-tokio = { version = "1.43.0", features = ["fs", "macros"] }
-uuid = { version = "1.12", features = ["v4"] }
+tempfile = { version = "3.23.0", default-features = false }
+tokio = { version = "1.48.0", features = ["fs", "macros"] }
+uuid = { version = "1.18", features = ["v4"] }
 linkify = "0.10"
 mime = "0.3.17"
 mime_guess = "2.0"
