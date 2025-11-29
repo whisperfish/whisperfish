@@ -4,6 +4,7 @@ use anyhow::Context;
 use diesel::{
     backend, deserialize, serialize,
     sql_types::{Integer, Nullable, Text},
+    Expression,
 };
 use phonenumber::PhoneNumber;
 use uuid::Uuid;
@@ -104,14 +105,17 @@ where
 
 #[derive(Debug)]
 pub struct OptionUuidString(Option<Uuid>);
-#[derive(Debug, AsExpression)]
-#[diesel(sql_type = Text)]
+#[derive(Debug, Eq, PartialEq, Hash)]
 pub struct UuidString(Uuid);
 
 impl Display for UuidString {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
+}
+
+impl Expression for UuidString {
+    type SqlType = Text;
 }
 
 impl<DB> deserialize::Queryable<Nullable<Text>, DB> for OptionUuidString

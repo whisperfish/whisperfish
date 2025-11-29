@@ -698,7 +698,8 @@ impl Handler<GroupV2Update> for ClientActor {
                 let mut group_v2 = session.unwrap_group_v2().to_owned();
 
                 if let Some(GroupChanges {
-                    group_id,
+                    // TODO Use this group_id?
+                    group_id: _group_id,
                     // TODO: Propagate editor to QML
                     editor,
                     revision,

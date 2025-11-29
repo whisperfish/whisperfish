@@ -1180,12 +1180,6 @@ impl ClientActor {
                     });
                     sender.send_sync_message(SyncMessage {blocked, ..SyncMessage::with_padding(&mut rand::rng())}).await?;
                 }
-                // RequestType::PniIdentity // RESERVED
-                // RequestType::Groups // RESERVED
-                _ => {
-                    tracing::trace!("Unimplemented sync request: {:#?}", req);
-                    anyhow::bail!("Unimplemented sync request type: {:?}", req.r#type());
-                },
             };
 
             Ok::<_, anyhow::Error>(())
@@ -2374,7 +2368,7 @@ impl Handler<StorageReady> for ClientActor {
                 phonenumber: e164,
                 password: Some(storage.signal_password().await.unwrap()),
                 signaling_key: storage.signaling_key().await.unwrap(),
-                device_id: Some(device_id.into()),
+                device_id: Some(device_id),
             }
         }
         .instrument(tracing::span!(

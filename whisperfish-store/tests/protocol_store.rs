@@ -169,8 +169,8 @@ mod tests {
         assert_eq!(aci_storage.get_identity(&addr1).await.unwrap(), None);
         assert_eq!(aci_storage.get_identity(&addr2).await.unwrap(), None);
 
-        // We store both keys and should get false because there wasn't a key with that address
-        // yet
+        // We store both keys and should get NewOrUnchanged because
+        // there wasn't a key with that address yet
         assert_eq!(
             aci_storage.save_identity(&addr1, &key1).await.unwrap(),
             IdentityChange::NewOrUnchanged
@@ -189,13 +189,13 @@ mod tests {
         // XXX Doesn't implement equality *arg*
         assert_eq!(aci_storage.get_identity(&addr2).await.unwrap(), None);
 
-        // We can now overwrite key1 with key1 and should get true returned
+        // We can now overwrite key1 with key1 and should get NewOrUnchanged returned
         assert_eq!(
             aci_storage.save_identity(&addr1, &key1).await.unwrap(),
             IdentityChange::NewOrUnchanged
         );
 
-        // We can now overwrite key1 with key2 and should get false returned
+        // We can now overwrite key1 with key2 and should get ReplacedExisting returned
         assert_eq!(
             aci_storage.save_identity(&addr1, &key2).await.unwrap(),
             IdentityChange::ReplacedExisting

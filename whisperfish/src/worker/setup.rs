@@ -254,7 +254,7 @@ impl SetupWorker {
         config.set_tel(reg.phonenumber.clone());
         config.set_aci(reg.service_ids.aci);
         config.set_pni(reg.service_ids.pni);
-        config.set_device_id(reg.device_id.into());
+        config.set_device_id(reg.device_id);
 
         if let Some(profile_key) = reg.profile_key {
             storage.update_profile_key(
