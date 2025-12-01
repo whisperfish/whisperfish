@@ -524,7 +524,7 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="142"/>
         <source>Rename</source>
         <extracomment>Rename the linked or primary device menu option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Hernoemen</translation>
     </message>
     <message id="whisperfish-device-unlink">
         <location filename="../qml/pages/LinkedDevices.qml" line="151"/>
@@ -1864,27 +1864,27 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="113"/>
         <source>Search</source>
         <extracomment>Show search field menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zoeken</translation>
     </message>
     <message id="whisperfish-announcements-switch-label">
         <location filename="../qml/pages/GroupProfilePage.qml" line="165"/>
         <source>Message sending allowed</source>
         <extracomment>Announcements only setting label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Berichten verzenden is toegelaten</translation>
     </message>
     <message id="whisperfish-announcements-admins-only">
         <location filename="../qml/pages/GroupProfilePage.qml" line="167"/>
         <location filename="../qml/pages/GroupProfilePage.qml" line="180"/>
         <source>Administrators only</source>
         <extracomment>Message sending allowed for admins only</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Alleên beheerders</translation>
     </message>
     <message id="whisperfish-announcements-all-useres">
         <location filename="../qml/pages/GroupProfilePage.qml" line="168"/>
         <location filename="../qml/pages/GroupProfilePage.qml" line="175"/>
         <source>All users</source>
         <extracomment>Message sending allowed for all users</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Alle gebruikers</translation>
     </message>
     <message id="whisperfish-group-member-admin">
         <location filename="../qml/components/GroupMemberListView.qml" line="19"/>
@@ -2049,7 +2049,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ChatTextInput.qml" line="343"/>
         <source>Only administrators can send messages</source>
         <extracomment>Placeholder for administrators-only group</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Alleên beheerders kunnen berichten verzenden</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-default">
         <location filename="../qml/components/ChatTextInput.qml" line="347"/>
@@ -2970,52 +2970,52 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RenameDevicePage.qml" line="28"/>
         <source>New device name</source>
         <extracomment>Short description for rename device input field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Naam van ’t nief toestel</translation>
     </message>
     <message id="whisperfish-rename-device-input-desc">
         <location filename="../qml/pages/RenameDevicePage.qml" line="31"/>
         <source>Rename device &quot;%1&quot;</source>
         <extracomment>Description for rename device input field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Toestel ‘%1’ hernoemen</translation>
     </message>
     <message id="whisperfish-search-title">
         <location filename="../qml/pages/SearchPage.qml" line="46"/>
         <source>Message search</source>
         <extracomment>Search page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Berichten zoeken</translation>
     </message>
     <message id="whisperfish-search-field-label">
         <location filename="../qml/pages/SearchPage.qml" line="77"/>
         <source>Search messages by text</source>
         <extracomment>Search field default text</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zoekt berichten met tekst</translation>
     </message>
     <message id="whisperfish-search-field-desc" numerus="yes">
         <location filename="../qml/pages/SearchPage.qml" line="80"/>
         <source>%n match(es)</source>
         <extracomment>Search field description</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n resultaat</numerusform>
+            <numerusform>%n resultaten</numerusform>
         </translation>
     </message>
     <message id="whisperfish-search-select-session">
         <location filename="../qml/pages/SearchPage.qml" line="120"/>
         <source>Search from conversation</source>
         <extracomment>Search page, select session to search from, or all</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zoeken in gesprek</translation>
     </message>
     <message id="whisperfish-search-from-all">
         <location filename="../qml/pages/SearchPage.qml" line="126"/>
         <source>All conversations</source>
         <extracomment>Search page, search from all conversations</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Alle gesprekken</translation>
     </message>
     <message id="whisperfish-search-results-label">
         <location filename="../qml/pages/SearchPage.qml" line="270"/>
         <source>No messages</source>
         <extracomment>Search results placeholder text</extracomment>
-        <translation type="unfinished">Geên berichten</translation>
+        <translation>Geên berichten</translation>
     </message>
 </context>
 </TS>
