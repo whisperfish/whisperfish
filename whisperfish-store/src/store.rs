@@ -3074,7 +3074,13 @@ impl<O: Observable> Storage<O> {
     /// attachments directory beforehand.
     ///
     /// Filename is always saved from the original filename.
-    #[tracing::instrument(skip(self, original_path, attachment_path), fields(original_path = %original_path.as_ref().display(), attachment_path = %attachment_path.as_ref().display()))]
+    #[tracing::instrument(
+        skip(self, original_path, attachment_path),
+        fields(
+            original_path = %original_path.as_ref().display(),
+            attachment_path = %attachment_path.as_ref().display(),
+        )
+    )]
     pub fn insert_local_attachment(
         &self,
         attachment_message_id: i32,
