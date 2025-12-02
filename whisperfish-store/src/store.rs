@@ -3544,13 +3544,8 @@ impl<O: Observable> Storage<O> {
             return false;
         };
 
-        let mut n_attachments: usize = 0;
-
         let _span = tracing::trace_span!("delete attachments", message_id = message.id).entered();
-        if !message.is_outbound {
-            tracing::trace!("Message is from someone else, deleting attachments...");
-            n_attachments = self.delete_attachments_for_message(message.id);
-        }
+        let n_attachments = self.delete_attachments_for_message(message.id);
         drop(_span);
 
         let _span = tracing::trace_span!("delete reactions", message_id = message.id).entered();
