@@ -222,18 +222,6 @@ pub enum GroupContext {
     GroupV2(GroupV2),
 }
 
-impl From<GroupV1> for GroupContext {
-    fn from(v1: GroupV1) -> GroupContext {
-        GroupContext::GroupV1(v1)
-    }
-}
-
-impl From<GroupV2> for GroupContext {
-    fn from(v2: GroupV2) -> GroupContext {
-        GroupContext::GroupV2(v2)
-    }
-}
-
 /// ID-free Group model for insertions
 #[derive(Clone, Debug)]
 pub struct GroupV1 {
