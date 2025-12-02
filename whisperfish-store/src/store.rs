@@ -2652,8 +2652,10 @@ impl<O: Observable> Storage<O> {
         }
     }
 
+    /// Save the provided attachment pointer to storage. Any attachment must belong to a message,
+    /// so a message id needs to be provided. The function returns the id of the created attachment.
     #[tracing::instrument(skip(self))]
-    pub fn register_attachment(&mut self, mid: i32, ptr: AttachmentPointer) -> i32 {
+    pub fn register_attachment(&mut self, msg_id: i32, attachment_ptr: AttachmentPointer) -> i32 {
         use schema::attachments::dsl::*;
 
         let inserted_attachment_id = diesel::insert_into(attachments)
@@ -2663,24 +2665,26 @@ impl<O: Observable> Storage<O> {
                 // - transform properties
 
                 // First the fields that borrow, but are `Copy` through an accessor method
-                is_voice_note
-                    .eq(attachment_pointer::Flags::VoiceMessage as i32 & ptr.flags() as i32 != 0),
-                is_borderless
-                    .eq(attachment_pointer::Flags::Borderless as i32 & ptr.flags() as i32 != 0),
-                upload_timestamp.eq(millis_to_naive_chrono(ptr.upload_timestamp())),
-                cdn_number.eq(ptr.cdn_number() as i32),
-                content_type.eq(ptr.content_type().to_string()),
+                is_voice_note.eq(attachment_pointer::Flags::VoiceMessage as i32
+                    & attachment_ptr.flags() as i32
+                    != 0),
+                is_borderless.eq(attachment_pointer::Flags::Borderless as i32
+                    & attachment_ptr.flags() as i32
+                    != 0),
+                upload_timestamp.eq(millis_to_naive_chrono(attachment_ptr.upload_timestamp())),
+                cdn_number.eq(attachment_ptr.cdn_number() as i32),
+                content_type.eq(attachment_ptr.content_type().to_string()),
                 // Then the fields that we immediately access
                 is_quote.eq(false),
-                message_id.eq(mid),
-                visual_hash.eq(&ptr.blur_hash),
-                size.eq(&ptr.size.map(|x| x as i32)),
-                file_name.eq(&ptr.file_name),
-                caption.eq(&ptr.caption),
-                data_hash.eq(&ptr.digest),
-                width.eq(ptr.width.map(|x| x as i32)),
-                height.eq(ptr.height.map(|x| x as i32)),
-                pointer.eq(ptr.encode_to_vec()),
+                message_id.eq(msg_id),
+                visual_hash.eq(&attachment_ptr.blur_hash),
+                size.eq(&attachment_ptr.size.map(|x| x as i32)),
+                file_name.eq(&attachment_ptr.file_name),
+                caption.eq(&attachment_ptr.caption),
+                data_hash.eq(&attachment_ptr.digest),
+                width.eq(attachment_ptr.width.map(|x| x as i32)),
+                height.eq(attachment_ptr.height.map(|x| x as i32)),
+                pointer.eq(attachment_ptr.encode_to_vec()),
             ))
             .returning(id)
             .get_result::<i32>(&mut *self.db())
@@ -2690,7 +2694,7 @@ impl<O: Observable> Storage<O> {
             schema::attachments::table,
             PrimaryKey::RowId(inserted_attachment_id),
         )
-        .with_relation(schema::messages::table, mid);
+        .with_relation(schema::messages::table, msg_id);
 
         inserted_attachment_id
     }
@@ -3469,12 +3473,13 @@ impl<O: Observable> Storage<O> {
         self.credential_cache.write().await
     }
 
-    /// Saves a given attachment into a random-generated path. Returns the path.
+    /// Saves the given contents into a randomly-named file in the attachment folder
+    /// and updates the attachment with the resulting path, which is then returned.
     #[tracing::instrument(skip(self, attachment), fields(attachment_size = attachment.len()))]
     pub async fn save_attachment(
         &self,
-        id: i32,
-        dest: &Path,
+        attachment_id: i32,
+        destination: &Path,
         ext: &str,
         attachment: &[u8],
     ) -> Result<PathBuf, anyhow::Error> {
@@ -3483,7 +3488,7 @@ impl<O: Observable> Storage<O> {
         let fname_formatted = format!("{}", fname);
         let fname_path = Path::new(&fname_formatted);
 
-        let mut path = dest.join(fname_path);
+        let mut path = destination.join(fname_path);
         path.set_extension(ext);
 
         utils::write_file_async(&path, attachment)
@@ -3499,7 +3504,7 @@ impl<O: Observable> Storage<O> {
             crate::replace_home_with_tilde(path.to_str().expect("UTF8-compliant path"));
 
         let updated_message_id = diesel::update(schema::attachments::table)
-            .filter(schema::attachments::id.eq(id))
+            .filter(schema::attachments::id.eq(attachment_id))
             .set((
                 schema::attachments::attachment_path.eq(relative_dir),
                 schema::attachments::download_length.eq(Option::<i32>::None),
@@ -3510,12 +3515,12 @@ impl<O: Observable> Storage<O> {
             .unwrap();
 
         if let Some(updated_message_id) = updated_message_id {
-            tracing::trace!(%id, %updated_message_id, "Attachment path saved");
-            self.observe_update(schema::attachments::table, id)
+            tracing::trace!(%attachment_id, %updated_message_id, "Attachment path saved");
+            self.observe_update(schema::attachments::table, attachment_id)
                 .with_relation(schema::messages::table, updated_message_id);
         } else {
             tracing::error!(
-                %id,
+                %attachment_id,
                 "Could not save attachment path",
             );
         };
