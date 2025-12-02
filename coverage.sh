@@ -14,6 +14,13 @@ if ! which grcov >/dev/null ; then
 	exit 1
 fi
 
+export QMAKE=/usr/bin/qmake
+qmake_is_qt5=$($QMAKE --version | grep "Qt version 5." | wc -l)
+if [ $qmake_is_qt5 -ne 1 ] ; then
+	echo "Error: $QMAKE is not using Qt5"
+	exit 1
+fi
+
 export LLVM_PATH=$(dirname "${LLVM_TOOL}")
 export RUSTFLAGS="-Cinstrument-coverage -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off"
 export LLVM_PROFILE_FILE="whisperfish-%p-%m.profraw"
