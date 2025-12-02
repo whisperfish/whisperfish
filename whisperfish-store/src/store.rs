@@ -3598,7 +3598,7 @@ impl<O: Observable> Storage<O> {
                         .unwrap();
                     if remaining > 0 {
                         tracing::warn!(attachment.id, %path, "references to attachment exist, not deleting");
-                    } else if allowed.is_match(&path) {
+                    } else if allowed.is_match(attachment.attachment_path.as_ref().unwrap()) {
                         match std::fs::remove_file(path.as_ref()) {
                             Ok(()) => {
                                 tracing::trace!("deleted file");
