@@ -974,6 +974,14 @@ async fn test_recipient_actions() {
     assert!(!r.is_empty());
     assert_eq!(r.first().unwrap().0.emoji, String::from("❤"));
 
+    assert_eq!(storage.fetch_grouped_reactions_for_message(msg.id).len(), 1);
+    assert!(storage.fetch_reaction(msg.id, recip.id).is_some());
+
+    assert!(storage.remove_reaction(msg.id, recip.id).unwrap()); // 1st OK, removed
+    assert!(!storage.remove_reaction(msg.id, recip.id).unwrap()); // 2nd OK, no match
+    let r = storage.fetch_reactions_for_message(msg.id);
+    assert!(r.is_empty());
+
     let m = storage
         .fetch_last_message_by_session_id_augmented(session.id)
         .unwrap();
@@ -1319,4 +1327,213 @@ async fn settings_table() {
     assert_eq!(storage.read_setting(k1), Some(v1));
     assert_eq!(storage.read_setting(k2), Some(v2));
     assert_eq!(storage.read_setting(k3), Some(v3));
+}
+
+#[tokio::test]
+async fn various_storage_functions() {
+    use rand::distributions::Alphanumeric;
+    use rand::Rng;
+    use std::str::FromStr;
+    use std::time::Duration;
+    use uuid::Uuid;
+    use whisperfish_store::{StoreProfile, TrustLevel};
+
+    let location = whisperfish_store::temp();
+    let rng = rand::thread_rng();
+
+    // Signaling password for REST API
+    let password: String = rng
+        .sample_iter(&Alphanumeric)
+        .take(24)
+        .map(char::from)
+        .collect();
+
+    // Registration ID
+    let regid = 12345;
+    let pni_regid = 12345;
+
+    let config = Arc::new(SignalConfig::default());
+
+    let own_aci = Uuid::new_v4();
+    let own_pni = Uuid::new_v4();
+    let own_e164 = PhoneNumber::from_str("+358501111111").unwrap();
+    let own_service_id = ServiceId::Aci(own_aci.into());
+    let own_profile_key: Vec<u8> = vec![
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+        26, 27, 28, 29, 30, 31, 32,
+    ];
+
+    let r1_aci = Uuid::new_v4();
+    let r1_pni = Uuid::new_v4();
+    let r1_e164 = PhoneNumber::from_str("+358502222222").unwrap();
+
+    let storage = SimpleStorage::new(
+        config.clone(),
+        &location,
+        None,
+        regid,
+        pni_regid,
+        &password,
+        None,
+        None,
+    )
+    .await
+    .unwrap();
+
+    assert!(storage.fetch_self_recipient().is_none());
+
+    config.set_aci(own_aci);
+    config.set_pni(own_pni);
+    config.set_tel(own_e164.clone());
+    config.set_device_id(1);
+
+    let own_recipient = storage.merge_and_fetch_self_recipient(
+        Some(own_e164.clone()),
+        Some(own_aci.into()),
+        Some(own_pni.into()),
+    );
+
+    let r = storage.fetch_self_recipient().unwrap();
+    assert_eq!(r.id, own_recipient.id);
+    assert_eq!(r.aci(), own_recipient.aci());
+    assert_eq!(r.pni(), own_recipient.pni());
+    assert_eq!(r.e164(), own_recipient.e164());
+
+    assert_eq!(storage.fetch_self_recipient_id(), own_recipient.id);
+    assert_eq!(storage.fetch_self_recipient_profile_key(), None);
+    storage.invalidate_self_recipient();
+    assert_eq!(storage.fetch_self_recipient_id(), own_recipient.id);
+
+    storage.update_profile_key(
+        Some(own_e164.clone()),
+        Some(own_service_id),
+        &own_profile_key,
+        whisperfish_store::TrustLevel::Certain,
+    );
+    assert_eq!(
+        storage.fetch_self_service_address_aci().unwrap(),
+        own_service_id
+    );
+
+    assert!(storage.fetch_blocked_numbers().is_empty());
+    assert!(storage.fetch_blocked_acis().is_empty());
+
+    let mut r1 = storage.merge_and_fetch_recipient(
+        Some(r1_e164.clone()),
+        Some(r1_aci.into()),
+        Some(r1_pni.into()),
+        TrustLevel::Uncertain,
+    );
+    assert!(!r1.needs_pni_signature);
+    storage.mark_recipient_needs_pni_signature(&r1, true);
+    r1 = storage.fetch_recipient_by_id(r1.id).unwrap();
+    assert!(r1.needs_pni_signature);
+    storage.mark_recipient_needs_pni_signature(&r1, false);
+    r1 = storage.fetch_recipient_by_id(r1.id).unwrap();
+    assert!(!r1.needs_pni_signature);
+
+    assert_eq!(storage.compact_db(), 0);
+
+    assert!(r1.profile_given_name.is_none());
+    storage.update_profile_details(&r1_aci, &Some("anonymous".into()), &None, &None, &None);
+    r1 = storage.fetch_recipient_by_id(r1.id).unwrap();
+    assert_eq!(r1.profile_given_name.as_ref().unwrap(), "anonymous");
+
+    let profile = StoreProfile {
+        given_name: Some("John".into()),
+        family_name: Some("Smith".into()),
+        joined_name: Some("John Smith".into()),
+        about_text: None,
+        emoji: None,
+        avatar: None,
+        unidentified: UnidentifiedAccessMode::Enabled,
+        last_fetch: Utc::now().naive_utc(),
+        r_uuid: r1_aci,
+        r_id: r1.id,
+        r_key: r1.profile_key.clone(),
+    };
+
+    storage.save_profile(profile);
+    r1 = storage.fetch_recipient_by_id(r1.id).unwrap();
+    assert_eq!(r1.profile_joined_name.as_ref().unwrap(), "John Smith");
+    assert!(r1.last_profile_fetch.is_some());
+
+    storage.mark_profile_outdated(&r1);
+    r1 = storage.fetch_recipient_by_id(r1.id).unwrap();
+    assert!(r1.last_profile_fetch.is_none());
+
+    let mut s1 = storage.fetch_or_insert_session_by_recipient_id(r1.id);
+    assert_eq!(s1.expire_timer_version, 1);
+    assert_eq!(s1.expiring_message_timeout, None);
+    storage.update_expiration_timer(&s1, Some(60), Some(2));
+    s1 = storage.fetch_session_by_id(s1.id).unwrap();
+    assert_eq!(s1.expire_timer_version, 2);
+    assert_eq!(s1.expiring_message_timeout, Some(Duration::from_secs(60)));
+
+    let mut r_merged = storage.merge_and_fetch_self_recipient(Some(own_e164.clone()), None, None);
+    assert_eq!(r.id, r_merged.id);
+    assert_eq!(r.e164(), r_merged.e164());
+    r_merged = storage.merge_and_fetch_self_recipient(None, Some(own_aci.into()), None);
+    assert_eq!(r.id, r_merged.id);
+    assert_eq!(r.aci(), r_merged.aci());
+    r_merged = storage.merge_and_fetch_self_recipient(None, None, Some(own_pni.into()));
+    assert_eq!(r.id, r_merged.id);
+    assert_eq!(r.pni(), r_merged.pni());
+
+    let mut r1_merged =
+        storage.merge_and_fetch_recipient(Some(r1_e164.clone()), None, None, TrustLevel::Uncertain);
+    assert_eq!(r1.id, r1_merged.id);
+    assert_eq!(r1.e164(), r1_merged.e164());
+    r1_merged =
+        storage.merge_and_fetch_recipient(None, Some(r1_aci.into()), None, TrustLevel::Uncertain);
+    assert_eq!(r1.id, r1_merged.id);
+    assert_eq!(r1.aci(), r1_merged.aci());
+    r1_merged =
+        storage.merge_and_fetch_recipient(None, None, Some(r1_pni.into()), TrustLevel::Uncertain);
+    assert_eq!(r1.id, r1_merged.id);
+    assert_eq!(r1.pni(), r1_merged.pni());
+
+    let r1_foi = storage.fetch_or_insert_recipient_by_address(&ServiceId::Pni(r1_pni.into()));
+    assert_eq!(r1_foi.id, r1.id);
+    assert_eq!(r1_foi.e164(), r1.e164());
+
+    storage.create_message(&NewMessage {
+        session_id: s1.id,
+        source_addr: Some(ServiceId::Aci(r1_aci.into())),
+        server_guid: None,
+        text: "todo!()".into(),
+        timestamp: Utc::now().naive_utc(),
+        sent: false,
+        received: true,
+        is_read: false,
+        flags: 0,
+        outgoing: false,
+        is_unidentified: false,
+        quote_timestamp: None,
+        expires_in: Some(Duration::from_secs(60)),
+        expire_timer_version: 2,
+        story_type: StoryType::None,
+        body_ranges: None,
+        message_type: None,
+        edit: None,
+    });
+    let mut msg = storage.fetch_last_message_by_session_id(s1.id).unwrap();
+    assert!(!msg.is_read);
+    assert!(msg.expiry_started.is_none());
+    storage.mark_messages_read_in_ui(vec![msg.id]);
+    msg = storage.fetch_last_message_by_session_id(s1.id).unwrap();
+    assert!(msg.is_read);
+    assert!(msg.expiry_started.is_some());
+
+    assert!(storage.fetch_expired_message_ids().is_empty());
+    assert!(!storage.fetch_expiring_message_ids().is_empty());
+    assert_eq!(storage.fetch_next_expiring_message_id().unwrap().0, msg.id);
+
+    assert!(s1.draft.is_none());
+    storage.save_draft(s1.id, "I was going to text you but my battery di".into());
+    s1 = storage.fetch_session_by_id(s1.id).unwrap();
+    assert!(s1.draft.is_some());
+    storage.save_draft(s1.id, "".into());
+    s1 = storage.fetch_session_by_id(s1.id).unwrap();
+    assert!(s1.draft.is_none());
 }
