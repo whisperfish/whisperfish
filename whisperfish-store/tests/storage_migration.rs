@@ -262,6 +262,22 @@ async fn copy_to_temp(root: std::path::PathBuf) -> tempfile::TempDir {
     new_root
 }
 
+#[rstest]
+#[tokio::test]
+async fn display_storage_debug() {
+    let path = tempfile::tempdir().unwrap();
+    let storage_path = path.path().to_owned();
+    let location = StorageLocation::Path(path);
+    let storage = create_old_storage(None, &location).await;
+    assert_eq!(
+        format!("{storage:?}"),
+        format!(
+            "Storage {{ path: \"{}\", is_encrypted: false }}",
+            storage_path.to_string_lossy()
+        )
+    );
+}
+
 /// These storages were initialized in June 2022, while moving the identity and session store into the SQLite database.
 ///
 /// https://gitlab.com/whisperfish/whisperfish/-/merge_requests/249
