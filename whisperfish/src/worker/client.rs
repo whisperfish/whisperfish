@@ -885,9 +885,6 @@ impl ClientActor {
                 }
             }
             None
-        } else if !msg.attachments.is_empty() {
-            tracing::trace!("Received an attachment without body, replacing with empty text.");
-            Some("".into())
         } else if let Some(sticker) = &msg.sticker {
             tracing::warn!(
                 "Received a sticker, but they are currently unsupported. Please upvote issue #14."
@@ -993,6 +990,11 @@ impl ClientActor {
                 msg.expire_timer.map(|v| Duration::from_secs(v as u64));
             session
         };
+
+        // Make sure attachment message without text gets inserted
+        if !msg.attachments.is_empty() && alt_body.is_none() {
+            alt_body = Some("".into());
+        }
 
         let body = msg.body.clone().or(alt_body);
         let text = if let Some(body) = body {
