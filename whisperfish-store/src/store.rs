@@ -2239,6 +2239,12 @@ impl<O: Observable> Storage<O> {
         })
     }
 
+    /// Fetch the existing or create a new session by GroupV2.
+    ///
+    /// NOTE: Doesn't send the session observer update when creating the group,
+    /// since we don't have any details of it yet.
+    /// In case this is a previously unknown group, the caller
+    /// is responsible for requesting the group details from server.
     pub fn fetch_or_insert_session_by_group_v2(&self, group: &GroupV2) -> orm::Session {
         let group_id = group.secret.get_group_identifier();
         let group_id_hex = hex::encode(group_id);
@@ -2267,12 +2273,12 @@ impl<O: Observable> Storage<O> {
                 .get_result(&mut *self.db())
                 .unwrap();
 
-            let session = self
+            // Don't send observer updates - no point having
+            // an "empty" group in chat list. Response to group info
+            // query takes care of the observer update.
+            return self
                 .fetch_session_by_id(session_id)
                 .expect("a session has been inserted");
-            self.observe_insert(sessions, session.id)
-                .with_relation(schema::group_v2s::table, group.id);
-            return session;
         }
 
         // At this point neither the GroupV2 nor the session exists.
@@ -2304,8 +2310,6 @@ impl<O: Observable> Storage<O> {
             .execute(&mut *self.db())
             .unwrap();
         self.observe_insert(schema::group_v2s::table, new_group.id.clone());
-
-        // XXX somehow schedule this group for member list/name updating.
 
         // Two things could have happened by now:
         // - Migration: there is an existing session for a groupv1 with this V2 id.
