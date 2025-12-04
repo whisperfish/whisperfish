@@ -788,7 +788,6 @@ impl ClientActor {
         edit: Option<NaiveDateTime>,
     ) {
         let timestamp = metadata.timestamp;
-        let dest_identity = metadata.destination.kind();
         let is_sync_sent = sync_sent.is_some();
 
         let mut storage = self.storage.clone().expect("storage");
@@ -818,6 +817,7 @@ impl ClientActor {
                 .as_ref()
                 .and_then(|r| r.to_service_address())
             {
+                let dest_identity = metadata.destination.kind();
                 actix::spawn(async move {
                     if let Err(e) = match dest_identity {
                         ServiceIdKind::Aci => {
@@ -858,7 +858,6 @@ impl ClientActor {
             tracing::warn!("Message contains preview data, which is not yet saved nor displayed. Please upvote issue #695");
         }
 
-        let expiration_timer_update = flags & DataMessageFlags::ExpirationTimerUpdate as i32 != 0;
         let alt_body = if flags & DataMessageFlags::ProfileKeyUpdate as i32 != 0 {
             message_type = Some(MessageType::ProfileKeyUpdate);
             None
@@ -884,7 +883,7 @@ impl ClientActor {
                 }
             }
             None
-        } else if expiration_timer_update {
+        } else if flags & DataMessageFlags::ExpirationTimerUpdate as i32 != 0 {
             message_type = Some(MessageType::ExpirationTimerUpdate);
             Some("".into())
         } else if let Some(GroupContextV2 {
@@ -1029,6 +1028,12 @@ impl ClientActor {
             tracing::warn!("Inserting a generic GroupChange message after handling it. This should not happen.");
         }
 
+        let timestamp = millis_to_naive_chrono(if is_sync_sent && timestamp > 0 {
+            timestamp
+        } else {
+            msg.timestamp()
+        });
+
         let new_message = crate::store::NewMessage {
             source_addr,
             text,
@@ -1036,11 +1041,7 @@ impl ClientActor {
             outgoing: is_sync_sent,
             is_unidentified,
             sent: is_sync_sent,
-            timestamp: millis_to_naive_chrono(if is_sync_sent && timestamp > 0 {
-                timestamp
-            } else {
-                msg.timestamp()
-            }),
+            timestamp,
             received: false, // This is set true by a receipt handler
             session_id: session.id,
             is_read: is_sync_sent,
