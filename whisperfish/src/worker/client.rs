@@ -1528,12 +1528,23 @@ impl ClientActor {
                     }
                 }
             }
-            #[cfg(feature = "calling")]
             ContentBody::CallMessage(call) => {
+                #[cfg(feature = "calling")]
                 self.handle_call_message(ctx, metadata, call);
+
+                #[cfg(not(feature = "calling"))]
+                {
+                    tracing::error!("Received CallMessage, but calling feature is not enabled.");
+                    tracing::trace!("{call:?}");
+                }
             }
-            _ => {
-                tracing::warn!("unimplemented ContentBody")
+            ContentBody::StoryMessage(story) => {
+                tracing::error!("Received a Story, which is not yet implemented.");
+                tracing::trace!("{story:?}");
+            }
+            ContentBody::PniSignatureMessage(pni) => {
+                tracing::error!("Received a PniSignatureMessage, which is not yet implemented.");
+                tracing::trace!("{pni:?}");
             }
         }
     }
