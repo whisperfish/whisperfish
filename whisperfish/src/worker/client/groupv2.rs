@@ -10,16 +10,6 @@ use qmeta_async::with_executor;
 use tokio::io::AsyncWriteExt;
 use whisperfish_store::NewMessage;
 
-#[derive(Message)]
-#[rtype(result = "()")]
-/// Request group v2 metadata from server by session id
-pub struct RequestGroupV2InfoBySessionId(pub i32);
-
-#[derive(Message)]
-#[rtype(result = "()")]
-/// Request group v2 metadata from server
-pub struct RequestGroupV2Info(pub GroupV2, pub [u8; zkgroup::GROUP_MASTER_KEY_LEN]);
-
 impl ClientWorker {
     #[with_executor]
     #[tracing::instrument(skip(self))]
@@ -35,6 +25,50 @@ impl ClientWorker {
         });
     }
 }
+
+#[derive(Message)]
+#[rtype(result = "()")]
+/// Request group v2 metadata from server by session id
+pub struct RequestGroupV2InfoBySessionId(pub i32);
+
+impl Handler<RequestGroupV2InfoBySessionId> for ClientActor {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        RequestGroupV2InfoBySessionId(sid): RequestGroupV2InfoBySessionId,
+        ctx: &mut Self::Context,
+    ) -> Self::Result {
+        match self
+            .storage
+            .as_ref()
+            .unwrap()
+            .fetch_session_by_id(sid)
+            .map(|s| s.r#type)
+        {
+            Some(orm::SessionType::GroupV2(group_v2)) => {
+                let mut key_stack = [0u8; zkgroup::GROUP_MASTER_KEY_LEN];
+                key_stack.clone_from_slice(&hex::decode(group_v2.master_key).expect("hex in db"));
+                let key = GroupMasterKey::new(key_stack);
+                let secret = GroupSecretParams::derive_from_master_key(key);
+
+                let store_v2 = crate::store::GroupV2 {
+                    secret,
+                    revision: group_v2.revision as _,
+                };
+                ctx.notify(RequestGroupV2Info(store_v2, key_stack));
+            }
+            _ => {
+                tracing::warn!("No group_v2 with session id {}", sid);
+            }
+        }
+    }
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+/// Request group v2 metadata from server
+pub struct RequestGroupV2Info(pub GroupV2, pub [u8; zkgroup::GROUP_MASTER_KEY_LEN]);
 
 impl Handler<RequestGroupV2Info> for ClientActor {
     type Result = ResponseActFuture<Self, ()>;
@@ -333,40 +367,6 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                 // XXX send notification of group update to UI for refresh.
             }),
         )
-    }
-}
-
-impl Handler<RequestGroupV2InfoBySessionId> for ClientActor {
-    type Result = ();
-
-    fn handle(
-        &mut self,
-        RequestGroupV2InfoBySessionId(sid): RequestGroupV2InfoBySessionId,
-        ctx: &mut Self::Context,
-    ) -> Self::Result {
-        match self
-            .storage
-            .as_ref()
-            .unwrap()
-            .fetch_session_by_id(sid)
-            .map(|s| s.r#type)
-        {
-            Some(orm::SessionType::GroupV2(group_v2)) => {
-                let mut key_stack = [0u8; zkgroup::GROUP_MASTER_KEY_LEN];
-                key_stack.clone_from_slice(&hex::decode(group_v2.master_key).expect("hex in db"));
-                let key = GroupMasterKey::new(key_stack);
-                let secret = GroupSecretParams::derive_from_master_key(key);
-
-                let store_v2 = crate::store::GroupV2 {
-                    secret,
-                    revision: group_v2.revision as _,
-                };
-                ctx.notify(RequestGroupV2Info(store_v2, key_stack));
-            }
-            _ => {
-                tracing::warn!("No group_v2 with session id {}", sid);
-            }
-        }
     }
 }
 

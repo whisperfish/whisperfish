@@ -964,9 +964,10 @@ async fn test_recipient_actions() {
         story_context: None,
         gift_badge: None,
     };
-    let (m, s) = storage
-        .process_reaction(&recip, &data_msg, &reaction)
-        .unwrap();
+    let (m, s) = match storage.process_reaction(&recip, &data_msg, &reaction) {
+        Ok(Some((m, s))) => (m, s),
+        _ => unreachable!(),
+    };
     assert_eq!(m.id, msg.id);
     assert_eq!(s.id, session.id);
     let r = storage.fetch_reactions_for_message(msg.id);
