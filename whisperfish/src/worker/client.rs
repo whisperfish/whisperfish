@@ -763,7 +763,7 @@ impl ClientActor {
 
     /// Process incoming message from Signal
     ///
-    /// This was `MessageHandler` in Go.
+    /// Return true if the message was valid and well-formed.
     ///
     /// TODO: consider putting this as an actor `Handle<>` implementation instead.
     #[tracing::instrument(
@@ -786,7 +786,8 @@ impl ClientActor {
         sync_sent: Option<Sent>,
         metadata: &Metadata,
         edit: Option<NaiveDateTime>,
-    ) {
+    ) -> bool {
+        let mut is_valid = true;
         let timestamp = metadata.timestamp;
         let is_sync_sent = sync_sent.is_some();
 
@@ -876,11 +877,12 @@ impl ClientActor {
                         .messageReactionReceived(session.id, message.id);
                 }
                 Ok(None) => {
-                    tracing::error!("No message or session for reaction. Dropping silently.");
-                    tracing::warn!("This could indicate out-of-order receipt delivery (#260)");
+                    tracing::error!("No message or session for reaction, dropping silently (#260)");
+                    is_valid = false;
                 }
                 Err(e) => {
                     tracing::error!("Could not process reaction: {e}");
+                    is_valid = false;
                 }
             }
             (None, None)
@@ -918,15 +920,18 @@ impl ClientActor {
                         tracing::warn!(
                             "Received a delete message from a different user, ignoring it."
                         );
+                        is_valid = false;
                     }
                 } else {
                     tracing::warn!(
                         "Message {} not found for deletion!",
                         naive_chrono_to_millis(target_sent_timestamp)
                     );
+                    is_valid = false;
                 }
             } else {
                 tracing::error!("Delete message without timestamp");
+                is_valid = false;
             };
             (None, None)
         }
@@ -938,11 +943,11 @@ impl ClientActor {
         let session = if let Some(group_v2) = msg.group_v2.as_ref() {
             let Some(master_key) = group_v2.master_key.as_ref() else {
                 tracing::error!("Group message without master key");
-                return;
+                return false;
             };
             if master_key.len() != zkgroup::GROUP_MASTER_KEY_LEN {
                 tracing::error!("Group message with invalid master key");
-                return;
+                return false;
             }
             let mut key_stack = [0u8; zkgroup::GROUP_MASTER_KEY_LEN];
             key_stack.clone_from_slice(master_key);
@@ -996,7 +1001,7 @@ impl ClientActor {
 
         let Some(body) = msg.body.as_ref().or(alt_body.as_ref()) else {
             tracing::debug!("Message without body, nothing to insert.");
-            return;
+            return is_valid;
         };
 
         if msg.body.is_some() && message_type.is_some() {
@@ -1124,6 +1129,7 @@ impl ClientActor {
             );
             self.inner.pinned().borrow_mut().notifyMessage(notification);
         }
+        is_valid
     }
 
     fn handle_sync_request(&mut self, meta: Metadata, req: SyncRequest) {
@@ -1274,7 +1280,7 @@ impl ClientActor {
                 tracing::error!(?message, "ignoring decryption error");
             }
             ContentBody::DataMessage(message) => {
-                self.handle_message(
+                let is_valid = self.handle_message(
                     ctx,
                     None,
                     Some(metadata.sender),
@@ -1283,7 +1289,7 @@ impl ClientActor {
                     &metadata,
                     None,
                 );
-                if metadata.needs_receipt {
+                if is_valid && metadata.needs_receipt {
                     self.handle_needs_delivery_receipt(ctx, &message, &metadata);
                 }
 
@@ -1297,7 +1303,7 @@ impl ClientActor {
                     .data_message
                     .as_ref()
                     .expect("edit message contains data");
-                self.handle_message(
+                let is_valid = self.handle_message(
                     ctx,
                     None,
                     Some(metadata.sender),
@@ -1310,7 +1316,7 @@ impl ClientActor {
                     )),
                 );
 
-                if metadata.needs_receipt {
+                if is_valid && metadata.needs_receipt {
                     self.handle_needs_delivery_receipt(ctx, message, &metadata);
                 }
 
