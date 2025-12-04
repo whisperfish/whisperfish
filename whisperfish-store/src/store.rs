@@ -702,18 +702,20 @@ impl<O: Observable> Storage<O> {
         sender: &orm::Recipient,
         data_message: &DataMessage,
         reaction: &Reaction,
-    ) -> Option<(orm::Message, orm::Session)> {
-        // XXX error handling...
-        let ts = reaction.target_sent_timestamp.expect("target timestamp");
-        let ts = millis_to_naive_chrono(ts);
-        let message = self.fetch_message_by_timestamp(ts)?;
+    ) -> anyhow::Result<Option<(orm::Message, orm::Session)>> {
+        let ts = reaction
+            .target_sent_timestamp
+            .map(millis_to_naive_chrono)
+            .context("Invalid timestamp")?;
+        let target_author_uuid =
+            Uuid::parse_str(reaction.target_author_aci()).context("Invalid Aci")?;
+
+        let message = self
+            .fetch_message_by_timestamp(ts)
+            .context("No such message")?;
         let session = self
             .fetch_session_by_id(message.session_id)
-            .expect("session exists");
-
-        let target_author_uuid = Uuid::parse_str(reaction.target_author_aci())
-            .map_err(|_| tracing::error!("ignoring reaction with invalid uuid"))
-            .ok()?;
+            .context("No such session")?;
 
         if let Some(uuid) = sender.uuid {
             if uuid != target_author_uuid {
@@ -725,10 +727,10 @@ impl<O: Observable> Storage<O> {
             }
         }
 
-        // Two options, either it's a *removal* or an update-or-replace
+        // Two options, either it's a removal or an update-or-replace
         // Both cases, we remove existing reactions for this author-message pair.
-        if reaction.remove() {
-            self.remove_reaction(message.id, sender.id);
+        match if reaction.remove() {
+            self.remove_reaction(message.id, sender.id)
         } else {
             // If this was not a removal action, we have a replacement
             let message_sent_time = millis_to_naive_chrono(data_message.timestamp());
@@ -737,10 +739,12 @@ impl<O: Observable> Storage<O> {
                 sender.id,
                 reaction.emoji.to_owned().unwrap(),
                 message_sent_time,
-            );
+            )
+        } {
+            Ok(true) => Ok(Some((message, session))),
+            Ok(false) => Ok(None),
+            Err(e) => Err(e),
         }
-
-        Some((message, session))
     }
 
     #[tracing::instrument(skip(self))]
@@ -750,10 +754,10 @@ impl<O: Observable> Storage<O> {
         sender_id: i32,
         new_emoji: String,
         sent_ts: NaiveDateTime,
-    ) {
+    ) -> anyhow::Result<bool> {
         use crate::schema::reactions::dsl::*;
         use diesel::dsl::*;
-        diesel::insert_into(reactions)
+        let count = diesel::insert_into(reactions)
             .values((
                 message_id.eq(msg_id),
                 author.eq(sender_id),
@@ -769,23 +773,40 @@ impl<O: Observable> Storage<O> {
                 received_time.eq(now),
             ))
             .execute(&mut *self.db())
-            .expect("insert reaction into database");
-        tracing::trace!("Saved reaction for message {} from {}", msg_id, sender_id);
-        self.observe_upsert(reactions, PrimaryKey::Unknown)
-            .with_relation(schema::messages::table, msg_id);
+            .context("Insert reaction into database")?;
+
+        if count > 0 {
+            tracing::trace!("Saved reaction for message {} from {}", msg_id, sender_id);
+            self.observe_upsert(reactions, PrimaryKey::Unknown)
+                .with_relation(schema::messages::table, msg_id);
+            Ok(true)
+        } else {
+            tracing::warn!(
+                "Reaction wasn't updated nor inserted for message {} from {}",
+                msg_id,
+                sender_id
+            );
+            Ok(false)
+        }
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn remove_reaction(&mut self, msg_id: i32, sender_id: i32) {
+    pub fn remove_reaction(&mut self, msg_id: i32, sender_id: i32) -> anyhow::Result<bool> {
         use crate::schema::reactions::dsl::*;
-        diesel::delete(reactions)
+        let count = diesel::delete(reactions)
             .filter(author.eq(sender_id))
             .filter(message_id.eq(msg_id))
             .execute(&mut *self.db())
-            .expect("remove old reaction from database");
-        tracing::trace!("Removed reaction for message {}", msg_id);
-        self.observe_delete(reactions, PrimaryKey::Unknown)
-            .with_relation(schema::messages::table, msg_id);
+            .context("Remove old reaction from database")?;
+
+        if count > 0 {
+            tracing::trace!("Removed reaction for message {}", msg_id);
+            self.observe_delete(reactions, PrimaryKey::Unknown)
+                .with_relation(schema::messages::table, msg_id);
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 
     #[tracing::instrument(skip(self))]

@@ -795,6 +795,8 @@ impl ClientActor {
         let is_sync_sent = sync_sent.is_some();
 
         let mut storage = self.storage.clone().expect("storage");
+        let self_recipient = storage.fetch_self_recipient().expect("self recipient");
+
         let sender_recipient = if source_phonenumber.is_some() || source_addr.is_some() {
             Some(storage.merge_and_fetch_recipient(
                 source_phonenumber.clone(),
@@ -864,24 +866,25 @@ impl ClientActor {
 
         let expiration_timer_update = flags & DataMessageFlags::ExpirationTimerUpdate as i32 != 0;
         let alt_body = if let Some(reaction) = &msg.reaction {
-            if let Some((message, session)) = storage.process_reaction(
-                &sender_recipient
-                    .clone()
-                    .or_else(|| storage.fetch_self_recipient())
-                    .expect("sender or self-sent"),
+            match storage.process_reaction(
+                sender_recipient.as_ref().unwrap_or(&self_recipient),
                 msg,
                 reaction,
             ) {
-                tracing::info!("Reaction saved for message {}/{}", session.id, message.id);
-                self.inner
-                    .pinned()
-                    .borrow_mut()
-                    .messageReactionReceived(session.id, message.id);
-            } else {
-                tracing::error!("Could not find a message for this reaction. Dropping.");
-                tracing::warn!(
-                    "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
-                );
+                Ok(Some((message, session))) => {
+                    tracing::info!("Reaction saved for message {}/{}", session.id, message.id);
+                    self.inner
+                        .pinned()
+                        .borrow_mut()
+                        .messageReactionReceived(session.id, message.id);
+                }
+                Ok(None) => {
+                    tracing::error!("No message or session for reaction. Dropping silently.");
+                    tracing::warn!("This could indicate out-of-order receipt delivery (#260)");
+                }
+                Err(e) => {
+                    tracing::error!("Could not process reaction: {e}");
+                }
             }
             None
         } else if expiration_timer_update {
@@ -1091,8 +1094,6 @@ impl ClientActor {
             .borrow_mut()
             .messageReceived(session.id, message.id);
 
-        let self_recipient = storage.fetch_self_recipient().expect("self recipient");
-
         if !is_sync_sent
             && !session.is_muted
             && self.settings.get_notification_privacy() != "off"
@@ -1105,7 +1106,9 @@ impl ClientActor {
                     .closeNotification(original_message.session_id, original_message.id);
 
                 for (rct, rcp) in storage.fetch_reactions_for_message(original_message.id) {
-                    storage.save_reaction(message.id, rcp.id, rct.emoji, rct.sent_time);
+                    // We already have these reactions in the database so there should
+                    // not be any errors, and even if so, we can safely ignore them
+                    let _ = storage.save_reaction(message.id, rcp.id, rct.emoji, rct.sent_time);
                 }
             };
 
@@ -2212,9 +2215,9 @@ impl Handler<ReactionSent> for ClientActor {
     ) {
         let storage = self.storage.as_mut().unwrap();
         if remove {
-            storage.remove_reaction(message_id, sender_id);
+            let _ = storage.remove_reaction(message_id, sender_id);
         } else {
-            storage.save_reaction(message_id, sender_id, emoji, timestamp);
+            let _ = storage.save_reaction(message_id, sender_id, emoji, timestamp);
         }
     }
 }
