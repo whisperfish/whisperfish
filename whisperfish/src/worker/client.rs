@@ -809,7 +809,6 @@ impl ClientActor {
             .flags()
             .try_into()
             .expect("Message flags doesn't fit into i32");
-        let mut message_type: Option<MessageType> = None;
 
         if (source_phonenumber.is_some() || source_addr.is_some()) && !is_sync_sent {
             if let Some(key) = msg.profile_key.as_deref() {
@@ -829,7 +828,10 @@ impl ClientActor {
             tracing::warn!("Message contains preview data, which is not yet saved nor displayed. Please upvote issue #695");
         }
 
-        let alt_body = if flags & DataMessageFlags::EndSession as i32 != 0 {
+        // Determine the message type and text body contents.
+        // Message is visibly inserted to chat if MessageType is set
+        // and/or alternative (i.e. placeholder) body text is given.
+        let (mut message_type, mut alt_body) = if flags & DataMessageFlags::EndSession as i32 != 0 {
             let storage = storage.clone();
             if let Some(svc_addr) = sender_recipient
                 .as_ref()
@@ -855,14 +857,11 @@ impl ClientActor {
             } else {
                 tracing::error!("Requested session reset but no service address associated");
             }
-            message_type = Some(MessageType::EndSession);
-            None
+            (Some(MessageType::EndSession), None)
         } else if flags & DataMessageFlags::ProfileKeyUpdate as i32 != 0 {
-            message_type = Some(MessageType::ProfileKeyUpdate);
-            None
+            (Some(MessageType::ProfileKeyUpdate), None)
         } else if flags & DataMessageFlags::ExpirationTimerUpdate as i32 != 0 {
-            message_type = Some(MessageType::ExpirationTimerUpdate);
-            Some("".into())
+            (Some(MessageType::ExpirationTimerUpdate), Some("".into()))
         } else if let Some(reaction) = &msg.reaction {
             match storage.process_reaction(
                 sender_recipient.as_ref().unwrap_or(&self_recipient),
@@ -884,24 +883,23 @@ impl ClientActor {
                     tracing::error!("Could not process reaction: {e}");
                 }
             }
-            None
+            (None, None)
         } else if let Some(sticker) = &msg.sticker {
             tracing::warn!(
                 "Received a sticker, but they are currently unsupported. Please upvote issue #14."
             );
             tracing::trace!("{:?}", sticker);
-            message_type = Some(MessageType::Sticker);
-            Some(sticker.emoji.as_ref().unwrap().to_owned())
+            (
+                Some(MessageType::Sticker),
+                Some(sticker.emoji.as_ref().unwrap().to_owned()),
+            )
         } else if msg.payment.is_some() {
             // TODO: Save some info about payments?
-            message_type = Some(MessageType::Payment);
-            Some("".into())
+            (Some(MessageType::Payment), Some("".into()))
         } else if msg.group_call_update.is_some() {
-            message_type = Some(MessageType::GroupCallUpdate);
-            Some("".into())
+            (Some(MessageType::GroupCallUpdate), Some("".into()))
         } else if !msg.contact.is_empty() {
-            message_type = Some(MessageType::Contact);
-            Some("".into())
+            (Some(MessageType::Contact), Some("".into()))
         } else if let Some(msg_delete) = &msg.delete {
             if let Some(target_sent_timestamp) =
                 msg_delete.target_sent_timestamp.map(millis_to_naive_chrono)
@@ -930,11 +928,11 @@ impl ClientActor {
             } else {
                 tracing::error!("Delete message without timestamp");
             };
-            None
+            (None, None)
         }
         // TODO: Add more message types
         else {
-            None
+            (None, None)
         };
 
         let session = if let Some(group_v2) = msg.group_v2.as_ref() {
