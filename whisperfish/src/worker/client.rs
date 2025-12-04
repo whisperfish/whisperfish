@@ -811,7 +811,25 @@ impl ClientActor {
             .expect("Message flags doesn't fit into i32");
         let mut message_type: Option<MessageType> = None;
 
-        if flags & DataMessageFlags::EndSession as i32 != 0 {
+        if (source_phonenumber.is_some() || source_addr.is_some()) && !is_sync_sent {
+            if let Some(key) = msg.profile_key.as_deref() {
+                let (recipient, was_updated) = storage.update_profile_key(
+                    source_phonenumber.clone(),
+                    source_addr,
+                    key,
+                    crate::store::TrustLevel::Certain,
+                );
+                if was_updated {
+                    ctx.notify(RefreshProfile::ByRecipientId(recipient.id));
+                }
+            }
+        }
+
+        if !msg.preview.is_empty() {
+            tracing::warn!("Message contains preview data, which is not yet saved nor displayed. Please upvote issue #695");
+        }
+
+        let alt_body = if flags & DataMessageFlags::EndSession as i32 != 0 {
             let storage = storage.clone();
             if let Some(svc_addr) = sender_recipient
                 .as_ref()
@@ -838,27 +856,8 @@ impl ClientActor {
                 tracing::error!("Requested session reset but no service address associated");
             }
             message_type = Some(MessageType::EndSession);
-        }
-
-        if (source_phonenumber.is_some() || source_addr.is_some()) && !is_sync_sent {
-            if let Some(key) = msg.profile_key.as_deref() {
-                let (recipient, was_updated) = storage.update_profile_key(
-                    source_phonenumber.clone(),
-                    source_addr,
-                    key,
-                    crate::store::TrustLevel::Certain,
-                );
-                if was_updated {
-                    ctx.notify(RefreshProfile::ByRecipientId(recipient.id));
-                }
-            }
-        }
-
-        if !msg.preview.is_empty() {
-            tracing::warn!("Message contains preview data, which is not yet saved nor displayed. Please upvote issue #695");
-        }
-
-        let alt_body = if flags & DataMessageFlags::ProfileKeyUpdate as i32 != 0 {
+            None
+        } else if flags & DataMessageFlags::ProfileKeyUpdate as i32 != 0 {
             message_type = Some(MessageType::ProfileKeyUpdate);
             None
         } else if let Some(reaction) = &msg.reaction {
