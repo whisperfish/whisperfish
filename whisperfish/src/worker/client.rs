@@ -905,6 +905,35 @@ impl ClientActor {
         } else if !msg.contact.is_empty() {
             message_type = Some(MessageType::Contact);
             Some("".into())
+        } else if let Some(msg_delete) = &msg.delete {
+            if let Some(target_sent_timestamp) =
+                msg_delete.target_sent_timestamp.map(millis_to_naive_chrono)
+            {
+                let db_message = storage.fetch_message_by_timestamp(target_sent_timestamp);
+                if let Some(db_message) = db_message {
+                    let db_sender_rcpt = db_message.sender_recipient_id;
+                    let msg_sender_rcpt = sender_recipient.as_ref().map(|r| r.id);
+                    if is_sync_sent || db_sender_rcpt == msg_sender_rcpt {
+                        storage.delete_message(db_message.id);
+                        self.inner
+                            .pinned()
+                            .borrow_mut()
+                            .closeNotification(db_message.session_id, db_message.id);
+                    } else {
+                        tracing::warn!(
+                            "Received a delete message from a different user, ignoring it."
+                        );
+                    }
+                } else {
+                    tracing::warn!(
+                        "Message {} not found for deletion!",
+                        naive_chrono_to_millis(target_sent_timestamp)
+                    );
+                }
+            } else {
+                tracing::error!("Delete message without timestamp");
+            };
+            None
         }
         // TODO: Add more message types
         else {
@@ -964,33 +993,6 @@ impl ClientActor {
                 msg.expire_timer.map(|v| Duration::from_secs(v as u64));
             session
         };
-
-        if let Some(msg_delete) = &msg.delete {
-            let target_sent_timestamp = millis_to_naive_chrono(
-                msg_delete
-                    .target_sent_timestamp
-                    .expect("Delete message has no timestamp"),
-            );
-            let db_message = storage.fetch_message_by_timestamp(target_sent_timestamp);
-            if let Some(db_message) = db_message {
-                let db_sender_rcpt = db_message.sender_recipient_id;
-                let msg_sender_rcpt = sender_recipient.as_ref().map(|r| r.id);
-                if is_sync_sent || db_sender_rcpt == msg_sender_rcpt {
-                    storage.delete_message(db_message.id);
-                    self.inner
-                        .pinned()
-                        .borrow_mut()
-                        .closeNotification(db_message.session_id, db_message.id);
-                } else {
-                    tracing::warn!("Received a delete message from a different user, ignoring it.");
-                }
-            } else {
-                tracing::warn!(
-                    "Message {} not found for deletion!",
-                    naive_chrono_to_millis(target_sent_timestamp)
-                );
-            }
-        }
 
         let body = msg.body.clone().or(alt_body);
         let text = if let Some(body) = body {
