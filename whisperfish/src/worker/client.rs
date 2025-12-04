@@ -1012,15 +1012,17 @@ impl ClientActor {
             metadata.unidentified_sender
         };
 
-        let original_message = edit.and_then(|ts| storage.fetch_message_by_timestamp(ts));
+        let mut original_message = None;
         // Some sanity checks
-        if edit.is_some() {
-            if let Some(original_message) = original_message.as_ref() {
-                if original_message.sender_recipient_id != sender_recipient.as_ref().map(|x| x.id) {
-                    tracing::warn!("Received an edit for a message that was not sent by the same sender. Continuing, but this is weird.");
+        if let Some(edit) = edit {
+            original_message = storage.fetch_message_by_timestamp(edit);
+            if let Some(orig) = original_message.as_ref() {
+                if orig.sender_recipient_id != sender_recipient.as_ref().map(|x| x.id) {
+                    tracing::warn!("Received an edit for a message that was not sent by the same sender. Ignoring edit, inserting as new.");
+                    original_message = None;
                 }
             } else {
-                tracing::warn!("Received an edit for a message that does not exist. Inserting as is and praying.  This is most probably a bug regarding out-of-order delivery.");
+                tracing::warn!("Received an edit for a message that does not (yet) exist.");
             }
         }
 
