@@ -860,6 +860,9 @@ impl ClientActor {
         } else if flags & DataMessageFlags::ProfileKeyUpdate as i32 != 0 {
             message_type = Some(MessageType::ProfileKeyUpdate);
             None
+        } else if flags & DataMessageFlags::ExpirationTimerUpdate as i32 != 0 {
+            message_type = Some(MessageType::ExpirationTimerUpdate);
+            Some("".into())
         } else if let Some(reaction) = &msg.reaction {
             match storage.process_reaction(
                 sender_recipient.as_ref().unwrap_or(&self_recipient),
@@ -882,9 +885,6 @@ impl ClientActor {
                 }
             }
             None
-        } else if flags & DataMessageFlags::ExpirationTimerUpdate as i32 != 0 {
-            message_type = Some(MessageType::ExpirationTimerUpdate);
-            Some("".into())
         } else if let Some(GroupContextV2 {
             group_change: Some(ref _group_change),
             ..
