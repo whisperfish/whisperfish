@@ -2578,11 +2578,11 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                     match cipher.open_envelope(msg.clone(), &mut rand::thread_rng()).await {
                         Ok(Some(content)) => {
                             storage.mark_recipient_registered(content.metadata.sender, true);
-                            break content;
+                            break Some(content);
                         }
                         Ok(None) => {
                             tracing::warn!("Empty envelope");
-                            return None;
+                            break None;
                         }
                         Err(ServiceError::SignalProtocolError(
                             SignalProtocolError::UntrustedIdentity(dest_protocol_address),
@@ -2616,19 +2616,21 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
 
                             if !storage.delete_identity_key(&dest_address) {
                                 tracing::error!("Could not remove identity key for {}.  Please file a bug.", dest_protocol_address);
-                                return None;
+                                break None;
                             }
                         }
                         Err(e) => {
                             tracing::error!("Error opening envelope: {:?}", e);
-                            return None;
+                            break None;
                         }
                     }
                 };
 
-                tracing::trace!(sender = ?content.metadata.sender.service_id_string(), "opened envelope");
+                if let Some(content) = content.as_ref() {
+                    tracing::trace!(sender = content.metadata.sender.service_id_string(), "opened envelope");
+                }
 
-                Some(content)
+                content
             }.instrument(tracing::trace_span!("opening envelope", incoming_address=incoming_address.service_id_string()))
             .into_actor(self)
             .map(move |content, act, ctx| {
