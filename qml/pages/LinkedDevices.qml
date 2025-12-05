@@ -3,50 +3,28 @@ import Sailfish.Silica 1.0
 
 Page {
     id: linkedDevices
+
     objectName: "linkedDevicesPage"
+
+    property bool is_primary_device: SettingsBridge.isPrimaryDevice()
 
     SilicaListView {
         id: listView
+
         anchors.fill: parent
         spacing: Theme.paddingMedium
         model: DeviceModel
 
-        PullDownMenu {
-            MenuItem {
-                //: Menu option to add new linked device
-                //% "Add"
-                text: qsTrId("whisperfish-add-linked-device")
-                onClicked: {
-                    var d = pageStack.push(Qt.resolvedUrl("AddDevice.qml"))
-                    d.addDevice.connect(function(tsurl) {
-                        console.log("Add device: "+tsurl)
-                        // TODO: handle errors
-                        ClientWorker.link_device(tsurl)
-                    })
-                }
-            }
-            MenuItem {
-                //: Menu option to refresh linked devices
-                //% "Refresh"
-                text: qsTrId("whisperfish-refresh-linked-devices")
-                onClicked: {
-                    ClientWorker.reload_linked_devices()
-                }
-            }
-        }
         header: PageHeader {
             //: Title for Linked Devices page
             //% "Linked Devices"
             title: qsTrId("whisperfish-linked-devices")
         }
-        Loader {
-            id: addDeviceLoader
-            visible: false
-            source: "AddDevice.qml"
-        }
+
         delegate: ListItem {
-            contentHeight: created.y + created.height + lastSeen.height + Theme.paddingMedium
             id: delegate
+
+            contentHeight: created.y + created.height + lastSeen.height + Theme.paddingMedium
             menu: deviceContextMenu
 
             function remove(contentItem) {
@@ -62,36 +40,33 @@ Page {
 
             Label {
                 id: name
-                truncationMode: TruncationMode.Fade
-                font.pixelSize: Theme.fontSizeMedium
-                text: if (model.name) {
-                    model.name
-                } else if (model.id == 1) {
-                    //: Linked device title for current Whisperfish
-                    //% "Current device (Whisperfish, %1)"
-                    qsTrId("whisperfish-current-device-name").arg(model.id)
-                } else {
-                    //: Linked device name
-                    //% "Device %1"
-                    qsTrId("whisperfish-device-name").arg(model.id)
-                }
+
                 anchors {
                     left: parent.left
                     leftMargin: Theme.horizontalPageMargin
                     right: parent.right
                     rightMargin: Theme.horizontalPageMargin
                 }
-            }
-            Label {
-                function createdTime() {
-                    var linkDate = Format.formatDate(model.created, Formatter.Timepoint)
-                    //: Linked device date
-                    //% "Linked: %1"
-                    return qsTrId("whisperfish-device-link-date").arg(linkDate)
+                truncationMode: TruncationMode.Fade
+                font.pixelSize: Theme.fontSizeMedium
+
+                // TODO: handle the current device differently?
+                text: if (model.name) {
+                    model.name
+                } else if (model.id == 1) {
+                    //: The nameless primary device in linked devices list
+                    //% "Primary device"
+                    qsTrId("whisperfish-primary-device-name").arg(model.id)
+                } else {
+                    //: A nameless secondary device in linked devices list
+                    //% "Device %1"
+                    qsTrId("whisperfish-secondary-device-name").arg(model.id)
                 }
+            }
+
+            Label {
                 id: created
-                text: createdTime()
-                font.pixelSize: Theme.fontSizeExtraSmall
+
                 anchors {
                     top: name.bottom
                     left: parent.left
@@ -99,9 +74,32 @@ Page {
                     right: parent.right
                     rightMargin: Theme.horizontalPageMargin
                 }
+                text: createdTime()
+                font.pixelSize: Theme.fontSizeExtraSmall
+
+                function createdTime() {
+                    var linkDate = Format.formatDate(model.created, Formatter.Timepoint)
+                    //: Linked device date
+                    //% "Linked: %1"
+                    return qsTrId("whisperfish-device-link-date").arg(linkDate)
+                }
             }
+
             Label {
                 id: lastSeen
+
+                anchors {
+                    top: created.bottom
+                    topMargin: Theme.paddingSmall
+                    left: parent.left
+                    leftMargin: Theme.horizontalPageMargin
+                    right: parent.right
+                    rightMargin: Theme.horizontalPageMargin
+                }
+                text: lastSeenTime()
+                font.pixelSize: Theme.fontSizeExtraSmall
+                font.italic: true
+
                 function lastSeenTime() {
                     var diff = (new Date()).valueOf() - model.lastSeen.valueOf()
 
@@ -119,43 +117,79 @@ Page {
                     //% "Last active: %1"
                     return qsTrId("whisperfish-device-last-active").arg(ls)
                 }
-                text: lastSeenTime()
-                font.pixelSize: Theme.fontSizeExtraSmall
-                font.italic: true
-                anchors {
-                    top: created.bottom
-                    topMargin: Theme.paddingSmall
-                    left: parent.left
-                    leftMargin: Theme.horizontalPageMargin
-                    right: parent.right
-                    rightMargin: Theme.horizontalPageMargin
-                }
             }
             Component {
                 id: deviceContextMenu
+
                 ContextMenu {
                     id: menu
+
+                    enabled: is_primary_device
+                    visible: enabled
                     width: parent ? parent.width : Screen.width
+
                     MenuItem {
+                        enabled: model.id > 1
+                        visible: enabled
                         //: Rename the linked or primary device menu option
                         //% "Rename"
                         text: qsTrId("whisperfish-device-rename")
+
                         onClicked: pageStack.push(Qt.resolvedUrl("RenameDevicePage.qml"), {
                             device_id: model.id,
                             device_name: model.name
                         })
                     }
+
                     MenuItem {
                         //: Device unlink menu option
                         //% "Unlink"
                         text: qsTrId("whisperfish-device-unlink")
-                        onClicked: remove(menu.parent)
-                        enabled: model.id != 1
+                        enabled: model.id > 1
                         visible: enabled
+
+                        onClicked: remove(menu.parent)
                     }
                 }
             }
         }
+
+        PullDownMenu {
+            MenuItem {
+                enabled: is_primary_device
+                visible: enabled
+                //: Menu option to add new linked device
+                //% "Add"
+                text: qsTrId("whisperfish-add-linked-device")
+
+                onClicked: {
+                    var d = pageStack.push(Qt.resolvedUrl("AddDevice.qml"))
+                    d.addDevice.connect(function(tsurl) {
+                        console.log("Add device: "+tsurl)
+                        // TODO: handle errors
+                        ClientWorker.link_device(tsurl)
+                    })
+                }
+            }
+            MenuItem {
+                //: Menu option to refresh linked devices
+                //% "Refresh"
+                text: qsTrId("whisperfish-refresh-linked-devices")
+
+                onClicked: {
+                    ClientWorker.reload_linked_devices()
+                }
+            }
+        }
+
+        Loader {
+            id: addDeviceLoader
+
+            visible: false
+            source: is_primary_device ? "AddDevice.qml" : ""
+            asynchronous: true
+        }
+
         ViewPlaceholder {
             enabled: listView.count == 0
             //: Placeholder when no linked device yet
