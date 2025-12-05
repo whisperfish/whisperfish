@@ -1216,16 +1216,16 @@ impl ClientActor {
             let addr = ServiceId::Aci(aci);
             match response.r#type() {
                 MessageRequestAction::Accept => storage.mark_recipient_accepted(&addr),
-                MessageRequestAction::Block => storage.mark_recipient_blocked(&addr),
+                MessageRequestAction::Block => storage.mark_recipient_blocked_by_address(&addr),
                 MessageRequestAction::BlockAndDelete => {
                     // Is it a "thread delete" which we don't support yet either?
-                    storage.mark_recipient_blocked(&addr)
+                    storage.mark_recipient_blocked_by_address(&addr)
                 }
                 MessageRequestAction::BlockAndSpam => {
                     tracing::warn!(
                         "Reporting spam for groups is not yet implemented. Please upvote bug #392"
                     );
-                    storage.mark_recipient_blocked(&addr)
+                    storage.mark_recipient_blocked_by_address(&addr)
                 }
                 _ => {
                     tracing::warn!(
@@ -1469,8 +1469,24 @@ impl ClientActor {
                     }
                 }
                 if let Some(blocked) = blocked {
-                    tracing::error!("SyncMessage blocked is not implemented");
-                    tracing::debug!("{blocked:?}");
+                    tracing::debug!("Sync blocked message");
+                    for e164 in blocked.numbers {
+                        let Ok(e164) = PhoneNumber::from_str(&e164) else {
+                            tracing::error!("Sync blocked: unparsable phone number: {e164}");
+                            continue;
+                        };
+                        storage.mark_recipient_blocked_by_e164(&e164);
+                    }
+                    for aci in blocked.acis {
+                        let Some(service_id) = ServiceId::parse_from_service_id_string(&aci) else {
+                            tracing::error!("Sync blocked: unparsable aci: {aci}");
+                            continue;
+                        };
+                        storage.mark_recipient_blocked_by_address(&service_id);
+                    }
+                    if !blocked.group_ids.is_empty() {
+                        tracing::error!("Blocking groups is not implemented");
+                    }
                 }
                 if let Some(contacts) = contacts {
                     tracing::error!("SyncMessage contacts is not implemented");
@@ -3875,7 +3891,7 @@ impl Handler<MessageRequestAnswer> for ClientActor {
                         storage.mark_recipient_accepted(&address.into());
                     }
                     MessageRequestAction::Block => {
-                        storage.mark_recipient_blocked(&address.into());
+                        storage.mark_recipient_blocked_by_address(&address.into());
                     }
                     _ => {
                         tracing::error!("Unimplemented message request action: {:?}", action);

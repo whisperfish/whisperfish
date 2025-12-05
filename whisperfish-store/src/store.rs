@@ -2681,10 +2681,10 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn mark_recipient_accepted(&self, service_address: &ServiceId) {
+    pub fn mark_recipient_accepted(&self, service_id: &ServiceId) {
         use schema::recipients::dsl::*;
 
-        let rcpt = self.fetch_or_insert_recipient_by_address(service_address);
+        let rcpt = self.fetch_or_insert_recipient_by_address(service_id);
 
         let affected_rows = diesel::update(
             recipients.filter(
@@ -2694,30 +2694,40 @@ impl<O: Observable> Storage<O> {
         )
         .set((is_accepted.eq(true), is_blocked.eq(false)))
         .execute(&mut *self.db())
-        .expect("mark recipient (un)accepted");
+        .expect("unblock recipient");
         if affected_rows > 0 {
             self.observe_update(schema::recipients::table, rcpt.id);
         }
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn mark_recipient_blocked(&self, service_address: &ServiceId) {
+    pub fn mark_recipient_blocked_by_id(&self, recipient_id: i32) {
         use schema::recipients::dsl::*;
-
-        let rcpt = self.fetch_or_insert_recipient_by_address(service_address);
 
         let affected_rows = diesel::update(
             recipients.filter(
-                id.eq(rcpt.id)
+                id.eq(recipient_id)
                     .and(is_accepted.ne(false).or(is_blocked.ne(true))),
             ),
         )
         .set((is_accepted.eq(false), is_blocked.eq(true)))
         .execute(&mut *self.db())
-        .expect("mark recipient (un)blocked");
+        .expect("block recipient");
         if affected_rows > 0 {
-            self.observe_update(schema::recipients::table, rcpt.id);
+            self.observe_update(schema::recipients::table, recipient_id);
         }
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn mark_recipient_blocked_by_address(&self, service_id: &ServiceId) {
+        let rcpt = self.fetch_or_insert_recipient_by_address(service_id);
+        self.mark_recipient_blocked_by_id(rcpt.id);
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn mark_recipient_blocked_by_e164(&self, phone_number: &PhoneNumber) {
+        let rcpt = self.fetch_or_insert_recipient_by_phonenumber(phone_number);
+        self.mark_recipient_blocked_by_id(rcpt.id);
     }
 
     /// Save the provided attachment pointer to storage. Any attachment must belong to a message,
