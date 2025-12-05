@@ -1385,11 +1385,11 @@ impl ClientActor {
                             &metadata,
                             Some(millis_to_naive_chrono(edit)),
                         );
+                    } else if let Some(story_message) = &sent.story_message {
+                        tracing::error!("SyncMessage story message is not implemented (#580)");
+                        tracing::trace!("{story_message:?}");
                     } else {
-                        tracing::warn!(
-                            "Dropping sync-sent without message; probably Stories related: {:?}",
-                            sent
-                        );
+                        tracing::error!("SyncMessage sent with unhandled content: {sent:?}");
                     }
                 }
                 if let Some(request) = request {
@@ -1612,7 +1612,7 @@ impl ClientActor {
                 }
             }
             ContentBody::StoryMessage(story) => {
-                tracing::error!("Received a Story, which is not yet implemented.");
+                tracing::error!("Received a Story, which is not yet implemented (#580)");
                 tracing::trace!("{story:?}");
             }
             ContentBody::PniSignatureMessage(pni) => {
