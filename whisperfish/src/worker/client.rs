@@ -1485,8 +1485,25 @@ impl ClientActor {
                     tracing::debug!("{pni_change_number:?}");
                 }
                 if let Some(conf) = configuration {
-                    tracing::error!("SyncMessage configuration is not implemented");
-                    tracing::debug!("{conf:?}");
+                    let mut settings = SettingsBridge::default();
+                    if let Some(value) = conf.read_receipts {
+                        settings.set_enable_read_receipts(value);
+                    }
+                    if conf.unidentified_delivery_indicators.is_some() {
+                        tracing::error!(
+                            "Configuration: unidentified delivery indicator is not implemented"
+                        );
+                    }
+                    if let Some(value) = conf.typing_indicators {
+                        settings.set_enable_typing_indicators(value);
+                    }
+                    if conf.provisioning_version.is_some() {
+                        // XXX Maybe this should go to database or config?
+                        tracing::error!("Configuration: provisioning version is not implemented");
+                    }
+                    if let Some(value) = conf.read_receipts {
+                        settings.set_enable_link_previews(value);
+                    }
                 }
                 if !sticker_pack_operation.is_empty() {
                     tracing::error!("SyncMessage sticker pack operation is not implemented");
