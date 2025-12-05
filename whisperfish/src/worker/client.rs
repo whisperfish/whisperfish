@@ -1047,6 +1047,9 @@ impl ClientActor {
             quote_timestamp: msg.quote.as_ref().and_then(|x| x.id),
             expires_in: session.expiring_message_timeout,
             expire_timer_version: session.expire_timer_version,
+            expiry_started: sync_sent
+                .and_then(|s| s.expiration_start_timestamp)
+                .map(millis_to_naive_chrono),
             story_type: StoryType::None,
             server_guid: metadata.server_guid,
             body_ranges,

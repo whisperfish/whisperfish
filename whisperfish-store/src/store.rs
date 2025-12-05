@@ -145,6 +145,7 @@ pub struct NewMessage<'a> {
     pub quote_timestamp: Option<u64>,
     pub expires_in: Option<std::time::Duration>,
     pub expire_timer_version: i32,
+    pub expiry_started: Option<NaiveDateTime>,
     pub story_type: StoryType,
     pub body_ranges: Option<Vec<u8>>,
     pub message_type: Option<MessageType>,
@@ -169,6 +170,7 @@ impl NewMessage<'_> {
             quote_timestamp: None,
             expires_in: None,
             expire_timer_version: 1,
+            expiry_started: None,
             story_type: StoryType::None,
             body_ranges: None,
             message_type: None,
@@ -192,6 +194,7 @@ impl NewMessage<'_> {
             quote_timestamp: None,
             expires_in: None,
             expire_timer_version: 1,
+            expiry_started: None,
             story_type: StoryType::None,
             body_ranges: None,
             message_type: None,
@@ -2463,6 +2466,32 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
+    pub fn update_message_expiry(&self, message_ts: u64, started_ts: u64) {
+        let msg_ts = millis_to_naive_chrono(message_ts);
+        let started = millis_to_naive_chrono(started_ts);
+        let affected_rows = diesel::update(
+            schema::messages::table.filter(
+                schema::messages::server_timestamp
+                    .eq(msg_ts)
+                    .and(schema::messages::expiry_started.gt(started))
+                    .and(schema::messages::message_type.is_null()),
+            ),
+        )
+        .set(schema::messages::expiry_started.eq(started))
+        .execute(&mut *self.db())
+        .expect("update message expiry");
+
+        tracing::trace!("affected {} rows", affected_rows);
+
+        if affected_rows > 0 {
+            let msg = self
+                .fetch_message_by_timestamp(msg_ts)
+                .expect("the message which was just updated");
+            self.observe_update(schema::messages::table, msg.id);
+        }
+    }
+
+    #[tracing::instrument(skip(self))]
     pub fn fetch_expired_message_ids(&self) -> Vec<(i32, DateTime<Utc>)> {
         self.fetch_message_ids_by_expiry(true)
     }
@@ -2874,6 +2903,7 @@ impl<O: Observable> Storage<O> {
                     quote_id.eq(quoted_message_id),
                     expires_in.eq(new_message.expires_in.map(|x| x.as_secs() as i32)),
                     expire_timer_version.eq(new_message.expire_timer_version),
+                    expiry_started.eq(new_message.expiry_started),
                     story_type.eq(new_message.story_type as i32),
                     message_ranges.eq(&new_message.body_ranges),
                     original_message_id.eq(edit_id),
