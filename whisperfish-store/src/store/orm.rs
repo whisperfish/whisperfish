@@ -238,6 +238,9 @@ pub enum MessageType {
     MissedVideoCall,
 
     GroupCall,
+
+    Contact,
+    Sticker,
 }
 
 impl MessageType {
@@ -277,6 +280,8 @@ impl AsRef<str> for MessageType {
             MessageType::OutgoingVideoCall => "outgoing_video_call",
             MessageType::MissedVideoCall => "missed_video_call",
             MessageType::GroupCall => "group_call",
+            MessageType::Contact => "contact",
+            MessageType::Sticker => "sticker",
         }
     }
 }

@@ -4,13 +4,16 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import be.rubdos.whisperfish 1.0
-// import "../components"
+import "../components"
 
 ListItem {
     id: delegate
+
+    // contentHeight: Math.max(column.height, sticker.height)
     contentHeight: column.height
     width: parent.width
     enabled: _canShowDetails
+
     onClicked: showDetails()
 
     property QtObject modelData
@@ -43,6 +46,7 @@ ListItem {
     } catch (err) {
         console.error(err, modelData.message)
     }
+    property bool _is_sticker: _type == "sticker"
 
     // _type == "group_change" && modelData.message && modelData.message[0] === "{" ? JSON.parse(modelData.message) : undefined
     property var _data: (_type == "group_change" && _json) ? _json : null
@@ -74,6 +78,9 @@ ListItem {
             return "image://theme/icon-s-new"
         case "left_group":
             return "image://theme/icon-s-blocked"
+        case "contact":
+            return "image://theme/icon-m-file-vcard"
+        // case "sticker":
         default:
             return ""
     }
@@ -306,6 +313,14 @@ ListItem {
             //: Service message, %1 is a name
             //% "%1 reset the secure session with you."
             : qsTrId("whisperfish-service-message-session-reset-peer").arg(recipientName)
+        case "sticker":
+            //: Message with a sticker, %1 is a name, %2 is an emoji
+            //% "%1 sent you a sticker: %2"
+            return qsTrId("whisperfish-service-message-sticker").arg(recipientName).arg(modelData.message)
+        case "contact":
+            //: Message with a contact card
+            //% "Contact cards can't yet be supported"
+            return qsTrId("whisperfish-service-message-contact")
         default:
             console.warn("Unsupported service message: id", modelData.id, "flags", modelData.flags, "type", _type, "text", modelData.message)
             //: Service message, %1 is an integer, %2 is a word, %3 is the message text (if any)
@@ -332,6 +347,8 @@ ListItem {
 
     Column {
         id: column
+
+        // visible: !_is_sticker
         anchors.horizontalCenter: parent.horizontalCenter
         width: parent.width - 4*Theme.horizontalPageMargin
         spacing: Theme.paddingSmall
@@ -352,11 +369,11 @@ ListItem {
             source: _iconSource
         }
 
-        Label {
+        LinkedEmojiLabel {
             width: parent.width
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.Wrap
-            text: (SettingsBridge.debug_mode ? "[" + modelData.id + "] " : "") + _message
+            plainText: (SettingsBridge.debug_mode ? "[" + modelData.id + "] " : "") + _message
             color: Theme.secondaryHighlightColor
             font.pixelSize: _fontSize
             textFormat: Text.PlainText
@@ -375,4 +392,28 @@ ListItem {
             font.pixelSize: _fontSize
         }
     }
+
+    /* Column {
+        id: sticker
+
+        visible: _is_sticker
+        // TODO: align left or right
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: Theme.itemSizeLarge * 2
+        spacing: Theme.paddingSmall
+        topPadding: Theme.paddingMedium
+        bottomPadding: Theme.paddingMedium
+
+        // TODO: Proper sticker item
+        LinkedEmojiLabel {
+            height: Theme.itemSizeLarge * 2
+            width: Theme.itemSizeLarge * 2
+            anchors.centerIn: parent
+            // TODO: Actual sticker
+            plainText: modelData.message
+            font.pixelSize: Theme.fontSizeLarge * 2
+            emojiSizeMult: 1.0
+            horizontalAlignment: Text.AlignHCenter
+        }
+    } */
 }
