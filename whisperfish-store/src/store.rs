@@ -698,10 +698,10 @@ impl<O: Observable> Storage<O> {
             .target_sent_timestamp
             .map(millis_to_naive_chrono)
             .context("Invalid timestamp")?;
-        let target_author_aci: Aci = reaction
+        let reaction_target_message_author_aci: Aci = reaction
             .parse_target_author_aci()
             .ok_or_else(|| anyhow::format_err!("invalid Aci"))?;
-        let target_author_uuid: Uuid = target_author_aci.into();
+        let reaction_target_message_author_uuid: Uuid = reaction_target_message_author_aci.into();
 
         let message = self
             .fetch_message_by_timestamp(ts)
@@ -709,13 +709,21 @@ impl<O: Observable> Storage<O> {
         let session = self
             .fetch_session_by_id(message.session_id)
             .context("No such session")?;
+        let db_message_sender_aci = self
+            .fetch_recipient_by_id(
+                message
+                    .sender_recipient_id
+                    .context("reaction target message in db has sender id")?,
+            )
+            .context("reaction target recipient in db")?;
 
-        if let Some(uuid) = sender.uuid {
-            if uuid != target_author_uuid {
+        // whisperfish_store::store: uuid != reaction.target_author_uuid (9bad15b5-dca3-418a-9949-7ca357b7fe47 != 9d4428ab-9ce2-4f7b-88f5-cf249ef692ce). Continuing, but this is a bug or attack.
+        if let Some(db_msg_sender_uuid) = db_message_sender_aci.uuid {
+            if db_msg_sender_uuid != reaction_target_message_author_uuid {
                 tracing::warn!(
-                    "uuid != reaction.target_author_uuid ({} != {}). Continuing, but this is a bug or attack.",
-                    uuid,
-                    target_author_uuid,
+                    "Database message author aci != reaction target message aci ({} != {}). Continuing, but this is a bug or attack.",
+                    db_msg_sender_uuid,
+                    reaction_target_message_author_uuid,
                 );
             }
         }
