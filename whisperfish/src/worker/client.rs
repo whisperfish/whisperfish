@@ -910,7 +910,7 @@ impl ClientActor {
                 sticker.emoji.as_ref().unwrap()
             ))
         } else if msg.payment.is_some() {
-            // TODO: Save some info about payents?
+            // TODO: Save some info about payments?
             message_type = Some(MessageType::Payment);
             Some("".into())
         } else if msg.group_call_update.is_some() {
