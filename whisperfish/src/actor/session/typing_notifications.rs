@@ -8,8 +8,7 @@ use libsignal_service::{
 };
 use std::collections::HashMap;
 
-// FIXME: chrono::Duration::seconds is not a const_fn.
-const TYPING_EXIPIRY_DELAY: std::time::Duration = std::time::Duration::from_secs(5);
+const TYPING_EXPIRY_DELAY: chrono::Duration = chrono::Duration::seconds(5);
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
@@ -46,7 +45,7 @@ impl Handler<TypingNotification> for SessionActor {
             Utc::now()
         };
         if typing.action() == typing_message::Action::Started {
-            let expire = started + chrono::Duration::from_std(TYPING_EXIPIRY_DELAY).unwrap();
+            let expire = started + TYPING_EXPIRY_DELAY;
             if expire < Utc::now() {
                 tracing::debug!(
                     "Received a typing notification too late (sent {}, now is {}, expired {}).",
