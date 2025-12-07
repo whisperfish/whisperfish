@@ -18,6 +18,7 @@ mod tests {
 
     async fn create_example_storage(
         storage_password: Option<&str>,
+        config: Option<Arc<SignalConfig>>,
     ) -> Result<
         (
             Storage<DummyObservatory>,
@@ -43,7 +44,7 @@ mod tests {
         let pni_regid = 12345;
 
         let storage = Storage::new(
-            Arc::new(SignalConfig::default()),
+            config.unwrap_or_else(|| Arc::new(SignalConfig::default())),
             &location,
             storage_password,
             regid,
@@ -105,7 +106,7 @@ mod tests {
     #[tokio::test]
     async fn own_identity_key_pair(password: Option<&str>) {
         // create a new storage
-        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password, None).await.unwrap();
 
         // Copy the identity key pair
         let id_key1 = storage.aci_storage().get_identity_key_pair().await.unwrap();
@@ -130,7 +131,7 @@ mod tests {
     #[tokio::test]
     async fn own_regid(password: Option<&str>) {
         // create a new storage
-        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password, None).await.unwrap();
 
         // Copy the regid
         let regid_1 = storage
@@ -154,7 +155,7 @@ mod tests {
     #[tokio::test]
     async fn save_retrieve_identity_key(password: Option<&str>) {
         // Create a new storage
-        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password, None).await.unwrap();
 
         // We need two identity keys and two addresses
         let (_svc1, addr1) = create_random_protocol_address();
@@ -207,7 +208,7 @@ mod tests {
     #[tokio::test]
     async fn is_trusted_identity(password: Option<&str>) {
         // Create a new storage
-        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password, None).await.unwrap();
 
         // We need two identity keys and two addresses
         let (_, addr1) = create_random_protocol_address();
@@ -240,7 +241,7 @@ mod tests {
     #[tokio::test]
     async fn save_retrieve_prekey(password: Option<&str>) {
         // Create a new storage
-        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password, None).await.unwrap();
 
         // We need two identity keys and two addresses
         let id1 = 0u32;
@@ -314,7 +315,7 @@ mod tests {
     #[tokio::test]
     async fn save_retrieve_signed_prekey(password: Option<&str>) {
         // Create a new storage
-        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password, None).await.unwrap();
 
         // We need two identity keys and two addresses
         let id1 = 0u32;
@@ -376,7 +377,7 @@ mod tests {
     #[tokio::test]
     async fn save_retrieve_session(password: Option<&str>) {
         // Create a new storage
-        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password, None).await.unwrap();
 
         // Collection of some addresses and sessions
         let (_svc1, addr1) = create_random_protocol_address();
@@ -458,7 +459,7 @@ mod tests {
     async fn get_next_pre_key_ids(password: Option<&str>) {
         use libsignal_service::pre_keys::PreKeysStore;
         // Create a new storage
-        let (storage, _tempdir) = create_example_storage(password).await.unwrap();
+        let (storage, _tempdir) = create_example_storage(password, None).await.unwrap();
 
         // Create two pre keys and one signed pre key
         let key1 = create_random_prekey();
