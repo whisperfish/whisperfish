@@ -126,12 +126,15 @@ impl RustleGraph {
                 params.width,
                 params.height
             );
-            let viz = Vizualizer::from_file(
-                params,
-                Some(&attachment.content_type),
-                std::path::Path::new(path.as_ref()),
-            );
-            match viz {
+            // We need those to be 'static, so we clone and move into the threadpool.
+            let content_type = attachment.content_type.clone();
+            let filename = std::path::PathBuf::from(path.into_owned());
+            let vizualizer = tokio::task::spawn_blocking(move || {
+                Vizualizer::from_file(params, Some(&content_type), &filename)
+            })
+            .await
+            .expect("threadpool");
+            match vizualizer {
                 Ok(vizualizer) => vizualizer,
                 Err(e) => {
                     tracing::error!("Vizualization failed: {}", e);
