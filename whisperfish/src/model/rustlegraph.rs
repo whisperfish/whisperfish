@@ -4,6 +4,7 @@ use std::sync::Arc;
 use image::Rgba;
 use qmetaobject::prelude::*;
 use rustlegraph::{VizualizationParameters, Vizualizer};
+use whisperfish_store::orm;
 
 #[derive(Default, QObject)]
 pub struct RustleGraph {
@@ -51,26 +52,31 @@ impl RustleGraph {
         }
     }
 
+    #[qmeta_async::with_executor]
     fn set_past_color(&mut self, color: QColor) {
         self.pastColor = color;
         self.reinit();
     }
 
+    #[qmeta_async::with_executor]
     fn set_future_color(&mut self, color: QColor) {
         self.futureColor = color;
         self.reinit();
     }
 
+    #[qmeta_async::with_executor]
     fn set_width(&mut self, width: u32) {
         self.width = width;
         self.reinit();
     }
 
+    #[qmeta_async::with_executor]
     fn set_height(&mut self, height: u32) {
         self.height = height;
         self.reinit();
     }
 
+    #[qmeta_async::with_executor]
     fn set_time(&mut self, time: f64) {
         self.timestamp = time;
         // Don't reinitialize here.
@@ -84,6 +90,81 @@ impl RustleGraph {
         } else {
             0.
         }
+    }
+
+    async fn load_vizualizer(this: QPointer<Self>, attachment: orm::Attachment) {
+        if !attachment.is_voice_note {
+            tracing::warn!("Attachment is not a voice note.");
+            /* no-op */
+            return;
+        }
+
+        let Some(path) = attachment.absolute_attachment_path() else {
+            tracing::warn!("attachment without known absolute path");
+            return;
+        };
+
+        let vizualizer = {
+            // Fetch params, don't hold across await point.
+            let params = {
+                let Some(this) = this.as_pinned() else {
+                    tracing::debug!("object dropped, aborting load");
+                    return;
+                };
+                // This kind of calls and checks should probably be guarded automatically/generically by the model
+                // macro...
+                if this.borrow().attachmentId != attachment.id {
+                    tracing::debug!("attachment id changed while loading, aborting load");
+                    return;
+                }
+
+                this.borrow().vizualizer_params()
+            };
+
+            tracing::debug!(
+                "Generating a RustleGraph of {}x{}",
+                params.width,
+                params.height
+            );
+            let viz = Vizualizer::from_file(
+                params,
+                Some(&attachment.content_type),
+                std::path::Path::new(path.as_ref()),
+            );
+            match viz {
+                Ok(vizualizer) => vizualizer,
+                Err(e) => {
+                    tracing::error!("Vizualization failed: {}", e);
+                    return;
+                }
+            }
+        };
+
+        let Some(this) = this.as_pinned() else {
+            tracing::debug!("object dropped, aborting load");
+            return;
+        };
+        let mut this = this.borrow_mut();
+
+        let vizualizer = Arc::new(vizualizer);
+
+        // Move the owned reference into self.
+        let vizualizer = Arc::downgrade(this.vizualizer.insert(vizualizer));
+
+        let Some(app) = this.app.as_pinned() else {
+            return;
+        };
+        let app = app.borrow();
+
+        // Put the vizualizer in the map
+        let id = this.image_id();
+        let _old = app.rustlegraphs.borrow_mut().insert(id, vizualizer);
+        if _old.is_some() {
+            tracing::info!("Replaced an old Rustlegraph; probably doing double work here");
+        }
+
+        this.image_updated();
+        this.duration_updated();
     }
 
     fn reinit(&mut self) {
@@ -108,46 +189,16 @@ impl RustleGraph {
                 });
             }
 
-            // Generate the vizualizer if we have all the data
-            if let Some(storage) = app.storage.borrow().clone() {
-                if let Some(att) = storage.fetch_attachment(self.attachmentId) {
-                    if !att.is_voice_note {
-                        tracing::warn!("Attachment is not a voice note.");
-                        self.image_updated();
-                        self.duration_updated();
-                        return;
-                    }
-                    if let Some(path) = att.absolute_attachment_path() {
-                        tracing::debug!(
-                            "Generating a RustleGraph of {}x{}",
-                            self.width,
-                            self.height
-                        );
-                        let viz = Vizualizer::from_file(
-                            self.vizualizer_params(),
-                            Some(&att.content_type),
-                            std::path::Path::new(path.as_ref()),
-                        );
-                        match viz {
-                            Ok(viz) => self.vizualizer = Some(Arc::new(viz)),
-                            Err(e) => {
-                                tracing::error!("Vizualization failed: {}", e);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Put the vizualizer in the map
-            if let Some(v) = &self.vizualizer {
-                let id = self.image_id();
-                let _old = app.rustlegraphs.borrow_mut().insert(id, Arc::downgrade(v));
-                if _old.is_some() {
-                    tracing::info!("Replaced an old Rustlegraph; probably doing double work here");
-                }
-            }
             self.image_updated();
             self.duration_updated();
+
+            // Generate the vizualizer if we have all the data
+            if let Some(storage) = app.storage.borrow().clone() {
+                if let Some(attachment) = storage.fetch_attachment(self.attachmentId) {
+                    let this = QPointer::from(&*self);
+                    actix::spawn(Self::load_vizualizer(this, attachment));
+                }
+            }
         }
     }
 
@@ -155,6 +206,7 @@ impl RustleGraph {
         self.attachmentId
     }
 
+    #[qmeta_async::with_executor]
     fn set_attachment_id(&mut self, id: i32) {
         self.attachmentId = id;
         self.reinit();
