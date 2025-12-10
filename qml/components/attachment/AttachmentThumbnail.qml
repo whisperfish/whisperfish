@@ -92,6 +92,8 @@ MouseArea {
         width: parent.width; height: parent.height
         source: attach.visual_hash != null ? "image://blurhash/" + attach.visual_hash : "image://theme/icon-m-image"
 
+        asynchronous: true // This runs the QQuickImageProvider on a separate low-prio thread
+
         BusyIndicator {
             id: downloadingBusyIndicator
             running: blurhashThumb.visible && attach.is_downloading
