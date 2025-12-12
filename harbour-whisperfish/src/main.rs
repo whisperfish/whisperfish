@@ -9,7 +9,7 @@ use whisperfish::*;
 
 /// Unofficial but advanced Signal client for Sailfish OS
 #[derive(Parser, Debug)]
-#[clap(name = "harbour-whisperfish", author, version, about, long_about = None)]
+#[command(name = "harbour-whisperfish", author, version, about, long_about = None)]
 struct Opts {
     /// Captcha override
     ///
@@ -18,22 +18,22 @@ struct Opts {
     /// it is possible to inject a signalcaptcha URL.
     ///
     /// This is as a work around for <https://gitlab.com/whisperfish/whisperfish/-/issues/378>
-    #[clap(short = 'c', long)]
+    #[arg(short = 'c', long)]
     captcha: Option<String>,
 
     /// Enable verbose console log. Disables journal logging.
     ///
     /// Equivalent with setting
     /// `QT_LOGGING_TO_CONSOLE=1 RUST_LOG=libsignal_service=trace,libsignal_service_actix=trace,whisperfish=trace`.
-    #[clap(short = 'v', long)]
+    #[arg(short = 'v', long)]
     verbose: bool,
 
     /// Whether whisperfish was launched from autostart. Also accepts '-prestart'
-    #[clap(long)]
+    #[arg(long)]
     prestart: bool,
 
     /// Send a signal to shutdown Whisperfish
-    #[clap(long)]
+    #[arg(long)]
     quit: bool,
 }
 
