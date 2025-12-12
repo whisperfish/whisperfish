@@ -54,8 +54,8 @@ thiserror = "2"
 hex = "0.4"
 phonenumber = "0.3.7"
 itertools = "0.14"
-qrencode = "0.14"
-image = { version = "0.24", default-features = false, features = ["png"] }
+qrcode = "0.14"
+image = { version = "0.25.9", default-features = false, features = ["png", "jpeg"] }
 
 diesel = { version = "2.2", features = ["sqlite", "chrono"] }
 diesel_migrations = "=2.2"
