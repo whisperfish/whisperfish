@@ -388,6 +388,7 @@ pub struct ClientActor {
     initial_queue_process_state: QueueProcessState,
 
     voice_note_transcription_queue: voice_note_transcription::VoiceNoteTranscriptionQueue,
+    attachment_resize_queue: resize_image::AttachmentResizeQueue,
 
     start_time: DateTime<Local>,
 
@@ -533,6 +534,7 @@ impl ClientActor {
 
             voice_note_transcription_queue:
                 voice_note_transcription::VoiceNoteTranscriptionQueue::default(),
+            attachment_resize_queue: resize_image::AttachmentResizeQueue::default(),
 
             start_time: Local::now(),
 
@@ -1778,37 +1780,23 @@ impl Handler<QueueMessage> for ClientActor {
             ..crate::store::NewMessage::new_outgoing()
         });
 
+        let mut resize_list = vec![];
+
         for attachment in &msg.attachments {
+            let att_id = storage.insert_local_attachment(
+                inserted_msg.id,
+                Some(attachment.mime_type.as_str()),
+                &attachment.path,
+                &attachment.path,
+                msg.is_voice_note,
+            );
             let resizeable = attachment.mime_type.eq("image/jpeg")
                 || attachment.mime_type.eq("image/png")
                 || attachment.mime_type.eq("image/jpg");
             // XXX What about stickers? We must ignore them here.
-            let resized_path = if resizeable {
-                match resize_image::shrink_attachment(
-                    Path::new(&attachment.path),
-                    Path::new(&self.settings.get_attachment_dir()),
-                    AttachmentQuality::from(self.settings.get_attachment_quality().as_ref()),
-                ) {
-                    Ok(ResizeResult::NoAction) => attachment.path.clone(),
-                    Ok(ResizeResult::Resized(path)) => path
-                        .to_str()
-                        .expect("valid storage path after resizing image")
-                        .to_string(),
-                    Err(e) => {
-                        tracing::error!("{e:?} - using original file");
-                        attachment.path.clone()
-                    }
-                }
-            } else {
-                attachment.path.clone()
-            };
-            storage.insert_local_attachment(
-                inserted_msg.id,
-                Some(attachment.mime_type.as_str()),
-                attachment.path.clone(),
-                resized_path,
-                msg.is_voice_note,
-            );
+            if resizeable {
+                resize_list.push(att_id);
+            }
         }
 
         if msg.is_voice_note {
@@ -1825,7 +1813,45 @@ impl Handler<QueueMessage> for ClientActor {
             h.send(()).expect("send message expiry notification");
         }
 
-        ctx.notify(SendMessage(inserted_msg.id));
+        if resize_list.is_empty() {
+            tracing::debug!("Immediate SendMessage");
+            ctx.notify(SendMessage(inserted_msg.id));
+        } else {
+            tracing::debug!("Delayed SendMessage");
+            ctx.notify(resize_image::NewAttachmentResize {
+                message_id: inserted_msg.id,
+                attachment_ids: resize_list,
+            });
+        }
+    }
+}
+
+#[derive(Debug, Message)]
+#[rtype(result = "()")]
+pub struct AttachmentsResized {
+    message_id: i32,
+    changed_data: Vec<(i32, String)>,
+}
+
+impl Handler<AttachmentsResized> for ClientActor {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        AttachmentsResized {
+            message_id,
+            changed_data,
+        }: AttachmentsResized,
+        ctx: &mut Self::Context,
+    ) -> Self::Result {
+        tracing::trace!("AttachmentsResized");
+        let storage = self.storage.clone().unwrap();
+        for (attachment_id, new_path) in changed_data.into_iter() {
+            tracing::info!("Changing attachment {attachment_id} attachment_path to {new_path}");
+            storage.update_attachment_path(attachment_id, new_path.as_str());
+        }
+        tracing::info!("Attachment resize completed, sending message {message_id}");
+        ctx.notify(SendMessage(message_id));
     }
 }
 

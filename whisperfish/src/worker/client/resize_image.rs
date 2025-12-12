@@ -1,8 +1,10 @@
+use actix::prelude::*;
 use fs2::FileExt;
 use image::codecs::jpeg::JpegEncoder;
 use image::{
     ColorType, DynamicImage, ExtendedColorType, GenericImageView, ImageDecoder, ImageReader,
 };
+use std::collections::VecDeque;
 use std::fs;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
@@ -92,6 +94,161 @@ impl From<std::io::Error> for ResizeError {
 impl From<image::ImageError> for ResizeError {
     fn from(err: image::ImageError) -> Self {
         ResizeError::ImageError(err)
+    }
+}
+
+#[derive(Debug, Default)]
+pub(super) struct AttachmentResizeQueue {
+    current_job: Option<i32>,
+    // message_id, attachment_ids to resize
+    queue: VecDeque<NewAttachmentResize>,
+}
+
+#[derive(Debug, Message)]
+#[rtype(result = "()")]
+pub(super) struct NewAttachmentResize {
+    pub message_id: i32,
+    pub attachment_ids: Vec<i32>,
+}
+
+pub(super) struct AttachmentResizeTask;
+
+#[derive(Message)]
+#[rtype(result = "()")]
+struct AttachmentResizeTaskFinished;
+
+impl Handler<NewAttachmentResize> for super::ClientActor {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        NewAttachmentResize {
+            message_id,
+            attachment_ids,
+        }: NewAttachmentResize,
+        ctx: &mut Self::Context,
+    ) {
+        self.attachment_resize_queue
+            .queue
+            .push_back(NewAttachmentResize {
+                message_id,
+                attachment_ids,
+            });
+        self.try_next_resize_task(ctx);
+    }
+}
+
+impl AttachmentResizeTask {
+    async fn resize_async(
+        storage: super::Storage,
+        message_id: i32,
+        attachment_ids: Vec<i32>,
+        attachments_path: String,
+        quality: String,
+        address: Addr<crate::worker::ClientActor>,
+    ) -> anyhow::Result<()> {
+        let mut attachments = vec![];
+        for att_id in attachment_ids.iter() {
+            if let Some(a) = storage.fetch_attachment(*att_id) {
+                attachments.push(a);
+            }
+        }
+
+        let attachments_path = Path::new(&attachments_path).to_owned();
+        let quality = quality.clone();
+        let address = address.clone();
+
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .build()
+                .unwrap();
+            rt.block_on(async move {
+                let mut changed_data: Vec<(i32, String)> = vec![];
+                for attachment in attachments.into_iter() {
+                    let original_path = attachment.absolute_original_path().unwrap().to_string();
+                    tracing::debug!("Resizing {original_path}...");
+
+                    let quality = quality.clone();
+                    let attachments_path = attachments_path.to_owned();
+
+                    match shrink_attachment(
+                        Path::new(&original_path),
+                        &attachments_path,
+                        AttachmentQuality::from(quality.as_str()),
+                    ) {
+                        Ok(ResizeResult::NoAction) => {}
+                        Ok(ResizeResult::Resized(path)) => {
+                            let resized_path = path
+                                .to_str()
+                                .expect("valid storage path after resizing image")
+                                .to_string();
+                            changed_data.push((attachment.id, resized_path));
+                        }
+                        Err(e) => {
+                            tracing::error!("{e:?} - attachment path not changed");
+                        }
+                    };
+                }
+                match address
+                    .send(crate::worker::AttachmentsResized {
+                        message_id,
+                        changed_data,
+                    })
+                    .await
+                {
+                    Ok(_) => tracing::debug!("AttachmentsResized sent"),
+                    Err(e) => tracing::error!("AttachmentsResized send failed: {e:?}"),
+                }
+            });
+        });
+        Ok(())
+    }
+}
+
+impl super::ClientActor {
+    fn try_next_resize_task(&mut self, ctx: &mut <Self as Actor>::Context) {
+        use AsyncContext;
+
+        if self.attachment_resize_queue.current_job.is_some() {
+            return;
+        }
+
+        if let Some(new_resize_task) = self.attachment_resize_queue.queue.pop_front() {
+            let task = AttachmentResizeTask::resize_async(
+                self.storage.clone().unwrap(),
+                new_resize_task.message_id,
+                new_resize_task.attachment_ids,
+                self.settings.get_attachment_dir(),
+                self.settings.get_attachment_quality(),
+                ctx.address(),
+            );
+            let addr = ctx.address();
+            actix::spawn(async move {
+                match task.await {
+                    Ok(_) => {
+                        addr.send(AttachmentResizeTaskFinished).await.unwrap();
+                    }
+                    Err(e) => {
+                        // XXX: Retry on failure?
+                        tracing::error!("Failed to start message attachments' resize task: {}", e);
+                    }
+                }
+            });
+        }
+    }
+}
+
+impl actix::Handler<AttachmentResizeTaskFinished> for super::ClientActor {
+    type Result = ();
+
+    fn handle(&mut self, _: AttachmentResizeTaskFinished, ctx: &mut Self::Context) -> Self::Result {
+        if let Some(message_id) = self.attachment_resize_queue.current_job {
+            tracing::info!(
+                "Resize job for message {message_id} returned (it runs in the background)"
+            );
+            self.attachment_resize_queue.current_job = None;
+        }
+        self.try_next_resize_task(ctx);
     }
 }
 

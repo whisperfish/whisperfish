@@ -3145,6 +3145,28 @@ impl<O: Observable> Storage<O> {
         id
     }
 
+    /// Update the attachment path of an existing attachment.
+    ///
+    /// The attachment path may have changed because of e.g. resizing the attached image.
+    /// The original path is not modified.
+    #[tracing::instrument(skip(self))]
+    pub fn update_attachment_path(&self, att_id: i32, att_path: &str) -> bool {
+        let msg_id = diesel::update(schema::attachments::table)
+            .filter(schema::attachments::id.eq(att_id))
+            .set(schema::attachments::attachment_path.eq(att_path))
+            .returning(schema::attachments::message_id)
+            .get_result::<i32>(&mut *self.db())
+            .optional()
+            .expect("update attachment_path");
+        if let Some(msg_id) = msg_id {
+            self.observe_insert(schema::attachments::table, att_id)
+                .with_relation(schema::messages::table, msg_id);
+            true
+        } else {
+            false
+        }
+    }
+
     #[tracing::instrument(skip(self))]
     pub fn fetch_message_by_timestamp(&self, ts: NaiveDateTime) -> Option<orm::Message> {
         let query = schema::messages::table.filter(schema::messages::server_timestamp.eq(ts));
