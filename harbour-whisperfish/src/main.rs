@@ -21,12 +21,15 @@ struct Opts {
     #[arg(short = 'c', long)]
     captcha: Option<String>,
 
-    /// Enable verbose console log. Disables journal logging.
+    /// Enable debug or trace logging to console, which disables journal.
     ///
-    /// Equivalent with setting
-    /// `QT_LOGGING_TO_CONSOLE=1 RUST_LOG=libsignal_service=trace,libsignal_service_actix=trace,whisperfish=trace`.
-    #[arg(short = 'v', long)]
-    verbose: bool,
+    /// Set debug level log with -v or --verbose once. Equivalent with setting
+    /// `QT_LOGGING_TO_CONSOLE=1 RUST_LOG=libsignal_service=debug,whisperfish=debug`
+    ///
+    /// Set trace level log with -vv or --verbose twice. Equivalent with setting
+    /// `QT_LOGGING_TO_CONSOLE=1 RUST_LOG=libsignal_service=trace,whisperfish=trace`
+    #[arg(short = 'v', long, action = clap::ArgAction::Count)]
+    verbose: u8,
 
     /// Whether whisperfish was launched from autostart. Also accepts '-prestart'
     #[arg(long)]
@@ -155,11 +158,15 @@ fn main() {
     }
     config.override_captcha = opt.captcha;
 
-    let log_filter = if config.verbose || opt.verbose {
+    let log_filter = if config.verbose || opt.verbose > 1 {
         // Enable QML debug output and full backtrace (for Sailjail).
         std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
         std::env::set_var("RUST_BACKTRACE", "full");
         "whisperfish=trace,libsignal_service=trace"
+    } else if opt.verbose == 1 {
+        std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
+        std::env::set_var("RUST_BACKTRACE", "full");
+        "whisperfish=debug,libsignal_service=debug"
     } else {
         "whisperfish=info,warn"
     };
@@ -204,7 +211,7 @@ fn main() {
 
         // If verbose, print to terminal (with timestamps and tracing).
         // Otherwise, send to journald (without tracing).
-        if opt.verbose {
+        if opt.verbose > 0 {
             tracing_subscriber::registry()
                 .with(env_filter)
                 .with(tracing_subscriber::fmt::layer())
