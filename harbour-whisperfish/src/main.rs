@@ -41,7 +41,7 @@ struct Opts {
 }
 
 fn dbus_show_app() -> Result<(), dbus::Error> {
-    tracing::info!("Calling app.show() on DBus.");
+    eprintln!("Calling app.show() on DBus.");
 
     let c = Connection::new_session()?;
     let proxy = c.with_proxy(
@@ -54,7 +54,7 @@ fn dbus_show_app() -> Result<(), dbus::Error> {
 }
 
 fn dbus_quit_app() -> Result<(), dbus::Error> {
-    tracing::info!("Calling app.quit() on DBus.");
+    eprintln!("Calling app.quit() on DBus.");
 
     let c = Connection::new_session()?;
     let proxy = c.with_proxy(
@@ -104,6 +104,12 @@ fn main() -> anyhow::Result<()> {
         return dbus_quit_app().map_err(|e| anyhow!(e));
     }
 
+    // Check if Whisperfish is already running and exit if it is
+    let instance_lock = SingleInstance::new("whisperfish").unwrap();
+    if !instance_lock.is_single() {
+        return dbus_show_app().map_err(|e| anyhow!(e));
+    }
+
     // Migrate the config file from
     // ~/.config/harbour-whisperfish/config.yml to
     // ~/.config/be.rubdos/harbour-whisperfish/config.yml
@@ -149,12 +155,16 @@ fn main() -> anyhow::Result<()> {
 
     let log_filter = if config.verbose || opt.verbose > 1 {
         // Enable QML debug output and full backtrace (for Sailjail).
-        std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
-        std::env::set_var("RUST_BACKTRACE", "full");
+        unsafe {
+            std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
+            std::env::set_var("RUST_BACKTRACE", "full");
+        }
         "whisperfish=trace,libsignal_service=trace"
     } else if opt.verbose == 1 {
-        std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
-        std::env::set_var("RUST_BACKTRACE", "full");
+        unsafe {
+            std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
+            std::env::set_var("RUST_BACKTRACE", "full");
+        }
         "whisperfish=debug,libsignal_service=debug"
     } else {
         "whisperfish=info,warn"
@@ -190,7 +200,9 @@ fn main() -> anyhow::Result<()> {
         tracing::subscriber::set_global_default(tracing_coz::TracingCozBridge::new()).unwrap();
     } else {
         if std::env::var("RUST_LOG").is_err() {
-            std::env::set_var("RUST_LOG", log_filter);
+            unsafe {
+                std::env::set_var("RUST_LOG", log_filter);
+            }
         }
         let env_filter = EnvFilter::from_default_env();
 
@@ -214,11 +226,6 @@ fn main() -> anyhow::Result<()> {
     }
 
     qtlog::enable();
-
-    let instance_lock = SingleInstance::new("whisperfish").unwrap();
-    if !instance_lock.is_single() {
-        return dbus_show_app().map_err(|e| anyhow!(e));
-    }
 
     tracing::info!("Start main app (with autostart = {})", config.autostart);
 
