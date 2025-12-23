@@ -1271,6 +1271,7 @@ impl ClientActor {
         ctx: &mut <Self as Actor>::Context,
     ) {
         let storage = self.storage.clone().expect("storage initialized");
+        let is_primary = self.config.get_device_id() == *DEFAULT_DEVICE_ID;
 
         match body {
             ContentBody::NullMessage(_message) => {
@@ -1466,17 +1467,19 @@ impl ClientActor {
                 }
                 if let Some(keys) = keys {
                     tracing::debug!("Sync Keys message");
-                    // Note: storage_key is deprecated; it's generated from master_key
-                    if let Some(bytes) = &keys.master {
-                        if let Ok(master_key) = MasterKey::from_slice(bytes) {
-                            storage.store_master_key(Some(&master_key));
-                            let storage_key = StorageServiceKey::from_master_key(&master_key);
-                            storage.store_storage_service_key(Some(&storage_key));
-                        } else {
-                            tracing::error!("Keys sync message with invalid data");
-                        };
+                    if !is_primary {
+                        tracing::debug!("We're the primary device, ignore Keys sync response.");
                     } else {
-                        tracing::error!("Keys sync message without data");
+                        // Note: storage_key is deprecated; it's generated from master_key
+                        if let Some(bytes) = &keys.master {
+                            if let Ok(master_key) = MasterKey::from_slice(bytes) {
+                                storage.store_master_key(Some(&master_key));
+                                let storage_key = StorageServiceKey::from_master_key(&master_key);
+                                storage.store_storage_service_key(Some(&storage_key));
+                            } else {
+                                tracing::error!("Keys sync message with invalid data");
+                            };
+                        }
                     }
                 }
                 if let Some(blocked) = blocked {
