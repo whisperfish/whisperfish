@@ -68,6 +68,7 @@ impl Settings {
 
     pub const MASTER_KEY: &'static str = "master_key";
     pub const STORAGE_SERVICE_KEY: &'static str = "storage_service_key";
+    pub const ACCOUNT_ENTROPY_POOL: &'static str = "account_entropy_pool";
 
     pub const VERBOSE: &'static str = "verbose";
 }

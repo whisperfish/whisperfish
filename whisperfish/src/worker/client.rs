@@ -51,6 +51,8 @@ use whisperfish_store::orm::shorten;
 use whisperfish_store::orm::MessageType;
 use whisperfish_store::orm::SessionType;
 use whisperfish_store::orm::StoryType;
+use whisperfish_store::Settings;
+use whisperfish_store::TrustLevel;
 use zkgroup::profiles::ProfileKey;
 
 use super::message_expiry::ExpiredMessagesStream;
@@ -1479,6 +1481,11 @@ impl ClientActor {
                             } else {
                                 tracing::error!("Keys sync message with invalid data");
                             };
+                        }
+                        if let Some(pool) = &keys.account_entropy_pool {
+                            // Consists of: [0-9a-zA-Z]
+                            tracing::warn!("Storing but otherwise ignoring account entropy pool");
+                            storage.write_setting(Settings::ACCOUNT_ENTROPY_POOL, pool.as_str());
                         }
                     }
                 }
