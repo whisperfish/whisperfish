@@ -42,11 +42,11 @@ Release: 1
 License: AGPLv3
 Group: Qt/Qt
 URL: https://gitlab.com/whisperfish/whisperfish/
-Source0: %{name}-%{version}.tar.gz
+Source0: %{name}-%{version}.tar.xz
 
 %if %{with vendor}
 # Note: these files don't exist in the git repository
-Source1: vendor.tar.gz
+Source1: vendor.tar.xz
 Source2: vendor.toml
 %endif
 
@@ -176,7 +176,7 @@ export OFFLINE="--offline --locked"
 if [ -d "vendor" ]; then
   echo "Not overwriting existing vendored sources."
 else
-  tar xf %SOURCE1
+  tar -xf %SOURCE1
   mkdir -p .cargo/
 fi
 cp %SOURCE2 .cargo/config.toml
