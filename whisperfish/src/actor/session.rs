@@ -88,6 +88,7 @@ impl SessionActor {
     }
 
     /// Helper method to access storage reference
+    ///
     /// Panics if storage is not initialized (should never happen after StorageReady)
     fn storage(&self) -> &Storage {
         self.storage.as_ref().expect("storage not initialized")
