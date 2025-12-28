@@ -319,6 +319,11 @@ export TASKSET="taskset %{taskset}"
 export JOBS="-j 1"
 %endif
 
+# Use sparse registry cloning.
+# This *accidentally* works around https://github.com/rust-lang/cargo/issues/8719
+# See https://github.com/rust-lang/cargo/issues/8719#issuecomment-1516492970
+export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+
 $TASKSET cargo build $JOBS \
           -v \
           --release \
