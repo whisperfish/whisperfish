@@ -46,7 +46,7 @@ Source0: %{name}-%{version}.tar.gz
 
 %if %{with vendor}
 # Note: these files don't exist in the git repository
-Source1: vendor.tar.xz
+Source1: vendor.tar.gz
 Source2: vendor.toml
 %endif
 
