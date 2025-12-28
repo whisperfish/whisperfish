@@ -69,6 +69,10 @@ key_prefix = "$SCCACHE_S3_KEY_PREFIX"
 no_credentials = false
 EOF
 
+# Build vendored / --offline
+# These files come from the vendored CI job.
+mv "$CI_PROJECT_DIR/vendor.tar.xz" "$CI_PROJECT_DIR/vendor.toml" rpm/
+
 echo_t "Building Whisperfish for SailfishOS-$SFOS_VERSION-$MER_ARCH..."
 mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" --no-snapshot=force build \
     --enable-debug \
@@ -77,6 +81,7 @@ mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" --no-snapshot=force build \
     --define "cargo_version $VERSION" \
     --define "git_version $GIT_VERSION" \
     --without git \
+    --with vendor \
     --with lto \
     --with sccache \
     --with tools \

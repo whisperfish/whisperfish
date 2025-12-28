@@ -59,7 +59,8 @@ stages:
 .build-sailfishos: &build-sailfishos
   image: registry.gitlab.com/whisperfish/sailo-rs/rust-$MER_ARCH-$SFOS_VERSION:latest
   stage: build
-  needs: []
+  needs:
+    - prep:host:vendor-tar-gz:stable
   variables:
     CARGO_HOME: /home/mersdk/cargo
   artifacts:
