@@ -1,10 +1,10 @@
 [package]
 name = "whisperfish"
-version = "0.6.0-dev"
+version.workspace = true
+license.workspace = true
 authors = ["Ruben De Smet <ruben.de.smet@rubdos.be>"]
 edition = "2018"
 build = "build.rs"
-license = "AGPL-3.0-only"
 description = "Private messaging using Signal for SailfishOS -- library."
 
 [dependencies]

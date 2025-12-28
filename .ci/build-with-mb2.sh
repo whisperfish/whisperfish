@@ -13,7 +13,7 @@ git config --global --add safe.directory "*"
 
 echo_t "Determine Whisperfish version..."
 if [ -z "$CI_COMMIT_TAG" ]; then
-    CARGO_VERSION="$(grep -m1 -e '^version\s=\s"' whisperfish/Cargo.toml | sed -e 's/.*"\(.*-dev\).*"/\1/')"
+    CARGO_VERSION="$(grep -m1 -e '^version\s=\s"' Cargo.toml | sed -e 's/.*"\(.*-dev\).*"/\1/')"
     GIT_REF="$(git rev-parse --short HEAD)"
     VERSION="$CARGO_VERSION.b$CI_PIPELINE_IID.$GIT_REF"
 else

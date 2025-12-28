@@ -7,6 +7,10 @@ members = [
     "whisperfish-model-macro",
 ]
 
+[workspace.package]
+version = "0.6.0-dev"
+license = "AGPL-3.0-only"
+
 [patch.crates-io]
 # Required for libsignal's lizard2 patches to c25519
 curve25519-dalek = { git = 'https://github.com/signalapp/curve25519-dalek', tag = 'signal-curve25519-4.1.3' }

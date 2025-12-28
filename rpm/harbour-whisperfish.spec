@@ -290,11 +290,8 @@ export OUTPUT_DIR=`realpath .`/ringrtc/322/${SB2_RUST_TARGET_TRIPLE}
 export GIT_VERSION=$(git describe  --exclude release,tag --dirty=-dirty)
 
 # Configure Cargo.toml
-# https://blog.rust-lang.org/2022/09/22/Rust-1.64.0.html#cargo-improvements-workspace-inheritance-and-multi-target-builds
 %if 0%{?cargo_version:1}
-for TOML in $(ls Cargo.toml */Cargo.toml) ; do
-  sed -i.bak "s/^version\s*=\s*\"[-\.0-9a-zA-Z]*\"$/version = \"%{cargo_version}\"/" "$TOML"
-done
+  sed -i.bak "s/^version\s*=\s*\"[-\.0-9a-zA-Z]*\"$/version = \"%{cargo_version}\"/" Cargo.toml
 export CARGO_PROFILE_RELEASE_LTO=thin
 %endif
 cat Cargo.toml
