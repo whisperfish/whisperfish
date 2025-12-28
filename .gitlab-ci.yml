@@ -116,6 +116,7 @@ build:sf:latest:aarch64:
 build:host:stable:
   <<: *rust-stable
   stage: build
+  needs: []
   script:
     - bash fetch-webrtc.sh x86_64
     - cargo build --features bundled-sqlcipher
@@ -146,7 +147,8 @@ build:host:nightly:
     # Run only if stable already succeeded. We don't use the results of this
     # job and run it only to test future versions of rust. See the discussion
     # in https://gitlab.com/whisperfish/whisperfish/-/merge_requests/202
-    - build:host:stable
+    - job: build:host:stable
+      artifacts: false
   script:
     - bash fetch-webrtc.sh x86_64
     - cargo build --features bundled-sqlcipher
@@ -159,7 +161,8 @@ build:host:stable:docs:
   <<: *rust-stable
   stage: build
   needs:
-    - build:host:stable
+    - job: build:host:stable
+      artifacts: false
   script:
     - bash fetch-webrtc.sh x86_64
     - cargo doc --no-deps --document-private-items -p harbour-whisperfish -p libsignal-service -p libsignal-protocol -p zkgroup  -p whisperfish
@@ -220,7 +223,8 @@ test:stable:
   <<: *rust-stable
   stage: test
   needs:
-    - build:host:stable
+    - job: build:host:stable
+      artifacts: false
   script:
     - bash fetch-webrtc.sh x86_64
     - cargo test --features whisperfish/bundled-sqlcipher
@@ -232,8 +236,7 @@ test:stable:
 test:cargo-deny:
   <<: *rust-stable
   stage: test
-  needs:
-    - build:host:stable
+  needs: []
   script:
     - cargo install --locked cargo-deny
     - export PATH="$CARGO_HOME/bin:$PATH"
@@ -247,8 +250,7 @@ test:cargo-deny:
 test:stable:diesel-schema:
   <<: *rust-stable
   stage: test
-  needs:
-    - build:host:stable
+  needs: []
   script:
     - rustup override set 1.89.0
     - rustup component add rustfmt
@@ -274,8 +276,7 @@ test:stable:diesel-schema:
 fmt:stable:
   <<: *rust-stable
   stage: format
-  needs:
-    - build:host:stable
+  needs: []
   # Cargo fmt does not need external packages.
   before_script: []
   script:
@@ -296,8 +297,7 @@ coverage:stable:
   # ASLR disable failed: EPERM: Operation not permitted
   allow_failure: true
   stage: format
-  needs:
-    - test:stable
+  needs: []
   variables:
     <<: *variables
     # Not needed anymore after the Tarpaulin image is on Debian Bullseye
@@ -330,8 +330,7 @@ coverage:stable:
 clippy:stable:
   <<: *rust-stable
   stage: format
-  needs:
-    - test:stable
+  needs: []
   script:
     - rustup override set 1.89.0
     - rustup component add clippy
@@ -353,8 +352,7 @@ clippy:stable-warnings:
   <<: *rust-stable
   stage: format
   allow_failure: true
-  needs:
-    - test:stable
+  needs: []
   script:
     - rustup component add clippy
     - bash fetch-webrtc.sh x86_64
@@ -404,10 +402,6 @@ test:sailfishos:validate-rpms:
   stage: test
   image: registry.gitlab.com/whisperfish/sailo-rs/rpm-validator:latest
   allow_failure: true
-  dependencies:
-    - build:sf:latest:armv7hl
-    - build:sf:latest:aarch64
-    - build:sf:latest:i486
   needs:
     - build:sf:latest:armv7hl
     - build:sf:latest:aarch64
@@ -440,8 +434,6 @@ notify_matrix_build_ready:
     - .ci/send-matrix-build-notification.sh
 
 pages:
-  dependencies:
-    - build:host:stable:docs
   needs:
     - build:host:stable:docs
   stage: deploy
@@ -481,10 +473,6 @@ deploy:openrepos:whisperfish:
     - build:sf:latest:i486
     - build:sf:latest:aarch64
     - test:stable
-  dependencies:
-    - build:sf:latest:armv7hl
-    - build:sf:latest:i486
-    - build:sf:latest:aarch64
 
 deploy:gitlab:tarball:
   stage: deploy
