@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::Context;
 use clap::Parser;
 use dbus::blocking::Connection;
 use signal_hook::{consts::SIGINT, iterator::Signals};
@@ -101,24 +101,21 @@ fn main() -> anyhow::Result<()> {
     let opt: Opts = Parser::parse_from(args);
 
     if opt.quit {
-        return dbus_quit_app().map_err(|e| anyhow!(e));
+        dbus_quit_app()?;
+        return Ok(());
     }
 
     // Check if Whisperfish is already running and exit if it is
     let instance_lock = SingleInstance::new("whisperfish").unwrap();
     if !instance_lock.is_single() {
-        return dbus_show_app().map_err(|e| anyhow!(e));
+        dbus_show_app()?;
+        return Ok(());
     }
 
     // Migrate the config file from
     // ~/.config/harbour-whisperfish/config.yml to
     // ~/.config/be.rubdos/harbour-whisperfish/config.yml
-    match config::SignalConfig::migrate_config() {
-        Ok(()) => (),
-        Err(e) => {
-            eprintln!("Could not migrate config file: {e}");
-        }
-    };
+    config::SignalConfig::migrate_config().context("migrate config file")?;
 
     // Migrate the QSettings file from
     // ~/.config/harbour-whisperfish/harbour-whisperfish.conf to
@@ -139,14 +136,10 @@ fn main() -> anyhow::Result<()> {
     // Migrate the db and storage folders from
     // ~/.local/share/harbour-whisperfish/[...] to
     // ~/.local/share/rubdos.be/harbour-whisperfish/[...]
-    if let Err(e) = store::Storage::migrate_storage() {
-        return Err(anyhow!("Could not migrate db and storage: {e}"));
-    };
+    store::Storage::migrate_storage().context("migrate db and storage")?;
 
     // Write config to initialize a default config
-    if let Err(e) = config.write_to_file() {
-        return Err(anyhow!("Could not initialize config: {e}"));
-    }
+    config.write_to_file().context("initialize config")?;
 
     if opt.prestart {
         config.autostart = true;
@@ -243,19 +236,13 @@ fn main() -> anyhow::Result<()> {
     ] {
         let path = std::path::Path::new(dir.trim());
         if !path.exists() {
-            if let Err(e) = std::fs::create_dir_all(path) {
-                return Err(anyhow!(
-                    "Could not create storage directory {}: {e}",
-                    path.display(),
-                ));
-            }
+            std::fs::create_dir_all(path)
+                .with_context(|| format!("create storage directory at {}", path.display()))?;
         }
     }
 
     // This will panic here if feature `sailfish` is not enabled
-    if let Err(e) = gui::run(config) {
-        return Err(anyhow!(e));
-    }
+    gui::run(config)?;
 
     match config::SignalConfig::read_from_file() {
         Ok(mut config) => {
