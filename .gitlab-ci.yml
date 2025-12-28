@@ -126,8 +126,16 @@ build:host:stable:
     - when: on_success
 
 prep:host:vendor-tar-gz:stable:
-  <<: *rust-stable
+  image: rust
+  cache:
+    key: vendor-tar
+    paths:
+      - target/
+      - /usr/local/cargo/
   stage: prep
+  before_script:
+    - cargo --version
+    - rustc --version
   script:
     - cargo vendor > vendor.toml
     - tar -czf vendor.tar.gz vendor
