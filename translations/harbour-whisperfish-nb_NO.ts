@@ -1825,7 +1825,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="113"/>
         <source>Search</source>
         <extracomment>Show search field menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Søk</translation>
     </message>
     <message id="whisperfish-announcements-switch-label">
         <location filename="../qml/pages/GroupProfilePage.qml" line="165"/>
@@ -2913,40 +2913,40 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/SearchPage.qml" line="46"/>
         <source>Message search</source>
         <extracomment>Search page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Søk i meldinger</translation>
     </message>
     <message id="whisperfish-search-field-label">
         <location filename="../qml/pages/SearchPage.qml" line="77"/>
         <source>Search messages by text</source>
         <extracomment>Search field default text</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Søk i meldinger etter tekst</translation>
     </message>
     <message id="whisperfish-search-field-desc" numerus="yes">
         <location filename="../qml/pages/SearchPage.qml" line="80"/>
         <source>%n match(es)</source>
         <extracomment>Search field description</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n treff</numerusform>
+            <numerusform>%n treff</numerusform>
         </translation>
     </message>
     <message id="whisperfish-search-select-session">
         <location filename="../qml/pages/SearchPage.qml" line="120"/>
         <source>Search from conversation</source>
         <extracomment>Search page, select session to search from, or all</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Søk i samtalen</translation>
     </message>
     <message id="whisperfish-search-from-all">
         <location filename="../qml/pages/SearchPage.qml" line="126"/>
         <source>All conversations</source>
         <extracomment>Search page, search from all conversations</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Alle samtaler</translation>
     </message>
     <message id="whisperfish-search-results-label">
         <location filename="../qml/pages/SearchPage.qml" line="270"/>
         <source>No messages</source>
         <extracomment>Search results placeholder text</extracomment>
-        <translation type="unfinished">Ingen meldinger</translation>
+        <translation>Ingen meldinger</translation>
     </message>
 </context>
 </TS>
