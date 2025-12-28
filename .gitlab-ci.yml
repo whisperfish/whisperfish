@@ -17,6 +17,7 @@ include:
   stage: deploy
 
 stages:
+  - prep
   - build
   - test
   - format
@@ -58,6 +59,7 @@ stages:
 .build-sailfishos: &build-sailfishos
   image: registry.gitlab.com/whisperfish/sailo-rs/rust-$MER_ARCH-$SFOS_VERSION:latest
   stage: build
+  needs: []
   variables:
     CARGO_HOME: /home/mersdk/cargo
   artifacts:
@@ -122,9 +124,9 @@ build:host:stable:
       when: never
     - when: on_success
 
-build:host:vendor-tar-gz:stable:
+prep:host:vendor-tar-gz:stable:
   <<: *rust-stable
-  stage: build
+  stage: prep
   script:
     - cargo vendor > vendor.toml
     - tar -czf vendor.tar.gz vendor
@@ -513,9 +515,7 @@ deploy:chum:
       name: "OBS Chum"
       url: "https://build.sailfishos.org/package/show/home:rubdos:whisperfish/Whisperfish"
   needs:
-    - build:host:vendor-tar-gz:stable
-  dependencies:
-    - build:host:vendor-tar-gz:stable
+    - prep:host:vendor-tar-gz:stable
   script:
     - echo $OSCRC | base64 -d > ~/.oscrc
     - zypper install -y osc
