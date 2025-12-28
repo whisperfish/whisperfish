@@ -40,8 +40,8 @@ bash fetch-webrtc.sh $MER_ARCH
 
 # We also need to move the cache, and afterwards move it back.
 if [ -e "$CI_PROJECT_DIR/cargo" ]; then
-    sudo mv "$CI_PROJECT_DIR/cargo" ~/cargo
-    sudo chown -R "$USER":"$USER" ~/cargo
+    sudo mv "$CI_PROJECT_DIR/cargo" $CARGO_HOME
+    sudo chown -R "$USER":"$USER" $CARGO_HOME
 fi
 
 git status
@@ -93,7 +93,7 @@ echo_t "Copying target files..."
 sudo cp -ar ~/whisperfish-build/target/* target/
 
 echo_t "Moving cargo cache..."
-sudo mv ~/cargo "$CI_PROJECT_DIR/cargo"
+sudo mv $CARGO_HOME "$CI_PROJECT_DIR/cargo"
 echo_t "Moving ringrtc for cache..."
 sudo mv ~/whisperfish-build/ringrtc "$CI_PROJECT_DIR/ringrtc"
 
