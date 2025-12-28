@@ -172,7 +172,7 @@ cargo --version
 
 %if %{with vendor}
 echo "Setting up an OFFLINE vendored build."
-export OFFLINE="--offline"
+export OFFLINE="--offline --locked"
 if [ -d "vendor" ]; then
   echo "Not overwriting existing vendored sources."
 else
