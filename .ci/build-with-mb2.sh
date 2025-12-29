@@ -91,11 +91,9 @@ export TMPDIR="$TMPDIR2"
 
 # Copy everything useful back
 popd
-mkdir -p RPMS target
+mkdir -p RPMS
 echo_t "Copying RPM packages..."
 sudo cp -ar ~/whisperfish-build/RPMS/* RPMS/
-echo_t "Copying target files..."
-sudo cp -ar ~/whisperfish-build/target/* target/
 
 echo_t "Moving cargo cache..."
 sudo mv $CARGO_HOME "$CI_PROJECT_DIR/cargo"

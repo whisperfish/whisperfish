@@ -65,10 +65,6 @@ stages:
   artifacts:
     paths:
       - RPMS/*.rpm
-        # i686 is the "native" target, so we catch them in the `target` dir directly.
-      - target/release/whisperfish-migration-dry-run
-      - target/release/fetch-signal-attachment
-      - target/release/harbour-whisperfish
       - target/*/release/whisperfish-migration-dry-run
       - target/*/release/fetch-signal-attachment
       - target/*/release/harbour-whisperfish
