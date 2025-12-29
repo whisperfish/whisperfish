@@ -76,7 +76,7 @@ stages:
       - cargo/bin/
       - cargo/registry/index/
       - cargo/registry/cache/
-      - cargo/git/db/
+      - cargo/git/
 
       - target/*/debug/deps
       - target/*/debug/build
