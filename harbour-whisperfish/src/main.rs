@@ -21,12 +21,15 @@ struct Opts {
     #[arg(short = 'c', long)]
     captcha: Option<String>,
 
-    /// Enable verbose console log. Disables journal logging.
+    /// Enable debug or trace logging to console, which disables journal.
     ///
-    /// Equivalent with setting
-    /// `QT_LOGGING_TO_CONSOLE=1 RUST_LOG=libsignal_service=trace,libsignal_service_actix=trace,whisperfish=trace`.
-    #[arg(short = 'v', long)]
-    verbose: bool,
+    /// Set debug level log with -v or --verbose once. Equivalent with setting
+    /// `QT_LOGGING_TO_CONSOLE=1 RUST_LOG=libsignal_service=debug,whisperfish=debug`
+    ///
+    /// Set trace level log with -vv or --verbose twice. Equivalent with setting
+    /// `QT_LOGGING_TO_CONSOLE=1 RUST_LOG=libsignal_service=trace,whisperfish=trace`
+    #[arg(short = 'v', long, action = clap::ArgAction::Count)]
+    verbose: u8,
 
     /// Whether whisperfish was launched from autostart. Also accepts '-prestart'
     #[arg(long)]
@@ -37,7 +40,33 @@ struct Opts {
     quit: bool,
 }
 
-fn main() {
+fn dbus_show_app() -> Result<(), dbus::Error> {
+    eprintln!("Calling app.show() on DBus.");
+
+    let c = Connection::new_session()?;
+    let proxy = c.with_proxy(
+        "be.rubdos.whisperfish",
+        "/be/rubdos/whisperfish/app",
+        Duration::from_millis(20000),
+    );
+
+    proxy.method_call("be.rubdos.whisperfish.app", "show", ())
+}
+
+fn dbus_quit_app() -> Result<(), dbus::Error> {
+    eprintln!("Calling app.quit() on DBus.");
+
+    let c = Connection::new_session()?;
+    let proxy = c.with_proxy(
+        "be.rubdos.whisperfish",
+        "/be/rubdos/whisperfish/app",
+        Duration::from_millis(1000),
+    );
+
+    proxy.method_call("be.rubdos.whisperfish.app", "quit", ())
+}
+
+fn main() -> anyhow::Result<()> {
     // Ctrl-C --> graceful shutdown
     if let Ok(mut signals) = Signals::new([SIGINT].iter()) {
         thread::spawn(move || {
@@ -72,37 +101,34 @@ fn main() {
     let opt: Opts = Parser::parse_from(args);
 
     if opt.quit {
-        if let Err(e) = dbus_quit_app() {
-            eprintln!("{}", e);
-        }
-        return;
+        dbus_quit_app()?;
+        return Ok(());
+    }
+
+    // Check if Whisperfish is already running and exit if it is
+    let instance_lock = SingleInstance::new("whisperfish").unwrap();
+    if !instance_lock.is_single() {
+        dbus_show_app()?;
+        return Ok(());
     }
 
     // Migrate the config file from
     // ~/.config/harbour-whisperfish/config.yml to
     // ~/.config/be.rubdos/harbour-whisperfish/config.yml
-    match config::SignalConfig::migrate_config() {
-        Ok(()) => (),
-        Err(e) => {
-            eprintln!("Could not migrate config file: {}", e);
-        }
-    };
+    config::SignalConfig::migrate_config().context("migrate config file")?;
 
     // Migrate the QSettings file from
     // ~/.config/harbour-whisperfish/harbour-whisperfish.conf to
     // ~/.config/be.rubdos/harbour-whisperfish/harbour-whisperfish.conf
-    match config::SettingsBridge::migrate_qsettings() {
-        Ok(()) => (),
-        Err(e) => {
-            eprintln!("Could not migrate QSettings file: {}", e);
-        }
+    if let Err(e) = config::SettingsBridge::migrate_qsettings() {
+        eprintln!("Could not migrate QSettings file: {e}");
     };
 
     // Read config file or get a default config
     let mut config = match config::SignalConfig::read_from_file() {
         Ok(x) => x,
         Err(e) => {
-            eprintln!("Config file not found: {}", e);
+            eprintln!("Config file not found: {e}");
             config::SignalConfig::default()
         }
     };
@@ -110,30 +136,29 @@ fn main() {
     // Migrate the db and storage folders from
     // ~/.local/share/harbour-whisperfish/[...] to
     // ~/.local/share/rubdos.be/harbour-whisperfish/[...]
-    match store::Storage::migrate_storage() {
-        Ok(()) => (),
-        Err(e) => {
-            eprintln!("Could not migrate db and storage: {}", e);
-            std::process::exit(1);
-        }
-    };
+    store::Storage::migrate_storage().context("migrate db and storage")?;
 
     // Write config to initialize a default config
-    if let Err(e) = config.write_to_file() {
-        eprintln!("{}", e);
-        std::process::exit(1);
-    }
+    config.write_to_file().context("initialize config")?;
 
     if opt.prestart {
         config.autostart = true;
     }
     config.override_captcha = opt.captcha;
 
-    let log_filter = if config.verbose || opt.verbose {
+    let log_filter = if config.verbose || opt.verbose > 1 {
         // Enable QML debug output and full backtrace (for Sailjail).
-        std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
-        std::env::set_var("RUST_BACKTRACE", "full");
+        unsafe {
+            std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
+            std::env::set_var("RUST_BACKTRACE", "full");
+        }
         "whisperfish=trace,libsignal_service=trace"
+    } else if opt.verbose == 1 {
+        unsafe {
+            std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
+            std::env::set_var("RUST_BACKTRACE", "full");
+        }
+        "whisperfish=debug,libsignal_service=debug"
     } else {
         "whisperfish=info,warn"
     };
@@ -168,7 +193,9 @@ fn main() {
         tracing::subscriber::set_global_default(tracing_coz::TracingCozBridge::new()).unwrap();
     } else {
         if std::env::var("RUST_LOG").is_err() {
-            std::env::set_var("RUST_LOG", log_filter);
+            unsafe {
+                std::env::set_var("RUST_LOG", log_filter);
+            }
         }
         let env_filter = EnvFilter::from_default_env();
 
@@ -178,7 +205,7 @@ fn main() {
 
         // If verbose, print to terminal (with timestamps and tracing).
         // Otherwise, send to journald (without tracing).
-        if opt.verbose {
+        if opt.verbose > 0 {
             tracing_subscriber::registry()
                 .with(env_filter)
                 .with(tracing_subscriber::fmt::layer())
@@ -193,47 +220,6 @@ fn main() {
 
     qtlog::enable();
 
-    let instance_lock = SingleInstance::new("whisperfish").unwrap();
-    if !instance_lock.is_single() {
-        if let Err(e) = dbus_show_app() {
-            tracing::error!("{}", e);
-        }
-        return;
-    }
-
-    if let Err(e) = run_main_app(config) {
-        tracing::error!("Fatal error: {}", e);
-        std::process::exit(1);
-    }
-}
-
-fn dbus_show_app() -> Result<(), dbus::Error> {
-    tracing::info!("Calling app.show() on DBus.");
-
-    let c = Connection::new_session()?;
-    let proxy = c.with_proxy(
-        "be.rubdos.whisperfish",
-        "/be/rubdos/whisperfish/app",
-        Duration::from_millis(20000),
-    );
-
-    proxy.method_call("be.rubdos.whisperfish.app", "show", ())
-}
-
-fn dbus_quit_app() -> Result<(), dbus::Error> {
-    tracing::info!("Calling app.quit() on DBus.");
-
-    let c = Connection::new_session()?;
-    let proxy = c.with_proxy(
-        "be.rubdos.whisperfish",
-        "/be/rubdos/whisperfish/app",
-        Duration::from_millis(1000),
-    );
-
-    proxy.method_call("be.rubdos.whisperfish.app", "quit", ())
-}
-
-fn run_main_app(config: config::SignalConfig) -> Result<(), anyhow::Error> {
     tracing::info!("Start main app (with autostart = {})", config.autostart);
 
     // Initialise storage here
@@ -251,24 +237,23 @@ fn run_main_app(config: config::SignalConfig) -> Result<(), anyhow::Error> {
         let path = std::path::Path::new(dir.trim());
         if !path.exists() {
             std::fs::create_dir_all(path)
-                .with_context(|| format!("Could not create dir: {}", path.display()))?;
+                .with_context(|| format!("create storage directory at {}", path.display()))?;
         }
     }
 
     // This will panic here if feature `sailfish` is not enabled
-    gui::run(config).unwrap();
+    gui::run(config)?;
 
     match config::SignalConfig::read_from_file() {
         Ok(mut config) => {
             config.verbose = settings.get_verbose();
             if let Err(e) = config.write_to_file() {
-                tracing::error!("Could not save config.yml: {}", e)
+                tracing::error!("Could not save config.yml: {e}")
             };
         }
-        Err(e) => tracing::error!("Could not open config.yml: {}", e),
+        Err(e) => tracing::error!("Could not open config.yml: {e}"),
     };
 
     tracing::info!("Shut down.");
-
     Ok(())
 }
