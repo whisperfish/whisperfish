@@ -42,7 +42,7 @@ Release: 1
 License: AGPLv3
 Group: Qt/Qt
 URL: https://gitlab.com/whisperfish/whisperfish/
-Source0: %{name}-%{version}.tar.gz
+Source0: %{name}-%{version}.tar.xz
 
 %if %{with vendor}
 # Note: these files don't exist in the git repository
@@ -172,11 +172,11 @@ cargo --version
 
 %if %{with vendor}
 echo "Setting up an OFFLINE vendored build."
-export OFFLINE="--offline"
+export OFFLINE="--offline --locked"
 if [ -d "vendor" ]; then
   echo "Not overwriting existing vendored sources."
 else
-  tar xf %SOURCE1
+  tar -xf %SOURCE1
   mkdir -p .cargo/
 fi
 cp %SOURCE2 .cargo/config.toml
@@ -318,6 +318,11 @@ export TASKSET="taskset %{taskset}"
 %else
 export JOBS="-j 1"
 %endif
+
+# Use sparse registry cloning.
+# This *accidentally* works around https://github.com/rust-lang/cargo/issues/8719
+# See https://github.com/rust-lang/cargo/issues/8719#issuecomment-1516492970
+export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 
 $TASKSET cargo build $JOBS \
           -v \

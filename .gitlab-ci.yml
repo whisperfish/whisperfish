@@ -17,6 +17,7 @@ include:
   stage: deploy
 
 stages:
+  - prep
   - build
   - test
   - format
@@ -58,6 +59,7 @@ stages:
 .build-sailfishos: &build-sailfishos
   image: registry.gitlab.com/whisperfish/sailo-rs/rust-$MER_ARCH-$SFOS_VERSION:latest
   stage: build
+  needs: []
   variables:
     CARGO_HOME: /home/mersdk/cargo
   artifacts:
@@ -76,17 +78,7 @@ stages:
       - cargo/bin/
       - cargo/registry/index/
       - cargo/registry/cache/
-      - cargo/git/db/
-
-      - target/*/debug/deps
-      - target/*/debug/build
-      - target/*/release/deps
-      - target/*/release/build
-      # i686
-      - target/debug/deps
-      - target/debug/build
-      - target/release/deps
-      - target/release/build
+      - cargo/git/
     key: target-$MER_ARCH
   script:
     - .ci/build-with-mb2.sh
@@ -124,6 +116,7 @@ build:sf:latest:aarch64:
 build:host:stable:
   <<: *rust-stable
   stage: build
+  needs: []
   script:
     - bash fetch-webrtc.sh x86_64
     - cargo build --features bundled-sqlcipher
@@ -132,15 +125,23 @@ build:host:stable:
       when: never
     - when: on_success
 
-build:host:vendor-tar-gz:stable:
-  <<: *rust-stable
-  stage: build
+prep:host:vendor-tar-gz:stable:
+  image: rust
+  cache:
+    key: vendor-tar
+    paths:
+      - target/
+      - /usr/local/cargo/
+  stage: prep
+  before_script:
+    - cargo --version
+    - rustc --version
   script:
     - cargo vendor > vendor.toml
-    - tar -czf vendor.tar.gz vendor
+    - tar -cJf vendor.tar.xz vendor
   artifacts:
     paths:
-      - vendor.tar.gz
+      - vendor.tar.xz
       - vendor.toml
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -154,7 +155,8 @@ build:host:nightly:
     # Run only if stable already succeeded. We don't use the results of this
     # job and run it only to test future versions of rust. See the discussion
     # in https://gitlab.com/whisperfish/whisperfish/-/merge_requests/202
-    - build:host:stable
+    - job: build:host:stable
+      artifacts: false
   script:
     - bash fetch-webrtc.sh x86_64
     - cargo build --features bundled-sqlcipher
@@ -167,7 +169,8 @@ build:host:stable:docs:
   <<: *rust-stable
   stage: build
   needs:
-    - build:host:stable
+    - job: build:host:stable
+      artifacts: false
   script:
     - bash fetch-webrtc.sh x86_64
     - cargo doc --no-deps --document-private-items -p harbour-whisperfish -p libsignal-service -p libsignal-protocol -p zkgroup  -p whisperfish
@@ -228,7 +231,8 @@ test:stable:
   <<: *rust-stable
   stage: test
   needs:
-    - build:host:stable
+    - job: build:host:stable
+      artifacts: false
   script:
     - bash fetch-webrtc.sh x86_64
     - cargo test --features whisperfish/bundled-sqlcipher
@@ -240,8 +244,7 @@ test:stable:
 test:cargo-deny:
   <<: *rust-stable
   stage: test
-  needs:
-    - build:host:stable
+  needs: []
   script:
     - cargo install --locked cargo-deny
     - export PATH="$CARGO_HOME/bin:$PATH"
@@ -255,8 +258,7 @@ test:cargo-deny:
 test:stable:diesel-schema:
   <<: *rust-stable
   stage: test
-  needs:
-    - build:host:stable
+  needs: []
   script:
     - rustup override set 1.89.0
     - rustup component add rustfmt
@@ -282,8 +284,7 @@ test:stable:diesel-schema:
 fmt:stable:
   <<: *rust-stable
   stage: format
-  needs:
-    - build:host:stable
+  needs: []
   # Cargo fmt does not need external packages.
   before_script: []
   script:
@@ -304,8 +305,7 @@ coverage:stable:
   # ASLR disable failed: EPERM: Operation not permitted
   allow_failure: true
   stage: format
-  needs:
-    - test:stable
+  needs: []
   variables:
     <<: *variables
     # Not needed anymore after the Tarpaulin image is on Debian Bullseye
@@ -338,8 +338,7 @@ coverage:stable:
 clippy:stable:
   <<: *rust-stable
   stage: format
-  needs:
-    - test:stable
+  needs: []
   script:
     - rustup override set 1.89.0
     - rustup component add clippy
@@ -361,8 +360,7 @@ clippy:stable-warnings:
   <<: *rust-stable
   stage: format
   allow_failure: true
-  needs:
-    - test:stable
+  needs: []
   script:
     - rustup component add clippy
     - bash fetch-webrtc.sh x86_64
@@ -412,10 +410,6 @@ test:sailfishos:validate-rpms:
   stage: test
   image: registry.gitlab.com/whisperfish/sailo-rs/rpm-validator:latest
   allow_failure: true
-  dependencies:
-    - build:sf:latest:armv7hl
-    - build:sf:latest:aarch64
-    - build:sf:latest:i486
   needs:
     - build:sf:latest:armv7hl
     - build:sf:latest:aarch64
@@ -448,8 +442,6 @@ notify_matrix_build_ready:
     - .ci/send-matrix-build-notification.sh
 
 pages:
-  dependencies:
-    - build:host:stable:docs
   needs:
     - build:host:stable:docs
   stage: deploy
@@ -489,10 +481,6 @@ deploy:openrepos:whisperfish:
     - build:sf:latest:i486
     - build:sf:latest:aarch64
     - test:stable
-  dependencies:
-    - build:sf:latest:armv7hl
-    - build:sf:latest:i486
-    - build:sf:latest:aarch64
 
 deploy:gitlab:tarball:
   stage: deploy
@@ -523,9 +511,7 @@ deploy:chum:
       name: "OBS Chum"
       url: "https://build.sailfishos.org/package/show/home:rubdos:whisperfish/Whisperfish"
   needs:
-    - build:host:vendor-tar-gz:stable
-  dependencies:
-    - build:host:vendor-tar-gz:stable
+    - prep:host:vendor-tar-gz:stable
   script:
     - echo $OSCRC | base64 -d > ~/.oscrc
     - zypper install -y osc
@@ -534,7 +520,7 @@ deploy:chum:
     - cat _service
     - osc ls home:rubdos:whisperfish Whisperfish
     - osc co home:rubdos:whisperfish Whisperfish
-    - cp vendor.tar.gz _service vendor.toml home:rubdos:whisperfish/Whisperfish/
+    - cp vendor.tar.xz _service vendor.toml home:rubdos:whisperfish/Whisperfish/
     - cd home:rubdos:whisperfish/Whisperfish
     - osc ci -m "Resources for Whisperfish $CI_COMMIT_TAG"
     # osc submitrequest sailfishos:chum:testing
