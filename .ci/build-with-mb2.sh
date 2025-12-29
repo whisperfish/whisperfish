@@ -29,6 +29,12 @@ echo_t "Cloning Whisperfish..."
 git clone . ~/whisperfish-build
 pushd ~/whisperfish-build
 
+# Try to restore ringrtc from cache
+if [ -e "$CI_PROJECT_DIR/ringrtc" ]; then
+    sudo mv "$CI_PROJECT_DIR/ringrtc" ~/ringrtc
+    sudo chown -R "$USER":"$USER" ~/ringrtc
+fi
+
 echo_t "Fetching WebRTC..."
 bash fetch-webrtc.sh $MER_ARCH
 
@@ -88,6 +94,8 @@ sudo cp -ar ~/whisperfish-build/target/* target/
 
 echo_t "Moving cargo cache..."
 sudo mv ~/cargo "$CI_PROJECT_DIR/cargo"
+echo_t "Moving ringrtc for cache..."
+sudo mv ~/whisperfish-build/ringrtc "$CI_PROJECT_DIR/ringrtc"
 
 echo_t "Uploading RPM packages..."
 .ci/upload-rpms.sh
