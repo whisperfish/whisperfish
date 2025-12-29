@@ -77,16 +77,6 @@ stages:
       - cargo/registry/index/
       - cargo/registry/cache/
       - cargo/git/
-
-      - target/*/debug/deps
-      - target/*/debug/build
-      - target/*/release/deps
-      - target/*/release/build
-      # i686
-      - target/debug/deps
-      - target/debug/build
-      - target/release/deps
-      - target/release/build
     key: target-$MER_ARCH
   script:
     - .ci/build-with-mb2.sh
