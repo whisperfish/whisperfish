@@ -14,6 +14,15 @@ pub struct ModelContext<T: QObject + 'static> {
     pub(crate) addr: Addr<ObservingModelActor<T>>,
 }
 
+impl<T: QObject + 'static> Clone for ModelContext<T> {
+    fn clone(&self) -> Self {
+        Self {
+            storage: self.storage.clone(),
+            addr: self.addr.clone(),
+        }
+    }
+}
+
 impl<T: QObject + 'static> ModelContext<T> {
     pub fn storage(&self) -> Storage {
         self.storage.clone()
