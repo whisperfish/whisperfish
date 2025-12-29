@@ -9,6 +9,7 @@
 %bcond_with calling
 %bcond_with diesel_instrumentation
 %bcond_with vendor
+%bcond_without git
 %bcond_without xz
 
 # Chum: _chum is set globally
@@ -92,7 +93,6 @@ BuildRequires:  libatomic-static
 BuildRequires:  rust >= 1.89
 BuildRequires:  rust-std-static >= 1.89
 BuildRequires:  cargo >= 1.89
-BuildRequires:  git
 BuildRequires:  protobuf-compiler
 BuildRequires:  nemo-qml-plugin-notifications-qt5-devel
 BuildRequires:  qt5-qtwebsockets-devel
@@ -101,6 +101,10 @@ BuildRequires:  gcc-c++
 BuildRequires:  zlib-devel
 BuildRequires:  coreutils
 BuildRequires:  perl-IPC-Cmd
+
+%if %{with git}
+BuildRequires:  git-core
+%endif
 
 # %if %%{with calling}
 # # Ringrtc needs linking against -lssl and -lcrypto;
@@ -287,7 +291,12 @@ export OUTPUT_DIR=`realpath .`/ringrtc/322/${SB2_RUST_TARGET_TRIPLE}
 # We could use the %%(version) and %%(release), but SFDK will include a datetime stamp,
 # ordering Cargo to recompile literally every second when the workspace is dirty.
 # git describe is a lot stabler, because it only uses the commit number and potentially a -dirty flag
-export GIT_VERSION=$(git describe  --exclude release,tag --dirty=-dirty)
+%if 0%{?git_version:1}
+GIT_VERSION="%{git_version}"
+%else
+GIT_VERSION=$(git describe  --exclude release,tag --dirty=-dirty)
+%endif
+export GIT_VERSION
 
 # Configure Cargo.toml
 %if 0%{?cargo_version:1}

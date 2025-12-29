@@ -29,6 +29,9 @@ echo_t "Cloning Whisperfish..."
 git clone . ~/whisperfish-build
 pushd ~/whisperfish-build
 
+# Determine GIT_VERSION in advance so SFOS targets don't need git
+export GIT_VERSION=$(git describe  --exclude release,tag --dirty=-dirty)
+
 # Try to restore ringrtc from cache
 if [ -e "$CI_PROJECT_DIR/ringrtc" ]; then
     sudo mv "$CI_PROJECT_DIR/ringrtc" ~/ringrtc
@@ -71,7 +74,9 @@ mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" --no-snapshot=force build \
     --enable-debug \
     --no-check \
     -- \
-    --define "cargo_version $VERSION"\
+    --define "cargo_version $VERSION" \
+    --define "git_version $GIT_VERSION" \
+    --without git \
     --with lto \
     --with sccache \
     --with tools \
