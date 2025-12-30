@@ -192,6 +192,7 @@ protoc --version
 %if %{with sccache}
 %ifnarch %ix86
 export RUSTC_WRAPPER=sccache
+sccache --stop-server || :
 sccache --start-server
 sccache -s
 %endif
@@ -340,7 +341,7 @@ $TASKSET cargo build $JOBS \
           %nil
 
 %if %{with sccache}
-sccache -s
+sccache --stop-server || :
 %endif
 
 lrelease -idbased translations/*.ts
