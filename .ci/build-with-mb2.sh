@@ -27,19 +27,17 @@ echo_t "Whisperfish version: $VERSION"
 
 echo_t "Cloning Whisperfish..."
 git clone . ~/whisperfish-build
-pushd ~/whisperfish-build
 
 # Determine GIT_VERSION in advance so SFOS targets don't need git
 export GIT_VERSION=$(git describe  --exclude release,tag --dirty=-dirty)
 
-# Try to restore ringrtc from cache
-if [ -e "$CI_PROJECT_DIR/ringrtc" ]; then
-    sudo mv "$CI_PROJECT_DIR/ringrtc" ~/ringrtc
-    sudo chown -R "$USER":"$USER" ~/ringrtc
-fi
+# This comes from job scripts
+echo_t "Restoring ringrtc cache..."
+sudo chown -R "$USER":"$USER" "$CI_PROJECT_DIR/ringrtc"
+[ -f "./whisperfish-build/ringrtc" ] && rm -rf "./whisperfish-build/ringrtc"
+mv -v "$CI_PROJECT_DIR/ringrtc" "./whisperfish-build/ringrtc"
 
-echo_t "Fetching WebRTC..."
-bash fetch-webrtc.sh $MER_ARCH
+pushd ~/whisperfish-build
 
 git status
 
@@ -89,9 +87,10 @@ export TMPDIR="$TMPDIR2"
 
 # Copy everything useful back
 popd
+
 mkdir -p RPMS
-echo_t "Copying RPM packages..."
-sudo cp -ar ~/whisperfish-build/RPMS/* RPMS/
+echo_t "Moving RPM packages..."
+sudo mv -v ~/whisperfish-build/RPMS/* RPMS/
 
 echo_t "Moving ringrtc for cache..."
 sudo mv ~/whisperfish-build/ringrtc "$CI_PROJECT_DIR/ringrtc"

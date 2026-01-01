@@ -26,7 +26,6 @@ stages:
 .rust: &rust
   cache: &rust-cache
     paths:
-      - ringrtc/
       - target/
       - cargo/bin/
       - cargo/registry/index/
@@ -74,6 +73,7 @@ stages:
       - ringrtc/
     key: target-$MER_ARCH
   script:
+    - ./fetch-webrtc.sh $MER_ARCH
     - .ci/unpack-vendor.sh
     - .ci/build-with-mb2.sh
 
@@ -113,13 +113,18 @@ build:host:stable:
   needs:
     - job: prep:host:vendor-tar-gz:stable
   script:
-    - bash fetch-webrtc.sh x86_64
+    - ./fetch-webrtc.sh x86_64
     - .ci/unpack-vendor.sh
     - cargo build --features bundled-sqlcipher
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
+  cache:
+    - key: ringrtc-x86_64
+      paths:
+        - ringrtc/
+      policy: pull
 
 prep:host:vendor-tar-gz:stable:
   image: rust
@@ -133,11 +138,16 @@ prep:host:vendor-tar-gz:stable:
       paths:
         - vendor.tar.xz
         - vendor.toml
+    # This is the only push-pull use of ringrtc-x86_64
+    - key: ringrtc-x86_64
+      paths:
+        - ringrtc/
   stage: prep
   before_script:
     - cargo --version
     - rustc --version
   script:
+    - ./fetch-webrtc.sh x86_64
     - .ci/unpack-vendor.sh || echo "Could not unpack vendor.tar.xz"
     - cargo vendor | tee vendor.toml # --> .cargo/config.toml
     - tar -cJf vendor.tar.xz vendor
@@ -162,12 +172,17 @@ build:host:nightly:
     - job: prep:host:vendor-tar-gz:stable
   script:
     - .ci/unpack-vendor.sh
-    - bash fetch-webrtc.sh x86_64
+    - ./fetch-webrtc.sh x86_64
     - cargo build --features bundled-sqlcipher
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
+  cache:
+    - key: ringrtc-x86_64
+      paths:
+        - ringrtc/
+      policy: pull
 
 build:host:stable:docs:
   <<: *rust-stable
@@ -239,12 +254,17 @@ test:stable:
     - job: build:host:stable
       artifacts: false
   script:
-    - bash fetch-webrtc.sh x86_64
+    - ./fetch-webrtc.sh x86_64
     - cargo test --features whisperfish/bundled-sqlcipher
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
+  cache:
+    - key: ringrtc-x86_64
+      paths:
+        - ringrtc/
+      policy: pull
 
 test:cargo-deny:
   <<: *rust-stable
@@ -350,7 +370,6 @@ clippy:stable:
     - .ci/unpack-vendor.sh
     - rustup override set 1.89.0
     - rustup component add clippy
-    - bash fetch-webrtc.sh x86_64
     # the following command should be used but needs sailfish SDK
     # - cargo clippy --all-targets --all-features -- -D warnings
     #
@@ -373,7 +392,6 @@ clippy:stable-warnings:
   script:
     - .ci/unpack-vendor.sh
     - rustup component add clippy
-    - bash fetch-webrtc.sh x86_64
     # the following command should be used but needs sailfish SDK
     # - cargo clippy --offline --all-targets --all-features -- -D warnings
     #
