@@ -189,15 +189,6 @@ cp %SOURCE2 .cargo/config.toml
 export PROTOC=/usr/bin/protoc
 protoc --version
 
-%if %{with sccache}
-%ifnarch %ix86
-export RUSTC_WRAPPER=sccache
-sccache --stop-server || :
-sccache --start-server
-sccache -s
-%endif
-%endif
-
 # https://git.sailfishos.org/mer-core/gecko-dev/blob/master/rpm/xulrunner-qt5.spec#L224
 # When cross-compiling under SB2 rust needs to know what arch to emit
 # when nothing is specified on the command line. That usually defaults
@@ -317,7 +308,7 @@ BINS="--bin harbour-whisperfish"
 %endif
 
 # Workaround a Scratchbox bug - /tmp/[...]/symbols.o not found
-export TMPDIR=${TMPDIR:-$(realpath ".tmp")}
+export TMPDIR=${TMPDIR:-"$PWD/.tmp"}
 mkdir -p $TMPDIR
 
 %if 0%{?taskset:1}
@@ -330,6 +321,15 @@ export JOBS="-j 1"
 # This *accidentally* works around https://github.com/rust-lang/cargo/issues/8719
 # See https://github.com/rust-lang/cargo/issues/8719#issuecomment-1516492970
 export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+
+%if %{with sccache}
+%ifnarch %ix86
+export RUSTC_WRAPPER=sccache
+sccache --stop-server || :
+sccache --start-server
+sccache -s
+%endif
+%endif
 
 $TASKSET cargo build $JOBS \
           -v \
