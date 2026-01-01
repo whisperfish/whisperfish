@@ -332,6 +332,10 @@ coverage:stable:
   stage: format
   needs:
     - job: prep:host:vendor-tar-gz:stable
+    # Make sure the project compiles before attempting tarpaulin,
+    # which is a quite heavy operation in comparison.
+    - job: build:host:stable
+      artifacts: false
   variables:
     <<: *variables
     # Not needed anymore after the Tarpaulin image is on Debian Bullseye
