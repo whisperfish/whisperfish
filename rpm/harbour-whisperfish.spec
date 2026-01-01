@@ -290,10 +290,12 @@ GIT_VERSION=$(git describe  --exclude release,tag --dirty=-dirty)
 %endif
 export GIT_VERSION
 
-# Configure Cargo.toml
+# Configure Cargo.toml and Cargo.lock with new version number.
+# This works as long as we have something unique (e.g. -dev) in the Cargo.coml version field.
+# If we don't, the build will simply abort mismatching vendored package versions.
 %if 0%{?cargo_version:1}
-  sed -i.bak "s/^version\s*=\s*\"[-\.0-9a-zA-Z]*\"$/version = \"%{cargo_version}\"/" Cargo.toml
-export CARGO_PROFILE_RELEASE_LTO=thin
+  V=$(grep -m1 -e '^version\s=\s"' Cargo.toml | awk -F '"' '{print $2}')
+  sed -i "s/^version = \"$V\"\$/version = \"%{cargo_version}\"/" Cargo.toml Cargo.lock
 %endif
 cat Cargo.toml
 
@@ -316,11 +318,6 @@ export TASKSET="taskset %{taskset}"
 %else
 export JOBS="-j 1"
 %endif
-
-# Use sparse registry cloning.
-# This *accidentally* works around https://github.com/rust-lang/cargo/issues/8719
-# See https://github.com/rust-lang/cargo/issues/8719#issuecomment-1516492970
-export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 
 %if %{with sccache}
 %ifnarch %ix86

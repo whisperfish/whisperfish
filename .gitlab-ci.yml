@@ -72,12 +72,9 @@ stages:
   cache:
     paths:
       - ringrtc/
-      - cargo/bin/
-      - cargo/registry/index/
-      - cargo/registry/cache/
-      - cargo/git/
     key: target-$MER_ARCH
   script:
+    - .ci/unpack-vendor.sh
     - .ci/build-with-mb2.sh
 
 build:sf:latest:armv7hl:
@@ -113,9 +110,11 @@ build:sf:latest:aarch64:
 build:host:stable:
   <<: *rust-stable
   stage: build
-  needs: []
+  needs:
+    - job: prep:host:vendor-tar-gz:stable
   script:
     - bash fetch-webrtc.sh x86_64
+    - .ci/unpack-vendor.sh
     - cargo build --features bundled-sqlcipher
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -125,16 +124,22 @@ build:host:stable:
 prep:host:vendor-tar-gz:stable:
   image: rust
   cache:
-    key: vendor-tar
-    paths:
-      - target/
-      - /usr/local/cargo/
+    - key: vendor-target
+      paths:
+        - target/
+        - /usr/local/cargo/
+    - key: vendor-tar
+      policy: pull-push
+      paths:
+        - vendor.tar.xz
+        - vendor.toml
   stage: prep
   before_script:
     - cargo --version
     - rustc --version
   script:
-    - cargo vendor > vendor.toml
+    - .ci/unpack-vendor.sh || echo "Could not unpack vendor.tar.xz"
+    - cargo vendor | tee vendor.toml # --> .cargo/config.toml
     - tar -cJf vendor.tar.xz vendor
   artifacts:
     paths:
@@ -154,7 +159,9 @@ build:host:nightly:
     # in https://gitlab.com/whisperfish/whisperfish/-/merge_requests/202
     - job: build:host:stable
       artifacts: false
+    - job: prep:host:vendor-tar-gz:stable
   script:
+    - .ci/unpack-vendor.sh
     - bash fetch-webrtc.sh x86_64
     - cargo build --features bundled-sqlcipher
   rules:
@@ -168,8 +175,9 @@ build:host:stable:docs:
   needs:
     - job: build:host:stable
       artifacts: false
+    - job: prep:host:vendor-tar-gz:stable
   script:
-    - bash fetch-webrtc.sh x86_64
+    - .ci/unpack-vendor.sh
     - cargo doc --no-deps --document-private-items -p harbour-whisperfish -p libsignal-service -p libsignal-protocol -p zkgroup  -p whisperfish
   artifacts:
     paths:
@@ -302,13 +310,14 @@ coverage:stable:
   # ASLR disable failed: EPERM: Operation not permitted
   allow_failure: true
   stage: format
-  needs: []
+  needs:
+    - job: prep:host:vendor-tar-gz:stable
   variables:
     <<: *variables
     # Not needed anymore after the Tarpaulin image is on Debian Bullseye
     QT_SELECT: qt5
   script:
-    - bash fetch-webrtc.sh x86_64
+    - .ci/unpack-vendor.sh
     # Add --all-features and --all-targets some time in the future. Tarpaulin
     # runs only at linux-x86 and would need the whisperfish sdk to build all
     # features.
@@ -335,8 +344,10 @@ coverage:stable:
 clippy:stable:
   <<: *rust-stable
   stage: format
-  needs: []
+  needs:
+    - prep:host:vendor-tar-gz:stable
   script:
+    - .ci/unpack-vendor.sh
     - rustup override set 1.89.0
     - rustup component add clippy
     - bash fetch-webrtc.sh x86_64
@@ -347,7 +358,7 @@ clippy:stable:
     # derive_partial_eq_without_eq occurs by prost, and prost suggests to disable the lint globally:
     #   https://github.com/tokio-rs/prost/issues/661
     # useless-transmute
-    - cargo clippy --all-targets -- -A clippy::derive_partial_eq_without_eq -A clippy::useless_transmute
+    - cargo clippy --offline --all-targets -- -A clippy::derive_partial_eq_without_eq -A clippy::useless_transmute
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
@@ -357,15 +368,17 @@ clippy:stable-warnings:
   <<: *rust-stable
   stage: format
   allow_failure: true
-  needs: []
+  needs:
+    - prep:host:vendor-tar-gz:stable
   script:
+    - .ci/unpack-vendor.sh
     - rustup component add clippy
     - bash fetch-webrtc.sh x86_64
     # the following command should be used but needs sailfish SDK
-    # - cargo clippy --all-targets --all-features -- -D warnings
+    # - cargo clippy --offline --all-targets --all-features -- -D warnings
     #
     # For allows, see above
-    - cargo clippy --all-targets -- -D warnings -A clippy::derive_partial_eq_without_eq -A clippy::useless_transmute
+    - cargo clippy --offline --all-targets -- -D warnings -A clippy::derive_partial_eq_without_eq -A clippy::useless_transmute
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never

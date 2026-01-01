@@ -41,12 +41,6 @@ fi
 echo_t "Fetching WebRTC..."
 bash fetch-webrtc.sh $MER_ARCH
 
-# We also need to move the cache, and afterwards move it back.
-if [ -e "$CI_PROJECT_DIR/cargo" ]; then
-    sudo mv "$CI_PROJECT_DIR/cargo" $CARGO_HOME
-    sudo chown -R "$USER":"$USER" $CARGO_HOME
-fi
-
 git status
 
 # -f to ignore non-existent files
@@ -91,7 +85,6 @@ mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" --no-snapshot=force build \
 rm -rf "$TMPDIR"
 export TMPDIR="$TMPDIR2"
 
-
 [ "$(ls -A RPMS/*.rpm)" ] || exit 1
 
 # Copy everything useful back
@@ -100,8 +93,6 @@ mkdir -p RPMS
 echo_t "Copying RPM packages..."
 sudo cp -ar ~/whisperfish-build/RPMS/* RPMS/
 
-echo_t "Moving cargo cache..."
-sudo mv $CARGO_HOME "$CI_PROJECT_DIR/cargo"
 echo_t "Moving ringrtc for cache..."
 sudo mv ~/whisperfish-build/ringrtc "$CI_PROJECT_DIR/ringrtc"
 
