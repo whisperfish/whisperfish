@@ -128,8 +128,10 @@ prep:host:vendor-tar-gz:stable:
   cache:
     - key: vendor-target
       paths:
-        - target/
-        - /usr/local/cargo/
+        - cargo/bin/
+        - cargo/registry/index/
+        - cargo/registry/cache/
+        - cargo/git/db/
     - key: vendor-tar
       policy: pull-push
       paths:
@@ -146,6 +148,8 @@ prep:host:vendor-tar-gz:stable:
   script:
     - ./fetch-webrtc.sh x86_64
     - .ci/unpack-vendor.sh || echo "Could not unpack vendor.tar.xz"
+    - mkdir -p cargo
+    - export CARGO_HOME=$(realpath cargo)
     - cargo vendor | tee vendor.toml # --> .cargo/config.toml
     - tar -cO vendor/ | xz -z -T4 > vendor.tar.xz
   artifacts:
