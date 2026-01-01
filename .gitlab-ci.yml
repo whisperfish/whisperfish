@@ -439,10 +439,12 @@ test:sailfishos:validate-rpms:
   image: registry.gitlab.com/whisperfish/sailo-rs/rpm-validator:latest
   allow_failure: true
   needs:
+    - build:sf:latest:i486
     - build:sf:latest:armv7hl
     - build:sf:latest:aarch64
-    - build:sf:latest:i486
   script:
+    # Only the main rpm needs to be validation
+    - rm -f RPMS/*debuginfo* RPMS/*debugsource*
     - for rpm in RPMS/*.rpm; do rpmvalidation.sh $rpm; done
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -460,13 +462,17 @@ notify_matrix_build_ready:
     name: Whisperfish Matrix channel
     url: $MATRIX_HOME_SERVER
   needs:
-    - build:sf:latest:armv7hl
-    - build:sf:latest:aarch64
-    - build:sf:latest:i486
+    - job: build:sf:latest:armv7hl
+      artifacts: false
+    - job: build:sf:latest:aarch64
+      artifacts: false
+    - job: build:sf:latest:i486
+      artifacts: false
   before_script:
     - apt-get update
     - apt-get install --no-install-recommends -y git curl jq ca-certificates
   script:
+    # Build notification only needs the git repo
     - .ci/send-matrix-build-notification.sh
 
 pages:
