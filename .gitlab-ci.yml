@@ -9,12 +9,9 @@ include:
   # Awesome OpenRepos script by @nobodyinperson/Yann Büchau
   - https://gitlab.com/nobodyinperson/python3-openrepos-webclient/-/raw/master/openrepos-upload-rpm.gitlab-ci.yml
   # The MergeRequest-Pipelines template makes your pipelines run for the default branch, tags, and all types of merge request pipelines.
-  - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
+  - template: "Workflows/MergeRequest-Pipelines.gitlab-ci.yml"
   - project: "dependabot-gitlab/dependabot-standalone"
     file: ".gitlab-ci.yml"
-
-.dependabot-gitlab:
-  stage: deploy
 
 stages:
   - prep
@@ -193,7 +190,7 @@ build:host:stable:docs:
     - job: prep:host:vendor-tar-gz:stable
   script:
     - .ci/unpack-vendor.sh
-    - cargo doc --no-deps --document-private-items -p harbour-whisperfish -p libsignal-service -p libsignal-protocol -p zkgroup  -p whisperfish
+    - cargo doc --no-deps --document-private-items -p harbour-whisperfish -p libsignal-service -p libsignal-protocol -p zkgroup -p whisperfish
   artifacts:
     paths:
       - target/doc
@@ -239,6 +236,7 @@ qmllint:
   <<: *rust
   stage: format
   image: rust
+  # Disable cache - qmllint doesn't need anything.
   cache: {}
   script:
     - "qmllint qml/**/*.qml"
@@ -269,11 +267,13 @@ test:stable:
 test:cargo-deny:
   <<: *rust-stable
   stage: test
+  # XXX Cargo deny can use vendor.tar.xz
   needs: []
   script:
     - cargo install --locked cargo-deny
     - export PATH="$CARGO_HOME/bin:$PATH"
     - cargo deny check
+  # XXX Separate rust-stable cargo/ and target/ caches
   cache: {}
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $CI_SCHEDULE == "cargo-deny"
@@ -283,6 +283,7 @@ test:cargo-deny:
 test:stable:diesel-schema:
   <<: *rust-stable
   stage: test
+  # Cargo fmt doesn't need even vendored sources
   needs: []
   script:
     - rustup override set 1.89.0
@@ -293,13 +294,14 @@ test:stable:diesel-schema:
     - cargo install -f --debug diesel_cli --version "^2.2" --features "sqlite-bundled"
     - export PATH="$CARGO_HOME/bin:$PATH"
     - export DATABASE_URL=test_whisperfish.db
+    # Diesel does not need to access build artifacts of other stages.
     - diesel setup
     - diesel migration run
     - diesel print-schema > whisperfish-store/src/schema.rs
     - diesel print-schema --schema-key protocol > whisperfish-store/src/schema/protocol.rs
+    # Cargo fmt doesn't need vendored sources
     - cargo fmt -- --check whisperfish-store/src/schema.rs
     - cargo fmt -- --check whisperfish-store/src/schema/protocol.rs
-  # Diesel does not need to access build artifacts of other stages.
   cache: {}
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -314,9 +316,10 @@ fmt:stable:
   before_script: []
   script:
     - rustup component add rustfmt
+    # Cargo fmt does not need external packages.
     - cargo fmt -- --check
-  # Cargo fmt does not need to access the cache. With it's own cache, it does
-  # not interfere with `coverage:stable` and `clippy:stable`. There is nothing
+    # Cargo fmt does not need to access the cache. With it's own cache, it does
+    # not interfere with `coverage:stable` and `clippy:stable`. There is nothing
   # to store in the cache either.
   cache: {}
   rules:
@@ -375,7 +378,7 @@ clippy:stable:
     - rustup override set 1.89.0
     - rustup component add clippy
     # the following command should be used but needs sailfish SDK
-    # - cargo clippy --all-targets --all-features -- -D warnings
+    # - cargo clippy --offline --all-targets --all-features
     #
     # Two allows are put in globally, because they occur from macro invocations.
     # derive_partial_eq_without_eq occurs by prost, and prost suggests to disable the lint globally:
@@ -419,7 +422,7 @@ translations:check:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
-    - if: '$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
+    - if: "$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH"
   script:
     - .ci/check-translations.sh
 
@@ -429,7 +432,7 @@ translations:update:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   variables:
     # Clone with full depth for translation contribution analysis
     GIT_STRATEGY: clone
@@ -461,7 +464,7 @@ notify_matrix_build_ready:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   environment:
     name: Whisperfish Matrix channel
     url: $MATRIX_HOME_SERVER
@@ -486,7 +489,7 @@ pages:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   script:
     - mkdir -p public
     - mv target/doc public/
@@ -510,10 +513,10 @@ deploy:openrepos:whisperfish:
   <<: *deploy-openrepos
   variables:
     <<: *openrepos-vars
-    OPENREPOS_UPLOAD_RPM_APPNAME:  Whisperfish
+    OPENREPOS_UPLOAD_RPM_APPNAME: Whisperfish
   environment:
-      name: OpenRepos
-      url: https://openrepos.net/content/rubdos/whisperfish
+    name: OpenRepos
+    url: https://openrepos.net/content/rubdos/whisperfish
   needs:
     - build:sf:latest:armv7hl
     - build:sf:latest:i486
@@ -525,7 +528,6 @@ deploy:gitlab:tarball:
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   needs:
     - job: build:host:stable:tarball
-      artifacts: true
   script:
     - echo "Running release job"
   release:
@@ -546,8 +548,8 @@ deploy:chum:
   only:
     - tags
   environment:
-      name: "OBS Chum"
-      url: "https://build.sailfishos.org/package/show/home:rubdos:whisperfish/Whisperfish"
+    name: "OBS Chum"
+    url: "https://build.sailfishos.org/package/show/home:rubdos:whisperfish/Whisperfish"
   needs:
     - prep:host:vendor-tar-gz:stable
   script:
@@ -562,7 +564,6 @@ deploy:chum:
     - cd home:rubdos:whisperfish/Whisperfish
     - osc ci -m "Resources for Whisperfish $CI_COMMIT_TAG"
     # osc submitrequest sailfishos:chum:testing
-
 
 dry-run:triage:
   stage: test
@@ -589,3 +590,6 @@ policy:run:
     - gitlab-triage --token $PRIVATE_TOKEN --source projects --source-id $CI_PROJECT_PATH
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $CI_SCHEDULE == "policy"
+
+.dependabot-gitlab:
+  stage: deploy
