@@ -150,7 +150,7 @@ prep:host:vendor-tar-gz:stable:
     - ./fetch-webrtc.sh x86_64
     - .ci/unpack-vendor.sh || echo "Could not unpack vendor.tar.xz"
     - cargo vendor | tee vendor.toml # --> .cargo/config.toml
-    - tar -cJf vendor.tar.xz vendor
+    - tar -cO vendor/ | xz -z -T4 > vendor.tar.xz
   artifacts:
     paths:
       - vendor.tar.xz
