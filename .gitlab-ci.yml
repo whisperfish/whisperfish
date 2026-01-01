@@ -214,7 +214,13 @@ build:host:stable:tarball:
     - export P="${CI_PROJECT_NAME}-${CI_COMMIT_TAG#v}"
   script:
     - git archive --prefix="${P}/" -o ${P}.tar ${CI_COMMIT_TAG}
-    - cargo vendor ${P}/vendor
+    - .ci/unpack-vendor.sh
+    - pushd ${P}
+    - mkdir -p .cargo
+    - mv ../vendor ./vendor
+    - mv ../vendor.toml .cargo/config.toml
+    - cargo vendor
+    - popd
     - tar --append -f ${P}.tar ${P}
     - gzip ${P}.tar
   after_script:
@@ -251,7 +257,9 @@ test:stable:
   needs:
     - job: build:host:stable
       artifacts: false
+    - job: prep:host:vendor-tar-gz:stable
   script:
+    - .ci/unpack-vendor.sh
     - ./fetch-webrtc.sh x86_64
     - cargo test --features whisperfish/bundled-sqlcipher
   rules:
