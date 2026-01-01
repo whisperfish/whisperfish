@@ -58,21 +58,21 @@ stages:
   needs:
     - prep:host:vendor-tar-gz:stable
   variables:
-    CARGO_HOME: /home/mersdk/cargo
+    - CARGO_HOME: cargo
+  cache: &sfos-cache
+    paths:
+      - ringrtc/
+      - target/
+      - cargo/bin/
+      - cargo/registry/index/
+      - cargo/registry/cache/
+      - cargo/git/db/
   artifacts:
     paths:
       - RPMS/*.rpm
       - target/*/release/whisperfish-migration-dry-run
       - target/*/release/fetch-signal-attachment
       - target/*/release/harbour-whisperfish
-  cache:
-    paths:
-      - ringrtc/
-    key: target-$MER_ARCH
-  script:
-    - ./fetch-webrtc.sh $MER_ARCH
-    - .ci/unpack-vendor.sh
-    - .ci/build-with-mb2.sh
 
 build:sf:latest:armv7hl:
   extends: .build-sailfishos
@@ -83,6 +83,13 @@ build:sf:latest:armv7hl:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
+  cache:
+    <<: *sfos-cache
+    key: target-armv7hl
+  script:
+    - ./fetch-webrtc.sh armv7hl
+    - .ci/unpack-vendor.sh
+    - .ci/build-with-mb2.sh
 
 build:sf:latest:i486:
   extends: .build-sailfishos
@@ -93,6 +100,13 @@ build:sf:latest:i486:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
+  cache:
+    <<: *sfos-cache
+    key: target-i486
+  script:
+    - ./fetch-webrtc.sh i486
+    - .ci/unpack-vendor.sh
+    - .ci/build-with-mb2.sh
 
 build:sf:latest:aarch64:
   extends: .build-sailfishos
@@ -103,6 +117,13 @@ build:sf:latest:aarch64:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
+  cache:
+    <<: *sfos-cache
+    key: target-aarch64
+  script:
+    - ./fetch-webrtc.sh aarch64
+    - .ci/unpack-vendor.sh
+    - .ci/build-with-mb2.sh
 
 build:host:stable:
   <<: *rust-stable

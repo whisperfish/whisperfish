@@ -27,22 +27,37 @@ echo_t "Whisperfish version: $VERSION"
 
 echo_t "Cloning Whisperfish..."
 git clone . ~/whisperfish-build
+pushd ~/whisperfish-build
 
 # Determine GIT_VERSION in advance so SFOS targets don't need git
 export GIT_VERSION=$(git describe  --exclude release,tag --dirty=-dirty)
 
-# This comes from job scripts
+# This comes from job cache or the fetch scripy
 echo_t "Restoring ringrtc cache..."
+pwd
 sudo chown -R "$USER":"$USER" "$CI_PROJECT_DIR/ringrtc"
-[ -f "./whisperfish-build/ringrtc" ] && rm -rf "./whisperfish-build/ringrtc"
-mv -v "$CI_PROJECT_DIR/ringrtc" "./whisperfish-build/ringrtc"
+mv "$CI_PROJECT_DIR/ringrtc" ringrtc
 
-pushd ~/whisperfish-build
+if [ -z "$CARGO_HOME" ]; then
+    echo "Warning: CARGO_HOME is not set, default to 'cargo'"
+    export CARGO_HOME=cargo
+fi
+
+if [ -e "$CI_PROJECT_DIR/cargo" ]; then
+    echo "Restoring CARGO_HOME..."
+    sudo chown -R "$USER":"$USER" "$CI_PROJECT_DIR/cargo"
+    sudo mv "$CI_PROJECT_DIR/cargo" $CARGO_HOME
+fi
+
+if [ -e "$CI_PROJECT_DIR/target" ]; then
+    echo "Restoring target..."
+    sudo chown -R "$USER":"$USER" "$CI_PROJECT_DIR/target"
+    sudo mv "$CI_PROJECT_DIR/target" target
+fi
 
 git status
 
-# -f to ignore non-existent files
-rm -f RPMS/*.rpm
+rm -rf RPMS
 
 # Set this for sccache.  Sccache is testing out compilers, and host-cc fails here.
 TMPDIR2="$TMPDIR"
@@ -86,14 +101,21 @@ export TMPDIR="$TMPDIR2"
 [ "$(ls -A RPMS/*.rpm)" ] || exit 1
 
 # Copy everything useful back
+
+echo "Moving target to cache..."
+sudo mv target "$CI_PROJECT_DIR/target"
+
+echo "Moving CARGO_HOME to cache..."
+sudo mv $CARGO_HOME "$CI_PROJECT_DIR/cargo"
+
+echo_t "Moving ringrtc to cache..."
+sudo mv ringrtc "$CI_PROJECT_DIR/ringrtc"
+
 popd
 
 mkdir -p RPMS
 echo_t "Moving RPM packages..."
 sudo mv -v ~/whisperfish-build/RPMS/* RPMS/
-
-echo_t "Moving ringrtc for cache..."
-sudo mv ~/whisperfish-build/ringrtc "$CI_PROJECT_DIR/ringrtc"
 
 echo_t "Uploading RPM packages..."
 .ci/upload-rpms.sh
