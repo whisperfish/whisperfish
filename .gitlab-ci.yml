@@ -389,6 +389,9 @@ clippy:stable:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
+  cache:
+    <<: *rust-cache
+    key: rust-stable-clippy
 
 clippy:stable-warnings:
   <<: *rust-stable
@@ -408,6 +411,10 @@ clippy:stable-warnings:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
+  cache:
+    <<: *rust-cache
+    key: rust-stable-clippy
+    policy: pull
 
 .translations: &translations
   image: debian
