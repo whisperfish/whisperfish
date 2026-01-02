@@ -21,25 +21,19 @@ stages:
   - deploy
 
 .rust: &rust
+  image: rust
   cache: &rust-cache
     paths:
       - target/
-      - cargo/bin/
-      - cargo/registry/index/
-      - cargo/registry/cache/
-      - cargo/git/db/
+      - /usr/local/cargo/bin/
+      - /usr/local/cargo/registry/index/
+      - /usr/local/cargo/registry/cache/
+      - /usr/local/cargo/git/db/
   before_script:
     - apt-get update
     - apt-get install -y --no-install-recommends libsqlcipher-dev qtbase5-dev qtbase5-private-dev qt5-qmake cmake qtdeclarative5-dev qtbase5-dev-tools qttools5-dev-tools protobuf-compiler libdbus-1-dev libqt5opengl5-dev libssl-dev libgstreamer1.0-dev
     - cargo --version
     - rustc --version
-
-.rust-stable: &rust-stable
-  <<: *rust
-  image: rust
-  cache:
-    <<: *rust-cache
-    key: rust-stable
 
 .rust-nightly: &rust-nightly
   <<: *rust
@@ -126,51 +120,41 @@ build:sf:latest:aarch64:
     - .ci/build-with-mb2.sh
 
 build:host:stable:
-  <<: *rust-stable
+  <<: *rust
   stage: build
   needs:
     - job: prep:host:vendor-tar-gz:stable
   script:
-    - ./fetch-webrtc.sh x86_64
     - .ci/unpack-vendor.sh
-    - cargo build --features bundled-sqlcipher
+    - cargo build --offline --features bundled-sqlcipher
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
   cache:
-    - key: ringrtc-x86_64
-      paths:
-        - ringrtc/
-      policy: pull
+    - key: rust-stable
+      <<: *rust-cache
 
 prep:host:vendor-tar-gz:stable:
   image: rust
   cache:
     - key: vendor-target
       paths:
-        - cargo/bin/
-        - cargo/registry/index/
-        - cargo/registry/cache/
-        - cargo/git/db/
+        - /usr/local/cargo/bin/
+        - /usr/local/cargo/registry/index/
+        - /usr/local/cargo/registry/cache/
+        - /usr/local/cargo/git/db/
     - key: vendor-tar
       policy: pull-push
       paths:
         - vendor.tar.xz
         - vendor.toml
-    # This is the only push-pull use of ringrtc-x86_64
-    - key: ringrtc-x86_64
-      paths:
-        - ringrtc/
   stage: prep
   before_script:
     - cargo --version
     - rustc --version
   script:
-    - ./fetch-webrtc.sh x86_64
-    - .ci/unpack-vendor.sh || echo "Could not unpack vendor.tar.xz"
-    - mkdir -p cargo
-    - export CARGO_HOME=$(realpath cargo)
+    - .ci/unpack-vendor.sh || true
     - cargo vendor | tee vendor.toml # --> .cargo/config.toml
     - tar -cO vendor/ | xz -z -T4 > vendor.tar.xz
   artifacts:
@@ -194,20 +178,17 @@ build:host:nightly:
     - job: prep:host:vendor-tar-gz:stable
   script:
     - .ci/unpack-vendor.sh
-    - ./fetch-webrtc.sh x86_64
-    - cargo build --features bundled-sqlcipher
+    - cargo build --offline --features bundled-sqlcipher
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
   cache:
-    - key: ringrtc-x86_64
-      paths:
-        - ringrtc/
-      policy: pull
+    - key: rust-nightly
+      <<: *rust-cache
 
 build:host:stable:docs:
-  <<: *rust-stable
+  <<: *rust
   stage: build
   needs:
     - job: build:host:stable
@@ -231,7 +212,7 @@ build:host:stable:docs:
     - when: on_success
 
 build:host:stable:tarball:
-  <<: *rust-stable
+  <<: *rust
   stage: build
   needs:
     - build:host:stable
@@ -277,7 +258,7 @@ qmllint:
     - when: on_success
 
 test:stable:
-  <<: *rust-stable
+  <<: *rust
   stage: test
   needs:
     - job: build:host:stable
@@ -285,20 +266,18 @@ test:stable:
     - job: prep:host:vendor-tar-gz:stable
   script:
     - .ci/unpack-vendor.sh
-    - ./fetch-webrtc.sh x86_64
-    - cargo test --features whisperfish/bundled-sqlcipher
+    - cargo test --offline --features whisperfish/bundled-sqlcipher
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
   cache:
-    - key: ringrtc-x86_64
-      paths:
-        - ringrtc/
+    - key: rust-stable
+      <<: *rust-cache
       policy: pull
 
 test:cargo-deny:
-  <<: *rust-stable
+  <<: *rust
   stage: test
   # XXX Cargo deny can use vendor.tar.xz
   needs: []
@@ -314,7 +293,7 @@ test:cargo-deny:
       allow_failure: true
 
 test:stable:diesel-schema:
-  <<: *rust-stable
+  <<: *rust
   stage: test
   # Cargo fmt doesn't need even vendored sources
   needs: []
@@ -335,14 +314,13 @@ test:stable:diesel-schema:
     # Cargo fmt doesn't need vendored sources
     - cargo fmt -- --check whisperfish-store/src/schema.rs
     - cargo fmt -- --check whisperfish-store/src/schema/protocol.rs
-  cache: {}
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
 
 fmt:stable:
-  <<: *rust-stable
+  <<: *rust
   stage: format
   needs: []
   # Cargo fmt does not need external packages.
@@ -354,14 +332,13 @@ fmt:stable:
     # Cargo fmt does not need to access the cache. With it's own cache, it does
     # not interfere with `coverage:stable` and `clippy:stable`. There is nothing
   # to store in the cache either.
-  cache: {}
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
 
 coverage:stable:
-  <<: *rust-stable
+  <<: *rust
   image: xd009642/tarpaulin
   # ASLR disable failed: EPERM: Operation not permitted
   allow_failure: true
@@ -402,7 +379,7 @@ coverage:stable:
     - when: on_success
 
 clippy:stable:
-  <<: *rust-stable
+  <<: *rust
   stage: format
   needs:
     - prep:host:vendor-tar-gz:stable
@@ -427,7 +404,7 @@ clippy:stable:
     key: rust-stable-clippy
 
 clippy:stable-warnings:
-  <<: *rust-stable
+  <<: *rust
   stage: format
   allow_failure: true
   needs:
