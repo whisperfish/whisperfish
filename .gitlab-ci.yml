@@ -161,11 +161,6 @@ build:host:nightly:
   stage: build
   allow_failure: true
   needs:
-    # Run only if stable already succeeded. We don't use the results of this
-    # job and run it only to test future versions of rust. See the discussion
-    # in https://gitlab.com/whisperfish/whisperfish/-/merge_requests/202
-    - job: build:host:stable
-      artifacts: false
     - job: prep:host:vendor-tar-gz:stable
   script:
     - .ci/unpack-vendor.sh
