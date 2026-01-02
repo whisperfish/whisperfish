@@ -334,9 +334,6 @@ coverage:stable:
     # Make sure the project compiles before attempting llvm-cov.
     - job: build:host:stable
       artifacts: false
-  variables:
-    <<: *variables
-    QT_SELECT: qt5
   script:
     - .ci/unpack-vendor.sh
     - rustup component add llvm-tools-preview
