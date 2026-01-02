@@ -330,40 +330,46 @@ fmt:stable:
 
 coverage:stable:
   <<: *rust
-  image: xd009642/tarpaulin
+  image: rust
   # ASLR disable failed: EPERM: Operation not permitted
   allow_failure: true
   stage: format
   needs:
     - job: prep:host:vendor-tar-gz:stable
-    # Make sure the project compiles before attempting tarpaulin,
-    # which is a quite heavy operation in comparison.
+    # Make sure the project compiles before attempting llvm-cov.
     - job: build:host:stable
       artifacts: false
   variables:
     <<: *variables
-    # Not needed anymore after the Tarpaulin image is on Debian Bullseye
     QT_SELECT: qt5
   script:
     - .ci/unpack-vendor.sh
+    - rustup component add llvm-tools-preview
+    # We don't need an optimized llvm-cov, we only run it once per pipeline.
+    - cargo install -f --debug cargo-llvm-cov
+    - export PATH="$CARGO_HOME/bin:$PATH"
     # Add --all-features and --all-targets some time in the future. Tarpaulin
     # runs only at linux-x86 and would need the whisperfish sdk to build all
     # features.
-    - cargo tarpaulin --features bundled-sqlcipher --exclude-files cargo/* --out xml
+    - cargo llvm-cov --all --features bundled-sqlcipher --no-fail-fast || true
+    - cargo llvm-cov report --cobertura --output-path cobertura.xml
+    - cargo llvm-cov report --html
   artifacts:
     name: ${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHA}
     reports:
       coverage_report:
         coverage_format: cobertura
         path: cobertura.xml
-  coverage: '/^\d+.\d+% coverage/'
+    paths:
+      - target/llvm-cov/html
+  coverage: '/TOTAL\s+(\d+\s+)+(\d+\.\d+\%)/'
   # Tarpaulin needs its own cache as many more information are stored from
   # other crates. In addition, `clippy:stable` can pull/push the cache from
   # `test:stable` and the tarpaulin job does not interfere with the clippy
   # cache.
   cache:
     <<: *rust-cache
-    key: rust-stable-tarpaulin
+    key: rust-nightly-llvm-cov
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
