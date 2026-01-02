@@ -35,17 +35,6 @@ stages:
     - cargo --version
     - rustc --version
 
-.rust-nightly: &rust-nightly
-  <<: *rust
-  variables:
-    QT_SELECT: 5
-    <<: *variables
-  image: rustlang/rust:nightly-bookworm
-  allow_failure: true
-  cache:
-    <<: *rust-cache
-    key: rust-nightly
-
 .build-sailfishos: &build-sailfishos
   image: registry.gitlab.com/whisperfish/sailo-rs/rust-$MER_ARCH-$SFOS_VERSION:latest
   stage: build
@@ -167,8 +156,10 @@ prep:host:vendor-tar-gz:stable:
     - when: on_success
 
 build:host:nightly:
-  <<: *rust-nightly
+  <<: *rust
+  image: rustlang/rust:nightly-bookworm
   stage: build
+  allow_failure: true
   needs:
     # Run only if stable already succeeded. We don't use the results of this
     # job and run it only to test future versions of rust. See the discussion
