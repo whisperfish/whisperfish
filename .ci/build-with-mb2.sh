@@ -2,59 +2,65 @@
 
 set -e
 
-echo_t() {
-    echo "[$(date +%H:%M:%S)]" "$@"
-}
+echo "Building for $SFOS_VERSION"
 
-echo_t "Building for $SFOS_VERSION"
-
-echo_t "Adding \"*\" as safe directory in git..."
+echo "Adding \"*\" as safe directory in git..."
 git config --global --add safe.directory "*"
 
-echo_t "Determine Whisperfish version..."
+echo "Determine Whisperfish version..."
 if [ -z "$CI_COMMIT_TAG" ]; then
-    CARGO_VERSION="$(grep -m1 -e '^version\s=\s"' whisperfish/Cargo.toml | sed -e 's/.*"\(.*-dev\).*"/\1/')"
+    CARGO_VERSION="$(grep -m1 -e '^version\s=\s"' Cargo.toml | sed -e 's/.*"\(.*-dev\).*"/\1/')"
     GIT_REF="$(git rev-parse --short HEAD)"
     VERSION="$CARGO_VERSION.b$CI_PIPELINE_IID.$GIT_REF"
 else
     # Strip leading v in v0.6.0- ...
     VERSION=$(echo "$CI_COMMIT_TAG" | sed -e 's/^v//g')
 fi
-echo_t "Whisperfish version: $VERSION"
+echo "Whisperfish version: $VERSION"
 
 # The MB2 image comes with a default user.
 # We need to copy the source over, because of that.
 
-echo_t "Cloning Whisperfish..."
+echo "Cloning Whisperfish..."
 git clone . ~/whisperfish-build
 pushd ~/whisperfish-build
 
-# Try to restore ringrtc from cache
-if [ -e "$CI_PROJECT_DIR/ringrtc" ]; then
-    sudo mv "$CI_PROJECT_DIR/ringrtc" ~/ringrtc
-    sudo chown -R "$USER":"$USER" ~/ringrtc
+# Determine GIT_VERSION in advance so SFOS targets don't need git
+export GIT_VERSION=$(git describe  --exclude release,tag --dirty=-dirty)
+
+# This comes from job cache or the fetch scripy
+echo "Restoring ringrtc cache..."
+pwd
+sudo chown -R "$USER":"$USER" "$CI_PROJECT_DIR/ringrtc"
+mv "$CI_PROJECT_DIR/ringrtc" ringrtc
+
+if [ -z "$CARGO_HOME" ]; then
+    echo "Warning: CARGO_HOME is not set, default to 'cargo'"
+    export CARGO_HOME=cargo
 fi
 
-echo_t "Fetching WebRTC..."
-bash fetch-webrtc.sh $MER_ARCH
-
-# We also need to move the cache, and afterwards move it back.
 if [ -e "$CI_PROJECT_DIR/cargo" ]; then
+    echo "Restoring CARGO_HOME..."
+    sudo chown -R "$USER":"$USER" "$CI_PROJECT_DIR/cargo"
     sudo mv "$CI_PROJECT_DIR/cargo" $CARGO_HOME
-    sudo chown -R "$USER":"$USER" $CARGO_HOME
+fi
+
+if [ -e "$CI_PROJECT_DIR/target" ]; then
+    echo "Restoring target..."
+    sudo chown -R "$USER":"$USER" "$CI_PROJECT_DIR/target"
+    sudo mv "$CI_PROJECT_DIR/target" target
 fi
 
 git status
 
-# -f to ignore non-existent files
-rm -f RPMS/*.rpm
+rm -rf RPMS
 
 # Set this for sccache.  Sccache is testing out compilers, and host-cc fails here.
 TMPDIR2="$TMPDIR"
 export TMPDIR="$PWD/tmp/"
 mkdir "$TMPDIR"
 
-echo_t "Configure sccache..."
+echo "Configure sccache..."
 mkdir -p ~/.config/sccache
 cat > ~/.config/sccache/config << EOF
 [cache.s3]
@@ -66,12 +72,19 @@ key_prefix = "$SCCACHE_S3_KEY_PREFIX"
 no_credentials = false
 EOF
 
-echo_t "Building Whisperfish for SailfishOS-$SFOS_VERSION-$MER_ARCH..."
+# Build vendored / --offline
+# These files come from the vendored CI job.
+mv "$CI_PROJECT_DIR/vendor.tar.xz" "$CI_PROJECT_DIR/vendor.toml" rpm/
+
+echo "Building Whisperfish for SailfishOS-$SFOS_VERSION-$MER_ARCH..."
 mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" --no-snapshot=force build \
     --enable-debug \
     --no-check \
     -- \
-    --define "cargo_version $VERSION"\
+    --define "cargo_version $VERSION" \
+    --define "git_version $GIT_VERSION" \
+    --without git \
+    --with vendor \
     --with lto \
     --with sccache \
     --with tools \
@@ -81,22 +94,25 @@ mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" --no-snapshot=force build \
 rm -rf "$TMPDIR"
 export TMPDIR="$TMPDIR2"
 
-
 [ "$(ls -A RPMS/*.rpm)" ] || exit 1
 
 # Copy everything useful back
-popd
-mkdir -p RPMS target
-echo_t "Copying RPM packages..."
-sudo cp -ar ~/whisperfish-build/RPMS/* RPMS/
-echo_t "Copying target files..."
-sudo cp -ar ~/whisperfish-build/target/* target/
 
-echo_t "Moving cargo cache..."
+echo "Moving target to cache..."
+sudo mv target "$CI_PROJECT_DIR/target"
+
+echo "Moving CARGO_HOME to cache..."
 sudo mv $CARGO_HOME "$CI_PROJECT_DIR/cargo"
-echo_t "Moving ringrtc for cache..."
-sudo mv ~/whisperfish-build/ringrtc "$CI_PROJECT_DIR/ringrtc"
 
-echo_t "Uploading RPM packages..."
+echo "Moving ringrtc to cache..."
+sudo mv ringrtc "$CI_PROJECT_DIR/ringrtc"
+
+popd
+
+mkdir -p RPMS
+echo "Moving RPM packages..."
+sudo mv -v ~/whisperfish-build/RPMS/* RPMS/
+
+echo "Uploading RPM packages..."
 .ci/upload-rpms.sh
-echo_t "Done!"
+echo "Done!"

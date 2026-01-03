@@ -9,12 +9,9 @@ include:
   # Awesome OpenRepos script by @nobodyinperson/Yann Büchau
   - https://gitlab.com/nobodyinperson/python3-openrepos-webclient/-/raw/master/openrepos-upload-rpm.gitlab-ci.yml
   # The MergeRequest-Pipelines template makes your pipelines run for the default branch, tags, and all types of merge request pipelines.
-  - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
+  - template: "Workflows/MergeRequest-Pipelines.gitlab-ci.yml"
   - project: "dependabot-gitlab/dependabot-standalone"
     file: ".gitlab-ci.yml"
-
-.dependabot-gitlab:
-  stage: deploy
 
 stages:
   - prep
@@ -24,7 +21,28 @@ stages:
   - deploy
 
 .rust: &rust
+  image: rust
   cache: &rust-cache
+    paths:
+      - target/
+      - /usr/local/cargo/bin/
+      - /usr/local/cargo/registry/index/
+      - /usr/local/cargo/registry/cache/
+      - /usr/local/cargo/git/db/
+  before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends libsqlcipher-dev qtbase5-dev qtbase5-private-dev qt5-qmake cmake qtdeclarative5-dev qtbase5-dev-tools qttools5-dev-tools protobuf-compiler libdbus-1-dev libqt5opengl5-dev libssl-dev libgstreamer1.0-dev
+    - cargo --version
+    - rustc --version
+
+.build-sailfishos: &build-sailfishos
+  image: registry.gitlab.com/whisperfish/sailo-rs/rust-$MER_ARCH-$SFOS_VERSION:latest
+  stage: build
+  needs:
+    - prep:host:vendor-tar-gz:stable
+  variables:
+    - CARGO_HOME: cargo
+  cache: &sfos-cache
     paths:
       - ringrtc/
       - target/
@@ -32,56 +50,12 @@ stages:
       - cargo/registry/index/
       - cargo/registry/cache/
       - cargo/git/db/
-  before_script:
-    - apt-get update
-    - apt-get install -y --no-install-recommends libsqlcipher-dev qtbase5-dev qtbase5-private-dev qt5-qmake cmake qtdeclarative5-dev qtbase5-dev-tools qttools5-dev-tools protobuf-compiler libdbus-1-dev libqt5opengl5-dev libssl-dev libgstreamer1.0-dev
-    - cargo --version
-    - rustc --version
-
-.rust-stable: &rust-stable
-  <<: *rust
-  image: rust
-  cache:
-    <<: *rust-cache
-    key: rust-stable
-
-.rust-nightly: &rust-nightly
-  <<: *rust
-  variables:
-    QT_SELECT: 5
-    <<: *variables
-  image: rustlang/rust:nightly-bookworm
-  allow_failure: true
-  cache:
-    <<: *rust-cache
-    key: rust-nightly
-
-.build-sailfishos: &build-sailfishos
-  image: registry.gitlab.com/whisperfish/sailo-rs/rust-$MER_ARCH-$SFOS_VERSION:latest
-  stage: build
-  needs: []
-  variables:
-    CARGO_HOME: /home/mersdk/cargo
   artifacts:
     paths:
       - RPMS/*.rpm
-        # i686 is the "native" target, so we catch them in the `target` dir directly.
-      - target/release/whisperfish-migration-dry-run
-      - target/release/fetch-signal-attachment
-      - target/release/harbour-whisperfish
       - target/*/release/whisperfish-migration-dry-run
       - target/*/release/fetch-signal-attachment
       - target/*/release/harbour-whisperfish
-  cache:
-    paths:
-      - ringrtc/
-      - cargo/bin/
-      - cargo/registry/index/
-      - cargo/registry/cache/
-      - cargo/git/
-    key: target-$MER_ARCH
-  script:
-    - .ci/build-with-mb2.sh
 
 build:sf:latest:armv7hl:
   extends: .build-sailfishos
@@ -92,6 +66,13 @@ build:sf:latest:armv7hl:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
+  cache:
+    <<: *sfos-cache
+    key: target-armv7hl
+  script:
+    - ./fetch-webrtc.sh armv7hl
+    - .ci/unpack-vendor.sh
+    - .ci/build-with-mb2.sh
 
 build:sf:latest:i486:
   extends: .build-sailfishos
@@ -102,6 +83,13 @@ build:sf:latest:i486:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
+  cache:
+    <<: *sfos-cache
+    key: target-i486
+  script:
+    - ./fetch-webrtc.sh i486
+    - .ci/unpack-vendor.sh
+    - .ci/build-with-mb2.sh
 
 build:sf:latest:aarch64:
   extends: .build-sailfishos
@@ -112,33 +100,52 @@ build:sf:latest:aarch64:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
+  cache:
+    <<: *sfos-cache
+    key: target-aarch64
+  script:
+    - ./fetch-webrtc.sh aarch64
+    - .ci/unpack-vendor.sh
+    - .ci/build-with-mb2.sh
 
 build:host:stable:
-  <<: *rust-stable
+  <<: *rust
   stage: build
-  needs: []
+  needs:
+    - job: prep:host:vendor-tar-gz:stable
   script:
-    - bash fetch-webrtc.sh x86_64
-    - cargo build --features bundled-sqlcipher
+    - .ci/unpack-vendor.sh
+    - cargo build --offline --features bundled-sqlcipher
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
+  cache:
+    - key: rust-stable
+      <<: *rust-cache
 
 prep:host:vendor-tar-gz:stable:
   image: rust
   cache:
-    key: vendor-tar
-    paths:
-      - target/
-      - /usr/local/cargo/
+    - key: vendor-target
+      paths:
+        - /usr/local/cargo/bin/
+        - /usr/local/cargo/registry/index/
+        - /usr/local/cargo/registry/cache/
+        - /usr/local/cargo/git/db/
+    - key: vendor-tar
+      policy: pull-push
+      paths:
+        - vendor.tar.xz
+        - vendor.toml
   stage: prep
   before_script:
     - cargo --version
     - rustc --version
   script:
-    - cargo vendor > vendor.toml
-    - tar -cJf vendor.tar.xz vendor
+    - .ci/unpack-vendor.sh || true
+    - cargo vendor | tee vendor.toml # --> .cargo/config.toml
+    - tar -cO vendor/ | xz -z -T4 > vendor.tar.xz
   artifacts:
     paths:
       - vendor.tar.xz
@@ -149,31 +156,33 @@ prep:host:vendor-tar-gz:stable:
     - when: on_success
 
 build:host:nightly:
-  <<: *rust-nightly
+  <<: *rust
+  image: rustlang/rust:nightly-bookworm
   stage: build
+  allow_failure: true
   needs:
-    # Run only if stable already succeeded. We don't use the results of this
-    # job and run it only to test future versions of rust. See the discussion
-    # in https://gitlab.com/whisperfish/whisperfish/-/merge_requests/202
-    - job: build:host:stable
-      artifacts: false
+    - job: prep:host:vendor-tar-gz:stable
   script:
-    - bash fetch-webrtc.sh x86_64
-    - cargo build --features bundled-sqlcipher
+    - .ci/unpack-vendor.sh
+    - cargo build --offline --features bundled-sqlcipher
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
+  cache:
+    - key: rust-nightly
+      <<: *rust-cache
 
 build:host:stable:docs:
-  <<: *rust-stable
+  <<: *rust
   stage: build
   needs:
     - job: build:host:stable
       artifacts: false
+    - job: prep:host:vendor-tar-gz:stable
   script:
-    - bash fetch-webrtc.sh x86_64
-    - cargo doc --no-deps --document-private-items -p harbour-whisperfish -p libsignal-service -p libsignal-protocol -p zkgroup  -p whisperfish
+    - .ci/unpack-vendor.sh
+    - cargo doc --no-deps --document-private-items -p harbour-whisperfish -p libsignal-service -p libsignal-protocol -p zkgroup -p whisperfish
   artifacts:
     paths:
       - target/doc
@@ -189,7 +198,7 @@ build:host:stable:docs:
     - when: on_success
 
 build:host:stable:tarball:
-  <<: *rust-stable
+  <<: *rust
   stage: build
   needs:
     - build:host:stable
@@ -197,7 +206,13 @@ build:host:stable:tarball:
     - export P="${CI_PROJECT_NAME}-${CI_COMMIT_TAG#v}"
   script:
     - git archive --prefix="${P}/" -o ${P}.tar ${CI_COMMIT_TAG}
-    - cargo vendor ${P}/vendor
+    - .ci/unpack-vendor.sh
+    - pushd ${P}
+    - mkdir -p .cargo
+    - mv ../vendor ./vendor
+    - mv ../vendor.toml .cargo/config.toml
+    - cargo vendor
+    - popd
     - tar --append -f ${P}.tar ${P}
     - gzip ${P}.tar
   after_script:
@@ -219,6 +234,7 @@ qmllint:
   <<: *rust
   stage: format
   image: rust
+  # Disable cache - qmllint doesn't need anything.
   cache: {}
   script:
     - "qmllint qml/**/*.qml"
@@ -228,27 +244,34 @@ qmllint:
     - when: on_success
 
 test:stable:
-  <<: *rust-stable
+  <<: *rust
   stage: test
   needs:
     - job: build:host:stable
       artifacts: false
+    - job: prep:host:vendor-tar-gz:stable
   script:
-    - bash fetch-webrtc.sh x86_64
-    - cargo test --features whisperfish/bundled-sqlcipher
+    - .ci/unpack-vendor.sh
+    - cargo test --offline --features whisperfish/bundled-sqlcipher
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
+  cache:
+    - key: rust-stable
+      <<: *rust-cache
+      policy: pull
 
 test:cargo-deny:
-  <<: *rust-stable
+  <<: *rust
   stage: test
+  # XXX Cargo deny can use vendor.tar.xz
   needs: []
   script:
     - cargo install --locked cargo-deny
     - export PATH="$CARGO_HOME/bin:$PATH"
     - cargo deny check
+  # XXX Separate rust-stable cargo/ and target/ caches
   cache: {}
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $CI_SCHEDULE == "cargo-deny"
@@ -256,8 +279,9 @@ test:cargo-deny:
       allow_failure: true
 
 test:stable:diesel-schema:
-  <<: *rust-stable
+  <<: *rust
   stage: test
+  # Cargo fmt doesn't need even vendored sources
   needs: []
   script:
     - rustup override set 1.89.0
@@ -268,111 +292,128 @@ test:stable:diesel-schema:
     - cargo install -f --debug diesel_cli --version "^2.2" --features "sqlite-bundled"
     - export PATH="$CARGO_HOME/bin:$PATH"
     - export DATABASE_URL=test_whisperfish.db
+    # Diesel does not need to access build artifacts of other stages.
     - diesel setup
     - diesel migration run
     - diesel print-schema > whisperfish-store/src/schema.rs
     - diesel print-schema --schema-key protocol > whisperfish-store/src/schema/protocol.rs
+    # Cargo fmt doesn't need vendored sources
     - cargo fmt -- --check whisperfish-store/src/schema.rs
     - cargo fmt -- --check whisperfish-store/src/schema/protocol.rs
-  # Diesel does not need to access build artifacts of other stages.
-  cache: {}
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
 
 fmt:stable:
-  <<: *rust-stable
+  <<: *rust
   stage: format
   needs: []
   # Cargo fmt does not need external packages.
   before_script: []
   script:
     - rustup component add rustfmt
+    # Cargo fmt does not need external packages.
     - cargo fmt -- --check
-  # Cargo fmt does not need to access the cache. With it's own cache, it does
-  # not interfere with `coverage:stable` and `clippy:stable`. There is nothing
+    # Cargo fmt does not need to access the cache. With it's own cache, it does
+    # not interfere with `coverage:stable` and `clippy:stable`. There is nothing
   # to store in the cache either.
-  cache: {}
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
 
 coverage:stable:
-  <<: *rust-stable
-  image: xd009642/tarpaulin
+  <<: *rust
+  image: rust
   # ASLR disable failed: EPERM: Operation not permitted
   allow_failure: true
   stage: format
-  needs: []
-  variables:
-    <<: *variables
-    # Not needed anymore after the Tarpaulin image is on Debian Bullseye
-    QT_SELECT: qt5
+  needs:
+    - job: prep:host:vendor-tar-gz:stable
+    # Make sure the project compiles before attempting llvm-cov.
+    - job: build:host:stable
+      artifacts: false
   script:
-    - bash fetch-webrtc.sh x86_64
+    - .ci/unpack-vendor.sh
+    - rustup component add llvm-tools-preview
+    # We don't need an optimized llvm-cov, we only run it once per pipeline.
+    - cargo install -f --debug cargo-llvm-cov
+    - export PATH="$CARGO_HOME/bin:$PATH"
     # Add --all-features and --all-targets some time in the future. Tarpaulin
     # runs only at linux-x86 and would need the whisperfish sdk to build all
     # features.
-    - cargo tarpaulin --features bundled-sqlcipher --exclude-files cargo/* --out xml
+    - cargo llvm-cov --all --features bundled-sqlcipher --no-fail-fast || true
+    - cargo llvm-cov report --cobertura --output-path cobertura.xml
+    - cargo llvm-cov report --html
   artifacts:
     name: ${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHA}
     reports:
       coverage_report:
         coverage_format: cobertura
         path: cobertura.xml
-  coverage: '/^\d+.\d+% coverage/'
+    paths:
+      - target/llvm-cov/html
+  coverage: '/TOTAL\s+(\d+\s+)+(\d+\.\d+\%)/'
   # Tarpaulin needs its own cache as many more information are stored from
   # other crates. In addition, `clippy:stable` can pull/push the cache from
   # `test:stable` and the tarpaulin job does not interfere with the clippy
   # cache.
   cache:
     <<: *rust-cache
-    key: rust-stable-tarpaulin
+    key: rust-nightly-llvm-cov
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
 
 clippy:stable:
-  <<: *rust-stable
+  <<: *rust
   stage: format
-  needs: []
+  needs:
+    - prep:host:vendor-tar-gz:stable
   script:
+    - .ci/unpack-vendor.sh
     - rustup override set 1.89.0
     - rustup component add clippy
-    - bash fetch-webrtc.sh x86_64
     # the following command should be used but needs sailfish SDK
-    # - cargo clippy --all-targets --all-features -- -D warnings
+    # - cargo clippy --offline --all-targets --all-features
     #
     # Two allows are put in globally, because they occur from macro invocations.
     # derive_partial_eq_without_eq occurs by prost, and prost suggests to disable the lint globally:
     #   https://github.com/tokio-rs/prost/issues/661
     # useless-transmute
-    - cargo clippy --all-targets -- -A clippy::derive_partial_eq_without_eq -A clippy::useless_transmute
+    - cargo clippy --offline --all-targets -- -A clippy::derive_partial_eq_without_eq -A clippy::useless_transmute
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
+  cache:
+    <<: *rust-cache
+    key: rust-stable-clippy
 
 clippy:stable-warnings:
-  <<: *rust-stable
+  <<: *rust
   stage: format
   allow_failure: true
-  needs: []
+  needs:
+    - prep:host:vendor-tar-gz:stable
   script:
+    - .ci/unpack-vendor.sh
     - rustup component add clippy
-    - bash fetch-webrtc.sh x86_64
     # the following command should be used but needs sailfish SDK
-    # - cargo clippy --all-targets --all-features -- -D warnings
+    # - cargo clippy --offline --all-targets --all-features -- -D warnings
     #
     # For allows, see above
-    - cargo clippy --all-targets -- -D warnings -A clippy::derive_partial_eq_without_eq -A clippy::useless_transmute
+    - cargo clippy --offline --all-targets -- -D warnings -A clippy::derive_partial_eq_without_eq -A clippy::useless_transmute
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - when: on_success
+  cache:
+    <<: *rust-cache
+    key: rust-stable-clippy
+    policy: pull
 
 .translations: &translations
   image: debian
@@ -387,7 +428,7 @@ translations:check:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
-    - if: '$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
+    - if: "$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH"
   script:
     - .ci/check-translations.sh
 
@@ -397,7 +438,7 @@ translations:update:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   variables:
     # Clone with full depth for translation contribution analysis
     GIT_STRATEGY: clone
@@ -411,10 +452,12 @@ test:sailfishos:validate-rpms:
   image: registry.gitlab.com/whisperfish/sailo-rs/rpm-validator:latest
   allow_failure: true
   needs:
+    - build:sf:latest:i486
     - build:sf:latest:armv7hl
     - build:sf:latest:aarch64
-    - build:sf:latest:i486
   script:
+    # Only the main rpm needs to be validation
+    - rm -f RPMS/*debuginfo* RPMS/*debugsource*
     - for rpm in RPMS/*.rpm; do rpmvalidation.sh $rpm; done
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -427,18 +470,22 @@ notify_matrix_build_ready:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   environment:
     name: Whisperfish Matrix channel
     url: $MATRIX_HOME_SERVER
   needs:
-    - build:sf:latest:armv7hl
-    - build:sf:latest:aarch64
-    - build:sf:latest:i486
+    - job: build:sf:latest:armv7hl
+      artifacts: false
+    - job: build:sf:latest:aarch64
+      artifacts: false
+    - job: build:sf:latest:i486
+      artifacts: false
   before_script:
     - apt-get update
     - apt-get install --no-install-recommends -y git curl jq ca-certificates
   script:
+    # Build notification only needs the git repo
     - .ci/send-matrix-build-notification.sh
 
 pages:
@@ -448,7 +495,7 @@ pages:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   script:
     - mkdir -p public
     - mv target/doc public/
@@ -472,10 +519,10 @@ deploy:openrepos:whisperfish:
   <<: *deploy-openrepos
   variables:
     <<: *openrepos-vars
-    OPENREPOS_UPLOAD_RPM_APPNAME:  Whisperfish
+    OPENREPOS_UPLOAD_RPM_APPNAME: Whisperfish
   environment:
-      name: OpenRepos
-      url: https://openrepos.net/content/rubdos/whisperfish
+    name: OpenRepos
+    url: https://openrepos.net/content/rubdos/whisperfish
   needs:
     - build:sf:latest:armv7hl
     - build:sf:latest:i486
@@ -487,7 +534,6 @@ deploy:gitlab:tarball:
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   needs:
     - job: build:host:stable:tarball
-      artifacts: true
   script:
     - echo "Running release job"
   release:
@@ -508,8 +554,8 @@ deploy:chum:
   only:
     - tags
   environment:
-      name: "OBS Chum"
-      url: "https://build.sailfishos.org/package/show/home:rubdos:whisperfish/Whisperfish"
+    name: "OBS Chum"
+    url: "https://build.sailfishos.org/package/show/home:rubdos:whisperfish/Whisperfish"
   needs:
     - prep:host:vendor-tar-gz:stable
   script:
@@ -524,7 +570,6 @@ deploy:chum:
     - cd home:rubdos:whisperfish/Whisperfish
     - osc ci -m "Resources for Whisperfish $CI_COMMIT_TAG"
     # osc submitrequest sailfishos:chum:testing
-
 
 dry-run:triage:
   stage: test
@@ -551,3 +596,6 @@ policy:run:
     - gitlab-triage --token $PRIVATE_TOKEN --source projects --source-id $CI_PROJECT_PATH
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $CI_SCHEDULE == "policy"
+
+.dependabot-gitlab:
+  stage: deploy

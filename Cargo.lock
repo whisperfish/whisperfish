@@ -4995,7 +4995,7 @@ dependencies = [
 
 [[package]]
 name = "whisperfish-model-macro"
-version = "0.1.0"
+version = "0.6.0-dev"
 dependencies = [
  "proc-macro2",
  "quote",

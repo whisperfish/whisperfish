@@ -9,6 +9,7 @@
 %bcond_with calling
 %bcond_with diesel_instrumentation
 %bcond_with vendor
+%bcond_without git
 %bcond_without xz
 
 # Chum: _chum is set globally
@@ -92,7 +93,6 @@ BuildRequires:  libatomic-static
 BuildRequires:  rust >= 1.89
 BuildRequires:  rust-std-static >= 1.89
 BuildRequires:  cargo >= 1.89
-BuildRequires:  git
 BuildRequires:  protobuf-compiler
 BuildRequires:  nemo-qml-plugin-notifications-qt5-devel
 BuildRequires:  qt5-qtwebsockets-devel
@@ -101,6 +101,10 @@ BuildRequires:  gcc-c++
 BuildRequires:  zlib-devel
 BuildRequires:  coreutils
 BuildRequires:  perl-IPC-Cmd
+
+%if %{with git}
+BuildRequires:  git-core
+%endif
 
 # %if %%{with calling}
 # # Ringrtc needs linking against -lssl and -lcrypto;
@@ -184,14 +188,6 @@ cp %SOURCE2 .cargo/config.toml
 
 export PROTOC=/usr/bin/protoc
 protoc --version
-
-%if %{with sccache}
-%ifnarch %ix86
-export RUSTC_WRAPPER=sccache
-sccache --start-server
-sccache -s
-%endif
-%endif
 
 # https://git.sailfishos.org/mer-core/gecko-dev/blob/master/rpm/xulrunner-qt5.spec#L224
 # When cross-compiling under SB2 rust needs to know what arch to emit
@@ -287,15 +283,19 @@ export OUTPUT_DIR=`realpath .`/ringrtc/322/${SB2_RUST_TARGET_TRIPLE}
 # We could use the %%(version) and %%(release), but SFDK will include a datetime stamp,
 # ordering Cargo to recompile literally every second when the workspace is dirty.
 # git describe is a lot stabler, because it only uses the commit number and potentially a -dirty flag
-export GIT_VERSION=$(git describe  --exclude release,tag --dirty=-dirty)
+%if 0%{?git_version:1}
+GIT_VERSION="%{git_version}"
+%else
+GIT_VERSION=$(git describe  --exclude release,tag --dirty=-dirty)
+%endif
+export GIT_VERSION
 
-# Configure Cargo.toml
-# https://blog.rust-lang.org/2022/09/22/Rust-1.64.0.html#cargo-improvements-workspace-inheritance-and-multi-target-builds
+# Configure Cargo.toml and Cargo.lock with new version number.
+# This works as long as we have something unique (e.g. -dev) in the Cargo.coml version field.
+# If we don't, the build will simply abort mismatching vendored package versions.
 %if 0%{?cargo_version:1}
-for TOML in $(ls Cargo.toml */Cargo.toml) ; do
-  sed -i.bak "s/^version\s*=\s*\"[-\.0-9a-zA-Z]*\"$/version = \"%{cargo_version}\"/" "$TOML"
-done
-export CARGO_PROFILE_RELEASE_LTO=thin
+  V=$(grep -m1 -e '^version\s=\s"' Cargo.toml | awk -F '"' '{print $2}')
+  sed -i "s/^version = \"$V\"\$/version = \"%{cargo_version}\"/" Cargo.toml Cargo.lock
 %endif
 cat Cargo.toml
 
@@ -310,7 +310,7 @@ BINS="--bin harbour-whisperfish"
 %endif
 
 # Workaround a Scratchbox bug - /tmp/[...]/symbols.o not found
-export TMPDIR=${TMPDIR:-$(realpath ".tmp")}
+export TMPDIR=${TMPDIR:-"$PWD/.tmp"}
 mkdir -p $TMPDIR
 
 %if 0%{?taskset:1}
@@ -319,10 +319,14 @@ export TASKSET="taskset %{taskset}"
 export JOBS="-j 1"
 %endif
 
-# Use sparse registry cloning.
-# This *accidentally* works around https://github.com/rust-lang/cargo/issues/8719
-# See https://github.com/rust-lang/cargo/issues/8719#issuecomment-1516492970
-export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+%if %{with sccache}
+%ifnarch %ix86
+export RUSTC_WRAPPER=sccache
+sccache --stop-server || :
+sccache --start-server
+sccache -s
+%endif
+%endif
 
 $TASKSET cargo build $JOBS \
           -v \
@@ -334,7 +338,7 @@ $TASKSET cargo build $JOBS \
           %nil
 
 %if %{with sccache}
-sccache -s
+sccache --stop-server || :
 %endif
 
 lrelease -idbased translations/*.ts
