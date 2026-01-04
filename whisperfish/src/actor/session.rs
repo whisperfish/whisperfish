@@ -87,6 +87,13 @@ impl SessionActor {
         }
     }
 
+    /// Helper method to access storage reference
+    ///
+    /// Panics if storage is not initialized (should never happen after StorageReady)
+    fn storage(&self) -> &Storage {
+        self.storage.as_ref().expect("storage not initialized")
+    }
+
     pub fn handle_update_typing(&mut self, typings: &HashMap<i32, Vec<orm::Recipient>>) {
         let session = self.inner.pinned();
         let session = session.borrow();
@@ -119,7 +126,7 @@ impl Handler<MarkSessionRead> for SessionActor {
         MarkSessionRead { sid }: MarkSessionRead,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        self.storage.as_ref().unwrap().mark_session_read(sid);
+        self.storage().mark_session_read(sid);
     }
 }
 
@@ -131,10 +138,7 @@ impl Handler<MarkSessionArchived> for SessionActor {
         MarkSessionArchived { sid, archived }: MarkSessionArchived,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        self.storage
-            .as_ref()
-            .unwrap()
-            .mark_session_archived(sid, archived);
+        self.storage().mark_session_archived(sid, archived);
     }
 }
 
@@ -146,10 +150,7 @@ impl Handler<MarkSessionPinned> for SessionActor {
         MarkSessionPinned { sid, pinned }: MarkSessionPinned,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        self.storage
-            .as_ref()
-            .unwrap()
-            .mark_session_pinned(sid, pinned);
+        self.storage().mark_session_pinned(sid, pinned);
     }
 }
 
@@ -161,10 +162,7 @@ impl Handler<MarkSessionMuted> for SessionActor {
         MarkSessionMuted { sid, muted }: MarkSessionMuted,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        self.storage
-            .as_ref()
-            .unwrap()
-            .mark_session_muted(sid, muted);
+        self.storage().mark_session_muted(sid, muted);
     }
 }
 
@@ -176,7 +174,7 @@ impl Handler<DeleteSession> for SessionActor {
         DeleteSession { id }: DeleteSession,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        self.storage.as_ref().unwrap().delete_session(id);
+        self.storage().delete_session(id);
     }
 }
 
@@ -188,7 +186,7 @@ impl Handler<SaveDraft> for SessionActor {
         SaveDraft { sid, draft }: SaveDraft,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        self.storage.as_ref().unwrap().save_draft(sid, draft);
+        self.storage().save_draft(sid, draft);
     }
 }
 
@@ -203,7 +201,7 @@ impl Handler<RemoveIdentities> for SessionActor {
         let _span =
             tracing::debug_span!("Removing identities for recipient ID {}", recipient_id).entered();
 
-        let storage = self.storage.as_ref().unwrap();
+        let storage = self.storage();
         let recipient = if let Some(r) = storage.fetch_recipient_by_id(recipient_id) {
             r
         } else {
