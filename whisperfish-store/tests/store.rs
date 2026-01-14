@@ -601,17 +601,17 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
 // #[rstest(ext, case("mp4"), case("jpg"), case("jpg"), case("png"), case("txt"))]
 // #[tokio::test]
 // async fn test_save_attachment(ext: &str) {
-//     use rand::distributions::Alphanumeric;
+//     use rand::distr::Alphanumeric;
 //     use rand::{Rng, RngCore};
 //
 //     let location = whisperfish_store::temp();
-//     let rng = rand::thread_rng();
+//     let rng = rand::rng();
 //
 //     // Signaling password for REST API
 //     let password: String = rng.sample_iter(&Alphanumeric).take(24).collect();
 //
 //     // Signaling key that decrypts the incoming Signal messages
-//     let mut rng = rand::thread_rng();
+//     let mut rng = rand::rng();
 //     let mut signaling_key = [0u8; 52];
 //     rng.fill_bytes(&mut signaling_key);
 //     let signaling_key = signaling_key;
@@ -670,11 +670,11 @@ async fn test_create_and_open_storage(
     storage_password: Option<String>,
 ) -> Result<(), anyhow::Error> {
     use libsignal_service::pre_keys::PreKeysStore;
-    use rand::distributions::Alphanumeric;
+    use rand::distr::Alphanumeric;
     use rand::Rng;
 
     let location = whisperfish_store::temp();
-    let rng = rand::thread_rng();
+    let rng = rand::rng();
 
     // Signaling password for REST API
     let password: String = rng
@@ -757,11 +757,11 @@ async fn test_create_and_open_storage(
 
 #[tokio::test]
 async fn test_recipient_actions() {
-    use rand::distributions::Alphanumeric;
+    use rand::distr::Alphanumeric;
     use rand::Rng;
 
     let location = whisperfish_store::temp();
-    let rng = rand::thread_rng();
+    let rng = rand::rng();
 
     // Signaling password for REST API
     let password: String = rng
@@ -1266,11 +1266,11 @@ fn test_remove_attachment_filenames() {
 
 #[tokio::test]
 async fn settings_table() {
-    use rand::distributions::Alphanumeric;
+    use rand::distr::Alphanumeric;
     use rand::Rng;
 
     let location = whisperfish_store::temp();
-    let rng = rand::thread_rng();
+    let rng = rand::rng();
 
     // Signaling password for REST API
     let password: String = rng

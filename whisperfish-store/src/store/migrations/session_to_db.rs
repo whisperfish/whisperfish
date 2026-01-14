@@ -49,7 +49,7 @@ fn name_to_protocol_addr(name: &str, id: DeviceId) -> Option<ProtocolAddress> {
         if let Ok(addr) = phonenumber::parse(None, pn) {
             return Some(ProtocolAddress::new(
                 addr.format().mode(phonenumber::Mode::E164).to_string(),
-                id.into(),
+                id,
             ));
         }
     }

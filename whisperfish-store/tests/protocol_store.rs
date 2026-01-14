@@ -3,6 +3,7 @@ mod common;
 #[cfg(test)]
 mod tests {
     use libsignal_service::master_key::{MasterKey, MasterKeyStore, StorageServiceKey};
+    use libsignal_service::protocol::IdentityChange;
     use libsignal_service::protocol::{GenericSignedPreKey, IdentityKeyPair, SignalProtocolError};
     use libsignal_service::session_store::SessionStoreExt;
     use std::sync::Arc;
@@ -24,11 +25,11 @@ mod tests {
         ),
         anyhow::Error,
     > {
-        use rand::distributions::Alphanumeric;
+        use rand::distr::Alphanumeric;
         use rand::Rng;
 
         let location = whisperfish_store::temp();
-        let rng = rand::thread_rng();
+        let rng = rand::rng();
 
         // Signaling password for REST API
         let password: String = rng
@@ -58,18 +59,18 @@ mod tests {
 
     fn create_random_protocol_address() -> (ServiceId, ProtocolAddress) {
         use rand::Rng;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let user_id = uuid::Uuid::new_v4();
-        let device_id = rng.gen_range(2..=20);
+        let device_id = rng.random_range(2..=20);
 
         let svc = ServiceId::from(Aci::from(user_id));
-        let prot = ProtocolAddress::new(user_id.to_string(), DeviceId::from(device_id));
+        let prot = ProtocolAddress::new(user_id.to_string(), DeviceId::new(device_id).unwrap());
         (svc, prot)
     }
 
     fn create_random_identity_key() -> IdentityKey {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let key_pair = IdentityKeyPair::generate(&mut rng);
 
@@ -78,21 +79,21 @@ mod tests {
 
     fn create_random_prekey() -> PreKeyRecord {
         use rand::Rng;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let key_pair = KeyPair::generate(&mut rng);
-        let id: u32 = rng.gen();
+        let id: u32 = rng.random();
 
         PreKeyRecord::new(PreKeyId::from(id), &key_pair)
     }
 
     fn create_random_signed_prekey() -> SignedPreKeyRecord {
         use rand::Rng;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let key_pair = KeyPair::generate(&mut rng);
-        let id: u32 = rng.gen();
-        let timestamp = Timestamp::from_epoch_millis(rng.gen::<u64>());
+        let id: u32 = rng.random();
+        let timestamp = Timestamp::from_epoch_millis(rng.random::<u64>());
         let signature = vec![0; 3];
 
         SignedPreKeyRecord::new(SignedPreKeyId::from(id), timestamp, &key_pair, &signature)
@@ -170,8 +171,14 @@ mod tests {
 
         // We store both keys and should get false because there wasn't a key with that address
         // yet
-        assert!(!aci_storage.save_identity(&addr1, &key1).await.unwrap());
-        assert!(!aci_storage.save_identity(&addr2, &key2).await.unwrap());
+        assert_eq!(
+            aci_storage.save_identity(&addr1, &key1).await.unwrap(),
+            IdentityChange::NewOrUnchanged
+        );
+        assert_eq!(
+            aci_storage.save_identity(&addr2, &key2).await.unwrap(),
+            IdentityChange::NewOrUnchanged
+        );
 
         // Now, we should get both keys
         assert_eq!(aci_storage.get_identity(&addr1).await.unwrap(), Some(key1));
@@ -183,10 +190,16 @@ mod tests {
         assert_eq!(aci_storage.get_identity(&addr2).await.unwrap(), None);
 
         // We can now overwrite key1 with key1 and should get true returned
-        assert!(aci_storage.save_identity(&addr1, &key1).await.unwrap());
+        assert_eq!(
+            aci_storage.save_identity(&addr1, &key1).await.unwrap(),
+            IdentityChange::NewOrUnchanged
+        );
 
         // We can now overwrite key1 with key2 and should get false returned
-        assert!(!aci_storage.save_identity(&addr1, &key2).await.unwrap());
+        assert_eq!(
+            aci_storage.save_identity(&addr1, &key2).await.unwrap(),
+            IdentityChange::ReplacedExisting
+        );
     }
 
     // Direction does not matter yet
@@ -371,7 +384,7 @@ mod tests {
         let (svc3, addr3) = create_random_protocol_address();
         let addr4 = ProtocolAddress::new(
             addr3.name().to_string(),
-            DeviceId::from(u32::from(addr3.device_id()) + 1),
+            DeviceId::new(u8::from(addr3.device_id()) + 1).unwrap(),
         );
         let session1 = SessionRecord::new_fresh();
         let session2 = SessionRecord::new_fresh();
@@ -421,14 +434,8 @@ mod tests {
         // Get all device ids for the same address
         let mut ids = storage.get_sub_device_sessions(&svc3).await.unwrap();
         ids.sort_unstable();
-        assert_eq!(
-            DeviceId::from(ids[0]),
-            std::cmp::min(addr3.device_id(), addr4.device_id())
-        );
-        assert_eq!(
-            DeviceId::from(ids[1]),
-            std::cmp::max(addr3.device_id(), addr4.device_id())
-        );
+        assert_eq!(ids[0], std::cmp::min(addr3.device_id(), addr4.device_id()));
+        assert_eq!(ids[1], std::cmp::max(addr3.device_id(), addr4.device_id()));
 
         // If we call delete all sessions, all sessions of one person/address should be removed
         assert_eq!(storage.delete_all_sessions(&svc3).await.unwrap(), 2);
@@ -487,11 +494,11 @@ mod tests {
 
     #[tokio::test]
     async fn store_and_load_master_key_and_storage_key() {
-        use rand::distributions::Alphanumeric;
+        use rand::distr::Alphanumeric;
         use rand::Rng;
 
         let location = whisperfish_store::temp();
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Signaling password for REST API
         let password: String = (&mut rng)

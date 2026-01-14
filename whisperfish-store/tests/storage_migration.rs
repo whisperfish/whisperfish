@@ -21,11 +21,11 @@ async fn create_old_storage(
     path: &StorageLocation<tempfile::TempDir>,
 ) -> SimpleStorage {
     use rand::Rng;
-    let rng = rand::thread_rng();
+    let rng = rand::rng();
 
     // Signaling password for REST API
     let password: String = rng
-        .sample_iter(&rand::distributions::Alphanumeric)
+        .sample_iter(&rand::distr::Alphanumeric)
         .take(24)
         .map(char::from)
         .collect();
@@ -59,19 +59,19 @@ async fn open_storage(
 
 fn create_random_protocol_address() -> libsignal_service::protocol::ProtocolAddress {
     use rand::Rng;
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let user_id = uuid::Uuid::new_v4();
-    let device_id = rng.gen_range(2..=20);
+    let device_id = rng.random_range(2..=20);
 
     libsignal_service::protocol::ProtocolAddress::new(
         user_id.to_string(),
-        DeviceId::from(device_id),
+        DeviceId::new(device_id).unwrap(),
     )
 }
 
 fn create_random_identity_key() -> libsignal_service::protocol::IdentityKey {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let key_pair = libsignal_service::protocol::IdentityKeyPair::generate(&mut rng);
 
@@ -306,14 +306,14 @@ async fn test_2022_06_migration(
     let device_id = 1;
     let addr_1 = libsignal_service::protocol::ProtocolAddress::new(
         user_id.to_string(),
-        DeviceId::from(device_id),
+        DeviceId::new(device_id).unwrap(),
     );
 
     let user_id = uuid::Uuid::from_str("7bec59e1-140d-4b53-98f1-dc8fd2c011c8").unwrap();
     let device_id = 2;
     let addr_2 = libsignal_service::protocol::ProtocolAddress::new(
         user_id.to_string(),
-        DeviceId::from(device_id),
+        DeviceId::new(device_id).unwrap(),
     );
 
     let storage = storage.aci_storage();

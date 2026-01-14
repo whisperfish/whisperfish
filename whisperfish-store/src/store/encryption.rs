@@ -277,7 +277,7 @@ mod tests {
         // Generate random IV
         use rand::RngCore;
         let mut iv = [0u8; 16];
-        rand::thread_rng().fill_bytes(&mut iv);
+        rand::rng().fill_bytes(&mut iv);
 
         use aes::cipher::{block_padding::Pkcs7, BlockEncryptMut, KeyIvInit};
         use cipher::generic_array::GenericArray;

@@ -1566,7 +1566,7 @@ impl ClientActor {
             self.storage.as_ref().unwrap().aci_or_pni(service_identity),
             service_cfg.unidentified_sender_trust_roots.clone(),
             Uuid::from(self.self_aci.unwrap()),
-            device_id.into(),
+            device_id,
         )
     }
 }

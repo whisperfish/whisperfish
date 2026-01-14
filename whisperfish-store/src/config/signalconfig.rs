@@ -241,7 +241,7 @@ impl SignalConfig {
     }
 
     pub fn get_device_id(&self) -> DeviceId {
-        (*self.device_id.lock().unwrap() as u32).try_into().unwrap()
+        (*self.device_id.lock().unwrap()).try_into().unwrap()
     }
 
     pub fn set_tel(&self, tel: PhoneNumber) {
