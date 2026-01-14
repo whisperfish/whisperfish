@@ -32,9 +32,9 @@ qmetaobject_impl = { git = 'https://github.com/woboq/qmetaobject-rs' }
 # The source and target refs are the same URL. If we add another / in there,
 # cargo sees this as a valid patch.  Very ugly workaround.
 # https://github.com/rust-lang/cargo/issues/5478#issuecomment-1055365283
-zkgroup = { git = "https://github.com/signalapp//libsignal", tag = "v0.83.0" }
-libsignal-core = { git = "https://github.com/signalapp//libsignal", tag = "v0.83.0" }
-signal-crypto = { git = "https://github.com/signalapp//libsignal", tag = "v0.83.0" }
+zkgroup = { git = "https://github.com/signalapp//libsignal", tag = "v0.86.6" }
+libsignal-core = { git = "https://github.com/signalapp//libsignal", tag = "v0.86.6" }
+signal-crypto = { git = "https://github.com/signalapp//libsignal", tag = "v0.86.6" }
 
 # Smart dev mode: Compile most stuff in release mode, except for the things
 # that are actually maintained by our community
