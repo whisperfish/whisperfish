@@ -3,7 +3,9 @@ mod quirk;
 use crate::observer::Observable;
 use crate::store::orm::{self, Prekey, SessionRecord, SignedPrekey};
 use crate::store::Storage;
-use libsignal_service::protocol::{self, IdentityKey, PreKeyId, ProtocolAddress, SignedPreKeyId};
+use libsignal_service::protocol::{
+    self, DeviceId, IdentityKey, PreKeyId, ProtocolAddress, SignedPreKeyId,
+};
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 use protocol::SignalProtocolError;
 use std::ops::{Deref, DerefMut};
@@ -37,9 +39,9 @@ fn option_warn<T>(o: Option<T>, s: &'static str) -> Option<T> {
     o
 }
 
-fn name_to_protocol_addr(name: &str, id: u32) -> Option<ProtocolAddress> {
+fn name_to_protocol_addr(name: &str, id: DeviceId) -> Option<ProtocolAddress> {
     if let Ok(uuid) = uuid::Uuid::parse_str(name) {
-        return Some(ProtocolAddress::new(uuid.to_string(), id.into()));
+        return Some(ProtocolAddress::new(uuid.to_string(), id));
     }
 
     let phonenumbers = [name, &format!("+{}", name)];
@@ -47,7 +49,7 @@ fn name_to_protocol_addr(name: &str, id: u32) -> Option<ProtocolAddress> {
         if let Ok(addr) = phonenumber::parse(None, pn) {
             return Some(ProtocolAddress::new(
                 addr.format().mode(phonenumber::Mode::E164).to_string(),
-                id.into(),
+                id,
             ));
         }
     }
@@ -303,7 +305,10 @@ impl<O: Observable> SessionStorageMigration<O> {
                 let id = option_warn(split.next(), "no session id; skipping")?;
                 let id: u32 = option_warn(id.parse().ok(), "unparseable session id")?;
 
-                let addr = option_warn(name_to_protocol_addr(name, id), "unparsable file name")?;
+                let addr = option_warn(
+                    name_to_protocol_addr(name, id.try_into().unwrap()),
+                    "unparsable file name",
+                )?;
                 Some(addr)
             });
 
@@ -404,7 +409,7 @@ impl<O: Observable> SessionStorageMigration<O> {
 
                 let addr = &name["remote_".len()..];
                 let addr = option_warn(
-                    name_to_protocol_addr(addr, DEFAULT_DEVICE_ID),
+                    name_to_protocol_addr(addr, *DEFAULT_DEVICE_ID),
                     "unparsable file name",
                 )?;
 

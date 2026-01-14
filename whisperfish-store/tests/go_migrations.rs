@@ -733,10 +733,10 @@ fn timestamp_conversion(original_go_db: SqliteConnection) {
     let count = 100_000;
 
     let mut timestamps = Vec::with_capacity(count);
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     for _ in 0..count {
-        let ts: u64 = rng.gen_range(0..=1614425253000);
+        let ts: u64 = rng.random_range(0..=1614425253000);
         message.timestamp = ts as i64;
         let ts = whisperfish_store::millis_to_naive_chrono(ts);
         timestamps.push(ts);

@@ -13,8 +13,8 @@ const UUID2: Uuid = uuid!("c25f3e9a-2cfd-4eb0-8a53-b22eb025667d");
 
 #[fixture]
 fn phonenumber() -> ::phonenumber::PhoneNumber {
-    let mut rng = rand::thread_rng();
-    let e164 = format!("+3247{}", rng.gen_range(4000000..=4999999));
+    let mut rng = rand::rng();
+    let e164 = format!("+3247{}", rng.random_range(4000000..=4999999));
     ::phonenumber::parse(None, e164).unwrap()
 }
 

@@ -99,7 +99,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                     zk_params,
                 );
                 let group = gm
-                    .fetch_encrypted_group(&mut rand::thread_rng(), &master_key)
+                    .fetch_encrypted_group(&mut rand::rng(), &master_key)
                     .await?;
                 let group = groups_v2::decrypt_group(&master_key, group)?;
                 // let group = gm.decrypt_
@@ -698,6 +698,7 @@ impl Handler<GroupV2Update> for ClientActor {
                 let mut group_v2 = session.unwrap_group_v2().to_owned();
 
                 if let Some(GroupChanges {
+                    group_id,
                     // TODO: Propagate editor to QML
                     editor,
                     revision,

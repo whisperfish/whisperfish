@@ -99,7 +99,9 @@ impl Default for SignalConfig {
             tel: std::sync::Mutex::new(None),
             uuid: std::sync::Mutex::new(None),
             pni: std::sync::Mutex::new(None),
-            device_id: std::sync::Mutex::new(libsignal_service::push_service::DEFAULT_DEVICE_ID),
+            device_id: std::sync::Mutex::new(
+                (*libsignal_service::push_service::DEFAULT_DEVICE_ID).into(),
+            ),
             share_dir: path.to_path_buf(),
             verbose: false,
             tracing: false,
@@ -239,7 +241,7 @@ impl SignalConfig {
     }
 
     pub fn get_device_id(&self) -> DeviceId {
-        DeviceId::from(*self.device_id.lock().unwrap())
+        (*self.device_id.lock().unwrap()).try_into().unwrap()
     }
 
     pub fn set_tel(&self, tel: PhoneNumber) {
@@ -254,7 +256,7 @@ impl SignalConfig {
         *self.pni.lock().unwrap() = Some(uuid);
     }
 
-    pub fn set_device_id(&self, id: u32) {
-        *self.device_id.lock().unwrap() = id;
+    pub fn set_device_id(&self, id: DeviceId) {
+        *self.device_id.lock().unwrap() = id.into();
     }
 }

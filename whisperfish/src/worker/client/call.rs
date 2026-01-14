@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use crate::store::orm::{self, Recipient};
 use actix::prelude::*;
 use chrono::Utc;
@@ -7,6 +9,7 @@ use libsignal_service::{
         call_message::{offer, Answer, Busy, Hangup, IceUpdate, Offer},
         CallMessage,
     },
+    protocol::DeviceId,
     push_service::DEFAULT_DEVICE_ID,
     ServiceIdExt,
 };
@@ -56,7 +59,10 @@ impl super::ClientActor {
         call: CallMessage,
     ) {
         // XXX is this unwrap_or correct?
-        let destination_id = call.destination_device_id.unwrap_or(DEFAULT_DEVICE_ID);
+        let destination_id = call
+            .destination_device_id
+            .map(|id| DeviceId::try_from(id).unwrap())
+            .unwrap_or(*DEFAULT_DEVICE_ID);
 
         if call.destination_device_id.is_none() {
             tracing::warn!("CallMessage did not have a destination_device_id set. Defaulting.");
@@ -72,7 +78,7 @@ impl super::ClientActor {
         .count();
 
         let _span =
-            tracing::trace_span!("handle_call_message", sender = ?metadata.sender, destination_id)
+            tracing::trace_span!("handle_call_message", sender = ?metadata.sender, ?destination_id)
                 .entered();
 
         if num_fields_set > 1 {
@@ -125,7 +131,7 @@ impl super::ClientActor {
                 .manager
                 .received_call_message(
                     metadata.sender.raw_uuid().into_bytes().to_vec(),
-                    metadata.sender_device,
+                    metadata.sender_device.into(),
                     local_device_id.into(),
                     opaque,
                     age.to_std().unwrap_or(std::time::Duration::ZERO),
@@ -140,7 +146,7 @@ impl super::ClientActor {
         &mut self,
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
-        _destination_device_id: u32,
+        _destination_device_id: DeviceId,
         peer: &Recipient,
         offer: Offer,
     ) {
@@ -195,8 +201,9 @@ impl super::ClientActor {
         let protocol_address = peer
             .to_service_address()
             .expect("existing session for peer")
-            .to_protocol_address(DEFAULT_DEVICE_ID);
-        let self_device_id = u32::from(self.config.get_device_id());
+            .to_protocol_address(*DEFAULT_DEVICE_ID)
+            .expect("valid protocol address");
+        let self_device_id = self.config.get_device_id();
         let sender_device_id = metadata.sender_device;
         let destination_identity = metadata.destination.kind();
 
@@ -223,9 +230,9 @@ impl super::ClientActor {
             let received_offer = ReceivedOffer {
                 offer,
                 age: age.to_std().unwrap_or(std::time::Duration::ZERO),
-                sender_device_id,
-                receiver_device_id: self_device_id,
-                receiver_device_is_primary: self_device_id == DEFAULT_DEVICE_ID,
+                sender_device_id: sender_device_id.into(),
+                receiver_device_id: self_device_id.into(),
+                receiver_device_is_primary: self_device_id == *DEFAULT_DEVICE_ID,
                 sender_identity_key,
                 receiver_identity_key,
             };
@@ -242,7 +249,7 @@ impl super::ClientActor {
         &mut self,
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
-        _destination_device_id: u32,
+        _destination_device_id: DeviceId,
         peer: &Recipient,
         answer: Answer,
     ) {
@@ -262,7 +269,8 @@ impl super::ClientActor {
         let protocol_address = peer
             .to_service_address()
             .expect("existing session for peer")
-            .to_protocol_address(DEFAULT_DEVICE_ID);
+            .to_protocol_address(*DEFAULT_DEVICE_ID)
+            .expect("valid protocol address");
 
         let protocol_storage = self
             .storage
@@ -291,7 +299,7 @@ impl super::ClientActor {
 
             let answer = ReceivedAnswer {
                 answer: ringrtc::core::signaling::Answer::new(opaque).expect("parsed answer"),
-                sender_device_id,
+                sender_device_id: sender_device_id.into(),
                 sender_identity_key,
                 receiver_identity_key,
             };
@@ -311,7 +319,7 @@ impl super::ClientActor {
         &mut self,
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
-        _destination_device_id: u32,
+        _destination_device_id: DeviceId,
         peer: &Recipient,
         ice_updates: Vec<IceUpdate>,
     ) {
@@ -330,7 +338,7 @@ impl super::ClientActor {
                 ice: ringrtc::core::signaling::Ice {
                     candidates: vec![IceCandidate::new(opaque)],
                 },
-                sender_device_id: metadata.sender_device,
+                sender_device_id: metadata.sender_device.into(),
             };
             self.call_state()
                 .manager
@@ -344,7 +352,7 @@ impl super::ClientActor {
         &mut self,
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
-        _destination_device_id: u32,
+        _destination_device_id: DeviceId,
         peer: &Recipient,
         busy: Busy,
     ) {
@@ -358,7 +366,7 @@ impl super::ClientActor {
             .received_busy(
                 call_id,
                 ReceivedBusy {
-                    sender_device_id: metadata.sender_device,
+                    sender_device_id: metadata.sender_device.into(),
                 },
             )
             .expect("handled busy message");
@@ -369,7 +377,7 @@ impl super::ClientActor {
         &mut self,
         _ctx: &mut <Self as actix::Actor>::Context,
         metadata: &Metadata,
-        _destination_device_id: u32,
+        _destination_device_id: DeviceId,
         peer: &Recipient,
         hangup: Hangup,
     ) {
@@ -399,7 +407,7 @@ impl super::ClientActor {
             .received_hangup(
                 call_id,
                 ReceivedHangup {
-                    sender_device_id: metadata.sender_device,
+                    sender_device_id: metadata.sender_device.into(),
                     hangup,
                 },
             )

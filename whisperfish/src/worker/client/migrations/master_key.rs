@@ -27,7 +27,7 @@ impl Handler<CheckMasterKey> for ClientActor {
         };
 
         let sender = self.message_sender();
-        let is_primary = self.config.as_ref().get_device_id() == DEFAULT_DEVICE_ID.into();
+        let is_primary = self.config.as_ref().get_device_id() == *DEFAULT_DEVICE_ID;
         let ctx_addr = ctx.address();
 
         Box::pin(
@@ -35,7 +35,7 @@ impl Handler<CheckMasterKey> for ClientActor {
                 connectable.await;
                 if is_primary {
                     tracing::debug!("Whisperfish is primary. Generating master key...");
-                    let master_key = MasterKey::generate(&mut rand::thread_rng());
+                    let master_key = MasterKey::generate(&mut rand::rng());
                     let storage_key = StorageServiceKey::from_master_key(&master_key);
                     storage.store_master_key(Some(&master_key));
                     storage.store_storage_service_key(Some(&storage_key));
@@ -49,7 +49,7 @@ impl Handler<CheckMasterKey> for ClientActor {
                                 request: Some(sync_message::Request {
                                     r#type: Some(RequestType::Keys.into()),
                                 }),
-                                ..SyncMessage::with_padding(&mut rand::thread_rng())
+                                ..SyncMessage::with_padding(&mut rand::rng())
                             };
                             if let Err(e) = sender.send_sync_message(request_keys).await {
                                 tracing::error!("Error fetching master key: {e:?}; continuing...");

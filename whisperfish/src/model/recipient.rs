@@ -4,7 +4,7 @@ use crate::model::*;
 use crate::store::observer::{EventObserving, Interest};
 use crate::store::orm;
 use futures::TryFutureExt;
-use libsignal_service::protocol::{Aci, SessionStore};
+use libsignal_service::protocol::{Aci, DeviceId, SessionStore};
 use libsignal_service::session_store::SessionStoreExt;
 use libsignal_service::ServiceIdExt;
 use qmeta_async::with_executor;
@@ -81,7 +81,7 @@ pub struct Recipient {
         NOTIFY: fingerprint_changed,
     )]
     fingerprint: String,
-    versions: Vec<(u32, u32)>,
+    versions: Vec<(DeviceId, u32)>,
 
     #[qt_property(
         READ: session_is_post_quantum,
@@ -262,7 +262,7 @@ impl Recipient {
                 for device_id in sessions {
                     let session = storage
                         .aci_storage()
-                        .load_session(&recipient_svc.to_protocol_address(device_id))
+                        .load_session(&recipient_svc.to_protocol_address(device_id)?)
                         .await?;
                     let version = session
                         .map(|x| x.session_version())

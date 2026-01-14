@@ -1,6 +1,5 @@
 use anyhow::Context;
 
-use libsignal_protocol::DeviceId;
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
@@ -458,7 +457,7 @@ impl SettingsBridge {
         // XXX There must be easier way to access current device id...
         let config = whisperfish_store::config::SignalConfig::read_from_file();
         if let Ok(config) = config {
-            config.get_device_id() == DeviceId::from(DEFAULT_DEVICE_ID)
+            config.get_device_id() == *DEFAULT_DEVICE_ID
         } else {
             false
         }

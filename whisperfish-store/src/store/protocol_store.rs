@@ -423,11 +423,9 @@ impl<T: Identity<O>, O: Observable> protocol::IdentityKeyStore for IdentityStora
         &mut self,
         addr: &ProtocolAddress,
         key: &IdentityKey,
-    ) -> Result<bool, SignalProtocolError> {
+    ) -> Result<IdentityChange, SignalProtocolError> {
         use crate::schema::identity_records::dsl::*;
         let previous = self.get_identity(addr).await?;
-
-        let ret = previous.as_ref() == Some(key);
 
         if previous.is_some() {
             diesel::update(identity_records)
@@ -435,6 +433,12 @@ impl<T: Identity<O>, O: Observable> protocol::IdentityKeyStore for IdentityStora
                 .set(record.eq(key.serialize().to_vec()))
                 .execute(&mut *self.0.db())
                 .expect("db");
+
+            if previous.as_ref() == Some(key) {
+                Ok(IdentityChange::NewOrUnchanged)
+            } else {
+                Ok(IdentityChange::ReplacedExisting)
+            }
         } else {
             diesel::insert_into(identity_records)
                 .values((
@@ -444,9 +448,8 @@ impl<T: Identity<O>, O: Observable> protocol::IdentityKeyStore for IdentityStora
                 ))
                 .execute(&mut *self.0.db())
                 .expect("db");
+            Ok(IdentityChange::NewOrUnchanged)
         }
-
-        Ok(ret)
     }
 
     #[tracing::instrument(level = "trace", skip(self))]
@@ -830,6 +833,9 @@ impl<T: Identity<O>, O: Observable> protocol::KyberPreKeyStore for IdentityStora
     async fn mark_kyber_pre_key_used(
         &mut self,
         kyber_prekey_id: KyberPreKeyId,
+        // TODO
+        _ec_prekey_id: SignedPreKeyId,
+        _base_key: &PublicKey,
     ) -> Result<(), SignalProtocolError> {
         use crate::schema::kyber_prekeys::dsl::*;
         use diesel::prelude::*;
@@ -953,20 +959,25 @@ impl<T: Identity<O>, O: Observable> SessionStoreExt for IdentityStorage<T, O> {
     async fn get_sub_device_sessions(
         &self,
         addr: &ServiceId,
-    ) -> Result<Vec<u32>, SignalProtocolError> {
+    ) -> Result<Vec<DeviceId>, SignalProtocolError> {
         use crate::schema::session_records::dsl::*;
 
+        let default_device_id: u32 = (*libsignal_service::push_service::DEFAULT_DEVICE_ID).into();
         let records: Vec<i32> = session_records
             .select(device_id)
             .filter(
                 address
                     .eq(addr.service_id_string())
-                    .and(device_id.ne(libsignal_service::push_service::DEFAULT_DEVICE_ID as i32))
+                    .and(device_id.ne(default_device_id as i32))
                     .and(identity.eq(self.1.identity())),
             )
             .load(&mut *self.0.db())
             .expect("db");
-        Ok(records.into_iter().map(|x| x as u32).collect())
+
+        Ok(records
+            .into_iter()
+            .map(|id| DeviceId::try_from(id as u32).expect("valid device ids in db"))
+            .collect())
     }
 
     #[tracing::instrument(level = "trace", skip(self))]

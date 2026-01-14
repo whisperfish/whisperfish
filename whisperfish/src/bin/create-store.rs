@@ -26,11 +26,11 @@ async fn create_storage(
     path: store::StorageLocation<PathBuf>,
 ) -> store::Storage {
     use rand::Rng;
-    let rng = rand::thread_rng();
+    let rng = rand::rng();
 
     // Signaling password for REST API
     let password: String = rng
-        .sample_iter(&rand::distributions::Alphanumeric)
+        .sample_iter(&rand::distr::Alphanumeric)
         .take(24)
         .map(char::from)
         .collect();
@@ -55,19 +55,19 @@ async fn create_storage(
 
 async fn add_dummy_data(storage: &mut store::Storage) {
     use std::str::FromStr;
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     // Invent two users with devices
     let user_id = uuid::Uuid::from_str("5844fce4-4407-401a-9dbc-fc86c6def4e6").unwrap();
     let device_id = 1;
-    let addr_1 = ProtocolAddress::new(user_id.to_string(), DeviceId::from(device_id));
+    let addr_1 = ProtocolAddress::new(user_id.to_string(), DeviceId::new(device_id).unwrap());
 
     let user_id = uuid::Uuid::from_str("7bec59e1-140d-4b53-98f1-dc8fd2c011c8").unwrap();
     let device_id = 2;
-    let addr_2 = ProtocolAddress::new(user_id.to_string(), DeviceId::from(device_id));
+    let addr_2 = ProtocolAddress::new(user_id.to_string(), DeviceId::new(device_id).unwrap());
 
     let device_id = 3;
-    let addr_3 = ProtocolAddress::new("+32412345678".into(), DeviceId::from(device_id));
+    let addr_3 = ProtocolAddress::new("+32412345678".into(), DeviceId::new(device_id).unwrap());
 
     // Create two identities and two sessions
     let key_1 = IdentityKeyPair::generate(&mut rng);

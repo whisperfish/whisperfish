@@ -5,7 +5,9 @@ use chrono::prelude::*;
 use libsignal_service::content::Reaction;
 use libsignal_service::proto::DataMessage;
 use libsignal_service::protocol::{Aci, ServiceId};
+use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 use phonenumber::PhoneNumber;
+use rand::distr::Alphanumeric;
 use rstest::rstest;
 use std::future::Future;
 use std::sync::Arc;
@@ -599,17 +601,17 @@ async fn process_message_with_group(storage: impl Future<Output = InMemoryDb>) {
 // #[rstest(ext, case("mp4"), case("jpg"), case("jpg"), case("png"), case("txt"))]
 // #[tokio::test]
 // async fn test_save_attachment(ext: &str) {
-//     use rand::distributions::Alphanumeric;
+//     use rand::distr::Alphanumeric;
 //     use rand::{Rng, RngCore};
 //
 //     let location = whisperfish_store::temp();
-//     let rng = rand::thread_rng();
+//     let rng = rand::rng();
 //
 //     // Signaling password for REST API
 //     let password: String = rng.sample_iter(&Alphanumeric).take(24).collect();
 //
 //     // Signaling key that decrypts the incoming Signal messages
-//     let mut rng = rand::thread_rng();
+//     let mut rng = rand::rng();
 //     let mut signaling_key = [0u8; 52];
 //     rng.fill_bytes(&mut signaling_key);
 //     let signaling_key = signaling_key;
@@ -668,11 +670,11 @@ async fn test_create_and_open_storage(
     storage_password: Option<String>,
 ) -> Result<(), anyhow::Error> {
     use libsignal_service::pre_keys::PreKeysStore;
-    use rand::distributions::Alphanumeric;
+    use rand::distr::Alphanumeric;
     use rand::Rng;
 
     let location = whisperfish_store::temp();
-    let rng = rand::thread_rng();
+    let rng = rand::rng();
 
     // Signaling password for REST API
     let password: String = rng
@@ -755,11 +757,11 @@ async fn test_create_and_open_storage(
 
 #[tokio::test]
 async fn test_recipient_actions() {
-    use rand::distributions::Alphanumeric;
+    use rand::distr::Alphanumeric;
     use rand::Rng;
 
     let location = whisperfish_store::temp();
-    let rng = rand::thread_rng();
+    let rng = rand::rng();
 
     // Signaling password for REST API
     let password: String = rng
@@ -1264,11 +1266,11 @@ fn test_remove_attachment_filenames() {
 
 #[tokio::test]
 async fn settings_table() {
-    use rand::distributions::Alphanumeric;
+    use rand::distr::Alphanumeric;
     use rand::Rng;
 
     let location = whisperfish_store::temp();
-    let rng = rand::thread_rng();
+    let rng = rand::rng();
 
     // Signaling password for REST API
     let password: String = rng
@@ -1331,7 +1333,6 @@ async fn settings_table() {
 
 #[tokio::test]
 async fn various_storage_functions() {
-    use rand::distributions::Alphanumeric;
     use rand::Rng;
     use std::str::FromStr;
     use std::time::Duration;
@@ -1339,7 +1340,7 @@ async fn various_storage_functions() {
     use whisperfish_store::{StoreProfile, TrustLevel};
 
     let location = whisperfish_store::temp();
-    let rng = rand::thread_rng();
+    let rng = rand::rng();
 
     // Signaling password for REST API
     let password: String = rng
@@ -1385,7 +1386,7 @@ async fn various_storage_functions() {
     config.set_aci(own_aci);
     config.set_pni(own_pni);
     config.set_tel(own_e164.clone());
-    config.set_device_id(1);
+    config.set_device_id(*DEFAULT_DEVICE_ID);
 
     let own_recipient = storage.merge_and_fetch_self_recipient(
         Some(own_e164.clone()),
