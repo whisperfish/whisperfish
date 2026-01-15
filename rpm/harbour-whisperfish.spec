@@ -202,6 +202,15 @@ export CXXFLAGS_armv7_unknown_linux_gnueabihf=$CXXFLAGS
 %endif
 %ifarch aarch64
 export SB2_RUST_TARGET_TRIPLE=aarch64-unknown-linux-gnu
+# Flags and their rationale
+# Policy: Cortex-A53 with minimal extensions. We could maybe switch to -mcpu=cortex-a53
+# armv8-a: All Jolla-supported phones are armv8-a at least.
+# +crypto: Arm8 has this as optional feature, but seemingly most phones support it.
+# +simd: same
+# +fp: same
+# +simd: Neon is available on all arm8-a targets
+# +sha2: Seems to be available on all SailfishOS phones
+# -lse: LSE extension is Arm8.1+, so we can't rely on that: Cortex-A55
 export CFLAGS_aarch64_unknown_linux_gnu="$CFLAGS -march=armv8-a+crypto+fp+simd+sha2"
 export CXXFLAGS_aarch64_unknown_linux_gnu=$CXXFLAGS
 %endif
