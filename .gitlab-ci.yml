@@ -560,7 +560,7 @@ deploy:chum:
     - prep:host:vendor-tar-gz:stable
   script:
     - echo $OSCRC | base64 -d > ~/.oscrc
-    - zypper install -y osc
+    - zypper install -y osc git
     - sed -i.bak "s/main//" _service
     - sed -i.bak "s/revision\">/revision\">$CI_COMMIT_TAG/" _service
     - cat _service
