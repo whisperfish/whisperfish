@@ -1310,10 +1310,34 @@ impl ClientActor {
                     self.handle_message_not_sealed(metadata.sender);
                 }
             }
+            // Destructure the message so we catch any changes
             ContentBody::SynchronizeMessage(message) => {
-                let mut handled = false;
-                if let Some(sent) = message.sent {
-                    handled = true;
+                let SyncMessage {
+                    sent,
+                    contacts,
+                    request,
+                    read,
+                    blocked,
+                    verified,
+                    configuration,
+                    padding: _,
+                    sticker_pack_operation,
+                    view_once_open,
+                    fetch_latest,
+                    keys,
+                    message_request_response,
+                    outgoing_payment,
+                    viewed,
+                    pni_change_number,
+                    call_event,
+                    call_link_update,
+                    call_log_event,
+                    delete_for_me,
+                    attachment_backfill_request,
+                    attachment_backfill_response,
+                    device_name_change,
+                } = message;
+                if let Some(sent) = sent {
                     tracing::trace!("SyncMessage sent");
                     // These are messages sent through a paired device.
                     let address = sent.parse_destination_service_id();
@@ -1365,15 +1389,13 @@ impl ClientActor {
                         );
                     }
                 }
-                if let Some(request) = message.request {
-                    handled = true;
-                    tracing::trace!("Sync request message");
+                if let Some(request) = request {
+                    tracing::trace!("SyncMessage request");
                     self.handle_sync_request(metadata, request);
                 }
-                if !message.read.is_empty() {
-                    handled = true;
-                    tracing::trace!("Sync read message");
-                    for read in &message.read {
+                if !read.is_empty() {
+                    tracing::trace!("SyncMessage read");
+                    for read in &read {
                         // Signal uses timestamps in milliseconds, chrono has nanoseconds
                         // XXX: this should probably not be based on ts alone.
                         if let Some(timestamp) = read.timestamp.map(millis_to_naive_chrono) {
@@ -1383,9 +1405,7 @@ impl ClientActor {
                             };
                             let source: Uuid = source_aci.into();
                             tracing::trace!(
-                                "Marking message from {} at {} ({}) as read.",
-                                source,
-                                timestamp,
+                                "Message {timestamp} ({}) from {source} was read",
                                 naive_chrono_rounded_down(timestamp),
                             );
                             if let Some(updated) = storage.mark_message_read(timestamp) {
@@ -1397,11 +1417,18 @@ impl ClientActor {
                         }
                     }
                 }
-                if let Some(fetch) = message.fetch_latest {
-                    handled = true;
+                if let Some(opened) = view_once_open {
+                    tracing::error!("SyncMessage view once open is not implemented");
+                    tracing::debug!("{opened:?}");
+                }
+                if !viewed.is_empty() {
+                    tracing::error!("SyncMessage viewed is not implemented");
+                    tracing::debug!("{:?}", viewed);
+                }
+                if let Some(fetch) = fetch_latest {
                     match fetch.r#type() {
                         LatestType::Unknown => {
-                            tracing::warn!("Sync FetchLatest with unknown type")
+                            tracing::error!("SyncMessage fetch latest unknown is unimplemented")
                         }
                         LatestType::LocalProfile => {
                             tracing::trace!("Scheduling local profile refresh");
@@ -1409,23 +1436,21 @@ impl ClientActor {
                         }
                         LatestType::StorageManifest => {
                             // XXX
-                            tracing::warn!(
-                                "Unimplemented: synchronize fetch request StorageManifest"
+                            tracing::error!(
+                                "SyncMessage fetch latest storage manifest is unimplemented"
                             )
                         }
                         LatestType::SubscriptionStatus => {
-                            tracing::warn!(
-                                "Unimplemented: synchronize fetch request SubscriptionStatus"
+                            tracing::error!(
+                                "SyncMessage fetch latest subscription status is unimplemented"
                             )
                         }
                     }
                 }
-                if let Some(response) = message.message_request_response {
-                    handled = true;
+                if let Some(response) = message_request_response {
                     self.handle_message_request_response(&response);
                 }
-                if let Some(keys) = message.keys {
-                    handled = true;
+                if let Some(keys) = keys {
                     tracing::debug!("Sync Keys message");
                     // Note: storage_key is deprecated; it's generated from master_key
                     if let Some(bytes) = &keys.master {
@@ -1433,7 +1458,6 @@ impl ClientActor {
                             storage.store_master_key(Some(&master_key));
                             let storage_key = StorageServiceKey::from_master_key(&master_key);
                             storage.store_storage_service_key(Some(&storage_key));
-                            tracing::info!("Keys sync message handled successfully");
                         } else {
                             tracing::error!("Keys sync message with invalid data");
                         };
@@ -1441,17 +1465,66 @@ impl ClientActor {
                         tracing::error!("Keys sync message without data");
                     }
                 }
-                if !handled {
-                    tracing::warn!("Sync message without known sync type");
+                if let Some(blocked) = blocked {
+                    tracing::error!("SyncMessage blocked is not implemented");
+                    tracing::debug!("{blocked:?}");
+                }
+                if let Some(contacts) = contacts {
+                    tracing::error!("SyncMessage contacts is not implemented");
+                    tracing::debug!("{contacts:?}");
+                }
+                if let Some(verified) = verified {
+                    tracing::error!("SyncMessage verified is not implemented");
+                    tracing::debug!("{verified:?}");
+                }
+                if let Some(pni_change_number) = pni_change_number {
+                    tracing::error!("SyncMessage pni change number is not implemented");
+                    tracing::debug!("{pni_change_number:?}");
+                }
+                if let Some(conf) = configuration {
+                    tracing::error!("SyncMessage configuration is not implemented");
+                    tracing::debug!("{conf:?}");
+                }
+                if !sticker_pack_operation.is_empty() {
+                    tracing::error!("SyncMessage sticker pack operation is not implemented");
+                    tracing::debug!("{:?}", sticker_pack_operation);
+                }
+                if let Some(payment) = outgoing_payment {
+                    tracing::error!("SyncMessage outgoing payment is not implemented");
+                    tracing::debug!("{payment:?}");
+                }
+                if let Some(delete) = delete_for_me {
+                    tracing::error!("SyncMessage delete for me is not implemented");
+                    tracing::debug!("{delete:?}");
+                }
+                if let Some(event) = call_event {
+                    tracing::error!("SyncMessage call event is not implemented");
+                    tracing::debug!("{event:?}");
+                }
+                if let Some(update) = call_link_update {
+                    tracing::error!("SyncMessage call link update is not implemented");
+                    tracing::debug!("{update:?}");
+                }
+                if let Some(event) = call_log_event {
+                    tracing::error!("SyncMessage call log event is not implemented");
+                    tracing::debug!("{event:?}");
+                }
+                if let Some(attachment_backfill_request) = attachment_backfill_request {
+                    tracing::error!("SyncMessage attachment backfill request is not implemented");
+                    tracing::debug!("{attachment_backfill_request:?}");
+                }
+                if let Some(attachment_backfill_response) = attachment_backfill_response {
+                    tracing::error!("SyncMessage attachment_backfill_response is not implemented");
+                    tracing::debug!("{attachment_backfill_response:?}");
+                }
+                if let Some(device_name_change) = device_name_change {
+                    tracing::error!("SyncMessage device name change is not implemented");
+                    tracing::debug!("{device_name_change:?}");
                 }
             }
             ContentBody::TypingMessage(typing) => {
                 if self.settings.get_enable_typing_indicators() {
-                    let svc_str = metadata.sender.service_id_string();
-                    match typing.action() {
-                        Action::Started => tracing::info!("{svc_str} is typing"),
-                        Action::Stopped => tracing::info!("{svc_str} stopped typing"),
-                    };
+                    tracing::info!("{:?} is typing.", metadata.sender.service_id_string());
                     let res = self
                         .inner
                         .pinned()
