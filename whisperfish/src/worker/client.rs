@@ -1471,60 +1471,58 @@ impl ClientActor {
                 }
             }
             ContentBody::ReceiptMessage(receipt) => {
-                if let Some(receipt_type_i32) = receipt.r#type {
-                    if let Ok(receipt_type) = ReceiptType::try_from(receipt_type_i32) {
-                        let timestamps = receipt
-                            .timestamp
-                            .into_iter()
-                            .map(millis_to_naive_chrono)
-                            .collect();
-                        let rcpt_timestamp = millis_to_naive_chrono(metadata.timestamp);
-                        match receipt_type {
-                            ReceiptType::Delivery => {
-                                tracing::info!(
-                                    "{:?} received {} message(s)",
-                                    metadata.sender.service_id_string(),
-                                    timestamps.len(),
-                                );
-                                for updated in storage.mark_messages_delivered(
-                                    metadata.sender,
-                                    timestamps,
-                                    rcpt_timestamp,
-                                ) {
-                                    self.inner
-                                        .pinned()
-                                        .borrow_mut()
-                                        .messageReceipt(updated.session_id, updated.message_id)
-                                }
-                            }
-                            ReceiptType::Read => {
-                                if self.settings.get_enable_read_receipts() {
-                                    tracing::info!(
-                                        "{:?} read {} message(s)",
-                                        metadata.sender.service_id_string(),
-                                        timestamps.len(),
-                                    );
-                                    for updated in storage.mark_messages_read(
-                                        metadata.sender,
-                                        timestamps,
-                                        rcpt_timestamp,
-                                    ) {
-                                        self.inner
-                                            .pinned()
-                                            .borrow_mut()
-                                            .messageReceipt(updated.session_id, updated.message_id)
-                                    }
-                                } else {
-                                    tracing::debug!("Ignoring DeliveryMessage(Read)");
-                                }
-                            }
-                            ReceiptType::Viewed => {
-                                tracing::warn!(
-                                    "Viewed receipts are not yet implemented. Please upvote issue #670"
-                                );
-                            }
+                let timestamps: Vec<NaiveDateTime> = receipt
+                    .timestamp
+                    .into_iter()
+                    .map(millis_to_naive_chrono)
+                    .collect();
+                let rcpt_timestamp = millis_to_naive_chrono(metadata.timestamp);
+                let receipt_type = ReceiptType::try_from(receipt.r#type.unwrap_or(-1)).ok();
+                match receipt_type {
+                    Some(ReceiptType::Delivery) => {
+                        tracing::info!(
+                            "{:?} received {} message(s)",
+                            metadata.sender.service_id_string(),
+                            timestamps.len(),
+                        );
+                        for updated in storage.mark_messages_delivered(
+                            metadata.sender,
+                            timestamps,
+                            rcpt_timestamp,
+                        ) {
+                            self.inner
+                                .pinned()
+                                .borrow_mut()
+                                .messageReceipt(updated.session_id, updated.message_id)
                         }
                     }
+                    Some(ReceiptType::Read) => {
+                        if self.settings.get_enable_read_receipts() {
+                            tracing::info!(
+                                "{:?} read {} message(s)",
+                                metadata.sender.service_id_string(),
+                                timestamps.len(),
+                            );
+                            for updated in storage.mark_messages_read(
+                                metadata.sender,
+                                timestamps,
+                                rcpt_timestamp,
+                            ) {
+                                self.inner
+                                    .pinned()
+                                    .borrow_mut()
+                                    .messageReceipt(updated.session_id, updated.message_id)
+                            }
+                        } else {
+                            tracing::debug!("Ignoring DeliveryMessage(Read)");
+                        }
+                    }
+                    Some(ReceiptType::Viewed) => {
+                        tracing::warn!(
+                            "Viewed receipts are not yet implemented. Please upvote issue #670"
+                        );
+                    }
+                    None => tracing::error!("Unknown ReceiptType enum value: {:?}", receipt.r#type),
                 }
             }
             ContentBody::CallMessage(call) => {
