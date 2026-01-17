@@ -1314,11 +1314,11 @@ impl ClientActor {
                 let mut handled = false;
                 if let Some(sent) = message.sent {
                     handled = true;
-                    tracing::trace!("Sync sent message");
+                    tracing::trace!("SyncMessage sent");
                     // These are messages sent through a paired device.
                     let address = sent.parse_destination_service_id();
                     if address.is_none() {
-                        tracing::warn!("Unparsable ServiceId {}", sent.destination_service_id());
+                        tracing::error!("Unparsable ServiceId: {}", sent.destination_service_id());
                     }
                     let phonenumber = sent
                         .destination_e164
@@ -1326,7 +1326,7 @@ impl ClientActor {
                         .map(|s| phonenumber::parse(None, s))
                         .transpose()
                         .map_err(|_| {
-                            tracing::warn!("Unparsable phonenumber {}", sent.destination_e164())
+                            tracing::error!("Unparsable phonenumber: {}", sent.destination_e164())
                         })
                         .ok()
                         .flatten();
@@ -1447,7 +1447,11 @@ impl ClientActor {
             }
             ContentBody::TypingMessage(typing) => {
                 if self.settings.get_enable_typing_indicators() {
-                    tracing::info!("{:?} is typing.", metadata.sender.service_id_string());
+                    let svc_str = metadata.sender.service_id_string();
+                    match typing.action() {
+                        Action::Started => tracing::info!("{svc_str} is typing"),
+                        Action::Stopped => tracing::info!("{svc_str} stopped typing"),
+                    };
                     let res = self
                         .inner
                         .pinned()
@@ -1460,10 +1464,7 @@ impl ClientActor {
                             sender: metadata.sender,
                         });
                     if let Err(e) = res {
-                        tracing::error!(
-                            "Could not send typing notification to SessionActor: {}",
-                            e
-                        );
+                        tracing::error!("Could not send typing notification to SessionActor: {e}");
                     }
                 } else {
                     tracing::debug!("Ignoring TypingMessage");
@@ -1481,8 +1482,9 @@ impl ClientActor {
                         match receipt_type {
                             ReceiptType::Delivery => {
                                 tracing::info!(
-                                    "{:?} received a message.",
-                                    metadata.sender.service_id_string()
+                                    "{:?} received {} message(s)",
+                                    metadata.sender.service_id_string(),
+                                    timestamps.len(),
                                 );
                                 for updated in storage.mark_messages_delivered(
                                     metadata.sender,
@@ -1498,8 +1500,9 @@ impl ClientActor {
                             ReceiptType::Read => {
                                 if self.settings.get_enable_read_receipts() {
                                     tracing::info!(
-                                        "{:?} read a message.",
-                                        metadata.sender.service_id_string()
+                                        "{:?} read {} message(s)",
+                                        metadata.sender.service_id_string(),
+                                        timestamps.len(),
                                     );
                                     for updated in storage.mark_messages_read(
                                         metadata.sender,

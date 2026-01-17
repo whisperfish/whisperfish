@@ -2641,8 +2641,13 @@ impl<O: Observable> Storage<O> {
             .expect("mark recipient (un)registered"),
         };
 
+        let un = if registered { "" } else { "un" };
+
         if let Some(rid) = rid {
+            tracing::trace!("Recipient {service_address:?} marked {un}registered");
             self.observe_update(schema::recipients::table, rid);
+        } else {
+            tracing::trace!("Recipient {service_address:?} already {un}registered");
         }
     }
 
