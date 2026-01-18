@@ -928,7 +928,7 @@ impl Display for Attachment {
 }
 
 impl Attachment {
-    pub fn absolute_attachment_path<'a>(&'a self) -> Option<std::borrow::Cow<'a, str>> {
+    pub fn absolute_attachment_path<'a>(&'a self) -> Option<Cow<'a, str>> {
         self.attachment_path
             .as_deref()
             .map(crate::replace_tilde_with_home)
@@ -1372,7 +1372,7 @@ impl AugmentedMessage {
 
     pub fn styled_message(&self) -> Cow<'_, str> {
         if self.is_remote_deleted {
-            return std::borrow::Cow::Borrowed(self.inner.text.as_deref().unwrap_or_default());
+            return Cow::Borrowed(self.inner.text.as_deref().unwrap_or_default());
         }
         crate::store::body_ranges::to_styled(
             self.inner.text.as_deref().unwrap_or_default(),
@@ -1384,11 +1384,11 @@ impl AugmentedMessage {
                         self.mentions
                             .get(&uuid)
                             .map(|r| r.name())
-                            .unwrap_or(std::borrow::Cow::Borrowed(uuid_s))
+                            .unwrap_or(Cow::Borrowed(uuid_s))
                     }
                     Err(_e) => {
                         tracing::warn!("Requesting mention for invalid UUID {}", uuid_s);
-                        std::borrow::Cow::Borrowed(uuid_s)
+                        Cow::Borrowed(uuid_s)
                     }
                 }
             },
@@ -1518,12 +1518,12 @@ impl AugmentedSession {
         self.last_message.as_ref().map(|m| m.id).unwrap_or(-1)
     }
 
-    pub fn section(&self) -> String {
+    pub fn section(&self) -> &str {
         if self.is_pinned {
-            return String::from("pinned");
+            return "pinned";
         }
         let Some(last_message) = self.last_message.as_ref() else {
-            return String::from("never");
+            return "never";
         };
 
         // XXX: stub
@@ -1537,14 +1537,14 @@ impl AugmentedSession {
         let diff = today.signed_duration_since(server_timestamp);
 
         if diff.num_seconds() <= 0 {
-            String::from("today")
+            "today"
         } else if diff.num_hours() <= 24 {
-            String::from("yesterday")
-        } else if diff.num_hours() <= (7 * 24) {
-            let wd = server_timestamp.weekday().number_from_monday() % 7;
-            wd.to_string()
+            "yesterday"
+        } else if diff.num_days() <= 7 {
+            ["7", "1", "2", "3", "4", "5", "6"]
+                [(server_timestamp.weekday().number_from_monday() as usize) % 7]
         } else {
-            String::from("older")
+            "older"
         }
     }
 
@@ -1695,7 +1695,7 @@ pub struct DistributionListMember {
     pub privacy_mode: DistributionListPrivacyMode,
 }
 
-pub fn shorten(text: &str, limit: usize) -> std::borrow::Cow<'_, str> {
+pub fn shorten(text: &str, limit: usize) -> Cow<'_, str> {
     let limit = text
         .char_indices()
         .map(|(i, _)| i)
