@@ -355,8 +355,18 @@ Page {
                             qsTrId("whisperfish-session-section-never")
                             break;
                         default:
-                            // two days to one week ago
-                            Qt.locale().dayName(parseInt(section), Locale.LongFormat)
+                            var s = section.toString();
+                            var k = s.substring(0, 1);
+                            var i = parseInt(s.substring(1));
+                            if (k == 'd') {
+                                // 'dX' with X number requests a dayName
+                                // two days to one week ago
+                                return Qt.locale().dayName(i, Locale.LongFormat);
+                            } else if (k == 'm') {
+                                // 'mX' with X number requests a monthName
+                                return Qt.locale().monthName(i, Locale.LongFormat);
+                            }
+                            break;
                         }
                     }
                 }

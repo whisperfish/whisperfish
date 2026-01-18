@@ -1540,8 +1540,20 @@ impl AugmentedSession {
         } else if diff.num_hours() <= 24 {
             "yesterday"
         } else if diff.num_days() <= 7 {
-            ["7", "1", "2", "3", "4", "5", "6"]
+            // https://doc.qt.io/qt-6.9/qml-qtqml-locale.html#dayName-method
+            //
+            // The documentation does not note that the C++ API expects Sunday == 7,
+            // whereas QML expects Sunday == 0.
+            ["d0", "d1", "d2", "d3", "d4", "d5", "d6"]
                 [(server_timestamp.weekday().number_from_monday() as usize) % 7]
+        } else if diff.num_days() <= 365 {
+            // From https://doc.qt.io/qt-6.9/qml-qtqml-locale.html#monthName-method
+            //
+            // Note: the QLocale C++ API expects a range of (1-12), however Locale.monthName()
+            // expects 0-11 as per the JS Date object.
+            [
+                "m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9", "m10", "m11",
+            ][(server_timestamp.month() as usize) - 1]
         } else {
             "older"
         }
