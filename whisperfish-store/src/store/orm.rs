@@ -1526,14 +1526,13 @@ impl AugmentedSession {
             return "never";
         };
 
-        // XXX: stub
-        let now = chrono::Utc::now();
-        let today = Utc
+        let now = chrono::Local::now();
+        let today = Local
             .with_ymd_and_hms(now.year(), now.month(), now.day(), 0, 0, 0)
-            .unwrap()
-            .naive_utc();
+            .unwrap();
 
         let server_timestamp = last_message.inner.server_timestamp;
+        let server_timestamp = server_timestamp.and_utc();
         let diff = today.signed_duration_since(server_timestamp);
 
         if diff.num_seconds() <= 0 {
