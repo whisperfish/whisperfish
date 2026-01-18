@@ -361,10 +361,10 @@ Page {
                             if (k == 'd') {
                                 // 'dX' with X number requests a dayName
                                 // two days to one week ago
-                                return Qt.locale().dayName(i, Locale.LongFormat);
+                                return Qt.locale().standaloneDayName(i, Locale.LongFormat);
                             } else if (k == 'm') {
                                 // 'mX' with X number requests a monthName
-                                return Qt.locale().monthName(i, Locale.LongFormat);
+                                return Qt.locale().standaloneMonthName(i, Locale.LongFormat);
                             }
                             break;
                         }
