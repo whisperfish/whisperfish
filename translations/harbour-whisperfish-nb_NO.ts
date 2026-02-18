@@ -1182,7 +1182,7 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-text-registration-directions">
         <location filename="../qml/pages/RegisterPage.qml" line="216"/>
         <source>Signal will text you a 6-digit verification code.</source>
-        <translation>Signal vil sende deg en 6-tegns bekreftelseskode per SMS.</translation>
+        <translation>Signal vil sende deg en 6-tegns bekreftelseskode.</translation>
     </message>
     <message id="whisperfish-captcha-requested-title">
         <location filename="../qml/pages/ProofSubmitPage.qml" line="15"/>
