@@ -190,8 +190,8 @@ Page {
                 horizontalAlignment: TextEdit.Center
                 readOnly: true
                 text: {
-                    "Allan Nordhøy" + "\n" +
-                    "Frank Paul Silye"
+                    "Frank Paul Silye" + "\n" +
+                    "Allan Nordhøy"
                 }
             }
 
