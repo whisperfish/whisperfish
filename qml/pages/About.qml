@@ -431,6 +431,7 @@ Page {
                 text: {
                     "Sz. G" + "\n" +
                     "Alexander Schlarb" + "\n" +
+                    "Sailor Sun" + "\n" +
                     "carlosgonz"
                 }
             }
