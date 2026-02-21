@@ -2558,9 +2558,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             tracing::warn!("Message has no destination service id; ignoring");
             return;
         }
-        let incoming_address =
-            ServiceId::parse_from_service_id_string(msg.destination_service_id.as_deref().unwrap())
-                .unwrap();
+        let incoming_address = msg.destination_address();
         if ![
             self.self_aci.map(ServiceId::from),
             self.self_pni.map(ServiceId::from),
