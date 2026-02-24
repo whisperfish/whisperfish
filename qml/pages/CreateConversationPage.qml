@@ -9,8 +9,8 @@ Page {
     objectName: "createConversationPage"
 
     property alias sessionId: createConversation.sessionId
-    property alias e164: createConversation.e164
-    property alias uuid: createConversation.uuid
+    property alias serviceId: createConversation.serviceId
+    property alias name: createConversation.name
 
     function attemptTransition() {
         if (sessionId != -1) {

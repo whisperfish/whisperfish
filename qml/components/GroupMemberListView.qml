@@ -93,7 +93,11 @@ SilicaListView {
                             return page.objectName == "mainPage";
                         });
                         pageStack.replaceAbove(main, Qt.resolvedUrl("../pages/CreateConversationPage.qml"), {
-                            uuid: recipient.uuid
+                            name: (isUnknownContact ? (recipient.e164 ? recipient.e164 : recipient.uuid) : name),
+                            // Group members always have an ACI.
+                            // If the group member is invited, it might be PNI
+                            // XXX: add serviceId field to recipient, expose, and use here.
+                            serviceId: recipient.uuid,
                         });
                     }
                     visible: recipient.directMessageSessionId == -1 && !isSelf

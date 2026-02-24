@@ -1,23 +1,20 @@
 #![allow(non_snake_case)]
 
 use crate::model::*;
-use crate::store::Storage;
 use crate::store::observer::{EventObserving, Interest};
-use libsignal_service::protocol::Aci;
-use phonenumber::PhoneNumber;
+use crate::store::Storage;
+use libsignal_protocol::ServiceId;
 use qmetaobject::prelude::*;
 use whisperfish_store::schema;
 
-/// QML-constructable object that queries a session based on e164 or uuid, and creates it if
-/// necessary.
+/// QML-constructable object that queries a session based on a ServiceId,
+/// and creates it if necessary.
 #[observing_model]
 #[derive(Default, QObject)]
 pub struct CreateConversation {
     base: qt_base_class!(trait QObject),
     session_id: Option<i32>,
-    // XXX What about PNI?
-    uuid: Option<uuid::Uuid>,
-    e164: Option<phonenumber::PhoneNumber>,
+    service_id: Option<ServiceId>,
     name: Option<String>,
 
     #[qt_property(
@@ -25,25 +22,22 @@ pub struct CreateConversation {
         NOTIFY: conversation_changed,
     )]
     sessionId: i32,
+
     #[qt_property(
-        READ: get_uuid,
-        WRITE: set_uuid,
+        READ: get_service_id,
+        WRITE: set_service_id,
         NOTIFY: conversation_changed,
-        ALIAS: uuid,
+        ALIAS: serviceId,
     )]
-    uuid_: QString,
-    #[qt_property(
-        READ: get_e164,
-        WRITE: set_e164,
-        NOTIFY: conversation_changed,
-        ALIAS: e164,
-    )]
-    e164_: QString,
+    service_id_: QString,
+
     #[qt_property(
         READ: get_name,
+        WRITE: set_name,
         NOTIFY: conversation_changed,
     )]
     name_: QString,
+
     #[qt_property(
         READ: get_ready,
         NOTIFY: conversation_changed,
@@ -92,17 +86,14 @@ impl CreateConversation {
     }
 
     fn get_invalid(&self, _ctx: Option<ModelContext<Self>>) -> bool {
-        // XXX Also invalid when lookup failed
-        self.e164.is_none() && self.uuid.is_none()
+        self.service_id.is_none()
     }
 
     fn fetch(&mut self, storage: Storage) {
-        let recipient = if let Some(aci) = self.uuid {
-            storage.fetch_recipient(&Aci::from(aci).into())
-        } else if let Some(e164) = &self.e164 {
-            storage.fetch_recipient_by_e164(e164)
+        let recipient = if let Some(id) = &self.service_id {
+            storage.fetch_recipient(id)
         } else {
-            tracing::trace!("Neither e164 nor uuid set; not fetching.");
+            tracing::trace!("No service_id set; not fetching.");
             return;
         };
 
@@ -123,58 +114,36 @@ impl CreateConversation {
         self.conversation_changed();
     }
 
-    fn get_uuid(&self, _ctx: Option<ModelContext<Self>>) -> QString {
-        self.uuid
+    fn get_service_id(&self, _ctx: Option<ModelContext<Self>>) -> QString {
+        self.service_id
             .as_ref()
-            .map(uuid::Uuid::to_string)
+            .map(ServiceId::service_id_string)
             .unwrap_or_default()
             .into()
     }
 
-    fn set_uuid(&mut self, ctx: Option<ModelContext<Self>>, uuid: QString) {
-        self.uuid = uuid::Uuid::parse_str(&uuid.to_string())
-            // inspect_err https://github.com/rust-lang/rust/pull/91346 Rust 1.59 (unstable)
-            //             https://github.com/rust-lang/rust/pull/116866 Rust 1.76 (stable)
-            .map_err(|e| {
-                tracing::error!("Parsing uuid: {}", e);
-                e
-            })
-            .ok();
-        self.e164 = None;
+    fn set_service_id(&mut self, ctx: Option<ModelContext<Self>>, uuid: QString) {
+        self.service_id = ServiceId::parse_from_service_id_string(&uuid.to_string());
+        self.session_id = None;
+        if self.service_id.is_none() {
+            tracing::error!("parsing service id");
+        }
+
         if let Some(ctx) = ctx {
             self.fetch(ctx.storage());
         }
-    }
-
-    fn set_e164(&mut self, ctx: Option<ModelContext<Self>>, e164: QString) {
-        self.e164 = phonenumber::parse(None, e164.to_string())
-            // inspect_err https://github.com/rust-lang/rust/pull/91346 Rust 1.59 (unstable)
-            //             https://github.com/rust-lang/rust/pull/116866 Rust 1.76 (stable)
-            .map_err(|e| {
-                tracing::error!("Parsing phone number: {}", e);
-                e
-            })
-            .ok();
-        self.uuid = None;
-        if let Some(ctx) = ctx {
-            self.fetch(ctx.storage());
-        }
-    }
-
-    fn get_e164(&self, _ctx: Option<ModelContext<Self>>) -> QString {
-        self.e164
-            .as_ref()
-            .map(PhoneNumber::to_string)
-            .unwrap_or_default()
-            .into()
     }
 
     fn get_name(&self, _ctx: Option<ModelContext<Self>>) -> QString {
         self.name.as_deref().unwrap_or_default().into()
     }
 
+    fn set_name(&mut self, _ctx: Option<ModelContext<Self>>, name: QString) {
+        self.name = Some(name.to_string());
+    }
+
     fn init(&mut self, ctx: ModelContext<Self>) {
-        if self.e164.is_some() || self.uuid.is_some() {
+        if self.service_id.is_some() {
             self.fetch(ctx.storage());
         }
     }
