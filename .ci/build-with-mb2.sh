@@ -26,7 +26,8 @@ git clone . ~/whisperfish-build
 pushd ~/whisperfish-build
 
 # Determine GIT_VERSION in advance so SFOS targets don't need git
-export GIT_VERSION=$(git describe  --exclude release,tag --dirty=-dirty)
+GIT_VERSION=$(git describe  --exclude release,tag --dirty=-dirty)
+export GIT_VERSION
 
 # This comes from job cache or the fetch scripy
 echo "Restoring ringrtc cache..."

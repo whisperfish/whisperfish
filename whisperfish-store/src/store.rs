@@ -3156,7 +3156,7 @@ impl<O: Observable> Storage<O> {
                         diesel::dsl::max(diesel::dsl::sql::<diesel::sql_types::SmallInt>(
                             "attachments.is_voice_note",
                         )),
-                        diesel::dsl::count_distinct(schema::attachments::id),
+                        diesel::dsl::count(schema::attachments::id).aggregate_distinct(),
                     ))
                     .filter(schema::messages::session_id.eq(sid))
                     .order_by(order)
@@ -3172,7 +3172,7 @@ impl<O: Observable> Storage<O> {
                     .group_by(schema::reactions::message_id)
                     .select((
                         schema::reactions::message_id,
-                        diesel::dsl::count_distinct(schema::reactions::reaction_id),
+                        diesel::dsl::count(schema::reactions::reaction_id).aggregate_distinct(),
                     ))
                     .filter(schema::messages::session_id.eq(sid))
                     .order_by(order)

@@ -101,6 +101,7 @@ BuildRequires:  gcc-c++
 BuildRequires:  zlib-devel
 BuildRequires:  coreutils
 BuildRequires:  perl-IPC-Cmd
+BuildRequires:  perl-Time-Piece
 
 %if %{with git}
 BuildRequires:  git-core
