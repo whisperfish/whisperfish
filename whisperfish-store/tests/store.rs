@@ -941,6 +941,7 @@ async fn test_recipient_actions() {
         emoji: Some("❤".into()),
         remove: Some(false),
         target_author_aci: Some(recip.uuid.unwrap().to_string()),
+        target_author_aci_binary: Some(recip.uuid.unwrap().as_bytes().to_vec()),
         target_sent_timestamp: Some(naive_chrono_to_millis(msg.server_timestamp)),
     };
     let data_msg = DataMessage {
@@ -965,6 +966,11 @@ async fn test_recipient_actions() {
         payment: None,
         story_context: None,
         gift_badge: None,
+        pin_message: None,
+        unpin_message: None,
+        poll_create: None,
+        poll_terminate: None,
+        poll_vote: None,
     };
     let (m, s) = match storage.process_reaction(&recip, &data_msg, &reaction) {
         Ok(Some((m, s))) => (m, s),
