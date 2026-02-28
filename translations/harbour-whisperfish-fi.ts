@@ -1491,7 +1491,7 @@ Settings page share contacts</extracomment>
         <source>Attachments are stored at %1. Currently, when disabled, attachments will not work.</source>
         <oldsource>Attachments are stored at %1</oldsource>
         <extracomment>Settings page save attachments description</extracomment>
-        <translation>Liittee tallennetaan hakemistoon %1. Valinnan on oltava päällä, jotta liitteiden vastaanottaminen toimii.</translation>
+        <translation>Liitteet tallennetaan hakemistoon %1. Valinnan on oltava päällä, jotta liitteiden vastaanottaminen toimii.</translation>
     </message>
     <message id="whisperfish-settings-enable-enter-send">
         <location filename="../qml/pages/Settings.qml" line="276"/>
