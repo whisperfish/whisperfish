@@ -402,14 +402,10 @@ pub struct ClientActor {
 
 fn whisperfish_device_capabilities() -> DeviceCapabilities {
     DeviceCapabilities {
-        announcement_group: true,
         storage: false,
-        sender_key: true,
-        change_number: false,
-        gift_badges: false,
-        stories: false,
-        pni: true,
-        payment_activation: false,
+        transfer: false,
+        attachment_backfill: false,
+        spqr: true,
     }
 }
 
