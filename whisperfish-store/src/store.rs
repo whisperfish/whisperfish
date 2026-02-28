@@ -1093,12 +1093,11 @@ impl<O: Observable> Storage<O> {
         self.observe_update(recipients, recipient.id);
     }
 
-    #[tracing::instrument(skip(self))]
     /// Update the expiration timer for a session.
     ///
     /// Returns the new expiration time version
     // TODO: accept Duration instead of i32 seconds
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, session), fields(session=session.id))]
     pub fn update_expiration_timer(
         &self,
         session: &orm::Session,
