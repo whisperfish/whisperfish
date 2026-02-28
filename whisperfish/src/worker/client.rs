@@ -50,7 +50,6 @@ use whisperfish_store::orm::shorten;
 use whisperfish_store::orm::MessageType;
 use whisperfish_store::orm::SessionType;
 use whisperfish_store::orm::StoryType;
-use whisperfish_store::TrustLevel;
 use zkgroup::profiles::ProfileKey;
 
 use super::message_expiry::ExpiredMessagesStream;
@@ -720,6 +719,7 @@ impl ClientActor {
                     if let Some(recipient) = storage.fetch_recipient_by_id(r_id) {
                         Some(Read {
                             sender_aci: recipient.uuid.map(|u| u.to_string()),
+                            sender_aci_binary: recipient.uuid.map(|u| u.as_bytes().to_vec()),
                             timestamp: Some(m.server_timestamp.and_utc().timestamp_millis() as u64),
                         })
                     } else {
@@ -801,6 +801,7 @@ impl ClientActor {
                 crate::store::TrustLevel::Certain,
             ))
         } else {
+            tracing::warn!("merge_and_fetch_recipient below will crash");
             None
         };
 
@@ -1009,13 +1010,12 @@ impl ClientActor {
         let body_ranges = crate::store::body_ranges::serialize(&msg.body_ranges);
 
         let mut session = group.unwrap_or_else(|| {
-            let recipient = storage.merge_and_fetch_recipient(
-                source_phonenumber.clone(),
-                source_addr.map(Aci::try_from).transpose().ok().flatten(),
-                source_addr.map(Pni::try_from).transpose().ok().flatten(),
-                TrustLevel::Certain,
-            );
-            storage.fetch_or_insert_session_by_recipient_id(recipient.id)
+            storage.fetch_or_insert_session_by_recipient_id(
+                sender_recipient
+                    .as_ref()
+                    .expect("sender recipient found meanwhile")
+                    .id,
+            )
         });
 
         // Group expiry timer handled via GroupChanges
@@ -1169,9 +1169,11 @@ impl ClientActor {
                     sender.send_sync_message(SyncMessage {keys, ..SyncMessage::with_padding(&mut rand::rng())}).await?;
                 }
                 RequestType::Blocked => {
+                    let blocked_acis = storage.fetch_blocked_acis();
                     let blocked = Some(Blocked {
                         numbers: storage.fetch_blocked_numbers().into_iter().map(|e| e.to_string()).collect_vec(),
-                        acis: storage.fetch_blocked_acis().into_iter().map(|e| e.to_string()).collect_vec(),
+                        acis: blocked_acis.iter().map(|e| e.to_string()).collect_vec(),
+                        acis_binary: blocked_acis.iter().map(|e| e.as_bytes().to_vec()).collect_vec(),
                         group_ids: Vec::new(), // Group V1
                     });
                     sender.send_sync_message(SyncMessage {blocked, ..SyncMessage::with_padding(&mut rand::rng())}).await?;
@@ -1312,8 +1314,7 @@ impl ClientActor {
                     handled = true;
                     tracing::trace!("Sync sent message");
                     // These are messages sent through a paired device.
-                    let address =
-                        ServiceId::parse_from_service_id_string(sent.destination_service_id());
+                    let address = sent.parse_destination_service_id();
                     if address.is_none() {
                         tracing::warn!("Unparsable ServiceId {}", sent.destination_service_id());
                     }
@@ -2160,6 +2161,9 @@ impl Handler<SendReaction> for ClientActor {
                         emoji: Some(emoji.clone()),
                         remove: Some(remove),
                         target_author_aci: sender_recipient.uuid.map(|u| u.to_string()),
+                        target_author_aci_binary: sender_recipient
+                            .uuid
+                            .map(|u| u.as_bytes().to_vec()),
                         target_sent_timestamp: Some(naive_chrono_to_millis(
                             message.server_timestamp,
                         )),
@@ -2544,11 +2548,10 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             }
         };
 
-        if msg.destination_service_id.is_none() {
+        let Some(incoming_address) = msg.parse_destination_service_id() else {
             tracing::warn!("Message has no destination service id; ignoring");
             return;
-        }
-        let incoming_address = msg.destination_address();
+        };
         if ![
             self.self_aci.map(ServiceId::from),
             self.self_pni.map(ServiceId::from),

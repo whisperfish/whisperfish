@@ -53,6 +53,12 @@ pub fn serialize(value: &[WireBodyRange]) -> Option<Vec<u8>> {
                                 mention_aci.clone(),
                             ))
                         }
+                        wire_body_range::AssociatedValue::MentionAciBinary(mention_aci) => {
+                            let mention_aci = uuid::Uuid::from_slice(&mention_aci).expect("correctly formatted mention ACI");
+                            Some(database_protos::body_range_list::body_range::AssociatedValue::MentionUuid(
+                                mention_aci.to_string(),
+                            ))
+                        }
                         wire_body_range::AssociatedValue::Style(style) => {
                             use database_protos::body_range_list::body_range::Style;
                             let style = match WireStyle::try_from(*style).unwrap() {
