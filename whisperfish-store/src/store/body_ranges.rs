@@ -307,8 +307,15 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             AssociatedValue::Style(3) => segment.strikethrough = true,
             AssociatedValue::Style(4) => segment.monospace = true,
             AssociatedValue::MentionUuid(s) => {
-                assert_eq!(segment.contents.encode_utf16().count(), 1);
-                assert_eq!(segment.contents, "\u{fffc}");
+                match segment.contents.encode_utf16().count() {
+                    // old-style mention
+                    1 => {
+                        assert_eq!(segment.contents, "\u{fffc}");
+                    }
+                    _ => {
+                        tracing::warn!(segment=?segment.contents, "unconventional associated value style for mention");
+                    }
+                }
                 segment.mention = Some(s);
             }
             AssociatedValue::Link(s) => {
