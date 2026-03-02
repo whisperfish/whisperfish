@@ -1954,7 +1954,7 @@ Settings page share contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-sender-name-label-outgoing">
-        <location filename="../qml/components/QuotedMessagePreview.qml" line="115"/>
+        <location filename="../qml/components/QuotedMessagePreview.qml" line="116"/>
         <location filename="../qml/components/SenderNameLabel.qml" line="40"/>
         <location filename="../qml/harbour-whisperfish-main.qml" line="167"/>
         <location filename="../qml/pages/SearchPage.qml" line="210"/>
@@ -1965,7 +1965,7 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-recipient-no-name">
         <location filename="../qml/components/GroupMemberListView.qml" line="188"/>
-        <location filename="../qml/components/QuotedMessagePreview.qml" line="119"/>
+        <location filename="../qml/components/QuotedMessagePreview.qml" line="120"/>
         <location filename="../qml/delegates/MessageDelegate.qml" line="204"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="39"/>
         <location filename="../qml/pages/ConversationPage.qml" line="99"/>
@@ -1984,7 +1984,7 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-quoted-message-preview-attachment">
         <location filename="../qml/components/attachment/AttachmentItemAudio.qml" line="74"/>
         <location filename="../qml/components/attachment/AttachmentItemFile.qml" line="22"/>
-        <location filename="../qml/components/QuotedMessagePreview.qml" line="147"/>
+        <location filename="../qml/components/QuotedMessagePreview.qml" line="148"/>
         <source>Attachment</source>
         <extracomment>Placeholder text if quoted message preview contains no text, only attachments</extracomment>
         <translation type="unfinished"></translation>
