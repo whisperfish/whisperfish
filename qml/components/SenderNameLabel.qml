@@ -45,7 +45,7 @@ BackgroundItem {
         font.bold: true
         linkColor: color
         color: Qt.tint(highlighted ? Theme.highlightColor : Theme.primaryColor,
-                       '#'+Qt.md5(source).substr(0, 6)+'0F')
+                       '#'+Qt.md5(recipient.uuid).substr(0, 6)+'0F')
         defaultLinkActions: false
     }
 

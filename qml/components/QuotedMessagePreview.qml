@@ -110,6 +110,7 @@ BackgroundItem {
         SenderNameLabel {
             id: senderNameLabel
             enabled: false
+            recipient: sender
             source: quotedMessage.outgoing
                 ? // Reused from main.qml; "You"
                   qsTrId("whisperfish-sender-name-label-outgoing")
