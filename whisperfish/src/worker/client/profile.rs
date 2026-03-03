@@ -27,10 +27,17 @@ impl StreamHandler<OutdatedProfile> for ClientActor {
             async move { (aci, service.retrieve_profile_by_id(aci, key).await) }
                 .into_actor(self)
                 .map(|(recipient_aci, profile), act, ctx| {
+                    let _span = tracing::info_span!("processing profile fetch", recipient=%Uuid::from(recipient_aci)).entered();
                     match profile {
                         Ok(profile) => ctx.notify(ProfileFetched(recipient_aci, Some(profile))),
                         Err(e) => match e {
                             ServiceError::NotFoundError => {
+                                // Set the profile to None
+                                ctx.notify(ProfileFetched(recipient_aci, None))
+                            }
+                            ServiceError::Unauthorized => {
+                                // Set the profile to None
+                                tracing::warn!("profile fetch was unauhtorized");
                                 ctx.notify(ProfileFetched(recipient_aci, None))
                             }
                             ServiceError::RateLimitExceeded { retry_after: Some(retry_after) } => {
@@ -49,7 +56,10 @@ impl StreamHandler<OutdatedProfile> for ClientActor {
                                 tracing::error!("rate limit exceeded, stopping profile refresh process, without Retry-After header.");
                             }
                             _ => {
-                                tracing::error!("Error refreshing outdated profile: {}", e);
+                                tracing::error!(error=%e, "error refreshing outdated profile");
+                                // We mark the profile as fetched *anyway* in order to avoid rate
+                                // limiting errors.
+                                ctx.notify(ProfileFetched(recipient_aci, None))
                             }
                         },
                     };
