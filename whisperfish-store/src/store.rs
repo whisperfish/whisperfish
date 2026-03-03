@@ -695,8 +695,10 @@ impl<O: Observable> Storage<O> {
             .target_sent_timestamp
             .map(millis_to_naive_chrono)
             .context("Invalid timestamp")?;
-        let target_author_uuid =
-            Uuid::parse_str(reaction.target_author_aci()).context("Invalid Aci")?;
+        let target_author_aci: Aci = reaction
+            .parse_target_author_aci()
+            .ok_or_else(|| anyhow::format_err!("invalid Aci"))?;
+        let target_author_uuid: Uuid = target_author_aci.into();
 
         let message = self
             .fetch_message_by_timestamp(ts)
@@ -1529,6 +1531,7 @@ impl<O: Observable> Storage<O> {
     /// Marks the message read without creating a Receipt entry.
     /// This is used in handling sync messages only, and should
     /// only cover messages that was sent through a paired device.
+    // XXX: this should also be passed the ACI for validation purposes?
     #[tracing::instrument(skip(self))]
     pub fn mark_message_read(&self, timestamp: NaiveDateTime) -> Option<MessagePointer> {
         use schema::messages::dsl::*;
