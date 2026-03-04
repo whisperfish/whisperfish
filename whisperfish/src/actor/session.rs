@@ -221,7 +221,7 @@ impl Handler<RemoveIdentities> for SessionActor {
             .map(|pni| storage.delete_identity_key(&pni))
             .unwrap_or(false);
 
-        let session = storage.fetch_session_by_recipient_id(recipient_id).unwrap();
+        let session = storage.fetch_or_insert_session_by_recipient_id(recipient_id);
 
         storage.create_message(&NewMessage {
             session_id: session.id,
