@@ -26,16 +26,42 @@ impl StreamHandler<OutdatedProfile> for ClientActor {
         ctx.spawn(
             async move { (aci, service.retrieve_profile_by_id(aci, key).await) }
                 .into_actor(self)
-                .map(|(recipient_aci, profile), _act, ctx| {
+                .map(|(recipient_aci, profile), act, ctx| {
+                    let _span = tracing::info_span!("processing profile fetch", recipient=%Uuid::from(recipient_aci)).entered();
                     match profile {
                         Ok(profile) => ctx.notify(ProfileFetched(recipient_aci, Some(profile))),
-                        Err(e) => {
-                            if let ServiceError::NotFoundError = e {
+                        Err(e) => match e {
+                            ServiceError::NotFoundError => {
+                                // Set the profile to None
                                 ctx.notify(ProfileFetched(recipient_aci, None))
-                            } else {
-                                tracing::error!("Error refreshing outdated profile: {}", e);
                             }
-                        }
+                            ServiceError::Unauthorized => {
+                                // Set the profile to None
+                                tracing::warn!("profile fetch was unauhtorized");
+                                ctx.notify(ProfileFetched(recipient_aci, None))
+                            }
+                            ServiceError::RateLimitExceeded { retry_after: Some(retry_after) } => {
+                                tracing::warn!(%retry_after, "rate limit exceeded, stopping profile refresh process");
+                                if let Some(handle) = act.outdated_profile_stream_handle.take() {
+                                    if !ctx.cancel_future(handle) {
+                                        tracing::warn!("unable to cancel outdated profile stream");
+                                    }
+                                }
+                                tracing::debug!("scheduling profile stream restart");
+                                // XXX Ideally we have a separate handler for restarting just the
+                                //     profile stream. CBA right now.
+                                ctx.notify_later(Restart, retry_after.to_std().expect("retry range within limits"));
+                            }
+                            ServiceError::RateLimitExceeded { retry_after: None } => {
+                                tracing::error!("rate limit exceeded, stopping profile refresh process, without Retry-After header.");
+                            }
+                            _ => {
+                                tracing::error!(error=%e, "error refreshing outdated profile");
+                                // We mark the profile as fetched *anyway* in order to avoid rate
+                                // limiting errors.
+                                ctx.notify(ProfileFetched(recipient_aci, None))
+                            }
+                        },
                     };
                 }),
         );
