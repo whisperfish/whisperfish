@@ -190,7 +190,7 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
         spoiler: bool,
         strikethrough: bool,
         monospace: bool,
-        mention: Option<&'a str>,
+        mention: Option<(&'a str, Option<&'a str>)>,
         link: Option<&'a str>,
     }
 
@@ -307,9 +307,15 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
             AssociatedValue::Style(3) => segment.strikethrough = true,
             AssociatedValue::Style(4) => segment.monospace = true,
             AssociatedValue::MentionUuid(s) => {
-                assert_eq!(segment.contents.encode_utf16().count(), 1);
-                assert_eq!(segment.contents, "\u{fffc}");
-                segment.mention = Some(s);
+                let val = match segment.contents.encode_utf16().count() {
+                    // old-style mention
+                    1 if segment.contents == "\u{fffc}" => None,
+                    _ => {
+                        tracing::warn!(segment=?segment.contents, "unconventional associated value style for mention");
+                        Some(segment.contents)
+                    }
+                };
+                segment.mention = Some((s, val));
             }
             AssociatedValue::Link(s) => {
                 segment.link = Some(s);
@@ -427,7 +433,8 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
                 result.push_str(SPOILER_TAG_UNCLICKED);
             }
 
-            if let Some(mention) = segment.mention {
+            if let Some((mention, _contents)) = segment.mention {
+                // TODO: typeset _contents?
                 if segment.spoiler {
                     result.push_str(LINK_TAG_UNCLICKED);
                 } else {
