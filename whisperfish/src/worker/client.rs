@@ -1151,6 +1151,7 @@ impl ClientActor {
                                 // XXX: expire timer from dm session
                                 number: recipient.e164.as_ref().map(PhoneNumber::to_string),
                                 aci: recipient.uuid.as_ref().map(Uuid::to_string),
+                                aci_binary: recipient.uuid.as_ref().map(Uuid::as_bytes).map(Vec::from),
                                 name: recipient.profile_joined_name.clone(),
                                 // XXX other profile stuff
                                 ..Default::default()
@@ -1209,9 +1210,8 @@ impl ClientActor {
     #[tracing::instrument(level = "debug", skip(self))]
     fn handle_message_request_response(&mut self, response: &MessageRequestResponse) -> bool {
         let storage = self.storage.clone().expect("storage initialized");
-        if let Some(aci) = &response.thread_aci {
-            let addr = ServiceId::parse_from_service_id_string(aci.as_str())
-                .expect("valid aci uuid in MessageRequestResponse");
+        if let Some(aci) = response.parse_thread_aci() {
+            let addr = ServiceId::Aci(aci);
             match response.r#type() {
                 MessageRequestAction::Accept => storage.mark_recipient_accepted(&addr),
                 MessageRequestAction::Block => storage.mark_recipient_blocked(&addr),
@@ -1375,7 +1375,11 @@ impl ClientActor {
                         // Signal uses timestamps in milliseconds, chrono has nanoseconds
                         // XXX: this should probably not be based on ts alone.
                         if let Some(timestamp) = read.timestamp.map(millis_to_naive_chrono) {
-                            let source = read.sender_aci();
+                            let Some(source_aci) = read.parse_sender_aci() else {
+                                tracing::warn!("invalid sender ACI");
+                                continue;
+                            };
+                            let source: Uuid = source_aci.into();
                             tracing::trace!(
                                 "Marking message from {} at {} ({}) as read.",
                                 source,
@@ -1737,11 +1741,13 @@ impl Handler<SendMessage> for ClientActor {
                         }
                         let quote_sender = quoted_message
                             .sender_recipient_id
-                            .and_then(|x| storage.fetch_recipient_by_id(x));
+                            .and_then(|x| storage.fetch_recipient_by_id(x))
+                            .and_then(|r| r.uuid);
 
                         Quote {
                             id: Some(naive_chrono_to_millis(quoted_message.server_timestamp)),
-                            author_aci: quote_sender.as_ref().and_then(|r| r.uuid.as_ref().map(Uuid::to_string)),
+                            author_aci: quote_sender.as_ref().map(Uuid::to_string),
+                            author_aci_binary: quote_sender.as_ref().map(Uuid::as_bytes).map(Vec::from),
                             text: quoted_message.text.clone(),
 
                             ..Default::default()
