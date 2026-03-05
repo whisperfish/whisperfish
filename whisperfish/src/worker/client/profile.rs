@@ -46,11 +46,13 @@ impl StreamHandler<OutdatedProfile> for ClientActor {
                                     if !ctx.cancel_future(handle) {
                                         tracing::warn!("unable to cancel outdated profile stream");
                                     }
+                                    tracing::debug!("scheduling profile stream restart");
+                                    // XXX Ideally we have a separate handler for restarting just the
+                                    //     profile stream. CBA right now.
+                                    ctx.notify_later(Restart, retry_after.to_std().expect("retry range within limits"));
+                                } else {
+                                    tracing::warn!("outdated profile stream already stopped");
                                 }
-                                tracing::debug!("scheduling profile stream restart");
-                                // XXX Ideally we have a separate handler for restarting just the
-                                //     profile stream. CBA right now.
-                                ctx.notify_later(Restart, retry_after.to_std().expect("retry range within limits"));
                             }
                             ServiceError::RateLimitExceeded { retry_after: None } => {
                                 tracing::error!("rate limit exceeded, stopping profile refresh process, without Retry-After header.");
