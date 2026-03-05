@@ -37,7 +37,7 @@ impl StreamHandler<OutdatedProfile> for ClientActor {
                             }
                             ServiceError::Unauthorized => {
                                 // Set the profile to None
-                                tracing::warn!("profile fetch was unauhtorized");
+                                tracing::warn!("profile fetch was unauthorized");
                                 ctx.notify(ProfileFetched(recipient_aci, None))
                             }
                             ServiceError::RateLimitExceeded { retry_after: Some(retry_after) } => {
