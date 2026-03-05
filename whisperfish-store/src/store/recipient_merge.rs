@@ -213,10 +213,7 @@ pub fn merge_and_fetch_recipient_inner(
     // Merge PNI into E.164
     // This block resembles processPossibleE164PniMerge()
     // XXX && (change_self || not_self)
-    if e164.is_some()
-        && pni.is_some()
-        && let Some(by_e164) = by_e164.as_ref()
-        && let Some(by_pni) = by_pni.as_ref()
+    if let (Some(_e164), Some(pni), Some(by_e164), Some(by_pni)) = (&e164, pni, &by_e164, &by_pni)
         && by_e164.id != by_pni.id
     {
         tracing::info!(
@@ -230,7 +227,7 @@ pub fn merge_and_fetch_recipient_inner(
             ops.push(RecipientOperation::Merge(by_pni.id, by_e164.id));
         } else {
             ops.push(RecipientOperation::SetPni(by_pni.id, None));
-            ops.push(RecipientOperation::SetPni(by_e164.id, pni));
+            ops.push(RecipientOperation::SetPni(by_e164.id, Some(pni)));
             // XXX session switchover event?
         }
     }
@@ -239,10 +236,7 @@ pub fn merge_and_fetch_recipient_inner(
     // NB! We must never merge/move ACI!
     // This block resembles processPossiblePniAciMerge()
     // XXX && (change_self || not_self)
-    if aci.is_some()
-        && pni.is_some()
-        && let Some(by_aci) = by_aci.as_ref()
-        && let Some(by_pni) = by_pni.as_ref()
+    if let (Some(_aci), Some(pni), Some(by_aci), Some(by_pni)) = (aci, pni, &by_aci, &by_pni)
         && by_aci.id != by_pni.id
     {
         tracing::info!(
@@ -265,7 +259,7 @@ pub fn merge_and_fetch_recipient_inner(
             ops.push(RecipientOperation::Merge(by_pni.id, by_aci.id));
         } else {
             ops.push(RecipientOperation::SetPni(by_pni.id, None));
-            ops.push(RecipientOperation::SetPni(by_aci.id, pni));
+            ops.push(RecipientOperation::SetPni(by_aci.id, Some(pni)));
             if e164.is_some() && by_aci.e164 != e164 {
                 if by_pni.e164 == e164 {
                     ops.push(RecipientOperation::SetE164(by_pni.id, None));
@@ -281,13 +275,9 @@ pub fn merge_and_fetch_recipient_inner(
     // Merge E.164 into ACI
     // XXX && (change_self || not_self)
     // This block resembles processPossibleE164AciMerge()
-    if e164.is_some()
-        && aci.is_some()
-        && let Some(by_e164) = by_e164.as_ref()
-        && let Some(by_aci) = by_aci.as_ref()
+    if let (Some(e164), Some(_aci), Some(by_e164), Some(by_aci)) = (&e164, aci, &by_e164, &by_aci)
         && by_e164.id != by_aci.id
     {
-        let e164 = e164.as_ref().unwrap();
         tracing::info!(
             "Merging contact {} (by E.164) into {} (by ACI)",
             by_e164.id,
@@ -301,10 +291,14 @@ pub fn merge_and_fetch_recipient_inner(
             ops.push(RecipientOperation::SetE164(by_e164.id, None));
             ops.push(RecipientOperation::SetE164(by_aci.id, Some(e164.clone()))); // XXX This should be handled in merge func
             ops.push(RecipientOperation::Merge(by_e164.id, by_aci.id));
-            if by_aci.e164.is_some() && by_aci.e164.as_ref().unwrap() != e164 { // XXX && (change_self || not_self) && !by_aci.blocked
+            if let Some(by_aci_e164) = &by_aci.e164
+                && by_aci_e164 != e164
+            { // XXX && (change_self || not_self) && !by_aci.blocked
                 // XXX Phone number change event
             }
-        } else if pni.is_some() && by_e164.pni != pni {
+        } else if let Some(pni) = pni
+            && by_e164.pni != Some(pni)
+        {
             if by_aci.pni.is_some() {
                 ops.push(RecipientOperation::SetPni(by_aci.id, None));
             }
