@@ -693,7 +693,7 @@
         <source>Loading messages</source>
         <oldsource>Synchronizing</oldsource>
         <extracomment>Whisperfish connection status message</extracomment>
-        <translation type="unfinished">Synkronoidaan</translation>
+        <translation>Ladataan viestejä</translation>
     </message>
     <message id="whisperfish-registration-required-message">
         <location filename="../qml/pages/MainPage.qml" line="297"/>
