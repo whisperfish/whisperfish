@@ -531,7 +531,7 @@
         <source>Install Signal Desktop. Use e.g. the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</source>
         <oldsource>Install Signal Desktop. Use the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</oldsource>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
-        <translation type="unfinished">Asenna Signal Desktop, lue siinä näkyvä QR-koodi CodeReader-sovelluksella ja liitä osoite tähän.</translation>
+        <translation>Asenna Signal Desktop, lue siinä näkyvä QR-koodi Kameralla tai CodeReader-sovelluksella ja liitä linkityskoodi tähän.</translation>
     </message>
     <message id="whisperfish-select-picture">
         <source>Select picture</source>
@@ -954,7 +954,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="103"/>
         <source>Unlink contact</source>
         <extracomment>Menu action to unlink a Signal contact from a Sailfish OS contact</extracomment>
-        <translation>Poista yhteystiedon linkitys</translation>
+        <translation>Pura linkitys</translation>
     </message>
     <message id="whisperfish-recipient-link">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="106"/>
@@ -978,7 +978,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="241"/>
         <source>This user profile is broken and can&apos;t be used.</source>
         <extracomment>Warning about recipient UUID not existing or nil (all zeros)</extracomment>
-        <translation>Tämä käyttäjäprofiili on rikkinäinen, eikä sitä voi käyttää.</translation>
+        <translation>Tämä käyttäjäprofiili on rikki eikä sitä voi käyttää.</translation>
     </message>
     <message id="whisperfish-show-fingerprint">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="310"/>
@@ -1218,7 +1218,7 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <location filename="../qml/pages/SetupPasswordPage.qml" line="26"/>
         <source>Whisperfish stores identity keys, session state, and local message data encrypted on disk. The password you set is not stored anywhere and you will not be able to restore your data if you lose your password. Note: Attachments are currently stored unencrypted. You can disable storing of attachments in the Settings page.</source>
         <extracomment>Whisperfish password informational message</extracomment>
-        <translation>Whisperfish tallentaa salausavaimet, tilaviestit sekä paikallisen viestiarkiston salattuna levylle. Salasanaasi ei tallenneta mihinkään eikä tietojen palauttaminen ole mahdollista mikäli unohdat salasanasi. HUOM: Liitetiedostot tallennetaan salaamattomina. Voit estää liitetiedostojen tallennuksen Asetuksista.</translation>
+        <translation>Whisperfish tallentaa salausavaimet, tilatiedot sekä viestit salattuna levylle. Salasanaasi ei tallenneta mihinkään eikä tietojen palauttaminen ole mahdollista mikäli unohdat salasanasi. Huom: Liitetiedostot tallennetaan salaamattomina. Voit estää liitetiedostojen tallennuksen Asetuksista.</translation>
     </message>
     <message id="whisperfish-registration-message">
         <location filename="../qml/pages/RegisterPage.qml" line="20"/>
@@ -1473,7 +1473,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="188"/>
         <source>The selected country code determines what happens when a local phone number is entered.</source>
         <extracomment>Settings page country code description</extracomment>
-        <translation>Valittu maatunnus määrittää, mitä tapahtuu syötettäessä paikallinen puhelinnumero.</translation>
+        <translation>Käytä automaattisesti valittua maakoodia, jos se puuttuu syötetystä puhelinnumerosta.</translation>
     </message>
     <message id="whisperfish-settings-country-code-empty">
         <location filename="../qml/pages/Settings.qml" line="192"/>
@@ -1983,7 +1983,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="113"/>
         <source>Search</source>
         <extracomment>Show search field menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Etsi</translation>
     </message>
     <message id="whisperfish-announcements-switch-label">
         <location filename="../qml/pages/GroupProfilePage.qml" line="165"/>
@@ -2760,9 +2760,9 @@ Settings page share contacts</extracomment>
         <source>Retry sending %n failed message(s)</source>
         <oldsource>Retry sending (the) failed message(s)</oldsource>
         <extracomment>Message action description</extracomment>
-        <translation type="unfinished">
+        <translation>
             <numerusform>Yritä lähettää viesti uudelleen</numerusform>
-            <numerusform>Yritä viestien lähettämistä uudelleen</numerusform>
+            <numerusform>Yritä lähettää %n viestiä uudelleen</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-action-transcribe" numerus="yes">
@@ -3106,40 +3106,40 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/SearchPage.qml" line="46"/>
         <source>Message search</source>
         <extracomment>Search page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Viestihaku</translation>
     </message>
     <message id="whisperfish-search-field-label">
         <location filename="../qml/pages/SearchPage.qml" line="77"/>
         <source>Search messages by text</source>
         <extracomment>Search field default text</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Etsi viestejä tekstin perusteella</translation>
     </message>
     <message id="whisperfish-search-field-desc" numerus="yes">
         <location filename="../qml/pages/SearchPage.qml" line="80"/>
         <source>%n match(es)</source>
         <extracomment>Search field description</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n osuma</numerusform>
+            <numerusform>%s osumaa</numerusform>
         </translation>
     </message>
     <message id="whisperfish-search-select-session">
         <location filename="../qml/pages/SearchPage.qml" line="120"/>
         <source>Search from conversation</source>
         <extracomment>Search page, select session to search from, or all</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Hae keskusteluista</translation>
     </message>
     <message id="whisperfish-search-from-all">
         <location filename="../qml/pages/SearchPage.qml" line="126"/>
         <source>All conversations</source>
         <extracomment>Search page, search from all conversations</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kaikki keskustelut</translation>
     </message>
     <message id="whisperfish-search-results-label">
         <location filename="../qml/pages/SearchPage.qml" line="270"/>
         <source>No messages</source>
         <extracomment>Search results placeholder text</extracomment>
-        <translation type="unfinished">Ei viestejä</translation>
+        <translation>Ei viestejä</translation>
     </message>
 </context>
 </TS>
