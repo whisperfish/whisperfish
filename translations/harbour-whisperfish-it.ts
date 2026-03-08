@@ -709,7 +709,8 @@
     </message>
     <message id="whisperfish-connection-status-reconnecting">
         <location filename="../qml/pages/MainPage.qml" line="282"/>
-        <source>Synchronizing</source>
+        <source>Loading messages</source>
+        <oldsource>Synchronizing</oldsource>
         <extracomment>Whisperfish connection status message</extracomment>
         <translation type="unfinished"></translation>
     </message>

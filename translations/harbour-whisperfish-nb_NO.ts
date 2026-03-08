@@ -594,9 +594,10 @@
     </message>
     <message id="whisperfish-connection-status-reconnecting">
         <location filename="../qml/pages/MainPage.qml" line="282"/>
-        <source>Synchronizing</source>
+        <source>Loading messages</source>
+        <oldsource>Synchronizing</oldsource>
         <extracomment>Whisperfish connection status message</extracomment>
-        <translation>Synkroniserer</translation>
+        <translation type="unfinished">Synkroniserer</translation>
     </message>
     <message id="whisperfish-registration-required-message">
         <location filename="../qml/pages/MainPage.qml" line="297"/>
