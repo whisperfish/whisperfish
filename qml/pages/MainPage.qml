@@ -278,7 +278,7 @@ Page {
                             //% "Disconnected"
                           ? qsTrId("whisperfish-connection-status-disconnected")
                             //: Whisperfish connection status message
-                            //% "Synchronizing"
+                            //% "Loading messages"
                           : qsTrId("whisperfish-connection-status-reconnecting")
                     color: Theme.highlightColor
                     font.pixelSize: Theme.fontSizeSmall
