@@ -63,7 +63,6 @@ Requires:   dbus
 Requires:   gstreamer1.0
 # For avmux_mp4 and avmux_aac
 Requires:   gstreamer1.0-libav
-Requires:   opus
 BuildRequires:   gstreamer1.0-devel
 
 # For the captcha QML application
