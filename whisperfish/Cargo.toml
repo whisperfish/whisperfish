@@ -9,8 +9,8 @@ description = "Private messaging using Signal for SailfishOS -- library."
 
 [dependencies]
 actix = "0.13"
-dbus = "0.9"
-dbus-tokio = "0.7"
+dbus = { version = "0.9", optional = true }
+dbus-tokio = { version = "0.7", optional = true }
 rand = "0.9"
 uuid = { version = "1.18", features = ["v4"] }
 mime = "0.3.17"
@@ -116,6 +116,7 @@ sailfish = [
     "whisperfish-store/sailfish",
 ]
 calling = ["ringrtc"]
+voice-note-transcription = ["dep:dbus", "dep:dbus-tokio"]
 harbour = ["sailfish"]
 
 bundled-openssl = [

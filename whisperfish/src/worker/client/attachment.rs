@@ -1,5 +1,4 @@
 use super::ClientActor;
-use super::voice_note_transcription;
 use actix::prelude::*;
 use anyhow::Context;
 use libsignal_service::{content::AttachmentPointer, prelude::*};
@@ -87,6 +86,7 @@ impl Handler<FetchAttachment> for ClientActor {
         let attachment_id = attachment.id;
         let session_id = message.session_id;
         let message_id = message.id;
+        #[cfg(feature = "voice-note-transcription")]
         let transcribe_voice_notes = self.settings.get_transcribe_voice_notes();
 
         storage
@@ -192,9 +192,12 @@ impl Handler<FetchAttachment> for ClientActor {
                 if attachment.is_voice_note {
                     // If the attachment is a voice note, and we enabled automatic transcription,
                     // trigger the transcription
+                    #[cfg(feature = "voice-note-transcription")]
                     if transcribe_voice_notes {
                         client_addr
-                            .send(voice_note_transcription::TranscribeVoiceNote { message_id })
+                            .send(super::voice_note_transcription::TranscribeVoiceNote {
+                                message_id,
+                            })
                             .await?;
                     }
                 }

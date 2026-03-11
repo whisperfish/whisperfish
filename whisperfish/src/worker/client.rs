@@ -12,6 +12,7 @@ mod profile_upload;
 pub mod resize_image;
 mod service_error_ext;
 mod unidentified;
+#[cfg(feature = "voice-note-transcription")]
 mod voice_note_transcription;
 use service_error_ext::*;
 
@@ -298,6 +299,7 @@ pub struct ClientWorker {
     send_typing_notification: qt_method!(fn(&self, id: i32, is_start: bool)),
     submit_proof_captcha: qt_method!(fn(&self, token: String, response: String)),
 
+    #[cfg(feature = "voice-note-transcription")]
     transcribeVoiceNote: qt_method!(fn(&self, message_id: i32)),
 
     connected: qt_property!(bool; NOTIFY connectedChanged),
@@ -442,6 +444,7 @@ pub struct ClientActor {
     transient_timestamps: HashSet<u64>,
     initial_queue_process_state: QueueProcessState,
 
+    #[cfg(feature = "voice-note-transcription")]
     voice_note_transcription_queue: voice_note_transcription::VoiceNoteTranscriptionQueue,
     attachment_resize_queue: resize_image::AttachmentResizeQueue,
 
@@ -589,6 +592,7 @@ impl ClientActor {
             transient_timestamps,
             initial_queue_process_state: QueueProcessState::Starting,
 
+            #[cfg(feature = "voice-note-transcription")]
             voice_note_transcription_queue:
                 voice_note_transcription::VoiceNoteTranscriptionQueue::default(),
             attachment_resize_queue: resize_image::AttachmentResizeQueue::default(),
@@ -1934,6 +1938,7 @@ impl Handler<QueueMessage> for ClientActor {
         if msg.is_voice_note {
             // If the attachment is a voice note, and we enabled automatic transcription,
             // trigger the transcription
+            #[cfg(feature = "voice-note-transcription")]
             if self.settings.get_transcribe_voice_notes() {
                 ctx.notify(voice_note_transcription::TranscribeVoiceNote {
                     message_id: inserted_msg.id,

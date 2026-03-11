@@ -336,6 +336,7 @@ Page {
                 }
             }
             IconTextSwitch {
+                visible: !AppState.isHarbour()
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page auto transcribe voice notes
                 //% "Transcribe voice notes"

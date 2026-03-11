@@ -1,9 +1,13 @@
+#[cfg(all(feature = "harbour", feature = "daemon-mode"))]
+compile_error!("`harbour` feature cannot be used together with `daemon-mode`");
+
 use anyhow::Context;
 use clap::Parser;
+#[cfg(feature = "daemon-mode")]
 use dbus::blocking::Connection;
 use signal_hook::{consts::SIGINT, iterator::Signals};
 use single_instance::SingleInstance;
-use std::{os::unix::prelude::OsStrExt, thread, time::Duration};
+use std::{os::unix::prelude::OsStrExt, thread};
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 use whisperfish::*;
 
@@ -36,10 +40,12 @@ struct Opts {
     prestart: bool,
 
     /// Send a signal to shutdown Whisperfish
+    #[cfg(feature = "daemon-mode")]
     #[arg(long)]
     quit: bool,
 }
 
+#[cfg(feature = "daemon-mode")]
 fn dbus_show_app() -> Result<(), dbus::Error> {
     eprintln!("Calling app.show() on DBus.");
 
@@ -47,12 +53,13 @@ fn dbus_show_app() -> Result<(), dbus::Error> {
     let proxy = c.with_proxy(
         "be.rubdos.whisperfish",
         "/be/rubdos/whisperfish/app",
-        Duration::from_millis(20000),
+        std::time::Duration::from_millis(20000),
     );
 
     proxy.method_call("be.rubdos.whisperfish.app", "show", ())
 }
 
+#[cfg(feature = "daemon-mode")]
 fn dbus_quit_app() -> Result<(), dbus::Error> {
     eprintln!("Calling app.quit() on DBus.");
 
@@ -60,7 +67,7 @@ fn dbus_quit_app() -> Result<(), dbus::Error> {
     let proxy = c.with_proxy(
         "be.rubdos.whisperfish",
         "/be/rubdos/whisperfish/app",
-        Duration::from_millis(1000),
+        std::time::Duration::from_millis(1000),
     );
 
     proxy.method_call("be.rubdos.whisperfish.app", "quit", ())
@@ -75,6 +82,7 @@ fn main() -> anyhow::Result<()> {
                 if !terminate {
                     tracing::info!("[SIGINT] Trying to exit gracefully...");
                     terminate = true;
+                    #[cfg(feature = "daemon-mode")]
                     dbus_quit_app().ok();
                 } else {
                     tracing::info!("[SIGINT] Exiting forcefully...");
@@ -100,6 +108,7 @@ fn main() -> anyhow::Result<()> {
     // Then, handle command line arguments and overwrite settings from config file if necessary
     let opt: Opts = Parser::parse_from(args);
 
+    #[cfg(feature = "daemon-mode")]
     if opt.quit {
         dbus_quit_app()?;
         return Ok(());
@@ -108,6 +117,7 @@ fn main() -> anyhow::Result<()> {
     // Check if Whisperfish is already running and exit if it is
     let instance_lock = SingleInstance::new("whisperfish").unwrap();
     if !instance_lock.is_single() {
+        #[cfg(feature = "daemon-mode")]
         dbus_show_app()?;
         return Ok(());
     }

@@ -57,7 +57,9 @@ Requires:   sailfish-components-contacts-qt5
 Requires:   nemo-qml-plugin-contacts-qt5
 Requires:   nemo-qml-plugin-configuration-qt5
 Requires:   nemo-qml-plugin-notifications-qt5
+%if %{without harbour}
 Requires:   dbus
+%endif
 
 # For recording voice notes and voice/video calling
 Requires:   gstreamer1.0
@@ -95,7 +97,9 @@ BuildRequires:  cargo >= 1.89
 BuildRequires:  protobuf-compiler
 BuildRequires:  nemo-qml-plugin-notifications-qt5-devel
 BuildRequires:  qt5-qtwebsockets-devel
+%if %{without harbour}
 BuildRequires:  dbus-devel
+%endif
 BuildRequires:  gcc-c++
 BuildRequires:  zlib-devel
 BuildRequires:  coreutils
@@ -254,7 +258,7 @@ export PKG_CONFIG_ALLOW_CROSS_armv7_unknown_linux_gnueabihf=1
 export PKG_CONFIG_ALLOW_CROSS_aarch64_unknown_linux_gnu=1
 
 %if %{without harbour}
-FEATURES=sailfish
+FEATURES=sailfish,ex-harbour
 %endif
 %if %{with harbour}
 FEATURES="sailfish,harbour"

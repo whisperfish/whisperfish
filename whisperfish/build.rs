@@ -167,11 +167,12 @@ fn main() {
         );
     }
 
-    let libs = ["dbus-1"];
-    for lib in libs.iter() {
-        println!("cargo:rustc-link-lib{}={}", macos_lib_search, lib);
-    }
+    #[cfg(feature = "voice-note-transcription")]
+    println!("cargo:rustc-link-lib{}={}", macos_lib_search, "dbus-1");
 
     #[cfg(feature = "calling")]
     configure_webrtc().unwrap();
 }
+
+#[cfg(all(feature = "harbour", feature = "voice-note-transcription"))]
+compile_error!("`harbour` feature cannot be used together with `voice-note-transcription`");
