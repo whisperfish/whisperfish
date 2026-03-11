@@ -52,7 +52,6 @@ Source2: vendor.toml
 %endif
 
 Requires:   sailfishsilica-qt5 >= 0.10.9
-Requires:   libsailfishapp-launcher
 Requires:   sailfish-components-contacts-qt5
 Requires:   nemo-qml-plugin-contacts-qt5
 Requires:   nemo-qml-plugin-configuration-qt5
@@ -82,7 +81,9 @@ Recommends:   harbour-whisperfish-shareplugin
 # We're aiming to support 3.4 as long as possible, since Jolla 1 will be stuck on that.
 #
 # - Contacts/contacts.db phoneNumbers.normalizedNumber: introduced in 3.3
+%if %{without harbour}
 Requires:   sailfish-version >= 3.3
+%endif
 
 BuildRequires:  pkgconfig(sailfishapp) >= 1.0.3
 BuildRequires:  pkgconfig(Qt5Core)
