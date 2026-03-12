@@ -1263,6 +1263,9 @@ impl ClientActor {
             ContentBody::NullMessage(_message) => {
                 tracing::trace!("Ignoring NullMessage");
             }
+            ContentBody::DecryptionErrorMessage(message) => {
+                tracing::error!(?message, "ignoring decryption error");
+            }
             ContentBody::DataMessage(message) => {
                 self.handle_message(
                     ctx,
