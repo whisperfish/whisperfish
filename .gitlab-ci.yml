@@ -108,6 +108,60 @@ build:sf:latest:aarch64:
     - .ci/unpack-vendor.sh
     - .ci/build-with-mb2.sh
 
+build:harbour:latest:armv7hl:
+  extends: .build-sailfishos
+  variables:
+    <<: *variables
+    MER_ARCH: armv7hl
+    HARBOUR: 1
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - when: on_success
+  cache:
+    <<: *sfos-cache
+    key: target-armv7hl
+  script:
+    # - ./fetch-webrtc.sh armv7hl
+    - .ci/unpack-vendor.sh
+    - .ci/build-with-mb2.sh
+
+build:harbour:latest:i486:
+  extends: .build-sailfishos
+  variables:
+    <<: *variables
+    MER_ARCH: i486
+    HARBOUR: 1
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - when: on_success
+  cache:
+    <<: *sfos-cache
+    key: target-i486
+  script:
+    # - ./fetch-webrtc.sh i486
+    - .ci/unpack-vendor.sh
+    - .ci/build-with-mb2.sh
+
+build:harbour:latest:aarch64:
+  extends: .build-sailfishos
+  variables:
+    <<: *variables
+    MER_ARCH: aarch64
+    HARBOUR: 1
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - when: on_success
+  cache:
+    <<: *sfos-cache
+    key: target-aarch64
+  script:
+    # - ./fetch-webrtc.sh aarch64
+    - .ci/unpack-vendor.sh
+    - .ci/build-with-mb2.sh
+
 build:host:stable:
   <<: *rust
   stage: build

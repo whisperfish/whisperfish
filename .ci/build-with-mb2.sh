@@ -77,6 +77,12 @@ EOF
 # These files come from the vendored CI job.
 mv "$CI_PROJECT_DIR/vendor.tar.xz" "$CI_PROJECT_DIR/vendor.toml" rpm/
 
+if [ "$HARBOUR" == "1" ]; then
+    FEATURES="--with harbour"
+else
+    FEATURES="--with calling --with tools"
+fi
+
 echo "Building Whisperfish for SailfishOS-$SFOS_VERSION-$MER_ARCH..."
 mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" --no-snapshot=force build \
     --enable-debug \
@@ -88,8 +94,7 @@ mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" --no-snapshot=force build \
     --with vendor \
     --with lto \
     --with sccache \
-    --with tools \
-    --with calling \
+    $FEATURES \
     2> >(busybox grep -vE "Path not found for FD")
 
 rm -rf "$TMPDIR"
