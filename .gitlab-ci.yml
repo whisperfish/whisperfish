@@ -501,14 +501,14 @@ translations:update:
     - .ci/update-translation-contributors.sh
     - .ci/update-translations.sh
 
-test:sailfishos:validate-rpms:
+test:harbour:validate-rpms:
   stage: test
   image: registry.gitlab.com/whisperfish/sailo-rs/rpm-validator:latest
   allow_failure: true
   needs:
-    - build:sf:latest:i486
-    - build:sf:latest:armv7hl
-    - build:sf:latest:aarch64
+    - build:harbour:latest:i486
+    - build:harbour:latest:armv7hl
+    - build:harbour:latest:aarch64
   script:
     # Only the main rpm needs to be validation
     - rm -f RPMS/*debuginfo* RPMS/*debugsource*
