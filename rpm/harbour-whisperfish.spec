@@ -352,6 +352,7 @@ $TASKSET cargo build $JOBS \
           %nil
 
 %if %{with sccache}
+sccache -s
 sccache --stop-server || :
 %endif
 
