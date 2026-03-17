@@ -1,4 +1,4 @@
 [D-BUS Service]
-Name=be.rubdos.whisperfish
+Name=be.rubdos.harbour-whisperfish
 Exec=/bin/false
 SystemdService=harbour-whisperfish.service

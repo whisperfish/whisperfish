@@ -23,8 +23,7 @@ read-only ${HOME}/.local/share/sailor-emoji
 
 private-bin /usr/bin/sailfish-qml
 
-dbus-user.own org.whisperfish.*
-dbus-user.own be.rubdos.whisperfish.*
+dbus-user.own be.rubdos.harbour-whisperfish.*
 
 # Speech Note
 dbus-user.talk org.mkiol.Speech.*

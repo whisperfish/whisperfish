@@ -51,7 +51,7 @@ fn dbus_show_app() -> Result<(), dbus::Error> {
 
     let c = Connection::new_session()?;
     let proxy = c.with_proxy(
-        "be.rubdos.whisperfish",
+        "be.rubdos.harbour-whisperfish",
         "/be/rubdos/whisperfish/app",
         std::time::Duration::from_millis(20000),
     );
@@ -65,7 +65,7 @@ fn dbus_quit_app() -> Result<(), dbus::Error> {
 
     let c = Connection::new_session()?;
     let proxy = c.with_proxy(
-        "be.rubdos.whisperfish",
+        "be.rubdos.harbour-whisperfish",
         "/be/rubdos/whisperfish/app",
         std::time::Duration::from_millis(1000),
     );

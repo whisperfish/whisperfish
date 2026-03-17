@@ -402,10 +402,8 @@ find ./qml -type f -exec \
 
 %if %{without harbour}
 # Dbus service
-install -Dm 644 be.rubdos.whisperfish.service \
-    %{buildroot}%{_unitdir}/be.rubdos.whisperfish.service
-install -Dm 644 harbour-whisperfish.service \
-    %{buildroot}%{_userunitdir}/harbour-whisperfish.service
+install -Dm 644 be.rubdos.harbour-whisperfish.service %{buildroot}%{_unitdir}/be.rubdos.harbour-whisperfish.service
+install -Dm 644 harbour-whisperfish.service %{buildroot}%{_userunitdir}/harbour-whisperfish.service
 %endif
 
 %if %{without harbour}
@@ -434,7 +432,7 @@ systemctl-user disable harbour-whisperfish.service || true
 
 %if %{without harbour}
 %{_userunitdir}/harbour-whisperfish.service
-%{_unitdir}/be.rubdos.whisperfish.service
+%{_unitdir}/be.rubdos.harbour-whisperfish.service
 %endif
 
 %changelog

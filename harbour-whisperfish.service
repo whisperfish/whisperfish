@@ -5,7 +5,7 @@ After=lipstick.service
 
 [Service]
 Type=dbus
-BusName=be.rubdos.whisperfish
+BusName=be.rubdos.harbour-whisperfish
 ExecStart=/usr/bin/invoker --type=qtquick2 /usr/bin/harbour-whisperfish -prestart
 
 [Install]
