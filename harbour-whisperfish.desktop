@@ -14,6 +14,6 @@ BackupPathList=.config/be.rubdos/harbour-whisperfish/:.local/share/be.rubdos/har
 #BackupConfigList=/apps/harbour-whisperfish/
 
 [X-Sailjail]
-Permissions=Internet;Pictures;Contacts;Notifications;Phone;Privileged;Mozilla;MediaIndexing;Downloads;UserDirs;WebView;Camera;RemovableMedia;AppLaunch
+Permissions=Internet;Pictures;MediaIndexing;Contacts;Downloads;UserDirs;WebView;Camera;RemovableMedia
 OrganizationName=be.rubdos
 ApplicationName=harbour-whisperfish

@@ -17,6 +17,12 @@
 # x-sailjail-permission = Phone
 # x-sailjail-permission = Privileged
 # x-sailjail-permission = Mozilla
+# x-sailjail-permission = Downloads
+# x-sailjail-permission = UserDirs
+# x-sailjail-permission = WebView
+# x-sailjail-permission = Camera
+# x-sailjail-permission = RemovableMedia
+# x-sailjail-permission = AppLaunch
 
 whitelist ${HOME}/.local/share/sailor-emoji
 read-only ${HOME}/.local/share/sailor-emoji
