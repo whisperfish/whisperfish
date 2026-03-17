@@ -72,9 +72,11 @@ Requires:   sailfish-components-webview-qt5
 Requires:   sailfish-components-webview-qt5-popups
 Requires:   sailfish-components-webview-qt5-pickers
 
+%if %{without harbour}
 Recommends:   sailjail
 Recommends:   sailjail-permissions
 Recommends:   harbour-whisperfish-shareplugin
+%endif
 
 # This comment lists SailfishOS-version specific code,
 # for future reference, to track the reasoning behind the minimum SailfishOS version.
