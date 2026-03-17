@@ -376,16 +376,21 @@ desktop-file-install \
   --dir %{buildroot}%{_datadir}/applications \
    harbour-whisperfish.desktop
 
+%if %{without harbour}
+# Sailjail profile: sailor-emoji, Dbus
 install -Dm 644 harbour-whisperfish.profile \
     %{buildroot}%{_sysconfdir}/sailjail/permissions/harbour-whisperfish.profile
+# Privileges file, for Contact access
 install -Dm 644 harbour-whisperfish.privileges \
     %{buildroot}%{_datadir}/mapplauncherd/privileges.d/harbour-whisperfish.privileges
+# Notification categories: messages and calls
 install -Dm 644 harbour-whisperfish-message.conf \
     %{buildroot}%{_datadir}/lipstick/notificationcategories/harbour-whisperfish-message.conf
 install -Dm 644 harbour-whisperfish-call.conf \
     %{buildroot}%{_datadir}/lipstick/notificationcategories/harbour-whisperfish-call.conf
 install -Dm 644 harbour-whisperfish-message-quiet.conf \
     %{buildroot}%{_datadir}/lipstick/notificationcategories/harbour-whisperfish-message-quiet.conf
+%endif
 
 # Application icons
 for RES in 86x86 108x108 128x128 172x172; do
@@ -426,11 +431,17 @@ systemctl-user disable harbour-whisperfish.service || true
 %{_bindir}/*
 %{_datadir}/%{name}
 %{_datadir}/applications/%{name}.desktop
-%{_datadir}/mapplauncherd/privileges.d/%{name}.privileges
 %{_datadir}/icons/hicolor/*/apps/%{name}.png
+%if %{without harbour}
+%{_datadir}/mapplauncherd/privileges.d/%{name}.privileges
+%endif
+%if %{without harbour}
 %{_datadir}/lipstick/notificationcategories/%{name}*.conf
+%endif
 
+%if %{without harbour}
 %config %{_sysconfdir}/sailjail/permissions/harbour-whisperfish.profile
+%endif
 
 %if %{without harbour}
 %{_userunitdir}/harbour-whisperfish.service
