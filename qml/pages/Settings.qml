@@ -678,6 +678,7 @@ Page {
                 value: AppState.recipientCount()
             }
             DetailItem {
+                visible: AppState.hasGstreamer
                 //: GStreamer version indication in settings
                 //% "GStreamer version"
                 label: qsTrId("whisperfish-settings-gstreamer-version")

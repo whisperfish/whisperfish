@@ -60,11 +60,13 @@ Requires:   nemo-qml-plugin-notifications-qt5
 Requires:   dbus
 %endif
 
+%if %{without harbour}
 # For recording voice notes and voice/video calling
 Requires:   gstreamer1.0
 # For avmux_mp4 and avmux_aac
 Requires:   gstreamer1.0-libav
 BuildRequires:   gstreamer1.0-devel
+%endif
 
 # For the captcha QML application
 Requires:   qtmozembed-qt5

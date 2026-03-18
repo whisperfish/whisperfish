@@ -75,7 +75,7 @@ rustlegraph = { git = "https://gitlab.com/whisperfish/rustlegraph", branch = "ma
 
 regex = "1.12.2"
 
-gstreamer = "0.24"
+gstreamer = { version = "0.24", optional = true }
 glib = "0.21"
 
 ringrtc = { git = "https://github.com/whisperfish/ringrtc", branch = "whisperfork", version = "2.46.2", features = ["native", "system_ssl"], optional = true }
@@ -117,7 +117,10 @@ sailfish = [
 ]
 calling = ["ringrtc"]
 voice-note-transcription = ["dep:dbus", "dep:dbus-tokio"]
+voice-note-recording = ["_gstreamer"]
 harbour = ["sailfish"]
+
+_gstreamer = ["dep:gstreamer"]
 
 bundled-openssl = [
     "libsqlite3-sys/bundled-sqlcipher-vendored-openssl",

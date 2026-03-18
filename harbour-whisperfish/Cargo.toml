@@ -35,6 +35,7 @@ daemon-mode = ["dep:dbus"]
 
 ex-harbour = [
     "whisperfish/voice-note-transcription",
+    "whisperfish/voice-note-recording",
     "daemon-mode",
 ]
 

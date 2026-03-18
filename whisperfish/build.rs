@@ -176,3 +176,6 @@ fn main() {
 
 #[cfg(all(feature = "harbour", feature = "voice-note-transcription"))]
 compile_error!("`harbour` feature cannot be used together with `voice-note-transcription`");
+
+#[cfg(all(feature = "harbour", feature = "voice-note-recording"))]
+compile_error!("`harbour` feature cannot be used together with `voice-note-recording`");

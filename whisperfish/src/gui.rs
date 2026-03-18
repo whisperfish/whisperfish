@@ -27,6 +27,7 @@ pub struct AppState {
     activate: qt_signal!(),
 
     gstreamer_version: qt_property!(QString; READ gstreamer_version CONST),
+    has_gstreamer: qt_property!(bool; READ has_gstreamer ALIAS hasGstreamer CONST),
     gstreamer_version_major: qt_property!(u32; READ gstreamer_version_major CONST),
     gstreamer_version_minor: qt_property!(u32; READ gstreamer_version_minor CONST),
     gstreamer_version_micro: qt_property!(u32; READ gstreamer_version_micro CONST),
@@ -55,6 +56,7 @@ pub struct AppState {
     pub on_storage_ready: RefCell<Vec<Box<dyn FnOnce(Storage)>>>,
 }
 
+#[cfg(feature = "_gstreamer")]
 impl AppState {
     fn gstreamer_version(&self) -> QString {
         let (major, minor, micro, nano) = gstreamer::version();
@@ -75,6 +77,35 @@ impl AppState {
 
     fn gstreamer_version_nano(&self) -> u32 {
         gstreamer::version().3
+    }
+}
+
+#[cfg(not(feature = "_gstreamer"))]
+impl AppState {
+    fn gstreamer_version(&self) -> QString {
+        QString::default()
+    }
+
+    fn gstreamer_version_major(&self) -> u32 {
+        0
+    }
+
+    fn gstreamer_version_minor(&self) -> u32 {
+        0
+    }
+
+    fn gstreamer_version_micro(&self) -> u32 {
+        0
+    }
+
+    fn gstreamer_version_nano(&self) -> u32 {
+        0
+    }
+}
+
+impl AppState {
+    fn has_gstreamer(&self) -> bool {
+        cfg!(feature = "_gstreamer")
     }
 
     #[allow(non_snake_case)]
@@ -198,6 +229,7 @@ impl AppState {
     #[with_executor]
     fn new() -> Self {
         Self {
+            has_gstreamer: Default::default(),
             gstreamer_version: Default::default(),
             gstreamer_version_major: Default::default(),
             gstreamer_version_minor: Default::default(),
@@ -317,6 +349,7 @@ macro_rules! cstr {
 pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
     qmeta_async::run(|| {
         // For audio recording
+        #[cfg(feature = "_gstreamer")]
         gstreamer::init().expect("gstreamer initialization");
 
         // XXX this arc thing should be removed in the future and refactored
@@ -326,6 +359,7 @@ pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
         {
             let uri = cstr!("be.rubdos.whisperfish");
             qml_register_type::<model::RustleGraph>(uri, 1, 0, cstr!("RustleGraph"));
+            #[cfg(feature = "voice-note-recording")]
             qml_register_type::<model::VoiceNoteRecorder>(uri, 1, 0, cstr!("VoiceNoteRecorder"));
 
             qml_register_type::<model::Sessions>(uri, 1, 0, cstr!("Sessions"));
