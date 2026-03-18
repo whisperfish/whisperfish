@@ -26,12 +26,12 @@ pub struct AppState {
     isClosed: qt_method!(fn(&self) -> bool),
     activate: qt_signal!(),
 
-    gstreamer_version: qt_property!(QString; READ gstreamer_version CONST),
+    gstreamer_version: qt_property!(QString; READ gstreamer_version ALIAS gstreamerVersion CONST),
     has_gstreamer: qt_property!(bool; READ has_gstreamer ALIAS hasGstreamer CONST),
-    gstreamer_version_major: qt_property!(u32; READ gstreamer_version_major CONST),
-    gstreamer_version_minor: qt_property!(u32; READ gstreamer_version_minor CONST),
-    gstreamer_version_micro: qt_property!(u32; READ gstreamer_version_micro CONST),
-    gstreamer_version_nano: qt_property!(u32; READ gstreamer_version_nano CONST),
+    gstreamer_version_major: qt_property!(u32; READ gstreamer_version_major ALIAS gstreamerVersionMajor CONST),
+    gstreamer_version_minor: qt_property!(u32; READ gstreamer_version_minor ALIAS gstreamerVersionMinor CONST),
+    gstreamer_version_micro: qt_property!(u32; READ gstreamer_version_micro ALIAS gstreamerVersionMicro CONST),
+    gstreamer_version_nano: qt_property!(u32; READ gstreamer_version_nano ALIAS gstreamerVersionNano CONST),
 
     may_exit: MayExit,
     setMayExit: qt_method!(fn(&self, value: bool)),

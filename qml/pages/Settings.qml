@@ -682,7 +682,7 @@ Page {
                 //: GStreamer version indication in settings
                 //% "GStreamer version"
                 label: qsTrId("whisperfish-settings-gstreamer-version")
-                value: AppState.gstreamer_version
+                value: AppState.gstreamerVersion
             }
             DetailItem {
                 //: Voice note codec (dependeing on gstreamer version)
