@@ -115,7 +115,10 @@ sailfish = [
     "sailors",
     "whisperfish-store/sailfish",
 ]
-calling = ["ringrtc"]
+calling = [
+    "ringrtc",
+    # "_gstreamer",
+]
 voice-note-transcription = ["dep:dbus", "dep:dbus-tokio"]
 voice-note-recording = ["_gstreamer"]
 harbour = ["sailfish"]
