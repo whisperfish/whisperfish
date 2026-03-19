@@ -363,9 +363,12 @@ async fn test_2024_09_attachment_tilde_migration() {
         "/media/sdcard/foobar4.png",
     ];
 
-    for attachment in attachments {
+    for attachment in &attachments {
         let path = attachment.attachment_path.as_deref().unwrap();
-        assert!(to_find.contains(&path));
+        assert!(
+            to_find.contains(&path),
+            "expected to find {path} among {attachments:?}"
+        );
 
         let absolute_path = attachment.absolute_attachment_path().unwrap().into_owned();
 
