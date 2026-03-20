@@ -21,6 +21,7 @@ use anyhow::anyhow;
 use attachment::FetchAttachment;
 use image::GenericImageView;
 use itertools::Itertools;
+use libsignal_service::cipher::SealedSenderDecryptionError;
 use libsignal_service::groups_v2::Role;
 use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
@@ -32,6 +33,7 @@ use libsignal_service::proto::sync_message::Keys;
 use libsignal_service::proto::sync_message::MessageRequestResponse;
 use libsignal_service::proto::sync_message::Read;
 use libsignal_service::proto::sync_message::Sent;
+use libsignal_service::proto::NullMessage;
 use libsignal_service::proto::SyncMessage;
 use libsignal_service::protocol::ServiceIdKind;
 use libsignal_service::push_service::RegistrationMethod;
@@ -181,7 +183,24 @@ struct DeliverMessage<T> {
     timestamp: u64,
     online: bool,
     for_story: bool,
-    session_type: SessionType,
+    destination: DeliveryRecipient,
+}
+
+enum DeliveryRecipient {
+    Session(SessionType),
+    ServiceId(ServiceId),
+}
+
+impl From<SessionType> for DeliveryRecipient {
+    fn from(value: SessionType) -> Self {
+        DeliveryRecipient::Session(value)
+    }
+}
+
+impl From<ServiceId> for DeliveryRecipient {
+    fn from(value: ServiceId) -> Self {
+        DeliveryRecipient::ServiceId(value)
+    }
 }
 
 #[derive(Message)]
@@ -214,6 +233,11 @@ pub struct CompactDb;
 #[rtype(result = "()")]
 /// Reset a session with a certain recipient
 pub struct EndSession(pub i32);
+
+#[derive(Message)]
+#[rtype(result = "()")]
+/// Reset a session with a protocol address
+pub struct ResetSession(pub ProtocolAddress);
 
 #[derive(QObject, Default)]
 #[allow(non_snake_case)]
@@ -674,7 +698,7 @@ impl ClientActor {
         ctx.notify(DeliverMessage {
             content,
             timestamp: Utc::now().timestamp_millis() as u64,
-            session_type,
+            destination: session_type.into(),
             online: false,
             for_story: false,
         });
@@ -753,7 +777,7 @@ impl ClientActor {
                 ctx.notify(DeliverMessage {
                     content,
                     timestamp: Utc::now().timestamp_millis() as u64,
-                    session_type: session.r#type,
+                    destination: session.r#type.into(),
                     online: false,
                     for_story: false,
                 });
@@ -1861,7 +1885,7 @@ impl Handler<SendMessage> for ClientActor {
                         content,
                         online: false,
                         timestamp,
-                        session_type: session.r#type,
+                        destination: session.r#type.into(),
                         for_story: false,
                     })
                     .await?;
@@ -1990,6 +2014,51 @@ impl Handler<SendMessage> for ClientActor {
     }
 }
 
+impl Handler<ResetSession> for ClientActor {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        ResetSession(address): ResetSession,
+        ctx: &mut Self::Context,
+    ) -> Self::Result {
+        let storage = self.storage.clone().unwrap();
+        let addr = ctx.address();
+
+        actix::spawn(async move {
+            // 1. Delete all direct sessions with this ProtocolAddress
+            let aci = storage.aci_storage().delete_session(&address).await;
+            let pni = storage.pni_storage().delete_session(&address).await;
+            if aci.is_err() && pni.is_err() {
+                tracing::warn!("did not remove any direct sessions");
+            }
+
+            // 2. Remove our own sender keys for the contact
+            // storage.aci_storage().delete_all_sender_keys_for()
+
+            // XXX We should limit the frequency of sending these messages.
+            // 3. Send a NullMessage
+            let recipient = ServiceId::parse_from_service_id_string(address.name())
+                .expect("valid protocol address");
+            for res in addr
+                .send(DeliverMessage {
+                    content: NullMessage::generate(&mut rand::rng()),
+                    online: false,
+                    timestamp: Utc::now().timestamp_millis() as u64,
+                    recipient: DeliveryRecipient::ServiceId(recipient),
+                    for_story: false,
+                })
+                .await??
+            {
+                if let Err(e) = res {
+                    tracing::error!(error=%e, "error sending NullMessage");
+                }
+            }
+            Ok::<(), anyhow::Error>(())
+        });
+    }
+}
+
 impl Handler<EndSession> for ClientActor {
     type Result = ();
 
@@ -2073,7 +2142,7 @@ impl Handler<SendTypingNotification> for ClientActor {
                     content,
                     online: true,
                     timestamp: now,
-                    session_type: session.r#type,
+                    destination: session.r#type.into(),
                     for_story: false,
                 })
                 .await?
@@ -2195,7 +2264,7 @@ impl Handler<SendReaction> for ClientActor {
                     content,
                     online: false,
                     timestamp: now.timestamp_millis() as u64,
-                    session_type: session.r#type,
+                    destination: session.r#type.into(),
                     for_story: false,
                 })
                 .await?
@@ -2254,7 +2323,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
             content,
             timestamp,
             online,
-            session_type: session,
+            destination: session,
             for_story,
         } = msg;
         let content = content.into();
@@ -2277,12 +2346,12 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
             let mut sender = sender.await?;
 
             let results = match &session {
-                SessionType::GroupV1(_group) => {
+                DeliveryRecipient::Session(SessionType::GroupV1(_group)) => {
                     // FIXME
                     tracing::error!("Cannot send to Group V1 anymore.");
                     Vec::new()
                 }
-                SessionType::GroupV2(group) => {
+                DeliveryRecipient::Session(SessionType::GroupV2(group)) => {
                     let members = storage.fetch_group_members_by_group_v2_id(&group.id);
                     let members = members
                         .iter()
@@ -2311,7 +2380,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                         .send_message_to_group(&members, content, timestamp, online)
                         .await
                 }
-                SessionType::DirectMessage(recipient) => {
+                DeliveryRecipient::Session(SessionType::DirectMessage(recipient)) => {
                     let svc = recipient.to_service_address();
 
                     let access = certs.access_for(cert_type, recipient, for_story);
@@ -2336,6 +2405,22 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                     } else {
                         anyhow::bail!("Recipient id {} has no UUID", recipient.id);
                     }
+                }
+
+                DeliveryRecipient::ServiceId(svc) => {
+                    vec![
+                        sender
+                            .send_message(
+                                svc,
+                                // XXX: This always sends identified. We could make an attempt to work back to the
+                                // recipient, to maybe find that we can use sealed sending.
+                                None, content, timestamp,
+                                // Same with the PNI signature; we're directly targetting a
+                                // ServiceId, so we might not have that info.
+                                false, online,
+                            )
+                            .await,
+                    ]
                 }
             };
             Ok(results)
@@ -2586,6 +2671,13 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             return;
         }
 
+        let sender_address = msg
+            .parse_source_service_id()
+            .zip(msg.source_device)
+            .and_then(|(service_id, device_id)| {
+                Some(service_id.to_protocol_address(DeviceId::try_from(device_id).ok()?))
+            });
+
         let mut cipher = self.cipher(incoming_address.kind());
 
         let storage = self.storage.clone().expect("initialized storage");
@@ -2603,6 +2695,45 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                         }
                         Ok(None) => {
                             tracing::warn!("Empty envelope");
+                            break None;
+                        }
+                        // Capture NoSenderKeyState with authenticated sender
+                        Err(ServiceError::SignalProtocolError(SignalProtocolError::NoSenderKeyState{distribution_id})) => {
+                            let Some(sender) = sender_address else {
+                                tracing::warn!(%distribution_id, "non-sealed sending without clear-text sender when handling NoSenderKeyState");
+                                break None;
+                            };
+                            let Ok(sender) = sender else {
+                                tracing::warn!(%distribution_id, "non-sealed sending with invalid sender device id when handling NoSenderKeyState");
+                                break None;
+                            };
+
+                            let _span = tracing::warn_span!("handling NoSenderKeyState", %distribution_id, authenticated_sender=%sender).entered();
+
+                            break None;
+                        }
+                        // Capture NoSenderKeyState with sealed sender
+                        Err(ServiceError::SealedSenderDecryptionError(SealedSenderDecryptionError {
+                            inner: SignalProtocolError::NoSenderKeyState { distribution_id },
+                            // Force the sender to be present; this ensures the trust roots have
+                            // been validated.
+                            sender: Some(sender),
+                        })) => {
+                            let _span = tracing::warn_span!("handling NoSenderKeyState", %distribution_id, sealed_sender=%sender).entered();
+
+                            break None;
+                        }
+                        // Capture sessions not existing in both sealed and authenticated cases.
+                        Err(ServiceError::SignalProtocolError(SignalProtocolError::SessionNotFound(sender))) |
+                            Err(ServiceError::SealedSenderDecryptionError(SealedSenderDecryptionError {
+                            inner: SignalProtocolError::SessionNotFound(sender),
+                            // Force the sender to be present; this ensures the trust roots have
+                            // been validated.  Additionally, the sender is known to be the same as
+                            // the one used in the decryption attempt.
+                            sender: Some(_),
+                        }))  => {
+                            let _span = tracing::warn_span!("session not found", %sender).entered();
+
                             break None;
                         }
                         Err(ServiceError::SignalProtocolError(
@@ -3547,7 +3678,7 @@ impl Handler<DeleteMessageForAll> for ClientActor {
             for_story: false,
             timestamp: now,
             online: false,
-            session_type: session.r#type,
+            destination: session.r#type.into(),
         };
 
         // XXX: We can't get a result back, I think we should?
