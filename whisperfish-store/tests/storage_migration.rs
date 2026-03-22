@@ -152,7 +152,7 @@ async fn read_signal_password(storage_password: Option<String>) {
     let storage = create_old_storage(storage_password.as_deref(), &location).await;
 
     // Get own identity key
-    let value_1 = storage.signal_password().await.unwrap();
+    let value_1 = storage.signal_password().unwrap();
 
     // Drop storage
     drop(storage);
@@ -163,7 +163,7 @@ async fn read_signal_password(storage_password: Option<String>) {
     let storage = open_storage(storage_password, &location).await;
 
     // Get own identity key
-    let value_2 = storage.signal_password().await.unwrap();
+    let value_2 = storage.signal_password().unwrap();
 
     // Test equality
     assert_eq!(value_1, value_2);

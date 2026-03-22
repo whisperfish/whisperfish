@@ -637,18 +637,15 @@ impl<O: Observable> Storage<O> {
         Ok(db)
     }
 
-    /// Asynchronously loads the signal HTTP password from storage and decrypts it.
+    /// Synchronously loads the signal HTTP password from storage and decrypts it.
     #[tracing::instrument(skip(self))]
-    pub async fn signal_password(&self) -> Result<String, anyhow::Error> {
-        let contents = self
-            .read_file(
-                &self
-                    .path
-                    .join("storage")
-                    .join("identity")
-                    .join("http_password"),
-            )
-            .await?;
+    pub fn signal_password(&self) -> Result<String, anyhow::Error> {
+        let contents = self.read_file_encrypted_sync(
+            self.path
+                .join("storage")
+                .join("identity")
+                .join("http_password"),
+        )?;
         Ok(String::from_utf8(contents)?)
     }
 
@@ -668,6 +665,26 @@ impl<O: Observable> Storage<O> {
         let mut out = [0u8; 52];
         out.copy_from_slice(&v);
         Ok(Some(out))
+    }
+
+    #[tracing::instrument]
+    pub fn read_file_encrypted_sync(
+        &self,
+        path: impl AsRef<std::path::Path> + Debug,
+    ) -> Result<Vec<u8>, anyhow::Error> {
+        tracing::trace!("Opening file {}", path.as_ref().display());
+        let mut content = std::fs::read(&path)?;
+        tracing::trace!(
+            "Read file {} with {} bytes",
+            path.as_ref().display(),
+            content.len()
+        );
+
+        if let Some(store_enc) = self.store_enc.as_ref() {
+            store_enc.decrypt(&mut content)?;
+        }
+
+        Ok(content)
     }
 
     // This is public for session_to_db migration

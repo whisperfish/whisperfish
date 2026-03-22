@@ -715,7 +715,7 @@ async fn test_create_and_open_storage(
         ($storage:ident) => {{
             use libsignal_service::protocol::IdentityKeyStore;
             // TODO: assert that tables exist
-            assert_eq!(password, $storage.signal_password().await?);
+            assert_eq!(password, $storage.signal_password()?);
             assert_eq!(None, $storage.signaling_key().await?);
             assert_eq!(
                 regid,

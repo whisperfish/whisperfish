@@ -2739,14 +2739,32 @@ impl Handler<StorageReady> for ClientActor {
 
         storage.mark_pending_messages_failed();
 
+        let credentials = ServiceCredentials {
+            aci,
+            pni,
+            phonenumber: E164::from_str(&e164.to_string()).unwrap(), // TODO: E164 cleanup
+            password: Some(storage.signal_password().unwrap()),
+            device_id: Some(device_id),
+        };
+
+        let mut i_service = self.authenticated_service_with_credentials(credentials.clone());
+        let mut u_service = self.unauthenticated_service();
+
         let credentials = async move {
-            ServiceCredentials {
-                aci,
-                pni,
-                phonenumber: E164::from_str(&e164.to_string()).unwrap(), // TODO: E164 cleanup
-                password: Some(storage.signal_password().await.unwrap()),
-                device_id: Some(device_id),
-            }
+            let i_ws = i_service
+                .ws(
+                    "/v1/websocket/",
+                    "/v1/keepalive",
+                    &[],
+                    Some(credentials.clone()),
+                )
+                .await
+                .unwrap();
+            let u_ws = u_service
+                .ws("/v1/websocket/", "/v1/keepalive", &[], None)
+                .await
+                .unwrap();
+            (credentials, i_ws, u_ws)
         }
         .instrument(tracing::span!(
             tracing::Level::INFO,
@@ -2756,10 +2774,14 @@ impl Handler<StorageReady> for ClientActor {
         Box::pin(
             credentials
                 .into_actor(self)
-                .map(move |credentials, act, ctx| {
+                .map(move |(credentials, i_ws, u_ws), act, ctx| {
                     let _span = tracing::trace_span!("whisperfish startup").entered();
 
+                    act.self_aci = credentials.aci.map(Aci::from);
+                    act.self_pni = credentials.pni.map(Pni::from);
                     act.credentials = Some(credentials);
+                    act.i_ws = Some(i_ws);
+                    act.ws = Some(u_ws);
 
                     // Start workers.
                     act.profile_updater();
@@ -2767,7 +2789,8 @@ impl Handler<StorageReady> for ClientActor {
                     act.queue_migrations(ctx);
 
                     ctx.notify(Restart);
-                    ctx.notify(RefreshPreKeys);
+                    // XXX Restart now calls RefreshPreKeys. This could be wrong.
+                    // ctx.notify(RefreshPreKeys);
                 }),
         )
     }
@@ -2814,7 +2837,16 @@ impl Handler<Restart> for ClientActor {
             .into_actor(self)
             .map(move |pipe, act, ctx| match pipe {
                 Ok((pipe, i_ws)) => {
-                    ctx.notify(unidentified::RotateUnidentifiedCertificates);
+                    // XXX Save identified WebSocket and only then call RefreshPreKeys
+                    // in order to prevent "4409 Connected elsewhere" error.
+                    act.i_ws = Some(i_ws);
+                    ctx.notify_later(RefreshPreKeys, Duration::from_secs(2));
+
+                    // XXX Maybe RefreshPreKeys should call this or something?
+                    ctx.notify_later(
+                        unidentified::RotateUnidentifiedCertificates,
+                        Duration::from_secs(10),
+                    );
                     act.message_stream_handle = Some(
                         ctx.add_stream(
                             pipe.stream()
@@ -2828,7 +2860,6 @@ impl Handler<Restart> for ClientActor {
 
                     ctx.set_mailbox_capacity(1);
                     act.inner.pinned().borrow_mut().connected = true;
-                    act.i_ws = Some(i_ws);
                     act.inner.pinned().borrow().connectedChanged();
                 }
                 Err(e) => {
