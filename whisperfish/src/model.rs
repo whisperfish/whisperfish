@@ -1,3 +1,172 @@
+//! # Whisperfish Model Patterns
+//!
+//! This module contains QML model implementations for the Whisperfish application.
+//! For more details on the observation system, see:
+//! - [`store::observer`](crate::store::observer) - Database observation framework
+//! - [`observing_model` macro](active_model) - Model observation macros
+//!
+//! There are several patterns used for creating models:
+//!
+//! ## 1. Observing Model Pattern (with `observing_model` macro)
+//!
+//! Used for models that need to observe database changes and update automatically.
+//! These models typically represent database entities and use the `observing_model` macro
+//! from the `active_model` module.
+//!
+//! The `EventObserving` trait connects models to the database observation system,
+//! allowing them to react to changes in the database tables they're interested in.
+//!
+//! **Note**: Most ORM models in Whisperfish follow this pattern, including:
+//! - Message models (`messages.rs`)
+//! - Session models (`sessions.rs`)
+//! - Reaction models (`reactions.rs`)
+//! - Group models (`group.rs`)
+//! - Recipient models (`recipient.rs`)
+//!
+//! The `interests()` method is implemented for ORM entities in
+//! [`store::observer::orm_interests`](crate::store::observer::orm_interests),
+//! which provides the foundation for the observation system.
+//!
+//! Example: `messages.rs`, `sessions.rs`, `reactions.rs`
+//!
+//! ```ignore
+//! use qmetaobject::prelude::*;
+//!
+//! #[observing_model]
+//! #[derive(Default, QObject)]
+//! pub struct MyModel {
+//!     base: qt_base_class!(trait QObject),
+//!     id: Option<i32>,
+//!
+//!     #[qt_property(
+//!         READ: get_id,
+//!         WRITE: set_id,
+//!         NOTIFY: model_changed,
+//!     )]
+//!     myId: i32,
+//!
+//!     model_changed: qt_signal!(),
+//! }
+//!
+//! impl EventObserving for MyModel {
+//!     type Context = ModelContext<Self>;
+//!
+//!     fn observe(&mut self, ctx: Self::Context, event: Event) {
+//!         // React to database events. See [`Event`](crate::store::observer::Event) for
+//!         // available methods like `for_table()`, `for_row()`, `is_insert()`, etc.
+//!         if event.for_table(schema::my_table::table) {
+//!             self.fetch(ctx.storage());
+//!             self.model_changed();
+//!         }
+//!     }
+//!
+//!     fn interests(&self) -> Vec<Interest> {
+//!         // Declare which database changes this model is interested in.
+//!         // See [`Interest`](crate::store::observer::Interest) for available methods.
+//!         
+//!         // The interests() method is crucial for the observation system - it tells
+//!         // the framework which database changes should trigger observe() calls.
+//!         // Most ORM models in Whisperfish implement this method to specify their
+//!         // dependencies on specific tables, rows, or relationships.
+//!         
+//!         // For ORM entities, the default implementation is provided in
+//!         // [`store::observer::orm_interests`](crate::store::observer::orm_interests).
+//!         // Models can override this to add additional interests or modify behavior.
+//!         if let Some(id) = self.id {
+//!             vec![Interest::for_row(schema::my_table::table, id)]
+//!         } else {
+//!             Vec::new()
+//!         }
+//!     }
+//! }
+//! ```
+//!
+//! ## 2. Simple Property Model Pattern (with `qt_property!` macro)
+//!
+//! Used for models that don't need database observation but provide computed properties.
+//! These models use the `qt_property!` macro for automatic property management.
+//!
+//! Unlike observing models, these models don't automatically react to database changes.
+//! They're useful for computed properties or models that are recreated when needed.
+//!
+//! Example: `receipts.rs`
+//!
+//! The Receipts model demonstrates this pattern well - it provides three computed
+//! properties (delivery_receipts, read_receipts, viewed_receipts) that format receipt
+//! data for QML consumption, and automatically refreshes when the message_id changes.
+//!
+//! ```rust
+//! use qmetaobject::prelude::*;
+//! use whisperfish::gui::AppState;
+//!
+//! #[derive(Default, QObject)]
+//! pub struct MyModel {
+//!     base: qt_base_class!(trait QObject),
+//!
+//!     // Automatic property with getter/setter
+//!     app: qt_property!(QPointer<AppState>; WRITE set_app),
+//!     message_id: qt_property!(i32; WRITE set_message_id),
+//!
+//!     // Read-only computed property
+//!     my_data: qt_property!(QVariant; READ compute_data),
+//!
+//!     data_changed: qt_signal!(),
+//! }
+//!
+//! impl MyModel {
+//!     // Setter methods (qt_property! macro handles storage)
+//!     fn set_app(&mut self, _app: QPointer<AppState>) {
+//!         self.data_changed();
+//!     }
+//!
+//!     fn set_message_id(&mut self, _id: i32) {
+//!         self.data_changed();
+//!     }
+//!
+//!     // Getter method for computed property
+//!     fn compute_data(&self) -> QVariant {
+//!         // Compute and return data
+//!         QVariant::default()
+//!     }
+//! }
+//! ```
+//!
+//! ## 3. Model Roles Pattern (with `define_model_roles!` macro)
+//!
+//! Used for list models that expose database entities to QML.
+//! This pattern maps Rust structs to QML-accessible properties.
+//!
+//! Example: `messages.rs` (MessageRoles), `sessions.rs` (SessionRoles)
+//!
+//! ```ignore
+//! define_model_roles! {
+//!     pub(super) enum MyModelRoles for orm::MyEntity {
+//!         Id(id): "id",
+//!         Name(name): "name",
+//!         Timestamp(created_at via qdatetime_from_naive): "createdAt",
+//!         Computed(fn compute_property(&self) via conversion_fn): "computed",
+//!     }
+//! }
+//! ```
+//!
+//! ## Common Patterns
+//!
+//! ### Property Access
+//! - Use `self.property_name` for direct field access (qt_property! macro)
+//! - Use `self.property_name()` for getter method access (observing_model macro)
+//!
+//! ### Signals
+//! - Always emit signals when data changes to notify QML
+//! - Use `self.signal_name()` to emit signals
+//!
+//! ### Database Access
+//! - Access storage through `ctx.storage()` in observing models
+//! - Access storage through `app.borrow().storage.borrow().clone()` in simple models
+//!
+//! ### QML Data Formatting
+//! - Use `QVariant`, `QVariantList`, `QVariantMap` for QML data
+//! - Convert Rust types using `.to_qvariant()` (requires `QMetaType` trait)
+//! - Use conversion functions like `QString::from()`, `qdatetime_from_naive()`, etc.
 macro_rules! define_model_roles {
     (RETRIEVE $obj:ident fn $fn:ident(&self) $(via $via_fn:path)*) => {{
         let field = $obj.$fn();
@@ -61,6 +230,7 @@ pub mod group;
 pub mod grouped_reactions;
 pub mod messages;
 pub mod reactions;
+pub mod receipts;
 pub mod recipient;
 pub mod rustlegraph;
 pub mod sessions;
@@ -82,6 +252,7 @@ pub use self::grouped_reactions::*;
 pub use self::messages::*;
 pub use self::prompt::*;
 pub use self::reactions::*;
+pub use self::receipts::*;
 pub use self::recipient::*;
 pub use self::rustlegraph::*;
 pub use self::sessions::*;

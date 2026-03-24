@@ -150,7 +150,7 @@ Page {
             // READ RECEIPTS
 
             SectionHeader {
-                visible: readReceipts.length > 0 > 0
+                visible: readReceipts.length > 0
                 //: Read receipts section header
                 //% "Read receipts"
                 text: qsTrId("whisperfish-message-info-read-receipts")
