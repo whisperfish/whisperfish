@@ -25,10 +25,6 @@ use whisperfish_store::store::orm;
         read Read,
         viewed Viewed,
 
-        deliveredReceipts DeliveredReceipts,
-        readReceipts ReadReceipts,
-        viewedReceipts ViewedReceipts,
-
         sent Sent,
         flags Flags,
         messageType MessageType,
@@ -103,8 +99,9 @@ impl EventObserving for Message {
                 }
             } else if event.relation_key_for(schema::receipts::table).is_some() {
                 let storage = ctx.storage();
-                self.augmented_message.as_mut().unwrap().receipts =
-                    storage.fetch_message_receipts(id);
+                let receipts = storage.fetch_message_receipts(id);
+                self.augmented_message.as_mut().unwrap().receipt_counts =
+                    whisperfish_store::store::orm::ReceiptCounts::from_receipts(&receipts);
                 // XXX This could also be implemented efficiently
                 self.message_changed();
             } else {
@@ -431,14 +428,10 @@ define_model_roles! {
 
         SenderRecipientId(sender_recipient_id via int_from_i32_option): "senderRecipientId",
 
-        Delivered(fn delivered(&self)):                       "delivered",
-        Read(fn read(&self)):                                 "read", // How many recipient have received the message
+        Delivered(receipt_counts.delivered via int_from_usize): "delivered",
+        Read(receipt_counts.read via int_from_usize):           "read", // How many recipient have received the message
         IsRead(is_read):                                      "isRead", // Is the message unread or read by self
-        Viewed(fn viewed(&self)):                             "viewed",
-
-        DeliveredReceipts(fn delivered_receipts(&self) via receipts_to_qvlist): "deliveredReceipts",
-        ReadReceipts(fn read_receipts(&self) via receipts_to_qvlist): "readReceipts",
-        ViewedReceipts(fn viewed_receipts(&self) via receipts_to_qvlist): "viewedReceipts",
+        Viewed(receipt_counts.viewed via int_from_usize):       "viewed",
 
         Sent(fn sent(&self)):                                 "sent",
         Flags(flags):                                         "flags",
@@ -506,17 +499,6 @@ fn body_ranges_qvariantlist(
             }
             qrange.insert("associatedValue".into(), associated_value.to_qvariant());
             qrange.to_qvariant()
-        })
-        .collect()
-}
-
-fn receipts_to_qvlist(list: Vec<(NaiveDateTime, String)>) -> QVariantList {
-    list.iter()
-        .map(|(ts, name)| {
-            let mut item = QVariantMap::default();
-            item.insert("timestamp".into(), ts.to_string().to_qvariant());
-            item.insert("recipient".into(), name.to_qvariant());
-            item.to_qvariant()
         })
         .collect()
 }

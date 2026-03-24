@@ -149,6 +149,10 @@ fn int_from_duration_option(val: Option<Duration>) -> i32 {
     }
 }
 
+fn int_from_usize(val: usize) -> i32 {
+    val as i32
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

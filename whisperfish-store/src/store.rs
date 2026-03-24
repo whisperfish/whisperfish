@@ -12,7 +12,7 @@ mod protos;
 mod recipient_merge;
 mod utils;
 
-use self::orm::{AugmentedMessage, MessageType, StoryType, UnidentifiedAccessMode};
+use self::orm::{AugmentedMessage, MessageType, ReceiptCounts, StoryType, UnidentifiedAccessMode};
 use crate::body_ranges::AssociatedValue;
 use crate::diesel::connection::SimpleConnection;
 use crate::diesel_migrations::MigrationHarness;
@@ -3081,10 +3081,12 @@ impl<O: Observable> Storage<O> {
 
         let mentions = self.fetch_mentions(&body_ranges);
 
+        let receipt_counts = ReceiptCounts::from_receipts(&receipts);
+
         Some(AugmentedMessage {
             inner: message,
             is_voice_note,
-            receipts,
+            receipt_counts,
             attachments: attachments as usize,
             reactions: reactions as usize,
             mentions,
@@ -3252,12 +3254,14 @@ impl<O: Observable> Storage<O> {
 
                     let mentions = self.fetch_mentions(&body_ranges);
 
+                    let receipt_counts = orm::ReceiptCounts::from_receipts(&receipts);
+
                     aug_messages.push(orm::AugmentedMessage {
                         inner: message,
                         is_voice_note,
                         attachments,
                         reactions,
-                        receipts,
+                        receipt_counts,
                         body_ranges,
                         mentions,
                     });
