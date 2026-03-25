@@ -99,10 +99,8 @@ impl EventObserving for Message {
                 }
             } else if event.relation_key_for(schema::receipts::table).is_some() {
                 let storage = ctx.storage();
-                let receipts = storage.fetch_message_receipts(id);
                 self.augmented_message.as_mut().unwrap().receipt_counts =
-                    whisperfish_store::store::orm::ReceiptCounts::from_receipts(&receipts);
-                // XXX This could also be implemented efficiently
+                    storage.count_message_receipts(id);
                 self.message_changed();
             } else {
                 self.fetch(ctx.storage(), id);
