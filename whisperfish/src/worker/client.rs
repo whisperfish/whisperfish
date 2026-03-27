@@ -115,6 +115,11 @@ const TM_MAX_RATE: f32 = 30.0; // messages per minute
 const TM_CACHE_CAPACITY: f32 = 5.0; // 5 min
 const TM_CACHE_TRESHOLD: f32 = 4.5; // 4 min 30 sec
 
+// Rate limiting for session reset NullMessages
+// Following Signal Android's default of 1 hour between resets
+// Note: Android saves reset time per-device, not per-recipient
+const SESSION_RESET_INTERVAL: chrono::Duration = chrono::Duration::seconds(3600); // 1 hour
+
 #[derive(Debug)]
 pub struct NewAttachment {
     pub path: String,
@@ -2027,6 +2032,7 @@ impl Handler<ResetSession> for ClientActor {
 
         actix::spawn(async move {
             // 1. Delete all direct sessions with this ProtocolAddress
+            let mut storage = storage;
             let aci = storage.aci_storage().delete_session(&address).await;
             let pni = storage.pni_storage().delete_session(&address).await;
             if aci.is_err() && pni.is_err() {
@@ -2036,16 +2042,49 @@ impl Handler<ResetSession> for ClientActor {
             // 2. Remove our own sender keys for the contact
             // storage.aci_storage().delete_all_sender_keys_for()
 
-            // XXX We should limit the frequency of sending these messages.
-            // 3. Send a NullMessage
-            let recipient = ServiceId::parse_from_service_id_string(address.name())
+            // 3. Send a NullMessage with rate limiting
+            let recipient_service_id = ServiceId::parse_from_service_id_string(address.name())
                 .expect("valid protocol address");
+
+            // Fetch the recipient to check last session reset time
+            let Some(recipient) = storage.fetch_recipient(&recipient_service_id) else {
+                tracing::warn!(
+                    ?recipient_service_id,
+                    "recipient not found in database, skipping NullMessage"
+                );
+                return Ok(());
+            };
+
+            // Check rate limiting
+            let now = Utc::now();
+            let time_since_last_reset = recipient
+                .last_session_reset
+                .map(|last_reset| now.signed_duration_since(last_reset.and_utc()));
+
+            if let Some(duration_since_reset) = time_since_last_reset {
+                if duration_since_reset < SESSION_RESET_INTERVAL {
+                    tracing::warn!(
+                        %duration_since_reset,
+                        "Skipping NullMessage.",
+                    );
+                    return Ok(());
+                }
+
+                tracing::info!(
+                    "We're good! Sending a null message. Time since last reset: {:?}",
+                    duration_since_reset
+                );
+            } else {
+                tracing::info!("No previous session reset found. Sending null message.");
+            }
+
+            // Send NullMessage
             for res in addr
                 .send(DeliverMessage {
                     content: NullMessage::generate(&mut rand::rng()),
                     online: false,
-                    timestamp: Utc::now().timestamp_millis() as u64,
-                    recipient: DeliveryRecipient::ServiceId(recipient),
+                    timestamp: now.timestamp_millis() as u64,
+                    destination: DeliveryRecipient::ServiceId(recipient_service_id),
                     for_story: false,
                 })
                 .await??
@@ -2054,6 +2093,11 @@ impl Handler<ResetSession> for ClientActor {
                     tracing::error!(error=%e, "error sending NullMessage");
                 }
             }
+
+            // Update last session reset time
+            storage.update_last_session_reset(recipient.id, now.naive_utc());
+            tracing::info!(%now, "saved last reset time");
+
             Ok::<(), anyhow::Error>(())
         });
     }
