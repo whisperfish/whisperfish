@@ -54,7 +54,7 @@ pub fn serialize(value: &[WireBodyRange]) -> Option<Vec<u8>> {
                             ))
                         }
                         wire_body_range::AssociatedValue::MentionAciBinary(mention_aci) => {
-                            let mention_aci = uuid::Uuid::from_slice(&mention_aci).expect("correctly formatted mention ACI");
+                            let mention_aci = uuid::Uuid::from_slice(mention_aci).expect("correctly formatted mention ACI");
                             Some(database_protos::body_range_list::body_range::AssociatedValue::MentionUuid(
                                 mention_aci.to_string(),
                             ))
