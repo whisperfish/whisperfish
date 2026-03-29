@@ -1,8 +1,5 @@
 // SPDX-FileCopyrightText: 2021 Mirian Margiani
 // SPDX-License-Identifier: AGPL-3.0-or-later
-
-// SPDX-FileCopyrightText: 2021 Mirian Margiani
-// SPDX-License-Identifier: AGPL-3.0-or-later
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
@@ -28,40 +25,45 @@ BackgroundItem {
     property alias radius: roundedRectangle.radius
     property real backgroundGrow: Theme.paddingMedium
 
-    onClicked: !outbound ? pageStack.push(Qt.resolvedUrl("../pages/RecipientProfilePage.qml"), { recipient: recipient, groupContext: isInGroup } ) : {}
+    onClicked: !outbound
+                    ? pageStack.push(
+                        Qt.resolvedUrl("../pages/RecipientProfilePage.qml"),
+                        { recipient: recipient, groupContext: isInGroup })
+                    : {}
 
     LinkedEmojiLabel {
         id: label
 
         highlighted: root.highlighted
         plainText: outbound
-                   ? //: Name shown when replying to own messages
-                     //% "You"
-                     qsTrId("whisperfish-sender-name-label-outgoing")
+                    ? //: Name shown when replying to own messages
+                      //% "You"
+                      qsTrId("whisperfish-sender-name-label-outgoing")
                     : source
         maximumLineCount: 1
         wrapMode: Text.NoWrap
         font.pixelSize: Theme.fontSizeExtraSmall
         font.bold: true
         linkColor: color
-        color: Qt.tint(highlighted ? Theme.highlightColor : Theme.primaryColor,
-                       '#'+Qt.md5(recipient.uuid).substr(0, 6)+'0F')
+        color: !!recipient
+                    ? Qt.tint(highlighted ? Theme.highlightColor : Theme.primaryColor,
+                        '#'+Qt.md5(recipient.uuid).substr(0, 6)+'0F')
+                    : highlighted ? Theme.highlightColor : Theme.primaryColor
         defaultLinkActions: false
     }
 
     RoundedRect {
         id: roundedRectangle
 
-        visible: root.enabled
-
         x: -backgroundGrow
         y: -backgroundGrow
         height: label.height + 2 * backgroundGrow
         width: parent.width + 2 * backgroundGrow
-
-        color: down ? Theme.highlightBackgroundColor : "transparent"
-        opacity: Theme.opacityFaint
         roundedCorners: bottomLeft | bottomRight | (outbound ? topRight : topLeft)
         radius: Theme.paddingLarge * 0.75
+
+        visible: root.enabled
+        color: down ? Theme.highlightBackgroundColor : "transparent"
+        opacity: Theme.opacityFaint
     }
 }
