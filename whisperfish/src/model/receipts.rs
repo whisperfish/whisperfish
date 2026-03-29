@@ -45,13 +45,13 @@ impl EventObserving for Receipts {
 }
 
 impl Receipts {
-    fn set_app(&mut self, _app: QPointer<AppState>) {
-        // The qt_property! macro handles the actual storage
+    fn set_app(&mut self, app: QPointer<AppState>) {
+        self.app = app;
         self.receipts_changed();
     }
 
-    fn set_message_id(&mut self, _id: i32) {
-        // The qt_property! macro handles the actual storage
+    fn set_message_id(&mut self, id: i32) {
+        self.message_id = id;
         self.receipts_changed();
     }
 
