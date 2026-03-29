@@ -26,7 +26,7 @@ impl EventObserving for Receipts {
     type Context = ModelContext<Self>;
 
     fn observe(&mut self, _ctx: Self::Context, event: crate::store::observer::Event) {
-        if event.for_table(schema::receipts::table) {
+        if event.for_table(schema::receipts::table) && !self.app.is_null() && self.message_id > 0 {
             self.receipts_changed();
         }
     }
@@ -47,12 +47,16 @@ impl EventObserving for Receipts {
 impl Receipts {
     fn set_app(&mut self, app: QPointer<AppState>) {
         self.app = app;
-        self.receipts_changed();
+        if self.message_id > 0 {
+            self.receipts_changed();
+        }
     }
 
     fn set_message_id(&mut self, id: i32) {
         self.message_id = id;
-        self.receipts_changed();
+        if !self.app.is_null() {
+            self.receipts_changed();
+        }
     }
 
     fn delivery_receipts(&self) -> QVariant {
