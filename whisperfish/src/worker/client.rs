@@ -919,7 +919,7 @@ impl ClientActor {
                 reaction,
             ) {
                 Ok(Some((message, session))) => {
-                    tracing::info!("Reaction saved for message {}/{}", session.id, message.id);
+                    tracing::debug!("Reaction saved for message {}/{}", session.id, message.id);
                     self.inner
                         .pinned()
                         .borrow_mut()
@@ -1661,7 +1661,7 @@ impl ClientActor {
                 let receipt_type = ReceiptType::try_from(receipt.r#type.unwrap_or(-1)).ok();
                 match receipt_type {
                     Some(ReceiptType::Delivery) => {
-                        tracing::info!(
+                        tracing::debug!(
                             "{:?} received {} message(s)",
                             metadata.sender.service_id_string(),
                             timestamps.len(),
@@ -1679,7 +1679,7 @@ impl ClientActor {
                     }
                     Some(ReceiptType::Read) => {
                         if self.settings.get_enable_read_receipts() {
-                            tracing::info!(
+                            tracing::debug!(
                                 "{:?} read {} message(s)",
                                 metadata.sender.service_id_string(),
                                 timestamps.len(),
@@ -2045,7 +2045,7 @@ impl Handler<SendMessage> for ClientActor {
                         .map(|f| f.to_string_lossy().into_owned());
 
                     if attachment.visual_hash.is_none() && content_type.starts_with("image/") {
-                        tracing::info!("Computing blurhash for attachment {}", attachment.id);
+                        tracing::debug!("Computing blurhash for attachment {}", attachment.id);
                         match image::load_from_memory(&contents) {
                             Ok(img) => {
                                 let (width, height) = img.dimensions();
@@ -2131,7 +2131,7 @@ impl Handler<SendMessage> for ClientActor {
                             {
                                 // Recipient with profile key, but could not send unidentified.
                                 // Mark as disabled.
-                                tracing::info!(
+                                tracing::debug!(
                                     "Setting unidentified access mode for {:?} from {:?} to {:?}",
                                     recipient.uuid.unwrap(),
                                     recipient.unidentified_access_mode,
@@ -2365,7 +2365,7 @@ impl Handler<SendTypingNotification> for ClientActor {
         }: SendTypingNotification,
         ctx: &mut Self::Context,
     ) -> Self::Result {
-        tracing::info!(
+        tracing::debug!(
             "ClientActor::SendTypingNotification({}, {})",
             session_id,
             is_start
@@ -2449,7 +2449,7 @@ impl Handler<SendReaction> for ClientActor {
         }: SendReaction,
         ctx: &mut Self::Context,
     ) -> Self::Result {
-        tracing::info!(
+        tracing::debug!(
             "ClientActor::SendReaction({}, {}, {}, {:?})",
             message_id,
             sender_id,
@@ -2766,10 +2766,7 @@ impl Handler<StorageReady> for ClientActor {
                 .unwrap();
             (credentials, i_ws, u_ws)
         }
-        .instrument(tracing::span!(
-            tracing::Level::INFO,
-            "reading password and signaling key"
-        ));
+        .instrument(tracing::span!(tracing::Level::INFO, "storage ready"));
 
         Box::pin(
             credentials
@@ -2927,7 +2924,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                 (guid, e)
             }
             Ok(Incoming::QueueEmpty) => {
-                tracing::info!("Message queue is empty!");
+                tracing::debug!("Message queue is empty!");
                 self.initial_queue_process_state.observe_signal();
                 let inner = self.inner.pinned();
                 let mut inner = inner.borrow_mut();

@@ -51,11 +51,10 @@ impl Sessions {
     // Generate a sorted-by-name list of groups and conv's
     // from the already fetched SessionListModel.
     fn session_names(&self, _ctx: Option<ModelContext<Self>>) -> QVariantList {
-        tracing::info!("getting session list...");
         let qml_session_list = self.session_list.pinned();
         let session_list = &qml_session_list.borrow().content;
         if session_list.is_empty() {
-            tracing::info!("Empty list :(");
+            tracing::trace!("Empty list :(");
             return QVariantList::default();
         }
 
@@ -93,7 +92,7 @@ impl Sessions {
                 },
             });
         }
-        tracing::info!("Found {} sessions", sessions.len());
+        tracing::debug!("Found {} sessions", sessions.len());
         sessions.sort_by(|a, b| a.name.cmp(&b.name));
         let mut qvl = QVariantList::default();
         for session in sessions {
@@ -118,7 +117,7 @@ impl Sessions {
             );
             qvl.push(qvm.to_qvariant());
         }
-        tracing::info!("Generated {} QVariantMaps", qvl.len());
+        tracing::debug!("Generated {} QVariantMaps", qvl.len());
         qvl
     }
 

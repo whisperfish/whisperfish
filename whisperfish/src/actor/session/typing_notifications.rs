@@ -149,7 +149,7 @@ impl Handler<UpdateTypingNotifications> for SessionActor {
                 .map(|result, act, _ctx| match result {
                     Ok(typings) => {
                         if !typings.is_empty() {
-                            tracing::info!("Sending typings {:?} to model", typings);
+                            tracing::trace!("Sending typings {:?} to model", typings);
                             act.handle_update_typing(&typings);
                         }
                     }

@@ -163,7 +163,9 @@ impl RustleGraph {
         let id = this.image_id();
         let _old = app.rustlegraphs.borrow_mut().insert(id, vizualizer);
         if _old.is_some() {
-            tracing::info!("Replaced an old Rustlegraph; probably doing double work here");
+            tracing::info!(
+                "Replaced an old Rustlegraph; probably doing double work here. Upvote issue #596"
+            );
         }
 
         this.image_updated();

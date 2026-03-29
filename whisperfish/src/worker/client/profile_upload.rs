@@ -333,7 +333,7 @@ impl Handler<RefreshProfileAttributes> for ClientActor {
                             UnidentifiedAccessMode::Enabled,
                         );
                     }
-                    tracing::info!("profile attributes refreshed");
+                    tracing::info!("Profile attributes refreshed");
                 }
             }
             .instrument(tracing::debug_span!("refresh profile attributes")),
