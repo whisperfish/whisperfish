@@ -16,9 +16,15 @@ Page {
 
     // Proxy some more used properties
     readonly property var debugMode: SettingsBridge.debug_mode
-    readonly property var deliveryReceipts: message.deliveredReceipts
-    readonly property var readReceipts: message.readReceipts
-    readonly property var viewedReceipts: message.viewedReceipts
+    readonly property var deliveryReceipts: receipts.delivered
+    readonly property var readReceipts: receipts.read
+    readonly property var viewedReceipts: receipts.viewed
+
+    Receipts {
+        id: receipts
+        app: AppState
+        messageId: message.id
+    }
 
     Reactions {
         id: reactions
@@ -144,7 +150,7 @@ Page {
             // READ RECEIPTS
 
             SectionHeader {
-                visible: readReceipts.length > 0 > 0
+                visible: readReceipts.length > 0
                 //: Read receipts section header
                 //% "Read receipts"
                 text: qsTrId("whisperfish-message-info-read-receipts")

@@ -26,7 +26,7 @@ use diesel::prelude::*;
 use diesel::result::*;
 use diesel::sql_types::{Bool, Timestamp};
 use diesel_migrations::EmbeddedMigrations;
-use itertools::Itertools;
+
 use libsignal_service::groups_v2::{InMemoryCredentialsCache, Role};
 use libsignal_service::proto::{attachment_pointer, data_message::Reaction, DataMessage};
 use libsignal_service::protocol::{self, *};
@@ -1526,6 +1526,50 @@ impl<O: Observable> Storage<O> {
             .filter(receipts::message_id.eq(message_id))
             .load(&mut *self.db())
             .expect("db")
+    }
+
+    /// Count receipts for a message.
+    ///
+    /// This is more efficient than fetching all receipts when only counts are needed.
+    #[tracing::instrument(skip(self))]
+    pub fn count_message_receipts(&self, message_id: i32) -> orm::ReceiptCounts {
+        use schema::receipts;
+
+        let read_count: i64 = receipts::table
+            .filter(
+                receipts::message_id
+                    .eq(message_id)
+                    .and(receipts::read.is_not_null()),
+            )
+            .count()
+            .get_result(&mut *self.db())
+            .expect("db");
+
+        let delivered_count: i64 = receipts::table
+            .filter(
+                receipts::message_id
+                    .eq(message_id)
+                    .and(receipts::delivered.is_not_null()),
+            )
+            .count()
+            .get_result(&mut *self.db())
+            .expect("db");
+
+        let viewed_count: i64 = receipts::table
+            .filter(
+                receipts::message_id
+                    .eq(message_id)
+                    .and(receipts::viewed.is_not_null()),
+            )
+            .count()
+            .get_result(&mut *self.db())
+            .expect("db");
+
+        orm::ReceiptCounts {
+            read: read_count as usize,
+            delivered: delivered_count as usize,
+            viewed: viewed_count as usize,
+        }
     }
 
     /// Marks the message read without creating a Receipt entry.
@@ -3051,7 +3095,7 @@ impl<O: Observable> Storage<O> {
     #[tracing::instrument(skip(self))]
     pub fn fetch_augmented_message(&self, message_id: i32) -> Option<orm::AugmentedMessage> {
         let message = self.fetch_message_by_id(message_id)?;
-        let receipts = self.fetch_message_receipts(message.id);
+        let receipt_counts = self.count_message_receipts(message.id);
         let attachments: i64 = schema::attachments::table
             .filter(schema::attachments::message_id.eq(message_id))
             .count()
@@ -3084,7 +3128,7 @@ impl<O: Observable> Storage<O> {
         Some(AugmentedMessage {
             inner: message,
             is_voice_note,
-            receipts,
+            receipt_counts,
             attachments: attachments as usize,
             reactions: reactions as usize,
             mentions,
@@ -3182,19 +3226,43 @@ impl<O: Observable> Storage<O> {
                     .expect("db")
             });
 
-        let receipts: Vec<(orm::Receipt, orm::Recipient)> =
-            tracing::trace_span!("fetching receipts").in_scope(|| {
-                schema::receipts::table
-                    .inner_join(schema::recipients::table)
-                    .select((
-                        schema::receipts::all_columns,
-                        schema::recipients::all_columns,
-                    ))
-                    .inner_join(schema::messages::table.inner_join(schema::sessions::table))
-                    .filter(schema::sessions::id.eq(sid))
+        // Fetch receipt counts grouped by message_id for better performance
+        // Fetch receipt counts using the same pattern as reactions
+        let (read_counts, delivered_counts, viewed_counts) =
+            tracing::trace_span!("fetching receipt counts").in_scope(|| {
+                use schema::{messages, receipts};
+
+                // Fetch counts for each receipt type, using the same ordering as messages
+                let read_counts: Vec<(i32, i64)> = receipts::table
+                    .inner_join(messages::table)
+                    .filter(receipts::read.is_not_null())
+                    .filter(messages::session_id.eq(sid))
+                    .group_by(receipts::message_id)
+                    .select((receipts::message_id, diesel::dsl::count_star()))
                     .order_by(order)
                     .load(&mut *self.db())
-                    .expect("db")
+                    .expect("db");
+
+                let delivered_counts: Vec<(i32, i64)> = receipts::table
+                    .inner_join(messages::table)
+                    .filter(receipts::delivered.is_not_null())
+                    .filter(messages::session_id.eq(sid))
+                    .group_by(receipts::message_id)
+                    .select((receipts::message_id, diesel::dsl::count_star()))
+                    .order_by(order)
+                    .load(&mut *self.db())
+                    .expect("db");
+
+                let viewed_counts: Vec<(i32, i64)> = receipts::table
+                    .inner_join(messages::table)
+                    .filter(receipts::viewed.is_not_null())
+                    .filter(messages::session_id.eq(sid))
+                    .group_by(receipts::message_id)
+                    .select((receipts::message_id, diesel::dsl::count_star()))
+                    .order_by(order)
+                    .load(&mut *self.db())
+                    .expect("db");
+                (read_counts, delivered_counts, viewed_counts)
             });
 
         let mut aug_messages = Vec::with_capacity(messages.len());
@@ -3202,10 +3270,9 @@ impl<O: Observable> Storage<O> {
             .in_scope(|| {
                 let mut attachments = attachments.into_iter().peekable();
                 let mut reactions = reactions.into_iter().peekable();
-                let receipts = receipts
-                    .into_iter()
-                    .chunk_by(|(receipt, _recipient)| receipt.message_id);
-                let mut receipts = receipts.into_iter().peekable();
+                let mut read_counts_iter = read_counts.into_iter().peekable();
+                let mut delivered_counts_iter = delivered_counts.into_iter().peekable();
+                let mut viewed_counts_iter = viewed_counts.into_iter().peekable();
 
                 for message in messages {
                     let (attachments, is_voice_note) = if attachments
@@ -3233,15 +3300,41 @@ impl<O: Observable> Storage<O> {
                         0
                     };
 
-                    let receipts = if receipts
+                    // Look up receipt counts for this message
+                    let read_count = if read_counts_iter
                         .peek()
                         .map(|(id, _)| *id == message.id)
                         .unwrap_or(false)
                     {
-                        let (_, receipts) = receipts.next().unwrap();
-                        receipts.collect_vec()
+                        let (_, count) = read_counts_iter.next().unwrap();
+                        count
                     } else {
-                        vec![]
+                        0
+                    };
+                    let delivered_count = if delivered_counts_iter
+                        .peek()
+                        .map(|(id, _)| *id == message.id)
+                        .unwrap_or(false)
+                    {
+                        let (_, count) = delivered_counts_iter.next().unwrap();
+                        count
+                    } else {
+                        0
+                    };
+                    let viewed_count = if viewed_counts_iter
+                        .peek()
+                        .map(|(id, _)| *id == message.id)
+                        .unwrap_or(false)
+                    {
+                        let (_, count) = viewed_counts_iter.next().unwrap();
+                        count
+                    } else {
+                        0
+                    };
+                    let receipt_counts = orm::ReceiptCounts {
+                        read: read_count as usize,
+                        delivered: delivered_count as usize,
+                        viewed: viewed_count as usize,
                     };
 
                     let body_ranges = if let Some(r) = &message.message_ranges {
@@ -3257,7 +3350,7 @@ impl<O: Observable> Storage<O> {
                         is_voice_note,
                         attachments,
                         reactions,
-                        receipts,
+                        receipt_counts,
                         body_ranges,
                         mentions,
                     });

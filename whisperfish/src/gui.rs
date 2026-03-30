@@ -319,6 +319,7 @@ pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
                 qml_register_type::<model::Attachment>(uri, 1, 0, cstr!("Attachment"));
                 qml_register_type::<model::Reactions>(uri, 1, 0, cstr!("Reactions"));
                 qml_register_type::<model::GroupedReactions>(uri, 1, 0, cstr!("GroupedReactions"));
+                qml_register_type::<model::Receipts>(uri, 1, 0, cstr!("Receipts"));
             }
 
             let mut app = QmlApp::application("harbour-whisperfish".into());

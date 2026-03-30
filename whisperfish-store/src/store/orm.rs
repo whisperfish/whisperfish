@@ -1219,6 +1219,34 @@ impl SessionType {
 
 // Some extras
 
+/// Counts of different types of receipts for a message.
+#[derive(Clone, Default, Debug)]
+pub struct ReceiptCounts {
+    pub read: usize,
+    pub delivered: usize,
+    pub viewed: usize,
+}
+
+impl ReceiptCounts {
+    /// Create a new ReceiptCounts from a vector of receipts
+    pub fn from_receipts(receipts: &[(Receipt, Recipient)]) -> Self {
+        Self {
+            read: receipts
+                .iter()
+                .filter(|(receipt, _)| receipt.read.is_some())
+                .count(),
+            delivered: receipts
+                .iter()
+                .filter(|(receipt, _)| receipt.delivered.is_some())
+                .count(),
+            viewed: receipts
+                .iter()
+                .filter(|(receipt, _)| receipt.viewed.is_some())
+                .count(),
+        }
+    }
+}
+
 /// [`Message`] augmented with its sender, attachment count and receipts.
 #[derive(Clone, Default)]
 pub struct AugmentedMessage {
@@ -1226,7 +1254,7 @@ pub struct AugmentedMessage {
     pub attachments: usize,
     pub reactions: usize,
     pub is_voice_note: bool,
-    pub receipts: Vec<(Receipt, Recipient)>,
+    pub receipt_counts: ReceiptCounts,
     pub body_ranges: Vec<crate::store::protos::body_range_list::BodyRange>,
     pub mentions: std::collections::HashMap<uuid::Uuid, Recipient>,
 }
@@ -1235,10 +1263,12 @@ impl Display for AugmentedMessage {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(
             f,
-            "AugmentedMessage {{ attachments: {}, reactions: {}, _receipts: {}, inner: {} }}",
+            "AugmentedMessage {{ attachments: {}, reactions: {}, read: {}, delivered: {}, viewed: {}, inner: {} }}",
             &self.attachments,
             &self.reactions,
-            &self.receipts.len(),
+            self.receipt_counts.read,
+            self.receipt_counts.delivered,
+            self.receipt_counts.viewed,
             &self.inner
         )
     }
@@ -1255,51 +1285,6 @@ impl std::ops::Deref for AugmentedMessage {
 impl AugmentedMessage {
     pub fn sent(&self) -> bool {
         self.inner.sent_timestamp.is_some()
-    }
-
-    pub fn delivered(&self) -> u32 {
-        self.receipts
-            .iter()
-            .filter(|(r, _)| r.delivered.is_some())
-            .count() as _
-    }
-
-    pub fn delivered_receipts(&self) -> Vec<(NaiveDateTime, String)> {
-        self.receipts
-            .iter()
-            .filter(|(r, _)| r.delivered.is_some())
-            .map(|(receipt, recipient)| (receipt.delivered.unwrap(), recipient.name().to_string()))
-            .collect()
-    }
-
-    pub fn read(&self) -> u32 {
-        self.receipts
-            .iter()
-            .filter(|(r, _)| r.read.is_some())
-            .count() as _
-    }
-
-    pub fn read_receipts(&self) -> Vec<(NaiveDateTime, String)> {
-        self.receipts
-            .iter()
-            .filter(|(r, _)| r.read.is_some())
-            .map(|(receipt, recipient)| (receipt.delivered.unwrap(), recipient.name().to_string()))
-            .collect()
-    }
-
-    pub fn viewed(&self) -> u32 {
-        self.receipts
-            .iter()
-            .filter(|(r, _)| r.viewed.is_some())
-            .count() as _
-    }
-
-    pub fn viewed_receipts(&self) -> Vec<(NaiveDateTime, String)> {
-        self.receipts
-            .iter()
-            .filter(|(r, _)| r.viewed.is_some())
-            .map(|(receipt, recipient)| (receipt.delivered.unwrap(), recipient.name().to_string()))
-            .collect()
     }
 
     pub fn queued(&self) -> bool {
@@ -1566,23 +1551,20 @@ impl AugmentedSession {
             .unwrap_or(true)
     }
 
-    pub fn delivered(&self) -> u32 {
+    pub fn delivered(&self) -> usize {
         if let Some(m) = &self.last_message {
-            m.receipts
-                .iter()
-                .filter(|(r, _)| r.delivered.is_some())
-                .count() as _
+            m.receipt_counts.delivered
         } else {
             0
         }
     }
 
-    pub fn read(&self) -> u32 {
+    pub fn read(&self) -> usize {
         if let Some(m) = &self.last_message {
             if m.message_type.is_some() && m.is_read {
                 1
             } else {
-                m.receipts.iter().filter(|(r, _)| r.read.is_some()).count() as _
+                m.receipt_counts.read
             }
         } else {
             0
@@ -1601,12 +1583,9 @@ impl AugmentedSession {
         self.is_pinned
     }
 
-    pub fn viewed(&self) -> u32 {
+    pub fn viewed(&self) -> usize {
         if let Some(m) = &self.last_message {
-            m.receipts
-                .iter()
-                .filter(|(r, _)| r.viewed.is_some())
-                .count() as _
+            m.receipt_counts.viewed
         } else {
             0
         }
@@ -1867,22 +1846,15 @@ mod tests {
     }
 
     fn get_augmented_message() -> AugmentedMessage {
-        let timestamp =
-            NaiveDateTime::parse_from_str("2023-04-01 07:01:32", "%Y-%m-%d %H:%M:%S").unwrap();
         AugmentedMessage {
             attachments: 2,
             inner: get_message(),
             is_voice_note: false,
-            receipts: vec![(
-                Receipt {
-                    message_id: 1,
-                    recipient_id: 2,
-                    delivered: Some(timestamp),
-                    read: Some(timestamp),
-                    viewed: Some(timestamp),
-                },
-                get_recipient(),
-            )],
+            receipt_counts: ReceiptCounts {
+                read: 1,
+                delivered: 1,
+                viewed: 1,
+            },
             reactions: 0,
             body_ranges: vec![],
             mentions: Default::default(),
@@ -2124,7 +2096,7 @@ mod tests {
     #[test]
     fn display_augmented_message() {
         let m = get_augmented_message();
-        assert_eq!(format!("{}", m), "AugmentedMessage { attachments: 2, reactions: 0, _receipts: 1, inner: Message { id: 71, session_id: 66, text: \"msg text\" } }")
+        assert_eq!(format!("{}", m), "AugmentedMessage { attachments: 2, reactions: 0, read: 1, delivered: 1, viewed: 1, inner: Message { id: 71, session_id: 66, text: \"msg text\" } }")
     }
 
     #[test]
@@ -2134,7 +2106,7 @@ mod tests {
             last_message: Some(get_augmented_message()),
             group_self_member: None,
         };
-        assert_eq!(format!("{}", s), "AugmentedSession { inner: Session { id: 2, _has_draft: false, type: DirectMessage { recipient: Recipient { id: 981, name: \"Nick Name\", e164: \"+35840...\", uuid: \"bff93979-...\", pni: unavailable } } }, last_message: AugmentedMessage { attachments: 2, reactions: 0, _receipts: 1, inner: Message { id: 71, session_id: 66, text: \"msg text\" } } }");
+        assert_eq!(format!("{}", s), "AugmentedSession { inner: Session { id: 2, _has_draft: false, type: DirectMessage { recipient: Recipient { id: 981, name: \"Nick Name\", e164: \"+35840...\", uuid: \"bff93979-...\", pni: unavailable } } }, last_message: AugmentedMessage { attachments: 2, reactions: 0, read: 1, delivered: 1, viewed: 1, inner: Message { id: 71, session_id: 66, text: \"msg text\" } } }");
         s.last_message = None;
         assert_eq!(format!("{}", s), "AugmentedSession { inner: Session { id: 2, _has_draft: false, type: DirectMessage { recipient: Recipient { id: 981, name: \"Nick Name\", e164: \"+35840...\", uuid: \"bff93979-...\", pni: unavailable } } }, last_message: None }");
     }
@@ -2184,9 +2156,9 @@ mod tests {
         let a = get_augmented_message();
         assert!(!a.sent());
         assert!(!a.queued());
-        assert_eq!(a.delivered(), 1);
-        assert_eq!(a.read(), 1);
-        assert_eq!(a.viewed(), 1);
+        assert_eq!(a.receipt_counts.delivered, 1);
+        assert_eq!(a.receipt_counts.read, 1);
+        assert_eq!(a.receipt_counts.viewed, 1);
         assert_eq!(a.attachments(), 2);
     }
 
