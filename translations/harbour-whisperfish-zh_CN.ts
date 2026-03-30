@@ -2657,49 +2657,49 @@ Settings page share contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-message-info-title">
-        <location filename="../qml/pages/MessageInfoPage.qml" line="53"/>
+        <location filename="../qml/pages/MessageInfoPage.qml" line="59"/>
         <source>Message Info</source>
         <extracomment>Page title for message info/details page</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-message-message-id">
-        <location filename="../qml/pages/MessageInfoPage.qml" line="92"/>
+        <location filename="../qml/pages/MessageInfoPage.qml" line="98"/>
         <source>Message ID</source>
         <extracomment>Label for id of the message (in database)</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-message-session-id">
-        <location filename="../qml/pages/MessageInfoPage.qml" line="99"/>
+        <location filename="../qml/pages/MessageInfoPage.qml" line="105"/>
         <source>Session ID</source>
         <extracomment>Label for session id of the message (in database)</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-message-timestamp">
-        <location filename="../qml/pages/MessageInfoPage.qml" line="108"/>
+        <location filename="../qml/pages/MessageInfoPage.qml" line="114"/>
         <source>Timestamp</source>
         <extracomment>Label for the timestamp of the message</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-message-info-reactions">
-        <location filename="../qml/pages/MessageInfoPage.qml" line="118"/>
+        <location filename="../qml/pages/MessageInfoPage.qml" line="124"/>
         <source>Reactions</source>
         <extracomment>Reactions section header</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-message-info-delivery-receipts">
-        <location filename="../qml/pages/MessageInfoPage.qml" line="134"/>
+        <location filename="../qml/pages/MessageInfoPage.qml" line="140"/>
         <source>Delivery receipts</source>
         <extracomment>Delivered receipts section header</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-message-info-read-receipts">
-        <location filename="../qml/pages/MessageInfoPage.qml" line="150"/>
+        <location filename="../qml/pages/MessageInfoPage.qml" line="156"/>
         <source>Read receipts</source>
         <extracomment>Read receipts section header</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-message-info-viewed-receipts">
-        <location filename="../qml/pages/MessageInfoPage.qml" line="166"/>
+        <location filename="../qml/pages/MessageInfoPage.qml" line="172"/>
         <source>Viewed receipts</source>
         <extracomment>Viewed receipts section header</extracomment>
         <translation type="unfinished"></translation>
