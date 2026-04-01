@@ -4,7 +4,6 @@ use crate::orm::Recipient;
 use crate::schema;
 use crate::TrustLevel;
 use diesel::prelude::*;
-use libsignal_service::prelude::*;
 use phonenumber::PhoneNumber;
 use std::fmt::Debug;
 use uuid::Uuid;

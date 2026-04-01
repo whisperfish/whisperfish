@@ -103,11 +103,13 @@ impl Handler<ReloadLinkedDevices> for ClientActor {
         tracing::trace!("handle(ReloadLinkedDevices)");
 
         let service = self.authenticated_service();
+        let i_ws = self.i_ws.clone().unwrap();
         let store = self.storage.clone().unwrap();
         let profile_key: Option<[u8; 32]> = store
             .fetch_self_recipient_profile_key()
             .and_then(|key| key.try_into().ok());
-        let mut account_manager = AccountManager::new(service, profile_key.map(ProfileKey::create));
+        let mut account_manager =
+            AccountManager::new(service, i_ws, profile_key.map(ProfileKey::create));
 
         Box::pin(
             async move { account_manager.linked_devices(&store.aci_storage()).await }
@@ -145,11 +147,14 @@ impl Handler<LinkDevice> for ClientActor {
 
         let service = self.authenticated_service();
         let credentials = self.credentials.clone().unwrap();
+        let i_ws = self.i_ws.clone().unwrap();
+
         let store = self.storage.clone().unwrap();
         let profile_key: Option<[u8; 32]> = store
             .fetch_self_recipient_profile_key()
             .and_then(|key| key.try_into().ok());
-        let mut account_manager = AccountManager::new(service, profile_key.map(ProfileKey::create));
+        let mut account_manager =
+            AccountManager::new(service, i_ws, profile_key.map(ProfileKey::create));
         let master_key = store.fetch_master_key();
 
         Box::pin(
@@ -197,7 +202,7 @@ impl Handler<UnlinkDevice> for ClientActor {
     ) -> Self::Result {
         tracing::trace!("handle(UnlinkDevice)");
 
-        let mut service = self.authenticated_service();
+        let mut i_ws = self.i_ws.clone().unwrap();
 
         Box::pin(
             // Without `async move`, service would be borrowed instead of encapsulated in a Future.
@@ -233,11 +238,13 @@ impl Handler<RenameDevice> for ClientActor {
         tracing::trace!("handle(RenameDevice)");
 
         let service = self.authenticated_service();
+        let i_ws = self.i_ws.clone().unwrap();
         let store = self.storage.clone().unwrap();
         let profile_key: Option<[u8; 32]> = store
             .fetch_self_recipient_profile_key()
             .and_then(|key| key.try_into().ok());
-        let mut account_manager = AccountManager::new(service, profile_key.map(ProfileKey::create));
+        let mut account_manager =
+            AccountManager::new(service, i_ws, profile_key.map(ProfileKey::create));
         let aci = self.config.get_aci().unwrap();
 
         Box::pin(

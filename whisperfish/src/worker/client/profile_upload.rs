@@ -106,6 +106,15 @@ impl Handler<RefreshOwnProfile> for ClientActor {
         let config = self.config.clone();
         let aci = Aci::from(config.get_aci().expect("valid uuid at this point"));
 
+        if self.i_ws.is_none() {
+            tracing::warn!(
+                "Not connected to server, cannot refresh own profile. Retrying in two seconds..."
+            );
+            ctx.notify_later(RefreshOwnProfile { force }, Duration::from_secs(2));
+            return Box::pin(async {}.into_actor(self));
+        }
+        let mut i_ws = self.i_ws.clone().unwrap();
+
         Box::pin(
             async move {
                 let self_recipient = storage
@@ -202,6 +211,7 @@ impl Handler<UploadProfile> for ClientActor {
     fn handle(&mut self, _: UploadProfile, ctx: &mut Self::Context) -> Self::Result {
         let storage = self.storage.clone().unwrap();
         let service = self.authenticated_service();
+        let i_ws = self.i_ws.clone().unwrap();
         let client = ctx.address();
         let config = self.config.clone();
         let aci = Aci::from(config.get_aci().expect("valid ACI at this point"));
@@ -227,7 +237,7 @@ impl Handler<UploadProfile> for ClientActor {
                     family_name: self_recipient.profile_family_name.as_deref(),
                 };
 
-                let mut am = AccountManager::new(service, Some(profile_key));
+                let mut am = AccountManager::new(service, i_ws, Some(profile_key));
                 if let Err(e) = am
                     .upload_versioned_profile_without_avatar(
                         aci,
@@ -272,6 +282,7 @@ impl Handler<RefreshProfileAttributes> for ClientActor {
     fn handle(&mut self, _: RefreshProfileAttributes, ctx: &mut Self::Context) -> Self::Result {
         let storage = self.storage.clone().unwrap();
         let service = self.authenticated_service();
+        let i_ws = self.i_ws.clone().unwrap();
         let address = ctx.address();
 
         Box::pin(
@@ -289,23 +300,21 @@ impl Handler<RefreshProfileAttributes> for ClientActor {
                 let self_recipient = storage.fetch_self_recipient().expect("self set by now");
 
                 let profile_key = self_recipient.profile_key().map(ProfileKey::create);
-                let mut am = AccountManager::new(service, profile_key);
+                let mut am = AccountManager::new(service, i_ws, profile_key);
                 let unidentified_access_key =
                     profile_key.as_ref().map(ProfileKey::derive_access_key);
 
                 let account_attributes = AccountAttributes {
-                    signaling_key: None,
                     registration_id,
-                    voice: false,
-                    video: false,
                     fetches_messages: true,
                     pin: None,
                     registration_lock: None,
                     unidentified_access_key: unidentified_access_key.map(Vec::from),
                     unrestricted_unidentified_access: false,
                     discoverable_by_phone_number: true,
+                    recovery_password: None,
                     capabilities: whisperfish_device_capabilities(),
-                    name: Some("Whisperfish".into()),
+                    name: None, // TODO: DeviceName
                     pni_registration_id,
                 };
                 if let Err(e) = am.set_account_attributes(account_attributes).await {

@@ -82,7 +82,7 @@ impl Handler<RotateUnidentifiedCertificates> for ClientActor {
         _: RotateUnidentifiedCertificates,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        let mut service = self.authenticated_service();
+        let mut i_ws = self.i_ws.clone().unwrap();
         // Short cut
         let all_certs_available =
             CertType::all().all(|t| self.unidentified_certificates.certs.contains_key(&t));
@@ -92,10 +92,8 @@ impl Handler<RotateUnidentifiedCertificates> for ClientActor {
                 if !all_certs_available {
                     for cert_type in CertType::all() {
                         let cert = match cert_type {
-                            CertType::Complete => service.get_sender_certificate().await?,
-                            CertType::UuidOnly => {
-                                service.get_uuid_only_sender_certificate().await?
-                            }
+                            CertType::Complete => i_ws.get_sender_certificate().await?,
+                            CertType::UuidOnly => i_ws.get_uuid_only_sender_certificate().await?,
                         };
                         certs.insert(cert_type, cert);
                     }

@@ -28,6 +28,7 @@ use diesel::sql_types::{Bool, Timestamp};
 use diesel_migrations::EmbeddedMigrations;
 
 use libsignal_service::groups_v2::{InMemoryCredentialsCache, Role};
+use libsignal_service::libsignal_account_keys::AccountEntropyPool;
 use libsignal_service::proto::{attachment_pointer, data_message::Reaction, DataMessage};
 use libsignal_service::protocol::{self, *};
 use libsignal_service::zkgroup::api::groups::GroupSecretParams;
@@ -4850,6 +4851,34 @@ impl<O: Observable> Storage<O> {
                 group_v2.name
             );
             None
+        }
+    }
+
+    // TODO This should be in lss (and use lss types?)
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_account_entropy_pool(&self) -> Option<AccountEntropyPool> {
+        match self.read_setting(Settings::ACCOUNT_ENTROPY_POOL) {
+            Some(pool) if pool.len() == 64 => {
+                use std::str::FromStr;
+                match AccountEntropyPool::from_str(pool.as_str()) {
+                    Ok(pool) => Some(pool),
+                    Err(e) => {
+                        tracing::error!("{e}");
+                        None
+                    }
+                }
+            }
+            _ => None,
+        }
+    }
+
+    // TODO This should be in lss (and use lss types?)
+    #[tracing::instrument(skip(self))]
+    pub fn store_account_entropy_pool(&self, entropy: Option<AccountEntropyPool>) {
+        if let Some(entropy) = entropy {
+            self.write_setting(Settings::ACCOUNT_ENTROPY_POOL, entropy.to_string().as_str());
+        } else {
+            self.delete_setting(Settings::ACCOUNT_ENTROPY_POOL);
         }
     }
 }

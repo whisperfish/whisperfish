@@ -20,6 +20,7 @@ impl Handler<InitializePni> for ClientActor {
             return Box::pin(async {}.into_actor(self));
         }
         let service = self.authenticated_service();
+        let i_ws = self.i_ws.clone().unwrap();
         let whoami = self.migration_state.self_uuid_is_known();
         let storage = self.storage.clone().expect("initialized storage");
         let local_addr = self.self_aci.expect("local addr");
@@ -54,10 +55,12 @@ impl Handler<InitializePni> for ClientActor {
                             key.copy_from_slice(bytes);
                             ProfileKey::create(key)
                         });
-                let mut am = AccountManager::new(service.clone(), profile_key);
 
                 let identity_key_pair = protocol::IdentityKeyPair::generate(&mut rand::rng());
                 let mut pni = storage.pni_storage();
+
+                let mut am = AccountManager::new(service.clone(), i_ws, profile_key);
+
                 pni.write_identity_key_pair(identity_key_pair).await?;
 
                 let res = am
@@ -66,7 +69,7 @@ impl Handler<InitializePni> for ClientActor {
                         &mut storage.pni_storage(),
                         sender.await?,
                         local_addr,
-                        local_e164,
+                        E164::from_str(&local_e164.to_string()).unwrap(),
                         &mut rand::rng(),
                     )
                     .await

@@ -36,10 +36,11 @@ use libsignal_service::proto::sync_message::Sent;
 use libsignal_service::proto::NullMessage;
 use libsignal_service::proto::SyncMessage;
 use libsignal_service::protocol::ServiceIdKind;
-use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 use libsignal_service::sender::SendMessageResult;
 use libsignal_service::sender::ThreadIdentifier;
+use libsignal_service::websocket::registration::RegistrationMethod;
+use libsignal_service::websocket::{Identified, Unidentified};
 use libsignal_service::ServiceIdExt;
 use qmetaobject::QMetaType;
 use qttypes::QVariantMap;
@@ -88,11 +89,12 @@ use libsignal_service::proto::receipt_message::Type as ReceiptType;
 use libsignal_service::proto::typing_message::Action;
 use libsignal_service::proto::ReceiptMessage;
 use libsignal_service::protocol::{self, *};
-use libsignal_service::push_service::{
-    AccountAttributes, DeviceCapabilities, RegistrationSessionMetadataResponse, ServiceIds,
-    VerificationTransport, VerifyAccountResponse,
-};
+use libsignal_service::push_service::ServiceIds;
 use libsignal_service::sender::AttachmentSpec;
+use libsignal_service::websocket::account::{AccountAttributes, DeviceCapabilities};
+use libsignal_service::websocket::registration::{
+    RegistrationSessionMetadataResponse, VerificationTransport, VerifyAccountResponse,
+};
 use libsignal_service::websocket::SignalWebSocket;
 use libsignal_service::AccountManager;
 use phonenumber::PhoneNumber;
@@ -407,7 +409,8 @@ pub struct ClientActor {
     self_aci: Option<Aci>,
     self_pni: Option<Pni>,
     storage: Option<Storage>,
-    ws: Option<SignalWebSocket>,
+    ws: Option<SignalWebSocket<Unidentified>>,
+    i_ws: Option<SignalWebSocket<Identified>>,
     config: std::sync::Arc<crate::config::SignalConfig>,
 
     message_stream_handle: Option<SpawnHandle>,
@@ -553,6 +556,7 @@ impl ClientActor {
             self_pni: None,
             storage: None,
             ws: None,
+            i_ws: None,
             config,
 
             message_stream_handle: None,
@@ -601,17 +605,14 @@ impl ClientActor {
     }
 
     fn unauthenticated_service(&self) -> PushService {
-        let service_cfg = self.service_cfg();
-        PushService::new(service_cfg, None, self.user_agent())
+        PushService::new(self.signal_server(), None, self.user_agent())
     }
 
     fn authenticated_service_with_credentials(
         &self,
         credentials: ServiceCredentials,
     ) -> PushService {
-        let service_cfg = self.service_cfg();
-
-        PushService::new(service_cfg, Some(credentials), self.user_agent())
+        PushService::new(self.signal_server(), Some(credentials), self.user_agent())
     }
 
     /// Panics if no authentication credentials are set.
@@ -626,6 +627,7 @@ impl ClientActor {
         let service = self.authenticated_service();
         let mut u_service = self.unauthenticated_service();
 
+        let i_ws = self.i_ws.clone();
         let ws = self.ws.clone();
         let cipher = self.cipher(ServiceIdKind::Aci);
         let local_aci = self.self_aci.unwrap();
@@ -633,7 +635,7 @@ impl ClientActor {
         let device_id = self.config.get_device_id();
 
         async move {
-            let Some(ws) = ws else {
+            let Some(i_ws) = i_ws else {
                 return Err(ServiceError::SendError {
                     reason: "SignalWebSocket is not open".into(),
                 });
@@ -655,12 +657,16 @@ impl ClientActor {
                 })
                 .ok();
 
-            let u_ws = u_service
-                .ws("/v1/websocket/", "/v1/keepalive", &[], None)
-                .await?;
+            let ws = match ws {
+                Some(ws) => ws,
+                None => u_service
+                    .ws("/v1/websocket/", "/v1/keepalive", &[], None)
+                    .await
+                    .unwrap(),
+            };
             Ok(MessageSender::new(
+                i_ws,
                 ws,
-                u_ws,
                 service,
                 cipher,
                 storage.aci_or_pni(ServiceIdKind::Aci), // In what cases do we use the
@@ -673,9 +679,9 @@ impl ClientActor {
         }
     }
 
-    fn service_cfg(&self) -> ServiceConfiguration {
+    fn signal_server(&self) -> SignalServers {
         // XXX: read the configuration files!
-        SignalServers::Production.into()
+        SignalServers::Production
     }
 
     pub fn clear_transient_timstamps(&mut self) {
@@ -831,7 +837,7 @@ impl ClientActor {
         edit: Option<NaiveDateTime>,
     ) -> bool {
         let mut is_valid = true;
-        let timestamp = metadata.timestamp;
+        let timestamp = metadata.timestamp.timestamp_millis() as u64;
         let is_sync_sent = sync_sent.is_some();
 
         let mut storage = self.storage.clone().expect("storage");
@@ -1651,7 +1657,7 @@ impl ClientActor {
                     .into_iter()
                     .map(millis_to_naive_chrono)
                     .collect();
-                let rcpt_timestamp = millis_to_naive_chrono(metadata.timestamp);
+                let rcpt_timestamp = millis_to_naive_chrono(metadata.timestamp.timestamp_millis() as u64);
                 let receipt_type = ReceiptType::try_from(receipt.r#type.unwrap_or(-1)).ok();
                 match receipt_type {
                     Some(ReceiptType::Delivery) => {
@@ -1733,7 +1739,8 @@ impl ClientActor {
     }
 
     fn cipher(&self, service_identity: ServiceIdKind) -> ServiceCipher<AciOrPniStorage> {
-        let service_cfg = self.service_cfg();
+        let signal_server = self.signal_server();
+        let server_config: ServiceConfiguration = signal_server.into();
         let device_id = self.config.get_device_id();
         let local_address = match service_identity {
             ServiceIdKind::Aci => self
@@ -1748,7 +1755,7 @@ impl ClientActor {
         .expect("valid device id");
         ServiceCipher::new(
             self.storage.as_ref().unwrap().aci_or_pni(service_identity),
-            service_cfg.unidentified_sender_trust_roots.clone(),
+            server_config.unidentified_sender_trust_roots,
             local_address,
         )
     }
@@ -2736,9 +2743,8 @@ impl Handler<StorageReady> for ClientActor {
             ServiceCredentials {
                 aci,
                 pni,
-                phonenumber: e164,
+                phonenumber: E164::from_str(&e164.to_string()).unwrap(), // TODO: E164 cleanup
                 password: Some(storage.signal_password().await.unwrap()),
-                signaling_key: storage.signaling_key().await.unwrap(),
                 device_id: Some(device_id),
             }
         }
@@ -2801,13 +2807,13 @@ impl Handler<Restart> for ClientActor {
                 let mut receiver = MessageReceiver::new(service.clone());
 
                 let pipe = receiver.create_message_pipe(credentials, false).await?;
-                let ws = pipe.ws();
-                Result::<_, ServiceError>::Ok((pipe, ws))
+                let i_ws = pipe.ws();
+                Result::<_, ServiceError>::Ok((pipe, i_ws))
             }
             .instrument(tracing::trace_span!("set up message receiver"))
             .into_actor(self)
             .map(move |pipe, act, ctx| match pipe {
-                Ok((pipe, ws)) => {
+                Ok((pipe, i_ws)) => {
                     ctx.notify(unidentified::RotateUnidentifiedCertificates);
                     act.message_stream_handle = Some(
                         ctx.add_stream(
@@ -2822,7 +2828,7 @@ impl Handler<Restart> for ClientActor {
 
                     ctx.set_mailbox_capacity(1);
                     act.inner.pinned().borrow_mut().connected = true;
-                    act.ws = Some(ws);
+                    act.i_ws = Some(i_ws);
                     act.inner.pinned().borrow().connectedChanged();
                 }
                 Err(e) => {
@@ -3101,19 +3107,22 @@ impl Handler<Register> for ClientActor {
             captcha,
         } = reg;
 
-        let mut push_service = self.authenticated_service_with_credentials(ServiceCredentials {
+        let cred = ServiceCredentials {
             aci: None,
             pni: None,
-            phonenumber: phonenumber.clone(),
+            phonenumber: E164::from_str(&phonenumber.to_string()).unwrap(), // TODO: E164 cleanup
             password: Some(password.clone()),
-            signaling_key: None,
             device_id: None, // !77
-        });
-
+        };
+        let mut service = self.authenticated_service_with_credentials(cred.clone());
         let session = self.registration_session.clone();
 
         // XXX add profile key when #192 implemneted
         let registration_procedure = async move {
+            // XXX identified websocket from unidentified service (not ok? see below)
+            let mut u_ws: SignalWebSocket<Unidentified> = service
+                .ws("/v1/websocket/", "/v1/keepalive", &[], Some(cred))
+                .await?;
             let mut session = if let Some(session) = session {
                 session
             } else {
@@ -3124,8 +3133,7 @@ impl Handler<Register> for ClientActor {
                 } else {
                     (None, None)
                 };
-                push_service
-                    .create_verification_session(&number, None, mcc, mnc)
+                u_ws.create_verification_session(&number, None, mcc, mnc)
                     .await?
             };
 
@@ -3134,7 +3142,7 @@ impl Handler<Register> for ClientActor {
                     .as_deref()
                     .map(|captcha| captcha.trim())
                     .and_then(|captcha| captcha.strip_prefix("signalcaptcha://"));
-                session = push_service
+                session = u_ws
                     .patch_verification_session(&session.id, None, None, None, captcha, None)
                     .await?;
             }
@@ -3154,7 +3162,7 @@ impl Handler<Register> for ClientActor {
                 );
             }
 
-            session = push_service
+            session = u_ws
                 .request_verification_code(&session.id, "whisperfish", transport)
                 .await?;
             Ok((session, VerificationCodeResponse::Issued))
@@ -3208,20 +3216,25 @@ impl Handler<ConfirmRegistration> for ClientActor {
         );
         let config = self.config.clone();
 
-        let mut push_service = self.authenticated_service_with_credentials(ServiceCredentials {
+        let cred = ServiceCredentials {
             aci: None,
             pni: None,
-            phonenumber,
+            phonenumber: E164::from_str(&phonenumber.to_string()).unwrap(), // TODO: E164 cleanup,
             password: Some(password.clone()),
-            signaling_key: None,
             device_id: None, // !77
-        });
+        };
+        let mut service = self.authenticated_service_with_credentials(cred.clone());
+
         let mut session = self
             .registration_session
             .clone()
             .expect("confirm registration after creating registration session");
 
         let confirmation_procedure = async move {
+            // XXX authenticated websocket from authenticated service (ok? see above)
+            let mut i_ws: SignalWebSocket<Identified> = service
+                .ws("/v1/websocket/", "/v1/keepalive", &[], Some(cred))
+                .await?;
             let storage_dir = config.get_share_dir().to_owned().into();
             let storage = Storage::new(
                 config.clone(),
@@ -3236,21 +3249,19 @@ impl Handler<ConfirmRegistration> for ClientActor {
 
             // XXX centralize the place where attributes are generated.
             let account_attrs = AccountAttributes {
-                signaling_key: None,
                 registration_id,
-                voice: false,
-                video: false,
                 fetches_messages: true,
                 pin: None,
                 registration_lock: None,
                 unidentified_access_key: None,
                 unrestricted_unidentified_access: false,
                 discoverable_by_phone_number: true,
+                recovery_password: None,
                 capabilities: whisperfish_device_capabilities(),
-                name: Some("Whisperfish".into()),
+                name: None, // TODO: implement
                 pni_registration_id,
             };
-            session = push_service
+            session = i_ws
                 .submit_verification_code(&session.id, &confirm_code)
                 .await?;
             if !session.verified {
@@ -3264,7 +3275,7 @@ impl Handler<ConfirmRegistration> for ClientActor {
             let mut pni_store = storage.pni_storage();
 
             // XXX: should we already supply a profile key?
-            let mut account_manager = AccountManager::new(push_service, None);
+            let mut account_manager = AccountManager::new(service, i_ws, None);
 
             // XXX: We explicitely opt out of skipping device transfer (the false argument). Double
             //      check whether that's what we want!
@@ -3323,7 +3334,7 @@ impl Handler<RegisterLinked> for ClientActor {
     fn handle(&mut self, reg: RegisterLinked, _ctx: &mut Self::Context) -> Self::Result {
         use libsignal_service::provisioning::*;
 
-        let push_service = self.unauthenticated_service();
+        let service = self.unauthenticated_service();
 
         let (tx, mut rx) = futures::channel::mpsc::channel(1);
 
@@ -3357,7 +3368,7 @@ impl Handler<RegisterLinked> for ClientActor {
                     &mut aci_store,
                     &mut pni_store,
                     &mut rand::rng(),
-                    push_service,
+                    service,
                     &reg.password,
                     &reg.device_name,
                     tx,
@@ -3391,6 +3402,8 @@ impl Handler<RegisterLinked> for ClientActor {
                                     aci_public_key,
                                     pni_private_key,
                                     pni_public_key,
+                                    master_key,
+                                    account_entropy_pool,
                                 },
                             ) => {
                                 let aci_identity_key_pair =
@@ -3408,9 +3421,16 @@ impl Handler<RegisterLinked> for ClientActor {
                                     .write_identity_key_pair(pni_identity_key_pair)
                                     .await?;
 
+                                let master_key = MasterKey::from_slice(master_key.unwrap().as_slice()).expect("valid master key");
+                                storage.store_master_key(Some(&master_key));
+
+                                // let srv_key = account_entropy_pool.as_ref().map(|p| p.derive_svr_key());
+                                storage.store_account_entropy_pool(account_entropy_pool);
+
                                 res = Ok(RegisterLinkedResponse {
                                     storage: storage.clone(),
-                                    phone_number,
+                                    phone_number: PhoneNumber::from_str(&phone_number.to_string())
+                                        .unwrap(), // TODO: E164 cleanup
                                     aci_regid,
                                     pni_regid,
                                     device_id,
@@ -3454,25 +3474,27 @@ impl Handler<RefreshPreKeys> for ClientActor {
 
     fn handle(&mut self, _: RefreshPreKeys, _ctx: &mut Self::Context) -> Self::Result {
         let service = self.authenticated_service();
+        let i_ws = self.i_ws.clone().unwrap();
         // XXX add profile key when #192 implemneted
-        let mut am = AccountManager::new(service, None);
         let storage = self.storage.clone().unwrap();
 
         let pni_distribution = self.migration_state.pni_distributed();
 
         let proc = async move {
+            let mut am = AccountManager::new(service, i_ws, None);
+
             let mut aci = storage.aci_storage();
             let mut pni = storage.pni_storage();
 
             // It's tempting to run those two in parallel,
             // but I'm afraid the pre-key counts are going to be mixed up.
-            am.update_pre_key_bundle(&mut aci, ServiceIdKind::Aci, true, &mut rand::rng())
+            am.update_pre_key_bundle(&mut aci, ServiceIdKind::Aci, true)
                 .await
                 .context("refreshing ACI pre keys")?;
 
             let _pni_distribution = pni_distribution.await;
 
-            am.update_pre_key_bundle(&mut pni, ServiceIdKind::Pni, true, &mut rand::rng())
+            am.update_pre_key_bundle(&mut pni, ServiceIdKind::Pni, true)
                 .await
                 .context("refreshing PNI pre keys")?;
             anyhow::Result::<()>::Ok(())
@@ -3840,16 +3862,20 @@ impl Handler<ProofResponse> for ClientActor {
             ProfileKey::create(key)
         });
 
-        let service = self.authenticated_service();
-        let mut am = AccountManager::new(service, profile_key);
-
-        let addr = ctx.address();
+        let cred = self.credentials.clone().unwrap();
+        let mut service = self.authenticated_service_with_credentials(cred.clone());
 
         let proc = async move {
+            let i_ws: SignalWebSocket<Identified> = service
+                .ws("/v1/websocket/", "/v1/keepalive", &[], Some(cred))
+                .await?;
+            let mut am = AccountManager::new(service, i_ws, profile_key);
             am.submit_recaptcha_challenge(&proof.token, &proof.response)
                 .await
         }
         .instrument(span);
+
+        let addr = ctx.address();
 
         Box::pin(proc.into_actor(self).map(move |result, _act, _ctx| {
             actix::spawn(async move {

@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 use super::*;
-use libsignal_service::push_service::DeviceInfo;
+use libsignal_service::websocket::account::DeviceInfo;
 use qmetaobject::prelude::*;
 use std::collections::HashMap;
 

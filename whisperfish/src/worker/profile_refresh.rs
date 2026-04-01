@@ -6,7 +6,7 @@ use diesel::prelude::*;
 use futures::AsyncReadExt;
 use libsignal_service::{
     configuration::SignalServers, prelude::*, profile_cipher::ProfileCipher, protocol::Aci,
-    push_service::SignalServiceProfile,
+    websocket::profile::SignalServiceProfile,
 };
 use std::{
     collections::{hash_map, HashMap},
@@ -309,24 +309,22 @@ impl ProfileUpdater {
         }
     }
 
-    fn service_cfg(&self) -> ServiceConfiguration {
+    fn signal_server(&self) -> SignalServers {
         // XXX: read the configuration files!
-        SignalServers::Production.into()
+        SignalServers::Production
     }
 
     // XXX somehow dedupe this with the client ector.
     fn authenticated_service(&self) -> PushService {
-        let service_cfg = self.service_cfg();
         PushService::new(
-            service_cfg,
+            self.signal_server(),
             Some(self.credentials.clone()),
             crate::user_agent(),
         )
     }
 
     fn unauthenticated_service(&self) -> PushService {
-        let service_cfg = self.service_cfg();
-        PushService::new(service_cfg, None, crate::user_agent())
+        PushService::new(self.signal_server(), None, crate::user_agent())
     }
 
     fn update_scheduled_wake(&mut self, ctx: &mut <Self as actix::Actor>::Context) {
