@@ -2756,6 +2756,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             let _span = tracing::warn_span!("handling NoSenderKeyState", %distribution_id, authenticated_sender=%sender).entered();
                             let _ = this.send(ResetSession(sender)).await;
 
+                            tracing::info!("dropping envelope");
                             break None;
                         }
                         // Capture NoSenderKeyState with sealed sender
@@ -2768,6 +2769,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             let _span = tracing::warn_span!("handling NoSenderKeyState", %distribution_id, sealed_sender=%sender).entered();
                             let _ = this.send(ResetSession(sender)).await;
 
+                            tracing::info!("dropping envelope");
                             break None;
                         }
                         // Capture sessions not existing in both sealed and authenticated cases.
@@ -2782,6 +2784,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             let _span = tracing::warn_span!("session not found", %sender).entered();
                             let _ = this.send(ResetSession(sender)).await;
 
+                            tracing::info!("dropping envelope");
                             break None;
                         }
                         Err(ServiceError::SignalProtocolError(
