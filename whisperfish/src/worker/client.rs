@@ -2728,6 +2728,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
 
         self.initial_queue_process_state.observe_guid(&guid);
 
+        let this = ctx.address();
         ctx.spawn(
             async move {
                 let mut visited = false;
@@ -2753,6 +2754,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             };
 
                             let _span = tracing::warn_span!("handling NoSenderKeyState", %distribution_id, authenticated_sender=%sender).entered();
+                            let _ = this.send(ResetSession(sender)).await;
 
                             break None;
                         }
@@ -2764,6 +2766,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             sender: Some(sender),
                         })) => {
                             let _span = tracing::warn_span!("handling NoSenderKeyState", %distribution_id, sealed_sender=%sender).entered();
+                            let _ = this.send(ResetSession(sender)).await;
 
                             break None;
                         }
@@ -2777,6 +2780,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             sender: Some(_),
                         }))  => {
                             let _span = tracing::warn_span!("session not found", %sender).entered();
+                            let _ = this.send(ResetSession(sender)).await;
 
                             break None;
                         }
