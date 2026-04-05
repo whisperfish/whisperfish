@@ -134,7 +134,7 @@ impl MigrationCondVar {
 }
 
 impl ClientActor {
-    pub(super) fn queue_migrations(ctx: &mut <Self as Actor>::Context) {
+    pub(super) fn queue_migrations(&mut self, ctx: &mut <Self as Actor>::Context) {
         ctx.notify(WhoAmI);
         ctx.notify(MoveSessionsToDatabase);
         ctx.notify(ComputeGroupV2ExpectedIds);

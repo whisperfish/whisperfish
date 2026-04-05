@@ -7,7 +7,6 @@ mod call;
 mod groupv2;
 mod linked_devices;
 mod message_expiry;
-mod profile;
 mod profile_upload;
 mod unidentified;
 mod voice_note_transcription;
@@ -54,7 +53,6 @@ use whisperfish_store::orm::StoryType;
 use zkgroup::profiles::ProfileKey;
 
 use super::message_expiry::ExpiredMessagesStream;
-use super::profile_refresh::OutdatedProfileStream;
 use crate::actor::SendReaction;
 use crate::actor::SessionActor;
 use crate::config::SettingsBridge;
@@ -67,6 +65,7 @@ use crate::store::orm::UnidentifiedAccessMode;
 use crate::store::AciOrPniStorage;
 use crate::store::Storage;
 use crate::worker::client::unidentified::CertType;
+use crate::worker::profile_refresh::ProfileUpdater;
 use actix::prelude::*;
 use anyhow::Context;
 #[cfg(feature = "calling")]
@@ -389,7 +388,7 @@ pub struct ClientActor {
 
     start_time: DateTime<Local>,
 
-    outdated_profile_stream_handle: Option<SpawnHandle>,
+    profile_updater: Option<Addr<ProfileUpdater>>,
     message_expiry_notification_handle: Option<tokio::sync::mpsc::UnboundedSender<()>>,
 
     registration_session: Option<RegistrationSessionMetadataResponse>,
@@ -534,7 +533,7 @@ impl ClientActor {
 
             start_time: Local::now(),
 
-            outdated_profile_stream_handle: None,
+            profile_updater: None,
             message_expiry_notification_handle: None,
 
             registration_session: None,
@@ -543,6 +542,16 @@ impl ClientActor {
 
             #[cfg(feature = "calling")]
             call_state: None,
+        })
+    }
+
+    pub fn profile_updater(&mut self) -> Addr<ProfileUpdater> {
+        self.profile_updater.clone().unwrap_or_else(|| {
+            ProfileUpdater::new(
+                self.storage.clone().expect("initialized storage"),
+                self.self_aci.expect("self-aci set"),
+            )
+            .start()
         })
     }
 
@@ -2488,7 +2497,13 @@ impl Handler<StorageReady> for ClientActor {
 
         tracing::info!("E.164: {e164}, ACI: {aci:?}, PNI: {pni:?}, DeviceId: {device_id}");
 
+        self.self_aci = aci.map(Aci::from);
+        self.self_pni = pni.map(Pni::from);
+
         storage.mark_pending_messages_failed();
+
+        // Start workers.
+        self.profile_updater();
 
         let credentials = async move {
             ServiceCredentials {
@@ -2512,12 +2527,8 @@ impl Handler<StorageReady> for ClientActor {
                     let _span = tracing::trace_span!("whisperfish startup").entered();
 
                     act.credentials = Some(credentials);
-                    let cred = act.credentials.as_ref().unwrap();
 
-                    act.self_aci = cred.aci.map(Aci::from);
-                    act.self_pni = cred.pni.map(Pni::from);
-
-                    Self::queue_migrations(ctx);
+                    act.queue_migrations(ctx);
 
                     ctx.notify(Restart);
                     ctx.notify(RefreshPreKeys);
@@ -2583,17 +2594,6 @@ impl Handler<Restart> for ClientActor {
                     act.inner.pinned().borrow_mut().connected = true;
                     act.ws = Some(ws);
                     act.inner.pinned().borrow().connectedChanged();
-
-                    // If profile stream was running, restart.
-                    if let Some(handle) = act.outdated_profile_stream_handle.take() {
-                        ctx.cancel_future(handle);
-                    }
-                    act.outdated_profile_stream_handle = Some(
-                        ctx.add_stream(
-                            OutdatedProfileStream::new(act.storage.clone().unwrap())
-                                .instrument(tracing::info_span!("outdated profile stream")),
-                        ),
-                    );
                 }
                 Err(e) => {
                     tracing::error!("Error starting stream: {}", e);
