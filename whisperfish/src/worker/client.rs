@@ -38,6 +38,7 @@ use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 use libsignal_service::sender::SendMessageResult;
 use libsignal_service::sender::ThreadIdentifier;
+use libsignal_service::ServiceIdExt;
 use qmetaobject::QMetaType;
 use qttypes::QVariantMap;
 use tracing_futures::Instrument;
@@ -1559,11 +1560,21 @@ impl ClientActor {
     fn cipher(&self, service_identity: ServiceIdKind) -> ServiceCipher<AciOrPniStorage> {
         let service_cfg = self.service_cfg();
         let device_id = self.config.get_device_id();
+        let local_address = match service_identity {
+            ServiceIdKind::Aci => self
+                .self_aci
+                .expect("aci when registered")
+                .to_protocol_address(device_id),
+            ServiceIdKind::Pni => self
+                .self_pni
+                .expect("pni set after whoami for ServiceCipher construction")
+                .to_protocol_address(device_id),
+        }
+        .expect("valid device id");
         ServiceCipher::new(
             self.storage.as_ref().unwrap().aci_or_pni(service_identity),
             service_cfg.unidentified_sender_trust_roots.clone(),
-            Uuid::from(self.self_aci.unwrap()),
-            device_id,
+            local_address,
         )
     }
 }
