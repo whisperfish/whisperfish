@@ -327,12 +327,6 @@ BINS="--bin harbour-whisperfish"
 export TMPDIR=${TMPDIR:-"$PWD/.tmp"}
 mkdir -p $TMPDIR
 
-%if 0%{?taskset:1}
-export TASKSET="taskset %{taskset}"
-%else
-export JOBS="-j 1"
-%endif
-
 %if %{with sccache}
 %ifnarch %ix86
 export RUSTC_WRAPPER=sccache
@@ -342,7 +336,7 @@ sccache -s
 %endif
 %endif
 
-$TASKSET cargo build $JOBS \
+cargo build --jobs %{?jobs:%jobs}%{!?jobs:1} \
           -v \
           --release \
           --no-default-features \

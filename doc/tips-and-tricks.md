@@ -198,61 +198,92 @@ and idiomatic. This can lead to the following scenario:
 
 To prevent this from happening and to save both your ~~nerves~~ time
 and CI from spinning up the pipeline only to get stuck on something
-(non-)trivial, you can use a pre-push hook. With Rust 1.75.0 I use this:
+(non-)trivial, you can use a pre-push hook. With Rust 1.89.0 I use this:
 
-    $ cat .git/hooks/pre-push
-    #!/bin/sh
+```bash
+#!/bin/bash
 
-    fmt() {
-        if [ $2 -eq 0 ]; then
-        echo -e "$1:\tOK"
-        else
-        echo -e "$1:\tFAILED"
-        fi
-    }
+export QMAKE=/usr/bin/qmake
+export TOOLCHAIN="+1.89-x86_64-unknown-linux-gnu"
+export CARGO="$TASKSET cargo --jobs 16 $TOOLCHAIN"
+export RETVAL=0
 
-    SRC=$(git rev-parse --show-toplevel)
+fmt() {
+  if [ "$2" -eq 0 ]; then
+  echo -e "$1:\tOK"
+  else
+  echo -e "$1:\tFAILED"
+  fi
+}
 
-    grepper() {
-        echo -e "$1:\t$(rg "/.*$1" "$2" | wc -l)"
-    }
+check() {
+  RETVAL=$(("$RETVAL + $1"))
+  if [ "$RETVAL" -gt 0 ]; then
+    echo -e "\nErrors were found."
+    exit 1
+  fi
+}
 
-    echo -e "-----\nRunning tests...\n-----\n"
-    cargo test --color never -- --color never
-    E_TEST=$?
+SRC=$(git rev-parse --show-toplevel)
 
-    echo -e "-----\nRunning format...\n-----\n"
-    cargo fmt --check -- --color never
-    E_FMT=$?
+grepper() {
+    echo -e "$1:\t$(rg "/.*$1" "$2" | wc -l)"
+}
 
-    echo -e "-----\nRunning clippy...\n-----\n"
-    cargo clippy --color never --no-deps --all-targets -- -D warnings -A clippy::useless_transmute -A clippy::too-many-arguments
-    E_CLIPPY=$?
+RETVAL=0
 
-    echo -e "-----\nRunning qmllint...\n-----\n"
-    find qml/ -name "*.qml" -print0 | xargs -0 qmllint
-    E_QML=$?
+echo -e "-----\nRunning qmllint...\n-----\n"
+find qml/ -name "*.qml" -print0 | xargs -0 qmllint
+E_QML=$?
+check $E_QML
 
-    let "RETVAL = $E_TEST + $E_FMT + $E_CLIPPY + $E_QML"
+echo -e "-----\nRunning lupdate...\n-----\n"
+LOG=$(mktemp)
+TSDIR=$(mktemp -d)
+cp translations/*.ts "$TSDIR"
+lupdate qml/ -ts translations/*.ts 2>&1 | tee "$LOG"
+mv "$TSDIR"/*.ts translations/
+rmdir "$TSDIR"
+sed -i -E '/^Scanning|^Updating|^    Found|^Removed plural forms|^If this sounds wrong|^    Same-text heuristic provided|^    Kept [0-9]+ obsolete|^lupdate warning: Message with id .* has no source/d' "$LOG"
+E_TR=$(wc -l < "$LOG")
+E_TR=$(("$E_TR"))
+rm "$LOG"
+check $E_TR
 
-    echo ""
-    grepper FIXME $SRC
-    grepper TODO $SRC
-    grepper XXX $SRC
-    echo ""
-    fmt QML $E_QML
-    fmt Tests $E_TEST
-    fmt Format $E_FMT
-    fmt Clippy $E_CLIPPY
-    echo ""
+echo -e "-----\nRunning format...\n-----\n"
+$CARGO fmt --check -- --color never
+E_FMT=$?
+check $E_FMT
 
-    exit $RETVAL
+echo -e "-----\nRunning tests...\n-----\n"
+$CARGO test --color never -- --color never
+E_TEST=$?
+check $E_TEST
 
-Note that the script requires qmllint and ripgrep. Modify to taste!
+echo -e "-----\nRunning clippy...\n-----\n"
+$CARGO clippy --color never --no-deps --all-targets -- -D warnings -A clippy::useless_transmute -A clippy::too-many-arguments -A clippy::invalid_regex -A dead_code
+E_CLIPPY=$?
+check $E_CLIPPY
 
-For convenience, I also have a separate script to make
-`cargo clippy` and `cargo fmt` fix the found issues:
+echo -e "-----\nRunning shellcheck...\n-----\n"
+find . -name "*.sh" | grep -vE "^\./vendor/|^\./target/" | xargs -n1 shellcheck --severity=warning
+E_SH=0
+check $E_SH
 
-   $ cat fix.sh
-    #!/bin/sh
-    cargo fmt && cargo clippy --fix --allow-dirty --allow-staged --all-targets -- -D warnings -A clippy::useless-transmute -A clippy::too-many-arguments
+echo ""
+grepper FIXME "$SRC"
+grepper TODO "$SRC"
+grepper XXX "$SRC"
+echo ""
+fmt QML $E_QML
+fmt qsTrId $E_TR
+fmt Tests $E_TEST
+fmt Format $E_FMT
+fmt Clippy $E_CLIPPY
+fmt Shell $E_SH
+echo ""
+
+exit $RETVAL
+```
+
+Note that the script requires qmllint, shellcheck, ripgrep and maybe some other stuff as well. Modify to taste!
