@@ -1,6 +1,7 @@
 use super::*;
 use crate::worker::profile_refresh::OutdatedProfile;
 use actix::prelude::*;
+use anyhow::Context;
 use libsignal_service::profile_cipher::ProfileCipher;
 use libsignal_service::push_service::SignalServiceProfile;
 use tokio::io::AsyncWriteExt;
@@ -119,11 +120,11 @@ impl ClientActor {
         let storage = self.storage.clone().unwrap();
         let recipient = storage
             .fetch_recipient(&recipient_aci.into())
-            .ok_or_else(|| {
-                anyhow::anyhow!("could not find recipient for which we fetched a profile")
-            })?;
+            .context("could not find recipient for which we fetched a profile")?;
         let key = &recipient.profile_key;
-        let service_address = recipient.to_service_address().unwrap();
+        let service_address = recipient
+            .to_service_address()
+            .context("profile recipient has valid service address")?;
 
         if let Some(profile) = profile {
             let cipher = if let Some(key) = key {
@@ -170,8 +171,7 @@ impl ClientActor {
             ctx.notify(ProfileCreated(profile_data));
         } else {
             tracing::trace!(
-                "Recipient {} doesn't have a profile on the server, assuming unregistered user",
-                recipient.e164_or_address()
+                "Recipient {service_address:?} doesn't have a profile on the server, assuming unregistered user",
             );
 
             storage.mark_recipient_registered(service_address, false);
