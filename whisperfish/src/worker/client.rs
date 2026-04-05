@@ -902,10 +902,8 @@ impl ClientActor {
                 "Received a sticker, but they are currently unsupported. Please upvote issue #14."
             );
             tracing::trace!("{:?}", sticker);
-            Some(format!(
-                "[Whisperfish] Received a sticker: {}",
-                sticker.emoji.as_ref().unwrap()
-            ))
+            message_type = Some(MessageType::Sticker);
+            Some(sticker.emoji.as_ref().unwrap().to_owned())
         } else if msg.payment.is_some() {
             // TODO: Save some info about payments?
             message_type = Some(MessageType::Payment);
@@ -914,6 +912,7 @@ impl ClientActor {
             message_type = Some(MessageType::GroupCallUpdate);
             Some("".into())
         } else if !msg.contact.is_empty() {
+            message_type = Some(MessageType::Contact);
             Some("".into())
         }
         // TODO: Add more message types
