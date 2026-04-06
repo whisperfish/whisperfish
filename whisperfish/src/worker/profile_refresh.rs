@@ -239,7 +239,7 @@ impl Handler<FetchProfile> for ProfileUpdater {
 }
 
 impl Handler<FetchAvatar> for ProfileUpdater {
-    type Result = ();
+    type Result = ResponseActFuture<Self, ()>;
 
     fn handle(
         &mut self,
@@ -248,10 +248,11 @@ impl Handler<FetchAvatar> for ProfileUpdater {
             profile_key,
             avatar_attachment_path,
         }: FetchAvatar,
-        ctx: &mut Self::Context,
+        _ctx: &mut Self::Context,
     ) -> Self::Result {
         let mut service = self.unauthenticated_service();
-        ctx.spawn(
+        let span = tracing::info_span!("fetch avatar", recipient=%recipient_uuid, avatar=%avatar_attachment_path);
+        Box::pin(
             async move {
                 let settings = crate::config::SettingsBridge::default();
                 let avatar_dir = settings.get_string("avatar_dir");
@@ -278,13 +279,15 @@ impl Handler<FetchAvatar> for ProfileUpdater {
 
                 Ok(())
             }
+            .instrument(span.clone())
             .into_actor(self)
-            .map(|res: anyhow::Result<_>, _act, _ctx| {
+            .map(move |res: anyhow::Result<_>, _act, _ctx| {
+                let _span = span.entered();
                 if let Err(e) = res {
                     tracing::error!("Error fetching profile avatar: {}", e);
                 }
             }),
-        );
+        )
     }
 }
 
@@ -465,6 +468,7 @@ impl ProfileUpdater {
         tracing::info!("Decrypted profile {:?}", profile_decrypted);
 
         if let Some(avatar_attachment_path) = profile_decrypted.avatar.clone() {
+            tracing::debug!("scheduling avatar fetch");
             ctx.notify(FetchAvatar {
                 recipient_uuid: recipient_aci.into(),
                 profile_key,
