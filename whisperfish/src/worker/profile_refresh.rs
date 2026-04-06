@@ -3,6 +3,7 @@ use actix::prelude::*;
 use anyhow::Context;
 use chrono::prelude::*;
 use diesel::prelude::*;
+use futures::AsyncReadExt;
 use libsignal_service::{
     configuration::SignalServers, prelude::*, profile_cipher::ProfileCipher, protocol::Aci,
     push_service::SignalServiceProfile,
@@ -11,6 +12,7 @@ use std::{
     collections::{hash_map, HashMap},
     time::Duration,
 };
+use tokio::io::AsyncWriteExt;
 use uuid::Uuid;
 use whisperfish_store::{orm::UnidentifiedAccessMode, StoreProfile};
 use zkgroup::profiles::ProfileKey;
@@ -70,6 +72,14 @@ struct ScheduledWakeUp;
 // TODO: maybe return a more processed variant.
 #[rtype(result = "anyhow::Result<Option<SignalServiceProfile>>")]
 pub struct FetchProfile(pub Aci, pub Option<ProfileKey>);
+
+#[derive(actix::Message)]
+#[rtype(result = "()")]
+struct FetchAvatar {
+    recipient_uuid: Uuid,
+    profile_key: zkgroup::profiles::ProfileKey,
+    avatar_attachment_path: String,
+}
 
 pub struct ProfileUpdater {
     storage: Storage,
@@ -138,14 +148,18 @@ impl actix::Handler<ScheduledWakeUp> for ProfileUpdater {
                 // We execute the send's in a closure (as opposed to try_send),
                 // such that we can wait for the commands to return before scheduling our next
                 // action.
+                let mut successes = 0;
                 for fetch_command in fetch_commands {
-                    let _ = addr.send(fetch_command).await;
+                    if addr.send(fetch_command).await.is_ok() {
+                        successes += 1;
+                    }
                 }
+                successes
             }
             .into_actor(self)
-            .map(|(), act, ctx| {
+            .map(|successes, act, ctx| {
                 // Done: update schedule
-                tracing::debug!("ProfileUpdater scheduled wake finished");
+                tracing::debug!(updates=%successes, "ProfileUpdater scheduled wake finished");
 
                 // Wait at least five minutes for the next batch
                 let earliest_wake = Utc::now() + REYIELD_DELAY;
@@ -185,6 +199,56 @@ impl Handler<FetchProfile> for ProfileUpdater {
     }
 }
 
+impl Handler<FetchAvatar> for ProfileUpdater {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        FetchAvatar {
+            recipient_uuid,
+            profile_key,
+            avatar_attachment_path,
+        }: FetchAvatar,
+        ctx: &mut Self::Context,
+    ) -> Self::Result {
+        let mut service = self.unauthenticated_service();
+        ctx.spawn(
+            async move {
+                let settings = crate::config::SettingsBridge::default();
+                let avatar_dir = settings.get_string("avatar_dir");
+                let avatar_dir = std::path::Path::new(&avatar_dir);
+                if !avatar_dir.exists() {
+                    std::fs::create_dir(avatar_dir)?;
+                }
+                let avatar_path = avatar_dir.join(recipient_uuid.to_string());
+
+                let mut avatar = service
+                    .retrieve_profile_avatar(&avatar_attachment_path)
+                    .await?;
+                // 10MB is what Signal Android allocates
+                let mut contents = Vec::with_capacity(10 * 1024 * 1024);
+                let len = avatar.read_to_end(&mut contents).await?;
+                contents.truncate(len);
+
+                let cipher = ProfileCipher::new(profile_key);
+                let avatar_bytes = cipher.decrypt_avatar(&contents)?;
+
+                let mut f = tokio::fs::File::create(avatar_path).await?;
+                f.write_all(&avatar_bytes).await?;
+                tracing::info!("Profile avatar saved!");
+
+                Ok(())
+            }
+            .into_actor(self)
+            .map(|res: anyhow::Result<_>, _act, _ctx| {
+                if let Err(e) = res {
+                    tracing::error!("Error fetching profile avatar: {}", e);
+                }
+            }),
+        );
+    }
+}
+
 impl ProfileUpdater {
     pub fn new(storage: Storage, local_aci: Aci, credentials: ServiceCredentials) -> Self {
         Self {
@@ -215,7 +279,6 @@ impl ProfileUpdater {
         )
     }
 
-    #[allow(unused)]
     fn unauthenticated_service(&self) -> PushService {
         let service_cfg = self.service_cfg();
         PushService::new(service_cfg, None, crate::user_agent())
@@ -275,12 +338,12 @@ impl ProfileUpdater {
     }
 
     #[tracing::instrument(
-        skip(self, _ctx, profile),
+        skip(self, ctx, profile),
         fields(profile = ?profile.as_ref().map(debug_signal_service_profile))
     )]
     fn handle_profile_fetched(
         &mut self,
-        _ctx: &mut <Self as Actor>::Context,
+        ctx: &mut <Self as Actor>::Context,
         recipient_aci: Aci,
         profile: Result<SignalServiceProfile, ServiceError>,
     ) -> anyhow::Result<Option<SignalServiceProfile>> {
@@ -345,18 +408,27 @@ impl ProfileUpdater {
             },
         };
 
-        let cipher = if let Some(key) = key {
+        let profile_key = if let Some(key) = key {
             let mut bytes = [0u8; 32];
             bytes.copy_from_slice(key);
-            ProfileCipher::new(zkgroup::profiles::ProfileKey::create(bytes))
+            zkgroup::profiles::ProfileKey::create(bytes)
         } else {
             anyhow::bail!("Fetched a profile for a contact that did not share the profile key.");
         };
+        let cipher = ProfileCipher::new(profile_key);
 
         let unrestricted_unidentified_access = profile.unrestricted_unidentified_access;
         let profile_decrypted = cipher.decrypt(profile.clone())?;
 
         tracing::info!("Decrypted profile {:?}", profile_decrypted);
+
+        if let Some(avatar_attachment_path) = profile_decrypted.avatar.clone() {
+            ctx.notify(FetchAvatar {
+                recipient_uuid: recipient_aci.into(),
+                profile_key,
+                avatar_attachment_path,
+            });
+        }
 
         let profile_data = StoreProfile {
             given_name: profile_decrypted
@@ -385,9 +457,6 @@ impl ProfileUpdater {
         storage.mark_recipient_registered(service_address, true);
 
         storage.save_profile(profile_data);
-
-        // TODO: update avatar. Previously:
-        // ctx.notify(ProfileCreated(profile_data));
 
         Ok(Some(profile))
     }
