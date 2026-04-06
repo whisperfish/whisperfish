@@ -711,11 +711,13 @@ impl<O: Observable> Storage<O> {
             .fetch_session_by_id(message.session_id)
             .context("No such session")?;
         let db_message_sender_aci = self
-            .fetch_recipient_by_id(
+            .fetch_recipient_by_id(if !message.is_outbound {
                 message
                     .sender_recipient_id
-                    .context("reaction target message in db has sender id")?,
-            )
+                    .context("reaction target message in db has sender id")?
+            } else {
+                self.fetch_self_recipient_id()
+            })
             .context("reaction target recipient in db")?;
 
         // whisperfish_store::store: uuid != reaction.target_author_uuid (9bad15b5-dca3-418a-9949-7ca357b7fe47 != 9d4428ab-9ce2-4f7b-88f5-cf249ef692ce). Continuing, but this is a bug or attack.
