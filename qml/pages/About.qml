@@ -312,6 +312,7 @@ Page {
                     "Antoine BEAUJOT" + "\n" +
                     "Eric" + "\n" +
                     "Thibaut Vandervelden" + "\n" +
+                    "Thomas Rouyer" + "\n" +
                     "carlosgonz"
                 }
             }
