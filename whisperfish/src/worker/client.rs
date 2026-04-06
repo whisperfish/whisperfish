@@ -996,13 +996,14 @@ impl ClientActor {
             alt_body = Some("".into());
         }
 
-        let body = msg.body.clone().or(alt_body);
-        let text = if let Some(body) = body {
-            body
-        } else {
-            tracing::debug!("Message without (alt) body, not inserting");
+        let Some(body) = msg.body.as_ref().or(alt_body.as_ref()) else {
+            tracing::debug!("Message without body, nothing to insert.");
             return;
         };
+
+        if msg.body.is_some() && message_type.is_some() {
+            tracing::warn!("Service message contains body text. Saving anyway.");
+        }
 
         let is_unidentified = if let (Some(sent), Some(source_addr)) = (&sync_sent, &source_addr) {
             let source_service_id = source_addr.service_id_string();
@@ -1039,7 +1040,7 @@ impl ClientActor {
 
         let new_message = crate::store::NewMessage {
             source_addr,
-            text,
+            text: body.to_owned(),
             flags,
             outgoing: is_sync_sent,
             is_unidentified,
