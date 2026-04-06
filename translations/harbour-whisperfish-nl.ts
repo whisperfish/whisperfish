@@ -510,13 +510,13 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="59"/>
         <source>Primary device</source>
         <extracomment>The nameless primary device in linked devices list</extracomment>
-        <translation type="unfinished">Primair apparaat</translation>
+        <translation>Primair apparaat</translation>
     </message>
     <message id="whisperfish-secondary-device-name">
         <location filename="../qml/pages/LinkedDevices.qml" line="63"/>
         <source>Device %1</source>
         <extracomment>A nameless secondary device in linked devices list</extracomment>
-        <translation type="unfinished">Apparaat %1</translation>
+        <translation>Apparaat %1</translation>
     </message>
     <message id="whisperfish-device-link-date">
         <location filename="../qml/pages/LinkedDevices.qml" line="84"/>
@@ -2512,13 +2512,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="319"/>
         <source>%1 sent you a sticker: %2</source>
         <extracomment>Message with a sticker, %1 is a name, %2 is an emoji</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 heeft je een sticker gestuurd: %2</translation>
     </message>
     <message id="whisperfish-service-message-contact">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="323"/>
         <source>Contact cards can&apos;t yet be supported</source>
         <extracomment>Message with a contact card</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Visitekaartjes worden nog niet ondersteund</translation>
     </message>
     <message id="whisperfish-service-message-not-supported">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="329"/>
