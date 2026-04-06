@@ -107,6 +107,11 @@ impl actix::Handler<ScheduledWakeUp> for ProfileUpdater {
     type Result = ResponseActFuture<Self, ()>;
 
     fn handle(&mut self, _: ScheduledWakeUp, ctx: &mut Self::Context) -> Self::Result {
+        // Cancel any remaining wake-ups.
+        if let Some(handle) = self.next_wake_handle.take() {
+            ctx.cancel_future(handle);
+        }
+
         self.update_ignore_set();
 
         let storage = self.storage.clone();
