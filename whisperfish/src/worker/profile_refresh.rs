@@ -174,61 +174,12 @@ impl Handler<FetchProfile> for ProfileUpdater {
         // PushServiceSocket::retrieveProfile(SignalServiceId target, @Nullable SealedSenderAccess sealedSenderAccess, Locale locale)
         let mut service = self.authenticated_service();
 
-        // If our own Profile is outdated, schedule a profile refresh
-        let is_own_profile_refresh = self.local_aci == aci;
-
         Box::pin(
             async move { (aci, service.retrieve_profile_by_id(aci, key).await) }
                 .into_actor(self)
                 .map(move |(recipient_aci, profile), act, ctx| -> anyhow::Result<Option<SignalServiceProfile>>{
                     let _span = tracing::info_span!("processing profile fetch", recipient=%Uuid::from(recipient_aci)).entered();
-                    match profile {
-                        Ok(profile) => {
-                            act.handle_profile_fetched(ctx, recipient_aci, Some(profile.clone()))?;
-                            Ok(Some(profile))
-                        },
-                        Err(e) => match e {
-                            ServiceError::NotFoundError => {
-                                if !is_own_profile_refresh {
-                                    // Set the profile to None
-                                    act.handle_profile_fetched(ctx, recipient_aci, None)?;
-                                }
-
-                                Ok(None)
-                            }
-                            ServiceError::Unauthorized => {
-                                // Set the profile to None
-                                tracing::warn!("profile fetch was unauthorized");
-                                if !is_own_profile_refresh {
-                                    act.handle_profile_fetched(ctx, recipient_aci, None)?;
-                                }
-
-                                Err(e.into())
-                            }
-                            ServiceError::RateLimitExceeded { retry_after: Some(retry_after) } => {
-                                tracing::warn!(%retry_after, "rate limit exceeded, stopping profile refresh process");
-                                act.back_off_until = Utc::now() + retry_after;
-
-                                Err(e.into())
-                            }
-                            ServiceError::RateLimitExceeded { retry_after: None } => {
-                                tracing::error!("rate limit exceeded, stopping profile refresh process, without Retry-After header.");
-                                act.back_off_until = Utc::now() + REYIELD_DELAY;
-
-                                Err(e.into())
-                            }
-                            _ => {
-                                tracing::error!(error=%e, "error refreshing outdated profile");
-                                // We mark the profile as fetched *anyway* in order to avoid rate
-                                // limiting errors.
-                                if !is_own_profile_refresh {
-                                    act.handle_profile_fetched(ctx, recipient_aci, None)?;
-                                }
-
-                                Err(e).context("unknown profile refresh error")
-                            }
-                        },
-                    }
+                    act.handle_profile_fetched(ctx, recipient_aci, profile)
                 }),
         )
     }
@@ -325,14 +276,14 @@ impl ProfileUpdater {
 
     #[tracing::instrument(
         skip(self, _ctx, profile),
-        fields(profile = profile.as_ref().map(debug_signal_service_profile))
+        fields(profile = ?profile.as_ref().map(debug_signal_service_profile))
     )]
     fn handle_profile_fetched(
         &mut self,
         _ctx: &mut <Self as Actor>::Context,
         recipient_aci: Aci,
-        profile: Option<SignalServiceProfile>,
-    ) -> anyhow::Result<()> {
+        profile: Result<SignalServiceProfile, ServiceError>,
+    ) -> anyhow::Result<Option<SignalServiceProfile>> {
         let storage = self.storage.clone();
         let recipient = storage
             .fetch_recipient(&recipient_aci.into())
@@ -342,65 +293,102 @@ impl ProfileUpdater {
             .to_service_address()
             .context("profile recipient has valid service address")?;
 
-        if let Some(profile) = profile {
-            let cipher = if let Some(key) = key {
-                let mut bytes = [0u8; 32];
-                bytes.copy_from_slice(key);
-                ProfileCipher::new(zkgroup::profiles::ProfileKey::create(bytes))
-            } else {
-                anyhow::bail!(
-                    "Fetched a profile for a contact that did not share the profile key."
-                );
-            };
+        let is_own_profile_refresh = self.local_aci == recipient_aci;
 
-            let unrestricted_unidentified_access = profile.unrestricted_unidentified_access;
-            let profile_decrypted = cipher.decrypt(profile)?;
+        let profile = match profile {
+            Ok(profile) => profile,
+            Err(e) => match e {
+                ServiceError::NotFoundError => {
+                    if !is_own_profile_refresh {
+                        tracing::trace!(
+                            "Recipient {service_address:?} is not a registered Signal user",
+                        );
+                        storage.mark_recipient_registered(service_address, false);
+                    }
 
-            tracing::info!("Decrypted profile {:?}", profile_decrypted);
+                    return Ok(None);
+                }
+                ServiceError::Unauthorized => {
+                    // Set the profile to None
+                    tracing::warn!("profile fetch was unauthorized");
+                    if !is_own_profile_refresh {
+                        storage.remove_profile(recipient_aci.into());
+                    }
 
-            let profile_data = StoreProfile {
-                given_name: profile_decrypted
-                    .name
-                    .as_ref()
-                    .map(|x| x.given_name.to_owned()),
-                family_name: profile_decrypted
-                    .name
-                    .as_ref()
-                    .and_then(|x| x.family_name.to_owned()),
-                joined_name: profile_decrypted.name.as_ref().map(|x| x.to_string()),
-                about_text: profile_decrypted.about,
-                emoji: profile_decrypted.about_emoji,
-                unidentified: if unrestricted_unidentified_access {
-                    UnidentifiedAccessMode::Unrestricted
-                } else {
-                    recipient.unidentified_access_mode
-                },
-                avatar: profile_decrypted.avatar,
-                last_fetch: Utc::now().naive_utc(),
-                r_uuid: recipient.uuid.unwrap(),
-                r_id: recipient.id,
-                r_key: recipient.profile_key,
-            };
+                    return Err(e.into());
+                }
+                ServiceError::RateLimitExceeded {
+                    retry_after: Some(retry_after),
+                } => {
+                    tracing::warn!(%retry_after, "rate limit exceeded, stopping profile refresh process");
+                    self.back_off_until = Utc::now() + retry_after;
 
-            storage.mark_recipient_registered(service_address, true);
+                    return Err(e.into());
+                }
+                ServiceError::RateLimitExceeded { retry_after: None } => {
+                    tracing::error!("rate limit exceeded, stopping profile refresh process, without Retry-After header.");
+                    self.back_off_until = Utc::now() + REYIELD_DELAY;
 
-            storage.save_profile(profile_data);
+                    return Err(e.into());
+                }
+                _ => {
+                    tracing::error!(error=%e, "error refreshing outdated profile");
+                    // We mark the profile as fetched *anyway* in order to avoid rate
+                    // limiting errors.
+                    if !is_own_profile_refresh {
+                        // XXX Should we instead *just* update the time?
+                        storage.remove_profile(recipient_aci.into());
+                    }
 
-            // TODO: update avatar. Previously:
-            // ctx.notify(ProfileCreated(profile_data));
+                    return Err(e).context("unknown profile refresh error");
+                }
+            },
+        };
+
+        let cipher = if let Some(key) = key {
+            let mut bytes = [0u8; 32];
+            bytes.copy_from_slice(key);
+            ProfileCipher::new(zkgroup::profiles::ProfileKey::create(bytes))
         } else {
-            tracing::trace!(
-                "Recipient {service_address:?} doesn't have a profile on the server, assuming unregistered user",
-            );
+            anyhow::bail!("Fetched a profile for a contact that did not share the profile key.");
+        };
 
-            storage.mark_recipient_registered(service_address, false);
+        let unrestricted_unidentified_access = profile.unrestricted_unidentified_access;
+        let profile_decrypted = cipher.decrypt(profile.clone())?;
 
-            // If updating self, invalidate the cache
-            if recipient_aci == self.local_aci {
-                storage.invalidate_self_recipient();
-            }
-        }
+        tracing::info!("Decrypted profile {:?}", profile_decrypted);
 
-        Ok(())
+        let profile_data = StoreProfile {
+            given_name: profile_decrypted
+                .name
+                .as_ref()
+                .map(|x| x.given_name.to_owned()),
+            family_name: profile_decrypted
+                .name
+                .as_ref()
+                .and_then(|x| x.family_name.to_owned()),
+            joined_name: profile_decrypted.name.as_ref().map(|x| x.to_string()),
+            about_text: profile_decrypted.about,
+            emoji: profile_decrypted.about_emoji,
+            unidentified: if unrestricted_unidentified_access {
+                UnidentifiedAccessMode::Unrestricted
+            } else {
+                recipient.unidentified_access_mode
+            },
+            avatar: profile_decrypted.avatar,
+            last_fetch: Utc::now().naive_utc(),
+            r_uuid: recipient.uuid.unwrap(),
+            r_id: recipient.id,
+            r_key: recipient.profile_key,
+        };
+
+        storage.mark_recipient_registered(service_address, true);
+
+        storage.save_profile(profile_data);
+
+        // TODO: update avatar. Previously:
+        // ctx.notify(ProfileCreated(profile_data));
+
+        Ok(Some(profile))
     }
 }
