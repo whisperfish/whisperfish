@@ -885,13 +885,6 @@ impl ClientActor {
                 }
             }
             None
-        } else if let Some(GroupContextV2 {
-            group_change: Some(ref _group_change),
-            ..
-        }) = msg.group_v2
-        {
-            message_type = Some(MessageType::GroupChange);
-            None
         } else if !msg.attachments.is_empty() {
             tracing::trace!("Received an attachment without body, replacing with empty text.");
             Some("".into())
@@ -916,6 +909,60 @@ impl ClientActor {
         // TODO: Add more message types
         else {
             None
+        };
+
+        let session = if let Some(group_v2) = msg.group_v2.as_ref() {
+            let Some(master_key) = group_v2.master_key.as_ref() else {
+                tracing::error!("Group message without master key");
+                return;
+            };
+            if master_key.len() != zkgroup::GROUP_MASTER_KEY_LEN {
+                tracing::error!("Group message with invalid master key");
+                return;
+            }
+            let mut key_stack = [0u8; zkgroup::GROUP_MASTER_KEY_LEN];
+            key_stack.clone_from_slice(master_key);
+            let key = GroupMasterKey::new(key_stack);
+
+            let store_v2 = crate::store::GroupV2 {
+                secret: GroupSecretParams::derive_from_master_key(key),
+                revision: group_v2.revision(),
+            };
+
+            let group_existed = storage.group_v2_exists(&store_v2);
+            let session = storage.fetch_or_insert_session_by_group_v2(&store_v2);
+
+            if group_existed {
+                if group_v2.group_change.is_some() {
+                    if let Some(t) = message_type.as_ref() {
+                        tracing::warn!(
+                            "Overwriting message type from {t:?} to {:?}",
+                            MessageType::GroupChange
+                        );
+                    }
+                    message_type = Some(MessageType::GroupChange);
+                    ctx.notify(GroupV2Update(group_v2.clone(), session.clone()));
+                }
+            } else {
+                tracing::info!(
+                    "We don't know this group. We'll request it's structure from the server."
+                );
+                ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
+            }
+            session
+        } else {
+            let recipient = storage.merge_and_fetch_recipient(
+                source_phonenumber.clone(),
+                source_addr.map(Aci::try_from).transpose().ok().flatten(),
+                source_addr.map(Pni::try_from).transpose().ok().flatten(),
+                TrustLevel::Certain,
+            );
+            let mut session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
+            storage.update_expiration_timer(&session, msg.expire_timer, msg.expire_timer_version);
+            session.expire_timer_version = msg.expire_timer_version() as i32;
+            session.expiring_message_timeout =
+                msg.expire_timer.map(|v| Duration::from_secs(v as u64));
+            session
         };
 
         if let Some(msg_delete) = &msg.delete {
@@ -944,36 +991,6 @@ impl ClientActor {
                 );
             }
         }
-
-        let group = if let Some(group) = msg.group_v2.as_ref() {
-            let mut key_stack = [0u8; zkgroup::GROUP_MASTER_KEY_LEN];
-            key_stack.clone_from_slice(group.master_key.as_ref().expect("group message with key"));
-            let key = GroupMasterKey::new(key_stack);
-            let secret = GroupSecretParams::derive_from_master_key(key);
-
-            let store_v2 = crate::store::GroupV2 {
-                secret,
-                revision: group.revision(),
-            };
-
-            let existing_group = storage.group_v2_exists(&store_v2);
-            let session = storage.fetch_or_insert_session_by_group_v2(&store_v2);
-
-            if existing_group {
-                if group.group_change.is_some() {
-                    ctx.notify(GroupV2Update(group.clone(), session));
-                }
-            } else {
-                tracing::info!(
-                    "We don't know this group. We'll request it's structure from the server."
-                );
-                ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
-            }
-
-            Some(storage.fetch_or_insert_session_by_group_v2(&store_v2))
-        } else {
-            None
-        };
 
         let body = msg.body.clone().or(alt_body);
         let text = if let Some(body) = body {
@@ -1005,23 +1022,6 @@ impl ClientActor {
         }
 
         let body_ranges = crate::store::body_ranges::serialize(&msg.body_ranges);
-
-        let mut session = group.unwrap_or_else(|| {
-            storage.fetch_or_insert_session_by_recipient_id(
-                sender_recipient
-                    .as_ref()
-                    .expect("sender recipient found meanwhile")
-                    .id,
-            )
-        });
-
-        // Group expiry timer handled via GroupChanges
-        if session.is_dm() {
-            storage.update_expiration_timer(&session, msg.expire_timer, msg.expire_timer_version);
-            session.expire_timer_version = msg.expire_timer_version() as i32;
-            session.expiring_message_timeout =
-                msg.expire_timer.map(|v| Duration::from_secs(v as u64));
-        }
 
         if message_type == Some(MessageType::GroupChange) {
             tracing::warn!("Inserting a generic GroupChange message after handling it. This should not happen.");
