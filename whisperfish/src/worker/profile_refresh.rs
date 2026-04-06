@@ -47,9 +47,17 @@ macro_rules! recipients_filtered {
             .cloned()
             .map(|aci| Uuid::from(aci).to_string());
 
+        // We're looking for recipients such that:
+        // 1. The profile key *is known*; AND
+        // 2. Their ACI *is known*; AND
+        // 3. either:
+        //    a. Their profile has never been fetched
+        //    b. The last time the profile was fetched is more than LAST_PROFILE_FETCH_THRESHOLD
+        //       ago AND the user is a known registered user.
+        //    ; AND
+        // 4. The ACI is not in the ignore map
         recipients
             .filter(
-                // Keep this filter in sync with the one above
                 profile_key
                     .is_not_null()
                     .and(uuid.is_not_null())
