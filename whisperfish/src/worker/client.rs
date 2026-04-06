@@ -550,6 +550,7 @@ impl ClientActor {
             ProfileUpdater::new(
                 self.storage.clone().expect("initialized storage"),
                 self.self_aci.expect("self-aci set"),
+                self.credentials.clone().expect("credentials set"),
             )
             .start()
         })

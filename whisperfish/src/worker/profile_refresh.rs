@@ -76,6 +76,7 @@ pub struct ProfileUpdater {
     back_off_until: DateTime<Utc>,
 
     local_aci: Aci,
+    credentials: ServiceCredentials,
 
     // TODO: store the ignore reason
     ignore_map: HashMap<Aci, DateTime<Utc>>,
@@ -171,7 +172,7 @@ impl Handler<FetchProfile> for ProfileUpdater {
         );
         // XXX: this should actually be unauthenticated and use sealed sender access:
         // PushServiceSocket::retrieveProfile(SignalServiceId target, @Nullable SealedSenderAccess sealedSenderAccess, Locale locale)
-        let mut service = self.unauthenticated_service();
+        let mut service = self.authenticated_service();
 
         // If our own Profile is outdated, schedule a profile refresh
         let is_own_profile_refresh = self.local_aci == aci;
@@ -234,12 +235,13 @@ impl Handler<FetchProfile> for ProfileUpdater {
 }
 
 impl ProfileUpdater {
-    pub fn new(storage: Storage, local_aci: Aci) -> Self {
+    pub fn new(storage: Storage, local_aci: Aci, credentials: ServiceCredentials) -> Self {
         Self {
             storage,
             back_off_until: Utc::now() + REYIELD_DELAY,
 
             local_aci,
+            credentials,
 
             ignore_map: HashMap::new(),
 
@@ -253,6 +255,16 @@ impl ProfileUpdater {
     }
 
     // XXX somehow dedupe this with the client ector.
+    fn authenticated_service(&self) -> PushService {
+        let service_cfg = self.service_cfg();
+        PushService::new(
+            service_cfg,
+            Some(self.credentials.clone()),
+            crate::user_agent(),
+        )
+    }
+
+    #[allow(unused)]
     fn unauthenticated_service(&self) -> PushService {
         let service_cfg = self.service_cfg();
         PushService::new(service_cfg, None, crate::user_agent())
