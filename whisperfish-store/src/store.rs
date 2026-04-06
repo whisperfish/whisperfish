@@ -1248,6 +1248,40 @@ impl<O: Observable> Storage<O> {
         )
     }
 
+    #[tracing::instrument(skip(self))]
+    pub fn remove_profile(&self, recipient_uuid: Uuid) {
+        use crate::store::schema::recipients::dsl::*;
+        use diesel::prelude::*;
+
+        // TODO: maybe fetch the avatar and remove from storage.
+        if let Some(changed_id) = diesel::update(recipients)
+            .set((
+                profile_given_name.eq(None::<&str>),
+                profile_family_name.eq(None::<&str>),
+                profile_joined_name.eq(None::<&str>),
+                about.eq(None::<&str>),
+                about_emoji.eq(None::<&str>),
+                unidentified_access_mode.eq(UnidentifiedAccessMode::default()),
+                signal_profile_avatar.eq(None::<&str>),
+                last_profile_fetch.eq(Utc::now().naive_utc()),
+            ))
+            .filter(uuid.nullable().eq(&recipient_uuid.to_string()))
+            .returning(id)
+            .get_result::<i32>(&mut *self.db())
+            .optional()
+            .expect("updating profile")
+        {
+            // If updating self, invalidate the cache
+            if Some(recipient_uuid) == self.config.get_aci() {
+                self.invalidate_self_recipient();
+            }
+            self.observe_update(schema::recipients::table, changed_id);
+            tracing::info!("Profile for {} removed", recipient_uuid);
+        } else {
+            tracing::error!("no change");
+        }
+    }
+
     /// Save profile data to db and trigger GUI update.
     /// Assumes the avatar image has been saved/deleted in advance.
     /// Assumes that the recipient exists. Compares but doesn't update ACI.
