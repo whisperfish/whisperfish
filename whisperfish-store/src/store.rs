@@ -1249,6 +1249,30 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
+    pub fn mark_profile_updated(&self, recipient_uuid: Uuid) {
+        use crate::store::schema::recipients::dsl::*;
+        use diesel::prelude::*;
+
+        if let Some(changed_id) = diesel::update(recipients)
+            .set((last_profile_fetch.eq(Utc::now().naive_utc()),))
+            .filter(uuid.nullable().eq(&recipient_uuid.to_string()))
+            .returning(id)
+            .get_result::<i32>(&mut *self.db())
+            .optional()
+            .expect("updating profile")
+        {
+            // If updating self, invalidate the cache
+            if Some(recipient_uuid) == self.config.get_aci() {
+                self.invalidate_self_recipient();
+            }
+            self.observe_update(schema::recipients::table, changed_id);
+            tracing::info!("Profile for {} marked up-to-date", recipient_uuid);
+        } else {
+            tracing::error!("no change");
+        }
+    }
+
+    #[tracing::instrument(skip(self))]
     pub fn remove_profile(&self, recipient_uuid: Uuid) {
         use crate::store::schema::recipients::dsl::*;
         use diesel::prelude::*;

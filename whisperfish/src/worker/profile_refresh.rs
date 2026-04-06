@@ -409,6 +409,7 @@ impl ProfileUpdater {
                         storage.mark_recipient_registered(service_address, false);
                     }
 
+                    storage.mark_profile_updated(recipient_aci.into());
                     tracing::debug!("profile not found");
                     return Ok(None);
                 }
