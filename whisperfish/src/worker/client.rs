@@ -1561,7 +1561,11 @@ impl ClientActor {
             }
             ContentBody::TypingMessage(typing) => {
                 if self.settings.get_enable_typing_indicators() {
-                    tracing::info!("{:?} is typing.", metadata.sender.service_id_string());
+                    let svc_str = metadata.sender.service_id_string();
+                    match typing.action() {
+                        Action::Started => tracing::info!("{svc_str} is typing"),
+                        Action::Stopped => tracing::info!("{svc_str} stopped typing"),
+                    };
                     let res = self
                         .inner
                         .pinned()
