@@ -458,10 +458,11 @@ impl Default for Message {
     }
 }
 
-#[derive(Clone, Copy, Debug, FromSqlRow, PartialEq, Eq, AsExpression)]
+#[derive(Clone, Copy, Default, Debug, FromSqlRow, PartialEq, Eq, AsExpression)]
 #[diesel(sql_type = Integer)]
 #[repr(i32)]
 pub enum UnidentifiedAccessMode {
+    #[default]
     Unknown = 0,
     Disabled = 1,
     Enabled = 2,

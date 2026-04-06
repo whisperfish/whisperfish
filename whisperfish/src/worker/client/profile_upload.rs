@@ -1,5 +1,6 @@
-use super::{profile::ProfileFetched, *};
+use super::*;
 use crate::store::TrustLevel;
+use crate::worker::profile_refresh::FetchProfile;
 use actix::prelude::*;
 use libsignal_service::profile_name::ProfileName;
 use rand::Rng;
@@ -99,8 +100,9 @@ impl Handler<RefreshOwnProfile> for ClientActor {
         ctx: &mut Self::Context,
     ) -> Self::Result {
         let storage = self.storage.clone().unwrap();
-        let mut service = self.authenticated_service();
         let client = ctx.address();
+        let profile_updater = self.profile_updater();
+
         let config = self.config.clone();
         let aci = Aci::from(config.get_aci().expect("valid uuid at this point"));
 
@@ -131,28 +133,24 @@ impl Handler<RefreshOwnProfile> for ClientActor {
                     }
                 }
 
-                let online = service.retrieve_profile_by_id(aci, Some(profile_key)).await;
+                // FetchProfile only stores the own-profile if it was found
+                let online = profile_updater
+                    .send(FetchProfile(aci, Some(profile_key)))
+                    .await
+                    .expect("working ProfileUpdater");
 
                 let outdated = match online {
-                    Ok(profile) => {
+                    Ok(Some(profile)) => {
                         let unidentified_access_enabled = profile.unidentified_access.is_some();
                         let capabilities = profile.capabilities.clone();
-                        client
-                            .send(ProfileFetched(aci, Some(profile)))
-                            .await
-                            .unwrap();
 
                         !unidentified_access_enabled
                             || capabilities != whisperfish_device_capabilities()
                     }
+                    Ok(None) => true,
                     Err(e) => {
-                        if let ServiceError::NotFoundError = e {
-                            // No profile of ours online, let's upload one.
-                            true
-                        } else {
-                            tracing::error!("Error fetching own profile: {}", e);
-                            false
-                        }
+                        tracing::error!("Error fetching own profile: {}", e);
+                        false
                     }
                 };
 
