@@ -854,16 +854,15 @@ impl ClientActor {
             }
         }
 
-        if flags & DataMessageFlags::ProfileKeyUpdate as i32 != 0 {
-            message_type = Some(MessageType::ProfileKeyUpdate);
-        }
-
         if !msg.preview.is_empty() {
             tracing::warn!("Message contains preview data, which is not yet saved nor displayed. Please upvote issue #695");
         }
 
         let expiration_timer_update = flags & DataMessageFlags::ExpirationTimerUpdate as i32 != 0;
-        let alt_body = if let Some(reaction) = &msg.reaction {
+        let alt_body = if flags & DataMessageFlags::ProfileKeyUpdate as i32 != 0 {
+            message_type = Some(MessageType::ProfileKeyUpdate);
+            None
+        } else if let Some(reaction) = &msg.reaction {
             match storage.process_reaction(
                 sender_recipient.as_ref().unwrap_or(&self_recipient),
                 msg,
