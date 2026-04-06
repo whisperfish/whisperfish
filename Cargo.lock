@@ -2370,7 +2370,7 @@ dependencies = [
 [[package]]
 name = "libsignal-service"
 version = "0.1.0"
-source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=whisperfork#f7a538c669297b28c7a34f1a71f7d3719b88cf20"
+source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=whisperfork#f6497a261565a28dd5ad9eb509e4e28a3c0df8fb"
 dependencies = [
  "aes",
  "aes-gcm",
@@ -2398,6 +2398,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "signal-crypto",
  "thiserror 2.0.18",
  "tokio",
  "tracing",

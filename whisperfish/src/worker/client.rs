@@ -254,7 +254,7 @@ pub struct ClientWorker {
 
     // Linked device management
     link_device: qt_method!(fn(&self, tsurl: String)),
-    unlink_device: qt_method!(fn(&self, id: i64)),
+    unlink_device: qt_method!(fn(&self, id: i32)),
     reload_linked_devices: qt_method!(fn(&self)),
     renameLinkedDevice: qt_method!(fn(&self, device_id: i32, device_name: String)),
 

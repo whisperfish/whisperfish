@@ -56,7 +56,7 @@ Page {
                 } else if (model.id == 1) {
                     //: The nameless primary device in linked devices list
                     //% "Primary device"
-                    qsTrId("whisperfish-primary-device-name").arg(model.id)
+                    qsTrId("whisperfish-primary-device-name")
                 } else {
                     //: A nameless secondary device in linked devices list
                     //% "Device %1"
