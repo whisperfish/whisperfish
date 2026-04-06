@@ -66,7 +66,7 @@ macro_rules! recipients_filtered {
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
-struct ScheduledWakeUp;
+pub struct WakeUp;
 
 #[derive(actix::Message)]
 // TODO: maybe return a more processed variant.
@@ -103,10 +103,10 @@ impl actix::Actor for ProfileUpdater {
     }
 }
 
-impl actix::Handler<ScheduledWakeUp> for ProfileUpdater {
+impl actix::Handler<WakeUp> for ProfileUpdater {
     type Result = ResponseActFuture<Self, ()>;
 
-    fn handle(&mut self, _: ScheduledWakeUp, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, _: WakeUp, ctx: &mut Self::Context) -> Self::Result {
         // Cancel any remaining wake-ups.
         if let Some(handle) = self.next_wake_handle.take() {
             ctx.cancel_future(handle);
@@ -309,7 +309,7 @@ impl ProfileUpdater {
             tracing::trace!("wake-up scheduled immediately");
         }
 
-        self.next_wake_handle = Some(ctx.notify_later(ScheduledWakeUp, duration));
+        self.next_wake_handle = Some(ctx.notify_later(WakeUp, duration));
     }
 
     fn update_ignore_set(&mut self) {
