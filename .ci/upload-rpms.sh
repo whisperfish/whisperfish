@@ -5,10 +5,19 @@ set -e
 if [ -z "$CI_COMMIT_TAG" ]; then
     CARGO_VERSION="$(grep -m1 -e '^version\s=\s"' Cargo.toml | sed -e 's/.*"\(.*-dev\).*"/\1/')"
     GIT_REF="$(git rev-parse --short HEAD)"
-    VERSION="$CARGO_VERSION.b$CI_PIPELINE_IID.$GIT_REF"
+    if [ -z "$HARBOUR" ]; then
+        VERSION="$CARGO_VERSION.b$CI_PIPELINE_IID.$GIT_REF"
+    else
+        VERSION="$CARGO_VERSION-harbour.b$CI_PIPELINE_IID.$GIT_REF"
+    fi
 else
-    # Strip leading v in v0.6.0- ...
-    VERSION=$(echo "$CI_COMMIT_TAG" | sed -e 's/^v//g')
+    if [ -z "$HARBOUR" ]; then
+        # Strip leading v in v0.6.0- ...
+        VERSION=$(echo "$CI_COMMIT_TAG" | sed -e 's/^v//g')
+    else
+        # Strip leading v in v0.6.0- ...
+        VERSION=$(echo "$CI_COMMIT_TAG-harbour" | sed -e 's/^v//g')
+    fi
 fi
 
 # Only upload on tags or main
