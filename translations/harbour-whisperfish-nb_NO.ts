@@ -505,13 +505,13 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="59"/>
         <source>Primary device</source>
         <extracomment>The nameless primary device in linked devices list</extracomment>
-        <translation type="unfinished">Primær enhet</translation>
+        <translation>Primær enhet</translation>
     </message>
     <message id="whisperfish-secondary-device-name">
         <location filename="../qml/pages/LinkedDevices.qml" line="63"/>
         <source>Device %1</source>
         <extracomment>A nameless secondary device in linked devices list</extracomment>
-        <translation type="unfinished">Enhet %1</translation>
+        <translation>Enhet %1</translation>
     </message>
     <message id="whisperfish-device-link-date">
         <location filename="../qml/pages/LinkedDevices.qml" line="84"/>
