@@ -13,6 +13,7 @@ use std::{
     time::Duration,
 };
 use tokio::io::AsyncWriteExt;
+use tracing_futures::Instrument;
 use uuid::Uuid;
 use whisperfish_store::{orm::UnidentifiedAccessMode, StoreProfile};
 use zkgroup::profiles::ProfileKey;
@@ -136,7 +137,7 @@ impl actix::Handler<WakeUp> for ProfileUpdater {
             .filter_map(|recipient| {
                 // TODO: Filter out OOD-profiles without recent interaction (i.e., place them in the ignore map)
                 let recipient_aci = Aci::from(recipient.uuid.expect("database precondition"));
-                let recipient_key = if let Some(key) = recipient.profile_key {
+                let recipient_key = if let Some(key) = &recipient.profile_key {
                     if key.len() != 32 {
                         tracing::warn!("Invalid profile key in db. Skipping.");
                         return None;
@@ -147,11 +148,12 @@ impl actix::Handler<WakeUp> for ProfileUpdater {
                         return None;
                     }
                     let mut key_bytes = [0u8; 32];
-                    key_bytes.copy_from_slice(&key);
+                    key_bytes.copy_from_slice(key);
                     Some(ProfileKey::create(key_bytes))
                 } else {
                     None
                 };
+                tracing::debug!(%recipient, "scheduling profile update");
                 Some(FetchProfile(recipient_aci, recipient_key))
             })
             .collect::<Vec<_>>();
@@ -162,17 +164,40 @@ impl actix::Handler<WakeUp> for ProfileUpdater {
                 // such that we can wait for the commands to return before scheduling our next
                 // action.
                 let mut successes = 0;
+                let mut empties = 0;
+                let mut errors = 0;
                 for fetch_command in fetch_commands {
-                    if addr.send(fetch_command).await.is_ok() {
-                        successes += 1;
+                    let FetchProfile(ref recipient, _) = fetch_command;
+                    let span = tracing::info_span!("fetching profile", ?recipient);
+                    match addr.send(fetch_command).instrument(span.clone()).await {
+                        Ok(Ok(profile)) => {
+                            let _span = span.enter();
+                            if profile.is_some() {
+                                tracing::debug!("fetched profile");
+                                successes += 1;
+                            } else {
+                                tracing::debug!("returned empty profile");
+                                empties += 1;
+                            }
+                        }
+                        Ok(Err(e)) => {
+                            let _span = span.enter();
+                            tracing::error!("{e}");
+                            errors += 1;
+                        }
+                        Err(_) => {
+                            let _span = span.enter();
+                            // mailbox closed no-op and wait for shutdown
+                            errors += 1;
+                        }
                     }
                 }
-                successes
+                (successes, empties, errors)
             }
             .into_actor(self)
-            .map(|successes, act, ctx| {
+            .map(|(successes, empties, errors), act, ctx| {
                 // Done: update schedule
-                tracing::debug!(updates=%successes, "ProfileUpdater scheduled wake finished");
+                tracing::debug!(updates=%successes, empty_profiles=%empties, errors=%errors, "ProfileUpdater scheduled wake finished");
 
                 // Wait at least five minutes for the next batch
                 let earliest_wake = Utc::now() + REYIELD_DELAY;
@@ -353,7 +378,7 @@ impl ProfileUpdater {
 
     #[tracing::instrument(
         skip(self, ctx, profile),
-        fields(profile = ?profile.as_ref().map(debug_signal_service_profile))
+        fields(profile = ?profile.as_ref().map(debug_signal_service_profile), is_own_profile_refresh),
     )]
     fn handle_profile_fetched(
         &mut self,
@@ -361,6 +386,9 @@ impl ProfileUpdater {
         recipient_aci: Aci,
         profile: Result<SignalServiceProfile, ServiceError>,
     ) -> anyhow::Result<Option<SignalServiceProfile>> {
+        let is_own_profile_refresh = self.local_aci == recipient_aci;
+        tracing::Span::current().record("is_own_profile_refresh", is_own_profile_refresh);
+
         let storage = self.storage.clone();
         let recipient = storage
             .fetch_recipient(&recipient_aci.into())
@@ -369,8 +397,6 @@ impl ProfileUpdater {
         let service_address = recipient
             .to_service_address()
             .context("profile recipient has valid service address")?;
-
-        let is_own_profile_refresh = self.local_aci == recipient_aci;
 
         let profile = match profile {
             Ok(profile) => profile,
@@ -383,6 +409,7 @@ impl ProfileUpdater {
                         storage.mark_recipient_registered(service_address, false);
                     }
 
+                    tracing::debug!("profile not found");
                     return Ok(None);
                 }
                 ServiceError::Unauthorized => {
