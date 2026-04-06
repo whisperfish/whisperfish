@@ -199,6 +199,7 @@ impl Handler<FetchProfile> for ProfileUpdater {
                 .map(move |(recipient_aci, profile), act, ctx| -> anyhow::Result<Option<SignalServiceProfile>>{
                     let _span = tracing::info_span!("processing profile fetch", recipient=%Uuid::from(recipient_aci)).entered();
                     act.handle_profile_fetched(ctx, recipient_aci, profile)
+                        .inspect_err(|e| tracing::error!("{e}"))
                 }),
         )
     }
