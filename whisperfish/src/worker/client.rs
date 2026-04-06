@@ -2647,9 +2647,9 @@ impl Handler<RefreshProfile> for ClientActor {
             },
         };
         storage.mark_profile_outdated(&recipient);
-        // Polling the actor will poll the OutdatedProfileStream, which should immediately fire the
-        // necessary events.  This is hacky (XXX), we should in fact wake the stream somehow to ensure
-        // correct behaviour.
+        self.profile_updater()
+            .try_send(super::profile_refresh::WakeUp)
+            .ok();
     }
 }
 
