@@ -2503,9 +2503,6 @@ impl Handler<StorageReady> for ClientActor {
 
         storage.mark_pending_messages_failed();
 
-        // Start workers.
-        self.profile_updater();
-
         let credentials = async move {
             ServiceCredentials {
                 aci,
@@ -2528,6 +2525,9 @@ impl Handler<StorageReady> for ClientActor {
                     let _span = tracing::trace_span!("whisperfish startup").entered();
 
                     act.credentials = Some(credentials);
+
+                    // Start workers.
+                    act.profile_updater();
 
                     act.queue_migrations(ctx);
 
