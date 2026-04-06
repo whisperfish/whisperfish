@@ -2443,13 +2443,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="319"/>
         <source>%1 sent you a sticker: %2</source>
         <extracomment>Message with a sticker, %1 is a name, %2 is an emoji</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 sendte deg en sticker: %2</translation>
     </message>
     <message id="whisperfish-service-message-contact">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="323"/>
         <source>Contact cards can&apos;t yet be supported</source>
         <extracomment>Message with a contact card</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kontaktkort støttes ikke ennå</translation>
     </message>
     <message id="whisperfish-service-message-not-supported">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="329"/>
