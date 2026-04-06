@@ -281,8 +281,11 @@ impl Handler<FetchAvatar> for ProfileUpdater {
             }
             .instrument(span.clone())
             .into_actor(self)
-            .map(move |res: anyhow::Result<_>, _act, _ctx| {
+            .map(move |res: anyhow::Result<_>, act, _ctx| {
                 let _span = span.entered();
+
+                // XXX this is "incorrect", but will trigger QML to reload the avatar.
+                act.storage.mark_profile_updated(recipient_uuid);
                 if let Err(e) = res {
                     tracing::error!("Error fetching profile avatar: {}", e);
                 }
