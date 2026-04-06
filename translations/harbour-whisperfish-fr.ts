@@ -642,27 +642,27 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="113"/>
         <source>Search</source>
         <extracomment>Show search field menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Rechercher</translation>
     </message>
     <message id="whisperfish-announcements-switch-label">
         <location filename="../qml/pages/GroupProfilePage.qml" line="165"/>
         <source>Message sending allowed</source>
         <extracomment>Announcements only setting label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Envoi de message autorisé</translation>
     </message>
     <message id="whisperfish-announcements-admins-only">
         <location filename="../qml/pages/GroupProfilePage.qml" line="167"/>
         <location filename="../qml/pages/GroupProfilePage.qml" line="180"/>
         <source>Administrators only</source>
         <extracomment>Message sending allowed for admins only</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Administrateurs seulement</translation>
     </message>
     <message id="whisperfish-announcements-all-useres">
         <location filename="../qml/pages/GroupProfilePage.qml" line="168"/>
         <location filename="../qml/pages/GroupProfilePage.qml" line="175"/>
         <source>All users</source>
         <extracomment>Message sending allowed for all users</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Tous les utilisateurs</translation>
     </message>
     <message id="whisperfish-group-member-admin">
         <location filename="../qml/components/GroupMemberListView.qml" line="19"/>
@@ -785,7 +785,7 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="136"/>
         <source>Rename</source>
         <extracomment>Rename the linked or primary device menu option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Renommer</translation>
     </message>
     <message id="whisperfish-device-unlink">
         <location filename="../qml/pages/LinkedDevices.qml" line="147"/>
