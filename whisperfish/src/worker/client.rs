@@ -50,6 +50,8 @@ use whisperfish_store::orm::shorten;
 use whisperfish_store::orm::MessageType;
 use whisperfish_store::orm::SessionType;
 use whisperfish_store::orm::StoryType;
+use whisperfish_store::Settings;
+use whisperfish_store::TrustLevel;
 use zkgroup::profiles::ProfileKey;
 
 use super::message_expiry::ExpiredMessagesStream;
@@ -773,7 +775,7 @@ impl ClientActor {
 
     /// Process incoming message from Signal
     ///
-    /// This was `MessageHandler` in Go.
+    /// Return true if the message was valid and well-formed.
     ///
     /// TODO: consider putting this as an actor `Handle<>` implementation instead.
     #[tracing::instrument(
@@ -796,9 +798,9 @@ impl ClientActor {
         sync_sent: Option<Sent>,
         metadata: &Metadata,
         edit: Option<NaiveDateTime>,
-    ) {
+    ) -> bool {
+        let mut is_valid = true;
         let timestamp = metadata.timestamp;
-        let dest_identity = metadata.destination.kind();
         let is_sync_sent = sync_sent.is_some();
 
         let mut storage = self.storage.clone().expect("storage");
@@ -820,14 +822,35 @@ impl ClientActor {
             .flags()
             .try_into()
             .expect("Message flags doesn't fit into i32");
-        let mut message_type: Option<MessageType> = None;
 
-        if flags & DataMessageFlags::EndSession as i32 != 0 {
+        if (source_phonenumber.is_some() || source_addr.is_some()) && !is_sync_sent {
+            if let Some(key) = msg.profile_key.as_deref() {
+                let (recipient, was_updated) = storage.update_profile_key(
+                    source_phonenumber.clone(),
+                    source_addr,
+                    key,
+                    crate::store::TrustLevel::Certain,
+                );
+                if was_updated {
+                    ctx.notify(RefreshProfile::ByRecipientId(recipient.id));
+                }
+            }
+        }
+
+        if !msg.preview.is_empty() {
+            tracing::warn!("Message contains preview data, which is not yet saved nor displayed. Please upvote issue #695");
+        }
+
+        // Determine the message type and text body contents.
+        // Message is visibly inserted to chat if MessageType is set
+        // and/or alternative (i.e. placeholder) body text is given.
+        let (mut message_type, mut alt_body) = if flags & DataMessageFlags::EndSession as i32 != 0 {
             let storage = storage.clone();
             if let Some(svc_addr) = sender_recipient
                 .as_ref()
                 .and_then(|r| r.to_service_address())
             {
+                let dest_identity = metadata.destination.kind();
                 actix::spawn(async move {
                     if let Err(e) = match dest_identity {
                         ServiceIdKind::Aci => {
@@ -847,33 +870,12 @@ impl ClientActor {
             } else {
                 tracing::error!("Requested session reset but no service address associated");
             }
-            message_type = Some(MessageType::EndSession);
-        }
-
-        if (source_phonenumber.is_some() || source_addr.is_some()) && !is_sync_sent {
-            if let Some(key) = msg.profile_key.as_deref() {
-                let (recipient, was_updated) = storage.update_profile_key(
-                    source_phonenumber.clone(),
-                    source_addr,
-                    key,
-                    crate::store::TrustLevel::Certain,
-                );
-                if was_updated {
-                    ctx.notify(RefreshProfile::ByRecipientId(recipient.id));
-                }
-            }
-        }
-
-        if flags & DataMessageFlags::ProfileKeyUpdate as i32 != 0 {
-            message_type = Some(MessageType::ProfileKeyUpdate);
-        }
-
-        if !msg.preview.is_empty() {
-            tracing::warn!("Message contains preview data, which is not yet saved nor displayed. Please upvote issue #695");
-        }
-
-        let expiration_timer_update = flags & DataMessageFlags::ExpirationTimerUpdate as i32 != 0;
-        let alt_body = if let Some(reaction) = &msg.reaction {
+            (Some(MessageType::EndSession), None)
+        } else if flags & DataMessageFlags::ProfileKeyUpdate as i32 != 0 {
+            (Some(MessageType::ProfileKeyUpdate), None)
+        } else if flags & DataMessageFlags::ExpirationTimerUpdate as i32 != 0 {
+            (Some(MessageType::ExpirationTimerUpdate), Some("".into()))
+        } else if let Some(reaction) = &msg.reaction {
             match storage.process_reaction(
                 sender_recipient.as_ref().unwrap_or(&self_recipient),
                 msg,
@@ -887,94 +889,100 @@ impl ClientActor {
                         .messageReactionReceived(session.id, message.id);
                 }
                 Ok(None) => {
-                    tracing::error!("No message or session for reaction. Dropping silently.");
-                    tracing::warn!("This could indicate out-of-order receipt delivery (#260)");
+                    tracing::error!("No message or session for reaction, dropping silently (#260)");
+                    is_valid = false;
                 }
                 Err(e) => {
                     tracing::error!("Could not process reaction: {e}");
+                    is_valid = false;
                 }
             }
-            None
-        } else if expiration_timer_update {
-            message_type = Some(MessageType::ExpirationTimerUpdate);
-            Some("".into())
-        } else if let Some(GroupContextV2 {
-            group_change: Some(ref _group_change),
-            ..
-        }) = msg.group_v2
-        {
-            message_type = Some(MessageType::GroupChange);
-            None
-        } else if !msg.attachments.is_empty() {
-            tracing::trace!("Received an attachment without body, replacing with empty text.");
-            Some("".into())
+            (None, None)
         } else if let Some(sticker) = &msg.sticker {
             tracing::warn!(
                 "Received a sticker, but they are currently unsupported. Please upvote issue #14."
             );
             tracing::trace!("{:?}", sticker);
-            message_type = Some(MessageType::Sticker);
-            Some(sticker.emoji.as_ref().unwrap().to_owned())
+            (
+                Some(MessageType::Sticker),
+                Some(sticker.emoji.as_ref().unwrap().to_owned()),
+            )
         } else if msg.payment.is_some() {
             // TODO: Save some info about payments?
-            message_type = Some(MessageType::Payment);
-            Some("".into())
+            (Some(MessageType::Payment), Some("".into()))
         } else if msg.group_call_update.is_some() {
-            message_type = Some(MessageType::GroupCallUpdate);
-            Some("".into())
+            (Some(MessageType::GroupCallUpdate), Some("".into()))
         } else if !msg.contact.is_empty() {
-            message_type = Some(MessageType::Contact);
-            Some("".into())
+            (Some(MessageType::Contact), Some("".into()))
+        } else if let Some(msg_delete) = &msg.delete {
+            if let Some(target_sent_timestamp) =
+                msg_delete.target_sent_timestamp.map(millis_to_naive_chrono)
+            {
+                let db_message = storage.fetch_message_by_timestamp(target_sent_timestamp);
+                if let Some(db_message) = db_message {
+                    let db_sender_rcpt = db_message.sender_recipient_id;
+                    let msg_sender_rcpt = sender_recipient.as_ref().map(|r| r.id);
+                    if is_sync_sent || db_sender_rcpt == msg_sender_rcpt {
+                        storage.delete_message(db_message.id);
+                        self.inner
+                            .pinned()
+                            .borrow_mut()
+                            .closeNotification(db_message.session_id, db_message.id);
+                    } else {
+                        tracing::warn!(
+                            "Received a delete message from a different user, ignoring it."
+                        );
+                        is_valid = false;
+                    }
+                } else {
+                    tracing::warn!(
+                        "Message {} not found for deletion!",
+                        naive_chrono_to_millis(target_sent_timestamp)
+                    );
+                    is_valid = false;
+                }
+            } else {
+                tracing::error!("Delete message without timestamp");
+                is_valid = false;
+            };
+            (None, None)
         }
         // TODO: Add more message types
         else {
-            None
+            (None, None)
         };
 
-        if let Some(msg_delete) = &msg.delete {
-            let target_sent_timestamp = millis_to_naive_chrono(
-                msg_delete
-                    .target_sent_timestamp
-                    .expect("Delete message has no timestamp"),
-            );
-            let db_message = storage.fetch_message_by_timestamp(target_sent_timestamp);
-            if let Some(db_message) = db_message {
-                let db_sender_rcpt = db_message.sender_recipient_id;
-                let msg_sender_rcpt = sender_recipient.as_ref().map(|r| r.id);
-                if is_sync_sent || db_sender_rcpt == msg_sender_rcpt {
-                    storage.delete_message(db_message.id);
-                    self.inner
-                        .pinned()
-                        .borrow_mut()
-                        .closeNotification(db_message.session_id, db_message.id);
-                } else {
-                    tracing::warn!("Received a delete message from a different user, ignoring it.");
-                }
-            } else {
-                tracing::warn!(
-                    "Message {} not found for deletion!",
-                    naive_chrono_to_millis(target_sent_timestamp)
-                );
+        let session = if let Some(group_v2) = msg.group_v2.as_ref() {
+            let Some(master_key) = group_v2.master_key.as_ref() else {
+                tracing::error!("Group message without master key");
+                return false;
+            };
+            if master_key.len() != zkgroup::GROUP_MASTER_KEY_LEN {
+                tracing::error!("Group message with invalid master key");
+                return false;
             }
-        }
-
-        let group = if let Some(group) = msg.group_v2.as_ref() {
             let mut key_stack = [0u8; zkgroup::GROUP_MASTER_KEY_LEN];
-            key_stack.clone_from_slice(group.master_key.as_ref().expect("group message with key"));
+            key_stack.clone_from_slice(master_key);
             let key = GroupMasterKey::new(key_stack);
-            let secret = GroupSecretParams::derive_from_master_key(key);
 
             let store_v2 = crate::store::GroupV2 {
-                secret,
-                revision: group.revision(),
+                secret: GroupSecretParams::derive_from_master_key(key),
+                revision: group_v2.revision(),
             };
 
-            let existing_group = storage.group_v2_exists(&store_v2);
+            let group_existed = storage.group_v2_exists(&store_v2);
             let session = storage.fetch_or_insert_session_by_group_v2(&store_v2);
 
-            if existing_group {
-                if group.group_change.is_some() {
-                    ctx.notify(GroupV2Update(group.clone(), session));
+            if group_existed {
+                if group_v2.group_change.is_some() {
+                    if let Some(t) = message_type.as_ref() {
+                        tracing::warn!(
+                            "Overwriting message type from {t:?} to {:?}",
+                            MessageType::GroupChange
+                        );
+                    }
+                    message_type = Some(MessageType::GroupChange);
+                    ctx.notify(GroupV2Update(group_v2.clone(), session.clone()));
                 }
             } else {
                 tracing::info!(
@@ -982,19 +990,35 @@ impl ClientActor {
                 );
                 ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
             }
-
-            Some(storage.fetch_or_insert_session_by_group_v2(&store_v2))
+            session
         } else {
-            None
+            let recipient = storage.merge_and_fetch_recipient(
+                source_phonenumber.clone(),
+                source_addr.map(Aci::try_from).transpose().ok().flatten(),
+                source_addr.map(Pni::try_from).transpose().ok().flatten(),
+                TrustLevel::Certain,
+            );
+            let mut session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
+            storage.update_expiration_timer(&session, msg.expire_timer, msg.expire_timer_version);
+            session.expire_timer_version = msg.expire_timer_version() as i32;
+            session.expiring_message_timeout =
+                msg.expire_timer.map(|v| Duration::from_secs(v as u64));
+            session
         };
 
-        let body = msg.body.clone().or(alt_body);
-        let text = if let Some(body) = body {
-            body
-        } else {
-            tracing::debug!("Message without (alt) body, not inserting");
-            return;
+        // Make sure attachment message without text gets inserted
+        if !msg.attachments.is_empty() && alt_body.is_none() {
+            alt_body = Some("".into());
+        }
+
+        let Some(body) = msg.body.as_ref().or(alt_body.as_ref()) else {
+            tracing::debug!("Message without body, nothing to insert.");
+            return is_valid;
         };
+
+        if msg.body.is_some() && message_type.is_some() {
+            tracing::warn!("Service message contains body text. Saving anyway.");
+        }
 
         let is_unidentified = if let (Some(sent), Some(source_addr)) = (&sync_sent, &source_addr) {
             let source_service_id = source_addr.service_id_string();
@@ -1005,53 +1029,40 @@ impl ClientActor {
             metadata.unidentified_sender
         };
 
-        let original_message = edit.and_then(|ts| storage.fetch_message_by_timestamp(ts));
+        let mut original_message = None;
         // Some sanity checks
-        if edit.is_some() {
-            if let Some(original_message) = original_message.as_ref() {
-                if original_message.sender_recipient_id != sender_recipient.as_ref().map(|x| x.id) {
-                    tracing::warn!("Received an edit for a message that was not sent by the same sender. Continuing, but this is weird.");
+        if let Some(edit) = edit {
+            original_message = storage.fetch_message_by_timestamp(edit);
+            if let Some(orig) = original_message.as_ref() {
+                if orig.sender_recipient_id != sender_recipient.as_ref().map(|x| x.id) {
+                    tracing::warn!("Received an edit for a message that was not sent by the same sender. Ignoring edit, inserting as new.");
+                    original_message = None;
                 }
             } else {
-                tracing::warn!("Received an edit for a message that does not exist. Inserting as is and praying.  This is most probably a bug regarding out-of-order delivery.");
+                tracing::warn!("Received an edit for a message that does not (yet) exist.");
             }
         }
 
         let body_ranges = crate::store::body_ranges::serialize(&msg.body_ranges);
 
-        let mut session = group.unwrap_or_else(|| {
-            storage.fetch_or_insert_session_by_recipient_id(
-                sender_recipient
-                    .as_ref()
-                    .expect("sender recipient found meanwhile")
-                    .id,
-            )
-        });
-
-        // Group expiry timer handled via GroupChanges
-        if session.is_dm() {
-            storage.update_expiration_timer(&session, msg.expire_timer, msg.expire_timer_version);
-            session.expire_timer_version = msg.expire_timer_version() as i32;
-            session.expiring_message_timeout =
-                msg.expire_timer.map(|v| Duration::from_secs(v as u64));
-        }
-
         if message_type == Some(MessageType::GroupChange) {
             tracing::warn!("Inserting a generic GroupChange message after handling it. This should not happen.");
         }
 
+        let timestamp = millis_to_naive_chrono(if is_sync_sent && timestamp > 0 {
+            timestamp
+        } else {
+            msg.timestamp()
+        });
+
         let new_message = crate::store::NewMessage {
             source_addr,
-            text,
+            text: body.to_owned(),
             flags,
             outgoing: is_sync_sent,
             is_unidentified,
             sent: is_sync_sent,
-            timestamp: millis_to_naive_chrono(if is_sync_sent && timestamp > 0 {
-                timestamp
-            } else {
-                msg.timestamp()
-            }),
+            timestamp,
             received: false, // This is set true by a receipt handler
             session_id: session.id,
             is_read: is_sync_sent,
@@ -1130,6 +1141,7 @@ impl ClientActor {
             );
             self.inner.pinned().borrow_mut().notifyMessage(notification);
         }
+        is_valid
     }
 
     fn handle_sync_request(&mut self, meta: Metadata, req: SyncRequest) {
@@ -1271,6 +1283,7 @@ impl ClientActor {
         ctx: &mut <Self as Actor>::Context,
     ) {
         let storage = self.storage.clone().expect("storage initialized");
+        let is_primary = self.config.get_device_id() == *DEFAULT_DEVICE_ID;
 
         match body {
             ContentBody::NullMessage(_message) => {
@@ -1280,7 +1293,7 @@ impl ClientActor {
                 tracing::error!(?message, "ignoring decryption error");
             }
             ContentBody::DataMessage(message) => {
-                self.handle_message(
+                let is_valid = self.handle_message(
                     ctx,
                     None,
                     Some(metadata.sender),
@@ -1289,7 +1302,7 @@ impl ClientActor {
                     &metadata,
                     None,
                 );
-                if metadata.needs_receipt {
+                if is_valid && metadata.needs_receipt {
                     self.handle_needs_delivery_receipt(ctx, &message, &metadata);
                 }
 
@@ -1303,7 +1316,7 @@ impl ClientActor {
                     .data_message
                     .as_ref()
                     .expect("edit message contains data");
-                self.handle_message(
+                let is_valid = self.handle_message(
                     ctx,
                     None,
                     Some(metadata.sender),
@@ -1316,7 +1329,7 @@ impl ClientActor {
                     )),
                 );
 
-                if metadata.needs_receipt {
+                if is_valid && metadata.needs_receipt {
                     self.handle_needs_delivery_receipt(ctx, message, &metadata);
                 }
 
@@ -1466,17 +1479,24 @@ impl ClientActor {
                 }
                 if let Some(keys) = keys {
                     tracing::debug!("Sync Keys message");
-                    // Note: storage_key is deprecated; it's generated from master_key
-                    if let Some(bytes) = &keys.master {
-                        if let Ok(master_key) = MasterKey::from_slice(bytes) {
-                            storage.store_master_key(Some(&master_key));
-                            let storage_key = StorageServiceKey::from_master_key(&master_key);
-                            storage.store_storage_service_key(Some(&storage_key));
-                        } else {
-                            tracing::error!("Keys sync message with invalid data");
-                        };
+                    if !is_primary {
+                        tracing::debug!("We're the primary device, ignore Keys sync response.");
                     } else {
-                        tracing::error!("Keys sync message without data");
+                        // Note: storage_key is deprecated; it's generated from master_key
+                        if let Some(bytes) = &keys.master {
+                            if let Ok(master_key) = MasterKey::from_slice(bytes) {
+                                storage.store_master_key(Some(&master_key));
+                                let storage_key = StorageServiceKey::from_master_key(&master_key);
+                                storage.store_storage_service_key(Some(&storage_key));
+                            } else {
+                                tracing::error!("Keys sync message with invalid data");
+                            };
+                        }
+                        if let Some(pool) = &keys.account_entropy_pool {
+                            // Consists of: [0-9a-zA-Z]
+                            tracing::warn!("Storing but otherwise ignoring account entropy pool");
+                            storage.write_setting(Settings::ACCOUNT_ENTROPY_POOL, pool.as_str());
+                        }
                     }
                 }
                 if let Some(blocked) = blocked {
@@ -1571,7 +1591,11 @@ impl ClientActor {
             }
             ContentBody::TypingMessage(typing) => {
                 if self.settings.get_enable_typing_indicators() {
-                    tracing::info!("{:?} is typing.", metadata.sender.service_id_string());
+                    let svc_str = metadata.sender.service_id_string();
+                    match typing.action() {
+                        Action::Started => tracing::info!("{svc_str} is typing"),
+                        Action::Stopped => tracing::info!("{svc_str} stopped typing"),
+                    };
                     let res = self
                         .inner
                         .pinned()

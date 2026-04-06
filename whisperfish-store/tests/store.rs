@@ -841,7 +841,7 @@ async fn test_recipient_actions() {
         sent: true,
         received: true,
         flags: 0,
-        outgoing: true,
+        outgoing: false,
         source_addr: Some(addr1),
         text: "Hi!".into(),
         is_read: false,
