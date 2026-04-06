@@ -259,6 +259,7 @@ pub use self::sessions::*;
 pub use self::voice_note_recorder::*;
 
 use chrono::prelude::*;
+use libsignal_protocol::DeviceId;
 use qmetaobject::prelude::*;
 
 fn qdate_from_chrono<T: TimeZone>(dt: DateTime<T>) -> QDate {
@@ -322,6 +323,10 @@ fn int_from_duration_option(val: Option<Duration>) -> i32 {
 
 fn int_from_usize(val: usize) -> i32 {
     val as i32
+}
+
+fn int_from_device_id(val: DeviceId) -> u32 {
+    val.into()
 }
 
 #[cfg(test)]

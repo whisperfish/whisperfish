@@ -15,7 +15,7 @@ pub struct LinkDevice {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct UnlinkDevice {
-    pub id: i64,
+    pub id: DeviceId,
 }
 
 #[derive(Message)]
@@ -40,11 +40,18 @@ impl ClientWorker {
 
     #[with_executor]
     #[tracing::instrument(skip(self))]
-    pub fn unlink_device(&self, id: i64) {
+    pub fn unlink_device(&self, id: i32) {
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {
-            if let Err(e) = actor.send(UnlinkDevice { id }).await {
-                tracing::error!("{:?}", e);
+            match DeviceId::try_from(id) {
+                Ok(id) => {
+                    if let Err(e) = actor.send(UnlinkDevice { id }).await {
+                        tracing::error!("{:?}", e);
+                    }
+                }
+                Err(e) => {
+                    tracing::error!("Invalid device_id to unlink: {e}")
+                }
             }
         });
     }
@@ -185,7 +192,7 @@ impl Handler<UnlinkDevice> for ClientActor {
 
     fn handle(
         &mut self,
-        UnlinkDevice { id }: UnlinkDevice,
+        UnlinkDevice { id: device_id }: UnlinkDevice,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
         tracing::trace!("handle(UnlinkDevice)");
@@ -194,7 +201,7 @@ impl Handler<UnlinkDevice> for ClientActor {
 
         Box::pin(
             // Without `async move`, service would be borrowed instead of encapsulated in a Future.
-            async move { service.unlink_device(id).await }
+            async move { service.unlink_device(device_id).await }
                 .into_actor(self)
                 .map(move |result, _act, ctx| {
                     match result {

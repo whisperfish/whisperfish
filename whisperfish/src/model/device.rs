@@ -13,10 +13,10 @@ pub struct DeviceModel {
 
 define_model_roles! {
     enum DeviceRoles for DeviceInfo {
-        Id(id via i32::from):                       "id",
-        Name(name via qstring_from_option)  :       "name",
-        Created(created via qdatetime_from_chrono): "created",
-        LastSeen(last_seen via qdate_from_chrono):  "lastSeen",
+        Id(id via int_from_device_id): "id",
+        Name(name via qstring_from_option): "name",
+        Created(created_at via qdatetime_from_chrono): "created",
+        LastSeen(last_seen via qdate_from_chrono): "lastSeen",
     }
 }
 
