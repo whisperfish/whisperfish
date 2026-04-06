@@ -200,14 +200,14 @@
         <translation>செய்திகள் இல்லை</translation>
     </message>
     <message id="whisperfish-session-section-today">
-        <location filename="../qml/pages/LinkedDevices.qml" line="111"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="109"/>
         <location filename="../qml/pages/MainPage.qml" line="340"/>
         <source>Today</source>
         <extracomment>Session section label for today</extracomment>
         <translation>இன்று</translation>
     </message>
     <message id="whisperfish-session-section-yesterday">
-        <location filename="../qml/pages/LinkedDevices.qml" line="114"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="112"/>
         <location filename="../qml/pages/MainPage.qml" line="345"/>
         <source>Yesterday</source>
         <extracomment>Session section label for yesterday</extracomment>
@@ -467,74 +467,84 @@
         <translation>சிக்னல் டெஸ்க்டாப்பை நிறுவவும். உதாரணமாக, CodeReader பயன்பாட்டைப் பயன்படுத்தி சிக்னல் டெஸ்க்டாப்பில் காட்டப்படும் QR குறியீட்டை ஸ்கேன் செய்து, URL ஐ நகலெடுத்து இங்கே ஒட்டவும்.</translation>
     </message>
     <message id="whisperfish-add-linked-device">
-        <location filename="../qml/pages/LinkedDevices.qml" line="18"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="163"/>
         <source>Add</source>
         <extracomment>Menu option to add new linked device</extracomment>
         <translation>கூட்டு</translation>
     </message>
     <message id="whisperfish-refresh-linked-devices">
-        <location filename="../qml/pages/LinkedDevices.qml" line="31"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="177"/>
         <source>Refresh</source>
         <extracomment>Menu option to refresh linked devices</extracomment>
         <translation>புதுப்பிப்பு</translation>
     </message>
     <message id="whisperfish-linked-devices">
-        <location filename="../qml/pages/LinkedDevices.qml" line="40"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="21"/>
         <source>Linked Devices</source>
         <extracomment>Title for Linked Devices page</extracomment>
         <translation>இணைக்கப்பட்ட சாதனங்கள்</translation>
     </message>
     <message id="whisperfish-device-unlink-message">
-        <location filename="../qml/pages/LinkedDevices.qml" line="55"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="33"/>
         <source>Unlinked</source>
         <oldsource>Unlinking</oldsource>
         <extracomment>Unlinking remorse info message for unlinking secondary devices (past tense)</extracomment>
         <translation>இணைக்கப்படாதது</translation>
     </message>
     <message id="whisperfish-current-device-name">
-        <location filename="../qml/pages/LinkedDevices.qml" line="72"/>
         <source>Current device (Whisperfish, %1)</source>
         <extracomment>Linked device title for current Whisperfish</extracomment>
-        <translation>தற்போதைய சாதனம் (விச்பர்ஃபிச், %1)</translation>
+        <translation type="vanished">தற்போதைய சாதனம் (விச்பர்ஃபிச், %1)</translation>
     </message>
     <message id="whisperfish-device-name">
-        <location filename="../qml/pages/LinkedDevices.qml" line="76"/>
         <source>Device %1</source>
         <extracomment>Linked device name</extracomment>
-        <translation>சாதனம் %1</translation>
+        <translation type="vanished">சாதனம் %1</translation>
+    </message>
+    <message id="whisperfish-primary-device-name">
+        <location filename="../qml/pages/LinkedDevices.qml" line="59"/>
+        <source>Primary device</source>
+        <extracomment>The nameless primary device in linked devices list</extracomment>
+        <translation type="unfinished">முதன்மை சாதனம்</translation>
+    </message>
+    <message id="whisperfish-secondary-device-name">
+        <location filename="../qml/pages/LinkedDevices.qml" line="63"/>
+        <source>Device %1</source>
+        <extracomment>A nameless secondary device in linked devices list</extracomment>
+        <translation type="unfinished">சாதனம் %1</translation>
     </message>
     <message id="whisperfish-device-link-date">
-        <location filename="../qml/pages/LinkedDevices.qml" line="90"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="84"/>
         <source>Linked: %1</source>
         <extracomment>Linked device date</extracomment>
         <translation>இணைக்கப்பட்ட: %1</translation>
     </message>
     <message id="whisperfish-device-last-active">
-        <location filename="../qml/pages/LinkedDevices.qml" line="120"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="118"/>
         <source>Last active: %1</source>
         <extracomment>Linked device last active date</extracomment>
         <translation>கடைசி செயலில்: %1</translation>
     </message>
     <message id="whisperfish-device-rename">
-        <location filename="../qml/pages/LinkedDevices.qml" line="142"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="136"/>
         <source>Rename</source>
         <extracomment>Rename the linked or primary device menu option</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-device-unlink">
-        <location filename="../qml/pages/LinkedDevices.qml" line="151"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="147"/>
         <source>Unlink</source>
         <extracomment>Device unlink menu option</extracomment>
         <translation>இணைக்கவும்</translation>
     </message>
     <message id="whisperfish-device-placeholder">
-        <location filename="../qml/pages/LinkedDevices.qml" line="163"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="197"/>
         <source>No linked device</source>
         <extracomment>Placeholder when no linked device yet</extracomment>
         <translation>இணைக்கப்பட்ட சாதனம் இல்லை</translation>
     </message>
     <message id="whisperfish-device-placeholder-hint">
-        <location filename="../qml/pages/LinkedDevices.qml" line="166"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="200"/>
         <source>Pull down to link Whisperfish to another device</source>
         <extracomment>Placeholder hint when no linked device yet</extracomment>
         <translation>விஸ்பர்ஃபிஷை வேறொரு சாதனத்துடன் இணைக்கக் கீழே இழு</translation>
