@@ -211,14 +211,14 @@ prep:host:vendor-tar-gz:stable:
 
 build:host:nightly:
   <<: *rust
-  image: rustlang/rust:nightly-bookworm
+  image: rust
   stage: build
   allow_failure: true
   needs:
     - job: prep:host:vendor-tar-gz:stable
   script:
     - .ci/unpack-vendor.sh
-    - cargo build --offline --features bundled-sqlcipher
+    - cargo +nightly build --offline --features bundled-sqlcipher
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
