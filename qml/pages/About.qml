@@ -264,7 +264,8 @@ Page {
                 readOnly: true
                 text: {
                     "J. Lavoie" + "\n" +
-                    "Andrea Scarpino"
+                    "Andrea Scarpino" + "\n" +
+                    "luca rastelli"
                 }
             }
 
