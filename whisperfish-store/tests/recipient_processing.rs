@@ -830,4 +830,492 @@ mod merge_and_fetch_conflicting_recipients {
         verify(&r4, Id::Eq(r2.id), Some(&e164(2)), None, None);
         // TODO: steal_e164_and_pni_plus_aci_no_aci_provided_pni_session_exists
     }
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "steal, e164+pni+aci & e164+aci, no pni provided, change number"
+    async fn steal_e164_pni_aci_and_e164_aci_no_pni_provided_change_number(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, PNI_A, ACI_A)
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), Some(pni(1)), TrustLevel::Uncertain);
+
+        // given(E164_B, null, ACI_B)
+        let r2 = storage.merge_and_fetch_recipient(Some(e164(2)), Some(aci(2)), None, TrustLevel::Uncertain);
+
+        // process(E164_A, null, ACI_B)
+        let r3 = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(2)), None, TrustLevel::Certain);
+
+        // expect(null, PNI_A, ACI_A) — r1 loses its e164
+        let r4 = storage.fetch_recipient(&aci(1).into()).unwrap();
+        verify(&r4, Id::Eq(r1.id), None /*E164*/, Some(&pni(1)), Some(&aci(1)));
+
+        // expect(E164_A, null, ACI_B) — r2 gains e164_1
+        verify(&r3, Id::Eq(r2.id), Some(&e164(1)), None /*PNI*/, Some(&aci(2)));
+
+        // TODO: expectChangeNumberEvent()
+    }
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "steal, e164+pni & aci, no pni provided, no pni session"
+    async fn steal_e164_pni_and_aci_no_pni_provided_no_pni_session(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, PNI_A, null)
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), None, Some(pni(1)), TrustLevel::Uncertain);
+
+        // given(null, null, ACI_A)
+        let r2 = storage.merge_and_fetch_recipient(None, Some(aci(1)), None, TrustLevel::Uncertain);
+
+        // process(E164_A, null, ACI_A)
+        let r3 = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), None, TrustLevel::Certain);
+
+        // expect(null, PNI_A, null) — r1 loses e164, keeps pni
+        let r4 = storage.fetch_recipient_by_id(r1.id).unwrap();
+        verify(&r4, Id::Eq(r1.id), None /*E164*/, Some(&pni(1)), None);
+
+        // expect(E164_A, null, ACI_A) — r2 gains e164
+        verify(&r3, Id::Eq(r2.id), Some(&e164(1)), None /*PNI*/, Some(&aci(1)));
+    }
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "steal, e164+pni+aci & pni+aci, all provided, aci sessions but not pni sessions, no SSE expected"
+    async fn steal_e164_pni_aci_and_pni_aci_all_provided_aci_sessions_no_sse(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, PNI_A, ACI_A)
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), Some(pni(1)), TrustLevel::Uncertain);
+
+        // given(null, PNI_B, ACI_B)
+        let r2 = storage.merge_and_fetch_recipient(None, Some(aci(2)), Some(pni(2)), TrustLevel::Uncertain);
+        verify(&r2, Id::Ne(r1.id), None, Some(&pni(2)), Some(&aci(2)));
+        // process(E164_A, PNI_B, ACI_A)
+        // expect(E164_A, PNI_B, ACI_A) — r1 gets new pni
+        // expect(null, null, ACI_B)    — r2 loses pni
+        let r3 = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), Some(pni(2)), TrustLevel::Certain);
+        verify(&r3, Id::Eq(r1.id), Some(&e164(1)), Some(&pni(2)), Some(&aci(1)));
+
+        let r2_updated = storage.fetch_recipient(&aci(2).into()).unwrap();
+        verify(&r2_updated, Id::Eq(r2.id), None /*E164*/, None /*PNI*/, Some(&aci(2)));
+        // TODO: expectNoSessionSwitchoverEvent()
+    }
+
+    // -------------------------------------------------------------------------
+    // Merge tests
+    // -------------------------------------------------------------------------
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "merge, e164 & aci"
+    async fn merge_e164_and_aci(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, null, null)
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), None, None, TrustLevel::Uncertain);
+
+        // given(null, null, ACI_A)
+        let r2 = storage.merge_and_fetch_recipient(None, Some(aci(1)), None, TrustLevel::Uncertain);
+
+        // process(E164_A, null, ACI_A) → merge into ACI record; e164 record deleted
+        let r3 = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), None, TrustLevel::Certain);
+        verify(&r3, Id::Eq(r2.id), Some(&e164(1)), None /*PNI*/, Some(&aci(1)));
+
+        // r1 should have been deleted (merged into r2)
+        assert!(storage.fetch_recipient_by_id(r1.id).is_none());
+        assert_eq!(storage.fetch_recipients().len(), 1);
+        // TODO: expectThreadMergeEvent(E164_A)
+    }
+
+    /*
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "merge, e164 & pni & aci, all provided"
+    async fn merge_e164_and_pni_and_aci_all_provided(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, null, null)
+        storage.merge_and_fetch_recipient(Some(e164(1)), None, None, TrustLevel::Uncertain);
+        // given(null, PNI_A, null)
+        storage.merge_and_fetch_recipient(None, None, Some(pni(1)), TrustLevel::Uncertain);
+        // given(null, null, ACI_A)
+        storage.merge_and_fetch_recipient(None, Some(aci(1)), None, TrustLevel::Uncertain);
+        assert_eq!(storage.fetch_recipients().len(), 3);
+
+        // XXX: Pni doesn't get merged!
+        // process(E164_A, PNI_A, ACI_A) → merge all three into ACI record
+        let r = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), Some(pni(1)), TrustLevel::Certain);
+        verify(&r, Id::Nz, Some(&e164(1)), Some(&pni(1)), Some(&aci(1)));
+        assert_eq!(storage.fetch_recipients().len(), 1);
+        // TODO: expectThreadMergeEvent(E164_A)
+    }
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "merge, e164 & pni, no aci provided"
+    async fn merge_e164_and_pni_no_aci_provided(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, null, null)
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), None, None, TrustLevel::Uncertain);
+        // given(null, PNI_A, null)
+        let _r = storage.merge_and_fetch_recipient(None, None, Some(pni(1)), TrustLevel::Uncertain);
+        assert_eq!(storage.fetch_recipients().len(), 2);
+
+        // XXX: Pni doesn't get merged!
+        // process(E164_A, PNI_A, null) → merge pni record into e164 record
+        let r_out = storage.merge_and_fetch_recipient(Some(e164(1)), None, Some(pni(1)), TrustLevel::Certain);
+        verify(&r_out, Id::Eq(r1.id), Some(&e164(1)), Some(&pni(1)), None);
+
+        assert_eq!(storage.fetch_recipients().len(), 1);
+        // TODO: expectThreadMergeEvent("")
+    }
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "merge, e164 & pni, aci provided, no pni session"
+    async fn merge_e164_and_pni_aci_provided_no_pni_session(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, null, null)
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), None, None, TrustLevel::Uncertain);
+        // given(null, PNI_A, null)
+        let r2 = storage.merge_and_fetch_recipient(None, None, Some(pni(1)), TrustLevel::Uncertain);
+        assert_eq!(storage.fetch_recipients().len(), 2);
+
+        // XXX: Pni doesn't get merged!
+        // process(E164_A, PNI_A, ACI_A) → merge; e164 record wins, pni record deleted
+        let r_out = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), Some(pni(1)), TrustLevel::Certain);
+        verify(&r_out, Id::Eq(r1.id), Some(&e164(1)), Some(&pni(1)), Some(&aci(1)));
+
+        assert!(storage.fetch_recipient_by_id(r2.id).is_none());
+        assert_eq!(storage.fetch_recipients().len(), 1);
+        // TODO: expectThreadMergeEvent("")
+    }
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "merge, e164+pni & pni, no aci provided"
+    async fn merge_e164_pni_and_pni_no_aci_provided(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, PNI_B, null)
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), None, Some(pni(2)), TrustLevel::Uncertain);
+        // given(null, PNI_A, null)
+        let r2 = storage.merge_and_fetch_recipient(None, None, Some(pni(1)), TrustLevel::Uncertain);
+        assert_eq!(storage.fetch_recipients().len(), 2);
+
+        // XXX: Pni doesn't get merged!
+        // process(E164_A, PNI_A, null) → r2 (pni_1 record) merges into r1 (e164 record),
+        // pni_2 is replaced by pni_1
+        let r_out = storage.merge_and_fetch_recipient(Some(e164(1)), None, Some(pni(1)), TrustLevel::Certain);
+        verify(&r_out, Id::Eq(r1.id), Some(&e164(1)), Some(&pni(1)), None);
+
+        assert!(storage.fetch_recipient_by_id(r2.id).is_none());
+        assert_eq!(storage.fetch_recipients().len(), 1);
+        // TODO: expectThreadMergeEvent("")
+    }
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "merge, e164+pni & aci, no pni session"
+    async fn merge_e164_pni_and_aci_no_pni_session(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, PNI_A, null)
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), None, Some(pni(1)), TrustLevel::Uncertain);
+        // given(null, null, ACI_A)
+        let r2 = storage.merge_and_fetch_recipient(None, Some(aci(1)), None, TrustLevel::Uncertain);
+        assert_eq!(storage.fetch_recipients().len(), 2);
+
+        // XXX: Pni doesn't get merged!
+        // process(E164_A, PNI_A, ACI_A) → e164 record deleted, aci record wins
+        let r_out = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), Some(pni(1)), TrustLevel::Certain);
+        verify(&r_out, Id::Eq(r2.id), Some(&e164(1)), Some(&pni(1)), Some(&aci(1)));
+
+        assert!(storage.fetch_recipient_by_id(r1.id).is_none());
+        assert_eq!(storage.fetch_recipients().len(), 1);
+        // TODO: expectThreadMergeEvent(E164_A)
+    }
+    */
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "merge, e164 & e164+aci, change number"
+    async fn merge_e164_and_e164_aci_change_number(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, null, null)
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), None, None, TrustLevel::Uncertain);
+        // given(E164_B, null, ACI_A)
+        let r2 = storage.merge_and_fetch_recipient(Some(e164(2)), Some(aci(1)), None, TrustLevel::Uncertain);
+        assert_eq!(storage.fetch_recipients().len(), 2);
+
+        // process(E164_A, null, ACI_A) → r1 deleted, r2 gains e164_1, loses e164_2
+        let r_out = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), None, TrustLevel::Certain);
+        verify(&r_out, Id::Eq(r2.id), Some(&e164(1)), None /*PNI*/, Some(&aci(1)));
+
+        assert!(storage.fetch_recipient_by_id(r1.id).is_none());
+        assert_eq!(storage.fetch_recipients().len(), 1);
+        // TODO: expectChangeNumberEvent()
+        // TODO: expectThreadMergeEvent(E164_A)
+    }
+
+    /*
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "merge, e164 follows pni+aci"
+    async fn merge_e164_follows_pni_and_aci(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, PNI_A, null)
+        let _r = storage.merge_and_fetch_recipient(Some(e164(1)), None,
+            Some(pni(1)), TrustLevel::Uncertain);
+        // given(null, null, ACI_A)
+        let r2 = storage.merge_and_fetch_recipient(None, Some(aci(1)), None, TrustLevel::Uncertain);
+        assert_eq!(storage.fetch_recipients().len(), 2);
+
+        // XXX: Pni doesn't get merged!
+        // process(null, PNI_A, ACI_A) — no e164 explicitly provided, but e164 "follows" pni
+        // expect(E164_A, PNI_A, ACI_A)
+        let r_out = storage.merge_and_fetch_recipient(None, Some(aci(1)), Some(pni(1)), TrustLevel::Certain);
+        verify(&r_out, Id::Eq(r2.id), Some(&e164(1)), Some(&pni(1)), Some(&aci(1)));
+
+        assert_eq!(storage.fetch_recipients().len(), 1);
+        // TODO: expectThreadMergeEvent(E164_A)
+        // TODO: expectPniVerified() (pniVerified = true in Signal Android)
+    }
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "merge, e164 + pni reassigned, aci abandoned"
+    async fn merge_e164_pni_reassigned_aci_abandoned(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, PNI_A, ACI_A)
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), Some(pni(1)), TrustLevel::Uncertain);
+        // given(E164_B, PNI_B, ACI_B)
+        let r2 = storage.merge_and_fetch_recipient(Some(e164(2)), Some(aci(2)), Some(pni(2)), TrustLevel::Uncertain);
+        assert_eq!(storage.fetch_recipients().len(), 2);
+
+        // XXX: Pni doesn't get merged!
+        // process(E164_A, PNI_A, ACI_B)
+        // ACI_B moves to E164_A+PNI_A; ACI_A is abandoned (loses e164+pni)
+        // expect(null, null, ACI_A)
+        // expect(E164_A, PNI_A, ACI_B)
+        let r_out = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(2)), Some(pni(1)), TrustLevel::Certain);
+        verify(&r_out, Id::Eq(r2.id), Some(&e164(1)), Some(&pni(1)), Some(&aci(2)));
+
+        let r1_updated = storage.fetch_recipient(&aci(1).into()).unwrap();
+        verify(&r1_updated, Id::Eq(r1.id), None /*E164*/, None /*PNI*/, Some(&aci(1)));
+
+        assert_eq!(storage.fetch_recipients().len(), 2);
+        // TODO: expectChangeNumberEvent()
+    }
+    */
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "full match"
+    async fn full_match(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), Some(pni(1)), TrustLevel::Uncertain);
+        let r2 = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), Some(pni(1)), TrustLevel::Uncertain);
+        assert_eq!(r1.id, r2.id);
+        assert_eq!(storage.fetch_recipients().len(), 1);
+    }
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "e164 matches, e164 + aci provided"
+    /// given(E164_A, PNI_A, null) → process(E164_A, null, ACI_A) → expect(E164_A, PNI_A, ACI_A)
+    /// The existing `e164_matches_e164_provided_pni_changed` test does not cover this case.
+    async fn e164_matches_e164_plus_aci_provided_pni_preserved(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, PNI_A, null)
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), None, Some(pni(1)), TrustLevel::Uncertain);
+
+        // process(E164_A, null, ACI_A) — ACI added; existing PNI must be preserved
+        let r2 = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), None, TrustLevel::Uncertain);
+        verify(&r2, Id::Eq(r1.id), Some(&e164(1)), Some(&pni(1)), Some(&aci(1)));
+    }
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "pni matches, pni+aci provided, pni session"
+    /// Same data outcome as the no-session variant; SSE check omitted (session API TODO).
+    async fn pni_matches_pni_plus_aci_provided_pni_session(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, PNI_A, null, pniSession = true)
+        // TODO: set up PNI session for pni once session API is available
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), None, Some(pni(1)), TrustLevel::Uncertain);
+
+        // process(null, PNI_A, ACI_A)
+        let r2 = storage.merge_and_fetch_recipient(None, Some(aci(1)), Some(pni(1)), TrustLevel::Uncertain);
+        verify(&r2, Id::Eq(r1.id), Some(&e164(1)), Some(&pni(1)), Some(&aci(1)));
+
+        // TODO: expectSessionSwitchoverEvent(E164_A)
+    }
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "e164 and pni matches, all provided, new aci, existing pni session"
+    /// Same data outcome as the no-session variant; SSE check omitted (session API TODO).
+    async fn e164_and_pni_matches_all_provided_new_aci_existing_pni_session(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, PNI_A, null, pniSession = true)
+        // TODO: set up PNI session for pni once session API is available
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), None, Some(pni(1)), TrustLevel::Uncertain);
+
+        // process(E164_A, PNI_A, ACI_A)
+        let r2 = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), Some(pni(1)), TrustLevel::Uncertain);
+        verify(&r2, Id::Eq(r1.id), Some(&e164(1)), Some(&pni(1)), Some(&aci(1)));
+
+        // TODO: expectSessionSwitchoverEvent(E164_A)
+    }
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "pni matches, all provided, new e164 and aci, existing pni session"
+    /// Same data outcome as the no-session variant; SSE check omitted (session API TODO).
+    async fn pni_matches_all_provided_new_e164_and_aci_existing_pni_session(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(null, PNI_A, null, pniSession = true)
+        // TODO: set up PNI session for pni once session API is available
+        let r1 = storage.merge_and_fetch_recipient(None, None, Some(pni(1)), TrustLevel::Uncertain);
+
+        // process(E164_A, PNI_A, ACI_A)
+        let r2 = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), Some(pni(1)), TrustLevel::Uncertain);
+        verify(&r2, Id::Eq(r1.id), Some(&e164(1)), Some(&pni(1)), Some(&aci(1)));
+
+        // TODO: expectSessionSwitchoverEvent(E164_A)
+    }
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "e164 and pni matches, all provided, existing pni session"
+    /// Same data outcome as the no-session variant; SSE check omitted (session API TODO).
+    async fn e164_and_pni_matches_all_provided_existing_pni_session(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, PNI_A, null, pniSession = true)
+        // TODO: set up PNI session for pni once session API is available
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), None, Some(pni(1)), TrustLevel::Uncertain);
+
+        // process(E164_A, PNI_A, ACI_A)
+        let r2 = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), Some(pni(1)), TrustLevel::Uncertain);
+        verify(&r2, Id::Eq(r1.id), Some(&e164(1)), Some(&pni(1)), Some(&aci(1)));
+
+        // TODO: expectSessionSwitchoverEvent(E164_A)
+    }
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "pni matches, all provided, existing pni session"
+    /// Same data outcome as the no-session variant; SSE check omitted (session API TODO).
+    async fn pni_matches_all_provided_existing_pni_session(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(null, PNI_A, null, pniSession = true)
+        // TODO: set up PNI session for pni once session API is available
+        let r1 = storage.merge_and_fetch_recipient(None, None, Some(pni(1)), TrustLevel::Uncertain);
+
+        // process(E164_A, PNI_A, ACI_A)
+        let r2 = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), Some(pni(1)), TrustLevel::Uncertain);
+        verify(&r2, Id::Eq(r1.id), Some(&e164(1)), Some(&pni(1)), Some(&aci(1)));
+
+        // TODO: expectSessionSwitchoverEvent(E164_A)
+    }
+
+    // -------------------------------------------------------------------------
+    // Merge tests (continued) — change number variants
+    // -------------------------------------------------------------------------
+
+    /*
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "merge, e164+pni & e164+pni+aci, change number"
+    async fn merge_e164_pni_and_e164_pni_aci_change_number(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, PNI_A, null)
+        // given(E164_B, PNI_B, ACI_A)
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), None, Some(pni(1)), TrustLevel::Uncertain);
+        let r2 = storage.merge_and_fetch_recipient(Some(e164(2)), Some(aci(1)), Some(pni(2)), TrustLevel::Uncertain);
+        assert_eq!(storage.fetch_recipients().len(), 2);
+
+        // XXX: Pni doesn't get merged!
+        // process(E164_A, PNI_A, ACI_A)
+        let r_out = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), Some(pni(1)), TrustLevel::Certain);
+
+        // ACI record (r2) changes number to e164_1+pni_1; r1 deleted (merged in)
+        // expect(deleted) then expect(E164_A, PNI_A, ACI_A)
+        verify(&r_out, Id::Eq(r2.id), Some(&e164(1)), Some(&pni(1)), Some(&aci(1)));
+
+        assert!(storage.fetch_recipient_by_id(r1.id).is_none());
+        assert_eq!(storage.fetch_recipients().len(), 1);
+        // TODO: expectChangeNumberEvent()
+        // TODO: expectThreadMergeEvent(E164_A)
+    }
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "merge, e164+pni & e164+aci, change number"
+    async fn merge_e164_pni_and_e164_aci_change_number(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, PNI_A, null)
+        let r1 = storage.merge_and_fetch_recipient(Some(e164(1)), None,
+            Some(pni(1)), TrustLevel::Uncertain);
+
+        // given(E164_B, null, ACI_A)
+        let r2 = storage.merge_and_fetch_recipient(Some(e164(2)), Some(aci(1)), None, TrustLevel::Uncertain);
+        assert_eq!(storage.fetch_recipients().len(), 2);
+
+        // XXX: Pni doesn't get merged!
+        // process(E164_A, PNI_A, ACI_A)
+        let r_out = storage.merge_and_fetch_recipient(Some(e164(1)), Some(aci(1)), Some(pni(1)), TrustLevel::Certain);
+
+        // ACI record (r2) changes number to e164_1; r1 deleted (merged in)
+        // expect(deleted) then expect(E164_A, PNI_A, ACI_A)
+        verify(&r_out, Id::Eq(r2.id), Some(&e164(1)), Some(&pni(1)), Some(&aci(1)));
+
+        assert!(storage.fetch_recipient_by_id(r1.id).is_none());
+        assert_eq!(storage.fetch_recipients().len(), 1);
+        // TODO: expectChangeNumberEvent()
+        // TODO: expectThreadMergeEvent(E164_A)
+    }
+
+    #[rstest]
+    #[tokio::test]
+    /// Signal Android: "merge, e164+pni & e164+aci, pni+aci provided, change number"
+    async fn merge_e164_pni_and_e164_aci_pni_aci_provided_change_number(storage: impl Future<Output = InMemoryDb>) {
+        let (storage, _temp_dir) = storage.await;
+
+        // given(E164_A, PNI_A, null)
+        let _r = storage.merge_and_fetch_recipient(Some(e164(1)), None,
+            Some(pni(1)), TrustLevel::Uncertain);
+
+        // given(E164_B, null, ACI_A)
+        let r2 = storage.merge_and_fetch_recipient(Some(e164(2)), Some(aci(1)), None, TrustLevel::Uncertain);
+        assert_eq!(storage.fetch_recipients().len(), 2);
+
+        // XXX: Pni doesn't get merged!
+        // process(null, PNI_A, ACI_A)
+        let r3 = storage.merge_and_fetch_recipient(None, Some(aci(1)), Some(pni(1)), TrustLevel::Certain);
+
+        // PNI record (r1) carries e164_1 which follows; ACI record (r2) merges in
+        // expect(E164_A, PNI_A, ACI_A)
+        verify(&r3, Id::Eq(r2.id), Some(&e164(1)), Some(&pni(1)), Some(&aci(1)));
+
+        assert_eq!(storage.fetch_recipients().len(), 1);
+        // TODO: expectThreadMergeEvent(E164_A)
+        // TODO: expectChangeNumberEvent()
+    }
+    */
 }
