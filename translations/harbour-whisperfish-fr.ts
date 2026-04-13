@@ -579,7 +579,7 @@
         <source>Install Signal Desktop. Use e.g. the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</source>
         <oldsource>Install Signal Desktop. Use the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</oldsource>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
-        <translation type="unfinished">Veuillez installer Signal Desktop et scanner le code QR avec l&apos;application CodeReader. Copiez-collez l&apos;URL ici.</translation>
+        <translation>Veuillez installer Signal Desktop et scanner le code QR avec, par exemple, l&apos;application CodeReader. Copiez-collez l&apos;URL ici.</translation>
     </message>
     <message id="whisperfish-group-add-member-menu">
         <source>Add Member</source>
