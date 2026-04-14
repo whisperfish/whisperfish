@@ -310,10 +310,10 @@ Page {
                     "J. Lavoie" + "\n" +
                     "Alexander Schlarb" + "\n" +
                     "Bérenger" + "\n" +
-                    "Antoine BEAUJOT" + "\n" +
                     "Eric" + "\n" +
-                    "Thibaut Vandervelden" + "\n" +
                     "Thomas Rouyer" + "\n" +
+                    "Antoine BEAUJOT" + "\n" +
+                    "Thibaut Vandervelden" + "\n" +
                     "carlosgonz"
                 }
             }
