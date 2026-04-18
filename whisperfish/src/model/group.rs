@@ -198,6 +198,20 @@ impl GroupMembership {
             Self::V2(v2) => v2.role,
         }
     }
+
+    fn label(&self) -> Option<&str> {
+        match self {
+            Self::V1(_v1) => None,
+            Self::V2(v2) => v2.label.as_deref(),
+        }
+    }
+
+    fn label_emoji(&self) -> Option<&str> {
+        match self {
+            Self::V1(_v1) => None,
+            Self::V2(v2) => v2.label_emoji.as_deref(),
+        }
+    }
 }
 
 #[derive(QObject, Default)]
@@ -238,6 +252,8 @@ define_model_roles! {
     enum GroupMembershipRoles for GroupMembership [with offset 100] {
         MemberSince(fn member_since(&self) via qdatetime_from_naive_option): "memberSince",
         Role(fn role(&self)): "role",
+        Label(fn label(&self) via qstring_from_option): "label",
+        LabelEmoji(fn label_emoji(&self) via qstring_from_option): "labelEmoji",
     }
 }
 

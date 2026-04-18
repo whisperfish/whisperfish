@@ -128,6 +128,8 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                             access_required_for_members.eq(i32::from(acl.members)),
                             access_required_for_add_from_invite_link
                                 .eq(i32::from(acl.add_from_invite_link)),
+                            access_required_for_member_labels
+                                .eq(i32::from(acl.member_label)),
                             announcement_only.eq(group.announcements_only),
                         ))
                         .filter(id.eq(&group_id_hex))
