@@ -353,6 +353,30 @@ ApplicationWindow
             "iface": "org.whisperfish.session",
             "method": "showConversation",
             "arguments": [ "sessionId", data.sessionId ]
+        },{
+            "name": "markAsRead",
+            //: Notification action: mark message as read
+            //% "Mark as read"
+            "displayName": qsTrId("whisperfish-notification-mark_as_read"),
+            "service": "be.rubdos.whisperfish",
+            "path": "/be/rubdos/whisperfish/app",
+            "iface": "be.rubdos.whisperfish.app",
+            "method": "markAsRead",
+            "arguments": [ "messageId", data.messageId ]
+        },{
+            "name": "replyToMessage",
+            //: Notification action: Reply to (i.e. quote) the message
+            //% "Reply"
+            "displayName": qsTrId("whisperfish-notification-reply_to_message"),
+            "service": "be.rubdos.whisperfish",
+            "path": "/be/rubdos/whisperfish/app",
+            "iface": "be.rubdos.whisperfish.app",
+            "input" : {
+                "label": "Message",
+                "editable": true,
+            },
+            "method": "replyToMessage",
+            "arguments": [ "sessionId", data.sessionId, "messageId", data.messageId ]
         } ]
         if (!ClientWorker.queueEmpty) {
             console.log("Adding to queue")
@@ -523,6 +547,20 @@ ApplicationWindow
         service: "be.rubdos.whisperfish"
         path: "/be/rubdos/whisperfish/app"
         iface: "be.rubdos.whisperfish.app"
+
+        function markAsRead(param1, messageId) {
+            if (param1 != "sessionId") return;
+            ClientWorker.mark_messages_read([messageId])
+        }
+
+        function replyToMessage(param1, sessionId, param2, messageId, replyText) {
+            // XXX Better verification?
+            if (param1 != "sessionId") return;
+            if (param2 != "messageId") return;
+            if (replyText == "") return;
+            ClientWorker.mark_messages_read([messageId])
+            MessageModel.createMessage(sessionId, replyText, [], messageId, true, false)
+        }
 
         function show() {
             console.log("DBus app.show() call received")
