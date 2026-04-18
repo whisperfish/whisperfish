@@ -115,14 +115,14 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                     diesel::update(group_v2s)
                         .set((
                             name.eq(&group.title),
-                            description.eq(&group.description),
+                            description.eq(&group.description_text),
                             avatar.eq(if group.avatar.is_empty() {
                                 None
                             } else {
                                 Some(&group.avatar)
                             }),
                             // TODO: maybe rename the SQLite column to version
-                            revision.eq(group.revision as i32),
+                            revision.eq(group.version as i32),
                             invite_link_password.eq(&group.invite_link_password),
                             access_required_for_attributes.eq(i32::from(acl.attributes)),
                             access_required_for_members.eq(i32::from(acl.members)),
@@ -166,7 +166,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                     .members
                     .iter()
                     .map(|member| ((Some(member.aci)), None, Some(&member.profile_key)))
-                    .chain(group.pending_members.iter().map(|member|
+                    .chain(group.members_pending_profile_key.iter().map(|member|
                         match member.address.kind() {
                             ServiceIdKind::Aci => (member.address.aci(), None, None),
                             ServiceIdKind::Pni => (None, member.address.pni(), None),
@@ -174,7 +174,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                     ))
                     .chain(
                         group
-                            .requesting_members
+                            .members_pending_admin_approval
                             .iter()
                             .map(|member| (Some(member.aci), None, Some(&member.profile_key))),
                     );
@@ -298,7 +298,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                                     group_v2_members::group_v2_id.eq(&group_id_hex.clone()),
                                     group_v2_members::recipient_id.eq(recipient.id),
                                     group_v2_members::joined_at_revision
-                                        .eq(member.joined_at_revision as i32),
+                                        .eq(member.joined_at_version as i32),
                                     group_v2_members::role.eq(member.role as i32),
                                 ))
                                 .execute(&mut *storage.db())?;
@@ -317,24 +317,24 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         let deleted = diesel::delete(group_v2_banned_members::table)
                             .filter(group_v2_id.eq(&group_id_hex))
                             .execute(db)?;
-                        if deleted != group.banned_members.len() {
+                        if deleted != group.members_banned.len() {
                             tracing::warn!(
                                 "Expected {} deleted banned members, got {}.",
-                                group.banned_members.len(),
+                                group.members_banned.len(),
                                 deleted
                             )
                         } else {
                             tracing::debug!(
                                 "Deleted {} banned members, inserting {} new",
                                 deleted,
-                                group.banned_members.len()
+                                group.members_banned.len()
                             );
                         }
-                        for member in &group.banned_members {
+                        for member in &group.members_banned {
                             diesel::insert_or_ignore_into(group_v2_banned_members::table)
                                 .values((
                                     group_v2_id.eq(&group_id_hex),
-                                    service_id.eq(member.service_id.service_id_string()),
+                                    service_id.eq(member.user_id.service_id_string()),
                                     banned_at.eq(millis_to_naive_chrono(member.timestamp)),
                                 ))
                                 .execute(db)?;
@@ -534,12 +534,12 @@ fn group_change_to_service_message_json(group_change: &GroupChange) -> Option<St
     match group_change {
         GroupChange::AddBannedMember(member) => {
             change = Some("add_banned_member".into());
-            match member.service_id.kind() {
+            match member.user_id.kind() {
                 ServiceIdKind::Aci => {
-                    target_aci = Some(member.service_id.raw_uuid().to_string());
+                    target_aci = Some(member.user_id.raw_uuid().to_string());
                 }
                 ServiceIdKind::Pni => {
-                    target_pni = Some(member.service_id.raw_uuid().to_string());
+                    target_pni = Some(member.user_id.raw_uuid().to_string());
                 }
             };
         }
@@ -644,6 +644,25 @@ fn group_change_to_service_message_json(group_change: &GroupChange) -> Option<St
             change = Some("title".into());
             value = Some(title.to_owned());
         }
+        GroupChange::MemberLabel {
+            user_id,
+            label_emoji,
+            label_string,
+        } => {
+            target_aci = Some(user_id.raw_uuid().to_string());
+            change = Some("member_label".into());
+            value = Some(
+                serde_json::json!({
+                    "string": label_string,
+                    "emoji": label_emoji,
+                })
+                .to_string(),
+            );
+        }
+        GroupChange::MemberLabelAccess(access) => {
+            change = Some("member_label_access".into());
+            value = Some(access_to_string(access));
+        }
     };
 
     if change.is_some() {
@@ -702,7 +721,7 @@ impl Handler<GroupV2Update> for ClientActor {
                     group_id: _group_id,
                     // TODO: Propagate editor to QML
                     editor,
-                    revision,
+                    version,
                     changes,
                     change_epoch: _,
                 }) = changes.unwrap()
@@ -715,7 +734,7 @@ impl Handler<GroupV2Update> for ClientActor {
 
                     // TODO: This is ugly. Pass revision to functions in match arms below instead.
                     let original_revision = group_v2.revision;
-                    group_v2.revision = revision as i32;
+                    group_v2.revision = version as i32;
 
                     for change in changes {
                         if let Some(message) = group_change_to_service_message_json(&change) {
@@ -751,7 +770,7 @@ impl Handler<GroupV2Update> for ClientActor {
                                 tracing::debug!("Add banned member: {:?}", member);
                                 if let (_, Some(recipient)) = storage.add_group_v2_banned_member(
                                     &group_v2,
-                                    &member.service_id,
+                                    &member.user_id,
                                     member.timestamp,
                                 ) {
                                     db_triggers
@@ -850,7 +869,7 @@ impl Handler<GroupV2Update> for ClientActor {
                                     member.aci,
                                     member.role,
                                     &member.profile_key,
-                                    member.joined_at_revision as i32,
+                                    member.joined_at_version as i32,
                                     None,
                                 );
                                 if let Some((_, added)) = result {
@@ -937,6 +956,24 @@ impl Handler<GroupV2Update> for ClientActor {
                                 storage.update_group_v2_title(&group_v2, &title);
                                 db_triggers.push(GroupV2Trigger::Revision);
                             }
+                            GroupChange::MemberLabel {
+                                user_id,
+                                label_emoji,
+                                label_string,
+                            } => {
+                                tracing::debug!(
+                                    "Member label: {} ({label_emoji}) {label_string}",
+                                    user_id.service_id_string()
+                                );
+                                // TODO
+                                // storage.update_group_v2_label(...);
+                                db_triggers.push(GroupV2Trigger::Recipient(user_id.raw_uuid()));
+                            }
+                            GroupChange::MemberLabelAccess(_access) => {
+                                tracing::debug!("Member label access: {:?}", _access);
+                                // TODO
+                                // storage.update_group_v2_member_label_access(&group_v2, _access.into());
+                            }
                         }
                     }
                     group_v2.revision = original_revision;
@@ -968,7 +1005,7 @@ impl Handler<GroupV2Update> for ClientActor {
 
                     if !db_triggers.is_empty() {
                         // Triggers group update
-                        storage.update_group_v2_revision(&group_v2, revision as i32);
+                        storage.update_group_v2_revision(&group_v2, version as i32);
                     }
                 } else {
                     tracing::warn!("Group change message with no changes");

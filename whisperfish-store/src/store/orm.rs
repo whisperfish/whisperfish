@@ -1731,6 +1731,7 @@ mod tests {
             avatar: None,
             description: Some("desc".into()),
             announcement_only: false,
+            access_required_for_member_labels: 0,
         }
     }
 
@@ -1907,6 +1908,8 @@ mod tests {
             member_since: datetime,
             joined_at_revision: 999,
             role: 2,
+            label: None,
+            label_emoji: None,
         };
         assert_eq!(format!("{}",g2m), "GroupV2Member { group_v2_id: \"id\", recipient_id: 22, member_since: \"2023-03-31 14:51:25\" }");
     }
