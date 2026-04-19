@@ -27,11 +27,8 @@ pub struct AppState {
     activate: qt_signal!(),
 
     gstreamer_version: qt_property!(QString; READ gstreamer_version ALIAS gstreamerVersion CONST),
-    has_gstreamer: qt_property!(bool; READ has_gstreamer ALIAS hasGstreamer CONST),
     gstreamer_version_major: qt_property!(u32; READ gstreamer_version_major ALIAS gstreamerVersionMajor CONST),
     gstreamer_version_minor: qt_property!(u32; READ gstreamer_version_minor ALIAS gstreamerVersionMinor CONST),
-    gstreamer_version_micro: qt_property!(u32; READ gstreamer_version_micro ALIAS gstreamerVersionMicro CONST),
-    gstreamer_version_nano: qt_property!(u32; READ gstreamer_version_nano ALIAS gstreamerVersionNano CONST),
 
     may_exit: MayExit,
     setMayExit: qt_method!(fn(&self, value: bool)),
@@ -70,14 +67,6 @@ impl AppState {
     fn gstreamer_version_minor(&self) -> u32 {
         gstreamer::version().1
     }
-
-    fn gstreamer_version_micro(&self) -> u32 {
-        gstreamer::version().2
-    }
-
-    fn gstreamer_version_nano(&self) -> u32 {
-        gstreamer::version().3
-    }
 }
 
 #[cfg(not(feature = "_gstreamer"))]
@@ -93,21 +82,9 @@ impl AppState {
     fn gstreamer_version_minor(&self) -> u32 {
         0
     }
-
-    fn gstreamer_version_micro(&self) -> u32 {
-        0
-    }
-
-    fn gstreamer_version_nano(&self) -> u32 {
-        0
-    }
 }
 
 impl AppState {
-    fn has_gstreamer(&self) -> bool {
-        cfg!(feature = "_gstreamer")
-    }
-
     #[allow(non_snake_case)]
     #[with_executor]
     fn setActive(&mut self) {
@@ -229,12 +206,9 @@ impl AppState {
     #[with_executor]
     fn new() -> Self {
         Self {
-            has_gstreamer: Default::default(),
             gstreamer_version: Default::default(),
             gstreamer_version_major: Default::default(),
             gstreamer_version_minor: Default::default(),
-            gstreamer_version_micro: Default::default(),
-            gstreamer_version_nano: Default::default(),
 
             base: Default::default(),
             closed: false,

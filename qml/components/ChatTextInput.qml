@@ -402,7 +402,7 @@ Item {
                     icon.source: "../../icons/microphone.png"
                     icon.width: enableAttachments ? Theme.iconSizeMedium : 0
                     icon.height: icon.width
-                    visible: enableAttachments
+                    visible: enableAttachments && AppState.gstreamerVersionMajor > 0
                     onClicked: {
                         inputRow.toggleAttachmentButtons();
                         startRecording();
