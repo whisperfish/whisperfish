@@ -409,6 +409,11 @@ find ./icons -maxdepth 1 -type f -exec \
 find ./qml -type f -exec \
     install -Dm 644 "{}" "%{buildroot}%{_datadir}/harbour-whisperfish/{}" \;
 
+%if %{with harbour}
+# Generate a dummy VoiceNoteRecorder
+echo -e "import QtQuick 2.2\Item { }" > "%{buildroot}%{_datadir}/harbour-whisperfish/qml/components/VoiceNoteRecorder.qml"
+%endif
+
 %if %{without harbour}
 # Dbus service
 install -Dm 644 be.rubdos.harbour-whisperfish.service %{buildroot}%{_unitdir}/be.rubdos.harbour-whisperfish.service

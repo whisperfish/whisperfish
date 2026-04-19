@@ -37,6 +37,7 @@ Item {
     property var voiceNoteDuration: 0;
 
     property bool _useAac: useAac()
+    property bool useVoiceNotes: AppState.gstreamerVersionMajor > 0
 
     // getTime() doesn't work in a declarative context, so we need a timer
     Timer {
@@ -49,12 +50,12 @@ Item {
     }
 
     readonly property bool quotedMessageShown: quoteItem.messageId >= 0
-    readonly property bool canSend: enableSending &&
-                                    !announcementOnlyBlock &&
-                                    ClientWorker.connected &&
-                                    (text.trim().length > 0 ||
-                                     attachments.length > 0 ||
-                                     recorder.isRecording)
+    readonly property bool canSend: enableSending
+                                    && !announcementOnlyBlock
+                                    && ClientWorker.connected
+                                    && (text.trim().length > 0
+                                        || attachments.length > 0
+                                        || recorder.isRecording)
 
     signal sendMessage(var text, var attachments, var replyTo /* message id */, var isVoiceNote)
     signal sendTypingNotification()
@@ -372,8 +373,8 @@ Item {
                     horizontalCenter: moreButton.horizontalCenter
                     bottom: moreButton.top
                 }
-                width: cameraButton.width
-                height: voiceButton.height + cameraButton.height + attachButton.height + (3 * Theme.paddingSmall)
+                width: attachButton.width
+                height: (Theme.paddingSmall + attachButton.height) * (useVoiceNotes ? 3 : 2)
 
                 clip: false
 
@@ -396,13 +397,14 @@ Item {
                 IconButton {
                     id: voiceButton
                     anchors {
-                        top: parent.top
+                        bottom: cameraButton.top
+                        topMargin: Theme.paddingSmall
                         horizontalCenter: parent.horizontalCenter
                     }
                     icon.source: "../../icons/microphone.png"
                     icon.width: enableAttachments ? Theme.iconSizeMedium : 0
                     icon.height: icon.width
-                    visible: enableAttachments && AppState.gstreamerVersionMajor > 0
+                    visible: enableAttachments && useVoiceNotes
                     onClicked: {
                         inputRow.toggleAttachmentButtons();
                         startRecording();
@@ -412,7 +414,7 @@ Item {
                 IconButton {
                     id: cameraButton
                     anchors {
-                        top: voiceButton.bottom
+                        bottom: attachButton.top
                         topMargin: Theme.paddingSmall
                         horizontalCenter: parent.horizontalCenter
                     }
@@ -429,7 +431,8 @@ Item {
                 IconButton {
                     id: attachButton
                     anchors {
-                        top: cameraButton.bottom
+                        bottom: buttonContainer.bottom
+                        bottomMargin: Theme.paddingSmall
                         topMargin: Theme.paddingSmall
                         horizontalCenter: parent.horizontalCenter
                     }
@@ -456,9 +459,7 @@ Item {
                 icon.source: "image://theme/icon-m-cancel"
                 visible: isVoiceNote
                 enabled: isVoiceNote
-                onClicked: {
-                    cancelRecording()
-                }
+                onClicked: cancelRecording()
             }
 
             IconButton {
