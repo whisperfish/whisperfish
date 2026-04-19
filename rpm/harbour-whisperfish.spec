@@ -412,6 +412,14 @@ find ./qml -type f -exec \
 %if %{with harbour}
 # Generate a dummy VoiceNoteRecorder
 echo -e "import QtQuick 2.2\Item { }" > "%{buildroot}%{_datadir}/harbour-whisperfish/qml/components/VoiceNoteRecorder.qml"
+
+# Remove unused files containing harbour-illegal imports
+rm "%{buildroot}%{_datadir}/harbour-whisperfish/qml/pages/NewGroup.qml"
+rm "%{buildroot}%{_datadir}/harbour-whisperfish/qml/pages/NewMessage.qml"
+%endif
+
+%if %{without calling}
+rm "%{buildroot}%{_datadir}/harbour-whisperfish/qml/pages/RingingDialog.qml"
 %endif
 
 %if %{without harbour}
