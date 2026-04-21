@@ -1555,3 +1555,305 @@ async fn various_storage_functions() {
     s1 = storage.fetch_session_by_id(s1.id).unwrap();
     assert!(s1.draft.is_none());
 }
+
+#[tokio::test]
+async fn delete_message_with_attachments() {
+    use libsignal_service::proto::AttachmentPointer;
+    use std::io::Write;
+    use tempfile::TempDir;
+
+    let tmp_dir = TempDir::new().expect("create temp dir");
+    let tmp_home = tmp_dir.path().join("home").join("foobar");
+    std::fs::create_dir_all(tmp_home.as_path()).expect("create home in temp dir");
+    let tmp_storage = tmp_home
+        .join(".local")
+        .join("share")
+        .join("be.rubdos")
+        .join("harbour-whisperfish")
+        .join("storage");
+
+    let tmp_attachments = tmp_storage.join("attachments");
+    std::fs::create_dir_all(tmp_attachments.as_path())
+        .expect("create attachments dirs in temp home dir");
+
+    let tmp_camera = tmp_storage.join("camera");
+    std::fs::create_dir_all(tmp_camera.as_path())
+        .expect("create attachments dirs in temp home dir");
+
+    std::env::set_var("HOME", tmp_home.as_os_str());
+
+    use rand::distr::Alphanumeric;
+    use rand::Rng;
+
+    let location = whisperfish_store::temp();
+    let rng = rand::rng();
+
+    // Signaling password for REST API
+    let password: String = rng
+        .sample_iter(&Alphanumeric)
+        .take(24)
+        .map(char::from)
+        .collect();
+
+    // Registration ID
+    let regid = 12345;
+    let pni_regid = 12346;
+
+    let storage = SimpleStorage::new(
+        Arc::new(SignalConfig::default()),
+        &location,
+        None,
+        regid,
+        pni_regid,
+        &password,
+        None,
+        None,
+    )
+    .await;
+    assert!(storage.is_ok(), "{}", storage.err().unwrap());
+    let mut storage = storage.unwrap();
+
+    let my_uuid = uuid::Uuid::new_v4();
+    let my_addr = ServiceId::from(Aci::from(my_uuid));
+
+    let uuid1 = uuid::Uuid::new_v4();
+    let addr1 = ServiceId::from(Aci::from(uuid1));
+    let rcpt1 = storage.fetch_or_insert_recipient_by_address(&addr1);
+
+    let sess1 = storage.fetch_or_insert_session_by_recipient_id(rcpt1.id);
+    let ts = NaiveDateTime::parse_from_str("2023-04-01 07:01:32", "%Y-%m-%d %H:%M:%S").unwrap();
+
+    // Received attachment file is only attachments storage path
+    // --> it gets deleted
+
+    {
+        let msg = NewMessage {
+            session_id: sess1.id,
+            source_addr: Some(addr1),
+            text: "Hi!".into(),
+            timestamp: ts,
+            expire_timer_version: sess1.expire_timer_version,
+            ..NewMessage::new_incoming()
+        };
+
+        let msg = storage.create_message(&msg);
+        storage.dequeue_message(msg.id, ts, false);
+
+        let new_att = AttachmentPointer {
+            ..Default::default()
+        };
+        let attachment_id = storage.register_attachment(msg.id, new_att);
+        assert!(attachment_id > 0);
+
+        let stored = storage
+            .save_attachment(msg.id, &tmp_attachments, "dat", &[1, 2, 3, 4, 5])
+            .await
+            .unwrap();
+        let db_attachment = storage.fetch_attachment(attachment_id).unwrap();
+        assert_eq!(
+            db_attachment.absolute_attachment_path().unwrap(),
+            stored.to_string_lossy()
+        );
+        assert!(db_attachment.original_path.is_none());
+
+        assert!(std::fs::exists(&stored).unwrap());
+        assert!(storage.delete_message(msg.id));
+        assert!(!std::fs::exists(&stored).unwrap());
+    }
+
+    // Sending a picture from ~/Pictures makes a resized/stripped copy to attachments
+    // --> attachments file gets deleted
+
+    {
+        let msg = NewMessage {
+            session_id: sess1.id,
+            source_addr: Some(my_addr),
+            timestamp: ts,
+            expire_timer_version: sess1.expire_timer_version,
+            ..NewMessage::new_outgoing()
+        };
+        let msg = storage.create_message(&msg);
+        let pictures_file = tmp_home.join("Pictures");
+        std::fs::create_dir_all(&pictures_file).unwrap();
+        let pictures_file = pictures_file.join("selfie.jpg");
+        let attachments_file = tmp_attachments.join("some_uuid_goes_here.jpg");
+        {
+            let mut f = std::fs::File::create_new(&pictures_file).unwrap();
+            f.write_all(b"Hello, cruel world!").unwrap();
+        }
+        std::fs::copy(&pictures_file, &attachments_file).unwrap(); // pretend-resize
+
+        let attachment_id =
+            storage.insert_local_attachment(msg.id, None, &pictures_file, &attachments_file, false);
+        let db_attachment = storage.fetch_attachment(attachment_id).unwrap();
+        assert_eq!(
+            db_attachment.absolute_attachment_path().unwrap(),
+            attachments_file.to_string_lossy()
+        );
+        assert_eq!(
+            db_attachment.absolute_original_path().unwrap(),
+            pictures_file.to_string_lossy()
+        );
+
+        eprintln!("{db_attachment:#?}");
+        eprintln!(
+            "absolute_attachment_path: {}",
+            db_attachment.absolute_attachment_path().unwrap()
+        );
+        eprintln!(
+            "absolute_original_path:   {}",
+            db_attachment.absolute_original_path().unwrap()
+        );
+
+        assert!(std::fs::exists(&pictures_file).unwrap());
+        assert!(std::fs::exists(&attachments_file).unwrap());
+        assert!(storage.delete_message(msg.id));
+        assert!(std::fs::exists(&pictures_file).unwrap());
+        assert!(!std::fs::exists(&attachments_file).unwrap());
+    }
+
+    // Sending a document from ~/Documents sends the original file without attachments copy
+    // --> nothing gets deleted
+
+    {
+        let msg = NewMessage {
+            session_id: sess1.id,
+            source_addr: Some(my_addr),
+            timestamp: ts,
+            expire_timer_version: sess1.expire_timer_version,
+            ..NewMessage::new_outgoing()
+        };
+        let msg = storage.create_message(&msg);
+        let documents_file = tmp_home.join("Documents");
+        std::fs::create_dir_all(&documents_file).unwrap();
+        let documents_file = documents_file.join("polyglot.pdf");
+        {
+            let mut f = std::fs::File::create_new(&documents_file).unwrap();
+            f.write_all(b"imma pdf").unwrap();
+        }
+
+        let attachment_id =
+            storage.insert_local_attachment(msg.id, None, &documents_file, &documents_file, false);
+        let db_attachment = storage.fetch_attachment(attachment_id).unwrap();
+        assert_eq!(
+            db_attachment.absolute_attachment_path().unwrap(),
+            documents_file.to_string_lossy()
+        );
+        assert_eq!(
+            db_attachment.absolute_original_path().unwrap(),
+            documents_file.to_string_lossy()
+        );
+
+        eprintln!("{db_attachment:#?}");
+        eprintln!(
+            "absolute_attachment_path: {}",
+            db_attachment.absolute_attachment_path().unwrap()
+        );
+        eprintln!(
+            "absolute_original_path:   {}",
+            db_attachment.absolute_original_path().unwrap()
+        );
+
+        assert!(std::fs::exists(&documents_file).unwrap());
+        assert!(storage.delete_message(msg.id));
+        assert!(std::fs::exists(&documents_file).unwrap());
+    }
+
+    // Taking a picture in Whisperfish is saved into camera_dir.
+    // Sending the picture as attachment stores a resized/stripped copy into attachment_dir.
+    // --> attachment gets deleted, original doesn't even though it's in a allowed camera_dir
+
+    {
+        let msg = NewMessage {
+            session_id: sess1.id,
+            source_addr: Some(my_addr),
+            timestamp: ts,
+            expire_timer_version: sess1.expire_timer_version,
+            ..NewMessage::new_outgoing()
+        };
+        let msg = storage.create_message(&msg);
+        let pictures_file = tmp_camera.join("20250101121314.jpg");
+        let attachments_file = tmp_attachments.join("hurr_durr_uuidv4.jpg");
+        {
+            let mut f = std::fs::File::create_new(&pictures_file).unwrap();
+            f.write_all(b"jpeg magic bytes goes here").unwrap();
+        }
+        std::fs::copy(&pictures_file, &attachments_file).unwrap(); // pretend-resize
+
+        let attachment_id =
+            storage.insert_local_attachment(msg.id, None, &pictures_file, &attachments_file, false);
+        let db_attachment = storage.fetch_attachment(attachment_id).unwrap();
+        assert_eq!(
+            db_attachment.absolute_attachment_path().unwrap(),
+            attachments_file.to_string_lossy()
+        );
+        assert_eq!(
+            db_attachment.absolute_original_path().unwrap(),
+            pictures_file.to_string_lossy()
+        );
+
+        eprintln!("{db_attachment:#?}");
+        eprintln!(
+            "absolute_attachment_path: {}",
+            db_attachment.absolute_attachment_path().unwrap()
+        );
+        eprintln!(
+            "absolute_original_path:   {}",
+            db_attachment.absolute_original_path().unwrap()
+        );
+
+        assert!(std::fs::exists(&pictures_file).unwrap());
+        assert!(std::fs::exists(&attachments_file).unwrap());
+        assert!(storage.delete_message(msg.id));
+        assert!(std::fs::exists(&pictures_file).unwrap());
+        assert!(!std::fs::exists(&attachments_file).unwrap());
+    }
+
+    // Sending an image as-is from camera_dir without attachment copy
+    // --> attachments file, which _is_ the original file, gets deleted
+    // Note: Currently not possible, but let's have a test anyway.
+
+    {
+        let msg = NewMessage {
+            session_id: sess1.id,
+            source_addr: Some(my_addr),
+            timestamp: ts,
+            expire_timer_version: sess1.expire_timer_version,
+            ..NewMessage::new_outgoing()
+        };
+        let msg = storage.create_message(&msg);
+        let pictures_file = tmp_home.join("Pictures");
+        std::fs::create_dir_all(&pictures_file).unwrap();
+        let camera_file = tmp_camera.join("rage_comic.png");
+        {
+            let mut f = std::fs::File::create_new(&camera_file).unwrap();
+            f.write_all(b"funny png goes here").unwrap();
+        }
+
+        let attachment_id =
+            storage.insert_local_attachment(msg.id, None, &camera_file, &camera_file, false);
+        let db_attachment = storage.fetch_attachment(attachment_id).unwrap();
+        assert_eq!(
+            db_attachment.absolute_attachment_path().unwrap(),
+            camera_file.to_string_lossy()
+        );
+        assert_eq!(
+            db_attachment.absolute_original_path().unwrap(),
+            camera_file.to_string_lossy()
+        );
+
+        eprintln!("{db_attachment:#?}");
+        eprintln!(
+            "absolute_attachment_path: {}",
+            db_attachment.absolute_attachment_path().unwrap()
+        );
+        eprintln!(
+            "absolute_original_path:   {}",
+            db_attachment.absolute_original_path().unwrap()
+        );
+
+        assert!(std::fs::exists(&camera_file).unwrap());
+        assert!(storage.delete_message(msg.id));
+        assert!(!std::fs::exists(&camera_file).unwrap());
+    }
+}
