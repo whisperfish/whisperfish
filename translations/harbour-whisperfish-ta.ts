@@ -126,27 +126,39 @@
         <extracomment>Default label for new message notification</extracomment>
         <translation>புதிய செய்தி</translation>
     </message>
+    <message id="whisperfish-notification-mark_as_read">
+        <location filename="../qml/harbour-whisperfish-main.qml" line="360"/>
+        <source>Mark as read</source>
+        <extracomment>Notification action: mark message as read</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-notification-reply_to_message">
+        <location filename="../qml/harbour-whisperfish-main.qml" line="370"/>
+        <source>Reply</source>
+        <extracomment>Notification action: Reply to (i.e. quote) the message</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-fatal-error-setup-client">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="434"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="458"/>
         <source>Failed to setup Signal client</source>
         <extracomment>Failed to setup signal client error message</extracomment>
         <translation>சிக்னல் கிளையண்டை அமைப்பதில் தோல்வி</translation>
     </message>
     <message id="whisperfish-fatal-error-invalid-datastore">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="439"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="463"/>
         <source>Failed to setup data storage</source>
         <oldsource>Failed to setup datastore</oldsource>
         <extracomment>Failed to setup datastore error message</extracomment>
         <translation>தரவு சேமிப்பிடத்தை அமைப்பதில் தோல்வி</translation>
     </message>
     <message id="permission-la-data">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="628"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="666"/>
         <source>Whisperfish data storage</source>
         <extracomment>Permission for Whisperfish data storage</extracomment>
         <translation>விச்பர்ஃபிச் தரவு சேமிப்பு</translation>
     </message>
     <message id="permission-la-data_description">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="632"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="670"/>
         <source>Store configuration and messages</source>
         <extracomment>Permission description for Whisperfish data storage</extracomment>
         <translation>உள்ளமைவு மற்றும் செய்திகளை சேமிக்கவும்</translation>
@@ -1126,7 +1138,7 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
     </message>
     <message id="whisperfish-share-contacts-label">
         <location filename="../qml/pages/RegisterPage.qml" line="242"/>
-        <location filename="../qml/pages/Settings.qml" line="244"/>
+        <location filename="../qml/pages/Settings.qml" line="293"/>
         <source>Share Contacts</source>
         <extracomment>Share contacts label
 ----------
@@ -1135,7 +1147,7 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-share-contacts-description">
         <location filename="../qml/pages/RegisterPage.qml" line="245"/>
-        <location filename="../qml/pages/Settings.qml" line="247"/>
+        <location filename="../qml/pages/Settings.qml" line="296"/>
         <source>Allow Signal to use your local contact list, to find other Signal users.</source>
         <extracomment>Share contacts description</extracomment>
         <translation>பிற சமிக்ஞை பயனர்களைக் கண்டுபிடிக்க, உங்கள் உள்ளக தொடர்பு பட்டியலைப் பயன்படுத்த சமிக்ஞையை அனுமதிக்கவும்.</translation>
@@ -1296,52 +1308,52 @@ Settings page share contacts</extracomment>
         <translation>எதுவுமில்லை</translation>
     </message>
     <message id="whisperfish-settings-save-attachments">
-        <location filename="../qml/pages/Settings.qml" line="224"/>
+        <location filename="../qml/pages/Settings.qml" line="273"/>
         <source>Save Attachments</source>
         <extracomment>Settings page save attachments</extracomment>
         <translation>இணைப்புகளைச் சேமிக்கவும்</translation>
     </message>
     <message id="whisperfish-settings-save-attachments-description">
-        <location filename="../qml/pages/Settings.qml" line="228"/>
+        <location filename="../qml/pages/Settings.qml" line="277"/>
         <source>Attachments are stored at %1. Currently, when disabled, attachments will not work.</source>
         <oldsource>Attachments are stored at %1</oldsource>
         <extracomment>Settings page save attachments description</extracomment>
         <translation>இணைப்புகள் %1 இல் சேமிக்கப்படுகின்றன. தற்போது, முடக்கப்பட்டால், இணைப்புகள் இயங்காது.</translation>
     </message>
     <message id="whisperfish-settings-enable-enter-send">
-        <location filename="../qml/pages/Settings.qml" line="276"/>
+        <location filename="../qml/pages/Settings.qml" line="325"/>
         <source>Return key send</source>
         <oldsource>EnterKey Send</oldsource>
         <extracomment>Settings page enable enter send</extracomment>
         <translation>திரும்ப விசை அனுப்பவும்</translation>
     </message>
     <message id="whisperfish-settings-enable-enter-send-description">
-        <location filename="../qml/pages/Settings.qml" line="279"/>
+        <location filename="../qml/pages/Settings.qml" line="328"/>
         <source>When enabled, the return key functions as a send key. Otherwise, the return key can be used for multi-line messages.</source>
         <extracomment>Settings page enable enter send description</extracomment>
         <translation>இயக்கப்பட்டால், திரும்பும் விசை அனுப்பும் விசையாக செயல்படுகிறது. இல்லையெனில், திரும்பும் விசையை பல வரி செய்திகளுக்கு பயன்படுத்தலாம்.</translation>
     </message>
     <message id="whisperfish-settings-startup-shutdown-section">
-        <location filename="../qml/pages/Settings.qml" line="421"/>
+        <location filename="../qml/pages/Settings.qml" line="470"/>
         <source>Autostart and Background</source>
         <extracomment>Settings page startup and shutdown section</extracomment>
         <translation>ஆட்டோச்டார்ட் மற்றும் பின்னணி</translation>
     </message>
     <message id="whisperfish-settings-enable-autostart">
-        <location filename="../qml/pages/Settings.qml" line="427"/>
+        <location filename="../qml/pages/Settings.qml" line="476"/>
         <source>Autostart after boot</source>
         <extracomment>Settings page enable autostart</extracomment>
         <translation>துவக்கத்திற்குப் பிறகு ஆட்டோச்டார்ட்</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode-description">
-        <location filename="../qml/pages/Settings.qml" line="500"/>
+        <location filename="../qml/pages/Settings.qml" line="549"/>
         <source>When enabled, Whisperfish keeps running in the background and can send notifications after the app window has been closed.</source>
         <oldsource>When enabled, Whisperfish starts automatically after each boot. If storage encryption is enabled or background-mode is off, the UI will be shown, otherwise the app starts in the background.</oldsource>
         <extracomment>Settings page enable background mode description</extracomment>
         <translation>இயக்கப்பட்டால், விச்பர்ஃபிச் பின்னணியில் இயங்குகிறது மற்றும் பயன்பாட்டு சாளரம் மூடப்பட்ட பிறகு அறிவிப்புகளை அனுப்ப முடியும்.</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
-        <location filename="../qml/pages/Settings.qml" line="497"/>
+        <location filename="../qml/pages/Settings.qml" line="546"/>
         <source>Background mode</source>
         <extracomment>Settings page enable background mode</extracomment>
         <translation>பின்னணி முறை</translation>
@@ -1365,55 +1377,55 @@ Settings page share contacts</extracomment>
         <translation>மற்றவர்கள் எப்போது தட்டச்சு செய்கிறார்கள் என்பதைப் பாருங்கள், நீங்கள் தட்டச்சு செய்யும் போது மற்றவர்கள் பார்க்கட்டும், அவர்களும் இந்த இயக்கப்பட்டிருந்தால்.</translation>
     </message>
     <message id="whisperfish-settings-notification-privacy">
-        <location filename="../qml/pages/Settings.qml" line="342"/>
+        <location filename="../qml/pages/Settings.qml" line="391"/>
         <source>Notification privacy</source>
         <extracomment>Settings page notification privacy</extracomment>
         <translation>அறிவிப்பு தனியுரிமை</translation>
     </message>
     <message id="whisperfish-settings-notifications-disable">
-        <location filename="../qml/pages/Settings.qml" line="351"/>
+        <location filename="../qml/pages/Settings.qml" line="400"/>
         <source>Disable notifications</source>
         <extracomment>Settings page, turn notifications off</extracomment>
         <translation>அறிவிப்புகளை முடக்கு</translation>
     </message>
     <message id="whisperfish-settings-notifications-disable-description">
-        <location filename="../qml/pages/Settings.qml" line="354"/>
+        <location filename="../qml/pages/Settings.qml" line="403"/>
         <source>Whisperfish will not display any notification</source>
         <extracomment>Settings page, turn notifications off description</extracomment>
         <translation>விச்பர்ஃபிச் எந்த அறிவிப்பையும் காட்டாது</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimal">
-        <location filename="../qml/pages/Settings.qml" line="360"/>
+        <location filename="../qml/pages/Settings.qml" line="409"/>
         <source>Minimal notifications</source>
         <extracomment>Settings page, minimal notifications</extracomment>
         <translation>குறைந்தபட்ச அறிவிப்புகள்</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimal-description">
-        <location filename="../qml/pages/Settings.qml" line="363"/>
+        <location filename="../qml/pages/Settings.qml" line="412"/>
         <source>Notification without disclosing the sender or content of the message</source>
         <extracomment>Settings page, minimal notifications description</extracomment>
         <translation>செய்தியின் அனுப்புநர் அல்லது உள்ளடக்கத்தை வெளியிடாமல் அறிவிப்பு</translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only">
-        <location filename="../qml/pages/Settings.qml" line="369"/>
+        <location filename="../qml/pages/Settings.qml" line="418"/>
         <source>Sender-only notifications</source>
         <extracomment>Settings page, sender-only notifications</extracomment>
         <translation>அனுப்புநர் மட்டுமே அறிவிப்புகள்</translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only-description">
-        <location filename="../qml/pages/Settings.qml" line="372"/>
+        <location filename="../qml/pages/Settings.qml" line="421"/>
         <source>Notifications displaying the sender of a message, without the contents</source>
         <extracomment>Settings page, sender-only notifications description</extracomment>
         <translation>உள்ளடக்கங்கள் இல்லாமல் ஒரு செய்தியை அனுப்புநரைக் காண்பிக்கும் அறிவிப்புகள்</translation>
     </message>
     <message id="whisperfish-settings-notifications-complete">
-        <location filename="../qml/pages/Settings.qml" line="378"/>
+        <location filename="../qml/pages/Settings.qml" line="427"/>
         <source>Complete notifications</source>
         <extracomment>Settings page, complete notifications</extracomment>
         <translation>முழுமையான அறிவிப்புகள்</translation>
     </message>
     <message id="whisperfish-settings-notifications-complete-description">
-        <location filename="../qml/pages/Settings.qml" line="381"/>
+        <location filename="../qml/pages/Settings.qml" line="430"/>
         <source>Notifications displaying the contents and sender of a message</source>
         <extracomment>Settings page, sender-only notifications description</extracomment>
         <translation>உள்ளடக்கங்களை காண்பிக்கும் அறிவிப்புகள் மற்றும் ஒரு செய்தியை அனுப்பு</translation>
@@ -1461,156 +1473,196 @@ Settings page share contacts</extracomment>
         <extracomment>Settings page notifications show minimum number of notifications description</extracomment>
         <translation>இயக்கப்பட்டால், ஒவ்வொரு அமர்விலிருந்தும் முதல் அறிவிப்பைத் தவிர மற்ற அனைத்தையும் விச்பர்ஃபிச் அடக்கும்.</translation>
     </message>
+    <message id="whisperfish-settings-attachment-quality-text">
+        <location filename="../qml/pages/Settings.qml" line="226"/>
+        <source>Image attachments quality</source>
+        <extracomment>Settings page scale image attachments</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-settings-attachment-quality-high-text">
+        <location filename="../qml/pages/Settings.qml" line="232"/>
+        <source>High</source>
+        <extracomment>Settings page, use high attachment quality</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-settings-attachment-quality-high-description">
+        <location filename="../qml/pages/Settings.qml" line="235"/>
+        <source>Resize images larger than 4096 pixels in width or height or 3.0MB in size. Using this increases data usage.</source>
+        <extracomment>Settings page, high attachment quality description</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-settings-attachment-quality-standard-text">
+        <location filename="../qml/pages/Settings.qml" line="241"/>
+        <source>Standard</source>
+        <extracomment>Settings page, use standard (medium) attachment quality</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-settings-attachment-quality-standard-description">
+        <location filename="../qml/pages/Settings.qml" line="244"/>
+        <source>Resize images larger than 2048 pixels in width or height or over 1.5MB in size.</source>
+        <extracomment>Settings page, standard (medium) attachment quality description</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-settings-attachment-quality-low-text">
+        <location filename="../qml/pages/Settings.qml" line="250"/>
+        <source>Low</source>
+        <extracomment>Settings page, use low attachment quality</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-settings-attachment-quality-low-description">
+        <location filename="../qml/pages/Settings.qml" line="253"/>
+        <source>Resize images larger than 2048 pixels in width or height or 1.0MB in size. Recommened for low memory devices or minimizing data usage.</source>
+        <extracomment>Settings page, low attachment quality description</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-settings-notifications-prefer-device-contacts">
-        <location filename="../qml/pages/Settings.qml" line="260"/>
+        <location filename="../qml/pages/Settings.qml" line="309"/>
         <source>Prefer device contacts</source>
         <extracomment>Settings page prefer phone contacts</extracomment>
         <translation>சாதன தொடர்புகளை விரும்புங்கள்</translation>
     </message>
     <message id="whisperfish-settings-notifications-prefer-device-contacts-description">
-        <location filename="../qml/pages/Settings.qml" line="263"/>
+        <location filename="../qml/pages/Settings.qml" line="312"/>
         <source>Prefer Sailfish OS address book contact names and avatars over Signal Profile data.</source>
         <extracomment>Settings page prefer phone contacts description</extracomment>
         <translation>சமிக்ஞை சுயவிவரத் தரவைக் காட்டிலும் SAILFISH OS முகவரி புத்தக தொடர்பு பெயர்கள் மற்றும் அவதாரங்களை விரும்புங்கள்.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-label">
-        <location filename="../qml/pages/Settings.qml" line="292"/>
+        <location filename="../qml/pages/Settings.qml" line="341"/>
         <source>Transcribe voice notes</source>
         <extracomment>Settings page auto transcribe voice notes</extracomment>
         <translation>குரல் குறிப்புகளை படியெடுக்கவும்</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-available">
-        <location filename="../qml/pages/Settings.qml" line="296"/>
+        <location filename="../qml/pages/Settings.qml" line="345"/>
         <source>Automatically transcribe voice notes to text upon reception using Speech Note.</source>
         <extracomment>Auto transcribe voice notes description, Speech Note installed</extracomment>
         <translation>பேச்சுக் குறிப்பைப் பயன்படுத்தி வரவேற்பு மீது உரைக்கு குரல் குறிப்புகளை தானாகவே படியெடுக்கவும்.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-unavailable">
-        <location filename="../qml/pages/Settings.qml" line="299"/>
+        <location filename="../qml/pages/Settings.qml" line="348"/>
         <source>Automatically transcribe voice notes to text upon reception. Configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note installed but not configured.</extracomment>
         <translation>வரவேற்பு மீது உரைக்கு குரல் குறிப்புகளை தானாகவே படியெடுக்கவும். இந்த அம்சத்தைப் பயன்படுத்த பேச்சுக் குறிப்பில் &apos;ஆட்டோ கண்டறியப்பட்ட&apos; மாதிரியை உள்ளமைக்கவும்.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-uninstalled">
-        <location filename="../qml/pages/Settings.qml" line="302"/>
+        <location filename="../qml/pages/Settings.qml" line="351"/>
         <source>Automatically transcribe voice notes to text upon reception. Install and configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note not installed</extracomment>
         <translation>வரவேற்பு மீது உரைக்கு குரல் குறிப்புகளை தானாகவே படியெடுக்கவும். இந்த அம்சத்தைப் பயன்படுத்த பேச்சுக் குறிப்பில் &apos;ஆட்டோ கண்டறியப்பட்ட&apos; மாதிரியை நிறுவி உள்ளமைக்கவும்.</translation>
     </message>
     <message id="whisperfish-settings-privacy-section">
-        <location filename="../qml/pages/Settings.qml" line="319"/>
+        <location filename="../qml/pages/Settings.qml" line="368"/>
         <source>Privacy</source>
         <extracomment>Settings page &quot;privacy&quot; section</extracomment>
         <translation>தனியுரிமை</translation>
     </message>
     <message id="whisperfish-settings-share-phone-number">
-        <location filename="../qml/pages/Settings.qml" line="325"/>
+        <location filename="../qml/pages/Settings.qml" line="374"/>
         <source>Share phone number</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
         <translation>தொலைபேசி எண்ணைப் பகிரவும்</translation>
     </message>
     <message id="whisperfish-settings-share-phone-number-description">
-        <location filename="../qml/pages/Settings.qml" line="328"/>
+        <location filename="../qml/pages/Settings.qml" line="377"/>
         <source>When enabled, your contacts can see your phone number when you message them.</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
         <translation>இயக்கப்பட்டால், உங்கள் தொலைபேசி எண்ணை நீங்கள் செய்தி அனுப்பும்போது அவற்றைக் காணலாம்.</translation>
     </message>
     <message id="whisperfish-settings-show-phone-number">
-        <location filename="../qml/pages/Settings.qml" line="398"/>
+        <location filename="../qml/pages/Settings.qml" line="447"/>
         <source>Show phone number</source>
         <extracomment>Settings page, show recipient phone number in conversation view</extracomment>
         <translation>தொலைபேசி எண்ணைக் காட்டு</translation>
     </message>
     <message id="whisperfish-settings-show-phone-number-description">
-        <location filename="../qml/pages/Settings.qml" line="401"/>
+        <location filename="../qml/pages/Settings.qml" line="450"/>
         <source>Show the phone number of the recipient in the conversation page header.</source>
         <extracomment>Settings page, show recipient phone number in conversation view description</extracomment>
         <translation>உரையாடல் பக்க தலைப்பில் பெறுநரின் தொலைபேசி எண்ணைக் காட்டுங்கள்.</translation>
     </message>
     <message id="whisperfish-settings-enable-autostart-description">
-        <location filename="../qml/pages/Settings.qml" line="430"/>
+        <location filename="../qml/pages/Settings.qml" line="479"/>
         <source>When enabled, Whisperfish starts automatically after each boot. If storage encryption is enabled or background-mode is off, the UI will be shown, otherwise the app starts in the background.</source>
         <extracomment>Settings page enable autostart description</extracomment>
         <translation>இயக்கப்பட்டால், ஒவ்வொரு துவக்கத்திற்குப் பிறகு விச்பர்ஃபிச் தானாகத் தொடங்குகிறது. சேமிப்பக குறியாக்கம் இயக்கப்பட்டிருந்தால் அல்லது பின்னணி முறை முடக்கப்பட்டிருந்தால், இடைமுகம் காண்பிக்கப்படும், இல்லையெனில் பயன்பாடு பின்னணியில் தொடங்குகிறது.</translation>
     </message>
     <message id="whisperfish-settings-auto-unlock-password-field">
-        <location filename="../qml/pages/Settings.qml" line="453"/>
+        <location filename="../qml/pages/Settings.qml" line="502"/>
         <source>Unlock Password</source>
         <extracomment>Settings page autostart password field</extracomment>
         <translation>கடவுச்சொல்லைத் திறக்கவும்</translation>
     </message>
     <message id="whisperfish-settings-save-password-button">
-        <location filename="../qml/pages/Settings.qml" line="464"/>
+        <location filename="../qml/pages/Settings.qml" line="513"/>
         <source>Save password</source>
         <extracomment>Settings page save autologin password button</extracomment>
         <translation>கடவுச்சொல்லைச் சேமிக்கவும்</translation>
     </message>
     <message id="whisperfish-settings-clear-password-button">
-        <location filename="../qml/pages/Settings.qml" line="467"/>
+        <location filename="../qml/pages/Settings.qml" line="516"/>
         <source>clear password</source>
         <extracomment>Settings page clear autologin password button</extracomment>
         <translation>கடவுச்சொல்லை அழிக்கவும்</translation>
     </message>
     <message id="whisperfish-settings-auto-unlock-password-info">
-        <location filename="../qml/pages/Settings.qml" line="479"/>
+        <location filename="../qml/pages/Settings.qml" line="528"/>
         <source>You can enter your password to make Whisperfish unlock the database automatically at startup. Please note that the password is stored in plain text, and as such usage of this feature is not recommended.</source>
         <oldsource>You can enter your password to make Whisperfish unlock the database automatically at startup. Please note that the password is stored in plain text, and as such usage of this feature is not recommened.</oldsource>
         <extracomment>Settings page info about setting auto unlock password</extracomment>
         <translation>தொடக்கத்தில் தரவுத்தளத்தை தானாகத் திறக்க விச்பர்ஃபிச் திறக்க உங்கள் கடவுச்சொல்லை உள்ளிடலாம். கடவுச்சொல் எளிய உரையில் சேமிக்கப்பட்டுள்ளது என்பதை நினைவில் கொள்க, மேலும் இந்த அம்சத்தின் பயன்பாடு பரிந்துரைக்கப்படவில்லை.</translation>
     </message>
     <message id="whisperfish-settings-autostart-manual-info">
-        <location filename="../qml/pages/Settings.qml" line="490"/>
+        <location filename="../qml/pages/Settings.qml" line="539"/>
         <source>Whisperfish does not have the permission to change the autostart settings. You can enable or disable autostart manually from the command line by running &apos;systemctl --user enable harbour-whisperfish.service&apos; or &apos;systemctl --user disable harbour-whisperfish.service&apos;</source>
         <extracomment>Settings page info how to enable autostart manually</extracomment>
         <translation>ஆட்டோச்டார்ட் அமைப்புகளை மாற்றுவதற்கான இசைவு விச்பர்ஃபிசுக்கு இல்லை. &apos;Systemctl --user ஐ இயக்குவதன் மூலம் கட்டளை வரியிலிருந்து ஆட்டோச்டார்ட்டை கைமுறையாக இயக்கலாம் அல்லது முடக்கலாம்</translation>
     </message>
     <message id="whisperfish-settings-quit-button">
-        <location filename="../qml/pages/Settings.qml" line="517"/>
+        <location filename="../qml/pages/Settings.qml" line="566"/>
         <source>Quit Whisperfish</source>
         <extracomment>Settings page quit app button</extracomment>
         <translation>விச்பர்ஃபிசை விட்டு விடுங்கள்</translation>
     </message>
     <message id="whisperfish-settings-advanced-section">
-        <location filename="../qml/pages/Settings.qml" line="529"/>
+        <location filename="../qml/pages/Settings.qml" line="578"/>
         <source>Advanced</source>
         <extracomment>Settings page advanced section</extracomment>
         <translation>மேம்பட்ட</translation>
     </message>
     <message id="whisperfish-settings-scale-image-attachments">
-        <location filename="../qml/pages/Settings.qml" line="536"/>
         <source>Scale JPEG Attachments</source>
         <extracomment>Settings page scale image attachments</extracomment>
-        <translation>அளவிலான JPEG இணைப்புகள்</translation>
+        <translation type="vanished">அளவிலான JPEG இணைப்புகள்</translation>
     </message>
     <message id="whisperfish-settings-scale-image-attachments-description">
-        <location filename="../qml/pages/Settings.qml" line="539"/>
         <source>Scale down JPEG attachments to save on bandwidth.</source>
         <extracomment>Settings page scale image attachments description</extracomment>
-        <translation>அலைவரிசையில் சேமிக்க JPEG இணைப்புகளை அளவிடவும்.</translation>
+        <translation type="vanished">அலைவரிசையில் சேமிக்க JPEG இணைப்புகளை அளவிடவும்.</translation>
     </message>
     <message id="whisperfish-settings-debug-mode">
-        <location filename="../qml/pages/Settings.qml" line="552"/>
+        <location filename="../qml/pages/Settings.qml" line="584"/>
         <source>Debug mode</source>
         <extracomment>Settings page: debug info toggle</extracomment>
         <translation>பிழைத்திருத்த முறை</translation>
     </message>
     <message id="whisperfish-settings-debug-mode-description">
-        <location filename="../qml/pages/Settings.qml" line="555"/>
+        <location filename="../qml/pages/Settings.qml" line="587"/>
         <source>Show debugging information and controls in the user interface.</source>
         <oldsource>Show debugging information in the user interface.</oldsource>
         <extracomment>Settings page: debug info toggle extended description</extracomment>
         <translation>பயனர் இடைமுகத்தில் பிழைத்திருத்த செய்தி மற்றும் கட்டுப்பாடுகளைக் காட்டுங்கள்.</translation>
     </message>
     <message id="whisperfish-settings-verbose-journal">
-        <location filename="../qml/pages/Settings.qml" line="568"/>
+        <location filename="../qml/pages/Settings.qml" line="600"/>
         <source>Verbose journal log</source>
         <extracomment>Settings page, send verbose logs to systemd journal</extracomment>
         <translation>விரிவான குறிப்பேடு பதிவு</translation>
     </message>
     <message id="whisperfish-settings-verbose-journal-description">
-        <location filename="../qml/pages/Settings.qml" line="571"/>
+        <location filename="../qml/pages/Settings.qml" line="603"/>
         <source>When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect.</source>
         <extracomment>Settings page enable verbose logging description</extracomment>
         <translation>இயக்கப்பட்டால், விச்பர்ஃபிச் வாய்மொழி வெளியீட்டை உருவாக்கி systemd இதழுக்கு அனுப்பும். நடைமுறைக்கு வர மறுதொடக்கம் தேவை.</translation>
@@ -1638,86 +1690,86 @@ Settings page share contacts</extracomment>
         <translation type="vanished">இயக்கப்பட்டால், விச்பர்ஃபிச் அதன் வெளியீட்டை ஒரு பதிவு கோப்பில் சேமிக்கிறது. நடைமுறைக்கு வர மறுதொடக்கம் தேவை.</translation>
     </message>
     <message id="whisperfish-settings-compress-db">
-        <location filename="../qml/pages/Settings.qml" line="586"/>
+        <location filename="../qml/pages/Settings.qml" line="618"/>
         <source>Compact database</source>
         <oldsource>Compress database</oldsource>
         <extracomment>Settings page &apos;Compact database&apos; button: execute &apos;VACUUM&apos; command on SQLite-database</extracomment>
         <translation>கச்சிதமான தரவுத்தளம்</translation>
     </message>
     <message id="whisperfish-settings-test-captcha">
-        <location filename="../qml/pages/Settings.qml" line="597"/>
+        <location filename="../qml/pages/Settings.qml" line="629"/>
         <source>Test captcha</source>
         <extracomment>Settings page, test captcha button</extracomment>
         <translation>சோதனை கேப்ட்சா</translation>
     </message>
     <message id="whisperfish-settings-stats-section">
-        <location filename="../qml/pages/Settings.qml" line="608"/>
+        <location filename="../qml/pages/Settings.qml" line="640"/>
         <source>Statistics</source>
         <extracomment>Settings page stats section</extracomment>
         <translation>புள்ளிவிவரங்கள்</translation>
     </message>
     <message id="whisperfish-settings-websocket">
-        <location filename="../qml/pages/Settings.qml" line="613"/>
+        <location filename="../qml/pages/Settings.qml" line="645"/>
         <source>Websocket Status</source>
         <extracomment>Settings page websocket status</extracomment>
         <translation>வெப்சாக்கெட் நிலை</translation>
     </message>
     <message id="whisperfish-settings-connected">
-        <location filename="../qml/pages/Settings.qml" line="617"/>
+        <location filename="../qml/pages/Settings.qml" line="649"/>
         <source>Connected</source>
         <extracomment>Settings page connected message</extracomment>
         <translation>இணைக்கப்பட்டுள்ளது</translation>
     </message>
     <message id="whisperfish-settings-disconnected">
-        <location filename="../qml/pages/Settings.qml" line="620"/>
+        <location filename="../qml/pages/Settings.qml" line="652"/>
         <source>Disconnected</source>
         <extracomment>Settings page disconnected message</extracomment>
         <translation>துண்டிக்கப்பட்டது</translation>
     </message>
     <message id="whisperfish-settings-unsent-messages">
-        <location filename="../qml/pages/Settings.qml" line="625"/>
+        <location filename="../qml/pages/Settings.qml" line="657"/>
         <source>Unsent Messages</source>
         <extracomment>Settings page unsent messages</extracomment>
         <translation>அறிவுறுத்தப்படாத செய்திகள்</translation>
     </message>
     <message id="whisperfish-settings-total-sessions">
-        <location filename="../qml/pages/Settings.qml" line="631"/>
+        <location filename="../qml/pages/Settings.qml" line="663"/>
         <source>Total Sessions</source>
         <extracomment>Settings page total sessions</extracomment>
         <translation>மொத்த அமர்வுகள்</translation>
     </message>
     <message id="whisperfish-settings-total-messages">
-        <location filename="../qml/pages/Settings.qml" line="637"/>
+        <location filename="../qml/pages/Settings.qml" line="669"/>
         <source>Total Messages</source>
         <extracomment>Settings page total messages</extracomment>
         <translation>மொத்த செய்திகள்</translation>
     </message>
     <message id="whisperfish-settings-total-contacts">
-        <location filename="../qml/pages/Settings.qml" line="643"/>
+        <location filename="../qml/pages/Settings.qml" line="675"/>
         <source>Signal Contacts</source>
         <extracomment>Settings page total signal contacts</extracomment>
         <translation>சமிக்ஞை தொடர்புகள்</translation>
     </message>
     <message id="whisperfish-settings-gstreamer-version">
-        <location filename="../qml/pages/Settings.qml" line="649"/>
+        <location filename="../qml/pages/Settings.qml" line="681"/>
         <source>GStreamer version</source>
         <extracomment>GStreamer version indication in settings</extracomment>
         <translation>சிச்ட்ரீமர் பதிப்பு</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db">
-        <location filename="../qml/pages/Settings.qml" line="655"/>
+        <location filename="../qml/pages/Settings.qml" line="687"/>
         <source>Encrypted Database</source>
         <extracomment>Settings page encrypted database</extracomment>
         <translation>குறியாக்கம் செய்யப்பட்ட தரவுத்தளம்</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-enabled">
-        <location filename="../qml/pages/Settings.qml" line="659"/>
+        <location filename="../qml/pages/Settings.qml" line="691"/>
         <source>Enabled</source>
         <extracomment>Settings page encrypted db enabled</extracomment>
         <translation>இயக்கப்பட்டது</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-disabled">
-        <location filename="../qml/pages/Settings.qml" line="662"/>
+        <location filename="../qml/pages/Settings.qml" line="694"/>
         <source>Disabled</source>
         <extracomment>Settings page encrypted db disabled</extracomment>
         <translation>முடக்கப்பட்டது</translation>
@@ -2447,19 +2499,19 @@ Settings page share contacts</extracomment>
         <translation>%1 இலிருந்து</translation>
     </message>
     <message id="whisperfish-export-image-menu">
-        <location filename="../qml/pages/ViewImagePage.qml" line="69"/>
+        <location filename="../qml/pages/ViewImagePage.qml" line="70"/>
         <source>Export image</source>
         <extracomment>Copy the attachment image out of Whisperfish</extracomment>
         <translation>ஏற்றுமதி படம்</translation>
     </message>
     <message id="whisperfish-view-image-page-loading">
-        <location filename="../qml/pages/ViewImagePage.qml" line="271"/>
+        <location filename="../qml/pages/ViewImagePage.qml" line="272"/>
         <source>Loading image</source>
         <extracomment>Full page placeholder shown while a large image is being loaded</extracomment>
         <translation>படத்தை ஏற்றுகிறது</translation>
     </message>
     <message id="whisperfish-view-image-page-error">
-        <location filename="../qml/pages/ViewImagePage.qml" line="281"/>
+        <location filename="../qml/pages/ViewImagePage.qml" line="282"/>
         <source>Failed to load</source>
         <extracomment>Full page placeholder shown when an image failed to load</extracomment>
         <translation>ஏற்றுவதில் தோல்வி</translation>
