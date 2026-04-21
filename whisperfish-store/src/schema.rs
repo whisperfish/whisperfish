@@ -39,6 +39,7 @@ diesel::table! {
         pointer -> Nullable<Binary>,
         transcription -> Nullable<Text>,
         download_length -> Nullable<Integer>,
+        original_path -> Nullable<Text>,
     }
 }
 

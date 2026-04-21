@@ -3103,8 +3103,16 @@ impl<O: Observable> Storage<O> {
         });
 
         let filename = original_path.file_name().map(|s| s.to_str().unwrap());
-        let path =
-            crate::replace_home_with_tilde(attachment_path.to_str().expect("UTF8-compliant path"));
+        let att_path = crate::replace_home_with_tilde(
+            attachment_path
+                .to_str()
+                .expect("UTF8-compliant attached file path"),
+        );
+        let orig_path = crate::replace_home_with_tilde(
+            original_path
+                .to_str()
+                .expect("UTF8-compliant attachment original file path"),
+        );
 
         let id = {
             use schema::attachments::dsl::*;
@@ -3112,7 +3120,8 @@ impl<O: Observable> Storage<O> {
                 .values((
                     message_id.eq(attachment_message_id),
                     content_type.eq(mime_type),
-                    attachment_path.eq(path),
+                    attachment_path.eq(att_path),
+                    original_path.eq(orig_path),
                     size.eq(att_size),
                     file_name.eq(filename),
                     is_voice_note.eq(voice_note),

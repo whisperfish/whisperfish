@@ -23,6 +23,7 @@ Page {
     property alias subtitle: _titleOverlayItem.subtitle
     property MediaTitleOverlay titleOverlay: _titleOverlayItem
     property string path: ''
+    property string originalPath
     property bool isAnimated: false
     property bool enableDarkBackground: true
     property var attachment
