@@ -3066,23 +3066,34 @@ impl<O: Observable> Storage<O> {
         };
     }
 
-    #[tracing::instrument(skip(self, path), fields(path = %path.as_ref().display()))]
+    /// Insert a local file into attachments table.
+    ///
+    /// The original path points to the original file to be attached.
+    /// The attachment path points to the file that is actually uploaded.
+    /// This can be e.g. a resized image, which is already saved to the
+    /// attachments directory beforehand.
+    ///
+    /// Filename is always saved from the original filename.
+    #[tracing::instrument(skip(self, original_path, attachment_path), fields(original_path = %original_path.as_ref().display(), attachment_path = %attachment_path.as_ref().display()))]
     pub fn insert_local_attachment(
         &self,
         attachment_message_id: i32,
         mime_type: Option<&str>,
-        path: impl AsRef<Path>,
+        original_path: impl AsRef<Path>,
+        attachment_path: impl AsRef<Path>,
         voice_note: bool,
     ) -> i32 {
-        let path = path.as_ref();
-        let att_file = File::open(path).expect("");
+        let attachment_path = attachment_path.as_ref();
+        let original_path = original_path.as_ref();
+
+        let att_file = File::open(attachment_path).expect("");
         let att_size = match att_file.metadata() {
             Ok(m) => Some(m.len() as i32),
             Err(_) => None,
         };
 
         let mime_type = mime_type.map(std::borrow::Cow::from).unwrap_or_else(|| {
-            mime_guess::from_path(path)
+            mime_guess::from_path(attachment_path)
                 .first_or_octet_stream()
                 .essence_str()
                 // We need to either retain the Mime object or allocate a new string from the
@@ -3091,8 +3102,9 @@ impl<O: Observable> Storage<O> {
                 .into()
         });
 
-        let filename = path.file_name().map(|s| s.to_str().unwrap());
-        let path = crate::replace_home_with_tilde(path.to_str().expect("UTF8-compliant path"));
+        let filename = original_path.file_name().map(|s| s.to_str().unwrap());
+        let path =
+            crate::replace_home_with_tilde(attachment_path.to_str().expect("UTF8-compliant path"));
 
         let id = {
             use schema::attachments::dsl::*;

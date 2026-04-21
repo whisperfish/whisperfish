@@ -8,6 +8,7 @@ mod groupv2;
 mod linked_devices;
 mod message_expiry;
 mod profile_upload;
+pub mod resize_image;
 mod unidentified;
 mod voice_note_transcription;
 
@@ -1778,10 +1779,30 @@ impl Handler<QueueMessage> for ClientActor {
         });
 
         for attachment in &msg.attachments {
+            let resized_path = if attachment.mime_type.starts_with("image") {
+                match resize_image::shrink_attachment(
+                    Path::new(&attachment.path),
+                    Path::new(&self.settings.get_attachment_dir()),
+                    AttachmentQuality::from(self.settings.get_attachment_quality().as_ref()),
+                ) {
+                    Ok(ResizeResult::NoAction) => attachment.path.clone(),
+                    Ok(ResizeResult::Resized(path)) => path
+                        .to_str()
+                        .expect("valid storage path after resizing image")
+                        .to_string(),
+                    Err(e) => {
+                        tracing::error!("{e:?} - using original file");
+                        attachment.path.clone()
+                    }
+                }
+            } else {
+                attachment.path.clone()
+            };
             storage.insert_local_attachment(
                 inserted_msg.id,
                 Some(attachment.mime_type.as_str()),
                 attachment.path.clone(),
+                resized_path,
                 msg.is_voice_note,
             );
         }
@@ -1951,9 +1972,12 @@ impl Handler<SendMessage> for ClientActor {
                         None => String::from("application/octet-stream"),
                     };
 
-                    let file_name= Path::new(attachment_path.as_ref())
-                            .file_name()
-                            .map(|f| f.to_string_lossy().into_owned());
+                    let file_name = attachment.file_name.as_ref()
+                        .or(attachment.attachment_path.as_ref())
+                        .map(Path::new)
+                        .unwrap()
+                        .file_name()
+                        .map(|f| f.to_string_lossy().into_owned());
 
                     if attachment.visual_hash.is_none() && content_type.starts_with("image/") {
                         tracing::info!("Computing blurhash for attachment {}", attachment.id);
