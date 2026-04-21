@@ -54,6 +54,7 @@ MouseArea {
                 // when not in debug mode, it is ok to fade the file path if it is too long
                 'titleOverlay.subtitleItem.wrapMode': _debugMode ? Text.Wrap : Text.NoWrap,
                 'path': attach.data,
+                'originalPath': attach.original_path,
                 'isAnimated': _isAnimated,
                 'attachment': attach,
                 'isViewOnce': false, // TODO: Implement attachment can only be viewed once

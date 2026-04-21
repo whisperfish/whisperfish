@@ -91,6 +91,7 @@ define_model_roles! {
         MimeType(content_type via QString::from):        "type",
         Data(fn absolute_attachment_path(&self) via qstring_from_option): "data",
         OriginalName(file_name via qstring_from_option): "original_name",
+        OriginalPath(original_path via qstring_from_option): "original_path",
         VisualHash(visual_hash via qstring_from_option): "visual_hash",
         IsVoiceNote(is_voice_note):                      "is_voice_note",
         Transcription(transcription via qstring_from_option): "transcription",

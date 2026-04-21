@@ -38,7 +38,7 @@ pub fn naive_chrono_rounded_down(naive: chrono::NaiveDateTime) -> chrono::NaiveD
 pub fn replace_tilde_with_home<'a>(path: &'a str) -> std::borrow::Cow<'a, str> {
     if let Some(path) = path.strip_prefix("~/") {
         let home = std::env::var("HOME").expect("home dir set");
-        format!("{home}/{path}").into()
+        format!("{home}/{path}").replace("//", "/").into()
     } else {
         path.into()
     }
@@ -46,7 +46,7 @@ pub fn replace_tilde_with_home<'a>(path: &'a str) -> std::borrow::Cow<'a, str> {
 
 pub fn replace_home_with_tilde<'a>(path: &'a str) -> std::borrow::Cow<'a, str> {
     if let Some(path) = path.strip_prefix(&std::env::var("HOME").expect("home dir set")) {
-        format!("~/{path}").into()
+        format!("~/{path}").replace("//", "/").into()
     } else {
         path.into()
     }

@@ -8,6 +8,7 @@ mod groupv2;
 mod linked_devices;
 mod message_expiry;
 mod profile_upload;
+pub mod resize_image;
 mod unidentified;
 mod voice_note_transcription;
 
@@ -387,6 +388,7 @@ pub struct ClientActor {
     initial_queue_process_state: QueueProcessState,
 
     voice_note_transcription_queue: voice_note_transcription::VoiceNoteTranscriptionQueue,
+    attachment_resize_queue: resize_image::AttachmentResizeQueue,
 
     start_time: DateTime<Local>,
 
@@ -532,6 +534,7 @@ impl ClientActor {
 
             voice_note_transcription_queue:
                 voice_note_transcription::VoiceNoteTranscriptionQueue::default(),
+            attachment_resize_queue: resize_image::AttachmentResizeQueue::default(),
 
             start_time: Local::now(),
 
@@ -1777,13 +1780,23 @@ impl Handler<QueueMessage> for ClientActor {
             ..crate::store::NewMessage::new_outgoing()
         });
 
+        let mut resize_list = vec![];
+
         for attachment in &msg.attachments {
-            storage.insert_local_attachment(
+            let att_id = storage.insert_local_attachment(
                 inserted_msg.id,
                 Some(attachment.mime_type.as_str()),
-                attachment.path.clone(),
+                &attachment.path,
+                &attachment.path,
                 msg.is_voice_note,
             );
+            let resizeable = attachment.mime_type.eq("image/jpeg")
+                || attachment.mime_type.eq("image/png")
+                || attachment.mime_type.eq("image/jpg");
+            // XXX What about stickers? We must ignore them here.
+            if resizeable {
+                resize_list.push(att_id);
+            }
         }
 
         if msg.is_voice_note {
@@ -1800,7 +1813,45 @@ impl Handler<QueueMessage> for ClientActor {
             h.send(()).expect("send message expiry notification");
         }
 
-        ctx.notify(SendMessage(inserted_msg.id));
+        if resize_list.is_empty() {
+            tracing::debug!("Immediate SendMessage");
+            ctx.notify(SendMessage(inserted_msg.id));
+        } else {
+            tracing::debug!("Delayed SendMessage");
+            ctx.notify(resize_image::NewAttachmentResize {
+                message_id: inserted_msg.id,
+                attachment_ids: resize_list,
+            });
+        }
+    }
+}
+
+#[derive(Debug, Message)]
+#[rtype(result = "()")]
+pub struct AttachmentsResized {
+    message_id: i32,
+    changed_data: Vec<(i32, String)>,
+}
+
+impl Handler<AttachmentsResized> for ClientActor {
+    type Result = ();
+
+    fn handle(
+        &mut self,
+        AttachmentsResized {
+            message_id,
+            changed_data,
+        }: AttachmentsResized,
+        ctx: &mut Self::Context,
+    ) -> Self::Result {
+        tracing::trace!("AttachmentsResized");
+        let storage = self.storage.clone().unwrap();
+        for (attachment_id, new_path) in changed_data.into_iter() {
+            tracing::info!("Changing attachment {attachment_id} attachment_path to {new_path}");
+            storage.update_attachment_path(attachment_id, new_path.as_str());
+        }
+        tracing::info!("Attachment resize completed, sending message {message_id}");
+        ctx.notify(SendMessage(message_id));
     }
 }
 
@@ -1951,9 +2002,12 @@ impl Handler<SendMessage> for ClientActor {
                         None => String::from("application/octet-stream"),
                     };
 
-                    let file_name= Path::new(attachment_path.as_ref())
-                            .file_name()
-                            .map(|f| f.to_string_lossy().into_owned());
+                    let file_name = attachment.file_name.as_ref()
+                        .or(attachment.attachment_path.as_ref())
+                        .map(Path::new)
+                        .unwrap()
+                        .file_name()
+                        .map(|f| f.to_string_lossy().into_owned());
 
                     if attachment.visual_hash.is_none() && content_type.starts_with("image/") {
                         tracing::info!("Computing blurhash for attachment {}", attachment.id);
@@ -3706,39 +3760,17 @@ impl Handler<ExportAttachment> for ClientActor {
     ) {
         let storage = self.storage.as_mut().unwrap();
 
-        // 1) Chech the attachment
-
-        let attachment = storage.fetch_attachment(attachment_id);
-        if attachment.is_none() {
+        let Some(attachment) = storage.fetch_attachment(attachment_id) else {
             tracing::error!(
                 "Attachment id {} doesn't exist, can't export it!",
                 attachment_id
             );
             return;
-        }
-        let attachment = attachment.unwrap();
-        if attachment.attachment_path.is_none() {
-            tracing::error!(
-                "Attachment id {} has no path stored, can't export it!",
-                attachment_id
-            );
-            return;
-        }
+        };
 
-        // 2) Check the source file
+        let id = attachment.id;
 
-        let source = PathBuf::from_str(&attachment.absolute_attachment_path().unwrap()).unwrap();
-        if !source.exists() {
-            tracing::error!(
-                "Attachment {} doesn't exist anymore, not exporting!",
-                source.to_str().unwrap()
-            );
-            return;
-        }
-
-        // 3) Check the target dir
-
-        let target_dir = (if attachment.content_type.starts_with("image") {
+        let Some(mut target_dir) = (if attachment.content_type.starts_with("image") {
             dirs::picture_dir()
         } else if attachment.content_type.starts_with("audio") {
             dirs::audio_dir()
@@ -3746,68 +3778,91 @@ impl Handler<ExportAttachment> for ClientActor {
             dirs::video_dir()
         } else {
             dirs::download_dir()
-        })
-        .unwrap()
-        .join("Whisperfish");
-
-        if !std::path::Path::exists(&target_dir) && std::fs::create_dir(&target_dir).is_err() {
-            tracing::error!(
-                "Couldn't create directory {}, can't export attachment!",
-                target_dir.to_str().unwrap()
-            );
-            return;
-        }
-
-        // 4) Check free space
-        let free_space = fs2::free_space(&target_dir).expect("checking free space");
-        let file_size = std::fs::metadata(&source)
-            .expect("attachment file size")
-            .len();
-        if (free_space - file_size) < (100 * 1024 * 1024) {
-            // 100 MiB
-            tracing::error!("Not enough free space after copying, not exporting the attachment!");
+        }) else {
+            tracing::error!("Could not find target directory for attachment {id}");
             return;
         };
+        target_dir = target_dir.join("Whisperfish");
 
-        // 5) Check the target filename
+        for (path, att_type) in [
+            (&attachment.absolute_original_path(), "original"),
+            (&attachment.absolute_attachment_path(), "attached"),
+        ] {
+            let Some(path) = path else {
+                tracing::error!("Attachment {id} doesn't have {att_type} path.");
+                continue;
+            };
+            let path = path.to_string();
 
-        let mut target = match attachment.file_name {
-            Some(name) => target_dir.join(name),
-            None => target_dir.join(source.file_name().unwrap()),
-        };
-
-        let basename = target
-            .file_stem()
-            .expect("attachment filename (before the dot)")
-            .to_owned();
-        let basename = basename.to_str().unwrap();
-        let mut count = 0;
-        while target.exists() {
-            count += 1;
-            if target.extension().is_some() {
-                target.set_file_name(format!(
-                    "{}-{}.{}",
-                    basename,
-                    count,
-                    target.extension().unwrap().to_str().unwrap()
-                ));
-            } else {
-                target.set_file_name(format!("{}-{}", basename, count));
+            let source = PathBuf::from_str(&path).unwrap();
+            if !source.exists() {
+                tracing::error!("Attachment {id} {att_type} file '{path}' doesn't exist.");
+                continue;
             }
+
+            if !std::path::Path::exists(&target_dir) && std::fs::create_dir(&target_dir).is_err() {
+                tracing::error!(
+                    "Couldn't create directory {}, can't export attachment!",
+                    target_dir.to_string_lossy()
+                );
+                return;
+            }
+
+            let free_space = fs2::free_space(&target_dir).expect("checking free space");
+            let file_size = std::fs::metadata(&source)
+                .expect("attachment file size")
+                .len();
+            if (free_space - file_size) < (100 * 1024 * 1024) {
+                // 100 MiB
+                tracing::warn!(
+                    "Not enough free space after copying, not exporting the attachment!"
+                );
+                // In theory the next attachment file could be smaller and fit,
+                // but it free space is that scarce already, don't even try.
+                return;
+            };
+
+            let mut target_file = match &attachment.file_name {
+                Some(name) => target_dir.join(name),
+                None => target_dir.join(source.file_name().unwrap()),
+            };
+
+            let basename = target_file
+                .file_stem()
+                .expect("attachment filename (before the dot)")
+                .to_owned();
+            let basename = basename.to_str().unwrap();
+            let mut count = 0;
+            while target_file.exists() {
+                count += 1;
+                if target_file.extension().is_some() {
+                    target_file.set_file_name(format!(
+                        "{}-{}.{}",
+                        basename,
+                        count,
+                        target_file.extension().unwrap().to_str().unwrap()
+                    ));
+                } else {
+                    target_file.set_file_name(format!("{}-{}", basename, count));
+                }
+            }
+            let target = target_file.to_str().unwrap();
+
+            match std::fs::copy(source, target) {
+                Err(e) => tracing::trace!("Copying attachment failed: {}", e),
+                Ok(size) => {
+                    tracing::trace!(
+                        "Attachent {} {} file exported to {} ({} bytes)",
+                        attachment_id,
+                        att_type,
+                        target,
+                        size
+                    );
+                    return;
+                }
+            };
         }
-        let target = target.to_str().unwrap();
-
-        // 6) Copy the file
-
-        match std::fs::copy(source, target) {
-            Err(e) => tracing::trace!("Copying attachment failed: {}", e),
-            Ok(size) => tracing::trace!(
-                "Attachent {} exported to {} ({} bytes)",
-                attachment_id,
-                target,
-                size
-            ),
-        };
+        tracing::error!("Attachment id {id} could not be exported.");
     }
 }
 

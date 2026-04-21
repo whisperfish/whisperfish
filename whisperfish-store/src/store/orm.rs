@@ -904,6 +904,7 @@ pub struct Attachment {
     pub transcription: Option<String>,
 
     pub download_length: Option<i32>,
+    pub original_path: Option<String>,
 }
 
 impl Display for Attachment {
@@ -936,6 +937,12 @@ impl Display for Attachment {
 impl Attachment {
     pub fn absolute_attachment_path<'a>(&'a self) -> Option<Cow<'a, str>> {
         self.attachment_path
+            .as_deref()
+            .map(crate::replace_tilde_with_home)
+    }
+
+    pub fn absolute_original_path<'a>(&'a self) -> Option<std::borrow::Cow<'a, str>> {
+        self.original_path
             .as_deref()
             .map(crate::replace_tilde_with_home)
     }
@@ -1820,6 +1827,7 @@ mod tests {
             pointer: None,
             transcription: None,
             download_length: None,
+            original_path: None,
         }
     }
 
