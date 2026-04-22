@@ -1421,7 +1421,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="250"/>
         <source>Low</source>
         <extracomment>Settings page, use low attachment quality</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Niedrig</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-low-description">
         <location filename="../qml/pages/Settings.qml" line="253"/>
