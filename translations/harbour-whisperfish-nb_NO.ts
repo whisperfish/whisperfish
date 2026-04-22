@@ -125,13 +125,13 @@
         <location filename="../qml/harbour-whisperfish-main.qml" line="360"/>
         <source>Mark as read</source>
         <extracomment>Notification action: mark message as read</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Marker som lest</translation>
     </message>
     <message id="whisperfish-notification-reply_to_message">
         <location filename="../qml/harbour-whisperfish-main.qml" line="370"/>
         <source>Reply</source>
         <extracomment>Notification action: Reply to (i.e. quote) the message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Svar</translation>
     </message>
     <message id="whisperfish-fatal-error-setup-client">
         <location filename="../qml/harbour-whisperfish-main.qml" line="458"/>
@@ -1382,43 +1382,43 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="226"/>
         <source>Image attachments quality</source>
         <extracomment>Settings page scale image attachments</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kvalitet på bildevedlegg</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-high-text">
         <location filename="../qml/pages/Settings.qml" line="232"/>
         <source>High</source>
         <extracomment>Settings page, use high attachment quality</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Høy</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-high-description">
         <location filename="../qml/pages/Settings.qml" line="235"/>
         <source>Resize images larger than 4096 pixels in width or height or 3.0MB in size. Using this increases data usage.</source>
         <extracomment>Settings page, high attachment quality description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Endre størrelse på bilder som er større enn 4096 piksler i bredde eller høyde, eller over 3,0 MB i filstørrelse. Bruk av dette øker databruken.</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-standard-text">
         <location filename="../qml/pages/Settings.qml" line="241"/>
         <source>Standard</source>
         <extracomment>Settings page, use standard (medium) attachment quality</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Standard</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-standard-description">
         <location filename="../qml/pages/Settings.qml" line="244"/>
         <source>Resize images larger than 2048 pixels in width or height or over 1.5MB in size.</source>
         <extracomment>Settings page, standard (medium) attachment quality description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Endre størrelse på bilder som er større enn 2048 piksler i bredde eller høyde, eller over 1,5 MB i størrelse.</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-low-text">
         <location filename="../qml/pages/Settings.qml" line="250"/>
         <source>Low</source>
         <extracomment>Settings page, use low attachment quality</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Lav</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-low-description">
         <location filename="../qml/pages/Settings.qml" line="253"/>
         <source>Resize images larger than 2048 pixels in width or height or 1.0MB in size. Recommened for low memory devices or minimizing data usage.</source>
         <extracomment>Settings page, low attachment quality description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Endre størrelse på bilder som er større enn 2048 piksler i bredde eller høyde, eller over 1,0 MB i størrelse. Anbefales for enheter med lite minne eller for å minimere databruk.</translation>
     </message>
     <message id="whisperfish-settings-save-attachments">
         <location filename="../qml/pages/Settings.qml" line="273"/>
