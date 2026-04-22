@@ -2404,6 +2404,7 @@ impl<O: Observable> Storage<O> {
             access_required_for_attributes: 0,
             access_required_for_members: 0,
             access_required_for_add_from_invite_link: 0,
+            access_required_for_member_labels: 0,
 
             avatar: None,
             description: Some("Group is being updated".into()),

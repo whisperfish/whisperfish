@@ -116,6 +116,8 @@ diesel::table! {
         member_since -> Timestamp,
         joined_at_revision -> Integer,
         role -> Integer,
+        label -> Nullable<Text>,
+        label_emoji -> Nullable<Text>,
     }
 }
 
@@ -151,6 +153,7 @@ diesel::table! {
         avatar -> Nullable<Text>,
         description -> Nullable<Text>,
         announcement_only -> Bool,
+        access_required_for_member_labels -> Integer,
     }
 }
 

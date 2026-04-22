@@ -981,6 +981,7 @@ async fn test_recipient_actions() {
         poll_create: None,
         poll_terminate: None,
         poll_vote: None,
+        admin_delete: None,
     };
     let (m, s) = match storage.process_reaction(&recip, &data_msg, &reaction) {
         Ok(Some((m, s))) => (m, s),

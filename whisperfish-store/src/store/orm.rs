@@ -110,6 +110,8 @@ pub struct GroupV2 {
     pub avatar: Option<String>,
     pub description: Option<String>,
     pub announcement_only: bool,
+
+    pub access_required_for_member_labels: i32,
 }
 
 impl Display for GroupV2 {
@@ -139,6 +141,8 @@ pub struct GroupV2Member {
     pub member_since: NaiveDateTime,
     pub joined_at_revision: i32,
     pub role: i32,
+    pub label: Option<String>,
+    pub label_emoji: Option<String>,
 }
 
 impl Display for GroupV2Member {
@@ -1738,6 +1742,7 @@ mod tests {
             avatar: None,
             description: Some("desc".into()),
             announcement_only: false,
+            access_required_for_member_labels: 0,
         }
     }
 
@@ -1899,7 +1904,7 @@ mod tests {
         let mut g2 = get_group_v2();
         assert_eq!(
             format!("{:?}", g2),
-            "GroupV2 { id: \"abc\", name: \"G2\", master_key: \"123\", revision: 42, invite_link_password: None, access_required_for_attributes: 0, access_required_for_members: 0, access_required_for_add_from_invite_link: 0, avatar: None, description: Some(\"desc\"), announcement_only: false }"
+            "GroupV2 { id: \"abc\", name: \"G2\", master_key: \"123\", revision: 42, invite_link_password: None, access_required_for_attributes: 0, access_required_for_members: 0, access_required_for_add_from_invite_link: 0, avatar: None, description: Some(\"desc\"), announcement_only: false, access_required_for_member_labels: 0 }"
         );
         g2.description = None;
         assert_eq!(format!("{}", g2), "GroupV2 { id: \"abc\", name: \"G2\" }");
@@ -1915,6 +1920,8 @@ mod tests {
             member_since: datetime,
             joined_at_revision: 999,
             role: 2,
+            label: None,
+            label_emoji: None,
         };
         assert_eq!(format!("{}",g2m), "GroupV2Member { group_v2_id: \"id\", recipient_id: 22, member_since: \"2023-03-31 14:51:25\" }");
     }
