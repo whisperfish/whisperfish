@@ -86,18 +86,19 @@ impl Receipts {
                             ReceiptType::Viewed => receipt.viewed,
                         };
 
-                        if timestamp.is_none() {
+                        let Some(timestamp) = timestamp else {
                             continue;
-                        }
+                        };
 
                         let mut item = QVariantMap::default();
                         item.insert(
                             "recipient".into(),
                             recipient.name().to_string().to_qvariant(),
                         );
-                        if let Some(ts) = timestamp {
-                            item.insert("timestamp".into(), ts.to_string().to_qvariant());
-                        }
+                        item.insert(
+                            "timestamp".into(),
+                            qdatetime_from_naive(timestamp).to_qvariant(),
+                        );
                         variant_list.push(item.to_qvariant());
                     }
 
