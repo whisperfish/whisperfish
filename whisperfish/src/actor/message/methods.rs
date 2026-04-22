@@ -147,7 +147,7 @@ impl MessageMethods {
             self.client_actor
                 .as_mut()
                 .unwrap()
-                .send(crate::worker::EndSession(id))
+                .send(crate::worker::ResetSession::Recipient(id))
                 .map(Result::unwrap),
         );
     }

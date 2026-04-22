@@ -21,6 +21,7 @@ use anyhow::anyhow;
 use attachment::FetchAttachment;
 use image::GenericImageView;
 use itertools::Itertools;
+use libsignal_service::cipher::SealedSenderDecryptionError;
 use libsignal_service::groups_v2::Role;
 use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::data_message::{Delete, Quote};
@@ -32,6 +33,7 @@ use libsignal_service::proto::sync_message::Keys;
 use libsignal_service::proto::sync_message::MessageRequestResponse;
 use libsignal_service::proto::sync_message::Read;
 use libsignal_service::proto::sync_message::Sent;
+use libsignal_service::proto::NullMessage;
 use libsignal_service::proto::SyncMessage;
 use libsignal_service::protocol::ServiceIdKind;
 use libsignal_service::push_service::RegistrationMethod;
@@ -115,6 +117,11 @@ const TM_MAX_RATE: f32 = 30.0; // messages per minute
 const TM_CACHE_CAPACITY: f32 = 5.0; // 5 min
 const TM_CACHE_TRESHOLD: f32 = 4.5; // 4 min 30 sec
 
+// Rate limiting for session reset NullMessages
+// Following Signal Android's default of 1 hour between resets
+// Note: Android saves reset time per-device, not per-recipient
+const SESSION_RESET_INTERVAL: chrono::Duration = chrono::Duration::seconds(3600); // 1 hour
+
 #[derive(Debug)]
 pub struct NewAttachment {
     pub path: String,
@@ -183,7 +190,24 @@ struct DeliverMessage<T> {
     timestamp: u64,
     online: bool,
     for_story: bool,
-    session_type: SessionType,
+    destination: DeliveryRecipient,
+}
+
+enum DeliveryRecipient {
+    Session(SessionType),
+    ServiceId(ServiceId),
+}
+
+impl From<SessionType> for DeliveryRecipient {
+    fn from(value: SessionType) -> Self {
+        DeliveryRecipient::Session(value)
+    }
+}
+
+impl From<ServiceId> for DeliveryRecipient {
+    fn from(value: ServiceId) -> Self {
+        DeliveryRecipient::ServiceId(value)
+    }
 }
 
 #[derive(Message)]
@@ -214,8 +238,12 @@ pub struct CompactDb;
 
 #[derive(Message)]
 #[rtype(result = "()")]
-/// Reset a session with a certain recipient
-pub struct EndSession(pub i32);
+/// Reset a session with a protocol address
+pub enum ResetSession {
+    Device(ProtocolAddress),
+    Session(ServiceId),
+    Recipient(i32),
+}
 
 #[derive(QObject, Default)]
 #[allow(non_snake_case)]
@@ -689,7 +717,7 @@ impl ClientActor {
         ctx.notify(DeliverMessage {
             content,
             timestamp: Utc::now().timestamp_millis() as u64,
-            session_type,
+            destination: session_type.into(),
             online: false,
             for_story: false,
         });
@@ -768,7 +796,7 @@ impl ClientActor {
                 ctx.notify(DeliverMessage {
                     content,
                     timestamp: Utc::now().timestamp_millis() as u64,
-                    session_type: session.r#type,
+                    destination: session.r#type.into(),
                     online: false,
                     for_story: false,
                 });
@@ -2058,7 +2086,7 @@ impl Handler<SendMessage> for ClientActor {
                         content,
                         online: false,
                         timestamp,
-                        session_type: session.r#type,
+                        destination: session.r#type.into(),
                         for_story: false,
                     })
                     .await?;
@@ -2187,28 +2215,135 @@ impl Handler<SendMessage> for ClientActor {
     }
 }
 
-impl Handler<EndSession> for ClientActor {
+impl Handler<ResetSession> for ClientActor {
     type Result = ();
 
-    fn handle(&mut self, EndSession(id): EndSession, ctx: &mut Self::Context) -> Self::Result {
-        let _span =
-            tracing::trace_span!("ClientActor::EndSession(recipient_id = {})", id).entered();
+    fn handle(&mut self, command: ResetSession, ctx: &mut Self::Context) -> Self::Result {
+        let mut storage = self.storage.clone().unwrap();
+        let addr = ctx.address();
 
-        let storage = self.storage.as_mut().unwrap();
-        let recipient = storage
-            .fetch_recipient_by_id(id)
-            .expect("existing recipient id");
-        let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
+        actix::spawn(async move {
+            let (recipient, service_ids) = match command {
+                ResetSession::Device(address) => {
+                    // 1. Delete all direct sessions with this ProtocolAddress
+                    let aci = storage.aci_storage().delete_session(&address).await;
+                    let pni = storage.pni_storage().delete_session(&address).await;
+                    if aci.is_err() && pni.is_err() {
+                        tracing::warn!("did not remove any direct sessions");
+                        // Continue, maybe send NullMessage
+                    }
+                    let service_id = ServiceId::parse_from_service_id_string(address.name())
+                        .expect("valid protocol address");
 
-        let msg = storage.create_message(&crate::store::NewMessage {
-            session_id: session.id,
-            source_addr: recipient.to_service_address(),
-            timestamp: chrono::Utc::now().naive_utc(),
-            flags: DataMessageFlags::EndSession.into(),
-            message_type: Some(MessageType::EndSession),
-            ..crate::store::NewMessage::new_outgoing()
+                    // Fetch the recipient to check last session reset time
+                    let Some(recipient) = storage.fetch_recipient(&service_id) else {
+                        tracing::warn!(
+                            ?service_id,
+                            "recipient not found in database, skipping NullMessage"
+                        );
+                        return Ok(());
+                    };
+
+                    (recipient, vec![service_id])
+                }
+                ResetSession::Session(service_id) => {
+                    // 1. Delete all direct sessions with this ServiceId
+                    let aci = storage.aci_storage().delete_all_sessions(&service_id).await;
+                    let pni = storage.pni_storage().delete_all_sessions(&service_id).await;
+                    if aci.unwrap_or(0) + pni.unwrap_or(0) == 0 {
+                        tracing::warn!("did not remove any direct sessions");
+                        // Continue, maybe send NullMessage
+                    }
+
+                    // Fetch the recipient to check last session reset time
+                    let Some(recipient) = storage.fetch_recipient(&service_id) else {
+                        tracing::warn!(
+                            ?service_id,
+                            "recipient not found in database, skipping NullMessage"
+                        );
+                        return Ok(());
+                    };
+
+                    (recipient, vec![service_id])
+                }
+                ResetSession::Recipient(recipient_id) => {
+                    let Some(recipient) = storage.fetch_recipient_by_id(recipient_id) else {
+                        tracing::warn!("no recipient with id {recipient_id}");
+                        return Ok(());
+                    };
+
+                    let aci = recipient.uuid.map(Into::into).map(ServiceId::Aci);
+                    let pni = recipient.pni.map(Into::into).map(ServiceId::Pni);
+                    let service_ids = aci.into_iter().chain(pni.into_iter()).collect::<Vec<_>>();
+
+                    let mut count = 0;
+                    // 1. Delete all direct sessions with these ServiceIds
+                    for service_id in &service_ids {
+                        let aci = storage.aci_storage().delete_all_sessions(service_id).await;
+                        let pni = storage.pni_storage().delete_all_sessions(service_id).await;
+                        count += aci.unwrap_or(0);
+                        count += pni.unwrap_or(0);
+                    }
+
+                    if count == 0 {
+                        tracing::warn!("did not remove any direct sessions");
+                        // Continue, maybe send NullMessage
+                    }
+                    (recipient, service_ids)
+                }
+            };
+
+            // 2. Remove our own sender keys for the contact
+            // storage.aci_storage().delete_all_sender_keys_for()
+
+            // 3. Send a NullMessage with rate limiting
+            // Check rate limiting
+            let now = Utc::now();
+            let time_since_last_reset = recipient
+                .last_session_reset
+                .map(|last_reset| now.signed_duration_since(last_reset.and_utc()));
+
+            if let Some(duration_since_reset) = time_since_last_reset {
+                if duration_since_reset < SESSION_RESET_INTERVAL {
+                    tracing::warn!(
+                        %duration_since_reset,
+                        "Skipping NullMessage.",
+                    );
+                    return Ok(());
+                }
+
+                tracing::info!(
+                    "We're good! Sending a null message. Time since last reset: {:?}",
+                    duration_since_reset
+                );
+            } else {
+                tracing::info!("No previous session reset found. Sending null message.");
+            }
+
+            for service_id in service_ids {
+                // Send NullMessage
+                for res in addr
+                    .send(DeliverMessage {
+                        content: NullMessage::generate(&mut rand::rng()),
+                        online: false,
+                        timestamp: now.timestamp_millis() as u64,
+                        destination: DeliveryRecipient::ServiceId(service_id),
+                        for_story: false,
+                    })
+                    .await??
+                {
+                    if let Err(e) = res {
+                        tracing::error!(error=%e, "error sending NullMessage");
+                    }
+                }
+            }
+
+            // Update last session reset time
+            storage.update_last_session_reset(recipient.id, now.naive_utc());
+            tracing::info!(%now, "saved last reset time");
+
+            Ok::<(), anyhow::Error>(())
         });
-        ctx.notify(SendMessage(msg.id));
     }
 }
 
@@ -2270,7 +2405,7 @@ impl Handler<SendTypingNotification> for ClientActor {
                     content,
                     online: true,
                     timestamp: now,
-                    session_type: session.r#type,
+                    destination: session.r#type.into(),
                     for_story: false,
                 })
                 .await?
@@ -2392,7 +2527,7 @@ impl Handler<SendReaction> for ClientActor {
                     content,
                     online: false,
                     timestamp: now.timestamp_millis() as u64,
-                    session_type: session.r#type,
+                    destination: session.r#type.into(),
                     for_story: false,
                 })
                 .await?
@@ -2451,7 +2586,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
             content,
             timestamp,
             online,
-            session_type: session,
+            destination: session,
             for_story,
         } = msg;
         let content = content.into();
@@ -2474,12 +2609,12 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
             let mut sender = sender.await?;
 
             let results = match &session {
-                SessionType::GroupV1(_group) => {
+                DeliveryRecipient::Session(SessionType::GroupV1(_group)) => {
                     // FIXME
                     tracing::error!("Cannot send to Group V1 anymore.");
                     Vec::new()
                 }
-                SessionType::GroupV2(group) => {
+                DeliveryRecipient::Session(SessionType::GroupV2(group)) => {
                     let members = storage.fetch_group_members_by_group_v2_id(&group.id);
                     let members = members
                         .iter()
@@ -2508,7 +2643,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                         .send_message_to_group(&members, content, timestamp, online)
                         .await
                 }
-                SessionType::DirectMessage(recipient) => {
+                DeliveryRecipient::Session(SessionType::DirectMessage(recipient)) => {
                     let svc = recipient.to_service_address();
 
                     let access = certs.access_for(cert_type, recipient, for_story);
@@ -2533,6 +2668,22 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                     } else {
                         anyhow::bail!("Recipient id {} has no UUID", recipient.id);
                     }
+                }
+
+                DeliveryRecipient::ServiceId(svc) => {
+                    vec![
+                        sender
+                            .send_message(
+                                svc,
+                                // XXX: This always sends identified. We could make an attempt to work back to the
+                                // recipient, to maybe find that we can use sealed sending.
+                                None, content, timestamp,
+                                // Same with the PNI signature; we're directly targetting a
+                                // ServiceId, so we might not have that info.
+                                false, online,
+                            )
+                            .await,
+                    ]
                 }
             };
             Ok(results)
@@ -2774,12 +2925,20 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
             return;
         }
 
+        let sender_address = msg
+            .parse_source_service_id()
+            .zip(msg.source_device)
+            .and_then(|(service_id, device_id)| {
+                Some(service_id.to_protocol_address(DeviceId::try_from(device_id).ok()?))
+            });
+
         let mut cipher = self.cipher(incoming_address.kind());
 
         let storage = self.storage.clone().expect("initialized storage");
 
         self.initial_queue_process_state.observe_guid(&guid);
 
+        let this = ctx.address();
         ctx.spawn(
             async move {
                 let mut visited = false;
@@ -2791,6 +2950,51 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                         }
                         Ok(None) => {
                             tracing::warn!("Empty envelope");
+                            break None;
+                        }
+                        // Capture NoSenderKeyState with authenticated sender
+                        Err(ServiceError::SignalProtocolError(SignalProtocolError::NoSenderKeyState{distribution_id})) => {
+                            let Some(sender) = sender_address else {
+                                tracing::warn!(%distribution_id, "non-sealed sending without clear-text sender when handling NoSenderKeyState");
+                                break None;
+                            };
+                            let Ok(sender) = sender else {
+                                tracing::warn!(%distribution_id, "non-sealed sending with invalid sender device id when handling NoSenderKeyState");
+                                break None;
+                            };
+
+                            let _span = tracing::warn_span!("handling NoSenderKeyState", %distribution_id, authenticated_sender=%sender).entered();
+                            let _ = this.send(ResetSession::Device(sender)).await;
+
+                            tracing::info!("dropping envelope");
+                            break None;
+                        }
+                        // Capture NoSenderKeyState with sealed sender
+                        Err(ServiceError::SealedSenderDecryptionError(SealedSenderDecryptionError {
+                            inner: SignalProtocolError::NoSenderKeyState { distribution_id },
+                            // Force the sender to be present; this ensures the trust roots have
+                            // been validated.
+                            sender: Some(sender),
+                        })) => {
+                            let _span = tracing::warn_span!("handling NoSenderKeyState", %distribution_id, sealed_sender=%sender).entered();
+                            let _ = this.send(ResetSession::Device(sender)).await;
+
+                            tracing::info!("dropping envelope");
+                            break None;
+                        }
+                        // Capture sessions not existing in both sealed and authenticated cases.
+                        Err(ServiceError::SignalProtocolError(SignalProtocolError::SessionNotFound(sender))) |
+                            Err(ServiceError::SealedSenderDecryptionError(SealedSenderDecryptionError {
+                            inner: SignalProtocolError::SessionNotFound(sender),
+                            // Force the sender to be present; this ensures the trust roots have
+                            // been validated.  Additionally, the sender is known to be the same as
+                            // the one used in the decryption attempt.
+                            sender: Some(_),
+                        }))  => {
+                            let _span = tracing::warn_span!("session not found", %sender).entered();
+                            let _ = this.send(ResetSession::Device(sender)).await;
+
+                            tracing::info!("dropping envelope");
                             break None;
                         }
                         Err(ServiceError::SignalProtocolError(
@@ -3735,7 +3939,7 @@ impl Handler<DeleteMessageForAll> for ClientActor {
             for_story: false,
             timestamp: now,
             online: false,
-            session_type: session.r#type,
+            destination: session.r#type.into(),
         };
 
         // XXX: We can't get a result back, I think we should?

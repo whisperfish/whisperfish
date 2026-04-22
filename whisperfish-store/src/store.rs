@@ -3841,6 +3841,18 @@ impl<O: Observable> Storage<O> {
         }
     }
 
+    /// Update the last_session_reset timestamp for a recipient.
+    ///
+    /// Used for rate limiting session reset NullMessages
+    pub fn update_last_session_reset(&mut self, recipient_id: i32, timestamp: NaiveDateTime) {
+        use crate::schema::recipients::dsl::*;
+        diesel::update(recipients)
+            .set(last_session_reset.eq(timestamp))
+            .filter(id.eq(recipient_id))
+            .execute(&mut *self.db())
+            .expect("db");
+    }
+
     #[tracing::instrument]
     pub fn migrate_storage() -> Result<(), anyhow::Error> {
         let data_dir = dirs::data_local_dir().context("No data directory found")?;

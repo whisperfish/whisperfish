@@ -643,7 +643,7 @@ impl Handler<SendCallMessage> for super::ClientActor {
                 content,
                 online: false,
                 timestamp: now.timestamp_millis() as u64,
-                session_type: session.r#type,
+                destination: session.r#type.into(),
                 for_story: false,
             })
             .await?
