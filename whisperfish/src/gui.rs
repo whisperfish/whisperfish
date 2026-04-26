@@ -44,6 +44,9 @@ pub struct AppState {
     recipientCount: qt_method!(fn(&self) -> i32),
     unsentCount: qt_method!(fn(&self) -> i32),
 
+    prekeyCounts: qt_method!(fn(&self) -> QString),
+    kyberPrekeyCounts: qt_method!(fn(&self) -> QString),
+
     pub storage: RefCell<Option<Storage>>,
     // XXX Is this really thread safe?
     pub rustlegraphs: Rc<RefCell<HashMap<String, Weak<rustlegraph::Vizualizer>>>>,
@@ -149,6 +152,28 @@ impl AppState {
         self.storage.borrow().as_ref().unwrap().unsent_count()
     }
 
+    #[allow(non_snake_case)]
+    #[with_executor]
+    fn prekeyCounts(&self) -> QString {
+        if let Some(storage) = self.storage.borrow_mut().as_mut() {
+            let (aci_count, pni_count) = storage.get_prekey_counts();
+            format!("{} / {}", aci_count, pni_count).into()
+        } else {
+            "? / ?".into()
+        }
+    }
+
+    #[allow(non_snake_case)]
+    #[with_executor]
+    fn kyberPrekeyCounts(&self) -> QString {
+        if let Some(storage) = self.storage.borrow_mut().as_mut() {
+            let (aci_count, pni_count) = storage.get_kyber_prekey_counts();
+            format!("{} / {}", aci_count, pni_count).into()
+        } else {
+            "? / ?".into()
+        }
+    }
+
     pub fn set_storage(&self, storage: Storage) {
         for cb in self.on_storage_ready.take() {
             let storage = storage.clone();
@@ -198,6 +223,10 @@ impl AppState {
             sessionCount: Default::default(),
             recipientCount: Default::default(),
             unsentCount: Default::default(),
+
+            // XXX: Remove these two when #803 gets fixed
+            prekeyCounts: Default::default(),
+            kyberPrekeyCounts: Default::default(),
 
             on_storage_ready: Default::default(),
         }

@@ -694,6 +694,16 @@ Page {
                     //% "Disabled"
                     qsTrId("whisperfish-settings-encrypted-db-disabled")
             }
+            DetailItem {
+                label: "Prekeys (ACI/PNI)"
+                value: debugMode ? AppState.prekeyCounts() : ""
+                visible: debugMode
+            }
+            DetailItem {
+                label: "Kyber prekeys (ACI/PNI)"
+                value: debugMode ? AppState.kyberPrekeyCounts() : ""
+                visible: debugMode
+            }
             // ------ END STATS ------
         }
     }
