@@ -607,7 +607,8 @@ Page {
                     "Alexander Schlarb" + "\n" +
                     "PawelSpoon" + "\n" +
                     "carlosgonz" + "\n" +
-                    "Allan Nordhøy"
+                    "Allan Nordhøy" + "\n" +
+                    "Bernd Krause"
                 }
             }
             /// END TRANSLATORS
