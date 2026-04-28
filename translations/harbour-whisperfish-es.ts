@@ -2614,7 +2614,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="238"/>
         <source>%1 accepted %2 into the group</source>
         <extracomment>Group change: requesting member was accepted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1 aceptó %2 al grupo</translation>
     </message>
     <message id="whisperfish-service-message-group-change-title">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="244"/>
