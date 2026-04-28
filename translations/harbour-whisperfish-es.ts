@@ -591,7 +591,7 @@
         <source>Install Signal Desktop. Use e.g. the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</source>
         <oldsource>Install Signal Desktop. Use the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</oldsource>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
-        <translation type="unfinished">Instale Signal Escritorio. Use la aplicación CodeReader para escanear el código QR que se muestra en Signal Escritorio y copiar y pegar la URL aquí.</translation>
+        <translation>Instalar Signal Desktop. Usar p.e. la aplicación CodeReader para escanear el código QR que se muestra en Signal Desktop y copiar y pegar la URL aquí.</translation>
     </message>
     <message id="whisperfish-select-picture">
         <source>Select picture</source>
@@ -637,13 +637,13 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="59"/>
         <source>Primary device</source>
         <extracomment>The nameless primary device in linked devices list</extracomment>
-        <translation type="unfinished">Dispositivo principal</translation>
+        <translation>Dispositivo principal</translation>
     </message>
     <message id="whisperfish-secondary-device-name">
         <location filename="../qml/pages/LinkedDevices.qml" line="63"/>
         <source>Device %1</source>
         <extracomment>A nameless secondary device in linked devices list</extracomment>
-        <translation type="unfinished">Dispositivo %1</translation>
+        <translation>Dispositivo %1</translation>
     </message>
     <message id="whisperfish-device-link-date">
         <location filename="../qml/pages/LinkedDevices.qml" line="84"/>
@@ -732,7 +732,7 @@
         <location filename="../qml/pages/MainPage.qml" line="279"/>
         <source>Disconnected</source>
         <extracomment>Whisperfish connection status message</extracomment>
-        <translation type="unfinished">Desconectado</translation>
+        <translation>Desconectado</translation>
     </message>
     <message id="whisperfish-connection-status-reconnecting">
         <location filename="../qml/pages/MainPage.qml" line="282"/>
@@ -1563,13 +1563,13 @@ Settings page share contacts</extracomment>
         <source>Return key send</source>
         <oldsource>EnterKey Send</oldsource>
         <extracomment>Settings page enable enter send</extracomment>
-        <translation>Enviar con tecla INTRO</translation>
+        <translation>Enviar con tecla Intro</translation>
     </message>
     <message id="whisperfish-settings-enable-enter-send-description">
         <location filename="../qml/pages/Settings.qml" line="328"/>
         <source>When enabled, the return key functions as a send key. Otherwise, the return key can be used for multi-line messages.</source>
         <extracomment>Settings page enable enter send description</extracomment>
-        <translation>Cuando está activada, la tecla INTRO funciona como una tecla de envío. De lo contrario, la tecla INTRO se puede utilizar para mensajes de varias líneas.</translation>
+        <translation>Cuando está activada, la tecla Intro funciona como una tecla de envío. De lo contrario, la tecla Intro se puede utilizar para mensajes de varias líneas.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-label">
         <location filename="../qml/pages/Settings.qml" line="341"/>
@@ -1669,7 +1669,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="603"/>
         <source>When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect.</source>
         <extracomment>Settings page enable verbose logging description</extracomment>
-        <translation type="unfinished">Cuando está activado, Whisperfish produce una salida detallada. Útil para ejecutar en el terminal. Requiere un reinicio para tener efecto.</translation>
+        <translation>Cuando está activado, Whisperfish envía una salida detallada al journal de systemd. Requiere un reinicio para tener efecto.</translation>
     </message>
     <message id="whisperfish-settings-gstreamer-version">
         <location filename="../qml/pages/Settings.qml" line="681"/>
@@ -2530,13 +2530,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="181"/>
         <source>%1 restricted sending messages to administrators only</source>
         <extracomment>Group change: only admins can send messages</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 restringió enviar mensajes a administradores sólo</translation>
     </message>
     <message id="whisperfish-service-message-group-change-announcement-only-off">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="184"/>
         <source>%1 allowed everyone send messages</source>
         <extracomment>Group change: all members can send messages</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 permitió a todos enviar mensajes</translation>
     </message>
     <message id="whisperfish-service-message-group-change-attribute-access">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="189"/>
@@ -2566,7 +2566,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="206"/>
         <source>%1 set invite link setting to &apos;%2&apos;</source>
         <extracomment>Group change: joining group via invite link setting</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 establece la configuración del enlace de invitación a &apos;%2&apos;</translation>
     </message>
     <message id="whisperfish-service-message-group-change-invite-link-password">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="210"/>
@@ -2578,13 +2578,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="214"/>
         <source>%1 allowed &apos;%2&apos; add new members</source>
         <extracomment>Group change: change members joining setting</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 permitió &apos;%2&apos; añadir nuevos miembros</translation>
     </message>
     <message id="whisperfish-service-message-group-change-modify-member-role">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="218"/>
         <source>%1 changed %2 to %3</source>
         <extracomment>Group change: change member &quot;power level&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 cambió %2 a %3</translation>
     </message>
     <message id="whisperfish-service-message-group-change-new-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="222"/>
@@ -2614,13 +2614,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="238"/>
         <source>%1 accepted %2 into the group</source>
         <extracomment>Group change: requesting member was accepted</extracomment>
-        <translation type="unfinished">%1 aceptó %2 al grupo</translation>
+        <translation>%1 aceptó %2 al grupo</translation>
     </message>
     <message id="whisperfish-service-message-group-change-title">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="244"/>
         <source>%1 changed the group title to &apos;%2&apos;</source>
         <extracomment>Group change: title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 cambió el título de grupo a &apos;%2&apos;</translation>
     </message>
     <message id="whisperfish-service-message-call-group-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="267"/>
@@ -2682,13 +2682,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="319"/>
         <source>%1 sent you a sticker: %2</source>
         <extracomment>Message with a sticker, %1 is a name, %2 is an emoji</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 te envió un sticker: %2</translation>
     </message>
     <message id="whisperfish-service-message-contact">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="323"/>
         <source>Contact cards can&apos;t yet be supported</source>
         <extracomment>Message with a contact card</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Las tarjetas de contacto todavía no están soportadas</translation>
     </message>
     <message id="whisperfish-service-message-not-supported">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="329"/>
@@ -2788,7 +2788,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="424"/>
         <source>Clear selection</source>
         <extracomment>Message action description, shown if one or more messages are selected</extracomment>
-        <translation type="unfinished">Eliminar la selección</translation>
+        <translation>Eliminar selección</translation>
     </message>
     <message id="whisperfish-message-action-copy" numerus="yes">
         <location filename="../qml/pages/ConversationPage.qml" line="435"/>
@@ -2834,9 +2834,9 @@ Settings page share contacts</extracomment>
         <source>Retry sending %n failed message(s)</source>
         <oldsource>Retry sending (the) failed message(s)</oldsource>
         <extracomment>Message action description</extracomment>
-        <translation type="unfinished">
-            <numerusform>Vuelve a intentar enviar (el) mensaje fallido</numerusform>
-            <numerusform>Vuelve a intentar enviar (los) mensajes fallidos</numerusform>
+        <translation>
+            <numerusform>Vuelve a intentar enviar %n mensaje fallido</numerusform>
+            <numerusform>Vuelve a intentar enviar %n mensajes fallidos</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-action-transcribe" numerus="yes">
@@ -2844,9 +2844,9 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="565"/>
         <source>Transcribe %n message(s)</source>
         <extracomment>Message action description</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Transcribe %n mensaje</numerusform>
+            <numerusform>Transcribe %n mensajes</numerusform>
         </translation>
     </message>
     <message id="whisperfish-group-request-information">
@@ -3168,52 +3168,52 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RenameDevicePage.qml" line="28"/>
         <source>New device name</source>
         <extracomment>Short description for rename device input field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nuevo nombre de dispositivo</translation>
     </message>
     <message id="whisperfish-rename-device-input-desc">
         <location filename="../qml/pages/RenameDevicePage.qml" line="31"/>
         <source>Rename device &quot;%1&quot;</source>
         <extracomment>Description for rename device input field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Renombrado dispositivo &quot;%1&quot;</translation>
     </message>
     <message id="whisperfish-search-title">
         <location filename="../qml/pages/SearchPage.qml" line="46"/>
         <source>Message search</source>
         <extracomment>Search page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Búsqueda de mensajes</translation>
     </message>
     <message id="whisperfish-search-field-label">
         <location filename="../qml/pages/SearchPage.qml" line="77"/>
         <source>Search messages by text</source>
         <extracomment>Search field default text</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Buscar mensajes por texto</translation>
     </message>
     <message id="whisperfish-search-field-desc" numerus="yes">
         <location filename="../qml/pages/SearchPage.qml" line="80"/>
         <source>%n match(es)</source>
         <extracomment>Search field description</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n coincidencia</numerusform>
+            <numerusform>%n coincidencias</numerusform>
         </translation>
     </message>
     <message id="whisperfish-search-select-session">
         <location filename="../qml/pages/SearchPage.qml" line="120"/>
         <source>Search from conversation</source>
         <extracomment>Search page, select session to search from, or all</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Búsqueda desde conversación</translation>
     </message>
     <message id="whisperfish-search-from-all">
         <location filename="../qml/pages/SearchPage.qml" line="126"/>
         <source>All conversations</source>
         <extracomment>Search page, search from all conversations</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Todas las conversaciones</translation>
     </message>
     <message id="whisperfish-search-results-label">
         <location filename="../qml/pages/SearchPage.qml" line="270"/>
         <source>No messages</source>
         <extracomment>Search results placeholder text</extracomment>
-        <translation type="unfinished">Sin mensajes</translation>
+        <translation>No hay mensajes</translation>
     </message>
 </context>
 </TS>
