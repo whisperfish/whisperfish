@@ -1023,7 +1023,7 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <location filename="../qml/pages/SetupPasswordPage.qml" line="104"/>
         <source>Password is too short</source>
         <extracomment>Password label when too short</extracomment>
-        <translation>Das Passwort ist zu kurz</translation>
+        <translation>Das Kennwort ist zu kurz</translation>
     </message>
     <message id="whisperfish-password-label">
         <location filename="../qml/pages/SetupPasswordPage.qml" line="76"/>
@@ -1049,13 +1049,13 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <location filename="../qml/pages/SetupPasswordPage.qml" line="107"/>
         <source>Passwords do not match</source>
         <extracomment>repeated password input label if passwords don&apos;t match</extracomment>
-        <translation>Passwörter stimmen nicht überein</translation>
+        <translation>Kennworte stimmen nicht überein</translation>
     </message>
     <message id="whisperfish-new-password-repeat-placeholder">
         <location filename="../qml/pages/SetupPasswordPage.qml" line="111"/>
         <source>Repeat your new password</source>
         <extracomment>Repeated new password input placeholder</extracomment>
-        <translation>Wiederhole dein neues Passwort</translation>
+        <translation>Wiederhole dein neues Kennwort</translation>
     </message>
     <message id="whisperfish-skip-button-label">
         <location filename="../qml/pages/SetupPasswordPage.qml" line="137"/>
@@ -1079,7 +1079,7 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <location filename="../qml/pages/UnlockPage.qml" line="29"/>
         <source>Please enter your password to unlock your conversations.</source>
         <extracomment>unlock page password prompt</extracomment>
-        <translation>Bitte gib dein Passwort ein, um deine Unterhaltungen zu entsperren.</translation>
+        <translation>Bitte gib dein Kennwort ein, um deine Unterhaltungen zu entsperren.</translation>
     </message>
     <message id="whisperfish-registration-secondary-title">
         <location filename="../qml/pages/RegisterSecondaryPage.qml" line="15"/>
@@ -1112,7 +1112,7 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <source>Your password</source>
         <oldsource>Password</oldsource>
         <extracomment>password placeholder</extracomment>
-        <translation>Dein Passwort</translation>
+        <translation>Dein Kennwort</translation>
     </message>
     <message id="whisperfish-unlock-button-label">
         <location filename="../qml/pages/UnlockPage.qml" line="99"/>
@@ -1124,7 +1124,7 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <location filename="../qml/pages/SetupPasswordPage.qml" line="26"/>
         <source>Whisperfish stores identity keys, session state, and local message data encrypted on disk. The password you set is not stored anywhere and you will not be able to restore your data if you lose your password. Note: Attachments are currently stored unencrypted. You can disable storing of attachments in the Settings page.</source>
         <extracomment>Whisperfish password informational message</extracomment>
-        <translation>Whisperfish speichert Identitätsschlüssel, Sitzungsverläufe und lokale Nachrichten verschlüsselt ab. Das Passwort wird nicht gespeichert, ein Verlust dessen bedeutet, dass du die Daten nicht wiederherstellen kannst. Beachte: Anhänge werden derzeit unverschlüsselt gespeichert. Das Speichern von Anhängen kann in den Einstellungen deaktiviert werden.</translation>
+        <translation>Whisperfish speichert Identitätsschlüssel, Sitzungsverläufe und lokale Nachrichten verschlüsselt ab. Das Kennwort wird nicht gespeichert, ein Verlust dessen bedeutet, dass du die Daten nicht wiederherstellen kannst. Beachte: Anhänge werden derzeit unverschlüsselt gespeichert. Das Speichern von Anhängen kann in den Einstellungen deaktiviert werden.</translation>
     </message>
     <message id="whisperfish-registration-message">
         <location filename="../qml/pages/RegisterPage.qml" line="20"/>
@@ -1521,20 +1521,20 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="513"/>
         <source>Save password</source>
         <extracomment>Settings page save autologin password button</extracomment>
-        <translation>Passwort speichern</translation>
+        <translation>Kennwort speichern</translation>
     </message>
     <message id="whisperfish-settings-clear-password-button">
         <location filename="../qml/pages/Settings.qml" line="516"/>
         <source>clear password</source>
         <extracomment>Settings page clear autologin password button</extracomment>
-        <translation>Passwort löschen</translation>
+        <translation>Kennwort löschen</translation>
     </message>
     <message id="whisperfish-settings-auto-unlock-password-info">
         <location filename="../qml/pages/Settings.qml" line="528"/>
         <source>You can enter your password to make Whisperfish unlock the database automatically at startup. Please note that the password is stored in plain text, and as such usage of this feature is not recommended.</source>
         <oldsource>You can enter your password to make Whisperfish unlock the database automatically at startup. Please note that the password is stored in plain text, and as such usage of this feature is not recommened.</oldsource>
         <extracomment>Settings page info about setting auto unlock password</extracomment>
-        <translation>Du kannst dein Passwort hinterlegen, damit Whisperfish die Datenbank beim Start automatisch entsperrt. Bitte beachte, dass das Passwort im Klartext gespeichert wird, weshalb diese Funktion nicht empfohlen wird.</translation>
+        <translation>Du kannst dein Kennwort hinterlegen, damit Whisperfish die Datenbank beim Start automatisch entsperrt. Bitte beachte, dass das Kennwort im Klartext gespeichert wird, weshalb diese Funktion nicht empfohlen wird.</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode-description">
         <location filename="../qml/pages/Settings.qml" line="549"/>
