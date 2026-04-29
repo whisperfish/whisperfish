@@ -289,6 +289,8 @@ Page {
                     "Alexander Schlarb" + "\n" +
                     "Ettore Atalan" + "\n" +
                     "Simon Hahne" + "\n" +
+                    "Bernd Krause" + "\n" +
+                    "Peter G." + "\n" +
                     "Sebastian Maus" + "\n" +
                     "carlosgonz" + "\n" +
                     "tct123"
@@ -605,10 +607,10 @@ Page {
                     "J. Lavoie" + "\n" +
                     "Jose Manuel REGUEIRA" + "\n" +
                     "Alexander Schlarb" + "\n" +
+                    "Bernd Krause" + "\n" +
                     "PawelSpoon" + "\n" +
                     "carlosgonz" + "\n" +
-                    "Allan Nordhøy" + "\n" +
-                    "Bernd Krause"
+                    "Allan Nordhøy"
                 }
             }
             /// END TRANSLATORS
