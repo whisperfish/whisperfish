@@ -1063,10 +1063,10 @@ impl ClientActor {
                 TrustLevel::Certain,
             );
             let mut session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
-            storage.update_expiration_timer(&session, msg.expire_timer, msg.expire_timer_version);
+            let expire_timer = msg.expire_timer.filter(|&v| v > 0);
+            storage.update_expiration_timer(&session, expire_timer, msg.expire_timer_version);
             session.expire_timer_version = msg.expire_timer_version() as i32;
-            session.expiring_message_timeout =
-                msg.expire_timer.map(|v| Duration::from_secs(v as u64));
+            session.expiring_message_timeout = expire_timer.map(|v| Duration::from_secs(v as u64));
             session
         };
 
@@ -1951,7 +1951,7 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
 
         session.expire_timer_version = storage.update_expiration_timer(
             &session,
-            msg.expires_in.map(|x| x.as_secs() as u32),
+            msg.expires_in.map(|x| x.as_secs() as u32).or(Some(0)),
             None,
         );
 
@@ -2052,7 +2052,11 @@ impl Handler<SendMessage> for ClientActor {
 
                     profile_key: storage.fetch_self_recipient_profile_key(),
                     quote,
-                    expire_timer: msg.expires_in.map(|x| x as u32),
+                    expire_timer: if msg.expire_timer_version > 0 {
+                        msg.expires_in.map(|x| x as u32).or(Some(0))
+                    } else {
+                        msg.expires_in.map(|x| x as u32)
+                    },
                     expire_timer_version: Some(msg.expire_timer_version as u32),
                     body_ranges: crate::store::body_ranges::to_vec(msg.message_ranges.as_ref()),
                     ..Default::default()
