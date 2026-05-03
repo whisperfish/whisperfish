@@ -2818,6 +2818,7 @@ impl Handler<Restart> for ClientActor {
             .into_actor(self)
             .map(move |pipe, act, ctx| match pipe {
                 Ok((pipe, i_ws)) => {
+                    tracing::info!("message stream established");
                     // Store the identified websocket for reuse
                     act.identified_websocket = Some(i_ws);
                     ctx.notify_later(RefreshPreKeys, Duration::from_secs(2));
