@@ -81,7 +81,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
         let _span = tracing::info_span!("handle RequestGroupV2Info").entered();
         let storage = self.storage.clone().unwrap();
         let service_ids = self.service_ids().expect("whoami");
-        let u_ws = self.ws.clone().unwrap();
+        let u_ws = self.unidentified_websocket();
 
         let authenticated_service = self.authenticated_service();
         let zk_params =
@@ -93,6 +93,7 @@ impl Handler<RequestGroupV2Info> for ClientActor {
 
         Box::pin(
             async move {
+            let u_ws = u_ws.await?;
                 let mut credential_cache = storage.credential_cache_mut().await;
                 let mut gm = GroupsManager::new(
                     service_ids,
@@ -412,10 +413,11 @@ impl Handler<RefreshGroupAvatar> for ClientActor {
         let zk_params =
             ServiceConfiguration::from(self.signal_server()).zkgroup_server_public_params;
         let service_ids = self.service_ids().expect("whoami");
-        let u_ws = self.ws.clone().unwrap();
+        let u_ws = self.unidentified_websocket();
 
         ctx.spawn(
             async move {
+                let u_ws = u_ws.await?;
                 let master_key = hex::decode(&master_key).expect("hex group key in db");
                 let mut key_stack = [0u8; zkgroup::GROUP_MASTER_KEY_LEN];
                 key_stack.clone_from_slice(master_key.as_ref());
@@ -713,10 +715,11 @@ impl Handler<GroupV2Update> for ClientActor {
         let zk_params =
             ServiceConfiguration::from(self.signal_server()).zkgroup_server_public_params;
         let service_ids = self.service_ids().expect("whoami");
-        let u_ws = self.ws.clone().unwrap();
+        let u_ws = self.unidentified_websocket();
 
         ctx.spawn(
             async move {
+                let u_ws = u_ws.await?;
                 let mut db_triggers: Vec<GroupV2Trigger> = Vec::new();
                 let mut ctx_triggers: Vec<GroupV2Trigger> = Vec::new();
                 let mut svc_messages: Vec<GroupChangeServiceMessage> = Vec::new();
@@ -730,11 +733,7 @@ impl Handler<GroupV2Update> for ClientActor {
                     zk_params,
                 );
 
-                let changes = gm.decrypt_group_context(group_v2_ctx);
-                #[allow(clippy::question_mark)] // Fixing this messes up `ret` type inferrence
-                if let Err(e) = changes {
-                    return Err(e);
-                }
+                let changes = gm.decrypt_group_context(group_v2_ctx)?;
                 let mut group_v2 = session.unwrap_group_v2().to_owned();
 
                 if let Some(GroupChanges {
@@ -745,7 +744,7 @@ impl Handler<GroupV2Update> for ClientActor {
                     version,
                     changes,
                     change_epoch: _,
-                }) = changes.unwrap()
+                }) = changes
                 {
                     tracing::debug!(
                         "Group (session {}) has {} update(s)",
@@ -1032,7 +1031,7 @@ impl Handler<GroupV2Update> for ClientActor {
                     tracing::warn!("Group change message with no changes");
                 }
 
-                Ok((ctx_triggers, session.id, svc_messages))
+                Ok::<_, ServiceError>((ctx_triggers, session.id, svc_messages))
             }
             .into_actor(self)
             .map(|res, _act, ctx| {

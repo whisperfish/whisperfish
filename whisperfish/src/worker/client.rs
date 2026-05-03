@@ -409,8 +409,6 @@ pub struct ClientActor {
     self_aci: Option<Aci>,
     self_pni: Option<Pni>,
     storage: Option<Storage>,
-    ws: Option<SignalWebSocket<Unidentified>>,
-    i_ws: Option<SignalWebSocket<Identified>>,
     config: std::sync::Arc<crate::config::SignalConfig>,
 
     message_stream_handle: Option<SpawnHandle>,
@@ -555,8 +553,6 @@ impl ClientActor {
             self_aci: None,
             self_pni: None,
             storage: None,
-            ws: None,
-            i_ws: None,
             config,
 
             message_stream_handle: None,
@@ -620,26 +616,45 @@ impl ClientActor {
         self.authenticated_service_with_credentials(self.credentials.clone().unwrap())
     }
 
+    fn identified_websocket(
+        &self,
+    ) -> impl Future<Output = Result<SignalWebSocket<Identified>, ServiceError>> {
+        let mut i_service = self.authenticated_service();
+        let credentials = self.credentials.clone();
+        async move {
+            i_service
+                .ws("/v1/websocket/", "/v1/keepalive", &[], credentials)
+                .await
+        }
+    }
+
+    fn unidentified_websocket(
+        &self,
+    ) -> impl Future<Output = Result<SignalWebSocket<Unidentified>, ServiceError>> {
+        let mut u_service = self.unauthenticated_service();
+        async move {
+            u_service
+                .ws("/v1/websocket/", "/v1/keepalive", &[], None)
+                .await
+        }
+    }
+
     fn message_sender(
         &self,
     ) -> impl Future<Output = Result<MessageSender<AciOrPniStorage>, ServiceError>> {
         let storage = self.storage.clone().unwrap();
         let service = self.authenticated_service();
-        let mut u_service = self.unauthenticated_service();
 
-        let i_ws = self.i_ws.clone();
-        let ws = self.ws.clone();
+        let identified = self.identified_websocket();
+        let unidentified = self.unidentified_websocket();
         let cipher = self.cipher(ServiceIdKind::Aci);
         let local_aci = self.self_aci.unwrap();
         let local_pni = self.self_pni.unwrap();
         let device_id = self.config.get_device_id();
 
         async move {
-            let Some(i_ws) = i_ws else {
-                return Err(ServiceError::SendError {
-                    reason: "SignalWebSocket is not open".into(),
-                });
-            };
+            let identified = identified.await?;
+            let unidentified = unidentified.await?;
 
             let aci_key = storage
                 .aci_storage()
@@ -657,16 +672,9 @@ impl ClientActor {
                 })
                 .ok();
 
-            let ws = match ws {
-                Some(ws) => ws,
-                None => u_service
-                    .ws("/v1/websocket/", "/v1/keepalive", &[], None)
-                    .await
-                    .unwrap(),
-            };
             Ok(MessageSender::new(
-                i_ws,
-                ws,
+                identified,
+                unidentified,
                 service,
                 cipher,
                 storage.aci_or_pni(ServiceIdKind::Aci), // In what cases do we use the
@@ -2715,12 +2723,12 @@ impl Handler<DeliverSyncMessage> for ClientActor {
 }
 
 impl Handler<StorageReady> for ClientActor {
-    type Result = ResponseActFuture<Self, ()>;
+    type Result = ();
 
     fn handle(
         &mut self,
         StorageReady { storage }: StorageReady,
-        _ctx: &mut Self::Context,
+        ctx: &mut Self::Context,
     ) -> Self::Result {
         self.storage = Some(storage.clone());
         let e164 = self
@@ -2747,49 +2755,22 @@ impl Handler<StorageReady> for ClientActor {
             device_id: Some(device_id),
         };
 
-        let mut i_service = self.authenticated_service_with_credentials(credentials.clone());
-        let mut u_service = self.unauthenticated_service();
+        let _span = tracing::trace_span!("whisperfish startup").entered();
 
-        let credentials = async move {
-            let i_ws = i_service
-                .ws(
-                    "/v1/websocket/",
-                    "/v1/keepalive",
-                    &[],
-                    Some(credentials.clone()),
-                )
-                .await
-                .unwrap();
-            let u_ws = u_service
-                .ws("/v1/websocket/", "/v1/keepalive", &[], None)
-                .await
-                .unwrap();
-            (credentials, i_ws, u_ws)
-        }
-        .instrument(tracing::span!(tracing::Level::INFO, "storage ready"));
+        self.self_aci = credentials.aci.map(Aci::from);
+        self.self_pni = credentials.pni.map(Pni::from);
+        self.credentials = Some(credentials);
 
-        Box::pin(
-            credentials
-                .into_actor(self)
-                .map(move |(credentials, i_ws, u_ws), act, ctx| {
-                    let _span = tracing::trace_span!("whisperfish startup").entered();
+        Self::queue_migrations(ctx);
 
-                    act.self_aci = credentials.aci.map(Aci::from);
-                    act.self_pni = credentials.pni.map(Pni::from);
-                    act.credentials = Some(credentials);
-                    act.i_ws = Some(i_ws);
-                    act.ws = Some(u_ws);
+        // Start workers.
+        Self.profile_updater();
 
-                    // Start workers.
-                    act.profile_updater();
+        Self.queue_migrations(ctx);
 
-                    act.queue_migrations(ctx);
-
-                    ctx.notify(Restart);
-                    // XXX Restart now calls RefreshPreKeys. This could be wrong.
-                    // ctx.notify(RefreshPreKeys);
-                }),
-        )
+        ctx.notify(Restart);
+        // XXX Restart now calls RefreshPreKeys. This could be wrong.
+        // ctx.notify(RefreshPreKeys);
     }
 }
 
@@ -2833,10 +2814,7 @@ impl Handler<Restart> for ClientActor {
             .instrument(tracing::trace_span!("set up message receiver"))
             .into_actor(self)
             .map(move |pipe, act, ctx| match pipe {
-                Ok((pipe, i_ws)) => {
-                    // XXX Save identified WebSocket and only then call RefreshPreKeys
-                    // in order to prevent "4409 Connected elsewhere" error.
-                    act.i_ws = Some(i_ws);
+                Ok((pipe, _i_ws)) => {
                     ctx.notify_later(RefreshPreKeys, Duration::from_secs(2));
 
                     // XXX Maybe RefreshPreKeys should call this or something?
@@ -3498,14 +3476,14 @@ impl Handler<RefreshPreKeys> for ClientActor {
 
     fn handle(&mut self, _: RefreshPreKeys, _ctx: &mut Self::Context) -> Self::Result {
         let service = self.authenticated_service();
-        let i_ws = self.i_ws.clone().unwrap();
+        let i_ws = self.identified_websocket();
         // XXX add profile key when #192 implemneted
         let storage = self.storage.clone().unwrap();
 
         let pni_distribution = self.migration_state.pni_distributed();
 
         let proc = async move {
-            let mut am = AccountManager::new(service, i_ws, None);
+            let mut am = AccountManager::new(service, i_ws.await?, None);
 
             let mut aci = storage.aci_storage();
             let mut pni = storage.pni_storage();

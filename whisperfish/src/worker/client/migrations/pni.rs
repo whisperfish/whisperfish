@@ -10,17 +10,17 @@ pub struct InitializePni;
 impl Handler<InitializePni> for ClientActor {
     type Result = ResponseActFuture<Self, ()>;
     fn handle(&mut self, _: InitializePni, ctx: &mut Self::Context) -> Self::Result {
-        if self.ws.is_none() {
+        if self.credentials.is_none() {
             // This should be triggered after restart,
             // not during the initial connection.
             tracing::warn!(
-                "Not connected to server, cannot initialize PNI. Retrying in 10 seconds."
+                "Credentials not initialized, cannot initialize PNI. Retrying in 10 seconds."
             );
             ctx.notify_later(InitializePni, Duration::from_secs(10));
             return Box::pin(async {}.into_actor(self));
         }
         let service = self.authenticated_service();
-        let i_ws = self.i_ws.clone().unwrap();
+        let i_ws = self.identified_websocket();
         let whoami = self.migration_state.self_uuid_is_known();
         let storage = self.storage.clone().expect("initialized storage");
         let local_addr = self.self_aci.expect("local addr");
@@ -31,6 +31,10 @@ impl Handler<InitializePni> for ClientActor {
         Box::pin(
             async move {
                 whoami.await;
+                // XXX: This is not ideal: if we can't connect for some intermittent reason,
+                // we probably want to retry a few times before giving up.
+                // However, nobody should exist anymore that needs this migration logic...
+                let i_ws = i_ws.await?;
 
                 if storage.pni_storage().get_identity_key_pair().await.is_ok() {
                     // XXX: this is not a great way to check if PNI is initialized

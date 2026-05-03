@@ -103,34 +103,35 @@ impl Handler<ReloadLinkedDevices> for ClientActor {
         tracing::trace!("handle(ReloadLinkedDevices)");
 
         let service = self.authenticated_service();
-        let i_ws = self.i_ws.clone().unwrap();
+        let i_ws = self.identified_websocket();
         let store = self.storage.clone().unwrap();
         let profile_key: Option<[u8; 32]> = store
             .fetch_self_recipient_profile_key()
             .and_then(|key| key.try_into().ok());
-        let mut account_manager =
-            AccountManager::new(service, i_ws, profile_key.map(ProfileKey::create));
 
         Box::pin(
-            async move { account_manager.linked_devices(&store.aci_storage()).await }
-                .into_actor(self)
-                .map(move |result, act, _ctx| {
-                    match result {
-                        Err(e) => {
-                            // XXX show error
-                            tracing::error!("Refresh linked devices failed: {}", e);
-                        }
-                        Ok(devices) => {
-                            tracing::trace!("Successfully refreshed linked devices: {:?}", devices);
-                            // A bunch bindings because of scope
-                            let client_worker = act.inner.pinned();
-                            let client_worker = client_worker.borrow_mut();
-                            let device_model =
-                                client_worker.device_model.as_ref().unwrap().pinned();
-                            device_model.borrow_mut().set_devices(devices);
-                        }
+            async move {
+                let mut account_manager =
+                    AccountManager::new(service, i_ws.await?, profile_key.map(ProfileKey::create));
+                account_manager.linked_devices(&store.aci_storage()).await
+            }
+            .into_actor(self)
+            .map(move |result, act, _ctx| {
+                match result {
+                    Err(e) => {
+                        // XXX show error
+                        tracing::error!("Refresh linked devices failed: {}", e);
                     }
-                }),
+                    Ok(devices) => {
+                        tracing::trace!("Successfully refreshed linked devices: {:?}", devices);
+                        // A bunch bindings because of scope
+                        let client_worker = act.inner.pinned();
+                        let client_worker = client_worker.borrow_mut();
+                        let device_model = client_worker.device_model.as_ref().unwrap().pinned();
+                        device_model.borrow_mut().set_devices(devices);
+                    }
+                }
+            }),
         )
     }
 }
@@ -147,19 +148,19 @@ impl Handler<LinkDevice> for ClientActor {
 
         let service = self.authenticated_service();
         let credentials = self.credentials.clone().unwrap();
-        let i_ws = self.i_ws.clone().unwrap();
+        let i_ws = self.identified_websocket();
 
         let store = self.storage.clone().unwrap();
         let profile_key: Option<[u8; 32]> = store
             .fetch_self_recipient_profile_key()
             .and_then(|key| key.try_into().ok());
-        let mut account_manager =
-            AccountManager::new(service, i_ws, profile_key.map(ProfileKey::create));
         let master_key = store.fetch_master_key();
 
         Box::pin(
             // Without `async move`, service would be borrowed instead of encapsulated in a Future.
             async move {
+                let mut account_manager =
+                    AccountManager::new(service, i_ws.await?, profile_key.map(ProfileKey::create));
                 let url = tsurl.parse()?;
                 Ok::<_, anyhow::Error>(
                     account_manager
@@ -202,24 +203,28 @@ impl Handler<UnlinkDevice> for ClientActor {
     ) -> Self::Result {
         tracing::trace!("handle(UnlinkDevice)");
 
-        let mut i_ws = self.i_ws.clone().unwrap();
+        let i_ws = self.identified_websocket();
 
         Box::pin(
             // Without `async move`, service would be borrowed instead of encapsulated in a Future.
-            async move { service.unlink_device(device_id).await }
-                .into_actor(self)
-                .map(move |result, _act, ctx| {
-                    match result {
-                        Err(e) => {
-                            // XXX show error in UI
-                            tracing::error!("Delete linked device failed: {}", e);
-                        }
-                        Ok(()) => {
-                            tracing::trace!("Successfully unlinked device");
-                            ctx.notify(ReloadLinkedDevices);
-                        }
+            async move {
+                i_ws.await?
+                    .unlink_device(DeviceId::new(id as u8).unwrap())
+                    .await
+            }
+            .into_actor(self)
+            .map(move |result, _act, ctx| {
+                match result {
+                    Err(e) => {
+                        // XXX show error in UI
+                        tracing::error!("Delete linked device failed: {}", e);
                     }
-                }),
+                    Ok(()) => {
+                        tracing::trace!("Successfully unlinked device");
+                        ctx.notify(ReloadLinkedDevices);
+                    }
+                }
+            }),
         )
     }
 }
@@ -238,17 +243,17 @@ impl Handler<RenameDevice> for ClientActor {
         tracing::trace!("handle(RenameDevice)");
 
         let service = self.authenticated_service();
-        let i_ws = self.i_ws.clone().unwrap();
+        let i_ws = self.identified_websocket();
         let store = self.storage.clone().unwrap();
         let profile_key: Option<[u8; 32]> = store
             .fetch_self_recipient_profile_key()
             .and_then(|key| key.try_into().ok());
-        let mut account_manager =
-            AccountManager::new(service, i_ws, profile_key.map(ProfileKey::create));
         let aci = self.config.get_aci().unwrap();
 
         Box::pin(
             async move {
+                let mut account_manager =
+                    AccountManager::new(service, i_ws.await?, profile_key.map(ProfileKey::create));
                 account_manager
                     .update_device_name(
                         device_id.try_into().unwrap(),
