@@ -2860,13 +2860,9 @@ impl Handler<Restart> for ClientActor {
                     act.inner.pinned().borrow().connectedChanged();
                 }
                 Err(e) => {
-                    tracing::error!("Error starting stream: {}", e);
-                    tracing::info!("Retrying in 10");
-                    let addr = ctx.address();
-                    actix::spawn(async move {
-                        actix::clock::sleep(Duration::from_secs(10)).await;
-                        addr.send(Restart).await.expect("retry restart");
-                    });
+                    let delay = Duration::from_secs(10);
+                    tracing::error!(error = %e, "Error starting stream. Retrying in {delay:?}");
+                    ctx.notify_later(Restart, delay);
                 }
             }),
         )
