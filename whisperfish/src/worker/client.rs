@@ -111,6 +111,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
+
 use sync_message::request::Type as RequestType;
 
 // Maximum theoretical TypingMessage send rate,
@@ -410,6 +411,7 @@ pub struct ClientActor {
     self_pni: Option<Pni>,
     storage: Option<Storage>,
     config: std::sync::Arc<crate::config::SignalConfig>,
+    identified_websocket: Option<SignalWebSocket<Identified>>,
 
     message_stream_handle: Option<SpawnHandle>,
 
@@ -554,6 +556,7 @@ impl ClientActor {
             self_pni: None,
             storage: None,
             config,
+            identified_websocket: None,
 
             message_stream_handle: None,
 
@@ -619,13 +622,13 @@ impl ClientActor {
     fn identified_websocket(
         &self,
     ) -> impl Future<Output = Result<SignalWebSocket<Identified>, ServiceError>> {
-        let mut i_service = self.authenticated_service();
-        let credentials = self.credentials.clone();
-        async move {
-            i_service
-                .ws("/v1/websocket/", "/v1/keepalive", &[], credentials)
-                .await
-        }
+        // If we have a stored websocket, return a clone of it
+        let ws = self.identified_websocket.clone();
+        // This is a future as to be equivalent with the unidentified websocket,
+        // and such that we can later decide to change the behaviour of this method to do async work.
+        futures::future::ready(ws.ok_or(ServiceError::IO(std::io::Error::other(
+            "temporarily disconnected",
+        ))))
     }
 
     fn unidentified_websocket(
@@ -2814,7 +2817,9 @@ impl Handler<Restart> for ClientActor {
             .instrument(tracing::trace_span!("set up message receiver"))
             .into_actor(self)
             .map(move |pipe, act, ctx| match pipe {
-                Ok((pipe, _i_ws)) => {
+                Ok((pipe, i_ws)) => {
+                    // Store the identified websocket for reuse
+                    act.identified_websocket = Some(i_ws);
                     ctx.notify_later(RefreshPreKeys, Duration::from_secs(2));
 
                     // XXX Maybe RefreshPreKeys should call this or something?
