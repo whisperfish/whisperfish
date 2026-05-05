@@ -113,11 +113,9 @@ impl Handler<RefreshOwnProfile> for ClientActor {
             ctx.notify_later(RefreshOwnProfile { force }, Duration::from_secs(2));
             return Box::pin(async {}.into_actor(self));
         }
-        let i_ws = self.identified_websocket();
 
         Box::pin(
             async move {
-                let mut i_ws = i_ws.await?;
                 let self_recipient = storage
                     .fetch_self_recipient()
                     .expect("self recipient should be set by now");

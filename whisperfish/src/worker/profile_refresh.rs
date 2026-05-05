@@ -5,11 +5,15 @@ use chrono::prelude::*;
 use diesel::prelude::*;
 use futures::AsyncReadExt;
 use libsignal_service::{
-    configuration::SignalServers, prelude::*, profile_cipher::ProfileCipher, protocol::Aci,
-    websocket::profile::SignalServiceProfile,
+    configuration::SignalServers,
+    prelude::*,
+    profile_cipher::ProfileCipher,
+    protocol::Aci,
+    websocket::{profile::SignalServiceProfile, Identified, SignalWebSocket, Unidentified},
 };
 use std::{
     collections::{hash_map, HashMap},
+    sync::Weak,
     time::Duration,
 };
 use tokio::io::AsyncWriteExt;
@@ -95,7 +99,7 @@ pub struct ProfileUpdater {
     back_off_until: DateTime<Utc>,
 
     local_aci: Aci,
-    credentials: ServiceCredentials,
+    i_ws: Weak<SignalWebSocket<Identified>>,
 
     // TODO: store the ignore reason
     ignore_map: HashMap<Aci, DateTime<Utc>>,
@@ -103,11 +107,47 @@ pub struct ProfileUpdater {
     next_wake_handle: Option<actix::SpawnHandle>,
 }
 
+// XXX These four methods are duplicates of the ones in Client.
+impl ProfileUpdater {
+    fn user_agent(&self) -> String {
+        crate::user_agent()
+    }
+
+    fn signal_server(&self) -> SignalServers {
+        // XXX: read the configuration files!
+        SignalServers::Production
+    }
+
+    fn unauthenticated_service(&self) -> PushService {
+        PushService::new(self.signal_server(), None, self.user_agent())
+    }
+
+    fn unidentified_websocket(
+        &self,
+    ) -> impl Future<Output = Result<SignalWebSocket<Unidentified>, ServiceError>> + use<> {
+        let mut u_service = self.unauthenticated_service();
+        async move {
+            u_service
+                .ws("/v1/websocket/", "/v1/keepalive", &[], None)
+                .await
+        }
+    }
+}
+
 impl actix::Actor for ProfileUpdater {
     type Context = actix::Context<Self>;
 
     fn started(&mut self, ctx: &mut <Self as actix::Actor>::Context) {
         // Schedule first wake
+        self.update_scheduled_wake(ctx);
+    }
+}
+
+impl actix::Handler<super::client::Reconnected> for ProfileUpdater {
+    type Result = ();
+
+    fn handle(&mut self, msg: super::client::Reconnected, ctx: &mut Self::Context) -> Self::Result {
+        self.i_ws = msg.ws;
         self.update_scheduled_wake(ctx);
     }
 }
@@ -131,6 +171,11 @@ impl actix::Handler<WakeUp> for ProfileUpdater {
             .expect("db");
 
         let addr = ctx.address();
+
+        if self.i_ws.strong_count() == 0 {
+            tracing::debug!("websocket disconnected, suspending profile updater");
+            return Box::pin(async {}.into_actor(self).map(|_, _, _| ()));
+        }
 
         let fetch_commands = out_of_date_profile_recipients
             .into_iter()
@@ -224,10 +269,21 @@ impl Handler<FetchProfile> for ProfileUpdater {
         );
         // XXX: this should actually be unauthenticated and use sealed sender access:
         // PushServiceSocket::retrieveProfile(SignalServiceId target, @Nullable SealedSenderAccess sealedSenderAccess, Locale locale)
-        let mut service = self.authenticated_service();
+        let Some(i_ws) = self.i_ws.upgrade() else {
+            return Box::pin(
+                async move {}
+                    .into_actor(self)
+                    .map(|(), _act, _ctx| anyhow::bail!("websocket unavailable")),
+            );
+        };
+
+        let i_ws = i_ws.as_ref().clone();
 
         Box::pin(
-            async move { (aci, service.retrieve_profile_by_id(aci, key).await) }
+            async move {
+                let profile = i_ws.clone().retrieve_profile_by_id(aci, key).await;
+                (aci, profile)
+            }
                 .into_actor(self)
                 .map(move |(recipient_aci, profile), act, ctx| -> anyhow::Result<Option<SignalServiceProfile>>{
                     let _span = tracing::info_span!("processing profile fetch", recipient=%Uuid::from(recipient_aci)).entered();
@@ -250,10 +306,14 @@ impl Handler<FetchAvatar> for ProfileUpdater {
         }: FetchAvatar,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        let mut service = self.unauthenticated_service();
         let span = tracing::info_span!("fetch avatar", recipient=%recipient_uuid, avatar=%avatar_attachment_path);
+        let ws = self.unidentified_websocket();
         Box::pin(
             async move {
+                // XXX this connection might fail, and I don't believe we retry avatar fetching
+                // correctly.
+                let mut ws = ws.await?;
+
                 let settings = crate::config::SettingsBridge::default();
                 let avatar_dir = settings.get_string("avatar_dir");
                 let avatar_dir = std::path::Path::new(&avatar_dir);
@@ -262,9 +322,7 @@ impl Handler<FetchAvatar> for ProfileUpdater {
                 }
                 let avatar_path = avatar_dir.join(recipient_uuid.to_string());
 
-                let mut avatar = service
-                    .retrieve_profile_avatar(&avatar_attachment_path)
-                    .await?;
+                let mut avatar = ws.retrieve_profile_avatar(&avatar_attachment_path).await?;
                 // 10MB is what Signal Android allocates
                 let mut contents = Vec::with_capacity(10 * 1024 * 1024);
                 let len = avatar.read_to_end(&mut contents).await?;
@@ -295,36 +353,18 @@ impl Handler<FetchAvatar> for ProfileUpdater {
 }
 
 impl ProfileUpdater {
-    pub fn new(storage: Storage, local_aci: Aci, credentials: ServiceCredentials) -> Self {
+    pub fn new(storage: Storage, local_aci: Aci, i_ws: Weak<SignalWebSocket<Identified>>) -> Self {
         Self {
             storage,
             back_off_until: Utc::now() + REYIELD_DELAY,
 
             local_aci,
-            credentials,
+            i_ws,
 
             ignore_map: HashMap::new(),
 
             next_wake_handle: None,
         }
-    }
-
-    fn signal_server(&self) -> SignalServers {
-        // XXX: read the configuration files!
-        SignalServers::Production
-    }
-
-    // XXX somehow dedupe this with the client ector.
-    fn authenticated_service(&self) -> PushService {
-        PushService::new(
-            self.signal_server(),
-            Some(self.credentials.clone()),
-            crate::user_agent(),
-        )
-    }
-
-    fn unauthenticated_service(&self) -> PushService {
-        PushService::new(self.signal_server(), None, crate::user_agent())
     }
 
     fn update_scheduled_wake(&mut self, ctx: &mut <Self as actix::Actor>::Context) {

@@ -131,6 +131,12 @@ pub struct NewAttachment {
     pub mime_type: String,
 }
 
+#[derive(Debug, Message)]
+#[rtype(result = "()")]
+pub struct Reconnected {
+    pub ws: std::sync::Weak<SignalWebSocket<Identified>>,
+}
+
 #[derive(actix::Message, Debug)]
 #[rtype(result = "()")]
 pub struct QueueMessage {
@@ -411,7 +417,7 @@ pub struct ClientActor {
     self_pni: Option<Pni>,
     storage: Option<Storage>,
     config: std::sync::Arc<crate::config::SignalConfig>,
-    identified_websocket: Option<SignalWebSocket<Identified>>,
+    identified_websocket: Option<std::sync::Arc<SignalWebSocket<Identified>>>,
 
     message_stream_handle: Option<SpawnHandle>,
 
@@ -586,7 +592,10 @@ impl ClientActor {
             ProfileUpdater::new(
                 self.storage.clone().expect("initialized storage"),
                 self.self_aci.expect("self-aci set"),
-                self.credentials.clone().expect("credentials set"),
+                self.identified_websocket
+                    .as_ref()
+                    .map(std::sync::Arc::downgrade)
+                    .unwrap_or_default(),
             )
             .start()
         })
@@ -621,9 +630,12 @@ impl ClientActor {
 
     fn identified_websocket(
         &self,
-    ) -> impl Future<Output = Result<SignalWebSocket<Identified>, ServiceError>> {
+    ) -> impl Future<Output = Result<SignalWebSocket<Identified>, ServiceError>> + use<> {
         // If we have a stored websocket, return a clone of it
-        let ws = self.identified_websocket.clone();
+        let ws = self
+            .identified_websocket
+            .as_ref()
+            .map(|ptr| ptr.as_ref().clone());
         // This is a future as to be equivalent with the unidentified websocket,
         // and such that we can later decide to change the behaviour of this method to do async work.
         futures::future::ready(ws.ok_or(ServiceError::IO(std::io::Error::other(
@@ -2764,12 +2776,7 @@ impl Handler<StorageReady> for ClientActor {
         self.self_pni = credentials.pni.map(Pni::from);
         self.credentials = Some(credentials);
 
-        Self::queue_migrations(ctx);
-
-        // Start workers.
-        Self.profile_updater();
-
-        Self.queue_migrations(ctx);
+        self.queue_migrations(ctx);
 
         ctx.notify(Restart);
         // XXX Restart now calls RefreshPreKeys. This could be wrong.
@@ -2803,6 +2810,8 @@ impl Handler<Restart> for ClientActor {
             ctx.cancel_future(handle);
         }
 
+        let profile_updater = self.profile_updater();
+
         self.inner.pinned().borrow_mut().connected = false;
         self.inner.pinned().borrow().connectedChanged();
         Box::pin(
@@ -2812,15 +2821,24 @@ impl Handler<Restart> for ClientActor {
 
                 let pipe = receiver.create_message_pipe(credentials, false).await?;
                 let i_ws = pipe.ws();
-                Result::<_, ServiceError>::Ok((pipe, i_ws))
+                let ws = std::sync::Arc::new(i_ws);
+
+                // Notify workers for reconnection
+                profile_updater
+                    .send(Reconnected {
+                        ws: std::sync::Arc::downgrade(&ws),
+                    })
+                    .await?;
+
+                anyhow::Result::<_>::Ok((pipe, ws))
             }
             .instrument(tracing::trace_span!("set up message receiver"))
             .into_actor(self)
             .map(move |pipe, act, ctx| match pipe {
-                Ok((pipe, i_ws)) => {
+                Ok((pipe, ws)) => {
                     tracing::info!("message stream established");
                     // Store the identified websocket for reuse
-                    act.identified_websocket = Some(i_ws);
+                    act.identified_websocket = Some(ws.clone());
                     ctx.notify_later(RefreshPreKeys, Duration::from_secs(2));
 
                     // XXX Maybe RefreshPreKeys should call this or something?

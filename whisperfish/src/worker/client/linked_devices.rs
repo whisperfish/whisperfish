@@ -207,24 +207,20 @@ impl Handler<UnlinkDevice> for ClientActor {
 
         Box::pin(
             // Without `async move`, service would be borrowed instead of encapsulated in a Future.
-            async move {
-                i_ws.await?
-                    .unlink_device(DeviceId::new(id as u8).unwrap())
-                    .await
-            }
-            .into_actor(self)
-            .map(move |result, _act, ctx| {
-                match result {
-                    Err(e) => {
-                        // XXX show error in UI
-                        tracing::error!("Delete linked device failed: {}", e);
+            async move { i_ws.await?.unlink_device(device_id).await }
+                .into_actor(self)
+                .map(move |result, _act, ctx| {
+                    match result {
+                        Err(e) => {
+                            // XXX show error in UI
+                            tracing::error!("Delete linked device failed: {}", e);
+                        }
+                        Ok(()) => {
+                            tracing::trace!("Successfully unlinked device");
+                            ctx.notify(ReloadLinkedDevices);
+                        }
                     }
-                    Ok(()) => {
-                        tracing::trace!("Successfully unlinked device");
-                        ctx.notify(ReloadLinkedDevices);
-                    }
-                }
-            }),
+                }),
         )
     }
 }
