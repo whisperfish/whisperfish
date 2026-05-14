@@ -4,6 +4,7 @@ pub mod migrations;
 mod attachment;
 #[cfg(feature = "calling")]
 mod call;
+mod early_receipt_cache;
 mod groupv2;
 mod linked_devices;
 mod message_expiry;
@@ -12,6 +13,7 @@ pub mod resize_image;
 mod unidentified;
 mod voice_note_transcription;
 
+use self::early_receipt_cache::EarlyReceiptCache;
 pub use self::groupv2::*;
 pub use self::linked_devices::*;
 use self::migrations::MigrationCondVar;
@@ -70,6 +72,7 @@ use crate::platform::QmlApp;
 use crate::store::AciOrPniStorage;
 use crate::store::Storage;
 use crate::store::orm::UnidentifiedAccessMode;
+use crate::worker::client::early_receipt_cache::CachedReceipt;
 use crate::worker::client::unidentified::CertType;
 use crate::worker::profile_refresh::ProfileUpdater;
 use actix::prelude::*;
@@ -255,6 +258,16 @@ pub enum ResetSession {
     Recipient(i32),
 }
 
+#[derive(Debug, Message)]
+#[rtype(result = "()")]
+/// Process a cached receipt for a message that has now been received.
+pub struct ProcessCachedReceipts {
+    pub timestamp: u64,
+    pub message_id: i32,
+    pub sender: ServiceId,
+    pub session_id: i32,
+}
+
 #[derive(QObject, Default)]
 #[allow(non_snake_case)]
 pub struct ClientWorker {
@@ -428,6 +441,8 @@ pub struct ClientActor {
     voice_note_transcription_queue: voice_note_transcription::VoiceNoteTranscriptionQueue,
     attachment_resize_queue: resize_image::AttachmentResizeQueue,
 
+    early_receipt_cache: EarlyReceiptCache,
+
     start_time: DateTime<Local>,
 
     profile_updater: Option<Addr<ProfileUpdater>>,
@@ -573,6 +588,8 @@ impl ClientActor {
             voice_note_transcription_queue:
                 voice_note_transcription::VoiceNoteTranscriptionQueue::default(),
             attachment_resize_queue: resize_image::AttachmentResizeQueue::default(),
+
+            early_receipt_cache: EarlyReceiptCache::new(),
 
             start_time: Local::now(),
 
@@ -1150,6 +1167,17 @@ impl ClientActor {
 
         let message = storage.create_message(&new_message);
 
+        // Trigger processing of any cached receipts for this newly created message.
+        // Only relevant for inbound messages (where source_addr is available).
+        if let Some(sender) = source_addr {
+            ctx.notify(ProcessCachedReceipts {
+                timestamp: naive_chrono_to_millis(timestamp),
+                message_id: message.id,
+                sender,
+                session_id: message.session_id,
+            });
+        }
+
         if let Some(h) = self.message_expiry_notification_handle.as_ref() {
             h.send(()).expect("send message expiry notification");
         }
@@ -1689,23 +1717,37 @@ impl ClientActor {
                 let receipt_type = receipt.r#type();
                 let timestamps: Vec<NaiveDateTime> = receipt
                     .timestamp
+                    .clone()
                     .into_iter()
                     .map(millis_to_naive_chrono)
                     .collect();
                 let rcpt_timestamp =
                     millis_to_naive_chrono(metadata.timestamp.timestamp_millis() as u64);
+
+                // Insert into cache first,
+                // only remove if messages were matched.
+                self.early_receipt_cache.add(metadata.clone(), receipt);
                 match receipt_type {
                     ReceiptType::Delivery => {
                         tracing::debug!(
-                            "{:?} received {} message(s)",
+                            "{:?} received {} message(s) (delivery)",
                             metadata.sender.service_id_string(),
                             timestamps.len(),
                         );
-                        for updated in storage.mark_messages_delivered(
+
+                        let updated = storage.mark_messages_delivered(
                             metadata.sender,
                             timestamps,
                             rcpt_timestamp,
-                        ) {
+                        );
+
+                        for updated in updated {
+                            // Remove matched timestamps from cache
+                            let _ = self
+                                .early_receipt_cache
+                                .take(naive_chrono_to_millis(updated.timestamp));
+
+                            // Notify UI
                             self.inner
                                 .pinned()
                                 .borrow_mut()
@@ -1719,11 +1761,19 @@ impl ClientActor {
                                 metadata.sender.service_id_string(),
                                 timestamps.len(),
                             );
-                            for updated in storage.mark_messages_read(
+
+                            let updated = storage.mark_messages_read(
                                 metadata.sender,
                                 timestamps,
                                 rcpt_timestamp,
-                            ) {
+                            );
+
+                            for updated in updated {
+                                // Remove matched timestamps from cache
+                                self.early_receipt_cache
+                                    .take(naive_chrono_to_millis(updated.timestamp));
+
+                                // Notify UI
                                 self.inner
                                     .pinned()
                                     .borrow_mut()
@@ -3864,6 +3914,60 @@ impl Handler<MarkMessagesRead> for ClientActor {
             }
             .instrument(tracing::debug_span!("mark messages read")),
         )
+    }
+}
+
+impl Handler<ProcessCachedReceipts> for ClientActor {
+    type Result = ();
+
+    #[tracing::instrument(skip(self, _ctx), fields(timestamp))]
+    fn handle(&mut self, msg: ProcessCachedReceipts, _ctx: &mut Self::Context) -> Self::Result {
+        let ProcessCachedReceipts { timestamp, .. } = msg;
+
+        tracing::Span::current().record("timestamp", timestamp);
+
+        let Some(receipts) = self.early_receipt_cache.take(timestamp) else {
+            return;
+        };
+        let storage = self.storage.as_mut().unwrap();
+
+        for CachedReceipt {
+            receipt,
+            metadata,
+            created_at,
+        } in receipts
+        {
+            let time_in_cache = Utc::now() - created_at;
+            tracing::debug!(%time_in_cache, "processing backlogged receipt");
+
+            let r#type = receipt.r#type();
+
+            let timestamps: Vec<NaiveDateTime> = receipt
+                .timestamp
+                .into_iter()
+                .map(millis_to_naive_chrono)
+                .collect();
+
+            match r#type {
+                ReceiptType::Delivery => {
+                    let _ = storage.mark_messages_delivered(
+                        metadata.sender,
+                        timestamps,
+                        millis_to_naive_chrono(metadata.timestamp.timestamp_millis() as u64),
+                    );
+                }
+                ReceiptType::Read => {
+                    let _ = storage.mark_messages_read(
+                        metadata.sender,
+                        timestamps,
+                        millis_to_naive_chrono(metadata.timestamp.timestamp_millis() as u64),
+                    );
+                }
+                _ => {
+                    tracing::warn!("Unimplemented ReceiptType: {:?}", r#type);
+                }
+            }
+        }
     }
 }
 
