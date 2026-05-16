@@ -1686,6 +1686,7 @@ impl ClientActor {
                 }
             }
             ContentBody::ReceiptMessage(receipt) => {
+                let receipt_type = receipt.r#type();
                 let timestamps: Vec<NaiveDateTime> = receipt
                     .timestamp
                     .into_iter()
@@ -1693,9 +1694,8 @@ impl ClientActor {
                     .collect();
                 let rcpt_timestamp =
                     millis_to_naive_chrono(metadata.timestamp.timestamp_millis() as u64);
-                let receipt_type = ReceiptType::try_from(receipt.r#type.unwrap_or(-1)).ok();
                 match receipt_type {
-                    Some(ReceiptType::Delivery) => {
+                    ReceiptType::Delivery => {
                         tracing::debug!(
                             "{:?} received {} message(s)",
                             metadata.sender.service_id_string(),
@@ -1712,7 +1712,7 @@ impl ClientActor {
                                 .messageReceipt(updated.session_id, updated.message_id)
                         }
                     }
-                    Some(ReceiptType::Read) => {
+                    ReceiptType::Read => {
                         if self.settings.get_enable_read_receipts() {
                             tracing::debug!(
                                 "{:?} read {} message(s)",
@@ -1733,12 +1733,11 @@ impl ClientActor {
                             tracing::debug!("Ignoring DeliveryMessage(Read)");
                         }
                     }
-                    Some(ReceiptType::Viewed) => {
+                    ReceiptType::Viewed => {
                         tracing::warn!(
                             "Viewed receipts are not yet implemented. Please upvote issue #670"
                         );
                     }
-                    None => tracing::error!("Unknown ReceiptType enum value: {:?}", receipt.r#type),
                 }
             }
             ContentBody::CallMessage(call) => {
