@@ -63,12 +63,12 @@
 //!     fn interests(&self) -> Vec<Interest> {
 //!         // Declare which database changes this model is interested in.
 //!         // See [`Interest`](crate::store::observer::Interest) for available methods.
-//!         
+//!
 //!         // The interests() method is crucial for the observation system - it tells
 //!         // the framework which database changes should trigger observe() calls.
 //!         // Most ORM models in Whisperfish implement this method to specify their
 //!         // dependencies on specific tables, rows, or relationships.
-//!         
+//!
 //!         // For ORM entities, the default implementation is provided in
 //!         // [`store::observer::orm_interests`](crate::store::observer::orm_interests).
 //!         // Models can override this to add additional interests or modify behavior.
@@ -321,8 +321,8 @@ fn int_from_duration_option(val: Option<Duration>) -> i32 {
     }
 }
 
-fn int_from_usize(val: usize) -> i32 {
-    val as i32
+fn bool_from_usize(val: usize) -> bool {
+    val > 0
 }
 
 fn int_from_device_id(val: DeviceId) -> u32 {

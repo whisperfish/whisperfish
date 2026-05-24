@@ -21,9 +21,9 @@ use whisperfish_store::store::orm;
 
         senderRecipientId SenderRecipientId,
 
-        delivered Delivered,
-        read Read,
-        viewed Viewed,
+        hasDeliveries HasDeliveries,
+        hasReads HasReads,
+        hasViews HasViews,
 
         sent Sent,
         flags Flags,
@@ -99,11 +99,20 @@ impl EventObserving for Message {
                 }
             } else if event.relation_key_for(schema::receipts::table).is_some() {
                 let storage = ctx.storage();
-                self.augmented_message.as_mut().unwrap().receipt_counts =
-                    storage.count_message_receipts(id);
-                self.message_changed();
+                let msg = self.augmented_message.as_mut().unwrap();
+                let old_counts = &msg.receipt_counts;
+                let new_counts = storage.count_message_receipts(id);
+                let has_changes = (old_counts.delivered > 0) != (new_counts.delivered > 0)
+                    || (old_counts.read > 0) != (new_counts.read > 0)
+                    || (old_counts.viewed > 0) != (new_counts.viewed > 0);
+
+                msg.receipt_counts = new_counts;
+                if has_changes {
+                    self.message_changed();
+                }
             } else {
                 self.fetch(ctx.storage(), id);
+                self.message_changed();
             }
         }
     }
@@ -159,7 +168,6 @@ impl Message {
     fn fetch(&mut self, storage: Storage, id: i32) {
         self.augmented_message = storage.fetch_augmented_message(id);
         self.fetch_attachments(storage, id);
-        self.message_changed();
     }
 
     fn fetch_attachments(&mut self, storage: Storage, id: i32) {
@@ -206,25 +214,27 @@ impl Message {
     }
 
     fn set_message_id(&mut self, ctx: Option<ModelContext<Self>>, id: i32) {
-        if id >= 0 {
+        if id >= 0 && (self.message_id.is_none() || self.message_id.as_ref().unwrap() != &id) {
             self.message_id = Some(id);
             if let Some(ctx) = ctx {
                 self.fetch(ctx.storage(), id);
             }
-        } else {
+            self.message_changed();
+        } else if id < 0 && self.message_id.is_some() {
             self.message_id = None;
             self.augmented_message = None;
             self.attachment_list_model
                 .pinned()
                 .borrow_mut()
                 .set(Vec::new());
+            self.message_changed();
         }
-        self.message_changed();
     }
 
     fn init(&mut self, ctx: ModelContext<Self>) {
         if let Some(id) = self.message_id {
             self.fetch(ctx.storage(), id);
+            self.message_changed();
         }
     }
 }
@@ -247,12 +257,12 @@ impl Message {
         timestamp Timestamp,
         read IsRead,
         sent Sent,
-        deliveryCount Delivered,
-        readCount Read,
+        hasDeliveries HasDeliveries,
+        hasReads HasReads,
+        hasViews HasViews,
         isMuted IsMuted,
         isArchived IsArchived,
         isPinned IsPinned,
-        viewCount Viewed,
         draft Draft,
         expiringMessageTimeout ExpiringMessageTimeout,
     })
@@ -426,10 +436,10 @@ define_model_roles! {
 
         SenderRecipientId(sender_recipient_id via int_from_i32_option): "senderRecipientId",
 
-        Delivered(receipt_counts.delivered via int_from_usize): "delivered",
-        Read(receipt_counts.read via int_from_usize):           "read", // How many recipient have received the message
+        HasDeliveries(receipt_counts.delivered via bool_from_usize): "hasDeliveries",
+        HasReads(receipt_counts.read via bool_from_usize):    "hasReads",
+        HasViews(receipt_counts.viewed via bool_from_usize):  "hasViews",
         IsRead(is_read):                                      "isRead", // Is the message unread or read by self
-        Viewed(receipt_counts.viewed via int_from_usize):       "viewed",
 
         Sent(fn sent(&self)):                                 "sent",
         Flags(flags):                                         "flags",

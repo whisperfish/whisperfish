@@ -396,12 +396,12 @@ define_model_roles! {
         Timestamp(fn timestamp(&self) via qdatetime_from_naive_option):    "timestamp",
         IsRead(fn is_read(&self)):                                         "read", // TODO Give session its own timestamp?
         Sent(fn sent(&self)):                                              "sent", // TODO cf. isPreviewReceived (#151)
-        Delivered(fn delivered(&self) via int_from_usize):                 "deliveryCount",
-        Read(fn read(&self) via int_from_usize):                           "readCount",
+        HasDeliveries(fn delivered(&self) via bool_from_usize):            "hasDeliveries",
+        HasReads(fn read(&self) via bool_from_usize):                      "hasReads",
+        HasViews(fn viewed(&self) via bool_from_usize):                    "hasViews",
         IsMuted(fn is_muted(&self)):                                       "isMuted",
         IsArchived(fn is_archived(&self)):                                 "isArchived",
         IsPinned(fn is_pinned(&self)):                                     "isPinned",
-        Viewed(fn viewed(&self) via int_from_usize):                       "viewCount",
 
         Draft(fn draft(&self) via QString::from):                          "draft",
         ExpiringMessageTimeout(expiring_message_timeout via int_from_duration_option): "expiringMessageTimeout",

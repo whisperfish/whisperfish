@@ -1280,12 +1280,12 @@ impl Display for AugmentedMessage {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(
             f,
-            "AugmentedMessage {{ attachments: {}, reactions: {}, read: {}, delivered: {}, viewed: {}, inner: {} }}",
+            "AugmentedMessage {{ attachments: {}, reactions: {}, hasReadRcpts: {}, hasDeliveredRcpts: {}, hasViewedRcpts: {}, inner: {} }}",
             &self.attachments,
             &self.reactions,
-            self.receipt_counts.read,
-            self.receipt_counts.delivered,
-            self.receipt_counts.viewed,
+            self.receipt_counts.read > 0,
+            self.receipt_counts.delivered > 0,
+            self.receipt_counts.viewed > 0,
             &self.inner
         )
     }
