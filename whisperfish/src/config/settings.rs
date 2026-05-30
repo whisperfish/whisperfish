@@ -596,7 +596,8 @@ mod tests {
 
     #[test]
     fn settings_integration_smoke_tests() {
-        qmeta_async::run(|| {
+        qmeta_async::init().ok();
+        qmeta_async::with_executor(|| {
             let temp_dir = tempfile::tempdir().unwrap();
             let settings_pathbuf = temp_dir.path().join("qsettings.conf");
             let settings_file = settings_pathbuf.to_str().unwrap();
@@ -630,12 +631,12 @@ mod tests {
             drop(temp_dir);
             assert!(!settings_pathbuf.as_path().exists());
         })
-        .unwrap();
     }
 
     #[test]
     fn qsettings_path_migration() {
-        qmeta_async::run(|| {
+        qmeta_async::init().ok();
+        qmeta_async::with_executor(|| {
             let temp_dir = tempfile::tempdir().unwrap();
             let settings_pathbuf = temp_dir.path().join("qsettings.conf");
             let settings_file = settings_pathbuf.to_str().unwrap();
@@ -687,6 +688,5 @@ mod tests {
             drop(temp_dir);
             assert!(!settings_pathbuf.exists());
         })
-        .unwrap();
     }
 }
