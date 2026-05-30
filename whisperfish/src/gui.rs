@@ -290,129 +290,115 @@ pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
         // For audio recording
         gstreamer::init().expect("gstreamer initialization");
 
-        let (app, _whisperfish) = with_executor(|| -> anyhow::Result<_> {
-            // XXX this arc thing should be removed in the future and refactored
-            let config = std::sync::Arc::new(config);
+        // XXX this arc thing should be removed in the future and refactored
+        let config = std::sync::Arc::new(config);
 
-            // Register types
-            {
-                let uri = cstr!("be.rubdos.whisperfish");
-                qml_register_type::<model::RustleGraph>(uri, 1, 0, cstr!("RustleGraph"));
-                qml_register_type::<model::VoiceNoteRecorder>(
-                    uri,
-                    1,
-                    0,
-                    cstr!("VoiceNoteRecorder"),
-                );
+        // Register types
+        {
+            let uri = cstr!("be.rubdos.whisperfish");
+            qml_register_type::<model::RustleGraph>(uri, 1, 0, cstr!("RustleGraph"));
+            qml_register_type::<model::VoiceNoteRecorder>(uri, 1, 0, cstr!("VoiceNoteRecorder"));
 
-                qml_register_type::<model::Sessions>(uri, 1, 0, cstr!("Sessions"));
-                qml_register_type::<model::Session>(uri, 1, 0, cstr!("Session"));
-                qml_register_type::<model::CreateConversation>(
-                    uri,
-                    1,
-                    0,
-                    cstr!("CreateConversation"),
-                );
-                qml_register_type::<model::Message>(uri, 1, 0, cstr!("Message"));
-                qml_register_type::<model::Recipient>(uri, 1, 0, cstr!("Recipient"));
-                qml_register_type::<model::Group>(uri, 1, 0, cstr!("Group"));
-                qml_register_type::<model::Attachment>(uri, 1, 0, cstr!("Attachment"));
-                qml_register_type::<model::Reactions>(uri, 1, 0, cstr!("Reactions"));
-                qml_register_type::<model::GroupedReactions>(uri, 1, 0, cstr!("GroupedReactions"));
-                qml_register_type::<model::Receipts>(uri, 1, 0, cstr!("Receipts"));
-            }
+            qml_register_type::<model::Sessions>(uri, 1, 0, cstr!("Sessions"));
+            qml_register_type::<model::Session>(uri, 1, 0, cstr!("Session"));
+            qml_register_type::<model::CreateConversation>(uri, 1, 0, cstr!("CreateConversation"));
+            qml_register_type::<model::Message>(uri, 1, 0, cstr!("Message"));
+            qml_register_type::<model::Recipient>(uri, 1, 0, cstr!("Recipient"));
+            qml_register_type::<model::Group>(uri, 1, 0, cstr!("Group"));
+            qml_register_type::<model::Attachment>(uri, 1, 0, cstr!("Attachment"));
+            qml_register_type::<model::Reactions>(uri, 1, 0, cstr!("Reactions"));
+            qml_register_type::<model::GroupedReactions>(uri, 1, 0, cstr!("GroupedReactions"));
+            qml_register_type::<model::Receipts>(uri, 1, 0, cstr!("Receipts"));
+        }
 
-            let mut app = QmlApp::application("harbour-whisperfish".into());
-            let long_version: QString = long_version().into();
-            tracing::info!("QmlApp::application loaded - version {}", long_version);
-            let version: QString = env!("CARGO_PKG_VERSION").into();
-            app.set_title("Whisperfish".into());
-            app.set_application_version(version.clone());
-            app.install_default_translator().unwrap();
+        let mut app = QmlApp::application("harbour-whisperfish".into());
+        let long_version: QString = long_version().into();
+        tracing::info!("QmlApp::application loaded - version {}", long_version);
+        let version: QString = env!("CARGO_PKG_VERSION").into();
+        app.set_title("Whisperfish".into());
+        app.set_application_version(version.clone());
+        app.install_default_translator().unwrap();
 
-            let app_state = AppState::new();
-            crate::qblurhashimageprovider::install(app.engine());
-            crate::qrustlegraphimageprovider::install(app.engine(), app_state.rustlegraphs.clone());
+        let app_state = AppState::new();
+        crate::qblurhashimageprovider::install(app.engine());
+        crate::qrustlegraphimageprovider::install(app.engine(), app_state.rustlegraphs.clone());
 
-            // XXX Spaghetti
-            let session_actor = actor::SessionActor::new(&mut app).start();
-            let client_actor = worker::ClientActor::new(
-                &mut app,
-                session_actor.clone(),
-                std::sync::Arc::clone(&config),
-            )?
-            .start();
-            let message_actor = actor::MessageActor::new(&mut app, client_actor.clone()).start();
+        // XXX Spaghetti
+        let session_actor = actor::SessionActor::new(&mut app).start();
+        let client_actor = worker::ClientActor::new(
+            &mut app,
+            session_actor.clone(),
+            std::sync::Arc::clone(&config),
+        )?
+        .start();
+        let message_actor = actor::MessageActor::new(&mut app, client_actor.clone()).start();
 
-            let whisperfish = Rc::new(WhisperfishApp {
-                app_state: QObjectBox::new(app_state),
-                session_actor,
-                message_actor,
-                client_actor,
-                contact_model: QObjectBox::new(model::ContactModel::default()),
-                prompt: QObjectBox::new(model::Prompt::default()),
+        let whisperfish = Rc::new(WhisperfishApp {
+            app_state: QObjectBox::new(app_state),
+            session_actor,
+            message_actor,
+            client_actor,
+            contact_model: QObjectBox::new(model::ContactModel::default()),
+            prompt: QObjectBox::new(model::Prompt::default()),
 
-                setup_worker: QObjectBox::new(worker::SetupWorker::default()),
+            setup_worker: QObjectBox::new(worker::SetupWorker::default()),
 
-                settings_bridge: QObjectBox::new(SettingsBridge::default()),
-            });
+            settings_bridge: QObjectBox::new(SettingsBridge::default()),
+        });
 
-            app.set_property("AppVersion".into(), version.into());
-            app.set_property("LongAppVersion".into(), long_version.into());
-            let ci_job_url: Option<QString> = option_env!("CI_JOB_URL").map(Into::into);
-            let ci_job_url = ci_job_url.map(Into::into).unwrap_or_else(|| false.into());
-            app.set_property("CiJobUrl".into(), ci_job_url);
+        app.set_property("AppVersion".into(), version.into());
+        app.set_property("LongAppVersion".into(), long_version.into());
+        let ci_job_url: Option<QString> = option_env!("CI_JOB_URL").map(Into::into);
+        let ci_job_url = ci_job_url.map(Into::into).unwrap_or_else(|| false.into());
+        app.set_property("CiJobUrl".into(), ci_job_url);
 
-            app.set_object_property("Prompt".into(), whisperfish.prompt.pinned());
-            app.set_object_property(
-                "SettingsBridge".into(),
-                whisperfish.settings_bridge.pinned(),
-            );
-            app.set_object_property("ContactModel".into(), whisperfish.contact_model.pinned());
-            app.set_object_property("SetupWorker".into(), whisperfish.setup_worker.pinned());
-            app.set_object_property("AppState".into(), whisperfish.app_state.pinned());
+        app.set_object_property("Prompt".into(), whisperfish.prompt.pinned());
+        app.set_object_property(
+            "SettingsBridge".into(),
+            whisperfish.settings_bridge.pinned(),
+        );
+        app.set_object_property("ContactModel".into(), whisperfish.contact_model.pinned());
+        app.set_object_property("SetupWorker".into(), whisperfish.setup_worker.pinned());
+        app.set_object_property("AppState".into(), whisperfish.app_state.pinned());
 
-            // We need to decied when to close the app based on the current setup state and
-            // background service configuration. We do that in QML in the lastWindowClosed signal
-            // emitted from the main QtGuiApplication object, since the corresponding app object in
-            // rust is occupied running the main loop.
-            // XXX: find a way to set quit_on_last_window_closed from SetupWorker and Settings at
-            // runtime to get rid of the QML part here.
-            app.set_quit_on_last_window_closed(false);
-            app.promote_gui_app_to_qml_context("RootApp".into());
+        // We need to decied when to close the app based on the current setup state and
+        // background service configuration. We do that in QML in the lastWindowClosed signal
+        // emitted from the main QtGuiApplication object, since the corresponding app object in
+        // rust is occupied running the main loop.
+        // XXX: find a way to set quit_on_last_window_closed from SetupWorker and Settings at
+        // runtime to get rid of the QML part here.
+        app.set_quit_on_last_window_closed(false);
+        app.promote_gui_app_to_qml_context("RootApp".into());
 
-            // We need harbour-whisperfish.qml for the QML-only signalcaptcha application
-            // so we have to use another filename for the main QML file for Whisperfish.
-            app.set_source(QmlApp::path_to("qml/harbour-whisperfish-main.qml".into()));
+        // We need harbour-whisperfish.qml for the QML-only signalcaptcha application
+        // so we have to use another filename for the main QML file for Whisperfish.
+        app.set_source(QmlApp::path_to("qml/harbour-whisperfish-main.qml".into()));
 
-            if config.autostart
-                && !whisperfish
-                    .settings_bridge
-                    .pinned()
-                    .borrow()
-                    .get_bool("quit_on_ui_close")
-                && !is_harbour()
-            {
-                // keep the ui closed until needed on auto-start
-                whisperfish
-                    .app_state
-                    .pinned()
-                    .borrow_mut()
-                    .setMayExit(false);
-                whisperfish.app_state.pinned().borrow_mut().setClosed();
-            } else {
-                app.show_full_screen();
-            }
+        if config.autostart
+            && !whisperfish
+                .settings_bridge
+                .pinned()
+                .borrow()
+                .get_bool("quit_on_ui_close")
+            && !is_harbour()
+        {
+            // keep the ui closed until needed on auto-start
+            whisperfish
+                .app_state
+                .pinned()
+                .borrow_mut()
+                .setMayExit(false);
+            whisperfish.app_state.pinned().borrow_mut().setClosed();
+        } else {
+            app.show_full_screen();
+        }
 
-            actix::spawn(worker::SetupWorker::run(
-                whisperfish.clone(),
-                std::sync::Arc::clone(&config),
-            ));
+        actix::spawn(worker::SetupWorker::run(
+            whisperfish.clone(),
+            std::sync::Arc::clone(&config),
+        ));
 
-            Ok((app, whisperfish))
-        })
-        .expect("setup application");
-
-        app.exec()
+        Ok(app.exec())
     })
+    .flatten()
 }
