@@ -45,7 +45,7 @@ qmeta-async = { git = "https://gitlab.com/rubdos/qmeta-async.git" }
 time = "0.3.44"
 scrypt = { version = "0.11.0", default-features = false, features = ["std"] }
 
-getrandom = "0.3"
+getrandom = "0.4"
 
 cpp = "0.5"
 dirs = "6.0"
@@ -98,7 +98,7 @@ hex = "0.4"
 
 [dev-dependencies]
 actix-rt = "2.11.0"
-criterion = "0.7"
+criterion = "0.8"
 rstest = "0.26"
 rstest_reuse = "0.7.0"
 
