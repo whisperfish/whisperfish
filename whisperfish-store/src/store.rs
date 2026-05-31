@@ -3363,45 +3363,37 @@ impl<O: Observable> Storage<O> {
         // part.
         let messages = self.fetch_all_messages(sid, only_most_recent);
 
-        let order = (
-            schema::messages::columns::server_timestamp.desc(),
-            schema::messages::columns::id.desc(),
-        );
-
         // message_id, is_voice_note, attachment count
         let attachments: Vec<(i32, Option<i16>, i64)> =
-            tracing::trace_span!("fetching attachments",).in_scope(|| {
+            tracing::trace_span!("fetching attachments").in_scope(|| {
                 schema::attachments::table
                     .inner_join(schema::messages::table)
-                    .group_by(schema::attachments::message_id)
+                    .group_by(schema::messages::id)
                     .select((
-                        schema::attachments::message_id,
-                        // We could also define a boolean or aggregate function...
-                        // Googling instructions for that is difficult though, since "diesel aggregate or"
-                        // yields you machines that consume fuel.
+                        schema::messages::id,
                         diesel::dsl::max(diesel::dsl::sql::<diesel::sql_types::SmallInt>(
                             "attachments.is_voice_note",
                         )),
-                        diesel::dsl::count(schema::attachments::id).aggregate_distinct(),
+                        diesel::dsl::count(schema::attachments::id),
                     ))
                     .filter(schema::messages::session_id.eq(sid))
-                    .order_by(order)
+                    .order_by(schema::messages::columns::id.desc())
                     .load(&mut *self.db())
                     .expect("db")
             });
 
         // message_id, reaction count
         let reactions: Vec<(i32, i64)> =
-            tracing::trace_span!("fetching reactions",).in_scope(|| {
+            tracing::trace_span!("fetching reactions").in_scope(|| {
                 schema::reactions::table
                     .inner_join(schema::messages::table)
-                    .group_by(schema::reactions::message_id)
+                    .group_by(schema::messages::id)
                     .select((
-                        schema::reactions::message_id,
-                        diesel::dsl::count(schema::reactions::reaction_id).aggregate_distinct(),
+                        schema::messages::id,
+                        diesel::dsl::count(schema::reactions::reaction_id),
                     ))
                     .filter(schema::messages::session_id.eq(sid))
-                    .order_by(order)
+                    .order_by(schema::messages::columns::id.desc())
                     .load(&mut *self.db())
                     .expect("db")
             });
@@ -3419,7 +3411,7 @@ impl<O: Observable> Storage<O> {
                     .filter(messages::session_id.eq(sid))
                     .group_by(receipts::message_id)
                     .select((receipts::message_id, diesel::dsl::count_star()))
-                    .order_by(order)
+                    .order_by(schema::receipts::columns::message_id.desc())
                     .load(&mut *self.db())
                     .expect("db");
 
@@ -3429,7 +3421,7 @@ impl<O: Observable> Storage<O> {
                     .filter(messages::session_id.eq(sid))
                     .group_by(receipts::message_id)
                     .select((receipts::message_id, diesel::dsl::count_star()))
-                    .order_by(order)
+                    .order_by(schema::receipts::columns::message_id.desc())
                     .load(&mut *self.db())
                     .expect("db");
 
@@ -3439,9 +3431,10 @@ impl<O: Observable> Storage<O> {
                     .filter(messages::session_id.eq(sid))
                     .group_by(receipts::message_id)
                     .select((receipts::message_id, diesel::dsl::count_star()))
-                    .order_by(order)
+                    .order_by(schema::receipts::columns::message_id.desc())
                     .load(&mut *self.db())
                     .expect("db");
+
                 (read_counts, delivered_counts, viewed_counts)
             });
 

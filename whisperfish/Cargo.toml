@@ -59,7 +59,7 @@ image = { version = "0.25.9", default-features = false, features = ["png", "jpeg
 
 diesel = { version = "2.3", features = ["sqlite", "chrono"] }
 diesel_migrations = "2.3"
-libsqlite3-sys = { version = "0.35", features = ["sqlcipher"] }
+libsqlite3-sys = { version = "0.36", features = ["sqlcipher"] }
 
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.145"

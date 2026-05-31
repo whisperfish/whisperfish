@@ -202,6 +202,7 @@ struct DeliverMessage<T> {
     destination: DeliveryRecipient,
 }
 
+#[allow(clippy::large_enum_variant)]
 enum DeliveryRecipient {
     Session(SessionType),
     ServiceId(ServiceId),
