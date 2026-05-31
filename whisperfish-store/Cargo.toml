@@ -52,7 +52,7 @@ mime_classifier = "0.0.1"
 
 tracing = "0.1"
 
-libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "whisperfork" }
+libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", default-features = false }
 
 [target.'cfg(target_arch = "arm")'.dependencies]
 # force-soft on armv7hl target, until sha2 0.11, which uses `cfg(sha2_backend)`
