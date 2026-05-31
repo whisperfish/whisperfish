@@ -2346,28 +2346,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "libsignal-account-keys"
-version = "0.1.0"
-source = "git+https://github.com/signalapp/libsignal?tag=v0.91.0#8418be45dba3ebc17127b5c6b76ce02886350524"
-dependencies = [
- "argon2",
- "derive_more",
- "displaydoc",
- "hkdf",
- "libsignal-core",
- "partial-default",
- "protobuf 3.7.2",
- "protobuf-codegen",
- "rand 0.9.4",
- "rand_core 0.9.5",
- "sha2",
- "signal-crypto",
- "static_assertions",
- "thiserror 2.0.18",
- "zerocopy",
-]
-
-[[package]]
 name = "libsignal-core"
 version = "0.1.0"
 source = "git+https://github.com/signalapp//libsignal?tag=v0.91.0#8418be45dba3ebc17127b5c6b76ce02886350524"
@@ -2452,7 +2430,7 @@ dependencies = [
  "hex",
  "hkdf",
  "hmac",
- "libsignal-account-keys 0.1.0 (git+https://github.com/signalapp/libsignal?tag=v0.91.0)",
+ "libsignal-account-keys",
  "libsignal-core",
  "libsignal-protocol",
  "prost 0.13.5",
@@ -6323,7 +6301,7 @@ dependencies = [
  "displaydoc",
  "hex",
  "hkdf",
- "libsignal-account-keys 0.1.0 (git+https://github.com/signalapp//libsignal?tag=v0.91.0)",
+ "libsignal-account-keys",
  "libsignal-core",
  "partial-default",
  "poksho",

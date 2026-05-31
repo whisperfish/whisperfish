@@ -38,6 +38,7 @@ libsignal-core = { git = "https://github.com/signalapp//libsignal", tag = "v0.91
 signal-crypto = { git = "https://github.com/signalapp//libsignal", tag = "v0.91.0" }
 libsignal-debug = { git = "https://github.com/signalapp//libsignal", tag = "v0.91.0" }
 poksho = { git = "https://github.com/signalapp//libsignal", tag = "v0.91.0" }
+libsignal-account-keys = { git = "https://github.com/signalapp//libsignal", tag = "v0.91.0" }
 
 # Smart dev mode: Compile most stuff in release mode, except for the things
 # that are actually maintained by our community
