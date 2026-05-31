@@ -344,8 +344,9 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
         // XXX Just skip the range if necessary, that's healthier than panicking.
         let end = range.start() + range.len();
 
-        if end > message.encode_utf16().count() {
-            tracing::warn!("range end out of bounds");
+        let message_size = message.encode_utf16().count();
+        if end > message_size {
+            tracing::warn!("range end out of bounds: {} > {}", end, message_size);
             return std::borrow::Cow::Borrowed(message);
         }
 
