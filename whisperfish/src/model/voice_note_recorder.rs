@@ -79,7 +79,7 @@ fn start_recording(filename: String) -> Recording {
                 "aac" => {
                     // TODO: Sailfish doesn't ship FAAC on gstreamer, so we can't use the superior
                     //       (according to gstreamer docs) FAAC. Instead we use libav_aac
-                    //       Potentially, we'd want to have more dynamic dispatch: try faac + mp4mux first, then avenc_aac + avmux_adts
+                    //       Potentially, we'd want to have more dynamic dispatch: try faac + mp4mux first, then avenc_aac + aacparse
                     //       on failure.
                     gst::ElementFactory::make("avenc_aac")
                         .name("avenc_aac")
@@ -103,8 +103,8 @@ fn start_recording(filename: String) -> Recording {
             };
 
             let mux = match ext {
-                "aac" => gst::ElementFactory::make("avmux_adts")
-                    .name("avmux_adts")
+                "aac" => gst::ElementFactory::make("aacparse")
+                    .name("aacparse")
                     .build()
                     .unwrap(),
                 "ogg" => gst::ElementFactory::make("oggmux")
@@ -114,17 +114,38 @@ fn start_recording(filename: String) -> Recording {
                 _ => unreachable!("checked above"),
             };
 
-            let filesink = gst::ElementFactory::make("filesink")
+            let capsfilter = if ext == "aac" {
+                let caps = gst::Caps::builder("audio/mpeg")
+                    .field("mpegversion", 4i32)
+                    .field("stream-format", "adts")
+                    .field("framed", true)
+                    .build();
+
+                let capsfilter = gst::ElementFactory::make("capsfilter")
+                    .name("capsfilter")
+                    .property("caps", &caps)
+                    .build()
+                    .unwrap();
+
+                Some(capsfilter)
+            } else {
+                None
+            };
+
+            let sink = gst::ElementFactory::make("filesink")
                 .name("filesink")
                 .property("location", &filename_clone)
                 .build()
                 .unwrap();
 
-            pipeline
-                .add_many([&pulsesrc, &audio_convert, &enc, &mux, &filesink])
-                .unwrap();
+            let elements = if let Some(capsfilter) = capsfilter.as_ref() {
+                vec![&pulsesrc, &audio_convert, &enc, &mux, capsfilter, &sink]
+            } else {
+                vec![&pulsesrc, &audio_convert, &enc, &mux, &sink]
+            };
 
-            gst::Element::link_many([&pulsesrc, &audio_convert, &enc, &mux, &filesink]).unwrap();
+            pipeline.add_many(elements.clone()).unwrap();
+            gst::Element::link_many(elements).unwrap();
 
             pipeline
                 .set_state(gst::State::Playing)
