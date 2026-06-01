@@ -48,13 +48,19 @@ fn start_recording(filename: String) -> Recording {
 
     let ext = std::path::Path::new(&filename)
         .extension()
-        .unwrap()
+        .expect("voice note filename has extension")
         .to_str()
         .unwrap()
         .to_lowercase();
 
+    let (enc, mux) = match ext.as_str() {
+        "aac" => ("avenc_aac", "aacparse"),
+        "ogg" => ("opusenc", "oggmux"),
+        _ => panic!("unsupported extension"),
+    };
+
     let main_loop = glib::MainLoop::new(None, false);
-    let pipeline = gst::Pipeline::with_name("test-pipeline");
+    let pipeline = gst::Pipeline::with_name("voicenote");
     let main_loop_clone = main_loop.clone();
     let pipeline_clone = pipeline.clone();
 
@@ -62,7 +68,6 @@ fn start_recording(filename: String) -> Recording {
     std::thread::Builder::new()
         .name(format!("recording {}", filename))
         .spawn(move || {
-            let ext = ext.as_str();
             // Create PlayBin element
             let pulsesrc = gst::ElementFactory::make("pulsesrc")
                 .name("pulsesrc")
@@ -75,46 +80,11 @@ fn start_recording(filename: String) -> Recording {
                 .build()
                 .unwrap();
 
-            let enc = match ext {
-                "aac" => {
-                    // TODO: Sailfish doesn't ship FAAC on gstreamer, so we can't use the superior
-                    //       (according to gstreamer docs) FAAC. Instead we use libav_aac
-                    //       Potentially, we'd want to have more dynamic dispatch: try faac + mp4mux first, then avenc_aac + aacparse
-                    //       on failure.
-                    gst::ElementFactory::make("avenc_aac")
-                        .name("avenc_aac")
-                        .build()
-                        .unwrap()
-                }
-                "ogg" => {
-                    // TODO: Currently, rustlegraph can't render Opus,
-                    //       because Symphonia doesn't decode it yet: https://github.com/pdeljanov/Symphonia/issues/8
-                    //       So we use Vorbis for now.
-                    // gst::ElementFactory::make("opusenc")
-                    //     .name("opusenc")
-                    //     .build()
-                    //     .unwrap()
-                    gst::ElementFactory::make("vorbisenc")
-                        .name("vorbisenc")
-                        .build()
-                        .unwrap()
-                }
-                _ => panic!("unsupported extension"),
-            };
+            let enc = gst::ElementFactory::make(enc).name(enc).build().unwrap();
 
-            let mux = match ext {
-                "aac" => gst::ElementFactory::make("aacparse")
-                    .name("aacparse")
-                    .build()
-                    .unwrap(),
-                "ogg" => gst::ElementFactory::make("oggmux")
-                    .name("oggmux")
-                    .build()
-                    .unwrap(),
-                _ => unreachable!("checked above"),
-            };
+            let mux = gst::ElementFactory::make(mux).name(mux).build().unwrap();
 
-            let capsfilter = if ext == "aac" {
+            let capsfilter = if ext.as_str() == "aac" {
                 let caps = gst::Caps::builder("audio/mpeg")
                     .field("mpegversion", 4i32)
                     .field("stream-format", "adts")

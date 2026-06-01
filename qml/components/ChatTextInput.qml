@@ -36,6 +36,8 @@ Item {
     // In seconds
     property var voiceNoteDuration: 0;
 
+    property bool _useAac: useAac()
+
     // getTime() doesn't work in a declarative context, so we need a timer
     Timer {
         running: voiceNoteStartTime != null
@@ -95,14 +97,9 @@ Item {
     function _send() {
         Qt.inputMethod.commit()
         if (isVoiceNote) {
-            var filename = recorder.stop();
-            var type;
-            if (useAac()) {
-                type = "audio/aac";
-            } else {
-                type = "audio/ogg";
-            }
-            attachments = [{data: filename, type: type}];
+            var filename = recorder.stop()
+            var type = _useAac ? "audio/aac" : "audio/ogg"
+            attachments = [ { data: filename, type: type } ]
         }
         if (text.length === 0 && attachments.length === 0) return
         if(SettingsBridge.enable_enter_send) {
@@ -112,27 +109,12 @@ Item {
         if (clearAfterSend) reset()
     }
 
-    function useAac() {
-        // TODO: Vorbis is not supported at all on iOS, so we need to use AAC there.
-        //       https://github.com/signalapp/Signal-iOS/issues/4539
-        //       https://github.com/signalapp/Signal-iOS/issues/5771
-        // TODO: Jolla's gstreamer version is 1.14.5, which crashes on libav_aacenc, so on gstreamer lower than 1.22,
-        //       we use Vorbis.  1.22 is tested on Sailfish 4.6.
-        //       This means that voice messages sent from SailfishOS 3.4 will not be playable on iOS.
-        //       Sad panda. 🐼
-        return AppState.gstreamer_version_major > 1
-            || AppState.gstreamer_version_major == 1 && AppState.gstreamer_version_minor >= 22;
-    }
-
     function startRecording() {
         isVoiceNote = true;
-        var ext;
-        if (useAac()) {
-            ext = "aac";
-        } else {
-            ext = "ogg";
-        }
-        var path = SettingsBridge.voice_note_dir + "/Note_" + Qt.formatDateTime(new Date(), "yyyyMMdd_hhmmss") + "." + ext
+        var path = "%1/Note_%2.%3"
+                   .arg(SettingsBridge.voice_note_dir)
+                   .arg(Qt.formatDateTime(new Date(), "yyyyMMdd_hhmmss"))
+                   .arg(_useAac ? "aac" : "ogg")
         recorder.start(path);
         voiceNoteStartTime = new Date().getTime();
     }
@@ -271,7 +253,7 @@ Item {
                 }
                 visible: isVoiceNote
                 height: parent.height
-                font.pixelSize: if (useAac()) {
+                font.pixelSize: if (_useAac) {
                     Theme.fontSizeMedium
                 } else {
                     Theme.fontSizeTiny
@@ -282,12 +264,12 @@ Item {
                     minutes = Math.floor(dt / 60);
                     seconds = Math.floor(dt % 60);
                     var s = minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-                    if (useAac()) {
+                    if (_useAac) {
                         return s;
                     } else {
-                        //: Short warning note that the voice note is being recorded in Vorbis format
+                        //: Short warning note that the voice note is being recorded in Opus format
                         //% "Incompatible with Signal iOS"
-                        return qsTrId("whisperfish-voice-note-vorbis-warning") + " " + s;
+                        return qsTrId("whisperfish-voice-note-ios-warning") + " " + s;
                     }
                 }
 

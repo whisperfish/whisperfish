@@ -405,6 +405,18 @@ ApplicationWindow
         return str.replace(new RegExp(escapeRegExp(find), 'g'), replace)
     }
 
+    function useAac() {
+        // TODO: Ogg/Opus/Vorbis is not supported at all on iOS, so we need to use AAC there.
+        //       https://github.com/signalapp/Signal-iOS/issues/4539
+        //       https://github.com/signalapp/Signal-iOS/issues/5771
+        // TODO: On gstreamer 1.22 and older crashes on libav_aacenc, so we can't use AAC.
+        //       When detected, use Opus (Vorbis would work too) which won't work on iOS,
+        //       but this luckily only affects older SFOS releases.
+        return AppState.gstreamer_version_major > 1
+               || AppState.gstreamer_version_major == 1
+                  && AppState.gstreamer_version_minor >= 22;
+    }
+
     Connections {
         target: ClientWorker
         onMessageReceived: { }

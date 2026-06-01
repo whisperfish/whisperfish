@@ -109,7 +109,7 @@ cpp! {{
                 if let Some(viz) = vizualizers.get(id) {
                     if let Some(viz) = viz.upgrade() {
                         let mut img = image::ImageBuffer::<image::Rgba<u8>, &mut [u8]>::from_raw(width, height, slice).expect("correct dimensions");
-                        if let Err(e) = viz.render_to_image(rustlegraph::Time { seconds: time as u64, frac: time.fract()}, &mut img) {
+                        if let Err(e) = viz.render_to_image(rustlegraph::Time::try_from_secs_f64(time).unwrap(), &mut img) {
                             tracing::error!("Could not render RustleGraph: {}", e);
                             return -2;
                         }
