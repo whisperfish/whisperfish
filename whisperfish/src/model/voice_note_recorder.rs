@@ -186,14 +186,33 @@ impl VoiceNoteRecorder {
     }
 
     fn stop(&mut self) -> String {
-        if let Some(handle) = self.handle.take() {
-            let f = handle.stop();
-            self.handle = None;
-            self.recording_updated();
-            return f;
+        let Some(handle) = self.handle.take() else {
+            return "".to_string();
+        };
+
+        handle.pipeline.send_event(gst::event::Eos::new());
+
+        let bus = handle.pipeline.bus().unwrap();
+        for msg in bus.iter_timed(gst::ClockTime::from_seconds(5)) {
+            use gst::MessageView;
+            match msg.view() {
+                MessageView::Eos(..) => break,
+                MessageView::Error(e) => {
+                    tracing::error!("{:?}", e);
+                    break;
+                }
+                _ => continue,
+            }
         }
 
-        "".to_string()
+        handle
+            .pipeline
+            .set_state(gst::State::Null)
+            .expect("set gst pipeline state to null");
+        handle.main_loop.quit();
+        self.recording_updated();
+
+        handle.filename
     }
 
     fn reset(&mut self) {
