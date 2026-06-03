@@ -26,8 +26,8 @@ mod tests {
         ),
         anyhow::Error,
     > {
-        use rand::distr::Alphanumeric;
         use rand::Rng;
+        use rand::distr::Alphanumeric;
 
         let location = whisperfish_store::temp();
         let rng = rand::rng();
@@ -218,23 +218,29 @@ mod tests {
         let mut storage = storage.aci_storage();
 
         // Test trust on first use
-        assert!(storage
-            .is_trusted_identity(&addr1, &key1, Direction::Receiving)
-            .await
-            .unwrap());
+        assert!(
+            storage
+                .is_trusted_identity(&addr1, &key1, Direction::Receiving)
+                .await
+                .unwrap()
+        );
 
         // Test inserted key
         storage.save_identity(&addr1, &key1).await.unwrap();
-        assert!(storage
-            .is_trusted_identity(&addr1, &key1, Direction::Receiving)
-            .await
-            .unwrap());
+        assert!(
+            storage
+                .is_trusted_identity(&addr1, &key1, Direction::Receiving)
+                .await
+                .unwrap()
+        );
 
         // Test wrong key
-        assert!(!storage
-            .is_trusted_identity(&addr1, &key2, Direction::Receiving)
-            .await
-            .unwrap());
+        assert!(
+            !storage
+                .is_trusted_identity(&addr1, &key2, Direction::Receiving)
+                .await
+                .unwrap()
+        );
     }
 
     #[rstest(password, case(Some("some password")), case(None))]
@@ -495,8 +501,8 @@ mod tests {
 
     #[tokio::test]
     async fn store_and_load_master_key_and_storage_key() {
-        use rand::distr::Alphanumeric;
         use rand::Rng;
+        use rand::distr::Alphanumeric;
 
         let location = whisperfish_store::temp();
         let mut rng = rand::rng();
@@ -533,9 +539,11 @@ mod tests {
         const STORAGE_KEY_BASE64: &str = "QMgZ5RGTLFTr4u/J6nypaJX6DKDlSgMw8vmxU6gxnvI=";
 
         assert!(storage.read_setting(Settings::MASTER_KEY).is_none());
-        assert!(storage
-            .read_setting(Settings::STORAGE_SERVICE_KEY)
-            .is_none());
+        assert!(
+            storage
+                .read_setting(Settings::STORAGE_SERVICE_KEY)
+                .is_none()
+        );
 
         let master_key =
             MasterKey::from_slice(&BASE64_STANDARD.decode(MASTER_KEY_BASE64).unwrap()).unwrap();
@@ -545,15 +553,19 @@ mod tests {
 
         storage.write_setting(Settings::MASTER_KEY, MASTER_KEY_BASE64);
         assert!(storage.read_setting(Settings::MASTER_KEY).is_some());
-        assert!(storage
-            .read_setting(Settings::STORAGE_SERVICE_KEY)
-            .is_none());
+        assert!(
+            storage
+                .read_setting(Settings::STORAGE_SERVICE_KEY)
+                .is_none()
+        );
 
         storage.write_setting(Settings::STORAGE_SERVICE_KEY, STORAGE_KEY_BASE64);
         assert!(storage.read_setting(Settings::MASTER_KEY).is_some());
-        assert!(storage
-            .read_setting(Settings::STORAGE_SERVICE_KEY)
-            .is_some());
+        assert!(
+            storage
+                .read_setting(Settings::STORAGE_SERVICE_KEY)
+                .is_some()
+        );
 
         let master_key_db = storage.fetch_master_key();
         let storage_key_db = storage.fetch_storage_service_key();
@@ -587,8 +599,10 @@ mod tests {
         storage.delete_setting(Settings::STORAGE_SERVICE_KEY);
 
         assert!(storage.read_setting(Settings::MASTER_KEY).is_none());
-        assert!(storage
-            .read_setting(Settings::STORAGE_SERVICE_KEY)
-            .is_none());
+        assert!(
+            storage
+                .read_setting(Settings::STORAGE_SERVICE_KEY)
+                .is_none()
+        );
     }
 }

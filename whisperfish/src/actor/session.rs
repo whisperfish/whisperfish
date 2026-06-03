@@ -5,9 +5,9 @@ pub use self::typing_notifications::*;
 mod methods;
 use methods::*;
 
+use whisperfish_store::NewMessage;
 use whisperfish_store::orm;
 use whisperfish_store::orm::MessageType;
-use whisperfish_store::NewMessage;
 
 use crate::platform::QmlApp;
 use crate::{gui::StorageReady, store::Storage};

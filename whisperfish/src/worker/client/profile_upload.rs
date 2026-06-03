@@ -133,12 +133,12 @@ impl Handler<RefreshOwnProfile> for ClientActor {
                     return Ok(());
                 };
 
-                if let Some(lpf) = &self_recipient.last_profile_fetch {
-                    if Utc.from_utc_datetime(lpf) > Utc::now() - chrono::Duration::days(1) && !force
-                    {
-                        tracing::info!("Our own profile is up-to-date, not fetching.");
-                        return Ok(());
-                    }
+                if let Some(lpf) = &self_recipient.last_profile_fetch
+                    && Utc.from_utc_datetime(lpf) > Utc::now() - chrono::Duration::days(1)
+                    && !force
+                {
+                    tracing::info!("Our own profile is up-to-date, not fetching.");
+                    return Ok(());
                 }
 
                 // FetchProfile only stores the own-profile if it was found

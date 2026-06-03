@@ -198,11 +198,11 @@ impl RustleGraph {
             self.duration_updated();
 
             // Generate the vizualizer if we have all the data
-            if let Some(storage) = app.storage.borrow().clone() {
-                if let Some(attachment) = storage.fetch_attachment(self.attachmentId) {
-                    let this = QPointer::from(&*self);
-                    actix::spawn(Self::load_vizualizer(this, attachment));
-                }
+            if let Some(storage) = app.storage.borrow().clone()
+                && let Some(attachment) = storage.fetch_attachment(self.attachmentId)
+            {
+                let this = QPointer::from(&*self);
+                actix::spawn(Self::load_vizualizer(this, attachment));
             }
         }
     }

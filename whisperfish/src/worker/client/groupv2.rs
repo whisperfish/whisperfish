@@ -1,10 +1,10 @@
 use super::*;
-use crate::store::{observer::PrimaryKey, GroupV2, TrustLevel};
+use crate::store::{GroupV2, TrustLevel, observer::PrimaryKey};
 use actix::prelude::*;
 use diesel::prelude::*;
 use libsignal_service::{
-    groups_v2::{self, *},
     ServiceIdExt,
+    groups_v2::{self, *},
 };
 use qmeta_async::with_executor;
 use tokio::io::AsyncWriteExt;

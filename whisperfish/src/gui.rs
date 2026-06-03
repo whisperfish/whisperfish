@@ -1,4 +1,4 @@
-use crate::platform::{is_harbour, MayExit, QmlApp};
+use crate::platform::{MayExit, QmlApp, is_harbour};
 use crate::store::Storage;
 use crate::{actor, config::SettingsBridge, model, worker};
 use actix::prelude::*;
@@ -398,7 +398,8 @@ pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
             std::sync::Arc::clone(&config),
         ));
 
-        Ok(app.exec())
+        app.exec();
+        Ok(())
     })
     .flatten()
 }

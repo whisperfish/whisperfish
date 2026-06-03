@@ -3,7 +3,7 @@
 use crate::gui::AppState;
 use crate::model::*;
 use crate::store::observer::{EventObserving, Interest};
-use qmetaobject::{prelude::*, QMetaType};
+use qmetaobject::{QMetaType, prelude::*};
 use qttypes::{QVariantList, QVariantMap};
 use whisperfish_store::schema;
 
@@ -73,38 +73,37 @@ impl Receipts {
 
     fn get_receipts_by_type(&self, receipt_type: ReceiptType) -> QVariant {
         let message_id = self.message_id;
-        if message_id >= 0 {
-            if let Some(app) = self.app.as_pinned() {
-                if let Some(storage) = app.borrow().storage.borrow().clone() {
-                    let mut variant_list = QVariantList::default();
+        if message_id >= 0
+            && let Some(app) = self.app.as_pinned()
+            && let Some(storage) = app.borrow().storage.borrow().clone()
+        {
+            let mut variant_list = QVariantList::default();
 
-                    let receipts = storage.fetch_message_receipts(message_id);
-                    for (receipt, recipient) in receipts.iter() {
-                        let timestamp = match receipt_type {
-                            ReceiptType::Delivered => receipt.delivered,
-                            ReceiptType::Read => receipt.read,
-                            ReceiptType::Viewed => receipt.viewed,
-                        };
+            let receipts = storage.fetch_message_receipts(message_id);
+            for (receipt, recipient) in receipts.iter() {
+                let timestamp = match receipt_type {
+                    ReceiptType::Delivered => receipt.delivered,
+                    ReceiptType::Read => receipt.read,
+                    ReceiptType::Viewed => receipt.viewed,
+                };
 
-                        let Some(timestamp) = timestamp else {
-                            continue;
-                        };
+                let Some(timestamp) = timestamp else {
+                    continue;
+                };
 
-                        let mut item = QVariantMap::default();
-                        item.insert(
-                            "recipient".into(),
-                            recipient.name().to_string().to_qvariant(),
-                        );
-                        item.insert(
-                            "timestamp".into(),
-                            qdatetime_from_naive(timestamp).to_qvariant(),
-                        );
-                        variant_list.push(item.to_qvariant());
-                    }
-
-                    return variant_list.to_qvariant();
-                }
+                let mut item = QVariantMap::default();
+                item.insert(
+                    "recipient".into(),
+                    recipient.name().to_string().to_qvariant(),
+                );
+                item.insert(
+                    "timestamp".into(),
+                    qdatetime_from_naive(timestamp).to_qvariant(),
+                );
+                variant_list.push(item.to_qvariant());
             }
+
+            return variant_list.to_qvariant();
         }
         QVariantList::default().to_qvariant()
     }

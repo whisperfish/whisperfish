@@ -21,41 +21,41 @@ use anyhow::anyhow;
 use attachment::FetchAttachment;
 use image::GenericImageView;
 use itertools::Itertools;
+use libsignal_service::ServiceIdExt;
 use libsignal_service::cipher::SealedSenderDecryptionError;
 use libsignal_service::groups_v2::Role;
 use libsignal_service::messagepipe::Incoming;
+use libsignal_service::proto::NullMessage;
+use libsignal_service::proto::SyncMessage;
 use libsignal_service::proto::data_message::{Delete, Quote};
-use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
-use libsignal_service::proto::sync_message::message_request_response::Type as MessageRequestAction;
 use libsignal_service::proto::sync_message::Blocked;
 use libsignal_service::proto::sync_message::Configuration;
 use libsignal_service::proto::sync_message::Keys;
 use libsignal_service::proto::sync_message::MessageRequestResponse;
 use libsignal_service::proto::sync_message::Read;
 use libsignal_service::proto::sync_message::Sent;
-use libsignal_service::proto::NullMessage;
-use libsignal_service::proto::SyncMessage;
+use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
+use libsignal_service::proto::sync_message::message_request_response::Type as MessageRequestAction;
 use libsignal_service::protocol::ServiceIdKind;
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 use libsignal_service::sender::SendMessageResult;
 use libsignal_service::sender::ThreadIdentifier;
 use libsignal_service::websocket::registration::RegistrationMethod;
 use libsignal_service::websocket::{Identified, Unidentified};
-use libsignal_service::ServiceIdExt;
 use qmetaobject::QMetaType;
 use qttypes::QVariantMap;
 use tracing_futures::Instrument;
 use uuid::Uuid;
+use whisperfish_store::Settings;
+use whisperfish_store::TrustLevel;
 use whisperfish_store::millis_to_naive_chrono;
 use whisperfish_store::naive_chrono_rounded_down;
 use whisperfish_store::naive_chrono_to_millis;
 use whisperfish_store::orm;
-use whisperfish_store::orm::shorten;
 use whisperfish_store::orm::MessageType;
 use whisperfish_store::orm::SessionType;
 use whisperfish_store::orm::StoryType;
-use whisperfish_store::Settings;
-use whisperfish_store::TrustLevel;
+use whisperfish_store::orm::shorten;
 use zkgroup::profiles::ProfileKey;
 
 use super::message_expiry::ExpiredMessagesStream;
@@ -67,9 +67,9 @@ use crate::gui::StorageReady;
 use crate::model::Calls;
 use crate::model::DeviceModel;
 use crate::platform::QmlApp;
-use crate::store::orm::UnidentifiedAccessMode;
 use crate::store::AciOrPniStorage;
 use crate::store::Storage;
+use crate::store::orm::UnidentifiedAccessMode;
 use crate::worker::client::unidentified::CertType;
 use crate::worker::profile_refresh::ProfileUpdater;
 use actix::prelude::*;
@@ -78,25 +78,25 @@ use anyhow::Context;
 pub use call::*;
 use chrono::prelude::*;
 use futures::prelude::*;
+use libsignal_service::AccountManager;
 use libsignal_service::configuration::SignalServers;
-use libsignal_service::content::sync_message::Request as SyncRequest;
 use libsignal_service::content::DataMessageFlags;
+use libsignal_service::content::sync_message::Request as SyncRequest;
 use libsignal_service::content::{
-    sync_message, ContentBody, DataMessage, GroupContextV2, Metadata, Reaction, TypingMessage,
+    ContentBody, DataMessage, GroupContextV2, Metadata, Reaction, TypingMessage, sync_message,
 };
 use libsignal_service::prelude::*;
+use libsignal_service::proto::ReceiptMessage;
 use libsignal_service::proto::receipt_message::Type as ReceiptType;
 use libsignal_service::proto::typing_message::Action;
-use libsignal_service::proto::ReceiptMessage;
 use libsignal_service::protocol::{self, *};
 use libsignal_service::push_service::ServiceIds;
 use libsignal_service::sender::AttachmentSpec;
+use libsignal_service::websocket::SignalWebSocket;
 use libsignal_service::websocket::account::{AccountAttributes, DeviceCapabilities};
 use libsignal_service::websocket::registration::{
     RegistrationSessionMetadataResponse, VerificationTransport, VerifyAccountResponse,
 };
-use libsignal_service::websocket::SignalWebSocket;
-use libsignal_service::AccountManager;
 use phonenumber::PhoneNumber;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
@@ -645,7 +645,7 @@ impl ClientActor {
 
     fn unidentified_websocket(
         &self,
-    ) -> impl Future<Output = Result<SignalWebSocket<Unidentified>, ServiceError>> {
+    ) -> impl Future<Output = Result<SignalWebSocket<Unidentified>, ServiceError>> + use<> {
         let mut u_service = self.unauthenticated_service();
         async move {
             u_service
@@ -656,7 +656,7 @@ impl ClientActor {
 
     fn message_sender(
         &self,
-    ) -> impl Future<Output = Result<MessageSender<AciOrPniStorage>, ServiceError>> {
+    ) -> impl Future<Output = Result<MessageSender<AciOrPniStorage>, ServiceError>> + use<> {
         let storage = self.storage.clone().unwrap();
         let service = self.authenticated_service();
 
@@ -883,22 +883,25 @@ impl ClientActor {
             .try_into()
             .expect("Message flags doesn't fit into i32");
 
-        if (source_phonenumber.is_some() || source_addr.is_some()) && !is_sync_sent {
-            if let Some(key) = msg.profile_key.as_deref() {
-                let (recipient, was_updated) = storage.update_profile_key(
-                    source_phonenumber.clone(),
-                    source_addr,
-                    key,
-                    crate::store::TrustLevel::Certain,
-                );
-                if was_updated {
-                    ctx.notify(RefreshProfile::ByRecipientId(recipient.id));
-                }
+        if (source_phonenumber.is_some() || source_addr.is_some())
+            && !is_sync_sent
+            && let Some(key) = msg.profile_key.as_deref()
+        {
+            let (recipient, was_updated) = storage.update_profile_key(
+                source_phonenumber.clone(),
+                source_addr,
+                key,
+                crate::store::TrustLevel::Certain,
+            );
+            if was_updated {
+                ctx.notify(RefreshProfile::ByRecipientId(recipient.id));
             }
         }
 
         if !msg.preview.is_empty() {
-            tracing::warn!("Message contains preview data, which is not yet saved nor displayed. Please upvote issue #695");
+            tracing::warn!(
+                "Message contains preview data, which is not yet saved nor displayed. Please upvote issue #695"
+            );
         }
 
         // Determine the message type and text body contents.
@@ -1095,7 +1098,9 @@ impl ClientActor {
             original_message = storage.fetch_message_by_timestamp(edit);
             if let Some(orig) = original_message.as_ref() {
                 if orig.sender_recipient_id != sender_recipient.as_ref().map(|x| x.id) {
-                    tracing::warn!("Received an edit for a message that was not sent by the same sender. Ignoring edit, inserting as new.");
+                    tracing::warn!(
+                        "Received an edit for a message that was not sent by the same sender. Ignoring edit, inserting as new."
+                    );
                     original_message = None;
                 }
             } else {
@@ -1106,7 +1111,9 @@ impl ClientActor {
         let body_ranges = crate::store::body_ranges::serialize(&msg.body_ranges);
 
         if message_type == Some(MessageType::GroupChange) {
-            tracing::warn!("Inserting a generic GroupChange message after handling it. This should not happen.");
+            tracing::warn!(
+                "Inserting a generic GroupChange message after handling it. This should not happen."
+            );
         }
 
         let timestamp = millis_to_naive_chrono(if is_sync_sent && timestamp > 0 {
@@ -1321,7 +1328,10 @@ impl ClientActor {
             }
             true
         } else if let Some(group_id) = &response.group_id {
-            tracing::warn!("Group message request responses are not yet implemented. {:?}. Please upvote bug #327", group_id);
+            tracing::warn!(
+                "Group message request responses are not yet implemented. {:?}. Please upvote bug #327",
+                group_id
+            );
             false
         } else {
             tracing::warn!(
@@ -1680,7 +1690,8 @@ impl ClientActor {
                     .into_iter()
                     .map(millis_to_naive_chrono)
                     .collect();
-                let rcpt_timestamp = millis_to_naive_chrono(metadata.timestamp.timestamp_millis() as u64);
+                let rcpt_timestamp =
+                    millis_to_naive_chrono(metadata.timestamp.timestamp_millis() as u64);
                 let receipt_type = ReceiptType::try_from(receipt.r#type.unwrap_or(-1)).ok();
                 match receipt_type {
                     Some(ReceiptType::Delivery) => {
@@ -1931,7 +1942,9 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
 
         // TODO: #706
         if session.is_group() {
-            tracing::error!("Group change messages and group message expiry timer changes are not supported yet. Please upvote bugs #706 and #707");
+            tracing::error!(
+                "Group change messages and group message expiry timer changes are not supported yet. Please upvote bugs #706 and #707"
+            );
             return;
         }
 
@@ -2304,7 +2317,7 @@ impl Handler<ResetSession> for ClientActor {
 
                     let aci = recipient.uuid.map(Into::into).map(ServiceId::Aci);
                     let pni = recipient.pni.map(Into::into).map(ServiceId::Pni);
-                    let service_ids = aci.into_iter().chain(pni.into_iter()).collect::<Vec<_>>();
+                    let service_ids = aci.into_iter().chain(pni).collect::<Vec<_>>();
 
                     let mut count = 0;
                     // 1. Delete all direct sessions with these ServiceIds
@@ -3447,7 +3460,9 @@ impl Handler<RegisterLinked> for ClientActor {
                                     .write_identity_key_pair(pni_identity_key_pair)
                                     .await?;
 
-                                let master_key = MasterKey::from_slice(master_key.unwrap().as_slice()).expect("valid master key");
+                                let master_key =
+                                    MasterKey::from_slice(master_key.unwrap().as_slice())
+                                        .expect("valid master key");
                                 storage.store_master_key(Some(&master_key));
 
                                 // let srv_key = account_entropy_pool.as_ref().map(|p| p.derive_svr_key());
@@ -4247,12 +4262,14 @@ impl Handler<MessageRequestAnswer> for ClientActor {
                 }
             }
             ThreadIdentifier::Group(_group) => {
-                tracing::warn!("Group message request responses are not yet implemented. Please upvote bug #327");
+                tracing::warn!(
+                    "Group message request responses are not yet implemented. Please upvote bug #327"
+                );
                 return;
             }
         }
 
-        let self_addr = Aci::from(self.config.get_aci().expect("valid uuid at this point"));
+        let own_addr = Aci::from(self.config.get_aci().expect("valid uuid at this point"));
         let sender = self.message_sender();
         actix::spawn(async move {
             let sender = sender.await;
@@ -4263,7 +4280,7 @@ impl Handler<MessageRequestAnswer> for ClientActor {
             let mut sender = sender.unwrap();
 
             let result = sender
-                .send_message_request_response(&self_addr.into(), &thread, action)
+                .send_message_request_response(&own_addr.into(), &thread, action)
                 .await;
 
             if let Err(e) = result {
@@ -4363,11 +4380,7 @@ impl Handler<Search> for ClientActor {
                                 .unwrap_or_else(|| snd_r.e164_or_address())
                         })
                         .unwrap();
-                    if m.is_outbound {
-                        (a, b)
-                    } else {
-                        (b, a)
-                    }
+                    if m.is_outbound { (a, b) } else { (b, a) }
                 }
             };
 
@@ -4403,7 +4416,10 @@ mod tests {
             quote: 12,
             is_voice_note: false,
         };
-        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[]\", is_voice_note: false }");
+        assert_eq!(
+            format!("{}", q),
+            "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[]\", is_voice_note: false }"
+        );
     }
 
     #[test]
@@ -4419,7 +4435,10 @@ mod tests {
             quote: 12,
             is_voice_note: false,
         };
-        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }]\", is_voice_note: false }");
+        assert_eq!(
+            format!("{}", q),
+            "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }]\", is_voice_note: false }"
+        );
     }
 
     #[test]
@@ -4441,6 +4460,9 @@ mod tests {
             quote: 12,
             is_voice_note: false,
         };
-        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }, NewAttachment { path: \"/path/to/audio.mp3\", mime_type: \"audio/mpeg\" }]\", is_voice_note: false }");
+        assert_eq!(
+            format!("{}", q),
+            "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }, NewAttachment { path: \"/path/to/audio.mp3\", mime_type: \"audio/mpeg\" }]\", is_voice_note: false }"
+        );
     }
 }

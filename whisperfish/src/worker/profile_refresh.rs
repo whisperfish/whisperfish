@@ -1,4 +1,4 @@
-use crate::store::{orm::Recipient, Storage};
+use crate::store::{Storage, orm::Recipient};
 use actix::prelude::*;
 use anyhow::Context;
 use chrono::prelude::*;
@@ -9,17 +9,17 @@ use libsignal_service::{
     prelude::*,
     profile_cipher::ProfileCipher,
     protocol::Aci,
-    websocket::{profile::SignalServiceProfile, Identified, SignalWebSocket, Unidentified},
+    websocket::{Identified, SignalWebSocket, Unidentified, profile::SignalServiceProfile},
 };
 use std::{
-    collections::{hash_map, HashMap},
+    collections::{HashMap, hash_map},
     sync::Weak,
     time::Duration,
 };
 use tokio::io::AsyncWriteExt;
 use tracing_futures::Instrument;
 use uuid::Uuid;
-use whisperfish_store::{orm::UnidentifiedAccessMode, StoreProfile};
+use whisperfish_store::{StoreProfile, orm::UnidentifiedAccessMode};
 use zkgroup::profiles::ProfileKey;
 
 const MAX_CONCURRENT_UPDATES: usize = 5;
@@ -475,7 +475,9 @@ impl ProfileUpdater {
                     return Err(e.into());
                 }
                 ServiceError::RateLimitExceeded { retry_after: None } => {
-                    tracing::error!("rate limit exceeded, stopping profile refresh process, without Retry-After header.");
+                    tracing::error!(
+                        "rate limit exceeded, stopping profile refresh process, without Retry-After header."
+                    );
                     self.back_off_until = Utc::now() + REYIELD_DELAY;
 
                     return Err(e.into());

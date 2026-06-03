@@ -287,8 +287,12 @@ fn print_current_stats(db: &mut SqliteConnection) -> Result<(), anyhow::Error> {
 }
 
 fn main() -> Result<(), anyhow::Error> {
-    println!("This utility will test whether the Whisperfish database will successfully get migrated to the most recent format.");
-    println!("It is a *dry-run*, which practically means we will work on a copy of the original database.");
+    println!(
+        "This utility will test whether the Whisperfish database will successfully get migrated to the most recent format."
+    );
+    println!(
+        "It is a *dry-run*, which practically means we will work on a copy of the original database."
+    );
 
     let storage = store::default_location().unwrap();
     let original_db_location = storage.join("db").join("harbour-whisperfish.db");
@@ -347,8 +351,12 @@ fn main() -> Result<(), anyhow::Error> {
 
     print_current_stats(&mut db)?;
     println!("------");
-    println!("Here above, the dry run should have produced at least two sets of statistics of your data.");
-    println!("These should give a decent indication to whether some data has been lost. Please report a bug if so.");
+    println!(
+        "Here above, the dry run should have produced at least two sets of statistics of your data."
+    );
+    println!(
+        "These should give a decent indication to whether some data has been lost. Please report a bug if so."
+    );
 
     db.batch_execute("PRAGMA foreign_keys = ON;").unwrap();
     let violations: Vec<ForeignKeyViolation> = diesel::sql_query("PRAGMA main.foreign_key_check;")

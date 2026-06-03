@@ -1,11 +1,11 @@
 #![allow(non_snake_case)]
 
 use crate::model::*;
-use crate::store::observer::{EventObserving, Interest};
 use crate::store::Storage;
+use crate::store::observer::{EventObserving, Interest};
 use libsignal_service::groups_v2::Role;
 use qmetaobject::QObjectBox;
-use qmetaobject::{prelude::*, QMetaType};
+use qmetaobject::{QMetaType, prelude::*};
 use qttypes::{QVariantList, QVariantMap};
 use std::collections::HashMap;
 use whisperfish_store::schema;
@@ -615,7 +615,9 @@ impl MessageListModel {
                     .find(|(_, msg)| messageId == msg.id)
                 {
                     Some((pos, _)) => {
-                        tracing::debug!("Binary search failed with index {miss}, linear search found index {pos}");
+                        tracing::debug!(
+                            "Binary search failed with index {miss}, linear search found index {pos}"
+                        );
                         pos as _
                     }
                     None => {

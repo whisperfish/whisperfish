@@ -326,7 +326,9 @@ fn maybe_resize(img: DynamicImage, size: u64, quality: AttachmentQuality) -> Dyn
     if width > max_dimension || height > max_dimension {
         // Not using resize_exact preserves the aspect ratio precisely
         // but can result in a sligtly reduced image dimensions.
-        tracing::debug!("Image file has too large dimension ({width}|‚{height} > {max_dimension}), recompressing.");
+        tracing::debug!(
+            "Image file has too large dimension ({width}|‚{height} > {max_dimension}), recompressing."
+        );
         img.resize(
             max_dimension,
             max_dimension,
@@ -497,7 +499,7 @@ mod tests {
             ])
         });
         img.save(&input_path).unwrap();
-        let _output_path = TempPath::from_path(&input_path);
+        let _output_path = TempPath::try_from_path(&input_path).expect("temp path");
 
         let size_file = fs::File::open(&input_path).unwrap();
         let size = size_file.allocated_size().unwrap();
@@ -514,7 +516,7 @@ mod tests {
                 assert!(resized_path.to_string_lossy().ends_with("jpg"));
 
                 let output_img = image::open(&resized_path).unwrap();
-                let _resized_path = TempPath::from_path(&resized_path);
+                let _resized_path = TempPath::try_from_path(&resized_path).expect("temp path");
                 let (w, h) = output_img.dimensions();
 
                 let size_file = fs::File::open(resized_path).unwrap();
@@ -538,7 +540,7 @@ mod tests {
                 assert!(resized_path.to_string_lossy().ends_with("jpg"));
 
                 let output_img = image::open(&resized_path).unwrap();
-                let _resized_path = TempPath::from_path(&resized_path);
+                let _resized_path = TempPath::try_from_path(&resized_path).expect("temp path");
                 let (w, h) = output_img.dimensions();
 
                 let size_file = fs::File::open(resized_path).unwrap();

@@ -335,7 +335,9 @@ mod tests {
 
     #[test]
     fn test_qdate_from_chrono() {
-        std::env::set_var("TZ", "UTC");
+        unsafe {
+            std::env::set_var("TZ", "UTC");
+        }
 
         // Same day as at UTC
         let qdate = qdate_from_chrono::<FixedOffset>(
@@ -352,7 +354,9 @@ mod tests {
 
     #[test]
     fn test_qdatetime_from_chrono() {
-        std::env::set_var("TZ", "UTC");
+        unsafe {
+            std::env::set_var("TZ", "UTC");
+        }
 
         // Same day as at UTC
         let qdatetime = qdatetime_from_chrono::<FixedOffset>(
@@ -373,7 +377,9 @@ mod tests {
 
     #[test]
     fn test_qdatetime_from_naive() {
-        std::env::set_var("TZ", "UTC");
+        unsafe {
+            std::env::set_var("TZ", "UTC");
+        }
 
         let qdatetime = qdatetime_from_naive(
             chrono::NaiveDateTime::parse_from_str("1996-12-19 16:39:57", "%Y-%m-%d %H:%M:%S")

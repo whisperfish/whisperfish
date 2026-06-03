@@ -2,9 +2,8 @@ use std::{convert::TryFrom, fmt::Display};
 
 use anyhow::Context;
 use diesel::{
-    backend, deserialize, serialize,
+    Expression, backend, deserialize, serialize,
     sql_types::{Integer, Nullable, Text},
-    Expression,
 };
 use phonenumber::PhoneNumber;
 use uuid::Uuid;

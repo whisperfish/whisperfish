@@ -14,7 +14,7 @@ use rstest::rstest;
 use std::{ops::Deref, sync::Arc};
 use whisperfish_store as current_storage;
 use whisperfish_store::config::SignalConfig;
-use whisperfish_store::{temp, StorageLocation};
+use whisperfish_store::{StorageLocation, temp};
 
 async fn create_old_storage(
     storage_password: Option<&str>,

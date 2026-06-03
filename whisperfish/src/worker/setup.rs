@@ -5,7 +5,7 @@ use anyhow::Context;
 use libsignal_service::prelude::MasterKey;
 use libsignal_service::prelude::StorageServiceKey;
 use libsignal_service::protocol::{self, Aci};
-use libsignal_service::push_service::{ServiceIds, DEFAULT_DEVICE_ID};
+use libsignal_service::push_service::{DEFAULT_DEVICE_ID, ServiceIds};
 use libsignal_service::websocket::registration::VerificationTransport;
 use phonenumber::PhoneNumber;
 use qmetaobject::prelude::*;
@@ -213,8 +213,8 @@ impl SetupWorker {
             .context("No registration type chosen")?;
 
         // generate a random 24 bytes password
-        use rand::distr::Alphanumeric;
         use rand::Rng;
+        use rand::distr::Alphanumeric;
         let rng = rand::rng();
         let password: String = rng
             .sample_iter(&Alphanumeric)

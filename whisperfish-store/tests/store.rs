@@ -13,7 +13,7 @@ use std::future::Future;
 use std::sync::Arc;
 use whisperfish_store::config::SignalConfig;
 use whisperfish_store::orm::{Receipt, Recipient, StoryType, UnidentifiedAccessMode};
-use whisperfish_store::{naive_chrono_to_millis, GroupV1, NewMessage};
+use whisperfish_store::{GroupV1, NewMessage, naive_chrono_to_millis};
 
 #[rstest]
 #[tokio::test]
@@ -679,8 +679,8 @@ async fn test_create_and_open_storage(
     storage_password: Option<String>,
 ) -> Result<(), anyhow::Error> {
     use libsignal_service::pre_keys::PreKeysStore;
-    use rand::distr::Alphanumeric;
     use rand::Rng;
+    use rand::distr::Alphanumeric;
 
     let location = whisperfish_store::temp();
     let rng = rand::rng();
@@ -766,8 +766,8 @@ async fn test_create_and_open_storage(
 
 #[tokio::test]
 async fn test_recipient_actions() {
-    use rand::distr::Alphanumeric;
     use rand::Rng;
+    use rand::distr::Alphanumeric;
 
     let location = whisperfish_store::temp();
     let rng = rand::rng();
@@ -1014,9 +1014,11 @@ async fn test_recipient_actions() {
     assert_eq!(storage.mark_pending_messages_failed(), 0);
 
     assert!(storage.fetch_group_sessions().is_empty());
-    assert!(storage
-        .fetch_session_by_id_augmented(session.id + 1)
-        .is_none());
+    assert!(
+        storage
+            .fetch_session_by_id_augmented(session.id + 1)
+            .is_none()
+    );
     assert!(storage.fetch_session_by_id_augmented(session.id).is_some());
     assert!(storage.fetch_attachment(42).is_none());
     assert!(storage.fetch_attachments_for_message(msg.id).is_empty());
@@ -1236,20 +1238,47 @@ fn test_remove_attachment_filenames() {
     let regex = SignalConfig::default().attachments_regex();
 
     // List of known good and bad locations, feel free to add samples.
-    let test_data: [(bool, &str); 21]= [
+    let test_data: [(bool, &str); 21] = [
         // defaultuser, new
-        (true, "~/.local/share/be.rubdos/harbour-whisperfish/storage/attachments/5da77b73f271bd460956d3807643f6b8.png"),
-        (true, "~/.local/share/be.rubdos/harbour-whisperfish/storage/attachments/Photo_20220417_233207.jpg"),
-        (true, "~/.local/share/be.rubdos/harbour-whisperfish/storage/camera/Photo_20220617_183938.jpg"),
+        (
+            true,
+            "~/.local/share/be.rubdos/harbour-whisperfish/storage/attachments/5da77b73f271bd460956d3807643f6b8.png",
+        ),
+        (
+            true,
+            "~/.local/share/be.rubdos/harbour-whisperfish/storage/attachments/Photo_20220417_233207.jpg",
+        ),
+        (
+            true,
+            "~/.local/share/be.rubdos/harbour-whisperfish/storage/camera/Photo_20220617_183938.jpg",
+        ),
         // defaultuser, old
-        (true, "~/.local/share/harbour-whisperfish/storage/attachments/d801caeea1cc119aac4fe6a64d1ecc3e.jpg"),
-        (true, "~/.local/share/harbour-whisperfish/storage/camera/Photo_20220617_192842.jpg"),
+        (
+            true,
+            "~/.local/share/harbour-whisperfish/storage/attachments/d801caeea1cc119aac4fe6a64d1ecc3e.jpg",
+        ),
+        (
+            true,
+            "~/.local/share/harbour-whisperfish/storage/camera/Photo_20220617_192842.jpg",
+        ),
         // nemo, new
-        (true, "~/.local/share/be.rubdos/harbour-whisperfish/storage/attachments/3a9f821ec8395b9a6565df0e1a952a85.jpg"),
-        (true, "~/.local/share/be.rubdos/harbour-whisperfish/storage/camera/Photo_20230703_174003.jpg"),
+        (
+            true,
+            "~/.local/share/be.rubdos/harbour-whisperfish/storage/attachments/3a9f821ec8395b9a6565df0e1a952a85.jpg",
+        ),
+        (
+            true,
+            "~/.local/share/be.rubdos/harbour-whisperfish/storage/camera/Photo_20230703_174003.jpg",
+        ),
         // nemo, old
-        (true, "~/.local/share/harbour-whisperfish/storage/attachments/bd09cdd805f5aa07aa3ee950a9b1fef9.pdf"),
-        (true, "~/.local/share/harbour-whisperfish/storage/camera/Photo_20221108_202942.jpg"),
+        (
+            true,
+            "~/.local/share/harbour-whisperfish/storage/attachments/bd09cdd805f5aa07aa3ee950a9b1fef9.pdf",
+        ),
+        (
+            true,
+            "~/.local/share/harbour-whisperfish/storage/camera/Photo_20221108_202942.jpg",
+        ),
         // Android storage
         (false, "~/android_storage/Download/cat-meme.jpg"),
         // Downloads
@@ -1263,11 +1292,23 @@ fn test_remove_attachment_filenames() {
         // Videos
         (false, "~/Videos/Camera/20210812_232017.mp4"),
         // MicroSD card
-        (false, "/run/media/defaultuser/0123-4567/Pictures/Camera/20220611_203625.jpg"),
-        (false, "/run/media/defaultuser/0123-4567/Videos/Camera/20230703_144325.mp4"),
-        (false, "/run/media/defaultuser/6738bbbc-5a3b-4505-971e-9f40ff14d51f/Pictures/Camera/20210425_134502.jpg"),
+        (
+            false,
+            "/run/media/defaultuser/0123-4567/Pictures/Camera/20220611_203625.jpg",
+        ),
+        (
+            false,
+            "/run/media/defaultuser/0123-4567/Videos/Camera/20230703_144325.mp4",
+        ),
+        (
+            false,
+            "/run/media/defaultuser/6738bbbc-5a3b-4505-971e-9f40ff14d51f/Pictures/Camera/20210425_134502.jpg",
+        ),
         // Local storage
-        (false, "~/.local/share/commhistory/data/1241/image000000.jpg"),
+        (
+            false,
+            "~/.local/share/commhistory/data/1241/image000000.jpg",
+        ),
     ];
 
     let _ = test_data.map(|(deleted, filename)| {
@@ -1283,8 +1324,8 @@ fn test_remove_attachment_filenames() {
 
 #[tokio::test]
 async fn settings_table() {
-    use rand::distr::Alphanumeric;
     use rand::Rng;
+    use rand::distr::Alphanumeric;
 
     let location = whisperfish_store::temp();
     let rng = rand::rng();
@@ -1581,10 +1622,12 @@ async fn delete_message_with_attachments() {
     std::fs::create_dir_all(tmp_camera.as_path())
         .expect("create attachments dirs in temp home dir");
 
-    std::env::set_var("HOME", tmp_home.as_os_str());
+    unsafe {
+        std::env::set_var("HOME", tmp_home.as_os_str());
+    }
 
-    use rand::distr::Alphanumeric;
     use rand::Rng;
+    use rand::distr::Alphanumeric;
 
     let location = whisperfish_store::temp();
     let rng = rand::rng();

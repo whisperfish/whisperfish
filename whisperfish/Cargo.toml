@@ -2,8 +2,8 @@
 name = "whisperfish"
 version.workspace = true
 license.workspace = true
+edition.workspace = true
 authors = ["Ruben De Smet <ruben.de.smet@rubdos.be>"]
-edition = "2018"
 build = "build.rs"
 description = "Private messaging using Signal for SailfishOS -- library."
 

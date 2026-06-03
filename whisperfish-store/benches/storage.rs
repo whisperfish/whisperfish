@@ -1,6 +1,6 @@
 mod common;
 
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use libsignal_service::{
     proto::AttachmentPointer,
     protocol::{Aci, ServiceId},
@@ -8,7 +8,7 @@ use libsignal_service::{
 use std::hint::black_box;
 use uuid::Uuid;
 use whisperfish_store::config::SignalConfig;
-use whisperfish_store::{orm, temp, NewMessage, Storage, StorageLocation};
+use whisperfish_store::{NewMessage, Storage, StorageLocation, orm, temp};
 
 pub type InMemoryDb = (
     Storage<common::DummyObservatory>,

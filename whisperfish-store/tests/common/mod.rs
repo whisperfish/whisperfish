@@ -4,7 +4,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 use whisperfish_store::config::SignalConfig;
 use whisperfish_store::observer::{Event, Interest, Observatory};
-use whisperfish_store::{temp, Storage, StorageLocation};
+use whisperfish_store::{Storage, StorageLocation, temp};
 
 #[derive(Default, Clone)]
 pub struct DummyObservatory;

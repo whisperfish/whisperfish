@@ -29,10 +29,10 @@ use diesel_migrations::EmbeddedMigrations;
 
 use libsignal_service::groups_v2::{InMemoryCredentialsCache, Role};
 use libsignal_service::libsignal_account_keys::AccountEntropyPool;
-use libsignal_service::proto::{attachment_pointer, data_message::Reaction, DataMessage};
+use libsignal_service::proto::{DataMessage, attachment_pointer, data_message::Reaction};
 use libsignal_service::protocol::{self, *};
-use libsignal_service::zkgroup::api::groups::GroupSecretParams;
 use libsignal_service::zkgroup::PROFILE_KEY_LEN;
+use libsignal_service::zkgroup::api::groups::GroupSecretParams;
 use libsignal_service::{
     prelude::*,
     protocol::{Aci, Pni, ServiceIdKind},
@@ -739,14 +739,14 @@ impl<O: Observable> Storage<O> {
             .context("reaction target recipient in db")?;
 
         // whisperfish_store::store: uuid != reaction.target_author_uuid (9bad15b5-dca3-418a-9949-7ca357b7fe47 != 9d4428ab-9ce2-4f7b-88f5-cf249ef692ce). Continuing, but this is a bug or attack.
-        if let Some(db_msg_sender_uuid) = db_message_sender_aci.uuid {
-            if db_msg_sender_uuid != reaction_target_message_author_uuid {
-                tracing::warn!(
-                    "Database message author aci != reaction target message aci ({} != {}). Continuing, but this is a bug or attack.",
-                    db_msg_sender_uuid,
-                    reaction_target_message_author_uuid,
-                );
-            }
+        if let Some(db_msg_sender_uuid) = db_message_sender_aci.uuid
+            && db_msg_sender_uuid != reaction_target_message_author_uuid
+        {
+            tracing::warn!(
+                "Database message author aci != reaction target message aci ({} != {}). Continuing, but this is a bug or attack.",
+                db_msg_sender_uuid,
+                reaction_target_message_author_uuid,
+            );
         }
 
         // Two options, either it's a removal or an update-or-replace
@@ -833,11 +833,10 @@ impl<O: Observable> Storage<O> {
 
     #[tracing::instrument(skip(self))]
     pub fn fetch_self_recipient(&self) -> Option<orm::Recipient> {
-        let read_lock = self.self_recipient.read();
-        if read_lock.is_ok() {
-            if let Some(recipient) = (*read_lock.unwrap()).as_ref() {
-                return Some(recipient.to_owned());
-            }
+        if let Ok(read_lock) = self.self_recipient.read()
+            && let Some(recipient) = read_lock.as_ref()
+        {
+            return Some(recipient.to_owned());
         }
 
         let e164 = self.config.get_tel();
@@ -855,9 +854,8 @@ impl<O: Observable> Storage<O> {
         }
         let self_rcpt = Some(self.merge_and_fetch_self_recipient(e164, aci, pni));
 
-        let write_lock = self.self_recipient.write();
-        if write_lock.is_ok() {
-            write_lock.unwrap().clone_from(&self_rcpt);
+        if let Ok(mut write_lock) = self.self_recipient.write() {
+            (*write_lock).clone_from(&self_rcpt);
         }
 
         self_rcpt
@@ -865,19 +863,17 @@ impl<O: Observable> Storage<O> {
 
     #[tracing::instrument(skip(self))]
     pub fn invalidate_self_recipient(&self) {
-        let write_lock = self.self_recipient.write();
-        if write_lock.is_ok() {
-            *write_lock.unwrap() = None;
+        if let Ok(mut write_lock) = self.self_recipient.write() {
+            *write_lock = None;
         }
     }
 
     #[tracing::instrument(skip(self))]
     pub fn fetch_self_recipient_profile_key(&self) -> Option<Vec<u8>> {
-        let read_lock = self.self_recipient.read();
-        if read_lock.is_ok() {
-            if let Some(recipient) = (*read_lock.unwrap()).as_ref() {
-                return recipient.profile_key.clone();
-            }
+        if let Ok(read_lock) = self.self_recipient.read()
+            && let Some(recipient) = read_lock.as_ref()
+        {
+            return recipient.profile_key.clone();
         }
 
         let recipient = self
@@ -888,11 +884,10 @@ impl<O: Observable> Storage<O> {
 
     #[tracing::instrument(skip(self))]
     pub fn fetch_self_recipient_id(&self) -> i32 {
-        let read_lock = self.self_recipient.read();
-        if read_lock.is_ok() {
-            if let Some(recipient) = (*read_lock.unwrap()).as_ref() {
-                return recipient.id;
-            }
+        if let Ok(read_lock) = self.self_recipient.read()
+            && let Some(recipient) = read_lock.as_ref()
+        {
+            return recipient.id;
         }
 
         let recipient = self
@@ -1202,11 +1197,11 @@ impl<O: Observable> Storage<O> {
             return (recipient, false);
         }
 
-        if let Some(addr) = addr {
-            if addr.kind() != ServiceIdKind::Aci {
-                tracing::warn!("Ignoring profile key update for non-ACI {:?}", addr);
-                return (recipient, false);
-            }
+        if let Some(addr) = addr
+            && addr.kind() != ServiceIdKind::Aci
+        {
+            tracing::warn!("Ignoring profile key update for non-ACI {:?}", addr);
+            return (recipient, false);
         }
 
         let is_unset = recipient.profile_key.is_none()
@@ -2480,7 +2475,9 @@ impl<O: Observable> Storage<O> {
                     .expect("existing session")
             }
             Some((_group, None)) => {
-                unreachable!("Former group V1 found.  We expect the branch above to have returned a session for it.");
+                unreachable!(
+                    "Former group V1 found.  We expect the branch above to have returned a session for it."
+                );
             }
             None => {
                 let session_id = diesel::insert_into(sessions)
@@ -3051,10 +3048,11 @@ impl<O: Observable> Storage<O> {
         }
 
         // Don't un-archive the session if it's muted
-        if let Some(s) = self.fetch_session_by_id(session) {
-            if s.is_muted && !s.is_archived {
-                self.mark_session_archived(s.id, false);
-            }
+        if let Some(s) = self.fetch_session_by_id(session)
+            && s.is_muted
+            && !s.is_archived
+        {
+            self.mark_session_archived(s.id, false);
         }
 
         tracing::trace!("Inserted message id {}", latest_message.id);

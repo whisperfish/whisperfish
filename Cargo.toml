@@ -11,6 +11,7 @@ members = [
 # Use something unique for version, e.g. 0.6.0-whisperfish
 version = "0.6.0-dev"
 license = "AGPL-3.0-only"
+edition = "2024"
 
 [patch.crates-io]
 # Required for libsignal's lizard2 patches to c25519

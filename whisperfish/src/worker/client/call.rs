@@ -4,14 +4,14 @@ use crate::store::orm::{self, Recipient};
 use actix::prelude::*;
 use chrono::Utc;
 use libsignal_service::{
+    ServiceIdExt,
     content::Metadata,
     proto::{
-        call_message::{offer, Answer, Busy, Hangup, IceUpdate, Offer},
         CallMessage,
+        call_message::{Answer, Busy, Hangup, IceUpdate, Offer, offer},
     },
     protocol::DeviceId,
     push_service::DEFAULT_DEVICE_ID,
-    ServiceIdExt,
 };
 use ringrtc::{
     common::{CallId, CallMediaType},
@@ -24,7 +24,7 @@ use ringrtc::{
     lite::http::DelegatingClient,
 };
 
-use super::{message_notification, Notification};
+use super::{Notification, message_notification};
 
 mod call_manager;
 

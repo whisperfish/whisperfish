@@ -63,7 +63,7 @@ impl StorageEncryption {
     /// Encrypt data in place. Uses the storage key. IV and MAC are appended to the msg vector.
     pub fn encrypt(&self, msg: &mut Vec<u8>) {
         // Load traits
-        use aes::cipher::{block_padding::Pkcs7, BlockEncryptMut, KeyIvInit};
+        use aes::cipher::{BlockEncryptMut, KeyIvInit, block_padding::Pkcs7};
         use hmac::Mac;
         use rand::RngCore;
         type Aes128CbcEnc = cbc::Encryptor<aes::Aes128>;
@@ -117,7 +117,7 @@ impl StorageEncryption {
 
     /// Decrypts message in place. Expects IV and MAC also in msg vector.
     pub fn decrypt(&self, msg: &mut Vec<u8>) -> Result<(), anyhow::Error> {
-        use aes::cipher::{block_padding::Pkcs7, BlockDecryptMut, KeyIvInit};
+        use aes::cipher::{BlockDecryptMut, KeyIvInit, block_padding::Pkcs7};
         use hmac::Mac;
         type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
         use cipher::generic_array::GenericArray;
@@ -266,20 +266,17 @@ mod tests {
         //
         // Create key
         let mut key = [0u8; 16 + 20];
-        assert!(pbkdf2::pbkdf2::<hmac::Hmac<sha1::Sha1>>(
-            my_key.as_bytes(),
-            &my_salt,
-            1024,
-            &mut key
-        )
-        .is_ok());
+        assert!(
+            pbkdf2::pbkdf2::<hmac::Hmac<sha1::Sha1>>(my_key.as_bytes(), &my_salt, 1024, &mut key)
+                .is_ok()
+        );
 
         // Generate random IV
         use rand::RngCore;
         let mut iv = [0u8; 16];
         rand::rng().fill_bytes(&mut iv);
 
-        use aes::cipher::{block_padding::Pkcs7, BlockEncryptMut, KeyIvInit};
+        use aes::cipher::{BlockEncryptMut, KeyIvInit, block_padding::Pkcs7};
         use cipher::generic_array::GenericArray;
         type Aes128CbcEnc = cbc::Encryptor<aes::Aes128>;
 
@@ -323,9 +320,10 @@ mod tests {
         let decr = crypto.decrypt(&mut ct);
         assert!(matches!(decr, Err(anyhow::Error { .. })));
         let err = decr.unwrap_err();
-        assert!(err
-            .to_string()
-            .contains("Attempt at decrypting a message with length 47 smaller"));
+        assert!(
+            err.to_string()
+                .contains("Attempt at decrypting a message with length 47 smaller")
+        );
     }
 
     #[tokio::test]

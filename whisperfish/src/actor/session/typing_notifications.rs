@@ -3,7 +3,7 @@ use crate::store::orm::shorten;
 use super::*;
 use chrono::prelude::*;
 use libsignal_service::{
-    proto::{typing_message, TypingMessage},
+    proto::{TypingMessage, typing_message},
     protocol::ServiceId,
 };
 use std::collections::HashMap;

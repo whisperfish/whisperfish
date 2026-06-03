@@ -1,4 +1,4 @@
-use qmetaobject::{log::*, prelude::*, QMessageLogContext, QtMsgType};
+use qmetaobject::{QMessageLogContext, QtMsgType, log::*, prelude::*};
 use tracing::Level;
 
 static QLEVEL: &[Level] = &[
@@ -13,7 +13,7 @@ static QLEVEL: &[Level] = &[
 
 const FILE_START: &str = "file:///usr/share/harbour-whisperfish/";
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn log_qt(msg_type: QtMsgType, msg_context: &QMessageLogContext, msg: &QString) {
     // QML may have prepended the message with the file information (so shorten it a bit),
     // or QMessageLogContext may provide it to us.

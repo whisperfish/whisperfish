@@ -20,7 +20,7 @@ use super::*;
 use crate::store::migrations::session_to_db::SessionStorageMigration;
 use actix::prelude::*;
 use std::sync::Arc;
-use tokio::sync::{broadcast, RwLock};
+use tokio::sync::{RwLock, broadcast};
 
 #[derive(Clone)]
 pub(super) struct MigrationCondVar {
