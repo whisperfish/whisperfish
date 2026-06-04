@@ -30,8 +30,8 @@ impl SignalingSender for WhisperfishSignalingSender {
     ) -> ringrtc::common::Result<()> {
         let mut message = match message {
             ringrtc::core::signaling::Message::Offer(offer) => {
-                use libsignal_service::proto::call_message::offer::Type as OfferType;
                 use libsignal_service::proto::call_message::Offer;
+                use libsignal_service::proto::call_message::offer::Type as OfferType;
 
                 tracing::debug!("sending offer");
 
@@ -84,8 +84,8 @@ impl SignalingSender for WhisperfishSignalingSender {
                 }
             }
             ringrtc::core::signaling::Message::Hangup(hangup) => {
-                use libsignal_service::proto::call_message::hangup::Type as ProtoHangupType;
                 use libsignal_service::proto::call_message::Hangup;
+                use libsignal_service::proto::call_message::hangup::Type as ProtoHangupType;
                 use ringrtc::core::signaling::HangupType;
 
                 tracing::debug!("sending hangup");

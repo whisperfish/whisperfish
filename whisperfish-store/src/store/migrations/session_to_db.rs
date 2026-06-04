@@ -1,8 +1,8 @@
 mod quirk;
 
 use crate::observer::Observable;
-use crate::store::orm::{self, Prekey, SessionRecord, SignedPrekey};
 use crate::store::Storage;
+use crate::store::orm::{self, Prekey, SessionRecord, SignedPrekey};
 use libsignal_service::protocol::{
     self, DeviceId, IdentityKey, PreKeyId, ProtocolAddress, SignedPreKeyId,
 };
@@ -364,7 +364,10 @@ impl<O: Observable> SessionStorageMigration<O> {
                         n
                     ),
                     Err(Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _)) => {
-                        tracing::warn!("Already found a session for {} in the database. Skipping and deleting the one on storage.", addr);
+                        tracing::warn!(
+                            "Already found a session for {} in the database. Skipping and deleting the one on storage.",
+                            addr
+                        );
                     }
                     Err(e) => panic!("{1}: {:?}", e, "well behaving database"),
                 }
@@ -447,7 +450,10 @@ impl<O: Observable> SessionStorageMigration<O> {
                     n
                 ),
                 Err(Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _)) => {
-                    tracing::warn!("Already found an identity for {} in the database. Skipping and deleting the one on storage.", addr);
+                    tracing::warn!(
+                        "Already found an identity for {} in the database. Skipping and deleting the one on storage.",
+                        addr
+                    );
                 }
                 Err(e) => panic!("{1}: {:?}", e, "well behaving database"),
             }

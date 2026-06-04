@@ -1,10 +1,9 @@
+use crate::TrustLevel;
 use crate::diesel::connection::SimpleConnection;
 use crate::orm;
 use crate::orm::Recipient;
 use crate::schema;
-use crate::TrustLevel;
 use diesel::prelude::*;
-use libsignal_service::prelude::*;
 use phonenumber::PhoneNumber;
 use std::fmt::Debug;
 use uuid::Uuid;
@@ -110,7 +109,7 @@ pub fn merge_and_fetch_recipient_inner(
         .filter_map(|r| r.as_ref())
         .collect();
     let match_count = by_all.len();
-    by_all.sort_by(|a, b| b.id.cmp(&a.id));
+    by_all.sort_by_key(|x| std::cmp::Reverse(x.id));
     by_all.dedup_by(|a, b| a.id == b.id);
     let common = if by_all.len() == 1 {
         Some(by_all[0])
@@ -172,10 +171,10 @@ pub fn merge_and_fetch_recipient_inner(
             if e164.is_some() && e164 != common.e164 && trust_level == TrustLevel::Certain {
                 tracing::debug!("Updating E164 in existing recipient");
                 ops.push(RecipientOperation::SetE164(common.id, e164.clone()));
-                if common.e164.is_some() {
+                if let Some(common_e164) = common.e164.as_ref() {
                     tracing::warn!(
                         "TODO: Phone number change from {:?} to {:?}",
-                        common.e164.as_ref().unwrap().to_string(),
+                        common_e164.to_string(),
                         e164
                     );
                 }
@@ -216,12 +215,10 @@ pub fn merge_and_fetch_recipient_inner(
     // XXX && (change_self || not_self)
     if e164.is_some()
         && pni.is_some()
-        && by_e164.is_some()
-        && by_pni.is_some()
-        && by_e164.as_ref().unwrap().id != by_pni.as_ref().unwrap().id
+        && let Some(by_e164) = by_e164.as_ref()
+        && let Some(by_pni) = by_pni.as_ref()
+        && by_e164.id != by_pni.id
     {
-        let by_pni = by_pni.as_ref().unwrap();
-        let by_e164 = by_e164.as_ref().unwrap();
         tracing::info!(
             "Merging contact {} (by E.164) into {} (by PNI)",
             by_pni.id,
@@ -244,12 +241,10 @@ pub fn merge_and_fetch_recipient_inner(
     // XXX && (change_self || not_self)
     if aci.is_some()
         && pni.is_some()
-        && by_aci.is_some()
-        && by_pni.is_some()
-        && by_aci.as_ref().unwrap().id != by_pni.as_ref().unwrap().id
+        && let Some(by_aci) = by_aci.as_ref()
+        && let Some(by_pni) = by_pni.as_ref()
+        && by_aci.id != by_pni.id
     {
-        let by_pni = by_pni.as_ref().unwrap();
-        let by_aci = by_aci.as_ref().unwrap();
         tracing::info!(
             "Merging contact {} (by PNI) into {} (by ACI)",
             by_pni.id,
@@ -288,12 +283,10 @@ pub fn merge_and_fetch_recipient_inner(
     // This block resembles processPossibleE164AciMerge()
     if e164.is_some()
         && aci.is_some()
-        && by_e164.is_some()
-        && by_aci.is_some()
-        && by_e164.as_ref().unwrap().id != by_aci.as_ref().unwrap().id
+        && let Some(by_e164) = by_e164.as_ref()
+        && let Some(by_aci) = by_aci.as_ref()
+        && by_e164.id != by_aci.id
     {
-        let by_e164 = by_e164.as_ref().unwrap();
-        let by_aci = by_aci.as_ref().unwrap();
         let e164 = e164.as_ref().unwrap();
         tracing::info!(
             "Merging contact {} (by E.164) into {} (by ACI)",
@@ -309,7 +302,7 @@ pub fn merge_and_fetch_recipient_inner(
             ops.push(RecipientOperation::SetE164(by_aci.id, Some(e164.clone()))); // XXX This should be handled in merge func
             ops.push(RecipientOperation::Merge(by_e164.id, by_aci.id));
             if by_aci.e164.is_some() && by_aci.e164.as_ref().unwrap() != e164 { // XXX && (change_self || not_self) && !by_aci.blocked
-                 // XXX Phone number change event
+                // XXX Phone number change event
             }
         } else if pni.is_some() && by_e164.pni != pni {
             if by_aci.pni.is_some() {
@@ -321,13 +314,13 @@ pub fn merge_and_fetch_recipient_inner(
             ops.push(RecipientOperation::Merge(by_e164.id, by_aci.id));
             // - if byAci.e164 changed, not self, not blocked
             if by_aci.e164.is_some() && by_aci.e164.as_ref().unwrap() != e164 { // XXX && (change_self || not_self) && !by_aci.blocked
-                 // XXX Phone number change event
+                // XXX Phone number change event
             }
         } else if pni.is_some() && by_e164.pni != pni || trust_level == TrustLevel::Certain {
             ops.push(RecipientOperation::SetE164(by_e164.id, None));
             ops.push(RecipientOperation::SetE164(by_aci.id, Some(e164.clone()))); // XXX This should be handled in merge func
             if by_aci.e164.is_some() && by_aci.e164.as_ref().unwrap() != e164 { // XXX && (change_self || not_self) && !by_aci.blocked
-                 // XXX Phone number change event
+                // XXX Phone number change event
             }
         }
     }

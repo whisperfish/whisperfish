@@ -49,12 +49,12 @@ impl Stream for ExpiredMessagesStream {
 
     #[tracing::instrument(skip(self, cx))]
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        if let Some(next_wake) = &mut self.next_wake {
-            if Pin::new(next_wake).poll(cx).is_ready() {
-                self.next_wake = None;
-                if !self.storage.fetch_expired_message_ids().is_empty() {
-                    return Poll::Ready(Some(ExpiredMessages));
-                }
+        if let Some(next_wake) = &mut self.next_wake
+            && Pin::new(next_wake).poll(cx).is_ready()
+        {
+            self.next_wake = None;
+            if !self.storage.fetch_expired_message_ids().is_empty() {
+                return Poll::Ready(Some(ExpiredMessages));
             }
         }
 

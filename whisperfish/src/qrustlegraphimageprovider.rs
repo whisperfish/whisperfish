@@ -32,7 +32,7 @@ cpp! {{
                 ctx: *mut VizualizerMap as "void *"
             ] {
                 // Explicit drop because of must_use
-                drop(Box::<VizualizerMap>::from_raw(ctx));
+                unsafe { drop(Box::<VizualizerMap>::from_raw(ctx)); }
             });
         }
 
@@ -105,7 +105,7 @@ cpp! {{
                 let time: f64 = time.parse().unwrap();
                 let slice = unsafe { std::slice::from_raw_parts_mut(buf, size_in_bytes) };
 
-                let mut vizualizers = ctx.as_ref().expect("no null pointers").borrow_mut();
+                let mut vizualizers = unsafe { ctx.as_ref().expect("no null pointers").borrow_mut() };
                 if let Some(viz) = vizualizers.get(id) {
                     if let Some(viz) = viz.upgrade() {
                         let mut img = image::ImageBuffer::<image::Rgba<u8>, &mut [u8]>::from_raw(width, height, slice).expect("correct dimensions");

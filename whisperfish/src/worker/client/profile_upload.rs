@@ -44,8 +44,8 @@ impl Handler<MultideviceSyncProfile> for ClientActor {
         let storage = self.storage.clone().unwrap();
         let local_addr = self.self_aci.unwrap();
 
-        // If not yet connected, retry in 60 seconds
-        if self.ws.is_none() {
+        // If not yet connectable, retry in 60 seconds
+        if self.credentials.is_none() {
             ctx.notify_later(MultideviceSyncProfile, Duration::from_secs(60));
             return Box::pin(async move {});
         }
@@ -106,6 +106,14 @@ impl Handler<RefreshOwnProfile> for ClientActor {
         let config = self.config.clone();
         let aci = Aci::from(config.get_aci().expect("valid uuid at this point"));
 
+        if self.credentials.is_none() {
+            tracing::warn!(
+                "Not connectable, cannot refresh own profile. Retrying in two seconds..."
+            );
+            ctx.notify_later(RefreshOwnProfile { force }, Duration::from_secs(2));
+            return Box::pin(async {}.into_actor(self));
+        }
+
         Box::pin(
             async move {
                 let self_recipient = storage
@@ -122,15 +130,15 @@ impl Handler<RefreshOwnProfile> for ClientActor {
                 } else {
                     // UploadProfile will generate a profile key if needed
                     client.send(UploadProfile).await.unwrap();
-                    return;
+                    return Ok(());
                 };
 
-                if let Some(lpf) = &self_recipient.last_profile_fetch {
-                    if Utc.from_utc_datetime(lpf) > Utc::now() - chrono::Duration::days(1) && !force
-                    {
-                        tracing::info!("Our own profile is up-to-date, not fetching.");
-                        return;
-                    }
+                if let Some(lpf) = &self_recipient.last_profile_fetch
+                    && Utc.from_utc_datetime(lpf) > Utc::now() - chrono::Duration::days(1)
+                    && !force
+                {
+                    tracing::info!("Our own profile is up-to-date, not fetching.");
+                    return Ok(());
                 }
 
                 // FetchProfile only stores the own-profile if it was found
@@ -158,6 +166,7 @@ impl Handler<RefreshOwnProfile> for ClientActor {
                     tracing::info!("Considering our profile as outdated, uploading new one.");
                     client.send(UploadProfile).await.unwrap();
                 }
+                Ok::<_, ServiceError>(())
             }
             .instrument(tracing::debug_span!("refresh own profile"))
             .into_actor(self)
@@ -197,11 +206,12 @@ impl Handler<UpdateProfile> for ClientActor {
 }
 
 impl Handler<UploadProfile> for ClientActor {
-    type Result = ResponseFuture<()>;
+    type Result = ResponseActFuture<Self, ()>;
 
     fn handle(&mut self, _: UploadProfile, ctx: &mut Self::Context) -> Self::Result {
         let storage = self.storage.clone().unwrap();
         let service = self.authenticated_service();
+        let i_ws = self.identified_websocket();
         let client = ctx.address();
         let config = self.config.clone();
         let aci = Aci::from(config.get_aci().expect("valid ACI at this point"));
@@ -227,7 +237,7 @@ impl Handler<UploadProfile> for ClientActor {
                     family_name: self_recipient.profile_family_name.as_deref(),
                 };
 
-                let mut am = AccountManager::new(service, Some(profile_key));
+                let mut am = AccountManager::new(service, i_ws.await?, Some(profile_key));
                 if let Err(e) = am
                     .upload_versioned_profile_without_avatar(
                         aci,
@@ -248,7 +258,7 @@ impl Handler<UploadProfile> for ClientActor {
                             .expect("client still running");
                     });
 
-                    return;
+                    return Ok(());
                 }
 
                 // Now also set the database
@@ -261,17 +271,26 @@ impl Handler<UploadProfile> for ClientActor {
 
                 client.send(RefreshProfileAttributes).await.unwrap();
                 client.send(MultideviceSyncProfile).await.unwrap();
+                Ok::<_, ServiceError>(())
             }
-            .instrument(tracing::debug_span!("upload profile")),
+            .instrument(tracing::debug_span!("upload profile"))
+            .into_actor(self)
+            .map(|result, _act, ctx| {
+                if let Err(e) = result {
+                    tracing::warn!(error = ?e, "Failed to upload profile. Retrying in 10 seconds.");
+                    ctx.notify_later(UploadProfile, Duration::from_secs(10));
+                }
+            }),
         )
     }
 }
 
 impl Handler<RefreshProfileAttributes> for ClientActor {
-    type Result = ResponseFuture<()>;
+    type Result = ResponseActFuture<Self, ()>;
     fn handle(&mut self, _: RefreshProfileAttributes, ctx: &mut Self::Context) -> Self::Result {
         let storage = self.storage.clone().unwrap();
         let service = self.authenticated_service();
+        let i_ws = self.identified_websocket();
         let address = ctx.address();
 
         Box::pin(
@@ -289,23 +308,21 @@ impl Handler<RefreshProfileAttributes> for ClientActor {
                 let self_recipient = storage.fetch_self_recipient().expect("self set by now");
 
                 let profile_key = self_recipient.profile_key().map(ProfileKey::create);
-                let mut am = AccountManager::new(service, profile_key);
+                let mut am = AccountManager::new(service, i_ws.await?, profile_key);
                 let unidentified_access_key =
                     profile_key.as_ref().map(ProfileKey::derive_access_key);
 
                 let account_attributes = AccountAttributes {
-                    signaling_key: None,
                     registration_id,
-                    voice: false,
-                    video: false,
                     fetches_messages: true,
                     pin: None,
                     registration_lock: None,
                     unidentified_access_key: unidentified_access_key.map(Vec::from),
                     unrestricted_unidentified_access: false,
                     discoverable_by_phone_number: true,
+                    recovery_password: None,
                     capabilities: whisperfish_device_capabilities(),
-                    name: Some("Whisperfish".into()),
+                    name: None, // TODO: DeviceName
                     pni_registration_id,
                 };
                 if let Err(e) = am.set_account_attributes(account_attributes).await {
@@ -324,10 +341,19 @@ impl Handler<RefreshProfileAttributes> for ClientActor {
                             UnidentifiedAccessMode::Enabled,
                         );
                     }
-                    tracing::info!("profile attributes refreshed");
+                    tracing::info!("Profile attributes refreshed");
                 }
+
+                Ok::<_, ServiceError>(())
             }
-            .instrument(tracing::debug_span!("refresh profile attributes")),
+            .instrument(tracing::debug_span!("refresh profile attributes"))
+            .into_actor(self)
+            .map(|result, _act, ctx| {
+                if let Err(e) = result {
+                    tracing::warn!(error = ?e, "Failed to upload profile attributes. Retrying in 10 seconds.");
+                    ctx.notify_later(RefreshProfileAttributes, std::time::Duration::from_secs(10));
+                }
+            }),
         )
     }
 }

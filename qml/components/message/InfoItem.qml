@@ -80,8 +80,8 @@ Row {
         color: infoLabel.color
         source: {
             if (!hasData) "../../../icons/icon-s-queued.png" // cf. below
-            if (modelData.read > 0) "../../../icons/icon-s-read.png"
-            else if (modelData.delivered > 0) "../../../icons/icon-s-received.png"
+            if (modelData.hasReads) "../../../icons/icon-s-read.png"
+            else if (modelData.hasDeliveries) "../../../icons/icon-s-received.png"
             else if (modelData.sent) "../../../icons/icon-s-sent.png"
             else if (modelData.queued) "../../../icons/icon-s-queued.png"
             // TODO check if SFOS 4 has "image://theme/icon-s-blocked" (3.4 doesn't)

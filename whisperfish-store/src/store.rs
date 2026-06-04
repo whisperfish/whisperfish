@@ -28,10 +28,11 @@ use diesel::sql_types::{Bool, Timestamp};
 use diesel_migrations::EmbeddedMigrations;
 
 use libsignal_service::groups_v2::{InMemoryCredentialsCache, Role};
-use libsignal_service::proto::{attachment_pointer, data_message::Reaction, DataMessage};
+use libsignal_service::libsignal_account_keys::AccountEntropyPool;
+use libsignal_service::proto::{DataMessage, attachment_pointer, data_message::Reaction};
 use libsignal_service::protocol::{self, *};
-use libsignal_service::zkgroup::api::groups::GroupSecretParams;
 use libsignal_service::zkgroup::PROFILE_KEY_LEN;
+use libsignal_service::zkgroup::api::groups::GroupSecretParams;
 use libsignal_service::{
     prelude::*,
     protocol::{Aci, Pni, ServiceIdKind},
@@ -636,18 +637,15 @@ impl<O: Observable> Storage<O> {
         Ok(db)
     }
 
-    /// Asynchronously loads the signal HTTP password from storage and decrypts it.
+    /// Synchronously loads the signal HTTP password from storage and decrypts it.
     #[tracing::instrument(skip(self))]
-    pub async fn signal_password(&self) -> Result<String, anyhow::Error> {
-        let contents = self
-            .read_file(
-                &self
-                    .path
-                    .join("storage")
-                    .join("identity")
-                    .join("http_password"),
-            )
-            .await?;
+    pub fn signal_password(&self) -> Result<String, anyhow::Error> {
+        let contents = self.read_file_encrypted_sync(
+            self.path
+                .join("storage")
+                .join("identity")
+                .join("http_password"),
+        )?;
         Ok(String::from_utf8(contents)?)
     }
 
@@ -667,6 +665,26 @@ impl<O: Observable> Storage<O> {
         let mut out = [0u8; 52];
         out.copy_from_slice(&v);
         Ok(Some(out))
+    }
+
+    #[tracing::instrument]
+    pub fn read_file_encrypted_sync(
+        &self,
+        path: impl AsRef<std::path::Path> + Debug,
+    ) -> Result<Vec<u8>, anyhow::Error> {
+        tracing::trace!("Opening file {}", path.as_ref().display());
+        let mut content = std::fs::read(&path)?;
+        tracing::trace!(
+            "Read file {} with {} bytes",
+            path.as_ref().display(),
+            content.len()
+        );
+
+        if let Some(store_enc) = self.store_enc.as_ref() {
+            store_enc.decrypt(&mut content)?;
+        }
+
+        Ok(content)
     }
 
     // This is public for session_to_db migration
@@ -721,14 +739,14 @@ impl<O: Observable> Storage<O> {
             .context("reaction target recipient in db")?;
 
         // whisperfish_store::store: uuid != reaction.target_author_uuid (9bad15b5-dca3-418a-9949-7ca357b7fe47 != 9d4428ab-9ce2-4f7b-88f5-cf249ef692ce). Continuing, but this is a bug or attack.
-        if let Some(db_msg_sender_uuid) = db_message_sender_aci.uuid {
-            if db_msg_sender_uuid != reaction_target_message_author_uuid {
-                tracing::warn!(
-                    "Database message author aci != reaction target message aci ({} != {}). Continuing, but this is a bug or attack.",
-                    db_msg_sender_uuid,
-                    reaction_target_message_author_uuid,
-                );
-            }
+        if let Some(db_msg_sender_uuid) = db_message_sender_aci.uuid
+            && db_msg_sender_uuid != reaction_target_message_author_uuid
+        {
+            tracing::warn!(
+                "Database message author aci != reaction target message aci ({} != {}). Continuing, but this is a bug or attack.",
+                db_msg_sender_uuid,
+                reaction_target_message_author_uuid,
+            );
         }
 
         // Two options, either it's a removal or an update-or-replace
@@ -815,11 +833,10 @@ impl<O: Observable> Storage<O> {
 
     #[tracing::instrument(skip(self))]
     pub fn fetch_self_recipient(&self) -> Option<orm::Recipient> {
-        let read_lock = self.self_recipient.read();
-        if read_lock.is_ok() {
-            if let Some(recipient) = (*read_lock.unwrap()).as_ref() {
-                return Some(recipient.to_owned());
-            }
+        if let Ok(read_lock) = self.self_recipient.read()
+            && let Some(recipient) = read_lock.as_ref()
+        {
+            return Some(recipient.to_owned());
         }
 
         let e164 = self.config.get_tel();
@@ -837,9 +854,8 @@ impl<O: Observable> Storage<O> {
         }
         let self_rcpt = Some(self.merge_and_fetch_self_recipient(e164, aci, pni));
 
-        let write_lock = self.self_recipient.write();
-        if write_lock.is_ok() {
-            write_lock.unwrap().clone_from(&self_rcpt);
+        if let Ok(mut write_lock) = self.self_recipient.write() {
+            (*write_lock).clone_from(&self_rcpt);
         }
 
         self_rcpt
@@ -847,19 +863,17 @@ impl<O: Observable> Storage<O> {
 
     #[tracing::instrument(skip(self))]
     pub fn invalidate_self_recipient(&self) {
-        let write_lock = self.self_recipient.write();
-        if write_lock.is_ok() {
-            *write_lock.unwrap() = None;
+        if let Ok(mut write_lock) = self.self_recipient.write() {
+            *write_lock = None;
         }
     }
 
     #[tracing::instrument(skip(self))]
     pub fn fetch_self_recipient_profile_key(&self) -> Option<Vec<u8>> {
-        let read_lock = self.self_recipient.read();
-        if read_lock.is_ok() {
-            if let Some(recipient) = (*read_lock.unwrap()).as_ref() {
-                return recipient.profile_key.clone();
-            }
+        if let Ok(read_lock) = self.self_recipient.read()
+            && let Some(recipient) = read_lock.as_ref()
+        {
+            return recipient.profile_key.clone();
         }
 
         let recipient = self
@@ -870,11 +884,10 @@ impl<O: Observable> Storage<O> {
 
     #[tracing::instrument(skip(self))]
     pub fn fetch_self_recipient_id(&self) -> i32 {
-        let read_lock = self.self_recipient.read();
-        if read_lock.is_ok() {
-            if let Some(recipient) = (*read_lock.unwrap()).as_ref() {
-                return recipient.id;
-            }
+        if let Ok(read_lock) = self.self_recipient.read()
+            && let Some(recipient) = read_lock.as_ref()
+        {
+            return recipient.id;
         }
 
         let recipient = self
@@ -1184,11 +1197,11 @@ impl<O: Observable> Storage<O> {
             return (recipient, false);
         }
 
-        if let Some(addr) = addr {
-            if addr.kind() != ServiceIdKind::Aci {
-                tracing::warn!("Ignoring profile key update for non-ACI {:?}", addr);
-                return (recipient, false);
-            }
+        if let Some(addr) = addr
+            && addr.kind() != ServiceIdKind::Aci
+        {
+            tracing::warn!("Ignoring profile key update for non-ACI {:?}", addr);
+            return (recipient, false);
         }
 
         let is_unset = recipient.profile_key.is_none()
@@ -2462,7 +2475,9 @@ impl<O: Observable> Storage<O> {
                     .expect("existing session")
             }
             Some((_group, None)) => {
-                unreachable!("Former group V1 found.  We expect the branch above to have returned a session for it.");
+                unreachable!(
+                    "Former group V1 found.  We expect the branch above to have returned a session for it."
+                );
             }
             None => {
                 let session_id = diesel::insert_into(sessions)
@@ -3033,10 +3048,11 @@ impl<O: Observable> Storage<O> {
         }
 
         // Don't un-archive the session if it's muted
-        if let Some(s) = self.fetch_session_by_id(session) {
-            if s.is_muted && !s.is_archived {
-                self.mark_session_archived(s.id, false);
-            }
+        if let Some(s) = self.fetch_session_by_id(session)
+            && s.is_muted
+            && !s.is_archived
+        {
+            self.mark_session_archived(s.id, false);
         }
 
         tracing::trace!("Inserted message id {}", latest_message.id);
@@ -3347,45 +3363,37 @@ impl<O: Observable> Storage<O> {
         // part.
         let messages = self.fetch_all_messages(sid, only_most_recent);
 
-        let order = (
-            schema::messages::columns::server_timestamp.desc(),
-            schema::messages::columns::id.desc(),
-        );
-
         // message_id, is_voice_note, attachment count
         let attachments: Vec<(i32, Option<i16>, i64)> =
-            tracing::trace_span!("fetching attachments",).in_scope(|| {
+            tracing::trace_span!("fetching attachments").in_scope(|| {
                 schema::attachments::table
                     .inner_join(schema::messages::table)
-                    .group_by(schema::attachments::message_id)
+                    .group_by(schema::messages::id)
                     .select((
-                        schema::attachments::message_id,
-                        // We could also define a boolean or aggregate function...
-                        // Googling instructions for that is difficult though, since "diesel aggregate or"
-                        // yields you machines that consume fuel.
+                        schema::messages::id,
                         diesel::dsl::max(diesel::dsl::sql::<diesel::sql_types::SmallInt>(
                             "attachments.is_voice_note",
                         )),
-                        diesel::dsl::count(schema::attachments::id).aggregate_distinct(),
+                        diesel::dsl::count(schema::attachments::id),
                     ))
                     .filter(schema::messages::session_id.eq(sid))
-                    .order_by(order)
+                    .order_by(schema::messages::columns::id.desc())
                     .load(&mut *self.db())
                     .expect("db")
             });
 
         // message_id, reaction count
         let reactions: Vec<(i32, i64)> =
-            tracing::trace_span!("fetching reactions",).in_scope(|| {
+            tracing::trace_span!("fetching reactions").in_scope(|| {
                 schema::reactions::table
                     .inner_join(schema::messages::table)
-                    .group_by(schema::reactions::message_id)
+                    .group_by(schema::messages::id)
                     .select((
-                        schema::reactions::message_id,
-                        diesel::dsl::count(schema::reactions::reaction_id).aggregate_distinct(),
+                        schema::messages::id,
+                        diesel::dsl::count(schema::reactions::reaction_id),
                     ))
                     .filter(schema::messages::session_id.eq(sid))
-                    .order_by(order)
+                    .order_by(schema::messages::columns::id.desc())
                     .load(&mut *self.db())
                     .expect("db")
             });
@@ -3403,7 +3411,7 @@ impl<O: Observable> Storage<O> {
                     .filter(messages::session_id.eq(sid))
                     .group_by(receipts::message_id)
                     .select((receipts::message_id, diesel::dsl::count_star()))
-                    .order_by(order)
+                    .order_by(schema::receipts::columns::message_id.desc())
                     .load(&mut *self.db())
                     .expect("db");
 
@@ -3413,7 +3421,7 @@ impl<O: Observable> Storage<O> {
                     .filter(messages::session_id.eq(sid))
                     .group_by(receipts::message_id)
                     .select((receipts::message_id, diesel::dsl::count_star()))
-                    .order_by(order)
+                    .order_by(schema::receipts::columns::message_id.desc())
                     .load(&mut *self.db())
                     .expect("db");
 
@@ -3423,9 +3431,10 @@ impl<O: Observable> Storage<O> {
                     .filter(messages::session_id.eq(sid))
                     .group_by(receipts::message_id)
                     .select((receipts::message_id, diesel::dsl::count_star()))
-                    .order_by(order)
+                    .order_by(schema::receipts::columns::message_id.desc())
                     .load(&mut *self.db())
                     .expect("db");
+
                 (read_counts, delivered_counts, viewed_counts)
             });
 
@@ -4850,6 +4859,34 @@ impl<O: Observable> Storage<O> {
                 group_v2.name
             );
             None
+        }
+    }
+
+    // TODO This should be in lss (and use lss types?)
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_account_entropy_pool(&self) -> Option<AccountEntropyPool> {
+        match self.read_setting(Settings::ACCOUNT_ENTROPY_POOL) {
+            Some(pool) if pool.len() == 64 => {
+                use std::str::FromStr;
+                match AccountEntropyPool::from_str(pool.as_str()) {
+                    Ok(pool) => Some(pool),
+                    Err(e) => {
+                        tracing::error!("{e}");
+                        None
+                    }
+                }
+            }
+            _ => None,
+        }
+    }
+
+    // TODO This should be in lss (and use lss types?)
+    #[tracing::instrument(skip(self))]
+    pub fn store_account_entropy_pool(&self, entropy: Option<AccountEntropyPool>) {
+        if let Some(entropy) = entropy {
+            self.write_setting(Settings::ACCOUNT_ENTROPY_POOL, entropy.to_string().as_str());
+        } else {
+            self.delete_setting(Settings::ACCOUNT_ENTROPY_POOL);
         }
     }
 }

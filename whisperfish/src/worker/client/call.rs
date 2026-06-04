@@ -4,14 +4,14 @@ use crate::store::orm::{self, Recipient};
 use actix::prelude::*;
 use chrono::Utc;
 use libsignal_service::{
+    ServiceIdExt,
     content::Metadata,
     proto::{
-        call_message::{offer, Answer, Busy, Hangup, IceUpdate, Offer},
         CallMessage,
+        call_message::{Answer, Busy, Hangup, IceUpdate, Offer, offer},
     },
     protocol::DeviceId,
     push_service::DEFAULT_DEVICE_ID,
-    ServiceIdExt,
 };
 use ringrtc::{
     common::{CallId, CallMediaType},
@@ -23,9 +23,8 @@ use ringrtc::{
     },
     lite::http::DelegatingClient,
 };
-use whisperfish_store::millis_to_naive_chrono;
 
-use super::{message_notification, Notification};
+use super::{Notification, message_notification};
 
 mod call_manager;
 
@@ -122,8 +121,7 @@ impl super::ClientActor {
                 return;
             };
 
-            let sent_time = millis_to_naive_chrono(metadata.timestamp).and_utc();
-            let age = Utc::now() - sent_time;
+            let age = Utc::now() - metadata.timestamp;
 
             let local_device_id = self.config.get_device_id();
 
@@ -169,7 +167,7 @@ impl super::ClientActor {
 
         let ringer_recipient = storage.fetch_or_insert_recipient_by_address(&metadata.sender);
 
-        let sent_time = millis_to_naive_chrono(metadata.timestamp).and_utc();
+        let sent_time = metadata.timestamp;
         let age = Utc::now() - sent_time;
         let seconds = std::cmp::max(age.num_seconds(), 0);
         tracing::debug!(

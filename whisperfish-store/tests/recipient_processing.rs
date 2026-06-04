@@ -6,7 +6,7 @@ use libsignal_service::protocol::{Aci, Pni, ServiceId};
 use rand::Rng;
 use rstest::{fixture, rstest};
 use std::future::Future;
-use uuid::{uuid, Uuid};
+use uuid::{Uuid, uuid};
 
 const UUID: Uuid = uuid!("dc6bf7f6-9946-4e01-89f6-dc3abdb2f71b");
 const UUID2: Uuid = uuid!("c25f3e9a-2cfd-4eb0-8a53-b22eb025667d");

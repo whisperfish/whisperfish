@@ -4,7 +4,7 @@ use dbus::blocking::Connection;
 use signal_hook::{consts::SIGINT, iterator::Signals};
 use single_instance::SingleInstance;
 use std::{os::unix::prelude::OsStrExt, thread, time::Duration};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 use whisperfish::*;
 
 /// Unofficial but advanced Signal client for Sailfish OS

@@ -1,6 +1,6 @@
 use crate::worker::{
-    client::{AnswerCall, HangupCall, InitiateCall},
     ClientActor,
+    client::{AnswerCall, HangupCall, InitiateCall},
 };
 use actix::Addr;
 use qmetaobject::prelude::*;

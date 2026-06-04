@@ -1,9 +1,9 @@
 #![allow(non_snake_case)]
 
 use crate::model::*;
-use crate::store::observer::{EventObserving, Interest};
 use crate::store::Storage;
-use qmetaobject::{prelude::*, QMetaType};
+use crate::store::observer::{EventObserving, Interest};
+use qmetaobject::{QMetaType, prelude::*};
 use qttypes::{QVariantList, QVariantMap};
 use std::collections::HashMap;
 use whisperfish_store::observer::Event;
@@ -51,11 +51,10 @@ impl Sessions {
     // Generate a sorted-by-name list of groups and conv's
     // from the already fetched SessionListModel.
     fn session_names(&self, _ctx: Option<ModelContext<Self>>) -> QVariantList {
-        tracing::info!("getting session list...");
         let qml_session_list = self.session_list.pinned();
         let session_list = &qml_session_list.borrow().content;
         if session_list.is_empty() {
-            tracing::info!("Empty list :(");
+            tracing::trace!("Empty list :(");
             return QVariantList::default();
         }
 
@@ -93,7 +92,7 @@ impl Sessions {
                 },
             });
         }
-        tracing::info!("Found {} sessions", sessions.len());
+        tracing::debug!("Found {} sessions", sessions.len());
         sessions.sort_by(|a, b| a.name.cmp(&b.name));
         let mut qvl = QVariantList::default();
         for session in sessions {
@@ -118,7 +117,7 @@ impl Sessions {
             );
             qvl.push(qvm.to_qvariant());
         }
-        tracing::info!("Generated {} QVariantMaps", qvl.len());
+        tracing::debug!("Generated {} QVariantMaps", qvl.len());
         qvl
     }
 
@@ -208,34 +207,34 @@ impl SessionListModel {
             return;
         }
 
-        if event.for_table(schema::recipients::table) && event.is_update() {
-            if let Some(recipient_id) = recipient_id {
-                if let Some(new_recipient) = storage.fetch_recipient_by_id(recipient_id) {
-                    let mut updates = Vec::new();
-                    for (idx, session) in self.content.iter_mut().enumerate() {
-                        match &mut session.inner.r#type {
-                            orm::SessionType::DirectMessage(recipient) => {
-                                if recipient.id == recipient_id {
-                                    *recipient = new_recipient.clone();
-                                    updates.push(idx);
-                                }
-                            }
-                            orm::SessionType::GroupV1(_group) => {
-                                // Groups don't have recipients in this model
-                            }
-                            orm::SessionType::GroupV2(_) => {
-                                // Groups don't have recipients in this model
-                            }
+        if event.for_table(schema::recipients::table)
+            && event.is_update()
+            && let Some(recipient_id) = recipient_id
+            && let Some(new_recipient) = storage.fetch_recipient_by_id(recipient_id)
+        {
+            let mut updates = Vec::new();
+            for (idx, session) in self.content.iter_mut().enumerate() {
+                match &mut session.inner.r#type {
+                    orm::SessionType::DirectMessage(recipient) => {
+                        if recipient.id == recipient_id {
+                            *recipient = new_recipient.clone();
+                            updates.push(idx);
                         }
                     }
-                    for idx in updates {
-                        let idx = self.row_index(idx as i32);
-                        self.data_changed(idx, idx);
+                    orm::SessionType::GroupV1(_group) => {
+                        // Groups don't have recipients in this model
                     }
-                    if session_id.is_none() && message_id.is_none() && attachment_id.is_none() {
-                        return;
+                    orm::SessionType::GroupV2(_) => {
+                        // Groups don't have recipients in this model
                     }
                 }
+            }
+            for idx in updates {
+                let idx = self.row_index(idx as i32);
+                self.data_changed(idx, idx);
+            }
+            if session_id.is_none() && message_id.is_none() && attachment_id.is_none() {
+                return;
             }
         }
 
@@ -343,15 +342,15 @@ impl SessionListModel {
                     session.last_message.as_ref().map(|x| x.id) == Some(message_id)
                 })
             {
-                if let Some(message) = &mut session.last_message {
-                    if message.id == message_id {
-                        // XXX This can in principle fetch a message with another timestamp,
-                        // but I think all those cases are handled with a session_id
-                        session.last_message =
-                            storage.fetch_last_message_by_session_id_augmented(session.id);
-                        let idx = self.row_index(idx as i32);
-                        self.data_changed(idx, idx);
-                    }
+                if let Some(message) = &mut session.last_message
+                    && message.id == message_id
+                {
+                    // XXX This can in principle fetch a message with another timestamp,
+                    // but I think all those cases are handled with a session_id
+                    session.last_message =
+                        storage.fetch_last_message_by_session_id_augmented(session.id);
+                    let idx = self.row_index(idx as i32);
+                    self.data_changed(idx, idx);
                 }
             } else {
                 tracing::warn!("Could not find session in model for message update event");
@@ -397,12 +396,12 @@ define_model_roles! {
         Timestamp(fn timestamp(&self) via qdatetime_from_naive_option):    "timestamp",
         IsRead(fn is_read(&self)):                                         "read", // TODO Give session its own timestamp?
         Sent(fn sent(&self)):                                              "sent", // TODO cf. isPreviewReceived (#151)
-        Delivered(fn delivered(&self) via int_from_usize):                 "deliveryCount",
-        Read(fn read(&self) via int_from_usize):                           "readCount",
+        HasDeliveries(fn delivered(&self) via bool_from_usize):            "hasDeliveries",
+        HasReads(fn read(&self) via bool_from_usize):                      "hasReads",
+        HasViews(fn viewed(&self) via bool_from_usize):                    "hasViews",
         IsMuted(fn is_muted(&self)):                                       "isMuted",
         IsArchived(fn is_archived(&self)):                                 "isArchived",
         IsPinned(fn is_pinned(&self)):                                     "isPinned",
-        Viewed(fn viewed(&self) via int_from_usize):                       "viewCount",
 
         Draft(fn draft(&self) via QString::from):                          "draft",
         ExpiringMessageTimeout(expiring_message_timeout via int_from_duration_option): "expiringMessageTimeout",

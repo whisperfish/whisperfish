@@ -9,7 +9,7 @@ ListItem {
     property string date: Format.formatDate(lastMessage.timestamp, _dateFormat) // TODO Give session its own timestamp?
     property bool isGroup: model.isGroup
     property int unreadCount: 0 // TODO implement in model
-    property bool isUnread: hasDraft || !model.read // TODO investigate: is this really a bool?
+    property bool isUnread: hasDraft || !model.read
     property bool isNoteToSelf: SetupWorker.uuid === model.recipientUuid
     property bool isPinned: model.isPinned
     property bool isArchived: model.isArchived
@@ -21,9 +21,9 @@ ListItem {
         ? getGroupAvatar(model.groupId)
         : (recipient.status == Loader.Ready ? getRecipientAvatar(recipient.item.e164, recipient.item.uuid, recipient.item.externalId) : '')
     ) : ''
-    property bool isPreviewDelivered: model.deliveryCount > 0 // TODO investigate: not updated for new message (#151, #55?)
-    property bool isPreviewRead: model.readCount > 0 // TODO investigate: not updated for new message (#151, #55?)
-    property bool isPreviewViewed: model.viewCount > 0 // TODO investigate: not updated for new message (#151, #55?)
+    property bool isPreviewDelivered: model.hasDeliveries // TODO investigate: not updated for new message (#151, #55?)
+    property bool isPreviewRead: model.hasReads // TODO investigate: not updated for new message (#151, #55?)
+    property bool isPreviewViewed: model.hasViews // TODO investigate: not updated for new message (#151, #55?)
     property bool isPreviewSent: hasLastMessage && model.sent // TODO cf. isPreviewReceived (#151)
     property bool isRemoteDeleted: hasLastMessage && lastMessage.remoteDeleted
     property bool hasText: lastMessage.message !== undefined && lastMessage.message !== ''
@@ -52,7 +52,11 @@ ListItem {
         }
 
         if (lastMessage.messageType != null) {
-           return text + "<i>" + serviceMessage.item._message + "</i>"
+            if (!!serviceMessage.item) {
+                return text + "<i>" + serviceMessage.item._message + "</i>"
+            } else {
+                return text
+            }
         }
 
         if (lastMessage.attachments.count > 0) {

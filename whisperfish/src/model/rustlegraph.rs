@@ -163,7 +163,9 @@ impl RustleGraph {
         let id = this.image_id();
         let _old = app.rustlegraphs.borrow_mut().insert(id, vizualizer);
         if _old.is_some() {
-            tracing::info!("Replaced an old Rustlegraph; probably doing double work here");
+            tracing::info!(
+                "Replaced an old Rustlegraph; probably doing double work here. Upvote issue #596"
+            );
         }
 
         this.image_updated();
@@ -196,11 +198,11 @@ impl RustleGraph {
             self.duration_updated();
 
             // Generate the vizualizer if we have all the data
-            if let Some(storage) = app.storage.borrow().clone() {
-                if let Some(attachment) = storage.fetch_attachment(self.attachmentId) {
-                    let this = QPointer::from(&*self);
-                    actix::spawn(Self::load_vizualizer(this, attachment));
-                }
+            if let Some(storage) = app.storage.borrow().clone()
+                && let Some(attachment) = storage.fetch_attachment(self.attachmentId)
+            {
+                let this = QPointer::from(&*self);
+                actix::spawn(Self::load_vizualizer(this, attachment));
             }
         }
     }

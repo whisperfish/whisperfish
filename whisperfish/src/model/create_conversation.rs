@@ -1,8 +1,8 @@
 #![allow(non_snake_case)]
 
 use crate::model::*;
-use crate::store::observer::{EventObserving, Interest};
 use crate::store::Storage;
+use crate::store::observer::{EventObserving, Interest};
 use libsignal_service::protocol::Aci;
 use phonenumber::PhoneNumber;
 use qmetaobject::prelude::*;

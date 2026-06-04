@@ -3,9 +3,9 @@
 use std::collections::HashMap;
 
 use crate::model::*;
+use crate::store::Storage;
 use crate::store::observer::{EventObserving, Interest};
 use crate::store::orm::{GroupV1Member, GroupV2Member};
-use crate::store::Storage;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
 use uuid::Uuid;

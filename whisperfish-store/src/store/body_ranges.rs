@@ -1,8 +1,8 @@
 use crate::store::protos as database_protos;
-pub use database_protos::body_range_list::{body_range::AssociatedValue, BodyRange};
+pub use database_protos::body_range_list::{BodyRange, body_range::AssociatedValue};
 use itertools::Itertools;
 use libsignal_service::proto::{
-    body_range as wire_body_range, body_range::Style as WireStyle, BodyRange as WireBodyRange,
+    BodyRange as WireBodyRange, body_range as wire_body_range, body_range::Style as WireStyle,
 };
 use prost::Message;
 
@@ -344,8 +344,9 @@ pub fn to_styled<'a, S: AsRef<str> + 'a>(
         // XXX Just skip the range if necessary, that's healthier than panicking.
         let end = range.start() + range.len();
 
-        if end > message.encode_utf16().count() {
-            tracing::warn!("range end out of bounds");
+        let message_size = message.encode_utf16().count();
+        if end > message_size {
+            tracing::warn!("range end out of bounds: {} > {}", end, message_size);
             return std::borrow::Cow::Borrowed(message);
         }
 
@@ -553,7 +554,10 @@ mod tests {
             "foo"
         });
 
-        assert_eq!(styled, "<a href=\"mention://9d4428ab-0000-0000-0000-000000000000\">@foo</a>Sorry for the random mention.");
+        assert_eq!(
+            styled,
+            "<a href=\"mention://9d4428ab-0000-0000-0000-000000000000\">@foo</a>Sorry for the random mention."
+        );
     }
 
     #[test]
@@ -638,7 +642,10 @@ mod tests {
             _ => panic!("unexpected mention {_u}"),
         });
 
-        assert_eq!("I <a href=\"mention://9bad15b5-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@rubdos</a> am \u{1f609}  testing co<b>mp</b>lex @-mentions <a href=\"mention://9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@direc85</a>  (sorry for the crashing Whisperfishes)", styled);
+        assert_eq!(
+            "I <a href=\"mention://9bad15b5-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@rubdos</a> am \u{1f609}  testing co<b>mp</b>lex @-mentions <a href=\"mention://9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@direc85</a>  (sorry for the crashing Whisperfishes)",
+            styled
+        );
     }
 
     #[test]
@@ -667,7 +674,10 @@ mod tests {
             _ => panic!("unexpected mention {_u}"),
         });
 
-        assert_eq!("Mention <a href=\"mention://89fca563-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@foobar</a> URL <a href=\"https://gitlab.com/\">https://gitlab.com/</a> Another <a href=\"mention://9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@direc85</a> Link! <a href=\"https://github.com/\">https://github.com/</a>", styled);
+        assert_eq!(
+            "Mention <a href=\"mention://89fca563-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@foobar</a> URL <a href=\"https://gitlab.com/\">https://gitlab.com/</a> Another <a href=\"mention://9d4428ab-xxxx-xxxx-xxxx-xxxxxxxxxxxx\">@direc85</a> Link! <a href=\"https://github.com/\">https://github.com/</a>",
+            styled
+        );
     }
 
     #[test]
@@ -730,7 +740,10 @@ mod tests {
         println!("{ranges:?}");
         let styled = to_styled(text, &ranges, no_mentions);
 
-        assert_eq!("Spoilers: you shouldn't see <span style='background-color: \"white\"; color: \"white\";'>this <a style='background-color: \"white\"; color: \"white\";' href=\"https://localhost/if-the-bug-is-fixed\">https://localhost/if-the-bug-is-fixed</a> nor this</span>", styled);
+        assert_eq!(
+            "Spoilers: you shouldn't see <span style='background-color: \"white\"; color: \"white\";'>this <a style='background-color: \"white\"; color: \"white\";' href=\"https://localhost/if-the-bug-is-fixed\">https://localhost/if-the-bug-is-fixed</a> nor this</span>",
+            styled
+        );
     }
 
     #[test]
@@ -744,7 +757,10 @@ mod tests {
         println!("{ranges:?}");
         let styled = to_styled(text, &ranges, no_mentions);
 
-        assert_eq!("Spoiler-link <span style='background-color: \"white\"; color: \"white\";'><a style='background-color: \"white\"; color: \"white\";' href=\"https://gitlab.com/\">https://gitlab.com/</a></span> and that's it.", styled);
+        assert_eq!(
+            "Spoiler-link <span style='background-color: \"white\"; color: \"white\";'><a style='background-color: \"white\"; color: \"white\";' href=\"https://gitlab.com/\">https://gitlab.com/</a></span> and that's it.",
+            styled
+        );
     }
 
     #[test]

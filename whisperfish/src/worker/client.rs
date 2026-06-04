@@ -21,40 +21,41 @@ use anyhow::anyhow;
 use attachment::FetchAttachment;
 use image::GenericImageView;
 use itertools::Itertools;
+use libsignal_service::ServiceIdExt;
 use libsignal_service::cipher::SealedSenderDecryptionError;
 use libsignal_service::groups_v2::Role;
 use libsignal_service::messagepipe::Incoming;
+use libsignal_service::proto::NullMessage;
+use libsignal_service::proto::SyncMessage;
 use libsignal_service::proto::data_message::{Delete, Quote};
-use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
-use libsignal_service::proto::sync_message::message_request_response::Type as MessageRequestAction;
 use libsignal_service::proto::sync_message::Blocked;
 use libsignal_service::proto::sync_message::Configuration;
 use libsignal_service::proto::sync_message::Keys;
 use libsignal_service::proto::sync_message::MessageRequestResponse;
 use libsignal_service::proto::sync_message::Read;
 use libsignal_service::proto::sync_message::Sent;
-use libsignal_service::proto::NullMessage;
-use libsignal_service::proto::SyncMessage;
+use libsignal_service::proto::sync_message::fetch_latest::Type as LatestType;
+use libsignal_service::proto::sync_message::message_request_response::Type as MessageRequestAction;
 use libsignal_service::protocol::ServiceIdKind;
-use libsignal_service::push_service::RegistrationMethod;
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
 use libsignal_service::sender::SendMessageResult;
 use libsignal_service::sender::ThreadIdentifier;
-use libsignal_service::ServiceIdExt;
+use libsignal_service::websocket::registration::RegistrationMethod;
+use libsignal_service::websocket::{Identified, Unidentified};
 use qmetaobject::QMetaType;
 use qttypes::QVariantMap;
 use tracing_futures::Instrument;
 use uuid::Uuid;
+use whisperfish_store::Settings;
+use whisperfish_store::TrustLevel;
 use whisperfish_store::millis_to_naive_chrono;
 use whisperfish_store::naive_chrono_rounded_down;
 use whisperfish_store::naive_chrono_to_millis;
 use whisperfish_store::orm;
-use whisperfish_store::orm::shorten;
 use whisperfish_store::orm::MessageType;
 use whisperfish_store::orm::SessionType;
 use whisperfish_store::orm::StoryType;
-use whisperfish_store::Settings;
-use whisperfish_store::TrustLevel;
+use whisperfish_store::orm::shorten;
 use zkgroup::profiles::ProfileKey;
 
 use super::message_expiry::ExpiredMessagesStream;
@@ -66,9 +67,9 @@ use crate::gui::StorageReady;
 use crate::model::Calls;
 use crate::model::DeviceModel;
 use crate::platform::QmlApp;
-use crate::store::orm::UnidentifiedAccessMode;
 use crate::store::AciOrPniStorage;
 use crate::store::Storage;
+use crate::store::orm::UnidentifiedAccessMode;
 use crate::worker::client::unidentified::CertType;
 use crate::worker::profile_refresh::ProfileUpdater;
 use actix::prelude::*;
@@ -77,24 +78,25 @@ use anyhow::Context;
 pub use call::*;
 use chrono::prelude::*;
 use futures::prelude::*;
+use libsignal_service::AccountManager;
 use libsignal_service::configuration::SignalServers;
-use libsignal_service::content::sync_message::Request as SyncRequest;
 use libsignal_service::content::DataMessageFlags;
+use libsignal_service::content::sync_message::Request as SyncRequest;
 use libsignal_service::content::{
-    sync_message, ContentBody, DataMessage, GroupContextV2, Metadata, Reaction, TypingMessage,
+    ContentBody, DataMessage, GroupContextV2, Metadata, Reaction, TypingMessage, sync_message,
 };
 use libsignal_service::prelude::*;
+use libsignal_service::proto::ReceiptMessage;
 use libsignal_service::proto::receipt_message::Type as ReceiptType;
 use libsignal_service::proto::typing_message::Action;
-use libsignal_service::proto::ReceiptMessage;
 use libsignal_service::protocol::{self, *};
-use libsignal_service::push_service::{
-    AccountAttributes, DeviceCapabilities, RegistrationSessionMetadataResponse, ServiceIds,
-    VerificationTransport, VerifyAccountResponse,
-};
+use libsignal_service::push_service::ServiceIds;
 use libsignal_service::sender::AttachmentSpec;
 use libsignal_service::websocket::SignalWebSocket;
-use libsignal_service::AccountManager;
+use libsignal_service::websocket::account::{AccountAttributes, DeviceCapabilities};
+use libsignal_service::websocket::registration::{
+    RegistrationSessionMetadataResponse, VerificationTransport, VerifyAccountResponse,
+};
 use phonenumber::PhoneNumber;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
@@ -109,6 +111,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
+
 use sync_message::request::Type as RequestType;
 
 // Maximum theoretical TypingMessage send rate,
@@ -126,6 +129,12 @@ const SESSION_RESET_INTERVAL: chrono::Duration = chrono::Duration::seconds(3600)
 pub struct NewAttachment {
     pub path: String,
     pub mime_type: String,
+}
+
+#[derive(Debug, Message)]
+#[rtype(result = "()")]
+pub struct Reconnected {
+    pub ws: std::sync::Weak<SignalWebSocket<Identified>>,
 }
 
 #[derive(actix::Message, Debug)]
@@ -193,6 +202,7 @@ struct DeliverMessage<T> {
     destination: DeliveryRecipient,
 }
 
+#[allow(clippy::large_enum_variant)]
 enum DeliveryRecipient {
     Session(SessionType),
     ServiceId(ServiceId),
@@ -407,8 +417,8 @@ pub struct ClientActor {
     self_aci: Option<Aci>,
     self_pni: Option<Pni>,
     storage: Option<Storage>,
-    ws: Option<SignalWebSocket>,
     config: std::sync::Arc<crate::config::SignalConfig>,
+    identified_websocket: Option<std::sync::Arc<SignalWebSocket<Identified>>>,
 
     message_stream_handle: Option<SpawnHandle>,
 
@@ -552,8 +562,8 @@ impl ClientActor {
             self_aci: None,
             self_pni: None,
             storage: None,
-            ws: None,
             config,
+            identified_websocket: None,
 
             message_stream_handle: None,
 
@@ -583,7 +593,10 @@ impl ClientActor {
             ProfileUpdater::new(
                 self.storage.clone().expect("initialized storage"),
                 self.self_aci.expect("self-aci set"),
-                self.credentials.clone().expect("credentials set"),
+                self.identified_websocket
+                    .as_ref()
+                    .map(std::sync::Arc::downgrade)
+                    .unwrap_or_default(),
             )
             .start()
         })
@@ -601,17 +614,14 @@ impl ClientActor {
     }
 
     fn unauthenticated_service(&self) -> PushService {
-        let service_cfg = self.service_cfg();
-        PushService::new(service_cfg, None, self.user_agent())
+        PushService::new(self.signal_server(), None, self.user_agent())
     }
 
     fn authenticated_service_with_credentials(
         &self,
         credentials: ServiceCredentials,
     ) -> PushService {
-        let service_cfg = self.service_cfg();
-
-        PushService::new(service_cfg, Some(credentials), self.user_agent())
+        PushService::new(self.signal_server(), Some(credentials), self.user_agent())
     }
 
     /// Panics if no authentication credentials are set.
@@ -619,25 +629,48 @@ impl ClientActor {
         self.authenticated_service_with_credentials(self.credentials.clone().unwrap())
     }
 
+    fn identified_websocket(
+        &self,
+    ) -> impl Future<Output = Result<SignalWebSocket<Identified>, ServiceError>> + use<> {
+        // If we have a stored websocket, return a clone of it
+        let ws = self
+            .identified_websocket
+            .as_ref()
+            .map(|ptr| ptr.as_ref().clone());
+        // This is a future as to be equivalent with the unidentified websocket,
+        // and such that we can later decide to change the behaviour of this method to do async work.
+        futures::future::ready(ws.ok_or(ServiceError::IO(std::io::Error::other(
+            "temporarily disconnected",
+        ))))
+    }
+
+    fn unidentified_websocket(
+        &self,
+    ) -> impl Future<Output = Result<SignalWebSocket<Unidentified>, ServiceError>> + use<> {
+        let mut u_service = self.unauthenticated_service();
+        async move {
+            u_service
+                .ws("/v1/websocket/", "/v1/keepalive", &[], None)
+                .await
+        }
+    }
+
     fn message_sender(
         &self,
-    ) -> impl Future<Output = Result<MessageSender<AciOrPniStorage>, ServiceError>> {
+    ) -> impl Future<Output = Result<MessageSender<AciOrPniStorage>, ServiceError>> + use<> {
         let storage = self.storage.clone().unwrap();
         let service = self.authenticated_service();
-        let mut u_service = self.unauthenticated_service();
 
-        let ws = self.ws.clone();
+        let identified = self.identified_websocket();
+        let unidentified = self.unidentified_websocket();
         let cipher = self.cipher(ServiceIdKind::Aci);
         let local_aci = self.self_aci.unwrap();
         let local_pni = self.self_pni.unwrap();
         let device_id = self.config.get_device_id();
 
         async move {
-            let Some(ws) = ws else {
-                return Err(ServiceError::SendError {
-                    reason: "SignalWebSocket is not open".into(),
-                });
-            };
+            let identified = identified.await?;
+            let unidentified = unidentified.await?;
 
             let aci_key = storage
                 .aci_storage()
@@ -655,12 +688,9 @@ impl ClientActor {
                 })
                 .ok();
 
-            let u_ws = u_service
-                .ws("/v1/websocket/", "/v1/keepalive", &[], None)
-                .await?;
             Ok(MessageSender::new(
-                ws,
-                u_ws,
+                identified,
+                unidentified,
                 service,
                 cipher,
                 storage.aci_or_pni(ServiceIdKind::Aci), // In what cases do we use the
@@ -673,9 +703,9 @@ impl ClientActor {
         }
     }
 
-    fn service_cfg(&self) -> ServiceConfiguration {
+    fn signal_server(&self) -> SignalServers {
         // XXX: read the configuration files!
-        SignalServers::Production.into()
+        SignalServers::Production
     }
 
     pub fn clear_transient_timstamps(&mut self) {
@@ -831,7 +861,7 @@ impl ClientActor {
         edit: Option<NaiveDateTime>,
     ) -> bool {
         let mut is_valid = true;
-        let timestamp = metadata.timestamp;
+        let timestamp = metadata.timestamp.timestamp_millis() as u64;
         let is_sync_sent = sync_sent.is_some();
 
         let mut storage = self.storage.clone().expect("storage");
@@ -854,22 +884,25 @@ impl ClientActor {
             .try_into()
             .expect("Message flags doesn't fit into i32");
 
-        if (source_phonenumber.is_some() || source_addr.is_some()) && !is_sync_sent {
-            if let Some(key) = msg.profile_key.as_deref() {
-                let (recipient, was_updated) = storage.update_profile_key(
-                    source_phonenumber.clone(),
-                    source_addr,
-                    key,
-                    crate::store::TrustLevel::Certain,
-                );
-                if was_updated {
-                    ctx.notify(RefreshProfile::ByRecipientId(recipient.id));
-                }
+        if (source_phonenumber.is_some() || source_addr.is_some())
+            && !is_sync_sent
+            && let Some(key) = msg.profile_key.as_deref()
+        {
+            let (recipient, was_updated) = storage.update_profile_key(
+                source_phonenumber.clone(),
+                source_addr,
+                key,
+                crate::store::TrustLevel::Certain,
+            );
+            if was_updated {
+                ctx.notify(RefreshProfile::ByRecipientId(recipient.id));
             }
         }
 
         if !msg.preview.is_empty() {
-            tracing::warn!("Message contains preview data, which is not yet saved nor displayed. Please upvote issue #695");
+            tracing::warn!(
+                "Message contains preview data, which is not yet saved nor displayed. Please upvote issue #695"
+            );
         }
 
         // Determine the message type and text body contents.
@@ -913,7 +946,7 @@ impl ClientActor {
                 reaction,
             ) {
                 Ok(Some((message, session))) => {
-                    tracing::info!("Reaction saved for message {}/{}", session.id, message.id);
+                    tracing::debug!("Reaction saved for message {}/{}", session.id, message.id);
                     self.inner
                         .pinned()
                         .borrow_mut()
@@ -1066,7 +1099,9 @@ impl ClientActor {
             original_message = storage.fetch_message_by_timestamp(edit);
             if let Some(orig) = original_message.as_ref() {
                 if orig.sender_recipient_id != sender_recipient.as_ref().map(|x| x.id) {
-                    tracing::warn!("Received an edit for a message that was not sent by the same sender. Ignoring edit, inserting as new.");
+                    tracing::warn!(
+                        "Received an edit for a message that was not sent by the same sender. Ignoring edit, inserting as new."
+                    );
                     original_message = None;
                 }
             } else {
@@ -1077,7 +1112,9 @@ impl ClientActor {
         let body_ranges = crate::store::body_ranges::serialize(&msg.body_ranges);
 
         if message_type == Some(MessageType::GroupChange) {
-            tracing::warn!("Inserting a generic GroupChange message after handling it. This should not happen.");
+            tracing::warn!(
+                "Inserting a generic GroupChange message after handling it. This should not happen."
+            );
         }
 
         let timestamp = millis_to_naive_chrono(if is_sync_sent && timestamp > 0 {
@@ -1292,7 +1329,10 @@ impl ClientActor {
             }
             true
         } else if let Some(group_id) = &response.group_id {
-            tracing::warn!("Group message request responses are not yet implemented. {:?}. Please upvote bug #327", group_id);
+            tracing::warn!(
+                "Group message request responses are not yet implemented. {:?}. Please upvote bug #327",
+                group_id
+            );
             false
         } else {
             tracing::warn!(
@@ -1651,11 +1691,12 @@ impl ClientActor {
                     .into_iter()
                     .map(millis_to_naive_chrono)
                     .collect();
-                let rcpt_timestamp = millis_to_naive_chrono(metadata.timestamp);
+                let rcpt_timestamp =
+                    millis_to_naive_chrono(metadata.timestamp.timestamp_millis() as u64);
                 let receipt_type = ReceiptType::try_from(receipt.r#type.unwrap_or(-1)).ok();
                 match receipt_type {
                     Some(ReceiptType::Delivery) => {
-                        tracing::info!(
+                        tracing::debug!(
                             "{:?} received {} message(s)",
                             metadata.sender.service_id_string(),
                             timestamps.len(),
@@ -1673,7 +1714,7 @@ impl ClientActor {
                     }
                     Some(ReceiptType::Read) => {
                         if self.settings.get_enable_read_receipts() {
-                            tracing::info!(
+                            tracing::debug!(
                                 "{:?} read {} message(s)",
                                 metadata.sender.service_id_string(),
                                 timestamps.len(),
@@ -1733,7 +1774,8 @@ impl ClientActor {
     }
 
     fn cipher(&self, service_identity: ServiceIdKind) -> ServiceCipher<AciOrPniStorage> {
-        let service_cfg = self.service_cfg();
+        let signal_server = self.signal_server();
+        let server_config: ServiceConfiguration = signal_server.into();
         let device_id = self.config.get_device_id();
         let local_address = match service_identity {
             ServiceIdKind::Aci => self
@@ -1748,7 +1790,7 @@ impl ClientActor {
         .expect("valid device id");
         ServiceCipher::new(
             self.storage.as_ref().unwrap().aci_or_pni(service_identity),
-            service_cfg.unidentified_sender_trust_roots.clone(),
+            server_config.unidentified_sender_trust_roots,
             local_address,
         )
     }
@@ -1901,7 +1943,9 @@ impl Handler<QueueExpiryUpdate> for ClientActor {
 
         // TODO: #706
         if session.is_group() {
-            tracing::error!("Group change messages and group message expiry timer changes are not supported yet. Please upvote bugs #706 and #707");
+            tracing::error!(
+                "Group change messages and group message expiry timer changes are not supported yet. Please upvote bugs #706 and #707"
+            );
             return;
         }
 
@@ -2038,7 +2082,7 @@ impl Handler<SendMessage> for ClientActor {
                         .map(|f| f.to_string_lossy().into_owned());
 
                     if attachment.visual_hash.is_none() && content_type.starts_with("image/") {
-                        tracing::info!("Computing blurhash for attachment {}", attachment.id);
+                        tracing::debug!("Computing blurhash for attachment {}", attachment.id);
                         match image::load_from_memory(&contents) {
                             Ok(img) => {
                                 let (width, height) = img.dimensions();
@@ -2124,7 +2168,7 @@ impl Handler<SendMessage> for ClientActor {
                             {
                                 // Recipient with profile key, but could not send unidentified.
                                 // Mark as disabled.
-                                tracing::info!(
+                                tracing::debug!(
                                     "Setting unidentified access mode for {:?} from {:?} to {:?}",
                                     recipient.uuid.unwrap(),
                                     recipient.unidentified_access_mode,
@@ -2274,7 +2318,7 @@ impl Handler<ResetSession> for ClientActor {
 
                     let aci = recipient.uuid.map(Into::into).map(ServiceId::Aci);
                     let pni = recipient.pni.map(Into::into).map(ServiceId::Pni);
-                    let service_ids = aci.into_iter().chain(pni.into_iter()).collect::<Vec<_>>();
+                    let service_ids = aci.into_iter().chain(pni).collect::<Vec<_>>();
 
                     let mut count = 0;
                     // 1. Delete all direct sessions with these ServiceIds
@@ -2358,7 +2402,7 @@ impl Handler<SendTypingNotification> for ClientActor {
         }: SendTypingNotification,
         ctx: &mut Self::Context,
     ) -> Self::Result {
-        tracing::info!(
+        tracing::debug!(
             "ClientActor::SendTypingNotification({}, {})",
             session_id,
             is_start
@@ -2442,7 +2486,7 @@ impl Handler<SendReaction> for ClientActor {
         }: SendReaction,
         ctx: &mut Self::Context,
     ) -> Self::Result {
-        tracing::info!(
+        tracing::debug!(
             "ClientActor::SendReaction({}, {}, {}, {:?})",
             message_id,
             sender_id,
@@ -2708,12 +2752,12 @@ impl Handler<DeliverSyncMessage> for ClientActor {
 }
 
 impl Handler<StorageReady> for ClientActor {
-    type Result = ResponseActFuture<Self, ()>;
+    type Result = ();
 
     fn handle(
         &mut self,
         StorageReady { storage }: StorageReady,
-        _ctx: &mut Self::Context,
+        ctx: &mut Self::Context,
     ) -> Self::Result {
         self.storage = Some(storage.clone());
         let e164 = self
@@ -2732,38 +2776,25 @@ impl Handler<StorageReady> for ClientActor {
 
         storage.mark_pending_messages_failed();
 
-        let credentials = async move {
-            ServiceCredentials {
-                aci,
-                pni,
-                phonenumber: e164,
-                password: Some(storage.signal_password().await.unwrap()),
-                signaling_key: storage.signaling_key().await.unwrap(),
-                device_id: Some(device_id),
-            }
-        }
-        .instrument(tracing::span!(
-            tracing::Level::INFO,
-            "reading password and signaling key"
-        ));
+        let credentials = ServiceCredentials {
+            aci,
+            pni,
+            phonenumber: E164::from_str(&e164.to_string()).unwrap(), // TODO: E164 cleanup
+            password: Some(storage.signal_password().unwrap()),
+            device_id: Some(device_id),
+        };
 
-        Box::pin(
-            credentials
-                .into_actor(self)
-                .map(move |credentials, act, ctx| {
-                    let _span = tracing::trace_span!("whisperfish startup").entered();
+        let _span = tracing::trace_span!("whisperfish startup").entered();
 
-                    act.credentials = Some(credentials);
+        self.self_aci = credentials.aci.map(Aci::from);
+        self.self_pni = credentials.pni.map(Pni::from);
+        self.credentials = Some(credentials);
 
-                    // Start workers.
-                    act.profile_updater();
+        self.queue_migrations(ctx);
 
-                    act.queue_migrations(ctx);
-
-                    ctx.notify(Restart);
-                    ctx.notify(RefreshPreKeys);
-                }),
-        )
+        ctx.notify(Restart);
+        // XXX Restart now calls RefreshPreKeys. This could be wrong.
+        // ctx.notify(RefreshPreKeys);
     }
 }
 
@@ -2793,6 +2824,8 @@ impl Handler<Restart> for ClientActor {
             ctx.cancel_future(handle);
         }
 
+        let profile_updater = self.profile_updater();
+
         self.inner.pinned().borrow_mut().connected = false;
         self.inner.pinned().borrow().connectedChanged();
         Box::pin(
@@ -2801,14 +2834,32 @@ impl Handler<Restart> for ClientActor {
                 let mut receiver = MessageReceiver::new(service.clone());
 
                 let pipe = receiver.create_message_pipe(credentials, false).await?;
-                let ws = pipe.ws();
-                Result::<_, ServiceError>::Ok((pipe, ws))
+                let i_ws = pipe.ws();
+                let ws = std::sync::Arc::new(i_ws);
+
+                // Notify workers for reconnection
+                profile_updater
+                    .send(Reconnected {
+                        ws: std::sync::Arc::downgrade(&ws),
+                    })
+                    .await?;
+
+                anyhow::Result::<_>::Ok((pipe, ws))
             }
             .instrument(tracing::trace_span!("set up message receiver"))
             .into_actor(self)
             .map(move |pipe, act, ctx| match pipe {
                 Ok((pipe, ws)) => {
-                    ctx.notify(unidentified::RotateUnidentifiedCertificates);
+                    tracing::info!("message stream established");
+                    // Store the identified websocket for reuse
+                    act.identified_websocket = Some(ws.clone());
+                    ctx.notify_later(RefreshPreKeys, Duration::from_secs(2));
+
+                    // XXX Maybe RefreshPreKeys should call this or something?
+                    ctx.notify_later(
+                        unidentified::RotateUnidentifiedCertificates,
+                        Duration::from_secs(10),
+                    );
                     act.message_stream_handle = Some(
                         ctx.add_stream(
                             pipe.stream()
@@ -2822,17 +2873,12 @@ impl Handler<Restart> for ClientActor {
 
                     ctx.set_mailbox_capacity(1);
                     act.inner.pinned().borrow_mut().connected = true;
-                    act.ws = Some(ws);
                     act.inner.pinned().borrow().connectedChanged();
                 }
                 Err(e) => {
-                    tracing::error!("Error starting stream: {}", e);
-                    tracing::info!("Retrying in 10");
-                    let addr = ctx.address();
-                    actix::spawn(async move {
-                        actix::clock::sleep(Duration::from_secs(10)).await;
-                        addr.send(Restart).await.expect("retry restart");
-                    });
+                    let delay = Duration::from_secs(10);
+                    tracing::error!(error = %e, "Error starting stream. Retrying in {delay:?}");
+                    ctx.notify_later(Restart, delay);
                 }
             }),
         )
@@ -2890,7 +2936,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                 (guid, e)
             }
             Ok(Incoming::QueueEmpty) => {
-                tracing::info!("Message queue is empty!");
+                tracing::debug!("Message queue is empty!");
                 self.initial_queue_process_state.observe_signal();
                 let inner = self.inner.pinned();
                 let mut inner = inner.borrow_mut();
@@ -3101,19 +3147,22 @@ impl Handler<Register> for ClientActor {
             captcha,
         } = reg;
 
-        let mut push_service = self.authenticated_service_with_credentials(ServiceCredentials {
+        let cred = ServiceCredentials {
             aci: None,
             pni: None,
-            phonenumber: phonenumber.clone(),
+            phonenumber: E164::from_str(&phonenumber.to_string()).unwrap(), // TODO: E164 cleanup
             password: Some(password.clone()),
-            signaling_key: None,
             device_id: None, // !77
-        });
-
+        };
+        let mut service = self.authenticated_service_with_credentials(cred.clone());
         let session = self.registration_session.clone();
 
         // XXX add profile key when #192 implemneted
         let registration_procedure = async move {
+            // XXX identified websocket from unidentified service (not ok? see below)
+            let mut u_ws: SignalWebSocket<Unidentified> = service
+                .ws("/v1/websocket/", "/v1/keepalive", &[], Some(cred))
+                .await?;
             let mut session = if let Some(session) = session {
                 session
             } else {
@@ -3124,8 +3173,7 @@ impl Handler<Register> for ClientActor {
                 } else {
                     (None, None)
                 };
-                push_service
-                    .create_verification_session(&number, None, mcc, mnc)
+                u_ws.create_verification_session(&number, None, mcc, mnc)
                     .await?
             };
 
@@ -3134,7 +3182,7 @@ impl Handler<Register> for ClientActor {
                     .as_deref()
                     .map(|captcha| captcha.trim())
                     .and_then(|captcha| captcha.strip_prefix("signalcaptcha://"));
-                session = push_service
+                session = u_ws
                     .patch_verification_session(&session.id, None, None, None, captcha, None)
                     .await?;
             }
@@ -3154,7 +3202,7 @@ impl Handler<Register> for ClientActor {
                 );
             }
 
-            session = push_service
+            session = u_ws
                 .request_verification_code(&session.id, "whisperfish", transport)
                 .await?;
             Ok((session, VerificationCodeResponse::Issued))
@@ -3208,20 +3256,25 @@ impl Handler<ConfirmRegistration> for ClientActor {
         );
         let config = self.config.clone();
 
-        let mut push_service = self.authenticated_service_with_credentials(ServiceCredentials {
+        let cred = ServiceCredentials {
             aci: None,
             pni: None,
-            phonenumber,
+            phonenumber: E164::from_str(&phonenumber.to_string()).unwrap(), // TODO: E164 cleanup,
             password: Some(password.clone()),
-            signaling_key: None,
             device_id: None, // !77
-        });
+        };
+        let mut service = self.authenticated_service_with_credentials(cred.clone());
+
         let mut session = self
             .registration_session
             .clone()
             .expect("confirm registration after creating registration session");
 
         let confirmation_procedure = async move {
+            // XXX authenticated websocket from authenticated service (ok? see above)
+            let mut i_ws: SignalWebSocket<Identified> = service
+                .ws("/v1/websocket/", "/v1/keepalive", &[], Some(cred))
+                .await?;
             let storage_dir = config.get_share_dir().to_owned().into();
             let storage = Storage::new(
                 config.clone(),
@@ -3236,21 +3289,19 @@ impl Handler<ConfirmRegistration> for ClientActor {
 
             // XXX centralize the place where attributes are generated.
             let account_attrs = AccountAttributes {
-                signaling_key: None,
                 registration_id,
-                voice: false,
-                video: false,
                 fetches_messages: true,
                 pin: None,
                 registration_lock: None,
                 unidentified_access_key: None,
                 unrestricted_unidentified_access: false,
                 discoverable_by_phone_number: true,
+                recovery_password: None,
                 capabilities: whisperfish_device_capabilities(),
-                name: Some("Whisperfish".into()),
+                name: None, // TODO: implement
                 pni_registration_id,
             };
-            session = push_service
+            session = i_ws
                 .submit_verification_code(&session.id, &confirm_code)
                 .await?;
             if !session.verified {
@@ -3264,7 +3315,7 @@ impl Handler<ConfirmRegistration> for ClientActor {
             let mut pni_store = storage.pni_storage();
 
             // XXX: should we already supply a profile key?
-            let mut account_manager = AccountManager::new(push_service, None);
+            let mut account_manager = AccountManager::new(service, i_ws, None);
 
             // XXX: We explicitely opt out of skipping device transfer (the false argument). Double
             //      check whether that's what we want!
@@ -3323,7 +3374,7 @@ impl Handler<RegisterLinked> for ClientActor {
     fn handle(&mut self, reg: RegisterLinked, _ctx: &mut Self::Context) -> Self::Result {
         use libsignal_service::provisioning::*;
 
-        let push_service = self.unauthenticated_service();
+        let service = self.unauthenticated_service();
 
         let (tx, mut rx) = futures::channel::mpsc::channel(1);
 
@@ -3357,7 +3408,7 @@ impl Handler<RegisterLinked> for ClientActor {
                     &mut aci_store,
                     &mut pni_store,
                     &mut rand::rng(),
-                    push_service,
+                    service,
                     &reg.password,
                     &reg.device_name,
                     tx,
@@ -3391,6 +3442,8 @@ impl Handler<RegisterLinked> for ClientActor {
                                     aci_public_key,
                                     pni_private_key,
                                     pni_public_key,
+                                    master_key,
+                                    account_entropy_pool,
                                 },
                             ) => {
                                 let aci_identity_key_pair =
@@ -3408,9 +3461,18 @@ impl Handler<RegisterLinked> for ClientActor {
                                     .write_identity_key_pair(pni_identity_key_pair)
                                     .await?;
 
+                                let master_key =
+                                    MasterKey::from_slice(master_key.unwrap().as_slice())
+                                        .expect("valid master key");
+                                storage.store_master_key(Some(&master_key));
+
+                                // let srv_key = account_entropy_pool.as_ref().map(|p| p.derive_svr_key());
+                                storage.store_account_entropy_pool(account_entropy_pool);
+
                                 res = Ok(RegisterLinkedResponse {
                                     storage: storage.clone(),
-                                    phone_number,
+                                    phone_number: PhoneNumber::from_str(&phone_number.to_string())
+                                        .unwrap(), // TODO: E164 cleanup
                                     aci_regid,
                                     pni_regid,
                                     device_id,
@@ -3454,25 +3516,27 @@ impl Handler<RefreshPreKeys> for ClientActor {
 
     fn handle(&mut self, _: RefreshPreKeys, _ctx: &mut Self::Context) -> Self::Result {
         let service = self.authenticated_service();
+        let i_ws = self.identified_websocket();
         // XXX add profile key when #192 implemneted
-        let mut am = AccountManager::new(service, None);
         let storage = self.storage.clone().unwrap();
 
         let pni_distribution = self.migration_state.pni_distributed();
 
         let proc = async move {
+            let mut am = AccountManager::new(service, i_ws.await?, None);
+
             let mut aci = storage.aci_storage();
             let mut pni = storage.pni_storage();
 
             // It's tempting to run those two in parallel,
             // but I'm afraid the pre-key counts are going to be mixed up.
-            am.update_pre_key_bundle(&mut aci, ServiceIdKind::Aci, true, &mut rand::rng())
+            am.update_pre_key_bundle(&mut aci, ServiceIdKind::Aci, true)
                 .await
                 .context("refreshing ACI pre keys")?;
 
             let _pni_distribution = pni_distribution.await;
 
-            am.update_pre_key_bundle(&mut pni, ServiceIdKind::Pni, true, &mut rand::rng())
+            am.update_pre_key_bundle(&mut pni, ServiceIdKind::Pni, true)
                 .await
                 .context("refreshing PNI pre keys")?;
             anyhow::Result::<()>::Ok(())
@@ -3840,16 +3904,20 @@ impl Handler<ProofResponse> for ClientActor {
             ProfileKey::create(key)
         });
 
-        let service = self.authenticated_service();
-        let mut am = AccountManager::new(service, profile_key);
-
-        let addr = ctx.address();
+        let cred = self.credentials.clone().unwrap();
+        let mut service = self.authenticated_service_with_credentials(cred.clone());
 
         let proc = async move {
+            let i_ws: SignalWebSocket<Identified> = service
+                .ws("/v1/websocket/", "/v1/keepalive", &[], Some(cred))
+                .await?;
+            let mut am = AccountManager::new(service, i_ws, profile_key);
             am.submit_recaptcha_challenge(&proof.token, &proof.response)
                 .await
         }
         .instrument(span);
+
+        let addr = ctx.address();
 
         Box::pin(proc.into_actor(self).map(move |result, _act, _ctx| {
             actix::spawn(async move {
@@ -4195,12 +4263,14 @@ impl Handler<MessageRequestAnswer> for ClientActor {
                 }
             }
             ThreadIdentifier::Group(_group) => {
-                tracing::warn!("Group message request responses are not yet implemented. Please upvote bug #327");
+                tracing::warn!(
+                    "Group message request responses are not yet implemented. Please upvote bug #327"
+                );
                 return;
             }
         }
 
-        let self_addr = Aci::from(self.config.get_aci().expect("valid uuid at this point"));
+        let own_addr = Aci::from(self.config.get_aci().expect("valid uuid at this point"));
         let sender = self.message_sender();
         actix::spawn(async move {
             let sender = sender.await;
@@ -4211,7 +4281,7 @@ impl Handler<MessageRequestAnswer> for ClientActor {
             let mut sender = sender.unwrap();
 
             let result = sender
-                .send_message_request_response(&self_addr.into(), &thread, action)
+                .send_message_request_response(&own_addr.into(), &thread, action)
                 .await;
 
             if let Err(e) = result {
@@ -4311,11 +4381,7 @@ impl Handler<Search> for ClientActor {
                                 .unwrap_or_else(|| snd_r.e164_or_address())
                         })
                         .unwrap();
-                    if m.is_outbound {
-                        (a, b)
-                    } else {
-                        (b, a)
-                    }
+                    if m.is_outbound { (a, b) } else { (b, a) }
                 }
             };
 
@@ -4351,7 +4417,10 @@ mod tests {
             quote: 12,
             is_voice_note: false,
         };
-        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[]\", is_voice_note: false }");
+        assert_eq!(
+            format!("{}", q),
+            "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[]\", is_voice_note: false }"
+        );
     }
 
     #[test]
@@ -4367,7 +4436,10 @@ mod tests {
             quote: 12,
             is_voice_note: false,
         };
-        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }]\", is_voice_note: false }");
+        assert_eq!(
+            format!("{}", q),
+            "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }]\", is_voice_note: false }"
+        );
     }
 
     #[test]
@@ -4389,6 +4461,9 @@ mod tests {
             quote: 12,
             is_voice_note: false,
         };
-        assert_eq!(format!("{}", q), "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }, NewAttachment { path: \"/path/to/audio.mp3\", mime_type: \"audio/mpeg\" }]\", is_voice_note: false }");
+        assert_eq!(
+            format!("{}", q),
+            "QueueMessage { session_id: 8, message: \"Lorem ips...\", quote: 12, attachments: \"[NewAttachment { path: \"/path/to/pic.jpg\", mime_type: \"image/jpeg\" }, NewAttachment { path: \"/path/to/audio.mp3\", mime_type: \"audio/mpeg\" }]\", is_voice_note: false }"
+        );
     }
 }

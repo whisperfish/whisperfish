@@ -35,10 +35,14 @@ mod sailfish_inner {
         pub fn set_source(&mut self, _source: String) {}
         pub fn show_full_screen(&mut self) {}
         pub fn exec(self) {
-            panic!("Whisperfish has been compiled in development mode. The application will not work. Please compile Whisperfish with the `sailfish` feature to have a working application.");
+            panic!(
+                "Whisperfish has been compiled in development mode. The application will not work. Please compile Whisperfish with the `sailfish` feature to have a working application."
+            );
         }
         pub fn engine(&mut self) -> &mut QQmlEngine {
-            panic!("Whisperfish has been compiled in development mode. The application will not work. Please compile Whisperfish with the `sailfish` feature to have a working application.");
+            panic!(
+                "Whisperfish has been compiled in development mode. The application will not work. Please compile Whisperfish with the `sailfish` feature to have a working application."
+            );
         }
     }
 }
@@ -91,7 +95,7 @@ mod harbour_inner {
     }
 }
 
-pub use self::harbour_inner::{is_harbour, MayExit};
+pub use self::harbour_inner::{MayExit, is_harbour};
 
 impl Default for MayExit {
     fn default() -> Self {

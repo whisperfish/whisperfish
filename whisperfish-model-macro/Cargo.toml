@@ -2,7 +2,7 @@
 name = "whisperfish-model-macro"
 license.workspace = true
 version.workspace = true
-edition = "2021"
+edition.workspace = true
 
 [lib]
 proc-macro = true

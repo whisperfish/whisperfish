@@ -2,8 +2,8 @@
 name = "whisperfish"
 version.workspace = true
 license.workspace = true
+edition.workspace = true
 authors = ["Ruben De Smet <ruben.de.smet@rubdos.be>"]
-edition = "2018"
 build = "build.rs"
 description = "Private messaging using Signal for SailfishOS -- library."
 
@@ -27,7 +27,7 @@ fs2 = "0.4.3"
 blurhash = "=0.2.3"
 percent-encoding = "2.3"
 
-libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "whisperfork" }
+libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", default-features = false }
 
 libsignal-protocol = { git = "https://github.com/signalapp/libsignal", tag = "v0.91.0" }
 zkgroup = { git = "https://github.com/signalapp/libsignal", tag = "v0.91.0" }
@@ -45,7 +45,7 @@ qmeta-async = { git = "https://gitlab.com/rubdos/qmeta-async.git" }
 time = "0.3.44"
 scrypt = { version = "0.11.0", default-features = false, features = ["std"] }
 
-getrandom = "0.3"
+getrandom = "0.4"
 
 cpp = "0.5"
 dirs = "6.0"
@@ -59,7 +59,7 @@ image = { version = "0.25.9", default-features = false, features = ["png", "jpeg
 
 diesel = { version = "2.3", features = ["sqlite", "chrono"] }
 diesel_migrations = "2.3"
-libsqlite3-sys = { version = "0.35", features = ["sqlcipher"] }
+libsqlite3-sys = { version = "0.36", features = ["sqlcipher"] }
 
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.145"
@@ -98,7 +98,7 @@ hex = "0.4"
 
 [dev-dependencies]
 actix-rt = "2.11.0"
-criterion = "0.7"
+criterion = "0.8"
 rstest = "0.26"
 rstest_reuse = "0.7.0"
 

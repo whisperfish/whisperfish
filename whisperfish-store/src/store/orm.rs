@@ -853,7 +853,9 @@ impl Display for DbSession {
             (Some(r_id), Some(g_id)) => write!(
                 f,
                 "DbSession {{ id: {}, direct_message_recipient_id: {}, group_v2_id: \"{}\", INVALID }}",
-                &self.id, r_id, shorten(g_id, 12)
+                &self.id,
+                r_id,
+                shorten(g_id, 12)
             ),
             (Some(r_id), None) => write!(
                 f,
@@ -863,7 +865,8 @@ impl Display for DbSession {
             (_, Some(g_id)) => write!(
                 f,
                 "DbSession {{ id: {}, group_v2_id: \"{}\" }}",
-                &self.id, shorten(g_id, 12)
+                &self.id,
+                shorten(g_id, 12)
             ),
             _ => write!(f, "DbSession {{ id: {}, INVALID }}", &self.id),
         }
@@ -917,22 +920,42 @@ impl Display for Attachment {
             (Some(size), Some(file_name)) => write!(
                 f,
                 "Attachment {{ id: {}, message_id: {}, content_type: \"{}\", size: {}, file_name: \"{}\", is_voice_note: {}, _is_sticker_pack: {} }}",
-                &self.id, &self.message_id, &self.content_type, size, file_name, &self.is_voice_note, &self.sticker_pack_id.is_some()
+                &self.id,
+                &self.message_id,
+                &self.content_type,
+                size,
+                file_name,
+                &self.is_voice_note,
+                &self.sticker_pack_id.is_some()
             ),
             (Some(size), _) => write!(
                 f,
                 "Attachment {{ id: {}, message_id: {}, content_type: \"{}\", size: {}, is_voice_note: {}, _is_sticker_pack: {} }}",
-                &self.id, &self.message_id, &self.content_type, size, &self.is_voice_note, &self.sticker_pack_id.is_some()
+                &self.id,
+                &self.message_id,
+                &self.content_type,
+                size,
+                &self.is_voice_note,
+                &self.sticker_pack_id.is_some()
             ),
             (_, Some(file_name)) => write!(
                 f,
                 "Attachment {{ id: {}, message_id: {}, content_type: \"{}\", file_name: \"{}\", is_voice_note: {}, _is_sticker_pack: {} }}",
-                &self.id, &self.message_id, &self.content_type, file_name, &self.is_voice_note, &self.sticker_pack_id.is_some()
+                &self.id,
+                &self.message_id,
+                &self.content_type,
+                file_name,
+                &self.is_voice_note,
+                &self.sticker_pack_id.is_some()
             ),
             _ => write!(
                 f,
                 "Attachment {{ id: {}, message_id: {}, content_type: \"{}\", is_voice_note: {}, _is_sticker_pack: {} }}",
-                &self.id, &self.message_id, &self.content_type, &self.is_voice_note, &self.sticker_pack_id.is_some()
+                &self.id,
+                &self.message_id,
+                &self.content_type,
+                &self.is_voice_note,
+                &self.sticker_pack_id.is_some()
             ),
         }
     }
@@ -1280,12 +1303,12 @@ impl Display for AugmentedMessage {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(
             f,
-            "AugmentedMessage {{ attachments: {}, reactions: {}, read: {}, delivered: {}, viewed: {}, inner: {} }}",
+            "AugmentedMessage {{ attachments: {}, reactions: {}, hasReadRcpts: {}, hasDeliveredRcpts: {}, hasViewedRcpts: {}, inner: {} }}",
             &self.attachments,
             &self.reactions,
-            self.receipt_counts.read,
-            self.receipt_counts.delivered,
-            self.receipt_counts.viewed,
+            self.receipt_counts.read > 0,
+            self.receipt_counts.delivered > 0,
+            self.receipt_counts.viewed > 0,
             &self.inner
         )
     }
@@ -1923,7 +1946,10 @@ mod tests {
             label: None,
             label_emoji: None,
         };
-        assert_eq!(format!("{}",g2m), "GroupV2Member { group_v2_id: \"id\", recipient_id: 22, member_since: \"2023-03-31 14:51:25\" }");
+        assert_eq!(
+            format!("{}", g2m),
+            "GroupV2Member { group_v2_id: \"id\", recipient_id: 22, member_since: \"2023-03-31 14:51:25\" }"
+        );
     }
 
     #[test]
@@ -1957,7 +1983,10 @@ mod tests {
     #[test]
     fn display_recipient() {
         let mut r = get_recipient();
-        assert_eq!(format!("{}", r), "Recipient { id: 981, name: \"Nick Name\", e164: \"+35840...\", uuid: \"bff93979-...\", pni: unavailable }");
+        assert_eq!(
+            format!("{}", r),
+            "Recipient { id: 981, name: \"Nick Name\", e164: \"+35840...\", uuid: \"bff93979-...\", pni: unavailable }"
+        );
         r.e164 = None;
         assert_eq!(
             format!("{}", r),
@@ -2035,7 +2064,10 @@ mod tests {
             created_at: datetime,
             identity: Identity::Aci,
         };
-        assert_eq!(format!("{}", s), "SenderKeyRecord { identity: Aci, address: \"whateva\", device: 13, created_at: \"2023-04-01 07:01:32\" }")
+        assert_eq!(
+            format!("{}", s),
+            "SenderKeyRecord { identity: Aci, address: \"whateva\", device: 13, created_at: \"2023-04-01 07:01:32\" }"
+        )
     }
 
     #[test]
@@ -2074,23 +2106,44 @@ mod tests {
     #[test]
     fn display_attachment() {
         let mut a = get_attachment();
-        assert_eq!(format!("{}", a), "Attachment { id: 24, message_id: 313, content_type: \"image/jpeg\", size: 963012, file_name: \"cat.jpg\", is_voice_note: false, _is_sticker_pack: false }");
+        assert_eq!(
+            format!("{}", a),
+            "Attachment { id: 24, message_id: 313, content_type: \"image/jpeg\", size: 963012, file_name: \"cat.jpg\", is_voice_note: false, _is_sticker_pack: false }"
+        );
         a.size = None;
-        assert_eq!(format!("{}", a), "Attachment { id: 24, message_id: 313, content_type: \"image/jpeg\", file_name: \"cat.jpg\", is_voice_note: false, _is_sticker_pack: false }");
+        assert_eq!(
+            format!("{}", a),
+            "Attachment { id: 24, message_id: 313, content_type: \"image/jpeg\", file_name: \"cat.jpg\", is_voice_note: false, _is_sticker_pack: false }"
+        );
         a.file_name = None;
-        assert_eq!(format!("{}", a), "Attachment { id: 24, message_id: 313, content_type: \"image/jpeg\", is_voice_note: false, _is_sticker_pack: false }");
+        assert_eq!(
+            format!("{}", a),
+            "Attachment { id: 24, message_id: 313, content_type: \"image/jpeg\", is_voice_note: false, _is_sticker_pack: false }"
+        );
         a.size = Some(0);
-        assert_eq!(format!("{}", a), "Attachment { id: 24, message_id: 313, content_type: \"image/jpeg\", size: 0, is_voice_note: false, _is_sticker_pack: false }");
+        assert_eq!(
+            format!("{}", a),
+            "Attachment { id: 24, message_id: 313, content_type: \"image/jpeg\", size: 0, is_voice_note: false, _is_sticker_pack: false }"
+        );
     }
 
     #[test]
     fn display_session() {
         let mut s = get_dm_session();
-        assert_eq!(format!("{}", s), "Session { id: 2, _has_draft: false, type: DirectMessage { recipient: Recipient { id: 981, name: \"Nick Name\", e164: \"+35840...\", uuid: \"bff93979-...\", pni: unavailable } } }");
+        assert_eq!(
+            format!("{}", s),
+            "Session { id: 2, _has_draft: false, type: DirectMessage { recipient: Recipient { id: 981, name: \"Nick Name\", e164: \"+35840...\", uuid: \"bff93979-...\", pni: unavailable } } }"
+        );
         s.r#type = SessionType::GroupV1(get_group_v1());
-        assert_eq!(format!("{}", s), "Session { id: 2, _has_draft: false, type: GroupV1 { group: GroupV1 { id: \"cba\", name: \"G1\" } } }");
+        assert_eq!(
+            format!("{}", s),
+            "Session { id: 2, _has_draft: false, type: GroupV1 { group: GroupV1 { id: \"cba\", name: \"G1\" } } }"
+        );
         s.r#type = SessionType::GroupV2(get_group_v2());
-        assert_eq!(format!("{}", s), "Session { id: 2, _has_draft: false, type: GroupV2 { group: GroupV2 { id: \"abc\", name: \"G2\", description: \"desc\" } } }");
+        assert_eq!(
+            format!("{}", s),
+            "Session { id: 2, _has_draft: false, type: GroupV2 { group: GroupV2 { id: \"abc\", name: \"G2\", description: \"desc\" } } }"
+        );
     }
 
     #[test]
@@ -2117,7 +2170,10 @@ mod tests {
     #[test]
     fn display_augmented_message() {
         let m = get_augmented_message();
-        assert_eq!(format!("{}", m), "AugmentedMessage { attachments: 2, reactions: 0, read: 1, delivered: 1, viewed: 1, inner: Message { id: 71, session_id: 66, text: \"msg text\" } }")
+        assert_eq!(
+            format!("{}", m),
+            "AugmentedMessage { attachments: 2, reactions: 0, hasReadRcpts: true, hasDeliveredRcpts: true, hasViewedRcpts: true, inner: Message { id: 71, session_id: 66, text: \"msg text\" } }"
+        )
     }
 
     #[test]
@@ -2127,9 +2183,15 @@ mod tests {
             last_message: Some(get_augmented_message()),
             group_self_member: None,
         };
-        assert_eq!(format!("{}", s), "AugmentedSession { inner: Session { id: 2, _has_draft: false, type: DirectMessage { recipient: Recipient { id: 981, name: \"Nick Name\", e164: \"+35840...\", uuid: \"bff93979-...\", pni: unavailable } } }, last_message: AugmentedMessage { attachments: 2, reactions: 0, read: 1, delivered: 1, viewed: 1, inner: Message { id: 71, session_id: 66, text: \"msg text\" } } }");
+        assert_eq!(
+            format!("{}", s),
+            "AugmentedSession { inner: Session { id: 2, _has_draft: false, type: DirectMessage { recipient: Recipient { id: 981, name: \"Nick Name\", e164: \"+35840...\", uuid: \"bff93979-...\", pni: unavailable } } }, last_message: AugmentedMessage { attachments: 2, reactions: 0, hasReadRcpts: true, hasDeliveredRcpts: true, hasViewedRcpts: true, inner: Message { id: 71, session_id: 66, text: \"msg text\" } } }"
+        );
         s.last_message = None;
-        assert_eq!(format!("{}", s), "AugmentedSession { inner: Session { id: 2, _has_draft: false, type: DirectMessage { recipient: Recipient { id: 981, name: \"Nick Name\", e164: \"+35840...\", uuid: \"bff93979-...\", pni: unavailable } } }, last_message: None }");
+        assert_eq!(
+            format!("{}", s),
+            "AugmentedSession { inner: Session { id: 2, _has_draft: false, type: DirectMessage { recipient: Recipient { id: 981, name: \"Nick Name\", e164: \"+35840...\", uuid: \"bff93979-...\", pni: unavailable } } }, last_message: None }"
+        );
     }
 
     #[test]

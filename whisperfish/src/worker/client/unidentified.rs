@@ -82,20 +82,19 @@ impl Handler<RotateUnidentifiedCertificates> for ClientActor {
         _: RotateUnidentifiedCertificates,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        let mut service = self.authenticated_service();
+        let i_ws = self.identified_websocket();
         // Short cut
         let all_certs_available =
             CertType::all().all(|t| self.unidentified_certificates.certs.contains_key(&t));
         Box::pin(
             async move {
+                let mut i_ws = i_ws.await?;
                 let mut certs = HashMap::<_, protocol::SenderCertificate>::default();
                 if !all_certs_available {
                     for cert_type in CertType::all() {
                         let cert = match cert_type {
-                            CertType::Complete => service.get_sender_certificate().await?,
-                            CertType::UuidOnly => {
-                                service.get_uuid_only_sender_certificate().await?
-                            }
+                            CertType::Complete => i_ws.get_sender_certificate().await?,
+                            CertType::UuidOnly => i_ws.get_uuid_only_sender_certificate().await?,
                         };
                         certs.insert(cert_type, cert);
                     }

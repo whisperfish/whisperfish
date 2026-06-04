@@ -186,11 +186,11 @@ ApplicationWindow
     }
 
     function closeMessageNotification(sessionId, messageId) {
-        console.log("Closing message notification for session", sessionId, "and message", messageId)
         if(sessionId in notificationMap) {
             for(var i in notificationMap[sessionId]) {
                 // This needs to be a loose comparison for some reason
                 if(notificationMap[sessionId][i].messageId == messageId) {
+                    console.log("Close message notification for sid", sessionId, "mid", messageId)
                     notificationMap[sessionId][i].close()
                     delete notificationMap[sessionId][i]
                     notificationMap[sessionId].splice(i, 1)
