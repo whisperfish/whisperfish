@@ -1147,7 +1147,7 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
     </message>
     <message id="whisperfish-share-contacts-label">
         <location filename="../qml/pages/RegisterPage.qml" line="242"/>
-        <location filename="../qml/pages/Settings.qml" line="293"/>
+        <location filename="../qml/pages/Settings.qml" line="294"/>
         <source>Share Contacts</source>
         <extracomment>Share contacts label
 ----------
@@ -1156,7 +1156,7 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-share-contacts-description">
         <location filename="../qml/pages/RegisterPage.qml" line="245"/>
-        <location filename="../qml/pages/Settings.qml" line="296"/>
+        <location filename="../qml/pages/Settings.qml" line="297"/>
         <source>Allow Signal to use your local contact list, to find other Signal users.</source>
         <extracomment>Share contacts description</extracomment>
         <translation>Geeft Signal toegank tot uwen telefonboek voôr andere Signalgebruikers te kunnen vinden.</translation>
@@ -1274,19 +1274,19 @@ Settings page share contacts</extracomment>
         <translation>WAARSCHUWING: d’identiteit van %1 wordt ni meêr betrouwd. Tikt op ‘Bevestigen’ voôr de peeridentiteit herin te stellen.</translation>
     </message>
     <message id="whisperfish-settings-linked-devices-menu">
-        <location filename="../qml/pages/Settings.qml" line="51"/>
+        <location filename="../qml/pages/Settings.qml" line="52"/>
         <source>Linked Devices</source>
         <extracomment>Linked devices menu option</extracomment>
         <translation>Gekoppelde toestellen</translation>
     </message>
     <message id="whisperfish-settings-reconnect-menu">
-        <location filename="../qml/pages/Settings.qml" line="61"/>
+        <location filename="../qml/pages/Settings.qml" line="62"/>
         <source>Reconnect</source>
         <extracomment>Reconnect menu</extracomment>
         <translation>Herconnecteren</translation>
     </message>
     <message id="whisperfish-settings-title">
-        <location filename="../qml/pages/Settings.qml" line="83"/>
+        <location filename="../qml/pages/Settings.qml" line="84"/>
         <source>Settings</source>
         <oldsource>Whisperfish Settings</oldsource>
         <extracomment>Settings page title</extracomment>
@@ -1338,368 +1338,368 @@ Settings page share contacts</extracomment>
         <translation type="vanished">As ge dees afzet toônt Whisperfish in meldingen alleên maar den afzender, ni’ den inhoud van ’t bericht.</translation>
     </message>
     <message id="whisperfish-settings-general-section">
-        <location filename="../qml/pages/Settings.qml" line="109"/>
+        <location filename="../qml/pages/Settings.qml" line="110"/>
         <source>General</source>
         <extracomment>Settings page general section</extracomment>
         <translation>Algemeên</translation>
     </message>
     <message id="whisperfish-settings-enable-read-receipts">
-        <location filename="../qml/pages/Settings.qml" line="133"/>
+        <location filename="../qml/pages/Settings.qml" line="134"/>
         <source>Enable read receipts</source>
         <extracomment>Settings page use read receipts</extracomment>
         <translation>Leesbevestigingen inschakelen</translation>
     </message>
     <message id="whisperfish-settings-enable-read-receipts-description">
-        <location filename="../qml/pages/Settings.qml" line="136"/>
+        <location filename="../qml/pages/Settings.qml" line="137"/>
         <source>See when others have read your messages, and let others see when you are have read theirs, if they also have this enabled.</source>
         <extracomment>Settings page scale read receipts description</extracomment>
         <translation>Hiermee ziede wanneêr da mensen u berichten lezen en zien zij oôk wanneêr da’ gij die van hun leest. Daarvoôr moeten zij oôk die optie hier inschakelen.</translation>
     </message>
     <message id="whisperfish-settings-enable-link-previews">
-        <location filename="../qml/pages/Settings.qml" line="150"/>
+        <location filename="../qml/pages/Settings.qml" line="151"/>
         <source>Link previews</source>
         <extracomment>Settings page enable link previews</extracomment>
         <translation>Linkvoôrbeelden</translation>
     </message>
     <message id="whisperfish-settings-enable-link-previews-description">
-        <location filename="../qml/pages/Settings.qml" line="153"/>
+        <location filename="../qml/pages/Settings.qml" line="154"/>
         <source>Create and send previews of the links you send in messages. Note: Feature not yet implemented in Whisperfish.</source>
         <extracomment>Settings page enable link previews description</extracomment>
         <translation>Maakt linkvoôrbeelden aan voôr de links da’ g’in uw berichten stuurt. Past op: die functie is nog ni’ geïmplementeerd in Whisperfish.</translation>
     </message>
     <message id="whisperfish-settings-country-code">
-        <location filename="../qml/pages/Settings.qml" line="185"/>
+        <location filename="../qml/pages/Settings.qml" line="186"/>
         <source>Country Code</source>
         <extracomment>Settings page country code</extracomment>
         <translation>Landcode</translation>
     </message>
     <message id="whisperfish-settings-country-code-description">
-        <location filename="../qml/pages/Settings.qml" line="188"/>
+        <location filename="../qml/pages/Settings.qml" line="189"/>
         <source>The selected country code determines what happens when a local phone number is entered.</source>
         <extracomment>Settings page country code description</extracomment>
         <translation>’t Land waarmee da ne lokalen telefonnumero moet geassocieerd worden.</translation>
     </message>
     <message id="whisperfish-settings-country-code-empty">
-        <location filename="../qml/pages/Settings.qml" line="192"/>
+        <location filename="../qml/pages/Settings.qml" line="193"/>
         <source>none</source>
         <extracomment>settings page country code selection: nothing selected</extracomment>
         <translation>geên</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-text">
-        <location filename="../qml/pages/Settings.qml" line="226"/>
+        <location filename="../qml/pages/Settings.qml" line="227"/>
         <source>Image attachments quality</source>
         <extracomment>Settings page scale image attachments</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-high-text">
-        <location filename="../qml/pages/Settings.qml" line="232"/>
+        <location filename="../qml/pages/Settings.qml" line="233"/>
         <source>High</source>
         <extracomment>Settings page, use high attachment quality</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-high-description">
-        <location filename="../qml/pages/Settings.qml" line="235"/>
+        <location filename="../qml/pages/Settings.qml" line="236"/>
         <source>Resize images larger than 4096 pixels in width or height or 3.0MB in size. Using this increases data usage.</source>
         <extracomment>Settings page, high attachment quality description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-standard-text">
-        <location filename="../qml/pages/Settings.qml" line="241"/>
+        <location filename="../qml/pages/Settings.qml" line="242"/>
         <source>Standard</source>
         <extracomment>Settings page, use standard (medium) attachment quality</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-standard-description">
-        <location filename="../qml/pages/Settings.qml" line="244"/>
+        <location filename="../qml/pages/Settings.qml" line="245"/>
         <source>Resize images larger than 2048 pixels in width or height or over 1.5MB in size.</source>
         <extracomment>Settings page, standard (medium) attachment quality description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-low-text">
-        <location filename="../qml/pages/Settings.qml" line="250"/>
+        <location filename="../qml/pages/Settings.qml" line="251"/>
         <source>Low</source>
         <extracomment>Settings page, use low attachment quality</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-low-description">
-        <location filename="../qml/pages/Settings.qml" line="253"/>
+        <location filename="../qml/pages/Settings.qml" line="254"/>
         <source>Resize images larger than 2048 pixels in width or height or 1.0MB in size. Recommened for low memory devices or minimizing data usage.</source>
         <extracomment>Settings page, low attachment quality description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-save-attachments">
-        <location filename="../qml/pages/Settings.qml" line="273"/>
+        <location filename="../qml/pages/Settings.qml" line="274"/>
         <source>Save Attachments</source>
         <extracomment>Settings page save attachments</extracomment>
         <translation>Bijlagen opslaan</translation>
     </message>
     <message id="whisperfish-settings-save-attachments-description">
-        <location filename="../qml/pages/Settings.qml" line="277"/>
+        <location filename="../qml/pages/Settings.qml" line="278"/>
         <source>Attachments are stored at %1. Currently, when disabled, attachments will not work.</source>
         <oldsource>Attachments are stored at %1</oldsource>
         <extracomment>Settings page save attachments description</extracomment>
         <translation>Bijlagen worden bijgehouden in %1. As ge dees afzet kunde voôr de moment geên bijlagen ontvangen.</translation>
     </message>
     <message id="whisperfish-settings-enable-enter-send">
-        <location filename="../qml/pages/Settings.qml" line="325"/>
+        <location filename="../qml/pages/Settings.qml" line="326"/>
         <source>Return key send</source>
         <oldsource>EnterKey Send</oldsource>
         <extracomment>Settings page enable enter send</extracomment>
         <translation>Verzenden me Enter</translation>
     </message>
     <message id="whisperfish-settings-enable-enter-send-description">
-        <location filename="../qml/pages/Settings.qml" line="328"/>
+        <location filename="../qml/pages/Settings.qml" line="329"/>
         <source>When enabled, the return key functions as a send key. Otherwise, the return key can be used for multi-line messages.</source>
         <extracomment>Settings page enable enter send description</extracomment>
         <translation>Hiermee stelde Enter in as verzendingstoets. Anders kunde Enter gebruiken voôr berichten me meêrdere lijnen tekst.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-label">
-        <location filename="../qml/pages/Settings.qml" line="341"/>
+        <location filename="../qml/pages/Settings.qml" line="342"/>
         <source>Transcribe voice notes</source>
         <extracomment>Settings page auto transcribe voice notes</extracomment>
         <translation>Spraakberichten transcriberen</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-available">
-        <location filename="../qml/pages/Settings.qml" line="345"/>
+        <location filename="../qml/pages/Settings.qml" line="346"/>
         <source>Automatically transcribe voice notes to text upon reception using Speech Note.</source>
         <extracomment>Auto transcribe voice notes description, Speech Note installed</extracomment>
         <translation>Transcribeert automatisch de spraakberichten da’ g’ontvangt naar tekst me Speech Note.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-unavailable">
-        <location filename="../qml/pages/Settings.qml" line="348"/>
+        <location filename="../qml/pages/Settings.qml" line="349"/>
         <source>Automatically transcribe voice notes to text upon reception. Configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note installed but not configured.</extracomment>
         <translation>Transcribeert automatisch de spraakberichten da’ g’ontvangt. Stelt in Speech Note een ‘automatisch gedetecteerd’ model in voôr die functie hier te kunnen gebruiken.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-uninstalled">
-        <location filename="../qml/pages/Settings.qml" line="351"/>
+        <location filename="../qml/pages/Settings.qml" line="352"/>
         <source>Automatically transcribe voice notes to text upon reception. Install and configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note not installed</extracomment>
         <translation>Transcribeert automatisch de spraakberichten da’ g’ontvangt. Installeert en stelt in Speech Note een ‘automatisch gedetecteerd’ model in voôr die functie hier te kunnen gebruiken.</translation>
     </message>
     <message id="whisperfish-settings-privacy-section">
-        <location filename="../qml/pages/Settings.qml" line="368"/>
+        <location filename="../qml/pages/Settings.qml" line="369"/>
         <source>Privacy</source>
         <extracomment>Settings page &quot;privacy&quot; section</extracomment>
         <translation>Privacy</translation>
     </message>
     <message id="whisperfish-settings-share-phone-number">
-        <location filename="../qml/pages/Settings.qml" line="374"/>
+        <location filename="../qml/pages/Settings.qml" line="375"/>
         <source>Share phone number</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
         <translation>Telefonnumero dêlen</translation>
     </message>
     <message id="whisperfish-settings-share-phone-number-description">
-        <location filename="../qml/pages/Settings.qml" line="377"/>
+        <location filename="../qml/pages/Settings.qml" line="378"/>
         <source>When enabled, your contacts can see your phone number when you message them.</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
         <translation>As ge dees aanzet kunnen uw contacten uwen telefonnumero zien as ge z’een bericht stuurt.</translation>
     </message>
     <message id="whisperfish-settings-startup-shutdown-section">
-        <location filename="../qml/pages/Settings.qml" line="470"/>
+        <location filename="../qml/pages/Settings.qml" line="471"/>
         <source>Autostart and Background</source>
         <extracomment>Settings page startup and shutdown section</extracomment>
         <translation>Automatisch starten en achtergronddienst</translation>
     </message>
     <message id="whisperfish-settings-enable-autostart">
-        <location filename="../qml/pages/Settings.qml" line="476"/>
+        <location filename="../qml/pages/Settings.qml" line="477"/>
         <source>Autostart after boot</source>
         <extracomment>Settings page enable autostart</extracomment>
         <translation>Automatisch starten</translation>
     </message>
     <message id="whisperfish-settings-auto-unlock-password-field">
-        <location filename="../qml/pages/Settings.qml" line="502"/>
+        <location filename="../qml/pages/Settings.qml" line="503"/>
         <source>Unlock Password</source>
         <extracomment>Settings page autostart password field</extracomment>
         <translation>Ontgrendelingspaswoord</translation>
     </message>
     <message id="whisperfish-settings-save-password-button">
-        <location filename="../qml/pages/Settings.qml" line="513"/>
+        <location filename="../qml/pages/Settings.qml" line="514"/>
         <source>Save password</source>
         <extracomment>Settings page save autologin password button</extracomment>
         <translation>Paswoord opslaan</translation>
     </message>
     <message id="whisperfish-settings-clear-password-button">
-        <location filename="../qml/pages/Settings.qml" line="516"/>
+        <location filename="../qml/pages/Settings.qml" line="517"/>
         <source>clear password</source>
         <extracomment>Settings page clear autologin password button</extracomment>
         <translation>Paswoord wissen</translation>
     </message>
     <message id="whisperfish-settings-auto-unlock-password-info">
-        <location filename="../qml/pages/Settings.qml" line="528"/>
+        <location filename="../qml/pages/Settings.qml" line="529"/>
         <source>You can enter your password to make Whisperfish unlock the database automatically at startup. Please note that the password is stored in plain text, and as such usage of this feature is not recommended.</source>
         <oldsource>You can enter your password to make Whisperfish unlock the database automatically at startup. Please note that the password is stored in plain text, and as such usage of this feature is not recommened.</oldsource>
         <extracomment>Settings page info about setting auto unlock password</extracomment>
         <translation>Hier kunde u paswoord ingeven zôdanig da Whisperfish den database bij ’t opstarten automatisch ontgrendelt. ’t Paswoord wordt wel opgeslagen in platte tekst, zôdus is ’t feitelijk best da’ ge deze optie ni’ gebruikt.</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode-description">
-        <location filename="../qml/pages/Settings.qml" line="549"/>
+        <location filename="../qml/pages/Settings.qml" line="550"/>
         <source>When enabled, Whisperfish keeps running in the background and can send notifications after the app window has been closed.</source>
         <oldsource>When enabled, Whisperfish starts automatically after each boot. If storage encryption is enabled or background-mode is off, the UI will be shown, otherwise the app starts in the background.</oldsource>
         <extracomment>Settings page enable background mode description</extracomment>
         <translation>Hiermee blijft Whisperfish draaien op den achtergrond en krijgde oôk nog meldingen achter da’ ge ’t appvenster sluit.</translation>
     </message>
     <message id="whisperfish-settings-verbose-journal">
-        <location filename="../qml/pages/Settings.qml" line="600"/>
+        <location filename="../qml/pages/Settings.qml" line="601"/>
         <source>Verbose journal log</source>
         <extracomment>Settings page, send verbose logs to systemd journal</extracomment>
         <translation>Uitgebreid journaallog</translation>
     </message>
     <message id="whisperfish-settings-verbose-journal-description">
-        <location filename="../qml/pages/Settings.qml" line="603"/>
+        <location filename="../qml/pages/Settings.qml" line="604"/>
         <source>When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect.</source>
         <extracomment>Settings page enable verbose logging description</extracomment>
         <translation>Hiermee schrijft Whisperfish gedetailleerde logs in ’t systemd-journaal. Hiervoôr moete Whisperfish wel herstarten.</translation>
     </message>
     <message id="whisperfish-settings-gstreamer-version">
-        <location filename="../qml/pages/Settings.qml" line="681"/>
+        <location filename="../qml/pages/Settings.qml" line="694"/>
         <source>GStreamer version</source>
         <extracomment>GStreamer version indication in settings</extracomment>
         <translation>GStreamer-versie</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
-        <location filename="../qml/pages/Settings.qml" line="546"/>
+        <location filename="../qml/pages/Settings.qml" line="547"/>
         <source>Background mode</source>
         <extracomment>Settings page enable background mode</extracomment>
         <translation>Achtergrondmodus</translation>
     </message>
     <message id="whisperfish-settings-show-own-profile-menu">
-        <location filename="../qml/pages/Settings.qml" line="69"/>
+        <location filename="../qml/pages/Settings.qml" line="70"/>
         <source>Show my profile</source>
         <extracomment>Show own profile menu</extracomment>
         <translation>Mij profiel tônen</translation>
     </message>
     <message id="whisperfish-settings-some-settings-locked">
-        <location filename="../qml/pages/Settings.qml" line="93"/>
+        <location filename="../qml/pages/Settings.qml" line="94"/>
         <source>Some settings can only be changed from the primary device.</source>
         <oldsource>Some setting can only be changed from the primary device.</oldsource>
         <extracomment>Settings page, not a primary device note</extracomment>
         <translation>Sommigte instellingen kunde alleên aanpassen vanop ’t primair toestel.</translation>
     </message>
     <message id="whisperfish-settings-enable-typing-indicators">
-        <location filename="../qml/pages/Settings.qml" line="116"/>
+        <location filename="../qml/pages/Settings.qml" line="117"/>
         <source>Enable typing indicators</source>
         <extracomment>Settings page use typing indicators</extracomment>
         <translation>Typindicatoren inschakelen</translation>
     </message>
     <message id="whisperfish-settings-enable-typing-indicators-description">
-        <location filename="../qml/pages/Settings.qml" line="119"/>
+        <location filename="../qml/pages/Settings.qml" line="120"/>
         <source>See when others are typing, and let others see when you are typing, if they also have this enabled.</source>
         <extracomment>Settings page typing indicators description</extracomment>
         <translation>Ziet as er iemand anders aan ’t typen is en laat andere mensen weten as gij aan ’t typen zijt, as zij deze functie oôk ingeschakeld hebben.</translation>
     </message>
     <message id="whisperfish-settings-notification-privacy">
-        <location filename="../qml/pages/Settings.qml" line="391"/>
+        <location filename="../qml/pages/Settings.qml" line="392"/>
         <source>Notification privacy</source>
         <extracomment>Settings page notification privacy</extracomment>
         <translation>Privacyniveau voôr meldingen</translation>
     </message>
     <message id="whisperfish-settings-notifications-disable">
-        <location filename="../qml/pages/Settings.qml" line="400"/>
+        <location filename="../qml/pages/Settings.qml" line="401"/>
         <source>Disable notifications</source>
         <extracomment>Settings page, turn notifications off</extracomment>
         <translation>Meldingen afzetten</translation>
     </message>
     <message id="whisperfish-settings-notifications-disable-description">
-        <location filename="../qml/pages/Settings.qml" line="403"/>
+        <location filename="../qml/pages/Settings.qml" line="404"/>
         <source>Whisperfish will not display any notification</source>
         <extracomment>Settings page, turn notifications off description</extracomment>
         <translation>Whisperfish ga’ geên meldingen tônen</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimal">
-        <location filename="../qml/pages/Settings.qml" line="409"/>
+        <location filename="../qml/pages/Settings.qml" line="410"/>
         <source>Minimal notifications</source>
         <extracomment>Settings page, minimal notifications</extracomment>
         <translation>Minimale meldingen</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimal-description">
-        <location filename="../qml/pages/Settings.qml" line="412"/>
+        <location filename="../qml/pages/Settings.qml" line="413"/>
         <source>Notification without disclosing the sender or content of the message</source>
         <extracomment>Settings page, minimal notifications description</extracomment>
         <translation>Meldingen zonder afzender of berichtinhoud</translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only">
-        <location filename="../qml/pages/Settings.qml" line="418"/>
+        <location filename="../qml/pages/Settings.qml" line="419"/>
         <source>Sender-only notifications</source>
         <extracomment>Settings page, sender-only notifications</extracomment>
         <translation>Alleên-afzender-meldingen</translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only-description">
-        <location filename="../qml/pages/Settings.qml" line="421"/>
+        <location filename="../qml/pages/Settings.qml" line="422"/>
         <source>Notifications displaying the sender of a message, without the contents</source>
         <extracomment>Settings page, sender-only notifications description</extracomment>
         <translation>Meldingen me’ den afzender maar zonder berichtinhoud</translation>
     </message>
     <message id="whisperfish-settings-notifications-complete">
-        <location filename="../qml/pages/Settings.qml" line="427"/>
+        <location filename="../qml/pages/Settings.qml" line="428"/>
         <source>Complete notifications</source>
         <extracomment>Settings page, complete notifications</extracomment>
         <translation>Volledige meldingen</translation>
     </message>
     <message id="whisperfish-settings-notifications-complete-description">
-        <location filename="../qml/pages/Settings.qml" line="430"/>
+        <location filename="../qml/pages/Settings.qml" line="431"/>
         <source>Notifications displaying the contents and sender of a message</source>
         <extracomment>Settings page, sender-only notifications description</extracomment>
         <translation>Meldingen me’ den afzender en de berichtinhoud</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimise">
-        <location filename="../qml/pages/Settings.qml" line="166"/>
+        <location filename="../qml/pages/Settings.qml" line="167"/>
         <source>Minimise notifications</source>
         <extracomment>Settings page notifications show minimum number of notifications</extracomment>
         <translation>Meldingen beperken</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimise-description">
-        <location filename="../qml/pages/Settings.qml" line="169"/>
+        <location filename="../qml/pages/Settings.qml" line="170"/>
         <source>If turned on, Whisperfish will suppress all but the first notification from each session.</source>
         <extracomment>Settings page notifications show minimum number of notifications description</extracomment>
         <translation>Hiermee onderdrukt Whisperfish alles behalve d’eêrste melding van iedere sessie.</translation>
     </message>
     <message id="whisperfish-settings-notifications-prefer-device-contacts">
-        <location filename="../qml/pages/Settings.qml" line="309"/>
+        <location filename="../qml/pages/Settings.qml" line="310"/>
         <source>Prefer device contacts</source>
         <extracomment>Settings page prefer phone contacts</extracomment>
         <translation>Contacten van ’t toestel verkiezen</translation>
     </message>
     <message id="whisperfish-settings-notifications-prefer-device-contacts-description">
-        <location filename="../qml/pages/Settings.qml" line="312"/>
+        <location filename="../qml/pages/Settings.qml" line="313"/>
         <source>Prefer Sailfish OS address book contact names and avatars over Signal Profile data.</source>
         <extracomment>Settings page prefer phone contacts description</extracomment>
         <translation>Geeft de voôrkeur aan contactnamen en -profielfoto’s uit de Sailfish OS-adresboek in plaats van hun Signal-profielgegevens.</translation>
     </message>
     <message id="whisperfish-settings-show-phone-number">
-        <location filename="../qml/pages/Settings.qml" line="447"/>
+        <location filename="../qml/pages/Settings.qml" line="448"/>
         <source>Show phone number</source>
         <extracomment>Settings page, show recipient phone number in conversation view</extracomment>
         <translation>Telefonnumero tônen</translation>
     </message>
     <message id="whisperfish-settings-show-phone-number-description">
-        <location filename="../qml/pages/Settings.qml" line="450"/>
+        <location filename="../qml/pages/Settings.qml" line="451"/>
         <source>Show the phone number of the recipient in the conversation page header.</source>
         <extracomment>Settings page, show recipient phone number in conversation view description</extracomment>
         <translation>Toônt den telefonnumero van den ontvanger in den balk vanboven.</translation>
     </message>
     <message id="whisperfish-settings-enable-autostart-description">
-        <location filename="../qml/pages/Settings.qml" line="479"/>
+        <location filename="../qml/pages/Settings.qml" line="480"/>
         <source>When enabled, Whisperfish starts automatically after each boot. If storage encryption is enabled or background-mode is off, the UI will be shown, otherwise the app starts in the background.</source>
         <extracomment>Settings page enable autostart description</extracomment>
         <translation>Hiermee wordt Whisperfish automatisch gestart achter da ’t toestel is opgestart. As uwen opslag versleuteld is of as ge den achtergrondmodus hed afgezet, ga’ den app getoônd worden, anders ga tij op den achtergrond gestart worden.</translation>
     </message>
     <message id="whisperfish-settings-autostart-manual-info">
-        <location filename="../qml/pages/Settings.qml" line="539"/>
+        <location filename="../qml/pages/Settings.qml" line="540"/>
         <source>Whisperfish does not have the permission to change the autostart settings. You can enable or disable autostart manually from the command line by running &apos;systemctl --user enable harbour-whisperfish.service&apos; or &apos;systemctl --user disable harbour-whisperfish.service&apos;</source>
         <extracomment>Settings page info how to enable autostart manually</extracomment>
         <translation>Whisperfish hee’ geên toelating voôr d’instellingen voôr automatisch starten te wijzigen. Ge kunt automatisch starten handmatig aan- of afzetten deur in nen terminal ‘systemctl --user enable harbour-whisperfish.service’ of ‘systemctl --user disable harbour-whisperfish.service’ uit te voeren</translation>
     </message>
     <message id="whisperfish-settings-quit-button">
-        <location filename="../qml/pages/Settings.qml" line="566"/>
+        <location filename="../qml/pages/Settings.qml" line="567"/>
         <source>Quit Whisperfish</source>
         <extracomment>Settings page quit app button</extracomment>
         <translation>Whisperfish afsluiten</translation>
     </message>
     <message id="whisperfish-settings-advanced-section">
-        <location filename="../qml/pages/Settings.qml" line="578"/>
+        <location filename="../qml/pages/Settings.qml" line="579"/>
         <source>Advanced</source>
         <extracomment>Settings page advanced section</extracomment>
         <translation>Geavanceerd</translation>
@@ -1731,13 +1731,13 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Schaalt JPEG-bijlagen voôr te besparen op dier Belgisch internet.</translation>
     </message>
     <message id="whisperfish-settings-debug-mode">
-        <location filename="../qml/pages/Settings.qml" line="584"/>
+        <location filename="../qml/pages/Settings.qml" line="585"/>
         <source>Debug mode</source>
         <extracomment>Settings page: debug info toggle</extracomment>
         <translation>Ontwikkelaarsmodus</translation>
     </message>
     <message id="whisperfish-settings-debug-mode-description">
-        <location filename="../qml/pages/Settings.qml" line="587"/>
+        <location filename="../qml/pages/Settings.qml" line="588"/>
         <source>Show debugging information and controls in the user interface.</source>
         <oldsource>Show debugging information in the user interface.</oldsource>
         <extracomment>Settings page: debug info toggle extended description</extracomment>
@@ -1766,62 +1766,62 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Hiermee schrijft Whisperfish zijnen uitvoer naar e logbestand. Hiervoôr moete Whisperfish wel herstarten.</translation>
     </message>
     <message id="whisperfish-settings-compress-db">
-        <location filename="../qml/pages/Settings.qml" line="618"/>
+        <location filename="../qml/pages/Settings.qml" line="619"/>
         <source>Compact database</source>
         <oldsource>Compress database</oldsource>
         <extracomment>Settings page &apos;Compact database&apos; button: execute &apos;VACUUM&apos; command on SQLite-database</extracomment>
         <translation>Database comprimeren</translation>
     </message>
     <message id="whisperfish-settings-test-captcha">
-        <location filename="../qml/pages/Settings.qml" line="629"/>
+        <location filename="../qml/pages/Settings.qml" line="630"/>
         <source>Test captcha</source>
         <extracomment>Settings page, test captcha button</extracomment>
         <translation>Captcha testen</translation>
     </message>
     <message id="whisperfish-settings-stats-section">
-        <location filename="../qml/pages/Settings.qml" line="640"/>
+        <location filename="../qml/pages/Settings.qml" line="641"/>
         <source>Statistics</source>
         <extracomment>Settings page stats section</extracomment>
         <translation>Statistieken</translation>
     </message>
     <message id="whisperfish-settings-websocket">
-        <location filename="../qml/pages/Settings.qml" line="645"/>
+        <location filename="../qml/pages/Settings.qml" line="646"/>
         <source>Websocket Status</source>
         <extracomment>Settings page websocket status</extracomment>
         <translation>Websocketstatus</translation>
     </message>
     <message id="whisperfish-settings-connected">
-        <location filename="../qml/pages/Settings.qml" line="649"/>
+        <location filename="../qml/pages/Settings.qml" line="650"/>
         <source>Connected</source>
         <extracomment>Settings page connected message</extracomment>
         <translation>Verbonden</translation>
     </message>
     <message id="whisperfish-settings-disconnected">
-        <location filename="../qml/pages/Settings.qml" line="652"/>
+        <location filename="../qml/pages/Settings.qml" line="653"/>
         <source>Disconnected</source>
         <extracomment>Settings page disconnected message</extracomment>
         <translation>Connectie verbroken</translation>
     </message>
     <message id="whisperfish-settings-unsent-messages">
-        <location filename="../qml/pages/Settings.qml" line="657"/>
+        <location filename="../qml/pages/Settings.qml" line="658"/>
         <source>Unsent Messages</source>
         <extracomment>Settings page unsent messages</extracomment>
         <translation>Ni’-verzonden berichten</translation>
     </message>
     <message id="whisperfish-settings-total-sessions">
-        <location filename="../qml/pages/Settings.qml" line="663"/>
+        <location filename="../qml/pages/Settings.qml" line="664"/>
         <source>Total Sessions</source>
         <extracomment>Settings page total sessions</extracomment>
         <translation>Totaal aantal sessies</translation>
     </message>
     <message id="whisperfish-settings-total-messages">
-        <location filename="../qml/pages/Settings.qml" line="669"/>
+        <location filename="../qml/pages/Settings.qml" line="670"/>
         <source>Total Messages</source>
         <extracomment>Settings page total messages</extracomment>
         <translation>Totaal aantal berichten</translation>
     </message>
     <message id="whisperfish-settings-total-contacts">
-        <location filename="../qml/pages/Settings.qml" line="675"/>
+        <location filename="../qml/pages/Settings.qml" line="676"/>
         <source>Signal Contacts</source>
         <extracomment>Settings page total signal contacts</extracomment>
         <translation>Contacten op Signal</translation>
@@ -1842,19 +1842,19 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Uitgeschakeld</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db">
-        <location filename="../qml/pages/Settings.qml" line="687"/>
+        <location filename="../qml/pages/Settings.qml" line="682"/>
         <source>Encrypted Database</source>
         <extracomment>Settings page encrypted database</extracomment>
         <translation>Versleutelden database</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-enabled">
-        <location filename="../qml/pages/Settings.qml" line="691"/>
+        <location filename="../qml/pages/Settings.qml" line="686"/>
         <source>Enabled</source>
         <extracomment>Settings page encrypted db enabled</extracomment>
         <translation>Ingeschakeld</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-disabled">
-        <location filename="../qml/pages/Settings.qml" line="694"/>
+        <location filename="../qml/pages/Settings.qml" line="689"/>
         <source>Disabled</source>
         <extracomment>Settings page encrypted db disabled</extracomment>
         <translation>Afgezet</translation>
