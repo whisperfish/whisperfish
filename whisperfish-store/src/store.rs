@@ -1135,8 +1135,9 @@ impl<O: Observable> Storage<O> {
     ) -> i32 {
         // TODO: update function signature?
         let version: i32 = version.map(|n| n as _).unwrap_or(1);
-        let timer: Option<std::time::Duration> =
-            timer.map(|t| std::time::Duration::from_secs(t as _));
+        let timer: Option<std::time::Duration> = timer
+            .filter(|&t| t > 0)
+            .map(|t| std::time::Duration::from_secs(t as _));
 
         // Carry out the update only if the timer changes
         use crate::schema::sessions::dsl::*;
