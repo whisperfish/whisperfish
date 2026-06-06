@@ -4863,6 +4863,40 @@ impl<O: Observable> Storage<O> {
         }
     }
 
+    pub fn get_prekey_counts(&self) -> (i64, i64) {
+        use schema::prekeys::dsl::*;
+        let aci_count: i64 = prekeys
+            .select(diesel::dsl::count_star())
+            .filter(identity.eq(orm::Identity::Aci))
+            .first(&mut *self.db())
+            .unwrap_or(-1);
+        let pni_count: i64 = prekeys
+            .select(diesel::dsl::count_star())
+            .filter(identity.eq(orm::Identity::Pni))
+            .first(&mut *self.db())
+            .unwrap_or(-1);
+        (aci_count, pni_count)
+    }
+
+    pub fn get_kyber_prekey_counts(&self) -> (i64, i64) {
+        use schema::kyber_prekeys::dsl::*;
+        let aci_count: i64 = kyber_prekeys
+            .select(diesel::dsl::count_star())
+            .filter(identity.eq(orm::Identity::Aci))
+            .first(&mut *self.db())
+            .unwrap_or(-1);
+        let pni_count: i64 = kyber_prekeys
+            .select(diesel::dsl::count_star())
+            .filter(
+                identity
+                    .eq(orm::Identity::Pni)
+                    .and(is_last_resort.eq(false)),
+            )
+            .first(&mut *self.db())
+            .unwrap_or(-1);
+        (aci_count, pni_count)
+    }
+
     // TODO This should be in lss (and use lss types?)
     #[tracing::instrument(skip(self))]
     pub fn fetch_account_entropy_pool(&self) -> Option<AccountEntropyPool> {

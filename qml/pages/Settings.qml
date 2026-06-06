@@ -16,6 +16,7 @@ Page {
     // Cache encryption state so it's only queried once from storage
     property bool encryptedDatabase: AppState.isEncrypted()
     readonly property bool isPrimaryDevice: SettingsBridge.isPrimaryDevice()
+    readonly property bool debugMode: SettingsBridge.debug_mode
 
     // Triggers to send Syng Type::Configuration after closing the page
     property bool _typingIndicators: false
@@ -585,10 +586,10 @@ Page {
                 //: Settings page: debug info toggle extended description
                 //% "Show debugging information and controls in the user interface."
                 description: qsTrId("whisperfish-settings-debug-mode-description")
-                checked: SettingsBridge.debug_mode
+                checked: debugMode
                 icon.source: "image://theme/icon-m-developer-mode"
                 onCheckedChanged: {
-                    if(checked != SettingsBridge.debug_mode) {
+                    if(checked != debugMode) {
                         SettingsBridge.debug_mode = checked
                     }
                 }
@@ -610,7 +611,7 @@ Page {
                 }
             }
             Button {
-                visible: SettingsBridge.debug_mode
+                visible: debugMode
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: parent.width - 2*Theme.horizontalPageMargin
                 //: Settings page 'Compact database' button: execute 'VACUUM' command on SQLite-database
@@ -621,7 +622,7 @@ Page {
                 }
             }
             Button {
-                visible: SettingsBridge.debug_mode
+                visible: debugMode
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: parent.width - 2*Theme.horizontalPageMargin
                 //: Settings page, test captcha button
@@ -676,12 +677,6 @@ Page {
                 value: AppState.recipientCount()
             }
             DetailItem {
-                //: GStreamer version indication in settings
-                //% "GStreamer version"
-                label: qsTrId("whisperfish-settings-gstreamer-version")
-                value: AppState.gstreamer_version
-            }
-            DetailItem {
                 //: Settings page encrypted database
                 //% "Encrypted Database"
                 label: qsTrId("whisperfish-settings-encrypted-db")
@@ -692,6 +687,23 @@ Page {
                     //: Settings page encrypted db disabled
                     //% "Disabled"
                     qsTrId("whisperfish-settings-encrypted-db-disabled")
+            }
+            DetailItem {
+                //: GStreamer version indication in settings
+                //% "GStreamer version"
+                label: qsTrId("whisperfish-settings-gstreamer-version")
+                value: AppState.gstreamer_version
+                visible: debugMode
+            }
+            DetailItem {
+                label: "Prekeys (ACI/PNI)"
+                value: debugMode ? AppState.prekeyCounts() : ""
+                visible: debugMode
+            }
+            DetailItem {
+                label: "Kyber prekeys (ACI/PNI)"
+                value: debugMode ? AppState.kyberPrekeyCounts() : ""
+                visible: debugMode
             }
             // ------ END STATS ------
         }
