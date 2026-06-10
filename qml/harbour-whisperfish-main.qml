@@ -80,6 +80,8 @@ ApplicationWindow
     Notification {
         id: quietMessageNotification
         property bool isSupported: false
+        appName: "Whisperfish"
+        category: "harbour-whisperfish-message"
 
         Component.onCompleted: {
             if(quietMessageNotification.sound !== undefined) {
@@ -87,6 +89,44 @@ ApplicationWindow
                 quietMessageNotification.isSupported = true
             }
         }
+    }
+
+    // Track the active Sailfish profile via profiled so that the soft
+    // in-app blip (quietMessageNotification) is suppressed when the
+    // device is in the silent profile. We keep the dedicated soft sound
+    // (a different, gentler cue than the full incoming-message alert);
+    // we only gate *whether* it plays at all on the profile.
+    DBusInterface {
+        id: profiledInterface
+
+        service: "com.nokia.profiled"
+        path: "/com/nokia/profiled"
+        iface: "com.nokia.profiled"
+
+        signalsEnabled: true
+
+        // Empty until the first get_profile reply / profile_changed arrives.
+        // Canonical silent profile is "silent"; treat anything else as audible.
+        property string profileName: ""
+
+        Component.onCompleted: {
+            // Fetch the active profile once at startup; call() is async.
+            profiledInterface.typedCall("get_profile", [], function(result) {
+                profiledInterface.profileName = result
+            })
+        }
+
+        function profile_changed(changed, active, profile, values) {
+            if (active)
+                profiledInterface.profileName = profile
+        }
+    }
+
+    // Whether the soft in-app blip may play: only when supported and the
+    // active profile is not silent.
+    function quietNotifyAllowed() {
+        return quietMessageNotification.isSupported
+            && profiledInterface.profileName !== "silent"
     }
 
     /// Helper function to mimic "??" operator for easier assignment of maybe undefined/null JS strings
@@ -219,7 +259,7 @@ ApplicationWindow
         // Only ConversationPage.qml has `sessionId` property.
         if(Qt.application.state == Qt.ApplicationActive &&
            (pageStack.currentPage == _mainPage || pageStack.currentPage.sessionId == data.sessionId)) {
-            if(quietMessageNotification.isSupported) {
+            if(quietNotifyAllowed()) {
                 quietMessageNotification.publish()
             }
             return
@@ -287,7 +327,7 @@ ApplicationWindow
         if(Qt.application.state == Qt.ApplicationActive &&
            (pageStack.currentPage.sessionId == data.sessionId)) {
             console.log("Quiet notification for session " + data.sessionId)
-            if(quietMessageNotification.isSupported) {
+            if(quietNotifyAllowed()) {
                 quietMessageNotification.publish()
             }
             return
