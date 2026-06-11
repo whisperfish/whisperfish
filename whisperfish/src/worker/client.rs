@@ -338,25 +338,25 @@ enum QueueProcessState {
     #[default]
     Starting,
     Processing {
-        expected_envelopes: Vec<String>,
+        expected_envelopes: Vec<Uuid>,
     },
     SignalSeen {
-        expected_envelopes: Vec<String>,
+        expected_envelopes: Vec<Uuid>,
     },
     Done,
 }
 
 impl QueueProcessState {
     #[tracing::instrument(level = "trace")]
-    fn observe_guid(&mut self, envelope: &str) {
+    fn observe_guid(&mut self, envelope: Uuid) {
         match self {
             Self::Starting => {
                 *self = Self::Processing {
-                    expected_envelopes: vec![envelope.to_string()],
+                    expected_envelopes: vec![envelope],
                 };
             }
             Self::Processing { expected_envelopes } => {
-                expected_envelopes.push(envelope.to_string());
+                expected_envelopes.push(envelope);
             }
             Self::SignalSeen { .. } | Self::Done => {
                 // no-op
@@ -367,16 +367,16 @@ impl QueueProcessState {
     }
 
     #[tracing::instrument(level = "trace")]
-    fn processed_guid(&mut self, processed_envelope: &str) {
+    fn processed_guid(&mut self, processed_envelope: Uuid) {
         match self {
             Self::SignalSeen { expected_envelopes } => {
-                expected_envelopes.retain(|e| e != processed_envelope);
+                expected_envelopes.retain(|e| *e != processed_envelope);
                 if expected_envelopes.is_empty() {
                     *self = Self::Done;
                 }
             }
             Self::Processing { expected_envelopes } => {
-                expected_envelopes.retain(|e| e != processed_envelope);
+                expected_envelopes.retain(|e| *e != processed_envelope);
             }
             _ => {}
         }
@@ -2936,7 +2936,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
     fn handle(&mut self, msg: Result<Incoming, ServiceError>, ctx: &mut Self::Context) {
         let (guid, msg) = match msg {
             Ok(Incoming::Envelope(e)) => {
-                let guid = e.server_guid.clone().unwrap();
+                let guid = e.parse_server_guid().expect("server guid set");
                 (guid, e)
             }
             Ok(Incoming::QueueEmpty) => {
@@ -2986,7 +2986,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
 
         let storage = self.storage.clone().expect("initialized storage");
 
-        self.initial_queue_process_state.observe_guid(&guid);
+        self.initial_queue_process_state.observe_guid(guid);
 
         let this = ctx.address();
         ctx.spawn(
@@ -3102,7 +3102,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                 }
 
                 act.initial_queue_process_state
-                    .processed_guid(&guid);
+                    .processed_guid(guid);
 
                 let inner = act.inner.pinned();
                 let mut inner = inner.borrow_mut();
