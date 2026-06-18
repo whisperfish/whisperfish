@@ -48,6 +48,8 @@ use tracing_futures::Instrument;
 use uuid::Uuid;
 use whisperfish_store::Settings;
 use whisperfish_store::TrustLevel;
+
+use tokio::sync::watch;
 use whisperfish_store::millis_to_naive_chrono;
 use whisperfish_store::naive_chrono_rounded_down;
 use whisperfish_store::naive_chrono_to_millis;
@@ -418,7 +420,7 @@ pub struct ClientActor {
     self_pni: Option<Pni>,
     storage: Option<Storage>,
     config: std::sync::Arc<crate::config::SignalConfig>,
-    identified_websocket: Option<std::sync::Arc<SignalWebSocket<Identified>>>,
+    identified_websocket: watch::Sender<Option<std::sync::Arc<SignalWebSocket<Identified>>>>,
 
     message_stream_handle: Option<SpawnHandle>,
 
@@ -563,7 +565,7 @@ impl ClientActor {
             self_pni: None,
             storage: None,
             config,
-            identified_websocket: None,
+            identified_websocket: watch::channel(None).0,
 
             message_stream_handle: None,
 
@@ -594,6 +596,7 @@ impl ClientActor {
                 self.storage.clone().expect("initialized storage"),
                 self.self_aci.expect("self-aci set"),
                 self.identified_websocket
+                    .borrow()
                     .as_ref()
                     .map(std::sync::Arc::downgrade)
                     .unwrap_or_default(),
@@ -632,16 +635,24 @@ impl ClientActor {
     fn identified_websocket(
         &self,
     ) -> impl Future<Output = Result<SignalWebSocket<Identified>, ServiceError>> + use<> {
-        // If we have a stored websocket, return a clone of it
-        let ws = self
-            .identified_websocket
-            .as_ref()
-            .map(|ptr| ptr.as_ref().clone());
-        // This is a future as to be equivalent with the unidentified websocket,
-        // and such that we can later decide to change the behaviour of this method to do async work.
-        futures::future::ready(ws.ok_or(ServiceError::IO(std::io::Error::other(
-            "temporarily disconnected",
-        ))))
+        // Subscribe to the watch channel; does not borrow &self.
+        let mut rx = self.identified_websocket.subscribe();
+        async move {
+            // wait_for will immediately return if the WS is available, or will wait for an
+            // established connection to appear
+            let guard = rx
+                .wait_for(|v| v.is_some())
+                .await
+                .map_err(|_| ServiceError::IO(std::io::Error::other("websocket channel closed")))?;
+
+            Ok(guard
+                .as_ref()
+                // the rx.wait_for() above asserts `is_some()`, because it returns the exact value
+                // which has yielded `is_some()`. Hence, we can expect()/unwrap() it.
+                .expect("wait_for(is_some) was checked on the websocket loop")
+                .as_ref()
+                .clone())
+        }
     }
 
     fn unidentified_websocket(
@@ -2856,7 +2867,7 @@ impl Handler<Restart> for ClientActor {
                 Ok((pipe, ws)) => {
                     tracing::info!("message stream established");
                     // Store the identified websocket for reuse
-                    act.identified_websocket = Some(ws.clone());
+                    act.identified_websocket.send_replace(Some(ws.clone()));
                     ctx.notify_later(RefreshPreKeys, Duration::from_secs(2));
 
                     // XXX Maybe RefreshPreKeys should call this or something?
@@ -3117,6 +3128,9 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
     /// Called when the WebSocket somehow has disconnected.
     fn finished(&mut self, ctx: &mut Self::Context) {
         tracing::debug!("Attempting reconnect");
+
+        // Clear the identified websocket so that future calls wait for reconnection
+        self.identified_websocket.send_replace(None);
 
         self.inner.pinned().borrow_mut().connected = false;
         self.inner.pinned().borrow().connectedChanged();
