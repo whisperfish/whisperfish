@@ -5560,6 +5560,7 @@ dependencies = [
  "qttypes",
  "rand 0.9.4",
  "regex",
+ "reqwest-websocket",
  "ringrtc",
  "rpassword",
  "rstest",

@@ -9,8 +9,10 @@ mod linked_devices;
 mod message_expiry;
 mod profile_upload;
 pub mod resize_image;
+mod service_error_ext;
 mod unidentified;
 mod voice_note_transcription;
+use service_error_ext::*;
 
 pub use self::groupv2::*;
 pub use self::linked_devices::*;
@@ -2753,14 +2755,29 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
 impl Handler<DeliverSyncMessage> for ClientActor {
     type Result = ResponseFuture<Result<(), MessageSenderError>>;
 
-    fn handle(&mut self, sync: DeliverSyncMessage, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, sync: DeliverSyncMessage, ctx: &mut Self::Context) -> Self::Result {
         let sync = sync.0;
         let sender = self.message_sender();
+        let client = ctx.address();
 
         Box::pin(async move {
-            let mut sender = sender
-                .await
-                .expect("message sender when sending a sync message");
+            let mut sender = match sender.await {
+                Ok(sender) => sender,
+                Err(error) => {
+                    let Some(time) = error
+                        .can_retry()
+                        .retry_delay_or(chrono::Duration::seconds(30))
+                    else {
+                        tracing::error!(%error, "message sender encountered an error");
+                        return Err(error.into());
+                    };
+
+                    tracing::warn!(%error, "message sender encountered an error, retrying in {time}");
+                    tokio::time::sleep(time.to_std().expect("timedelta within bounds")).await;
+                    let _ = client.send(DeliverSyncMessage(sync)).await;
+                    return Err(error.into());
+                }
+            };
             sender.send_sync_message(sync).await
         })
     }
