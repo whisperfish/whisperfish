@@ -356,8 +356,20 @@ ApplicationWindow
         }
 
         // Does this notification replace an existing one?
-        if (SettingsBridge.minimise_notify && (data.sessionId in notificationMap)) {
+        //
+        // When minimising notifications, subsequent messages for an already
+        // notified session replace the existing notification silently:
+        // we switch to the quiet category and lower the urgency so the
+        // category-driven feedback (sound, vibra, screen wake) does not
+        // re-fire on a mere update. The replacesId guard avoids claiming
+        // a replace when the previous notification has not yet been
+        // assigned an ID by the notification manager (e.g. it is still
+        // queued, or its publish callback has not run yet).
+        if (SettingsBridge.minimise_notify && (data.sessionId in notificationMap)
+            && notificationMap[data.sessionId][0].replacesId !== 0) {
             var first_message = notificationMap[data.sessionId][0]
+            m.category = "harbour-whisperfish-message-quiet"
+            m.urgency = Notification.Low
             m.replacesId = first_message.replacesId
             m.itemCount = first_message.itemCount + 1
         }
