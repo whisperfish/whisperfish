@@ -2117,6 +2117,26 @@ impl<O: Observable> Storage<O> {
             .unwrap()
     }
 
+    /// Returns the sender's [`orm::GroupV2Member`] row within the group, or
+    /// `None` when the recipient is not a stored member (e.g. a pseudonymous
+    /// sender whose membership was never persisted).
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_group_v2_member(
+        &self,
+        group_v2_id: &str,
+        recipient_id: i32,
+    ) -> Option<orm::GroupV2Member> {
+        schema::group_v2_members::table
+            .filter(
+                schema::group_v2_members::group_v2_id
+                    .eq(group_v2_id)
+                    .and(schema::group_v2_members::recipient_id.eq(recipient_id)),
+            )
+            .first::<orm::GroupV2Member>(&mut *self.db())
+            .optional()
+            .unwrap()
+    }
+
     #[tracing::instrument(skip(self))]
     pub fn fetch_group_v2_pending_member(
         &self,
@@ -3306,6 +3326,8 @@ impl<O: Observable> Storage<O> {
 
         let mentions = self.fetch_mentions(&body_ranges);
 
+        let sender_membership = self.fetch_message_sender_membership(&message);
+
         Some(AugmentedMessage {
             inner: message,
             is_voice_note,
@@ -3314,7 +3336,26 @@ impl<O: Observable> Storage<O> {
             reactions: reactions as usize,
             mentions,
             body_ranges,
+            sender_membership,
         })
+    }
+
+    /// Resolves the sender's group membership for a single message.
+    ///
+    /// Returns `None` for direct sessions, for outbound messages (no sender),
+    /// or when the sender is not a stored group member.
+    #[tracing::instrument(skip(self, message))]
+    fn fetch_message_sender_membership(
+        &self,
+        message: &orm::Message,
+    ) -> Option<orm::GroupV2Member> {
+        let session = self.fetch_session_by_id(message.session_id)?;
+        if !session.is_group_v2() {
+            return None;
+        }
+        let group_v2_id = &session.unwrap_group_v2().id;
+        let recipient_id = message.sender_recipient_id?;
+        self.fetch_group_v2_member(group_v2_id, recipient_id)
     }
 
     #[tracing::instrument(skip(self))]
@@ -3439,6 +3480,24 @@ impl<O: Observable> Storage<O> {
                 (read_counts, delivered_counts, viewed_counts)
             });
 
+        // Fetch the sender's group membership for each member of the group
+        // session, so per-message sender roles and labels can be rendered.
+        let sender_memberships: std::collections::HashMap<i32, orm::GroupV2Member> =
+            tracing::trace_span!("fetching sender memberships").in_scope(|| {
+                let session = self.fetch_session_by_id(sid);
+                if !session.as_ref().is_some_and(|s| s.is_group_v2()) {
+                    return Default::default();
+                }
+                let group_v2_id = session.unwrap().unwrap_group_v2().id.clone();
+                schema::group_v2_members::table
+                    .filter(schema::group_v2_members::group_v2_id.eq(group_v2_id))
+                    .load::<orm::GroupV2Member>(&mut *self.db())
+                    .expect("db")
+                    .into_iter()
+                    .map(|m| (m.recipient_id, m))
+                    .collect()
+            });
+
         let mut aug_messages = Vec::with_capacity(messages.len());
         tracing::trace_span!("joining messages, attachments, receipts into AugmentedMessage")
             .in_scope(|| {
@@ -3519,6 +3578,10 @@ impl<O: Observable> Storage<O> {
 
                     let mentions = self.fetch_mentions(&body_ranges);
 
+                    let sender_membership = message
+                        .sender_recipient_id
+                        .and_then(|rid| sender_memberships.get(&rid).cloned());
+
                     aug_messages.push(orm::AugmentedMessage {
                         inner: message,
                         is_voice_note,
@@ -3527,6 +3590,7 @@ impl<O: Observable> Storage<O> {
                         receipt_counts,
                         body_ranges,
                         mentions,
+                        sender_membership,
                     });
                 }
             });
