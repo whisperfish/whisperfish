@@ -6,7 +6,7 @@ use crate::store::observer::{EventObserving, Interest};
 use qmetaobject::{QMetaType, prelude::*};
 use qttypes::{QVariantList, QVariantMap};
 use std::collections::HashMap;
-use whisperfish_store::observer::Event;
+use whisperfish_store::observer::{Event, PrimaryKey};
 use whisperfish_store::orm::SessionType;
 use whisperfish_store::schema;
 use whisperfish_store::store::orm;
@@ -194,6 +194,44 @@ impl SessionListModel {
         let recipient_id = event
             .relation_key_for(schema::recipients::table)
             .and_then(|x| x.as_i32());
+
+        // Group membership events are emitted on the `group_v2_members` / `group_v1_members`
+        // tables and reference the affected session *indirectly* through a `group_v2s` /
+        // `group_v1s` relation rather than a `sessions` relation (see issue #809).
+        // Resolve the affected session via the group relation so the event is handled by
+        // the regular session_id path instead of falling back to a full model reload.
+        //
+        // Gate on the event's primary table being a membership table: other events (e.g.
+        // session or group metadata updates) may also carry a group relation as a
+        // secondary key and must keep following their existing handling paths rather than
+        // being re-routed through the group relation here.
+        let session_id = if event.for_table(schema::group_v2_members::table)
+            || event.for_table(schema::group_v1_members::table)
+        {
+            session_id.or_else(|| {
+                event
+                    .relation_key_for(schema::group_v2s::table)
+                    .and_then(|k| match k {
+                        PrimaryKey::StringRowId(s) => Some(s.clone()),
+                        _ => None,
+                    })
+                    .and_then(|gid| storage.fetch_session_by_group_v2_id(&gid))
+                    .map(|s| s.id)
+                    .or_else(|| {
+                        event
+                            .relation_key_for(schema::group_v1s::table)
+                            .and_then(|k| match k {
+                                PrimaryKey::StringRowId(s) => Some(s.clone()),
+                                _ => None,
+                            })
+                            .and_then(|gid| storage.fetch_session_by_group_v1_id(&gid))
+                            .map(|s| s.id)
+                    })
+            })
+        } else {
+            session_id
+        };
+
         if session_id.is_none()
             && message_id.is_none()
             && attachment_id.is_none()
