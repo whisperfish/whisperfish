@@ -286,7 +286,11 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                         if let Some(membership) = membership {
                             tracing::info!(%membership, "Member already in db. Updating membership.");
                             diesel::update(group_v2_members::table)
-                                .set((group_v2_members::role.eq(member.role as i32),))
+                                .set((
+                                    group_v2_members::role.eq(member.role as i32),
+                                    group_v2_members::label.eq(&member.label),
+                                    group_v2_members::label_emoji.eq(&member.label_emoji),
+                                ))
                                 .filter(
                                     group_v2_members::recipient_id
                                         .eq(recipient.id)
@@ -306,6 +310,8 @@ impl Handler<RequestGroupV2Info> for ClientActor {
                                     group_v2_members::joined_at_revision
                                         .eq(member.joined_at_version as i32),
                                     group_v2_members::role.eq(member.role as i32),
+                                    group_v2_members::label.eq(&member.label),
+                                    group_v2_members::label_emoji.eq(&member.label_emoji),
                                 ))
                                 .execute(&mut *storage.db())?;
                             storage
@@ -985,14 +991,33 @@ impl Handler<GroupV2Update> for ClientActor {
                                     "Member label: {} ({label_emoji}) {label_string}",
                                     user_id.service_id_string()
                                 );
-                                // TODO
-                                // storage.update_group_v2_label(...);
-                                db_triggers.push(GroupV2Trigger::Recipient(user_id.raw_uuid()));
+                                let recipient_uuid = user_id.raw_uuid();
+                                let next_label = (!label_string.is_empty()).then_some(label_string);
+                                let next_label_emoji =
+                                    (!label_emoji.is_empty()).then_some(label_emoji);
+                                match user_id.aci() {
+                                    Some(aci) => {
+                                        storage.update_group_v2_member_label(
+                                            &group_v2,
+                                            aci,
+                                            next_label,
+                                            next_label_emoji,
+                                        );
+                                        db_triggers.push(GroupV2Trigger::Recipient(recipient_uuid));
+                                    }
+                                    None => {
+                                        tracing::warn!(
+                                            "Member label change for non-ACI service id \
+                                             {:?}; ignoring",
+                                            recipient_uuid
+                                        );
+                                    }
+                                }
                             }
-                            GroupChange::MemberLabelAccess(_access) => {
-                                tracing::debug!("Member label access: {:?}", _access);
-                                // TODO
-                                // storage.update_group_v2_member_label_access(&group_v2, _access.into());
+                            GroupChange::MemberLabelAccess(access) => {
+                                tracing::debug!("Member label access: {:?}", access);
+                                storage
+                                    .update_group_v2_member_label_access(&group_v2, access.into());
                             }
                         }
                     }

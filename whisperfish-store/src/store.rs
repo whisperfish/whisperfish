@@ -4218,6 +4218,60 @@ impl<O: Observable> Storage<O> {
         }
     }
 
+    /// Update the label of a GroupV2 member.
+    ///
+    /// Triggers observer update on the group members list.
+    pub fn update_group_v2_member_label(
+        &self,
+        group_v2: &orm::GroupV2,
+        aci: Aci,
+        next_label: Option<String>,
+        next_label_emoji: Option<String>,
+    ) -> Option<orm::Recipient> {
+        use crate::schema::group_v2_members::dsl::*;
+
+        if let Some(recipient) = self.fetch_recipient(&aci.into()) {
+            let updated = diesel::update(
+                group_v2_members.filter(
+                    group_v2_id
+                        .eq(&group_v2.id)
+                        .and(recipient_id.eq(recipient.id)),
+                ),
+            )
+            .set((label.eq(next_label), label_emoji.eq(next_label_emoji)))
+            .execute(&mut *self.db())
+            .expect("db");
+            if updated == 0 {
+                tracing::warn!("No such member {:?} in group (update label)", aci);
+                None
+            } else {
+                self.observe_update(schema::group_v2_members::table, recipient.aci())
+                    .with_relation(schema::group_v2s::table, group_v2.id.to_owned());
+                Some(recipient)
+            }
+        } else {
+            tracing::error!("No such user {:?} (update label)", aci);
+            None
+        }
+    }
+
+    /// Update the access required to set member labels in a GroupV2.
+    ///
+    /// Triggers observer update on the group.
+    pub fn update_group_v2_member_label_access(
+        &self,
+        group_v2: &orm::GroupV2,
+        next_access: orm::AccessRequired,
+    ) {
+        use crate::schema::group_v2s::dsl::*;
+
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(access_required_for_member_labels.eq(i32::from(next_access)))
+            .execute(&mut *self.db())
+            .expect("db");
+        self.observe_update(schema::group_v2s::table, group_v2.id.to_owned());
+    }
+
     /// Add a member to a group.
     ///
     /// Returns the membership and recipient if it was added.
