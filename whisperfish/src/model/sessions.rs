@@ -287,6 +287,31 @@ impl SessionListModel {
             return;
         }
 
+        if event.for_table(schema::receipts::table) {
+            // Receipt (delivery/read/viewed) events reference the affected session only
+            // transitively via their message; the emitter attaches a `sessions` relation
+            // through `with_transitive_relation` and a `messages` relation directly.
+            // The session row only changes visually when the receipt is for the session's
+            // last message — its hasDeliveries/hasReads/hasViews all derive from
+            // `last_message`'s receipt counts — so refresh that one row in place instead
+            // of routing through the generic session_id path, which re-fetches and
+            // re-sorts the whole model per receipt.
+            if let (Some(session_id), Some(message_id)) = (session_id, message_id)
+                && let Some((idx, session)) = self
+                    .content
+                    .iter_mut()
+                    .enumerate()
+                    .find(|(_, s)| s.id == session_id)
+                && session.last_message.as_ref().map(|m| m.id) == Some(message_id)
+            {
+                session.last_message =
+                    storage.fetch_last_message_by_session_id_augmented(session.id);
+                let idx = self.row_index(idx as i32);
+                self.data_changed(idx, idx);
+            }
+            return;
+        }
+
         if let Some(session_id) = session_id {
             if let Some(session) = storage.fetch_session_by_id_augmented(session_id) {
                 let new_idx = self.content.binary_search_by_key(

@@ -313,6 +313,29 @@ impl EventObserving for Session {
                 return;
             } else if event.for_row(schema::sessions::table, session_id) {
                 self.session = storage.fetch_session_by_id_augmented(session_id);
+            } else if event.for_table(schema::receipts::table)
+                && let Some(message_id) = message_id
+            {
+                // Receipt (delivery/read/viewed) events reference the session only
+                // transitively via their message. Only the affected message's receipt
+                // counts and — if that message is the session's last message — session
+                // summary metadata (hasDeliveries/hasReads/hasViews, derived from
+                // `last_message`'s receipt counts) change. Forward to the message list
+                // unconditionally (it refreshes the single message efficiently); skip the
+                // augmented session fetch when the receipt isn't for the last message.
+                let is_last_message = self
+                    .session
+                    .as_ref()
+                    .and_then(|s| s.last_message.as_ref())
+                    .map(|m| m.id == message_id)
+                    .unwrap_or(false);
+                if is_last_message {
+                    self.session = storage.fetch_session_by_id_augmented(session_id);
+                }
+                self.message_list
+                    .pinned()
+                    .borrow_mut()
+                    .observe(storage, session_id, event);
             } else if message_id.is_some() {
                 // This also grabs reactions.
                 self.session = storage.fetch_session_by_id_augmented(session_id);
