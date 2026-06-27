@@ -31,10 +31,6 @@ impl Handler<InitializePni> for ClientActor {
         Box::pin(
             async move {
                 whoami.await;
-                // XXX: This is not ideal: if we can't connect for some intermittent reason,
-                // we probably want to retry a few times before giving up.
-                // However, nobody should exist anymore that needs this migration logic...
-                let i_ws = i_ws.await?;
 
                 if storage.pni_storage().get_identity_key_pair().await.is_ok() {
                     // XXX: this is not a great way to check if PNI is initialized
@@ -62,6 +58,11 @@ impl Handler<InitializePni> for ClientActor {
 
                 let identity_key_pair = protocol::IdentityKeyPair::generate(&mut rand::rng());
                 let mut pni = storage.pni_storage();
+
+                // XXX: This is not ideal: if we can't connect for some intermittent reason,
+                // we probably want to retry a few times before giving up.
+                // However, nobody should exist anymore that needs this migration logic...
+                let i_ws = i_ws.await?;
 
                 let mut am = AccountManager::new(service.clone(), i_ws, profile_key);
 
