@@ -28,3 +28,6 @@ dbus-user.own be.rubdos.whisperfish.*
 
 # Speech Note
 dbus-user.talk org.mkiol.Speech.*
+
+# profiled: query active profile to gate the soft in-app blip
+dbus-user.talk com.nokia.profiled

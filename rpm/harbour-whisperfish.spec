@@ -378,6 +378,8 @@ install -Dm 644 harbour-whisperfish-message.conf \
     %{buildroot}%{_datadir}/lipstick/notificationcategories/harbour-whisperfish-message.conf
 install -Dm 644 harbour-whisperfish-call.conf \
     %{buildroot}%{_datadir}/lipstick/notificationcategories/harbour-whisperfish-call.conf
+install -Dm 644 harbour-whisperfish-message-quiet.conf \
+    %{buildroot}%{_datadir}/lipstick/notificationcategories/harbour-whisperfish-message-quiet.conf
 
 # Application icons
 for RES in 86x86 108x108 128x128 172x172; do
