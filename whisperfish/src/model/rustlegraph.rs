@@ -86,7 +86,7 @@ impl RustleGraph {
     fn get_duration(&self) -> f64 {
         if let Some(viz) = self.vizualizer.as_ref() {
             let time = viz.time();
-            time.seconds as f64 + time.frac
+            time.as_secs_f64()
         } else {
             0.
         }

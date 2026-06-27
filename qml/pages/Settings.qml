@@ -677,6 +677,21 @@ Page {
                 value: AppState.recipientCount()
             }
             DetailItem {
+                //: GStreamer version indication in settings
+                //% "GStreamer version"
+                label: qsTrId("whisperfish-settings-gstreamer-version")
+                value: AppState.gstreamer_version
+            }
+            DetailItem {
+                //: Voice note codec (dependeing on gstreamer version)
+                //% "Voice note codec"
+                label: qsTrId("whisperfish-settings-voice_note_codec")
+                // Translated in ChatTextInput.qml
+                value: useAac()
+                       ? "AAC"
+                       : "Opus (%1)".arg(qsTrId("whisperfish-voice-note-ios-warning"))
+            }
+            DetailItem {
                 //: Settings page encrypted database
                 //% "Encrypted Database"
                 label: qsTrId("whisperfish-settings-encrypted-db")
@@ -687,13 +702,6 @@ Page {
                     //: Settings page encrypted db disabled
                     //% "Disabled"
                     qsTrId("whisperfish-settings-encrypted-db-disabled")
-            }
-            DetailItem {
-                //: GStreamer version indication in settings
-                //% "GStreamer version"
-                label: qsTrId("whisperfish-settings-gstreamer-version")
-                value: AppState.gstreamer_version
-                visible: debugMode
             }
             DetailItem {
                 label: "Prekeys (ACI/PNI)"
