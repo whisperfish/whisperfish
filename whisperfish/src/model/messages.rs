@@ -2,7 +2,7 @@
 
 use crate::model::*;
 use crate::store::Storage;
-use crate::store::observer::{EventObserving, Interest};
+use crate::store::observer::{EventObserving, Interest, PrimaryKey};
 use libsignal_service::groups_v2::Role;
 use qmetaobject::QObjectBox;
 use qmetaobject::{QMetaType, prelude::*};
@@ -313,6 +313,29 @@ impl EventObserving for Session {
                 return;
             } else if event.for_row(schema::sessions::table, session_id) {
                 self.session = storage.fetch_session_by_id_augmented(session_id);
+            } else if event.for_table(schema::receipts::table)
+                && let Some(message_id) = message_id
+            {
+                // Receipt (delivery/read/viewed) events reference the session only
+                // transitively via their message. Only the affected message's receipt
+                // counts and — if that message is the session's last message — session
+                // summary metadata (hasDeliveries/hasReads/hasViews, derived from
+                // `last_message`'s receipt counts) change. Forward to the message list
+                // unconditionally (it refreshes the single message efficiently); skip the
+                // augmented session fetch when the receipt isn't for the last message.
+                let is_last_message = self
+                    .session
+                    .as_ref()
+                    .and_then(|s| s.last_message.as_ref())
+                    .map(|m| m.id == message_id)
+                    .unwrap_or(false);
+                if is_last_message {
+                    self.session = storage.fetch_session_by_id_augmented(session_id);
+                }
+                self.message_list
+                    .pinned()
+                    .borrow_mut()
+                    .observe(storage, session_id, event);
             } else if message_id.is_some() {
                 // This also grabs reactions.
                 self.session = storage.fetch_session_by_id_augmented(session_id);
@@ -345,6 +368,12 @@ impl EventObserving for Session {
                         }
                     }
                 }
+            } else if self.group_matches_event(&event) {
+                // Group membership events (group_v2_members / group_v1_members) reference the
+                // affected session indirectly through a group_v2s / group_v1s relation (see
+                // issue #809). They only affect session-level metadata, so refresh the session
+                // without reloading the message list.
+                self.session = storage.fetch_session_by_id_augmented(session_id);
             } else {
                 tracing::debug!(
                     "Falling back to reloading the whole Session for event {:?}",
@@ -391,6 +420,38 @@ impl Session {
         self.session_changed();
         if was_valid != self.get_valid(None) {
             self.valid_changed();
+        }
+    }
+
+    /// Whether `event` is a group membership event for the group this session belongs
+    /// to. Membership events are emitted on the `group_v2_members` / `group_v1_members`
+    /// tables and reference the session indirectly via the `group_v2s` / `group_v1s`
+    /// relation rather than via the `sessions` table (see issue #809).
+    ///
+    /// Gating on the event's *primary table* (rather than merely on the presence of a
+    /// group relation) avoids falsely matching other events that happen to carry a group
+    /// relation as a secondary key — e.g. session metadata updates associated with a
+    /// group. The membership event's primary key is the member's identifier, not the group
+    /// id, so the group affinity is confirmed separately via the group relation.
+    fn group_matches_event(&self, event: &crate::store::observer::Event) -> bool {
+        let is_membership_event = event.for_table(schema::group_v2_members::table)
+            || event.for_table(schema::group_v1_members::table);
+        if !is_membership_event {
+            return false;
+        }
+        let Some(session) = self.session.as_ref() else {
+            return false;
+        };
+        match &session.inner.r#type {
+            orm::SessionType::GroupV2(group) => matches!(
+                event.relation_key_for(schema::group_v2s::table),
+                Some(PrimaryKey::StringRowId(s)) if s == &group.id
+            ),
+            orm::SessionType::GroupV1(group) => matches!(
+                event.relation_key_for(schema::group_v1s::table),
+                Some(PrimaryKey::StringRowId(s)) if s == &group.id
+            ),
+            orm::SessionType::DirectMessage(_) => false,
         }
     }
 
