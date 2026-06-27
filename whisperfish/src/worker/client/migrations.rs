@@ -1,7 +1,7 @@
+/// Migration to ensure the primary device Whisperfish has master key and storage service key
+mod account_entropy_pool;
 /// Migrations related to groupv2
 mod groupv2;
-/// Migration to ensure the primary device Whisperfish has master key and storage service key
-mod master_key;
 /// Migration to remove R@ reactions and dump them in the correct table.
 mod parse_reactions;
 /// Migration to initialize PNI
@@ -11,8 +11,8 @@ mod pni;
 /// Installs before Whisperfish 0.6 do not have their own UUID present in settings.
 mod whoami;
 
+use self::account_entropy_pool::*;
 use self::groupv2::*;
-use self::master_key::*;
 use self::parse_reactions::*;
 use self::pni::*;
 use self::whoami::*;
@@ -44,7 +44,7 @@ pub(super) struct MigrationState {
     pub self_profile_ready: bool,
     pub reactions_ready: bool,
     pub pni_distributed: bool,
-    pub check_master_key: bool,
+    pub check_account_entropy_pool: bool,
 }
 
 impl MigrationState {
@@ -56,7 +56,7 @@ impl MigrationState {
             self_profile_ready: false,
             reactions_ready: false,
             pni_distributed: false,
-            check_master_key: false,
+            check_account_entropy_pool: false,
         }
     }
 
@@ -130,7 +130,7 @@ impl MigrationCondVar {
     notify_method_for_var!(notify_self_profile_ready -> self_profile_ready);
     notify_method_for_var!(notify_reactions_ready -> reactions_ready);
     notify_method_for_var!(notify_pni_distributed -> pni_distributed);
-    notify_method_for_var!(notify_check_master_key -> check_master_key);
+    notify_method_for_var!(notify_check_account_entropy_pool -> check_account_entropy_pool);
 }
 
 impl ClientActor {
@@ -141,7 +141,7 @@ impl ClientActor {
         ctx.notify(RefreshOwnProfile { force: false });
         ctx.notify(ParseOldReaction);
         ctx.notify(InitializePni);
-        ctx.notify(CheckMasterKey);
+        ctx.notify(CheckAccountEntropyPool);
     }
 }
 

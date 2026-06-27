@@ -1,4 +1,5 @@
 use super::*;
+use libsignal_service::provisioning::ProvisioningSecrets;
 use qmeta_async::with_executor;
 use std::convert::TryInto;
 
@@ -155,6 +156,16 @@ impl Handler<LinkDevice> for ClientActor {
             .fetch_self_recipient_profile_key()
             .and_then(|key| key.try_into().ok());
         let master_key = store.fetch_master_key();
+        let account_entropy_pool = store
+            .fetch_account_entropy_pool()
+            .expect("AEP when linking another device");
+        let secrets = ProvisioningSecrets {
+            credentials,
+            master_key,
+            ephemeral_backup_key: None,
+            account_entropy_pool,
+            media_root_backup_key: None,
+        };
 
         Box::pin(
             // Without `async move`, service would be borrowed instead of encapsulated in a Future.
@@ -169,8 +180,7 @@ impl Handler<LinkDevice> for ClientActor {
                             url,
                             &store.aci_storage(),
                             &store.pni_storage(),
-                            credentials,
-                            master_key,
+                            secrets,
                         )
                         .await?,
                 )

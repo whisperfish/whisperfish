@@ -5032,11 +5032,7 @@ impl<O: Observable> Storage<O> {
 
     // TODO This should be in lss (and use lss types?)
     #[tracing::instrument(skip(self))]
-    pub fn store_account_entropy_pool(&self, entropy: Option<AccountEntropyPool>) {
-        if let Some(entropy) = entropy {
-            self.write_setting(Settings::ACCOUNT_ENTROPY_POOL, entropy.to_string().as_str());
-        } else {
-            self.delete_setting(Settings::ACCOUNT_ENTROPY_POOL);
-        }
+    pub fn store_account_entropy_pool(&self, entropy: &AccountEntropyPool) {
+        self.write_setting(Settings::ACCOUNT_ENTROPY_POOL, entropy.to_string().as_str());
     }
 }
