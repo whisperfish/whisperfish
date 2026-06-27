@@ -6,7 +6,17 @@ import Sailfish.Silica 1.0
 BackgroundItem {
     id: root
 
-    implicitWidth: Math.max(label.width, minimumWidth)
+    // The sender's custom group member label, shown as a pill to the right of
+    // the name. Only rendered for incoming group messages (see the pill's
+    // `visible` binding); outbound messages and direct sessions leave the
+    // properties empty, so the pill stays hidden.
+    property string labelText: ""
+    property string labelEmoji: ""
+
+    readonly property real _pillWidth: memberLabelPill.visible
+        ? Theme.paddingSmall + memberLabelPill.width : 0
+
+    implicitWidth: Math.max(label.width + _pillWidth, minimumWidth)
     implicitHeight: label.height + (enabled ? backgroundGrow : 0)
     width: Math.min(implicitWidth, maximumWidth)
     height: implicitHeight
@@ -50,6 +60,18 @@ BackgroundItem {
                         '#'+Qt.md5(recipient.uuid).substr(0, 6)+'0F')
                     : highlighted ? Theme.highlightColor : Theme.primaryColor
         defaultLinkActions: false
+    }
+
+    MemberLabelPill {
+        id: memberLabelPill
+        anchors.left: label.right
+        anchors.leftMargin: Theme.paddingSmall
+        anchors.verticalCenter: label.verticalCenter
+        alignHeight: label.height
+        labelText: root.labelText
+        labelEmoji: root.labelEmoji
+        // Pills belong to incoming group senders only.
+        visible: !root.outbound && (root.labelText.length > 0 || root.labelEmoji.length > 0)
     }
 
     RoundedRect {

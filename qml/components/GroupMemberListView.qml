@@ -187,6 +187,11 @@ SilicaListView {
                     qsTrId("whisperfish-group-member-name-self") : item.isUnknownContact ? // Translated in SessionDelegate.qml
                     qsTrId("whisperfish-recipient-no-name") : name
                 }
+                MemberLabelPill {
+                    alignHeight: nameLabel.height
+                    labelText: String(model.label || "")
+                    labelEmoji: String(model.labelEmoji || "")
+                }
             }
             Label {
                 color: item.down ? Theme.secondaryHighlightColor : Theme.secondaryColor

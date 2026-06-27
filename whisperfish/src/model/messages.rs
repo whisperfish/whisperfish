@@ -436,6 +436,10 @@ define_model_roles! {
 
         SenderRecipientId(sender_recipient_id via int_from_i32_option): "senderRecipientId",
 
+        SenderRole(fn sender_role(&self)): "senderRole",
+        SenderLabel(fn sender_label(&self) via qstring_from_option): "senderLabel",
+        SenderLabelEmoji(fn sender_label_emoji(&self) via qstring_from_option): "senderLabelEmoji",
+
         HasDeliveries(receipt_counts.delivered via bool_from_usize): "hasDeliveries",
         HasReads(receipt_counts.read via bool_from_usize):    "hasReads",
         HasViews(receipt_counts.viewed via bool_from_usize):  "hasViews",

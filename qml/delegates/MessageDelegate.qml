@@ -211,6 +211,8 @@ ListItem {
             highlighted: down || root.highlighted
             backgroundGrow: contentPadding/2
             radius: backgroundCornerRadius
+            labelText: String(modelData.senderLabel || "")
+            labelEmoji: String(modelData.senderLabelEmoji || "")
         }
 
         Loader {

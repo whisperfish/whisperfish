@@ -1288,6 +1288,10 @@ impl ReceiptCounts {
 }
 
 /// [`Message`] augmented with its sender, attachment count and receipts.
+///
+/// For group messages, `sender_membership` carries the sender's
+/// [`GroupV2Member`] row within the group session (if any), encoding the
+/// member's role, label and label emoji for display.
 #[derive(Clone, Default)]
 pub struct AugmentedMessage {
     pub inner: Message,
@@ -1297,6 +1301,7 @@ pub struct AugmentedMessage {
     pub receipt_counts: ReceiptCounts,
     pub body_ranges: Vec<crate::store::protos::body_range_list::BodyRange>,
     pub mentions: std::collections::HashMap<uuid::Uuid, Recipient>,
+    pub sender_membership: Option<GroupV2Member>,
 }
 
 impl Display for AugmentedMessage {
@@ -1329,6 +1334,29 @@ impl AugmentedMessage {
 
     pub fn queued(&self) -> bool {
         self.is_outbound && self.sent_timestamp.is_none() && !self.sending_has_failed
+    }
+
+    /// The sender's role within the group session, or `-1` when the message is
+    /// not a group message or the sender has no stored membership.
+    pub fn sender_role(&self) -> i32 {
+        self.sender_membership
+            .as_ref()
+            .map(|m| m.role)
+            .unwrap_or(-1)
+    }
+
+    /// The sender's custom group member label text, if any.
+    pub fn sender_label(&self) -> Option<&str> {
+        self.sender_membership
+            .as_ref()
+            .and_then(|m| m.label.as_deref())
+    }
+
+    /// The sender's custom group member label emoji, if any.
+    pub fn sender_label_emoji(&self) -> Option<&str> {
+        self.sender_membership
+            .as_ref()
+            .and_then(|m| m.label_emoji.as_deref())
     }
 
     pub fn attachments(&self) -> u32 {
@@ -1900,6 +1928,7 @@ mod tests {
             reactions: 0,
             body_ranges: vec![],
             mentions: Default::default(),
+            sender_membership: None,
         }
     }
 
