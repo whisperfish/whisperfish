@@ -343,6 +343,32 @@ where
         });
         self
     }
+
+    /// Declare a two-hop transitive relation on the emitted event: the primary table
+    /// `T` joins to `Via` via a declared FK, and `Via` joins to `Target` via a declared
+    /// FK. Both edges are proven at compile time through `JoinTo` bounds, so this is as
+    /// honest as [`with_relation`] without requiring a direct `T -> Target` FK.
+    ///
+    /// The pushed relation looks identical to a direct `with_relation(Target, key)` to
+    /// consumers; only the *path* by which it was justified is two-hop.
+    pub fn with_transitive_relation<Via, Target>(
+        mut self,
+        _via: Via,
+        _target: Target,
+        relation_key: impl Into<PrimaryKey>,
+    ) -> Self
+    where
+        Via: diesel::Table + 'static,
+        Target: diesel::Table + 'static,
+        Via: diesel::JoinTo<T>,
+        Target: diesel::JoinTo<Via>,
+    {
+        self.event.relations.push(Relation {
+            table: Table::from_diesel::<Target>(),
+            key: relation_key.into(),
+        });
+        self
+    }
 }
 
 #[derive(Copy, Clone)]
