@@ -487,8 +487,7 @@ impl ProfileUpdater {
                     // We mark the profile as fetched *anyway* in order to avoid rate
                     // limiting errors.
                     if !is_own_profile_refresh {
-                        // XXX Should we instead *just* update the time?
-                        storage.remove_profile(recipient_aci.into());
+                        storage.mark_profile_updated(recipient_aci.into());
                     }
 
                     return Err(e).context("unknown profile refresh error");
