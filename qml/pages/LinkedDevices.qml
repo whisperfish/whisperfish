@@ -129,8 +129,6 @@ Page {
                     width: parent ? parent.width : Screen.width
 
                     MenuItem {
-                        enabled: model.id > 1
-                        visible: enabled
                         //: Rename the linked or primary device menu option
                         //% "Rename"
                         text: qsTrId("whisperfish-device-rename")
