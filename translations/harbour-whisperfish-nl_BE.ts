@@ -130,13 +130,13 @@
         <location filename="../qml/harbour-whisperfish-main.qml" line="412"/>
         <source>Mark as read</source>
         <extracomment>Notification action: mark message as read</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Als gelezen markeren</translation>
     </message>
     <message id="whisperfish-notification-reply_to_message">
         <location filename="../qml/harbour-whisperfish-main.qml" line="422"/>
         <source>Reply</source>
         <extracomment>Notification action: Reply to (i.e. quote) the message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Beantwoorden</translation>
     </message>
     <message id="whisperfish-fatal-error-setup-client">
         <location filename="../qml/harbour-whisperfish-main.qml" line="522"/>
@@ -522,13 +522,13 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="59"/>
         <source>Primary device</source>
         <extracomment>The nameless primary device in linked devices list</extracomment>
-        <translation type="unfinished">Primair toestel</translation>
+        <translation>Primair toestel</translation>
     </message>
     <message id="whisperfish-secondary-device-name">
         <location filename="../qml/pages/LinkedDevices.qml" line="63"/>
         <source>Device %1</source>
         <extracomment>A nameless secondary device in linked devices list</extracomment>
-        <translation type="unfinished">Toestel %1</translation>
+        <translation>Toestel %1</translation>
     </message>
     <message id="whisperfish-device-link-date">
         <location filename="../qml/pages/LinkedDevices.qml" line="84"/>
