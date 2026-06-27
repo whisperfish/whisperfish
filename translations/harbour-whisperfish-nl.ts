@@ -2177,7 +2177,7 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-sender-name-label-outgoing">
         <location filename="../qml/components/QuotedMessagePreview.qml" line="116"/>
-        <location filename="../qml/components/SenderNameLabel.qml" line="41"/>
+        <location filename="../qml/components/SenderNameLabel.qml" line="51"/>
         <location filename="../qml/harbour-whisperfish-main.qml" line="167"/>
         <location filename="../qml/pages/SearchPage.qml" line="210"/>
         <location filename="../qml/pages/SearchPage.qml" line="219"/>
@@ -2223,14 +2223,14 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-message-deleted-note">
         <location filename="../qml/cover/CoverPage.qml" line="155"/>
-        <location filename="../qml/delegates/MessageDelegate.qml" line="267"/>
+        <location filename="../qml/delegates/MessageDelegate.qml" line="269"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="51"/>
         <source>this message was deleted</source>
         <extracomment>Placeholder note for a deleted message</extracomment>
         <translation>dit bericht werd verwijderd</translation>
     </message>
     <message id="whisperfish-message-empty-note">
-        <location filename="../qml/delegates/MessageDelegate.qml" line="270"/>
+        <location filename="../qml/delegates/MessageDelegate.qml" line="272"/>
         <source>this message is empty</source>
         <extracomment>Placeholder note if an empty message is encountered.</extracomment>
         <translation>dit bericht is leeg</translation>
