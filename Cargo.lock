@@ -2325,7 +2325,7 @@ dependencies = [
 [[package]]
 name = "libsignal-account-keys"
 version = "0.1.0"
-source = "git+https://github.com/signalapp//libsignal?tag=v0.91.0#8418be45dba3ebc17127b5c6b76ce02886350524"
+source = "git+https://github.com/signalapp//libsignal?tag=v0.94.4#46d867c986f66201e34e7ae20ce423eec742bf3f"
 dependencies = [
  "argon2",
  "derive_more",
@@ -2348,7 +2348,7 @@ dependencies = [
 [[package]]
 name = "libsignal-core"
 version = "0.1.0"
-source = "git+https://github.com/signalapp//libsignal?tag=v0.91.0#8418be45dba3ebc17127b5c6b76ce02886350524"
+source = "git+https://github.com/signalapp//libsignal?tag=v0.94.4#46d867c986f66201e34e7ae20ce423eec742bf3f"
 dependencies = [
  "curve25519-dalek",
  "derive_more",
@@ -2366,8 +2366,8 @@ dependencies = [
 
 [[package]]
 name = "libsignal-debug"
-version = "0.91.0"
-source = "git+https://github.com/signalapp//libsignal?tag=v0.91.0#8418be45dba3ebc17127b5c6b76ce02886350524"
+version = "0.94.4"
+source = "git+https://github.com/signalapp//libsignal?tag=v0.94.4#46d867c986f66201e34e7ae20ce423eec742bf3f"
 dependencies = [
  "cfg-if",
 ]
@@ -2375,7 +2375,7 @@ dependencies = [
 [[package]]
 name = "libsignal-protocol"
 version = "0.1.0"
-source = "git+https://github.com/signalapp/libsignal?tag=v0.91.0#8418be45dba3ebc17127b5c6b76ce02886350524"
+source = "git+https://github.com/signalapp/libsignal?tag=v0.94.4#46d867c986f66201e34e7ae20ce423eec742bf3f"
 dependencies = [
  "aes",
  "aes-gcm-siv",
@@ -2414,7 +2414,7 @@ dependencies = [
 [[package]]
 name = "libsignal-service"
 version = "0.1.0"
-source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=main#f93ec5a703f122b8094cc240ddbde02f1e7aad7c"
+source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=main#b09f88ecc90ba068a308caf7f0e1e1d734c8e75f"
 dependencies = [
  "aes",
  "aes-gcm",
@@ -2433,8 +2433,8 @@ dependencies = [
  "libsignal-account-keys",
  "libsignal-core",
  "libsignal-protocol",
- "prost 0.13.5",
- "prost-build 0.13.5",
+ "prost 0.14.3",
+ "prost-build 0.14.3",
  "rand 0.9.4",
  "rand_core 0.6.4",
  "reqwest",
@@ -3085,7 +3085,7 @@ dependencies = [
 [[package]]
 name = "poksho"
 version = "0.7.0"
-source = "git+https://github.com/signalapp//libsignal?tag=v0.91.0#8418be45dba3ebc17127b5c6b76ce02886350524"
+source = "git+https://github.com/signalapp//libsignal?tag=v0.94.4#46d867c986f66201e34e7ae20ce423eec742bf3f"
 dependencies = [
  "curve25519-dalek",
  "hmac",
@@ -4281,7 +4281,7 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 [[package]]
 name = "signal-crypto"
 version = "0.1.0"
-source = "git+https://github.com/signalapp//libsignal?tag=v0.91.0#8418be45dba3ebc17127b5c6b76ce02886350524"
+source = "git+https://github.com/signalapp//libsignal?tag=v0.94.4#46d867c986f66201e34e7ae20ce423eec742bf3f"
 dependencies = [
  "aes",
  "cbc",
@@ -5270,7 +5270,7 @@ dependencies = [
 [[package]]
 name = "usernames"
 version = "0.1.0"
-source = "git+https://github.com/signalapp/libsignal?tag=v0.91.0#8418be45dba3ebc17127b5c6b76ce02886350524"
+source = "git+https://github.com/signalapp/libsignal?tag=v0.94.4#46d867c986f66201e34e7ae20ce423eec742bf3f"
 dependencies = [
  "curve25519-dalek",
  "displaydoc",
@@ -6227,7 +6227,7 @@ dependencies = [
 [[package]]
 name = "zkcredential"
 version = "0.1.0"
-source = "git+https://github.com/signalapp//libsignal?tag=v0.91.0#8418be45dba3ebc17127b5c6b76ce02886350524"
+source = "git+https://github.com/signalapp//libsignal?tag=v0.94.4#46d867c986f66201e34e7ae20ce423eec742bf3f"
 dependencies = [
  "cfg-if",
  "curve25519-dalek",
@@ -6245,7 +6245,7 @@ dependencies = [
 [[package]]
 name = "zkgroup"
 version = "0.9.0"
-source = "git+https://github.com/signalapp//libsignal?tag=v0.91.0#8418be45dba3ebc17127b5c6b76ce02886350524"
+source = "git+https://github.com/signalapp//libsignal?tag=v0.94.4#46d867c986f66201e34e7ae20ce423eec742bf3f"
 dependencies = [
  "aes",
  "aes-gcm-siv",
