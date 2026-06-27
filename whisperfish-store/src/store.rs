@@ -128,6 +128,7 @@ pub struct Message {
 pub struct MessagePointer {
     pub message_id: i32,
     pub session_id: i32,
+    pub timestamp: NaiveDateTime,
 }
 
 /// ID-free Message model for insertions
@@ -1662,13 +1663,18 @@ impl<O: Observable> Storage<O> {
         let pointer: Option<MessagePointer> = diesel::update(messages)
             .filter(server_timestamp.eq(timestamp).and(is_read.ne(true)))
             .set(is_read.eq(true))
-            .returning((schema::messages::id, schema::messages::session_id))
+            .returning((
+                schema::messages::id,
+                schema::messages::session_id,
+                schema::messages::server_timestamp,
+            ))
             .load(&mut *self.db())
             .unwrap()
             .into_iter()
-            .map(|(m_id, s_id)| MessagePointer {
+            .map(|(m_id, s_id, ts)| MessagePointer {
                 message_id: m_id,
                 session_id: s_id,
+                timestamp: ts,
             })
             .collect::<Vec<MessagePointer>>()
             .pop();
@@ -1699,7 +1705,7 @@ impl<O: Observable> Storage<O> {
 
         // Part 1 - mark messages as read
 
-        let pointers: Vec<MessagePointer> = diesel::update(messages)
+        let results: Vec<(i32, i32, NaiveDateTime)> = diesel::update(messages)
             .filter(
                 server_timestamp
                     .eq_any(timestamps.clone())
@@ -1707,41 +1713,59 @@ impl<O: Observable> Storage<O> {
             )
             // XXX `is_read` should only be used for "self-has-read", perhaps
             .set(is_read.eq(true))
-            .returning((schema::messages::id, schema::messages::session_id))
+            .returning((
+                schema::messages::id,
+                schema::messages::session_id,
+                schema::messages::server_timestamp,
+            ))
             .load(&mut *self.db())
             .unwrap()
             .into_iter()
-            .map(|(m_id, s_id)| MessagePointer {
+            .collect();
+
+        let pointers: Vec<MessagePointer> = results
+            .into_iter()
+            .map(|(m_id, s_id, ts)| MessagePointer {
                 message_id: m_id,
                 session_id: s_id,
+                timestamp: ts,
             })
             .collect();
 
-        for ptr in pointers.iter() {
-            self.observe_update(messages, ptr.message_id)
-                .with_relation(schema::sessions::table, ptr.session_id);
+        for pointer in pointers.iter() {
+            self.observe_update(messages, pointer.message_id)
+                .with_relation(schema::sessions::table, pointer.session_id);
         }
 
         // Part 2 - insert/update read receipts
 
-        let pointers: Vec<MessagePointer> = schema::messages::table
-            .select((schema::messages::id, schema::messages::session_id))
+        let results: Vec<(i32, i32, NaiveDateTime)> = schema::messages::table
+            .select((
+                schema::messages::id,
+                schema::messages::session_id,
+                schema::messages::server_timestamp,
+            ))
             .filter(server_timestamp.eq_any(timestamps))
             .load(&mut *self.db())
             .unwrap()
             .into_iter()
-            .map(|(m_id, s_id)| MessagePointer {
+            .collect();
+
+        let pointers: Vec<MessagePointer> = results
+            .into_iter()
+            .map(|(m_id, s_id, ts)| MessagePointer {
                 message_id: m_id,
                 session_id: s_id,
+                timestamp: ts,
             })
             .collect();
 
-        for ptr in pointers.iter() {
+        for pointer in pointers.iter() {
             // For read receipts, existing row is likely present - try update first
             let mut affected = diesel::update(schema::receipts::table)
                 .filter(
                     schema::receipts::message_id
-                        .eq(ptr.message_id)
+                        .eq(pointer.message_id)
                         .and(schema::receipts::recipient_id.eq(rcpt.id))
                         .and(schema::receipts::read.is_null()),
                 )
@@ -1757,7 +1781,7 @@ impl<O: Observable> Storage<O> {
             if affected == 0 {
                 affected += diesel::insert_into(schema::receipts::table)
                     .values((
-                        schema::receipts::message_id.eq(ptr.message_id),
+                        schema::receipts::message_id.eq(pointer.message_id),
                         schema::receipts::recipient_id.eq(rcpt.id),
                         schema::receipts::read.eq(read_at),
                     ))
@@ -1776,7 +1800,7 @@ impl<O: Observable> Storage<O> {
             }
             if affected > 0 {
                 self.observe_upsert(schema::receipts::table, PrimaryKey::Unknown)
-                    .with_relation(schema::messages::table, ptr.message_id)
+                    .with_relation(schema::messages::table, pointer.message_id)
                     .with_relation(schema::recipients::table, rcpt.id);
             }
         }
@@ -1843,23 +1867,23 @@ impl<O: Observable> Storage<O> {
             self.merge_and_fetch_recipient_by_address(None, receiver_addr, TrustLevel::Certain);
 
         let num_timestamps = timestamps.len();
-        let pointers: Vec<MessagePointer> = schema::messages::table
-            .select((schema::messages::id, schema::messages::session_id))
+        let results: Vec<(i32, i32, NaiveDateTime)> = schema::messages::table
+            .select((
+                schema::messages::id,
+                schema::messages::session_id,
+                schema::messages::server_timestamp,
+            ))
             .filter(schema::messages::server_timestamp.eq_any(timestamps))
             .load(&mut *self.db())
             .unwrap()
             .into_iter()
-            .map(|(m_id, s_id)| MessagePointer {
-                message_id: m_id,
-                session_id: s_id,
-            })
             .collect();
 
-        if pointers.is_empty() {
+        if results.is_empty() {
             tracing::warn!(
                 "Received {} delivered timestamps but found {} messages",
                 num_timestamps,
-                pointers.len()
+                results.len()
             );
             tracing::warn!(
                 "This probably indicates out-of-order receipt delivery. Please upvote issue #260"
@@ -1867,11 +1891,20 @@ impl<O: Observable> Storage<O> {
             return Vec::new();
         }
 
-        for ptr in pointers.iter() {
+        let pointers: Vec<MessagePointer> = results
+            .into_iter()
+            .map(|(m_id, s_id, ts)| MessagePointer {
+                message_id: m_id,
+                session_id: s_id,
+                timestamp: ts,
+            })
+            .collect();
+
+        for pointer in pointers.iter() {
             // For delivery receipts, existing row is likely absent - try insert first
             let mut affected = diesel::insert_into(schema::receipts::table)
                 .values((
-                    schema::receipts::message_id.eq(ptr.message_id),
+                    schema::receipts::message_id.eq(pointer.message_id),
                     schema::receipts::recipient_id.eq(rcpt.id),
                     schema::receipts::delivered.eq(delivered_at),
                 ))
@@ -1889,7 +1922,7 @@ impl<O: Observable> Storage<O> {
                 affected += diesel::update(schema::receipts::table)
                     .filter(
                         schema::receipts::message_id
-                            .eq(ptr.message_id)
+                            .eq(pointer.message_id)
                             .and(schema::receipts::recipient_id.eq(rcpt.id))
                             .and(schema::receipts::delivered.is_null()),
                     )
@@ -1907,7 +1940,7 @@ impl<O: Observable> Storage<O> {
             }
             if affected > 0 {
                 self.observe_upsert(schema::receipts::table, PrimaryKey::Unknown)
-                    .with_relation(schema::messages::table, ptr.message_id)
+                    .with_relation(schema::messages::table, pointer.message_id)
                     .with_relation(schema::recipients::table, rcpt.id);
             }
         }
