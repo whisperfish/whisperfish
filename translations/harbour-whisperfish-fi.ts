@@ -139,26 +139,26 @@
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-fatal-error-setup-client">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="458"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="470"/>
         <source>Failed to setup Signal client</source>
         <extracomment>Failed to setup signal client error message</extracomment>
         <translation>Signal-sovelluksen määritys epäonnistui</translation>
     </message>
     <message id="whisperfish-fatal-error-invalid-datastore">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="463"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="475"/>
         <source>Failed to setup data storage</source>
         <oldsource>Failed to setup datastore</oldsource>
         <extracomment>Failed to setup datastore error message</extracomment>
         <translation>Tietovaraston määritys epäonnistui</translation>
     </message>
     <message id="permission-la-data">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="666"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="678"/>
         <source>Whisperfish data storage</source>
         <extracomment>Permission for Whisperfish data storage</extracomment>
         <translation>Whisperfish tallennustila</translation>
     </message>
     <message id="permission-la-data_description">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="670"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="682"/>
         <source>Store configuration and messages</source>
         <extracomment>Permission description for Whisperfish data storage</extracomment>
         <translation>Tallenna asetukset ja viestit</translation>
@@ -1672,10 +1672,16 @@ Settings page share contacts</extracomment>
         <translation>Kun tämä on käytössä, Whisperfish lähettää vianetsintätason lokia journald:lle. Muutos vaatii Whisperfishin uudelleenkäynnistämisen.</translation>
     </message>
     <message id="whisperfish-settings-gstreamer-version">
-        <location filename="../qml/pages/Settings.qml" line="694"/>
+        <location filename="../qml/pages/Settings.qml" line="682"/>
         <source>GStreamer version</source>
         <extracomment>GStreamer version indication in settings</extracomment>
         <translation>GStreamer-versio</translation>
+    </message>
+    <message id="whisperfish-settings-voice_note_codec">
+        <location filename="../qml/pages/Settings.qml" line="688"/>
+        <source>Voice note codec</source>
+        <extracomment>Voice note codec (dependeing on gstreamer version)</extracomment>
+        <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
         <location filename="../qml/pages/Settings.qml" line="547"/>
@@ -1960,19 +1966,19 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Ei käytössä</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db">
-        <location filename="../qml/pages/Settings.qml" line="682"/>
+        <location filename="../qml/pages/Settings.qml" line="697"/>
         <source>Encrypted Database</source>
         <extracomment>Settings page encrypted database</extracomment>
         <translation>Salattu tietokanta</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-enabled">
-        <location filename="../qml/pages/Settings.qml" line="686"/>
+        <location filename="../qml/pages/Settings.qml" line="701"/>
         <source>Enabled</source>
         <extracomment>Settings page encrypted db enabled</extracomment>
         <translation>Käytössä</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-disabled">
-        <location filename="../qml/pages/Settings.qml" line="689"/>
+        <location filename="../qml/pages/Settings.qml" line="704"/>
         <source>Disabled</source>
         <extracomment>Settings page encrypted db disabled</extracomment>
         <translation>Ei käytössä</translation>
@@ -2194,13 +2200,19 @@ Settings page share contacts</extracomment>
         <translation>Jaettu kontakti</translation>
     </message>
     <message id="whisperfish-voice-note-vorbis-warning">
-        <location filename="../qml/components/ChatTextInput.qml" line="290"/>
         <source>Incompatible with Signal iOS</source>
         <extracomment>Short warning note that the voice note is being recorded in Vorbis format</extracomment>
-        <translation>Signal iOS ei tuettu</translation>
+        <translation type="vanished">Signal iOS ei tuettu</translation>
+    </message>
+    <message id="whisperfish-voice-note-ios-warning">
+        <location filename="../qml/components/ChatTextInput.qml" line="272"/>
+        <location filename="../qml/pages/Settings.qml" line="692"/>
+        <source>Incompatible with Signal iOS</source>
+        <extracomment>Short warning note that the voice note is being recorded in Opus format</extracomment>
+        <translation type="unfinished">Signal iOS ei tuettu</translation>
     </message>
     <message id="whisperfish-chat-input-attachment-label" numerus="yes">
-        <location filename="../qml/components/ChatTextInput.qml" line="320"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="302"/>
         <source>%n attachment(s)</source>
         <extracomment>Number of attachments currently selected for sending</extracomment>
         <translation>
@@ -2209,37 +2221,37 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-chat-input-not-group-member">
-        <location filename="../qml/components/ChatTextInput.qml" line="330"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="312"/>
         <source>You are not member of the group</source>
         <extracomment>Chat text input placeholder for not being a member of the group</extracomment>
         <translation>Et ole ryhmän jäsen</translation>
     </message>
     <message id="whisperfish-chat-input-recipient-is-unregistered">
-        <location filename="../qml/components/ChatTextInput.qml" line="334"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="316"/>
         <source>The recipient is not registered</source>
         <extracomment>Chat text input placeholder for deleted/unregistered recipient</extracomment>
         <translation>Vastaanottaja ei ole rekisteröitynyt</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-personal">
-        <location filename="../qml/components/ChatTextInput.qml" line="339"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="321"/>
         <source>Hi %1</source>
         <extracomment>Personalized placeholder for chat input, e.g. &quot;Hi John&quot;</extracomment>
         <translation>Hei, %1</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-announcement-only">
-        <location filename="../qml/components/ChatTextInput.qml" line="343"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="325"/>
         <source>Only administrators can send messages</source>
         <extracomment>Placeholder for administrators-only group</extracomment>
         <translation>Vain järjestelmänvalvojat voivat lähettää viestejä</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-default">
-        <location filename="../qml/components/ChatTextInput.qml" line="347"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="329"/>
         <source>Write a message</source>
         <extracomment>Generic placeholder for chat input</extracomment>
         <translation>Kirjoita viesti</translation>
     </message>
     <message id="whisperfish-select-attachments-page-title">
-        <location filename="../qml/components/ChatTextInput.qml" line="534"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="516"/>
         <source>Select attachments</source>
         <extracomment>Attachment picker page title</extracomment>
         <translation>Valitse liitteet</translation>
