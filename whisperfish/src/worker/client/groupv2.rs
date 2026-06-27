@@ -988,20 +988,19 @@ impl Handler<GroupV2Update> for ClientActor {
                                 label_string,
                             } => {
                                 tracing::debug!(
-                                    "Member label: {} ({label_emoji}) {label_string}",
-                                    user_id.service_id_string()
+                                    "Member label: {} ({}) {}",
+                                    user_id.service_id_string(),
+                                    label_emoji.as_deref().unwrap_or(""),
+                                    label_string.as_deref().unwrap_or(""),
                                 );
                                 let recipient_uuid = user_id.raw_uuid();
-                                let next_label = (!label_string.is_empty()).then_some(label_string);
-                                let next_label_emoji =
-                                    (!label_emoji.is_empty()).then_some(label_emoji);
                                 match user_id.aci() {
                                     Some(aci) => {
                                         storage.update_group_v2_member_label(
                                             &group_v2,
                                             aci,
-                                            next_label,
-                                            next_label_emoji,
+                                            label_string,
+                                            label_emoji,
                                         );
                                         db_triggers.push(GroupV2Trigger::Recipient(recipient_uuid));
                                     }
