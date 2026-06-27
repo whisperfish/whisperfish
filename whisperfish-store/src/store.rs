@@ -833,9 +833,7 @@ impl<O: Observable> Storage<O> {
 
     #[tracing::instrument(skip(self))]
     pub fn fetch_self_recipient(&self) -> Option<orm::Recipient> {
-        if let Ok(read_lock) = self.self_recipient.read()
-            && let Some(recipient) = read_lock.as_ref()
-        {
+        if let Ok(Some(recipient)) = self.self_recipient.read().as_deref() {
             return Some(recipient.to_owned());
         }
 
@@ -870,9 +868,7 @@ impl<O: Observable> Storage<O> {
 
     #[tracing::instrument(skip(self))]
     pub fn fetch_self_recipient_profile_key(&self) -> Option<Vec<u8>> {
-        if let Ok(read_lock) = self.self_recipient.read()
-            && let Some(recipient) = read_lock.as_ref()
-        {
+        if let Ok(Some(recipient)) = self.self_recipient.read().as_deref() {
             return recipient.profile_key.clone();
         }
 
@@ -884,9 +880,7 @@ impl<O: Observable> Storage<O> {
 
     #[tracing::instrument(skip(self))]
     pub fn fetch_self_recipient_id(&self) -> i32 {
-        if let Ok(read_lock) = self.self_recipient.read()
-            && let Some(recipient) = read_lock.as_ref()
-        {
+        if let Ok(Some(recipient)) = self.self_recipient.read().as_deref() {
             return recipient.id;
         }
 
