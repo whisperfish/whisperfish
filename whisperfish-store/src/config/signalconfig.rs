@@ -1,4 +1,5 @@
 use anyhow::Context;
+use libsignal_service::configuration::SignalServers;
 use libsignal_service::protocol::{Aci, DeviceId, Pni, ServiceId};
 use phonenumber::PhoneNumber;
 use uuid::Uuid;
@@ -57,6 +58,8 @@ mod phonenumber_serde_e164 {
 #[serde(rename_all = "camelCase")]
 #[serde(default)]
 pub struct SignalConfig {
+    /// Allows selecting between Signal Production and Signal Staging servers.
+    signal_server: std::sync::Mutex<SignalServers>,
     /// Our telephone number. This field is changed in threads and thus has to be Send/Sync but
     /// mutable at the same time.
     #[serde(with = "phonenumber_serde_e164")]
@@ -102,6 +105,7 @@ impl Default for SignalConfig {
             device_id: std::sync::Mutex::new(
                 (*libsignal_service::push_service::DEFAULT_DEVICE_ID).into(),
             ),
+            signal_server: std::sync::Mutex::new(SignalServers::Production),
             share_dir: path.to_path_buf(),
             verbose: false,
             tracing: false,
@@ -244,6 +248,10 @@ impl SignalConfig {
         (*self.device_id.lock().unwrap()).try_into().unwrap()
     }
 
+    pub fn get_signal_server(&self) -> SignalServers {
+        *self.signal_server.lock().unwrap()
+    }
+
     pub fn set_tel(&self, tel: PhoneNumber) {
         *self.tel.lock().unwrap() = Some(tel);
     }
@@ -258,5 +266,23 @@ impl SignalConfig {
 
     pub fn set_device_id(&self, id: DeviceId) {
         *self.device_id.lock().unwrap() = id.into();
+    }
+
+    pub fn set_staging(&self) -> bool {
+        if self.uuid.lock().unwrap().is_none() {
+            *self.signal_server.lock().unwrap() = SignalServers::Staging;
+            true
+        } else {
+            *self.signal_server.lock().unwrap() == SignalServers::Staging
+        }
+    }
+
+    pub fn set_production(&self) -> bool {
+        if self.uuid.lock().unwrap().is_none() {
+            *self.signal_server.lock().unwrap() = SignalServers::Production;
+            true
+        } else {
+            *self.signal_server.lock().unwrap() == SignalServers::Production
+        }
     }
 }
