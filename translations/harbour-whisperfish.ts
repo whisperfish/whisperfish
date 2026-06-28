@@ -1309,26 +1309,26 @@ Settings page share contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-startup-shutdown-section">
-        <location filename="../qml/pages/Settings.qml" line="471"/>
+        <location filename="../qml/pages/Settings.qml" line="472"/>
         <source>Autostart and Background</source>
         <extracomment>Settings page startup and shutdown section</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-enable-autostart">
-        <location filename="../qml/pages/Settings.qml" line="477"/>
+        <location filename="../qml/pages/Settings.qml" line="478"/>
         <source>Autostart after boot</source>
         <extracomment>Settings page enable autostart</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode-description">
-        <location filename="../qml/pages/Settings.qml" line="550"/>
+        <location filename="../qml/pages/Settings.qml" line="551"/>
         <source>When enabled, Whisperfish keeps running in the background and can send notifications after the app window has been closed.</source>
         <oldsource>When enabled, Whisperfish starts automatically after each boot. If storage encryption is enabled or background-mode is off, the UI will be shown, otherwise the app starts in the background.</oldsource>
         <extracomment>Settings page enable background mode description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
-        <location filename="../qml/pages/Settings.qml" line="547"/>
+        <location filename="../qml/pages/Settings.qml" line="548"/>
         <source>Background mode</source>
         <extracomment>Settings page enable background mode</extracomment>
         <translation type="unfinished"></translation>
@@ -1352,55 +1352,55 @@ Settings page share contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notification-privacy">
-        <location filename="../qml/pages/Settings.qml" line="392"/>
+        <location filename="../qml/pages/Settings.qml" line="393"/>
         <source>Notification privacy</source>
         <extracomment>Settings page notification privacy</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notifications-disable">
-        <location filename="../qml/pages/Settings.qml" line="401"/>
+        <location filename="../qml/pages/Settings.qml" line="402"/>
         <source>Disable notifications</source>
         <extracomment>Settings page, turn notifications off</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notifications-disable-description">
-        <location filename="../qml/pages/Settings.qml" line="404"/>
+        <location filename="../qml/pages/Settings.qml" line="405"/>
         <source>Whisperfish will not display any notification</source>
         <extracomment>Settings page, turn notifications off description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notifications-minimal">
-        <location filename="../qml/pages/Settings.qml" line="410"/>
+        <location filename="../qml/pages/Settings.qml" line="411"/>
         <source>Minimal notifications</source>
         <extracomment>Settings page, minimal notifications</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notifications-minimal-description">
-        <location filename="../qml/pages/Settings.qml" line="413"/>
+        <location filename="../qml/pages/Settings.qml" line="414"/>
         <source>Notification without disclosing the sender or content of the message</source>
         <extracomment>Settings page, minimal notifications description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only">
-        <location filename="../qml/pages/Settings.qml" line="419"/>
+        <location filename="../qml/pages/Settings.qml" line="420"/>
         <source>Sender-only notifications</source>
         <extracomment>Settings page, sender-only notifications</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notifications-sender-only-description">
-        <location filename="../qml/pages/Settings.qml" line="422"/>
+        <location filename="../qml/pages/Settings.qml" line="423"/>
         <source>Notifications displaying the sender of a message, without the contents</source>
         <extracomment>Settings page, sender-only notifications description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notifications-complete">
-        <location filename="../qml/pages/Settings.qml" line="428"/>
+        <location filename="../qml/pages/Settings.qml" line="429"/>
         <source>Complete notifications</source>
         <extracomment>Settings page, complete notifications</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-notifications-complete-description">
-        <location filename="../qml/pages/Settings.qml" line="431"/>
+        <location filename="../qml/pages/Settings.qml" line="432"/>
         <source>Notifications displaying the contents and sender of a message</source>
         <extracomment>Settings page, sender-only notifications description</extracomment>
         <translation type="unfinished"></translation>
@@ -1503,222 +1503,222 @@ Settings page share contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-label">
-        <location filename="../qml/pages/Settings.qml" line="342"/>
+        <location filename="../qml/pages/Settings.qml" line="343"/>
         <source>Transcribe voice notes</source>
         <extracomment>Settings page auto transcribe voice notes</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-available">
-        <location filename="../qml/pages/Settings.qml" line="346"/>
+        <location filename="../qml/pages/Settings.qml" line="347"/>
         <source>Automatically transcribe voice notes to text upon reception using Speech Note.</source>
         <extracomment>Auto transcribe voice notes description, Speech Note installed</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-unavailable">
-        <location filename="../qml/pages/Settings.qml" line="349"/>
+        <location filename="../qml/pages/Settings.qml" line="350"/>
         <source>Automatically transcribe voice notes to text upon reception. Configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note installed but not configured.</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-uninstalled">
-        <location filename="../qml/pages/Settings.qml" line="352"/>
+        <location filename="../qml/pages/Settings.qml" line="353"/>
         <source>Automatically transcribe voice notes to text upon reception. Install and configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note not installed</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-privacy-section">
-        <location filename="../qml/pages/Settings.qml" line="369"/>
+        <location filename="../qml/pages/Settings.qml" line="370"/>
         <source>Privacy</source>
         <extracomment>Settings page &quot;privacy&quot; section</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-share-phone-number">
-        <location filename="../qml/pages/Settings.qml" line="375"/>
+        <location filename="../qml/pages/Settings.qml" line="376"/>
         <source>Share phone number</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-share-phone-number-description">
-        <location filename="../qml/pages/Settings.qml" line="378"/>
+        <location filename="../qml/pages/Settings.qml" line="379"/>
         <source>When enabled, your contacts can see your phone number when you message them.</source>
         <extracomment>Settings page, share recipient phone number with contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-show-phone-number">
-        <location filename="../qml/pages/Settings.qml" line="448"/>
+        <location filename="../qml/pages/Settings.qml" line="449"/>
         <source>Show phone number</source>
         <extracomment>Settings page, show recipient phone number in conversation view</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-show-phone-number-description">
-        <location filename="../qml/pages/Settings.qml" line="451"/>
+        <location filename="../qml/pages/Settings.qml" line="452"/>
         <source>Show the phone number of the recipient in the conversation page header.</source>
         <extracomment>Settings page, show recipient phone number in conversation view description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-enable-autostart-description">
-        <location filename="../qml/pages/Settings.qml" line="480"/>
+        <location filename="../qml/pages/Settings.qml" line="481"/>
         <source>When enabled, Whisperfish starts automatically after each boot. If storage encryption is enabled or background-mode is off, the UI will be shown, otherwise the app starts in the background.</source>
         <extracomment>Settings page enable autostart description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-auto-unlock-password-field">
-        <location filename="../qml/pages/Settings.qml" line="503"/>
+        <location filename="../qml/pages/Settings.qml" line="504"/>
         <source>Unlock Password</source>
         <extracomment>Settings page autostart password field</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-save-password-button">
-        <location filename="../qml/pages/Settings.qml" line="514"/>
+        <location filename="../qml/pages/Settings.qml" line="515"/>
         <source>Save password</source>
         <extracomment>Settings page save autologin password button</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-clear-password-button">
-        <location filename="../qml/pages/Settings.qml" line="517"/>
+        <location filename="../qml/pages/Settings.qml" line="518"/>
         <source>clear password</source>
         <extracomment>Settings page clear autologin password button</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-auto-unlock-password-info">
-        <location filename="../qml/pages/Settings.qml" line="529"/>
+        <location filename="../qml/pages/Settings.qml" line="530"/>
         <source>You can enter your password to make Whisperfish unlock the database automatically at startup. Please note that the password is stored in plain text, and as such usage of this feature is not recommended.</source>
         <oldsource>You can enter your password to make Whisperfish unlock the database automatically at startup. Please note that the password is stored in plain text, and as such usage of this feature is not recommened.</oldsource>
         <extracomment>Settings page info about setting auto unlock password</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-autostart-manual-info">
-        <location filename="../qml/pages/Settings.qml" line="540"/>
+        <location filename="../qml/pages/Settings.qml" line="541"/>
         <source>Whisperfish does not have the permission to change the autostart settings. You can enable or disable autostart manually from the command line by running &apos;systemctl --user enable harbour-whisperfish.service&apos; or &apos;systemctl --user disable harbour-whisperfish.service&apos;</source>
         <extracomment>Settings page info how to enable autostart manually</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-quit-button">
-        <location filename="../qml/pages/Settings.qml" line="567"/>
+        <location filename="../qml/pages/Settings.qml" line="568"/>
         <source>Quit Whisperfish</source>
         <extracomment>Settings page quit app button</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-advanced-section">
-        <location filename="../qml/pages/Settings.qml" line="579"/>
+        <location filename="../qml/pages/Settings.qml" line="580"/>
         <source>Advanced</source>
         <extracomment>Settings page advanced section</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-debug-mode">
-        <location filename="../qml/pages/Settings.qml" line="585"/>
+        <location filename="../qml/pages/Settings.qml" line="586"/>
         <source>Debug mode</source>
         <extracomment>Settings page: debug info toggle</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-debug-mode-description">
-        <location filename="../qml/pages/Settings.qml" line="588"/>
+        <location filename="../qml/pages/Settings.qml" line="589"/>
         <source>Show debugging information and controls in the user interface.</source>
         <oldsource>Show debugging information in the user interface.</oldsource>
         <extracomment>Settings page: debug info toggle extended description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-verbose-journal">
-        <location filename="../qml/pages/Settings.qml" line="601"/>
+        <location filename="../qml/pages/Settings.qml" line="602"/>
         <source>Verbose journal log</source>
         <extracomment>Settings page, send verbose logs to systemd journal</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-verbose-journal-description">
-        <location filename="../qml/pages/Settings.qml" line="604"/>
+        <location filename="../qml/pages/Settings.qml" line="605"/>
         <source>When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect.</source>
         <extracomment>Settings page enable verbose logging description</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-compress-db">
-        <location filename="../qml/pages/Settings.qml" line="619"/>
+        <location filename="../qml/pages/Settings.qml" line="620"/>
         <source>Compact database</source>
         <oldsource>Compress database</oldsource>
         <extracomment>Settings page &apos;Compact database&apos; button: execute &apos;VACUUM&apos; command on SQLite-database</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-test-captcha">
-        <location filename="../qml/pages/Settings.qml" line="630"/>
+        <location filename="../qml/pages/Settings.qml" line="631"/>
         <source>Test captcha</source>
         <extracomment>Settings page, test captcha button</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-stats-section">
-        <location filename="../qml/pages/Settings.qml" line="641"/>
+        <location filename="../qml/pages/Settings.qml" line="642"/>
         <source>Statistics</source>
         <extracomment>Settings page stats section</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-websocket">
-        <location filename="../qml/pages/Settings.qml" line="646"/>
+        <location filename="../qml/pages/Settings.qml" line="647"/>
         <source>Websocket Status</source>
         <extracomment>Settings page websocket status</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-connected">
-        <location filename="../qml/pages/Settings.qml" line="650"/>
+        <location filename="../qml/pages/Settings.qml" line="651"/>
         <source>Connected</source>
         <extracomment>Settings page connected message</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-disconnected">
-        <location filename="../qml/pages/Settings.qml" line="653"/>
+        <location filename="../qml/pages/Settings.qml" line="654"/>
         <source>Disconnected</source>
         <extracomment>Settings page disconnected message</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-unsent-messages">
-        <location filename="../qml/pages/Settings.qml" line="658"/>
+        <location filename="../qml/pages/Settings.qml" line="659"/>
         <source>Unsent Messages</source>
         <extracomment>Settings page unsent messages</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-total-sessions">
-        <location filename="../qml/pages/Settings.qml" line="664"/>
+        <location filename="../qml/pages/Settings.qml" line="665"/>
         <source>Total Sessions</source>
         <extracomment>Settings page total sessions</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-total-messages">
-        <location filename="../qml/pages/Settings.qml" line="670"/>
+        <location filename="../qml/pages/Settings.qml" line="671"/>
         <source>Total Messages</source>
         <extracomment>Settings page total messages</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-total-contacts">
-        <location filename="../qml/pages/Settings.qml" line="676"/>
+        <location filename="../qml/pages/Settings.qml" line="677"/>
         <source>Signal Contacts</source>
         <extracomment>Settings page total signal contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-gstreamer-version">
-        <location filename="../qml/pages/Settings.qml" line="682"/>
+        <location filename="../qml/pages/Settings.qml" line="684"/>
         <source>GStreamer version</source>
         <extracomment>GStreamer version indication in settings</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-voice_note_codec">
-        <location filename="../qml/pages/Settings.qml" line="688"/>
+        <location filename="../qml/pages/Settings.qml" line="690"/>
         <source>Voice note codec</source>
         <extracomment>Voice note codec (dependeing on gstreamer version)</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-encrypted-db">
-        <location filename="../qml/pages/Settings.qml" line="697"/>
+        <location filename="../qml/pages/Settings.qml" line="699"/>
         <source>Encrypted Database</source>
         <extracomment>Settings page encrypted database</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-enabled">
-        <location filename="../qml/pages/Settings.qml" line="701"/>
+        <location filename="../qml/pages/Settings.qml" line="703"/>
         <source>Enabled</source>
         <extracomment>Settings page encrypted db enabled</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-disabled">
-        <location filename="../qml/pages/Settings.qml" line="704"/>
+        <location filename="../qml/pages/Settings.qml" line="706"/>
         <source>Disabled</source>
         <extracomment>Settings page encrypted db disabled</extracomment>
         <translation type="unfinished"></translation>
@@ -1915,14 +1915,14 @@ Settings page share contacts</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-voice-note-ios-warning">
-        <location filename="../qml/components/ChatTextInput.qml" line="272"/>
-        <location filename="../qml/pages/Settings.qml" line="692"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="273"/>
+        <location filename="../qml/pages/Settings.qml" line="694"/>
         <source>Incompatible with Signal iOS</source>
         <extracomment>Short warning note that the voice note is being recorded in Opus format</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-chat-input-attachment-label" numerus="yes">
-        <location filename="../qml/components/ChatTextInput.qml" line="302"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="303"/>
         <source>%n attachment(s)</source>
         <extracomment>Number of attachments currently selected for sending</extracomment>
         <translation type="unfinished">
@@ -1931,37 +1931,37 @@ Settings page share contacts</extracomment>
         </translation>
     </message>
     <message id="whisperfish-chat-input-not-group-member">
-        <location filename="../qml/components/ChatTextInput.qml" line="312"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="313"/>
         <source>You are not member of the group</source>
         <extracomment>Chat text input placeholder for not being a member of the group</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-chat-input-recipient-is-unregistered">
-        <location filename="../qml/components/ChatTextInput.qml" line="316"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="317"/>
         <source>The recipient is not registered</source>
         <extracomment>Chat text input placeholder for deleted/unregistered recipient</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-personal">
-        <location filename="../qml/components/ChatTextInput.qml" line="321"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="322"/>
         <source>Hi %1</source>
         <extracomment>Personalized placeholder for chat input, e.g. &quot;Hi John&quot;</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-announcement-only">
-        <location filename="../qml/components/ChatTextInput.qml" line="325"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="326"/>
         <source>Only administrators can send messages</source>
         <extracomment>Placeholder for administrators-only group</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-default">
-        <location filename="../qml/components/ChatTextInput.qml" line="329"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="330"/>
         <source>Write a message</source>
         <extracomment>Generic placeholder for chat input</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-select-attachments-page-title">
-        <location filename="../qml/components/ChatTextInput.qml" line="516"/>
+        <location filename="../qml/components/ChatTextInput.qml" line="517"/>
         <source>Select attachments</source>
         <extracomment>Attachment picker page title</extracomment>
         <translation type="unfinished"></translation>
