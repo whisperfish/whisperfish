@@ -26,11 +26,9 @@ pub struct AppState {
     isClosed: qt_method!(fn(&self) -> bool),
     activate: qt_signal!(),
 
-    gstreamer_version: qt_property!(QString; READ gstreamer_version CONST),
-    gstreamer_version_major: qt_property!(u32; READ gstreamer_version_major CONST),
-    gstreamer_version_minor: qt_property!(u32; READ gstreamer_version_minor CONST),
-    gstreamer_version_micro: qt_property!(u32; READ gstreamer_version_micro CONST),
-    gstreamer_version_nano: qt_property!(u32; READ gstreamer_version_nano CONST),
+    gstreamer_version: qt_property!(QString; READ gstreamer_version ALIAS gstreamerVersion CONST),
+    gstreamer_version_major: qt_property!(u32; READ gstreamer_version_major ALIAS gstreamerVersionMajor CONST),
+    gstreamer_version_minor: qt_property!(u32; READ gstreamer_version_minor ALIAS gstreamerVersionMinor CONST),
 
     may_exit: MayExit,
     setMayExit: qt_method!(fn(&self, value: bool)),
@@ -55,6 +53,7 @@ pub struct AppState {
     pub on_storage_ready: RefCell<Vec<Box<dyn FnOnce(Storage)>>>,
 }
 
+#[cfg(feature = "_gstreamer")]
 impl AppState {
     fn gstreamer_version(&self) -> QString {
         let (major, minor, micro, nano) = gstreamer::version();
@@ -68,15 +67,24 @@ impl AppState {
     fn gstreamer_version_minor(&self) -> u32 {
         gstreamer::version().1
     }
+}
 
-    fn gstreamer_version_micro(&self) -> u32 {
-        gstreamer::version().2
+#[cfg(not(feature = "_gstreamer"))]
+impl AppState {
+    fn gstreamer_version(&self) -> QString {
+        QString::default()
     }
 
-    fn gstreamer_version_nano(&self) -> u32 {
-        gstreamer::version().3
+    fn gstreamer_version_major(&self) -> u32 {
+        0
     }
 
+    fn gstreamer_version_minor(&self) -> u32 {
+        0
+    }
+}
+
+impl AppState {
     #[allow(non_snake_case)]
     #[with_executor]
     fn setActive(&mut self) {
@@ -201,8 +209,6 @@ impl AppState {
             gstreamer_version: Default::default(),
             gstreamer_version_major: Default::default(),
             gstreamer_version_minor: Default::default(),
-            gstreamer_version_micro: Default::default(),
-            gstreamer_version_nano: Default::default(),
 
             base: Default::default(),
             closed: false,
@@ -317,6 +323,7 @@ macro_rules! cstr {
 pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
     qmeta_async::run(|| {
         // For audio recording
+        #[cfg(feature = "_gstreamer")]
         gstreamer::init().expect("gstreamer initialization");
 
         // XXX this arc thing should be removed in the future and refactored
@@ -326,6 +333,7 @@ pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
         {
             let uri = cstr!("be.rubdos.whisperfish");
             qml_register_type::<model::RustleGraph>(uri, 1, 0, cstr!("RustleGraph"));
+            #[cfg(feature = "voice-note-recording")]
             qml_register_type::<model::VoiceNoteRecorder>(uri, 1, 0, cstr!("VoiceNoteRecorder"));
 
             qml_register_type::<model::Sessions>(uri, 1, 0, cstr!("Sessions"));

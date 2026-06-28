@@ -52,19 +52,21 @@ Source2: vendor.toml
 %endif
 
 Requires:   sailfishsilica-qt5 >= 0.10.9
-Requires:   libsailfishapp-launcher
 Requires:   sailfish-components-contacts-qt5
 Requires:   nemo-qml-plugin-contacts-qt5
 Requires:   nemo-qml-plugin-configuration-qt5
 Requires:   nemo-qml-plugin-notifications-qt5
+%if %{without harbour}
 Requires:   dbus
+%endif
 
+%if %{without harbour}
 # For recording voice notes and voice/video calling
 Requires:   gstreamer1.0
 # For avmux_mp4 and avmux_aac
 Requires:   gstreamer1.0-libav
-Requires:   opus
 BuildRequires:   gstreamer1.0-devel
+%endif
 
 # For the captcha QML application
 Requires:   qtmozembed-qt5
@@ -72,16 +74,20 @@ Requires:   sailfish-components-webview-qt5
 Requires:   sailfish-components-webview-qt5-popups
 Requires:   sailfish-components-webview-qt5-pickers
 
+%if %{without harbour}
 Recommends:   sailjail
 Recommends:   sailjail-permissions
 Recommends:   harbour-whisperfish-shareplugin
+%endif
 
 # This comment lists SailfishOS-version specific code,
 # for future reference, to track the reasoning behind the minimum SailfishOS version.
 # We're aiming to support 3.4 as long as possible, since Jolla 1 will be stuck on that.
 #
 # - Contacts/contacts.db phoneNumbers.normalizedNumber: introduced in 3.3
+%if %{without harbour}
 Requires:   sailfish-version >= 3.3
+%endif
 
 BuildRequires:  pkgconfig(sailfishapp) >= 1.0.3
 BuildRequires:  pkgconfig(Qt5Core)
@@ -96,7 +102,9 @@ BuildRequires:  cargo >= 1.89
 BuildRequires:  protobuf-compiler
 BuildRequires:  nemo-qml-plugin-notifications-qt5-devel
 BuildRequires:  qt5-qtwebsockets-devel
+%if %{without harbour}
 BuildRequires:  dbus-devel
+%endif
 BuildRequires:  gcc-c++
 BuildRequires:  zlib-devel
 BuildRequires:  coreutils
@@ -255,7 +263,7 @@ export PKG_CONFIG_ALLOW_CROSS_armv7_unknown_linux_gnueabihf=1
 export PKG_CONFIG_ALLOW_CROSS_aarch64_unknown_linux_gnu=1
 
 %if %{without harbour}
-FEATURES=sailfish
+FEATURES=sailfish,ex-harbour
 %endif
 %if %{with harbour}
 FEATURES="sailfish,harbour"
@@ -370,16 +378,21 @@ desktop-file-install \
   --dir %{buildroot}%{_datadir}/applications \
    harbour-whisperfish.desktop
 
+%if %{without harbour}
+# Sailjail profile: sailor-emoji, Dbus
 install -Dm 644 harbour-whisperfish.profile \
     %{buildroot}%{_sysconfdir}/sailjail/permissions/harbour-whisperfish.profile
+# Privileges file, for Contact access
 install -Dm 644 harbour-whisperfish.privileges \
     %{buildroot}%{_datadir}/mapplauncherd/privileges.d/harbour-whisperfish.privileges
+# Notification categories: messages and calls
 install -Dm 644 harbour-whisperfish-message.conf \
     %{buildroot}%{_datadir}/lipstick/notificationcategories/harbour-whisperfish-message.conf
 install -Dm 644 harbour-whisperfish-call.conf \
     %{buildroot}%{_datadir}/lipstick/notificationcategories/harbour-whisperfish-call.conf
 install -Dm 644 harbour-whisperfish-message-quiet.conf \
     %{buildroot}%{_datadir}/lipstick/notificationcategories/harbour-whisperfish-message-quiet.conf
+%endif
 
 # Application icons
 for RES in 86x86 108x108 128x128 172x172; do
@@ -396,12 +409,23 @@ find ./icons -maxdepth 1 -type f -exec \
 find ./qml -type f -exec \
     install -Dm 644 "{}" "%{buildroot}%{_datadir}/harbour-whisperfish/{}" \;
 
+%if %{with harbour}
+# Generate a dummy VoiceNoteRecorder
+echo -e "import QtQuick 2.2\Item { }" > "%{buildroot}%{_datadir}/harbour-whisperfish/qml/components/VoiceNoteRecorder.qml"
+
+# Remove unused files containing harbour-illegal imports
+rm "%{buildroot}%{_datadir}/harbour-whisperfish/qml/pages/NewGroup.qml"
+rm "%{buildroot}%{_datadir}/harbour-whisperfish/qml/pages/NewMessage.qml"
+%endif
+
+%if %{without calling}
+rm "%{buildroot}%{_datadir}/harbour-whisperfish/qml/pages/RingingDialog.qml"
+%endif
+
 %if %{without harbour}
 # Dbus service
-install -Dm 644 be.rubdos.whisperfish.service \
-    %{buildroot}%{_unitdir}/be.rubdos.whisperfish.service
-install -Dm 644 harbour-whisperfish.service \
-    %{buildroot}%{_userunitdir}/harbour-whisperfish.service
+install -Dm 644 be.rubdos.harbour-whisperfish.service %{buildroot}%{_unitdir}/be.rubdos.harbour-whisperfish.service
+install -Dm 644 harbour-whisperfish.service %{buildroot}%{_userunitdir}/harbour-whisperfish.service
 %endif
 
 %if %{without harbour}
@@ -422,15 +446,21 @@ systemctl-user disable harbour-whisperfish.service || true
 %{_bindir}/*
 %{_datadir}/%{name}
 %{_datadir}/applications/%{name}.desktop
-%{_datadir}/mapplauncherd/privileges.d/%{name}.privileges
 %{_datadir}/icons/hicolor/*/apps/%{name}.png
+%if %{without harbour}
+%{_datadir}/mapplauncherd/privileges.d/%{name}.privileges
+%endif
+%if %{without harbour}
 %{_datadir}/lipstick/notificationcategories/%{name}*.conf
+%endif
 
+%if %{without harbour}
 %config %{_sysconfdir}/sailjail/permissions/harbour-whisperfish.profile
+%endif
 
 %if %{without harbour}
 %{_userunitdir}/harbour-whisperfish.service
-%{_unitdir}/be.rubdos.whisperfish.service
+%{_unitdir}/be.rubdos.harbour-whisperfish.service
 %endif
 
 %changelog

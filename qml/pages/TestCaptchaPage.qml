@@ -37,7 +37,7 @@ BlockingInfoPageBase {
     }
 
     DBusAdaptor {
-        service: "be.rubdos.whisperfish"
+        service: "be.rubdos.harbour-whisperfish"
         path: "/be/rubdos/whisperfish/captcha"
         iface: "be.rubdos.whisperfish.captcha"
 

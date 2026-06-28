@@ -336,6 +336,7 @@ Page {
                 }
             }
             IconTextSwitch {
+                visible: !AppState.isHarbour()
                 anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page auto transcribe voice notes
                 //% "Transcribe voice notes"
@@ -677,10 +678,11 @@ Page {
                 value: AppState.recipientCount()
             }
             DetailItem {
+                visible: AppState.hasGstreamer
                 //: GStreamer version indication in settings
                 //% "GStreamer version"
                 label: qsTrId("whisperfish-settings-gstreamer-version")
-                value: AppState.gstreamer_version
+                value: AppState.gstreamerVersion
             }
             DetailItem {
                 //: Voice note codec (dependeing on gstreamer version)

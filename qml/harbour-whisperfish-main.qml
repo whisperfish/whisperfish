@@ -304,9 +304,9 @@ ApplicationWindow
             // Doesn't work as-is.
             // TODO: Drop in Avatar image here.
             // "icon": "harbour-whisperfish",
-            "service": "org.whisperfish.session",
-            "path": "/message",
-            "iface": "org.whisperfish.session",
+            "service": "be.rubdos.harbour-whisperfish",
+            "path": "/be/rubdos/whisperfish/message",
+            "iface": "be.rubdos.whisperfish.session",
             "method": "showConversation",
             "arguments": [ "sessionId", data.sessionId ]
         } ]
@@ -400,9 +400,9 @@ ApplicationWindow
             // Doesn't work as-is.
             // TODO: Drop in Avatar image here.
             // "icon": "harbour-whisperfish",
-            "service": "org.whisperfish.session",
-            "path": "/message",
-            "iface": "org.whisperfish.session",
+            "service": "be.rubdos.harbour-whisperfish.session",
+            "path": "/be/rubdos/whisperfish/message",
+            "iface": "be.rubdos.whisperfish.session",
             "method": "showConversation",
             "arguments": [ "sessionId", data.sessionId ]
         },{
@@ -608,7 +608,7 @@ ApplicationWindow
     }
 
     DBusAdaptor {
-        service: "be.rubdos.whisperfish"
+        service: "be.rubdos.harbour-whisperfish"
         path: "/be/rubdos/whisperfish/app"
         iface: "be.rubdos.whisperfish.app"
 
@@ -676,7 +676,7 @@ ApplicationWindow
     }
     DBusInterface {
         id: dbusShareClient
-        service: "be.rubdos.whisperfish.shareClient.c" + shareClientId
+        service: "be.rubdos.harbour-whisperfish.shareClient.c" + shareClientId
         path: "/be/rubdos/whisperfish/shareClient/c" + shareClientId
         iface: "be.rubdos.whisperfish.shareClient"
     }
