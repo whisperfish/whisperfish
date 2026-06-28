@@ -469,13 +469,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-add-linked-device">
-        <location filename="../qml/pages/LinkedDevices.qml" line="163"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="161"/>
         <source>Add</source>
         <extracomment>Menu option to add new linked device</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-refresh-linked-devices">
-        <location filename="../qml/pages/LinkedDevices.qml" line="177"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="175"/>
         <source>Refresh</source>
         <extracomment>Menu option to refresh linked devices</extracomment>
         <translation type="unfinished"></translation>
@@ -518,25 +518,25 @@
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-device-rename">
-        <location filename="../qml/pages/LinkedDevices.qml" line="136"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="134"/>
         <source>Rename</source>
         <extracomment>Rename the linked or primary device menu option</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-device-unlink">
-        <location filename="../qml/pages/LinkedDevices.qml" line="147"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="145"/>
         <source>Unlink</source>
         <extracomment>Device unlink menu option</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-device-placeholder">
-        <location filename="../qml/pages/LinkedDevices.qml" line="197"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="195"/>
         <source>No linked device</source>
         <extracomment>Placeholder when no linked device yet</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-device-placeholder-hint">
-        <location filename="../qml/pages/LinkedDevices.qml" line="200"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="198"/>
         <source>Pull down to link Whisperfish to another device</source>
         <extracomment>Placeholder hint when no linked device yet</extracomment>
         <translation type="unfinished"></translation>
