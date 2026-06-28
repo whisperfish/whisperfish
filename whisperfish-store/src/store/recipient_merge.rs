@@ -24,16 +24,6 @@ struct MergeRecipients {
     pub by_pni: Option<Recipient>,
 }
 
-#[derive(Default)]
-pub struct RecipientResults {
-    pub id: Option<i32>,
-    // XXX Maybe make these Aci/Pni strong types
-    pub aci: Option<Uuid>,
-    pub pni: Option<Uuid>,
-    pub e164: Option<PhoneNumber>,
-    pub changed: bool,
-}
-
 fn fetch_separate_recipients(
     db: &mut SqliteConnection,
     aci: Option<&Uuid>,
@@ -91,7 +81,7 @@ pub fn merge_and_fetch_recipient_inner(
     pni: Option<Uuid>,
     trust_level: TrustLevel,
     change_self: bool,
-) -> Result<RecipientResults, diesel::result::Error> {
+) -> Result<(i32, bool), diesel::result::Error> {
     if e164.is_none() && aci.is_none() && pni.is_none() {
         panic!("merge_and_fetch_recipient requires at least one of e164 or uuid");
     }
@@ -133,10 +123,7 @@ pub fn merge_and_fetch_recipient_inner(
     if let Some(common) = common {
         // If there's a common recipient, and every criteria given matches, we're done!
         if match_count == criteria_count {
-            return Ok(RecipientResults {
-                id: Some(common.id),
-                ..Default::default()
-            });
+            return Ok((common.id, false));
         }
         tracing::debug!(
             "Found incomplete ({}/{}) common recipient {}",
@@ -344,19 +331,16 @@ pub fn merge_and_fetch_recipient_inner(
         .filter_map(|r| r.as_ref())
         .collect();
 
-    if by_all.is_empty() {
-        tracing::error!("Recipient merge should have resulted in at least one match!");
+    // This is why the order matters - we return the first match.
+    let rcpt = by_all.first().unwrap_or_else(|| {
         tracing::error!(
             "Searched with: ACI:{:?}, PNI:{:?}, E164:{:?}",
             aci.as_ref().map_or("None".into(), Uuid::to_string),
             pni.as_ref().map_or("None".into(), Uuid::to_string),
             e164.as_ref().map_or("None".into(), PhoneNumber::to_string)
         );
-        return Ok(RecipientResults::default());
-    }
-
-    // This is why the order matters - we return the first match.
-    let rcpt = by_all[0];
+        panic!("recipient merge without result");
+    });
 
     if aci.is_some() && new_by_aci.is_none() {
         // XXX && (change_self || not_self)
@@ -381,10 +365,7 @@ pub fn merge_and_fetch_recipient_inner(
         // XXX session switchover event
     }
 
-    Ok(RecipientResults {
-        id: Some(rcpt.id),
-        ..Default::default()
-    })
+    Ok((rcpt.id, true))
 }
 
 // Inner method because the coverage report is then sensible.

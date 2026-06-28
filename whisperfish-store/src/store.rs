@@ -1428,7 +1428,7 @@ impl<O: Observable> Storage<O> {
         aci: Option<Aci>,
         pni: Option<Pni>,
     ) -> orm::Recipient {
-        let merged = self
+        let (id, changed) = self
             .db()
             .transaction::<_, diesel::result::Error, _>(|db| {
                 merge_and_fetch_recipient_inner(
@@ -1441,27 +1441,11 @@ impl<O: Observable> Storage<O> {
                 )
             })
             .expect("database");
-        let recipient = match (merged.id, merged.aci, merged.pni, merged.e164) {
-            (Some(id), _, _, _) => self
-                .fetch_recipient_by_id(id)
-                .expect("existing updated recipient"),
-            // XXX: Should we not use the merged ACI/PNI for fetching the new recipient? Would
-            // avoid an unwrap too.
-            (_, Some(_), _, _) => self
-                .fetch_recipient(&aci.unwrap().into())
-                .expect("existing updated recipient by aci"),
-            (_, _, Some(_), _) => self
-                .fetch_recipient(&pni.unwrap().into())
-                .expect("existing updated recipient by pni"),
-            (_, _, _, Some(e164)) => self
-                .fetch_recipient_by_e164(&e164)
-                .expect("existing updated recipient"),
-            (None, None, None, None) => {
-                unreachable!("this should get implemented with an Either or custom enum instead")
-            }
-        };
-        if merged.changed {
-            self.observe_update(crate::schema::recipients::table, recipient.id);
+        let recipient = self
+            .fetch_recipient_by_id(id)
+            .expect("existing updated recipient");
+        if changed {
+            self.observe_update(crate::schema::recipients::table, id);
         }
 
         tracing::trace!("Fetched recipient: {}", recipient);
@@ -1481,7 +1465,7 @@ impl<O: Observable> Storage<O> {
         pni: Option<Pni>,
         trust_level: TrustLevel,
     ) -> orm::Recipient {
-        let merged = self
+        let (id, changed) = self
             .db()
             .transaction::<_, Error, _>(|db| {
                 merge_and_fetch_recipient_inner(
@@ -1494,25 +1478,11 @@ impl<O: Observable> Storage<O> {
                 )
             })
             .expect("database");
-        let recipient = match (merged.id, merged.aci, merged.pni, merged.e164) {
-            (Some(id), _, _, _) => self
-                .fetch_recipient_by_id(id)
-                .expect("existing updated recipient by id"),
-            (_, Some(_), _, _) => self
-                .fetch_recipient(&aci.unwrap().into())
-                .expect("existing updated recipient by aci"),
-            (_, _, Some(_), _) => self
-                .fetch_recipient(&pni.unwrap().into())
-                .expect("existing updated recipient by pni"),
-            (_, _, _, Some(e164)) => self
-                .fetch_recipient_by_e164(&e164)
-                .expect("existing updated recipient by e164"),
-            (None, None, None, None) => {
-                unreachable!("this should get implemented with an Either or custom enum instead")
-            }
-        };
-        if merged.changed {
-            self.observe_update(crate::schema::recipients::table, recipient.id);
+        let recipient = self
+            .fetch_recipient_by_id(id)
+            .expect("existing updated recipient by id");
+        if changed {
+            self.observe_update(crate::schema::recipients::table, id);
         }
 
         tracing::trace!("Fetched recipient: {}", recipient);
