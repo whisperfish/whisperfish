@@ -623,6 +623,7 @@ impl ClientActor {
                     .as_ref()
                     .map(std::sync::Arc::downgrade)
                     .unwrap_or_default(),
+                self.signal_server(),
             )
             .start()
         })
@@ -738,8 +739,7 @@ impl ClientActor {
     }
 
     fn signal_server(&self) -> SignalServers {
-        // XXX: read the configuration files!
-        SignalServers::Production
+        self.config.get_signal_server()
     }
 
     pub fn clear_transient_timstamps(&mut self) {

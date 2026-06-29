@@ -35,6 +35,10 @@ struct Opts {
     #[arg(short = 'v', long, action = clap::ArgAction::Count)]
     verbose: u8,
 
+    /// Connect to Signal Staging servers instead. Only effective before linking or registering.
+    #[clap(long)]
+    staging: bool,
+
     /// Whether whisperfish was launched from autostart. Also accepts '-prestart'
     #[arg(long)]
     prestart: bool,
@@ -147,6 +151,17 @@ fn main() -> anyhow::Result<()> {
     // ~/.local/share/harbour-whisperfish/[...] to
     // ~/.local/share/rubdos.be/harbour-whisperfish/[...]
     store::Storage::migrate_storage().context("migrate db and storage")?;
+
+    if config.get_aci().is_none() {
+        // Setting/changing staging mode only works as long as ACI is not yet set,
+        // which implies it has already been received from either stage or prod servers.
+        // Note: This *must* be done before the config file write below!
+        if opt.staging && config.set_staging() || !config.set_production() {
+            eprintln!("Staging mode configured!");
+        } else {
+            eprintln!("Production mode configured!");
+        }
+    }
 
     // Write config to initialize a default config
     config.write_to_file().context("initialize config")?;

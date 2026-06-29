@@ -100,6 +100,7 @@ pub struct ProfileUpdater {
 
     local_aci: Aci,
     i_ws: Weak<SignalWebSocket<Identified>>,
+    signal_server: SignalServers,
 
     // TODO: store the ignore reason
     ignore_map: HashMap<Aci, DateTime<Utc>>,
@@ -113,13 +114,8 @@ impl ProfileUpdater {
         crate::user_agent()
     }
 
-    fn signal_server(&self) -> SignalServers {
-        // XXX: read the configuration files!
-        SignalServers::Production
-    }
-
     fn unauthenticated_service(&self) -> PushService {
-        PushService::new(self.signal_server(), None, self.user_agent())
+        PushService::new(self.signal_server, None, self.user_agent())
     }
 
     fn unidentified_websocket(
@@ -353,13 +349,19 @@ impl Handler<FetchAvatar> for ProfileUpdater {
 }
 
 impl ProfileUpdater {
-    pub fn new(storage: Storage, local_aci: Aci, i_ws: Weak<SignalWebSocket<Identified>>) -> Self {
+    pub fn new(
+        storage: Storage,
+        local_aci: Aci,
+        i_ws: Weak<SignalWebSocket<Identified>>,
+        signal_server: SignalServers,
+    ) -> Self {
         Self {
             storage,
             back_off_until: Utc::now() + REYIELD_DELAY,
 
             local_aci,
             i_ws,
+            signal_server,
 
             ignore_map: HashMap::new(),
 
