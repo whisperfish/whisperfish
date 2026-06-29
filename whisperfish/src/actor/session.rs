@@ -1,12 +1,7 @@
-mod typing_notifications;
-
-pub use self::typing_notifications::*;
-
 mod methods;
 use methods::*;
 
 use whisperfish_store::NewMessage;
-use whisperfish_store::orm;
 use whisperfish_store::orm::MessageType;
 
 use crate::platform::QmlApp;
@@ -14,7 +9,6 @@ use crate::{gui::StorageReady, store::Storage};
 use actix::prelude::*;
 
 use qmetaobject::prelude::*;
-use std::collections::{HashMap, VecDeque};
 
 #[derive(actix::Message)]
 #[rtype(result = "()")]
@@ -71,8 +65,6 @@ pub struct SaveDraft {
 pub struct SessionActor {
     inner: QObjectBox<SessionMethods>,
     storage: Option<Storage>,
-
-    typing_queue: VecDeque<TypingQueueItem>,
 }
 
 impl SessionActor {
@@ -83,7 +75,6 @@ impl SessionActor {
         Self {
             inner,
             storage: None,
-            typing_queue: VecDeque::new(),
         }
     }
 
@@ -92,12 +83,6 @@ impl SessionActor {
     /// Panics if storage is not initialized (should never happen after StorageReady)
     fn storage(&self) -> &Storage {
         self.storage.as_ref().expect("storage not initialized")
-    }
-
-    pub fn handle_update_typing(&mut self, typings: &HashMap<i32, Vec<orm::Recipient>>) {
-        let session = self.inner.pinned();
-        let session = session.borrow();
-        session.handle_typings(typings);
     }
 }
 
