@@ -229,36 +229,6 @@ impl Event {
     }
 }
 
-/// Match a table/process interest against an event.
-///
-/// Returns `Some(None)` for a relation-less match, `Some(Some(relation))` when
-/// matched through the declared relation, and `None` when the subject differs.
-fn match_relation<S: PartialEq>(
-    subject: &S,
-    relation: Option<&Relation>,
-    ev_subject: &S,
-    relations: &[Relation],
-) -> Option<Option<Relation>> {
-    if subject != ev_subject {
-        return None;
-    }
-    match relation {
-        // Relation-less interest: any event on the subject matches.
-        None => Some(None),
-        Some(declared) => {
-            let matched = relations.is_empty()
-                || relations.iter().any(|event_relation| {
-                    event_relation.subject == declared.subject && event_relation.key == declared.key
-                });
-            if matched {
-                Some(Some(declared.clone()))
-            } else {
-                None
-            }
-        }
-    }
-}
-
 impl Interest {
     /// Watch subject `T` for any event, regardless of relation. `T` is the
     /// payload type for process events (subject = payload type under the fold
@@ -289,17 +259,34 @@ impl Interest {
     /// unless the match happened through a declared relation. Returns `None`
     /// when the event does not match.
     pub fn match_against(&self, ev: &Event) -> Option<Option<Relation>> {
-        match (self, ev) {
-            (Interest::All, _) => Some(None),
-            (Interest::Subject { subject, relation }, Event { relations, .. }) => {
-                match_relation(subject, relation.as_ref(), &ev.subject, relations)
-            }
-
-            (Interest::Row { subject, key }, Event { key: ev_key, .. }) => {
+        match self {
+            Interest::All => Some(None),
+            Interest::Subject { subject, relation } => {
                 if subject != &ev.subject {
                     return None;
                 }
-                match ev_key {
+                match relation {
+                    // Relation-less interest: any event on the subject matches.
+                    None => Some(None),
+                    Some(declared) => {
+                        let matched = ev.relations.is_empty()
+                            || ev.relations.iter().any(|event_relation| {
+                                event_relation.subject == declared.subject
+                                    && event_relation.key == declared.key
+                            });
+                        if matched {
+                            Some(Some(declared.clone()))
+                        } else {
+                            None
+                        }
+                    }
+                }
+            }
+            Interest::Row { subject, key } => {
+                if subject != &ev.subject {
+                    return None;
+                }
+                match &ev.key {
                     // An unknown-key event matches any row-scoped interest on the same subject.
                     PrimaryKey::Unknown => Some(None),
                     ke if key == ke => Some(None),
@@ -307,6 +294,11 @@ impl Interest {
                 }
             }
         }
+    }
+
+    /// Convenience equivalent to `match_against(ev).is_some()`.
+    pub fn is_interesting(&self, ev: &Event) -> bool {
+        self.match_against(ev).is_some()
     }
 }
 
@@ -326,13 +318,6 @@ pub fn matched_interests(interests: &[Interest], ev: &Event) -> Vec<MatchedInter
                 })
         })
         .collect()
-}
-
-impl Interest {
-    /// Convenience equivalent to `match_against(ev).is_some()`.
-    pub fn is_interesting(&self, ev: &Event) -> bool {
-        self.match_against(ev).is_some()
-    }
 }
 
 pub trait Observatory {
