@@ -23,10 +23,16 @@ use uuid::Uuid;
 /// `schema::messages::table`); the diesel-table plumbing in this module
 /// constructs subjects via [`Subject::of::<T>()`]. For future ephemeral/process
 /// subjects, `T` will be a zero-sized marker type defined in the consumer crate.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Subject {
     tid: TypeId,
     name: &'static str,
+}
+
+impl std::fmt::Debug for Subject {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Subject").field(&self.name).finish()
+    }
 }
 
 impl Subject {
