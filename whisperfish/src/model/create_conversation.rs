@@ -66,7 +66,12 @@ pub struct CreateConversation {
 impl EventObserving for CreateConversation {
     type Context = ModelContext<Self>;
 
-    fn observe(&mut self, ctx: Self::Context, _event: crate::store::observer::Event) {
+    fn observe(
+        &mut self,
+        ctx: Self::Context,
+        _event: crate::store::observer::Event,
+        _matched: &[crate::store::observer::MatchedInterest],
+    ) {
         let storage = ctx.storage();
 
         // If something changed

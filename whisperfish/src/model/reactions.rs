@@ -38,7 +38,12 @@ pub struct Reactions {
 impl EventObserving for Reactions {
     type Context = ModelContext<Self>;
 
-    fn observe(&mut self, ctx: Self::Context, event: crate::store::observer::Event) {
+    fn observe(
+        &mut self,
+        ctx: Self::Context,
+        event: crate::store::observer::Event,
+        _matched: &[crate::store::observer::MatchedInterest],
+    ) {
         if let Some(message_id) = self.message_id {
             self.reaction_list
                 .pinned()

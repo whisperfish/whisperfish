@@ -4,7 +4,6 @@ use qmetaobject::QPointer;
 
 pub use whisperfish_model_macro::observing_model;
 
-use crate::store::observer::Event;
 use crate::store::observer::EventObserving;
 use crate::store::observer::Interest;
 use crate::store::{ActixEvent, Storage};
@@ -66,7 +65,8 @@ where
                         storage: self.storage.clone(),
                         addr: ctx.address(),
                     };
-                    model.observe(ctx, Event::from(event));
+                    let ActixEvent { event, matched } = event;
+                    model.observe(ctx, event, &matched);
                     model.interests()
                 }
                 None => {

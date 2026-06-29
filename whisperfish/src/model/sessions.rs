@@ -133,7 +133,12 @@ impl Sessions {
 impl EventObserving for Sessions {
     type Context = ModelContext<Self>;
 
-    fn observe(&mut self, ctx: Self::Context, event: Event) {
+    fn observe(
+        &mut self,
+        ctx: Self::Context,
+        event: Event,
+        _matched: &[crate::store::observer::MatchedInterest],
+    ) {
         let storage = ctx.storage();
         self.session_list
             .pinned()
