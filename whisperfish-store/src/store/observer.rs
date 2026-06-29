@@ -1,6 +1,8 @@
 //! Storage observer subsystem
 
+mod diesel;
 mod orm_interests;
+mod process;
 
 use std::any::{Any, TypeId};
 
@@ -8,21 +10,11 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
-/// Type-erased routing token identifying *what kind of thing* an [`Event`] or
-/// [`Interest`] pertains to.
+/// Type-erased routing token identifying what an [`Event`] or [`Interest`] is about.
 ///
-/// `Subject` is the generalization of the former closed `Table` enum: it routes
-/// by [`TypeId`] rather than an enumerated variant list, so new kinds of
-/// subjects (database tables today; future ephemeral/process subjects such as
-/// typing notifications and username-resolution progress) register transparently
-/// via [`Subject::of::<T>()`] without the observer core enumerating them. The
-/// [`Eq`]/[`PartialEq`] impl compares only `tid`; `name` exists purely for
-/// `tracing`/`Debug` legibility and is derived from [`std::any::type_name`].
-///
-/// For database rows, `T` is the diesel table type (e.g.
-/// `schema::messages::table`); the diesel-table plumbing in this module
-/// constructs subjects via [`Subject::of::<T>()`]. For future ephemeral/process
-/// subjects, `T` will be a zero-sized marker type defined in the consumer crate.
+/// `Subject` replaces the old `Table` enum. A subject is identified by the
+/// [`TypeId`] of the Rust type it represents, so new kinds of subjects can be
+/// added without changing the observer core.
 #[derive(Clone)]
 pub struct Subject {
     tid: TypeId,
@@ -64,21 +56,51 @@ impl std::hash::Hash for Subject {
     }
 }
 
-/// Links a process marker type to the typed payload carried by its events.
+/// Type-erased identity token for a diesel table.
 ///
-/// This is the consumer-side "downcasting infrastructure" that minimizes
-/// syntactic overhead at `observe()` sites: instead of `event.payload
-/// .as_ref()?.downcast_ref::<TypingTyper>()`, a model keyed off `Typing` writes
-/// `event.payload_of::<Typing>()`. The observer core is oblivious to payload
-/// shapes — it stores `Option<Arc<dyn Any + Send + Sync>>` and never downcasts;
-/// only the consumer, which knows `P`, downcasts via [`Event::payload_of`].
+/// `DieselTable` is the diesel-bound counterpart of [`Subject`]. Keeping the
+/// two tokens separate makes the diesel/process distinction structural.
+#[derive(Clone)]
+pub struct DieselTable {
+    tid: TypeId,
+    name: &'static str,
+}
+
+impl std::fmt::Debug for DieselTable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("DieselTable").field(&self.name).finish()
+    }
+}
+
+impl PartialEq for DieselTable {
+    fn eq(&self, other: &Self) -> bool {
+        self.tid == other.tid
+    }
+}
+
+impl Eq for DieselTable {}
+
+impl std::hash::Hash for DieselTable {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.tid.hash(state);
+    }
+}
+
+/// The subject of an [`Event`]: either a diesel table or a non-diesel process marker.
 ///
-/// Diesel-row events carry no payload and have no marker, so they never
-/// participate in this trait. For process events that carry no payload on a
-/// given lifecycle step (e.g. a typing `Delete`), the emitter simply constructs
-/// a payloadless event (`process_event` or `observe_process_event`), and
-/// `payload_of::<P>()` returns `None` — the consumer falls back to `key()`/
-/// `relations` for the data it needs.
+/// [`Interest::Row`] and [`Interest::Table`] match [`EventSubject::Table`];
+/// [`Interest::Process`] matches [`EventSubject::Process`].
+#[derive(Clone, Debug, PartialEq)]
+pub enum EventSubject {
+    Table(DieselTable),
+    Process(Subject),
+}
+
+/// Links a process marker type `P` to the concrete payload type it carries.
+///
+/// The payload is stored as `Arc<dyn Any + Send + Sync>` and recovered by the
+/// consumer through [`Event::payload_of::<P>()`]. Diesel-row events never use
+/// this trait.
 pub trait EventPayload: 'static {
     type Payload: Send + Sync + 'static;
 }
@@ -87,139 +109,50 @@ pub trait EventPayload: 'static {
 pub enum Interest {
     All,
     Row {
-        subject: Subject,
+        table: DieselTable,
         key: PrimaryKey,
     },
     Table {
-        subject: Subject,
+        table: DieselTable,
         relation: Option<Relation>,
     },
-    /// Interest in an ephemeral/process [`Subject`] (a consumer-defined marker
-    /// type, e.g. `Typing`), optionally scoped to a real DB row via `relation`.
-    ///
-    /// Structurally identical to [`Interest::Table`] but kept distinct so that
-    /// [`Interest::Table`] cleanly means "a diesel table" and process subjects
-    /// have an honest home. The matcher treats both the same: it compares
-    /// [`Subject`] identity and, when `relation` is `Some`, requires the event to
-    /// carry a matching relation edge.
+    /// Interest in a non-diesel process marker (e.g. `Typing`), optionally
+    /// scoped to a real DB row via `relation`.
     Process {
         subject: Subject,
         relation: Option<Relation>,
     },
 }
 
-impl Interest {
-    pub fn whole_table<T: diesel::Table + 'static>(_table: T) -> Self {
-        Interest::Table {
-            subject: Subject::of::<T>(),
-            relation: None,
-        }
-    }
-
-    /// Watches a table T for changes related to a row in table U identified by a key
-    /// `relation_key`.
-    pub fn whole_table_with_relation<T, U>(
-        _table: T,
-        _related_table: U,
-        relation_key: impl Into<PrimaryKey>,
-    ) -> Self
-    where
-        T: diesel::Table + 'static,
-        U: diesel::Table + 'static,
-        U: diesel::JoinTo<T>,
-    {
-        Interest::Table {
-            subject: Subject::of::<T>(),
-            relation: Some(Relation {
-                subject: Subject::of::<U>(),
-                key: relation_key.into(),
-            }),
-        }
-    }
-
-    pub fn row<T: diesel::Table + 'static>(_table: T, key: impl Into<PrimaryKey>) -> Self {
-        Interest::Row {
-            subject: Subject::of::<T>(),
-            key: key.into(),
-        }
-    }
-
-    /// Watch an ephemeral/process marker `P` for events related to a row in
-    /// diesel table `U` identified by `relation_key`.
-    ///
-    /// `P` is the consumer-defined process marker (e.g. `Typing`); `U` is a real
-    /// diesel table whose row scopes the interest. Observers declared this way
-    /// receive process events whose `relations` include `(Subject::of::<U>(),
-    /// relation_key)`.
-    pub fn process_with_relation<P, U>(
-        _process: P,
-        _related_table: U,
-        relation_key: impl Into<PrimaryKey>,
-    ) -> Self
-    where
-        P: 'static,
-        U: diesel::Table + 'static,
-    {
-        Interest::Process {
-            subject: Subject::of::<P>(),
-            relation: Some(Relation {
-                subject: Subject::of::<U>(),
-                key: relation_key.into(),
-            }),
-        }
-    }
-
-    /// Watch an ephemeral/process marker `P` for *any* of its events, regardless
-    /// of relation. Rarely useful (most observers want a specific scope) but
-    /// provided for symmetry with [`Interest::whole_table`].
-    pub fn process<P: 'static>(_process: P) -> Self {
-        Interest::Process {
-            subject: Subject::of::<P>(),
-            relation: None,
-        }
-    }
-}
-
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Relation {
-    subject: Subject,
+    table: DieselTable,
     key: PrimaryKey,
 }
 
 impl Relation {
-    /// The subject (table or process kind) this relation points at.
-    pub fn subject(&self) -> &Subject {
-        &self.subject
+    pub fn table(&self) -> &DieselTable {
+        &self.table
     }
 
-    /// The primary key of the related row.
     pub fn key(&self) -> &PrimaryKey {
         &self.key
     }
 
-    /// Construct a relation edge to a [`Subject`] (a diesel table or a process
-    /// marker) at `key`. Used by process emitters to attach real DB rows to an
-    /// ephemeral event so session-/row-scoped observers receive it.
-    pub fn new(subject: Subject, key: impl Into<PrimaryKey>) -> Self {
+    /// Construct a relation edge to a diesel table at `key`.
+    pub fn new(table: DieselTable, key: impl Into<PrimaryKey>) -> Self {
         Relation {
-            subject,
+            table,
             key: key.into(),
         }
     }
 }
 
-/// Why an [`EventObserving::observe`] call fired, from the observer's point of
-/// view.
+/// Information about the [`Interest`] that caused an observer to fire.
 ///
-/// `interest_index` is the positional index of the matching [`Interest`] in
-/// the `Vec` the observer returned from [`EventObserving::interests`]. Order is
-/// stable because `#[observing_model]` generates that `Vec`. `via_relation` is
-/// `Some(declared)` when the matched interest was a
-/// [`Interest::Table`] carrying a `relation` that matched through that relation;
-/// `None` for [`Interest::All`], [`Interest::Row`], and relation-less
-/// [`Interest::Table`] matches. It echoes the *declared* relation (which the
-/// observer already knows) purely as a convenience so the observer can react in
-/// context without re-deriving the path.
+/// `interest_index` is the position of the matching interest in the observer's
+/// declared list. `via_relation` is the relation edge through which the match
+/// happened, if any.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MatchedInterest {
     interest_index: usize,
@@ -239,15 +172,11 @@ impl MatchedInterest {
 #[derive(Clone)]
 pub struct Event {
     r#type: EventType,
-    subject: Subject,
+    subject: EventSubject,
     key: PrimaryKey,
     relations: Vec<Relation>,
-    /// Typed, type-erased payload carried by process events. `None` for all
-    /// diesel-row events (and for payloadless process events such as a typing
-    /// `Delete`). Consumers recover the concrete type via
-    /// [`Event::payload_of::<P>()`] keyed off the process marker `P`, which
-    /// keeps the observer core oblivious to payload shapes — it never
-    /// downcasts, only routes on [`Subject`] + [`relations`].
+    /// Payload carried by process events. `None` for diesel-row events and for
+    /// payloadless process events.
     payload: Option<Arc<dyn Any + Send + Sync>>,
 }
 
@@ -305,18 +234,9 @@ impl From<String> for PrimaryKey {
 }
 
 impl Event {
-    pub fn for_table<T: diesel::Table + 'static>(&self, _table: T) -> bool {
-        let subject = Subject::of::<T>();
-        self.subject == subject
-    }
-
-    pub fn for_row<T: diesel::Table + 'static>(
-        &self,
-        _table: T,
-        key_test: impl Into<PrimaryKey>,
-    ) -> bool {
-        let subject = Subject::of::<T>();
-        self.subject == subject && self.key.implies(&key_test.into())
+    /// Recover the payload for the marker type `P`, if any.
+    pub fn payload_of<P: EventPayload>(&self) -> Option<&P::Payload> {
+        self.payload.as_ref()?.downcast_ref::<P::Payload>()
     }
 
     pub fn is_insert(&self) -> bool {
@@ -341,40 +261,16 @@ impl Event {
     pub fn key(&self) -> &PrimaryKey {
         &self.key
     }
-
-    pub fn relation_key_for<T: diesel::Table + 'static>(&self, _table: T) -> Option<&PrimaryKey> {
-        if self.for_table(_table) {
-            Some(&self.key)
-        } else {
-            let subject = Subject::of::<T>();
-            self.relations
-                .iter()
-                .find(|relation| relation.subject == subject)
-                .map(|relation| &relation.key)
-        }
-    }
-
-    /// Typed access to the payload, keyed off a process marker `P` whose
-    /// [`EventPayload::Payload`] is what it carries.
-    ///
-    /// Returns `None` for events with no payload (all diesel-row events, and
-    /// payloadless process events such as a typing `Delete`) or whose subject is
-    /// not `P`. The observer core is oblivious to payload shapes; only the
-    /// consumer downcasts via this helper.
-    pub fn payload_of<P: EventPayload>(&self) -> Option<&P::Payload> {
-        self.payload.as_ref()?.downcast_ref::<P::Payload>()
-    }
 }
 
-/// Shared matching logic for [`Interest::Table`] and [`Interest::Process`]:
-/// match if `subject == ev_subject`, and (when `relation` is `Some`) require the
-/// event to carry a matching relation edge — or, preserving legacy behaviour,
-/// match when the event carries no relations at all. Returns `Some(None)` for a
-/// relation-less match, `Some(Some(declared))` when matched through the relation.
-fn match_relation(
-    subject: &Subject,
+/// Match a table/process interest against an event.
+///
+/// Returns `Some(None)` for a relation-less match, `Some(Some(relation))` when
+/// matched through the declared relation, and `None` when the subject differs.
+fn match_relation<S: PartialEq>(
+    subject: &S,
     relation: Option<&Relation>,
-    ev_subject: &Subject,
+    ev_subject: &S,
     relations: &[Relation],
 ) -> Option<Option<Relation>> {
     if subject != ev_subject {
@@ -386,7 +282,7 @@ fn match_relation(
         Some(declared) => {
             let matched = relations.is_empty()
                 || relations.iter().any(|event_relation| {
-                    event_relation.subject == declared.subject && event_relation.key == declared.key
+                    event_relation.table == declared.table && event_relation.key == declared.key
                 });
             if matched {
                 Some(Some(declared.clone()))
@@ -398,77 +294,60 @@ fn match_relation(
 }
 
 impl Interest {
-    /// Test whether `self` matches `ev`, returning `Some(via_relation)` if so.
+    /// Test whether `self` matches `ev`.
     ///
-    /// `via_relation` is `Some(declared_relation)` when the matched interest is
-    /// a [`Interest::Table`] or [`Interest::Process`] that carried a `relation`
-    /// and matched through it; `None` for [`Interest::All`], [`Interest::Row`],
-    /// and relation-less [`Interest::Table`] / [`Interest::Process`] matches.
-    /// `None` (the outer `Option`) means "no match."
-    ///
-    /// This is the structured counterpart of [`is_interesting`]; [`is_interesting`]
-    /// is defined in terms of it.
+    /// Returns `Some(via_relation)` on a match, where `via_relation` is `None`
+    /// unless the match happened through a declared relation. Returns `None`
+    /// when the event does not match.
     pub fn match_against(&self, ev: &Event) -> Option<Option<Relation>> {
         match (self, ev) {
             (Interest::All, _) => Some(None),
             (
-                Interest::Table { subject, relation },
+                Interest::Table { table, relation },
                 Event {
-                    subject: ev_subject,
+                    subject: EventSubject::Table(ev_table),
                     relations,
                     ..
                 },
-            ) => match_relation(subject, relation.as_ref(), ev_subject, relations),
+            ) => match_relation(table, relation.as_ref(), ev_table, relations),
 
-            // Ephemeral/process interests route structurally identically to
-            // table interests; kept a distinct variant so `Interest::Table`
-            // cleanly means "a diesel table". See [`Interest::Process`].
             (
                 Interest::Process { subject, relation },
                 Event {
-                    subject: ev_subject,
+                    subject: EventSubject::Process(ev_subject),
                     relations,
                     ..
                 },
             ) => match_relation(subject, relation.as_ref(), ev_subject, relations),
 
             (
-                Interest::Row { subject, key },
+                Interest::Row { table, key },
                 Event {
-                    subject: ev_subject,
+                    subject: EventSubject::Table(ev_table),
                     key: ev_key,
                     ..
                 },
             ) => {
-                if subject != ev_subject {
+                if table != ev_table {
                     return None;
                 }
                 match ev_key {
-                    // Legacy behaviour: an event on an unknown row matches any
-                    // row-scoped interest on the same subject.
+                    // An unknown-row event matches any row-scoped interest on the same table.
                     PrimaryKey::Unknown => Some(None),
                     ke if key == ke => Some(None),
                     _ => None,
                 }
             }
 
-            #[allow(unreachable_patterns)] // XXX should one of the enums be non-exhaustive instead?
-            _ => {
-                tracing::debug!(
-                    "Unhandled event-interest pair; assuming interesting. {:?} {:?}",
-                    ev,
-                    self
-                );
-                // Preserves the legacy "assume interesting" fallback.
-                Some(None)
-            }
+            // Mismatched domains never match.
+            _ => None,
         }
     }
 }
 
-/// Compute the [`MatchedInterest`]s for an observer that declared `interests`,
-/// against a single [`Event`]. Returned in ascending `interest_index` order; an
-/// event may satisfy more than one declared interest.
+/// Compute the [`MatchedInterest`]s for an observer against a single [`Event`].
+///
+/// Results are returned in declaration order.
 pub fn matched_interests(interests: &[Interest], ev: &Event) -> Vec<MatchedInterest> {
     interests
         .iter()
@@ -484,60 +363,8 @@ pub fn matched_interests(interests: &[Interest], ev: &Event) -> Vec<MatchedInter
         .collect()
 }
 
-/// Construct an ephemeral/process [`Event`] for the marker type `P`.
-///
-/// `P` is a consumer-defined `'static` marker type (e.g. `Typing`, a future
-/// `UsernameLookup`). The event's [`Subject`] is `Subject::of::<P>()`; its
-/// `relations` carry the real DB rows it pertains to, so observers already
-/// scoped to those rows (via [`Interest::whole_table_with_relation`] or a
-/// hand-built [`Interest::Table`] with a `relation`) receive it through the
-/// normal [`matched_interests`] dispatch — the matcher is oblivious to what
-/// `P` is.
-///
-/// Typed payloads (`ProcessState` / `ProcessFailure`, R3), the `ProcessKind`
-/// trait, and a process-state registry for late-observer replay are deferred to
-/// the username-lookup MR, where they are first exercised; typing (binary,
-/// encoded in [`EventType`]) needs none of them.
-pub fn process_event<P: 'static>(
-    r#type: EventType,
-    key: impl Into<PrimaryKey>,
-    relations: Vec<Relation>,
-) -> Event {
-    Event {
-        r#type,
-        subject: Subject::of::<P>(),
-        key: key.into(),
-        relations,
-        payload: None,
-    }
-}
-
-/// Construct an ephemeral/process [`Event`] for the marker `P`, carrying a
-/// typed `payload` recoverable via [`Event::payload_of::<P>()`] at the consumer
-/// site. [`EventPayload`] links `P` to its [`EventPayload::Payload`] type; the
-/// observer core stores the payload as `Arc<dyn Any + Send + Sync>` and downcasts
-/// only at the consumer's request.
-///
-/// Use this for process events whose data the consumer needs (e.g. a typing
-/// `Insert` carrying the typer). Use [`process_event`] for payloadless steps
-/// (e.g. a typing `Delete`, where the consumer keys off [`Event::key`] and
-/// [`relations`] instead).
-pub fn process_event_with_payload<P: EventPayload>(
-    r#type: EventType,
-    key: impl Into<PrimaryKey>,
-    relations: Vec<Relation>,
-    payload: P::Payload,
-) -> Event {
-    Event {
-        r#type,
-        subject: Subject::of::<P>(),
-        key: key.into(),
-        relations,
-        payload: Some(Arc::new(payload)),
-    }
-}
-
 impl Interest {
+    /// Convenience equivalent to `match_against(ev).is_some()`.
     pub fn is_interesting(&self, ev: &Event) -> bool {
         self.match_against(ev).is_some()
     }
@@ -564,68 +391,6 @@ pub trait EventObserving {
     fn interests(&self) -> Vec<Interest>;
 }
 
-pub struct ObservationBuilder<'a, T, O>
-where
-    O: Observable,
-{
-    storage: &'a super::Storage<O>,
-    event: Event,
-    _table: T,
-}
-
-impl<T, O> Drop for ObservationBuilder<'_, T, O>
-where
-    O: Observable,
-{
-    fn drop(&mut self) {
-        self.storage.distribute_event(self.event.clone());
-    }
-}
-
-impl<'a, T, O> ObservationBuilder<'a, T, O>
-where
-    T: diesel::Table + 'static,
-    O: Observable,
-{
-    pub fn with_relation<U>(mut self, _table: U, relation_key: impl Into<PrimaryKey>) -> Self
-    where
-        U: diesel::Table + 'static,
-        U: diesel::JoinTo<T>,
-    {
-        self.event.relations.push(Relation {
-            subject: Subject::of::<U>(),
-            key: relation_key.into(),
-        });
-        self
-    }
-
-    /// Declare a two-hop transitive relation on the emitted event: the primary table
-    /// `T` joins to `Via` via a declared FK, and `Via` joins to `Target` via a declared
-    /// FK. Both edges are proven at compile time through `JoinTo` bounds, so this is as
-    /// honest as [`with_relation`] without requiring a direct `T -> Target` FK.
-    ///
-    /// The pushed relation looks identical to a direct `with_relation(Target, key)` to
-    /// consumers; only the *path* by which it was justified is two-hop.
-    pub fn with_transitive_relation<Via, Target>(
-        mut self,
-        _via: Via,
-        _target: Target,
-        relation_key: impl Into<PrimaryKey>,
-    ) -> Self
-    where
-        Via: diesel::Table + 'static,
-        Target: diesel::Table + 'static,
-        Via: diesel::JoinTo<T>,
-        Target: diesel::JoinTo<Via>,
-    {
-        self.event.relations.push(Relation {
-            subject: Subject::of::<Target>(),
-            key: relation_key.into(),
-        });
-        self
-    }
-}
-
 #[derive(Copy, Clone)]
 pub struct ObserverHandle {
     id: Uuid,
@@ -649,123 +414,22 @@ impl<O: Observable> super::Storage<O> {
     pub(super) fn distribute_event(&self, event: Event) {
         self.observatory.distribute_event(event);
     }
-
-    pub fn observe_insert<T: diesel::Table + 'static>(
-        &self,
-        diesel_table: T,
-        key: impl Into<PrimaryKey>,
-    ) -> ObservationBuilder<'_, T, O> {
-        ObservationBuilder {
-            storage: self,
-            event: Event {
-                subject: Subject::of::<T>(),
-                key: key.into(),
-                relations: Vec::new(),
-                r#type: EventType::Insert,
-                payload: None,
-            },
-            _table: diesel_table,
-        }
-    }
-
-    pub fn observe_upsert<T: diesel::Table + 'static>(
-        &self,
-        diesel_table: T,
-        key: impl Into<PrimaryKey>,
-    ) -> ObservationBuilder<'_, T, O> {
-        ObservationBuilder {
-            storage: self,
-            event: Event {
-                subject: Subject::of::<T>(),
-                key: key.into(),
-                relations: Vec::new(),
-                r#type: EventType::Upsert,
-                payload: None,
-            },
-            _table: diesel_table,
-        }
-    }
-
-    pub fn observe_update<T: diesel::Table + 'static>(
-        &self,
-        diesel_table: T,
-        key: impl Into<PrimaryKey>,
-    ) -> ObservationBuilder<'_, T, O> {
-        ObservationBuilder {
-            storage: self,
-            event: Event {
-                subject: Subject::of::<T>(),
-                key: key.into(),
-                relations: Vec::new(),
-                r#type: EventType::Update,
-                payload: None,
-            },
-            _table: diesel_table,
-        }
-    }
-
-    pub fn observe_delete<T: diesel::Table + 'static>(
-        &self,
-        diesel_table: T,
-        key: impl Into<PrimaryKey>,
-    ) -> ObservationBuilder<'_, T, O> {
-        ObservationBuilder {
-            storage: self,
-            event: Event {
-                subject: Subject::of::<T>(),
-                key: key.into(),
-                relations: Vec::new(),
-                r#type: EventType::Delete,
-                payload: None,
-            },
-            _table: diesel_table,
-        }
-    }
-
-    /// Emit an ephemeral/process event for the marker type `P`. Thin wrapper
-    /// over [`process_event`] + [`distribute_event`]; provided on `Storage`
-    /// so process coordinators use the same surface as DB emitters. The
-    /// relations should name the real DB rows the event pertains to so
-    /// session-/row-scoped observers receive it.
-    pub fn observe_process_event<P: 'static>(
-        &self,
-        r#type: EventType,
-        key: impl Into<PrimaryKey>,
-        relations: Vec<Relation>,
-    ) {
-        self.distribute_event(process_event::<P>(r#type, key, relations));
-    }
-
-    /// Emit an ephemeral/process event for the marker `P` carrying a typed
-    /// payload (see [`process_event_with_payload`]). Use this for process steps
-    /// whose data the consumer needs; use [`observe_process_event`] for
-    /// payloadless steps.
-    pub fn observe_process_event_with_payload<P: EventPayload>(
-        &self,
-        r#type: EventType,
-        key: impl Into<PrimaryKey>,
-        relations: Vec<Relation>,
-        payload: P::Payload,
-    ) {
-        self.distribute_event(process_event_with_payload::<P>(
-            r#type, key, relations, payload,
-        ));
-    }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::process::{process_event, process_event_with_payload};
     use super::*;
     use crate::schema;
 
-    fn messages() -> Subject {
-        Subject::of::<schema::messages::table>()
+    fn messages() -> DieselTable {
+        DieselTable::of::<schema::messages::table>()
     }
-    fn sessions() -> Subject {
-        Subject::of::<schema::sessions::table>()
+    fn sessions() -> DieselTable {
+        DieselTable::of::<schema::sessions::table>()
     }
-    fn recipients() -> Subject {
-        Subject::of::<schema::recipients::table>()
+    fn recipients() -> DieselTable {
+        DieselTable::of::<schema::recipients::table>()
     }
 
     #[test]
@@ -778,25 +442,25 @@ mod tests {
 
         let event_on_session_0 = Event {
             r#type: EventType::Insert,
-            subject: messages(),
+            subject: EventSubject::Table(messages()),
             key: 52.into(),
             relations: vec![Relation {
-                subject: sessions(),
+                table: sessions(),
                 key: 0.into(),
             }],
             payload: None,
         };
         let event_on_session_1 = Event {
             r#type: EventType::Insert,
-            subject: messages(),
+            subject: EventSubject::Table(messages()),
             key: 66.into(),
             relations: vec![
                 Relation {
-                    subject: recipients(),
+                    table: recipients(),
                     key: 26.into(),
                 },
                 Relation {
-                    subject: sessions(),
+                    table: sessions(),
                     key: 1.into(),
                 },
             ],
@@ -813,7 +477,7 @@ mod tests {
 
         let event = Event {
             r#type: EventType::Insert,
-            subject: messages(),
+            subject: EventSubject::Table(messages()),
             key: 52.into(),
             relations: vec![],
             payload: None,
@@ -828,14 +492,14 @@ mod tests {
 
         let negative = Event {
             r#type: EventType::Insert,
-            subject: messages(),
+            subject: EventSubject::Table(messages()),
             key: 1.into(),
             relations: vec![],
             payload: None,
         };
         let positive = Event {
             r#type: EventType::Insert,
-            subject: messages(),
+            subject: EventSubject::Table(messages()),
             key: 2.into(),
             relations: vec![],
             payload: None,
@@ -849,10 +513,10 @@ mod tests {
     fn event() {
         let e = Event {
             r#type: EventType::Insert,
-            subject: messages(),
+            subject: EventSubject::Table(messages()),
             key: 1.into(),
             relations: vec![Relation {
-                subject: sessions(),
+                table: sessions(),
                 key: 0.into(),
             }],
             payload: None,
@@ -884,42 +548,42 @@ mod tests {
     fn interest() {
         let i_all = Interest::All;
         let i_row = Interest::Row {
-            subject: messages(),
+            table: messages(),
             key: 2.into(),
         };
         let e_1 = Event {
             r#type: EventType::Insert,
-            subject: messages(),
+            subject: EventSubject::Table(messages()),
             key: 1.into(),
             relations: vec![Relation {
-                subject: sessions(),
+                table: sessions(),
                 key: 0.into(),
             }],
             payload: None,
         };
         let e_2 = Event {
             r#type: EventType::Insert,
-            subject: messages(),
+            subject: EventSubject::Table(messages()),
             key: 2.into(),
             relations: vec![Relation {
-                subject: sessions(),
+                table: sessions(),
                 key: 0.into(),
             }],
             payload: None,
         };
         let e_u = Event {
             r#type: EventType::Insert,
-            subject: messages(),
+            subject: EventSubject::Table(messages()),
             key: PrimaryKey::Unknown,
             relations: vec![Relation {
-                subject: sessions(),
+                table: sessions(),
                 key: 0.into(),
             }],
             payload: None,
         };
         let e_s = Event {
             r#type: EventType::Insert,
-            subject: sessions(),
+            subject: EventSubject::Table(sessions()),
             key: PrimaryKey::Unknown,
             relations: vec![],
             payload: None,
@@ -932,16 +596,7 @@ mod tests {
 
         let i_cln = i_row.clone();
         match (i_cln, i_row) {
-            (
-                Interest::Row {
-                    subject: t1,
-                    key: k1,
-                },
-                Interest::Row {
-                    subject: t2,
-                    key: k2,
-                },
-            ) => {
+            (Interest::Row { table: t1, key: k1 }, Interest::Row { table: t2, key: k2 }) => {
                 assert_eq!(t1, t2);
                 assert_eq!(k1, k2);
             }
@@ -965,34 +620,14 @@ mod tests {
 
     #[test]
     fn subject_equality_is_typeid_based() {
-        // Same type → equal regardless of the fact that the names differ on
-        // re-parameterization of the *type*; here we only have one concrete
-        // type per call, so this is the trivial positive case.
-        let a = Subject::of::<schema::messages::table>();
-        let b = Subject::of::<schema::messages::table>();
-        assert_eq!(a, b);
-        assert_eq!(a.name(), b.name());
-
-        // Different diesel tables → not equal.
-        let s = Subject::of::<schema::sessions::table>();
-        assert_ne!(a, s);
-    }
-
-    #[test]
-    fn subject_distinguishes_non_diesel_types() {
-        // Marker types (the future shape of ephemeral/process subjects) route
-        // distinctly from diesel tables and from each other, even though they
-        // carry no data. This is the property the typing retrofit and
-        // username-lookup will lean on.
-        struct Typing;
-        struct UsernameLookup;
-
-        assert_ne!(Subject::of::<Typing>(), Subject::of::<UsernameLookup>());
-        assert_ne!(
-            Subject::of::<Typing>(),
+        assert_eq!(
+            Subject::of::<schema::messages::table>(),
             Subject::of::<schema::messages::table>()
         );
-        assert_eq!(Subject::of::<Typing>(), Subject::of::<Typing>());
+        assert_ne!(
+            Subject::of::<schema::messages::table>(),
+            Subject::of::<schema::sessions::table>()
+        );
     }
 
     #[test]
@@ -1007,20 +642,20 @@ mod tests {
 
         let on_session_1 = Event {
             r#type: EventType::Update,
-            subject: Subject::of::<Typing>(),
+            subject: EventSubject::Process(Subject::of::<Typing>()),
             key: 7.into(),
             relations: vec![Relation {
-                subject: sessions(),
+                table: sessions(),
                 key: 1.into(),
             }],
             payload: None,
         };
         let on_session_2 = Event {
             r#type: EventType::Update,
-            subject: Subject::of::<Typing>(),
+            subject: EventSubject::Process(Subject::of::<Typing>()),
             key: 8.into(),
             relations: vec![Relation {
-                subject: sessions(),
+                table: sessions(),
                 key: 2.into(),
             }],
             payload: None,
@@ -1047,10 +682,10 @@ mod tests {
         );
         let event = Event {
             r#type: EventType::Insert,
-            subject: messages(),
+            subject: EventSubject::Table(messages()),
             key: 9.into(),
             relations: vec![Relation {
-                subject: sessions(),
+                table: sessions(),
                 key: 1.into(),
             }],
             payload: None,
@@ -1058,17 +693,17 @@ mod tests {
 
         let matched = interest.match_against(&event).expect("should match");
         let via = matched.expect("relation-scoped interest should carry a via_relation");
-        assert_eq!(via.subject(), &sessions());
+        assert_eq!(via.table(), &sessions());
         assert_eq!(via.key(), &PrimaryKey::RowId(1));
 
         // A relation-scoped interest that doesn't match the event's relation
         // key must yield no match.
         let event_other_session = Event {
             r#type: EventType::Insert,
-            subject: messages(),
+            subject: EventSubject::Table(messages()),
             key: 9.into(),
             relations: vec![Relation {
-                subject: sessions(),
+                table: sessions(),
                 key: 2.into(),
             }],
             payload: None,
@@ -1085,7 +720,7 @@ mod tests {
         let row = Interest::row(schema::messages::table, 5);
         let ev = Event {
             r#type: EventType::Update,
-            subject: messages(),
+            subject: EventSubject::Table(messages()),
             key: 5.into(),
             relations: vec![],
             payload: None,
@@ -1125,10 +760,10 @@ mod tests {
         ];
         let ev = Event {
             r#type: EventType::Insert,
-            subject: messages(),
+            subject: EventSubject::Table(messages()),
             key: 42.into(),
             relations: vec![Relation {
-                subject: sessions(),
+                table: sessions(),
                 key: 1.into(),
             }],
             payload: None,
@@ -1146,21 +781,8 @@ mod tests {
         let via2 = m2
             .via_relation()
             .expect("relation-scoped match has via_relation");
-        assert_eq!(via2.subject(), &sessions());
+        assert_eq!(via2.table(), &sessions());
         assert_eq!(via2.key(), &PrimaryKey::RowId(1));
-    }
-
-    #[test]
-    fn matched_interests_empty_when_no_interest_matches() {
-        let interests = vec![Interest::row(schema::messages::table, 1)];
-        let ev = Event {
-            r#type: EventType::Insert,
-            subject: sessions(),
-            key: 1.into(),
-            relations: vec![],
-            payload: None,
-        };
-        assert!(matched_interests(&interests, &ev).is_empty());
     }
 
     #[test]
@@ -1177,7 +799,7 @@ mod tests {
         let ev =
             process_event::<Typing>(EventType::Insert, sid, vec![Relation::new(sessions(), sid)]);
 
-        assert_eq!(ev.subject, Subject::of::<Typing>());
+        assert_eq!(ev.subject, EventSubject::Process(Subject::of::<Typing>()));
         assert_eq!(ev.key(), &PrimaryKey::RowId(sid));
 
         let interest = Interest::process_with_relation(Typing, schema::sessions::table, sid);
@@ -1187,26 +809,16 @@ mod tests {
         let via = matched[0]
             .via_relation()
             .expect("relation-scoped process match carries via_relation");
-        assert_eq!(via.subject(), &sessions());
+        assert_eq!(via.table(), &sessions());
         assert_eq!(via.key(), &PrimaryKey::RowId(sid));
-    }
 
-    #[test]
-    fn process_event_delete_propagates_to_same_observer() {
-        // Lifecycle symmetry: Delete reaches the same session-scoped interest
-        // that Insert created, so the observer can tear down on timeout/stop.
-        struct Typing;
-        let sid = 7;
-        let interest = Interest::process_with_relation(Typing, schema::sessions::table, sid);
-        let interests = [interest];
-
-        let insert =
-            process_event::<Typing>(EventType::Insert, sid, vec![Relation::new(sessions(), sid)]);
+        // Delete reaches the same session-scoped interest.
         let delete =
             process_event::<Typing>(EventType::Delete, sid, vec![Relation::new(sessions(), sid)]);
-
-        assert_eq!(matched_interests(&interests, &insert).len(), 1);
-        assert_eq!(matched_interests(&interests, &delete).len(), 1);
+        assert_eq!(
+            matched_interests(std::slice::from_ref(&interest), &delete).len(),
+            1
+        );
     }
 
     #[test]
@@ -1250,7 +862,7 @@ mod tests {
         // Diesel events carry no payload.
         let db_ev = Event {
             r#type: EventType::Insert,
-            subject: messages(),
+            subject: EventSubject::Table(messages()),
             key: 1.into(),
             relations: vec![],
             payload: None,
@@ -1271,25 +883,5 @@ mod tests {
         // And reports None as via_relation (no declared relation to echo).
         let matched = interest.match_against(&ev).expect("should match");
         assert!(matched.is_none());
-    }
-
-    #[test]
-    fn process_interest_is_distinct_from_table_interest() {
-        // `Interest::Process` and `Interest::Table` with the same (Subject,
-        // relation) shape behave identically for routing — the distinction is
-        // semantic (process vs diesel table), enforced by type-level
-        // constructors. A diesel-table interest must NOT route a process event
-        // of the same subject, and vice versa — but since `Subject` identity is
-        // what's compared, this reduces to: different subjects don't match.
-        struct Typing;
-
-        let process_interest = Interest::process_with_relation(Typing, schema::sessions::table, 1);
-        // A diesel-table interest on `sessions` is a different subject from the
-        // `Typing` marker, so a Typing event must not match it.
-        let db_interest = Interest::whole_table(schema::sessions::table);
-        let typing_ev =
-            process_event::<Typing>(EventType::Insert, 1, vec![Relation::new(sessions(), 1)]);
-        assert!(process_interest.is_interesting(&typing_ev));
-        assert!(!db_interest.is_interesting(&typing_ev));
     }
 }

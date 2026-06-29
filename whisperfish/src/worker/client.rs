@@ -77,7 +77,7 @@ use crate::model::typing::{Typing, TypingPayload};
 use crate::platform::QmlApp;
 use crate::store::AciOrPniStorage;
 use crate::store::Storage;
-use crate::store::observer::{EventType, Relation, Subject};
+use crate::store::observer::{DieselTable, EventType, Relation};
 use crate::store::orm::UnidentifiedAccessMode;
 use crate::worker::client::early_receipt_cache::CachedReceipt;
 use crate::worker::client::unidentified::CertType;
@@ -1425,7 +1425,7 @@ impl ClientActor {
         };
 
         let relations = vec![Relation::new(
-            Subject::of::<whisperfish_store::schema::sessions::table>(),
+            DieselTable::of::<whisperfish_store::schema::sessions::table>(),
             session.id,
         )];
 
