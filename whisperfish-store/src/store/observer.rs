@@ -103,27 +103,6 @@ impl Relation {
     }
 }
 
-/// Information about the [`Interest`] that caused an observer to fire.
-///
-/// `interest_index` is the position of the matching interest in the observer's
-/// declared list. `via_relation` is the relation edge through which the match
-/// happened, if any.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MatchedInterest {
-    interest_index: usize,
-    via_relation: Option<Relation>,
-}
-
-impl MatchedInterest {
-    pub fn interest_index(&self) -> usize {
-        self.interest_index
-    }
-
-    pub fn via_relation(&self) -> Option<&Relation> {
-        self.via_relation.as_ref()
-    }
-}
-
 #[derive(Clone)]
 pub struct Event {
     subject: Subject,
@@ -255,69 +234,40 @@ impl Interest {
 
     /// Test whether `self` matches `ev`.
     ///
-    /// Returns `Some(via_relation)` on a match, where `via_relation` is `None`
-    /// unless the match happened through a declared relation. Returns `None`
-    /// when the event does not match.
-    pub fn match_against(&self, ev: &Event) -> Option<Option<Relation>> {
+    /// The verb/domain the consumer needs is recovered separately from the
+    /// event's typed payload (`payload_of::<T>()`); the matcher only decides
+    /// routing on [`Subject`] identity + [`Relation`] edges.
+    pub fn is_interesting(&self, ev: &Event) -> bool {
         match self {
-            Interest::All => Some(None),
+            Interest::All => true,
             Interest::Subject { subject, relation } => {
                 if subject != &ev.subject {
-                    return None;
+                    return false;
                 }
                 match relation {
                     // Relation-less interest: any event on the subject matches.
-                    None => Some(None),
+                    None => true,
                     Some(declared) => {
-                        let matched = ev.relations.is_empty()
+                        ev.relations.is_empty()
                             || ev.relations.iter().any(|event_relation| {
                                 event_relation.subject == declared.subject
                                     && event_relation.key == declared.key
-                            });
-                        if matched {
-                            Some(Some(declared.clone()))
-                        } else {
-                            None
-                        }
+                            })
                     }
                 }
             }
             Interest::Row { subject, key } => {
                 if subject != &ev.subject {
-                    return None;
+                    return false;
                 }
                 match &ev.key {
                     // An unknown-key event matches any row-scoped interest on the same subject.
-                    PrimaryKey::Unknown => Some(None),
-                    ke if key == ke => Some(None),
-                    _ => None,
+                    PrimaryKey::Unknown => true,
+                    ke => key == ke,
                 }
             }
         }
     }
-
-    /// Convenience equivalent to `match_against(ev).is_some()`.
-    pub fn is_interesting(&self, ev: &Event) -> bool {
-        self.match_against(ev).is_some()
-    }
-}
-
-/// Compute the [`MatchedInterest`]s for an observer against a single [`Event`].
-///
-/// Results are returned in declaration order.
-pub fn matched_interests(interests: &[Interest], ev: &Event) -> Vec<MatchedInterest> {
-    interests
-        .iter()
-        .enumerate()
-        .filter_map(|(interest_index, interest)| {
-            interest
-                .match_against(ev)
-                .map(|via_relation| MatchedInterest {
-                    interest_index,
-                    via_relation,
-                })
-        })
-        .collect()
 }
 
 pub trait Observatory {
@@ -335,7 +285,7 @@ impl<O: Observatory + Clone> Observable for O {}
 pub trait EventObserving {
     type Context;
 
-    fn observe(&mut self, ctx: Self::Context, event: Event, matched: &[MatchedInterest])
+    fn observe(&mut self, ctx: Self::Context, event: Event)
     where
         Self: Sized;
     fn interests(&self) -> Vec<Interest>;
@@ -665,123 +615,11 @@ mod tests {
     }
 
     #[test]
-    fn match_against_returns_via_relation_for_table_with_relation() {
-        // A `Table { relation: Some(_) }` interest that matches through its
-        // declared relation echoes that relation back as `via_relation`.
-        let interest = Interest::whole_table_with_relation(
-            schema::messages::table,
-            schema::sessions::table,
-            1,
-        );
-        let event = Event {
-            subject: messages(),
-            key: 9.into(),
-            relations: vec![Relation {
-                subject: sessions(),
-                key: 1.into(),
-            }],
-            payload: Arc::new(EventType::Insert),
-        };
-
-        let matched = interest.match_against(&event).expect("should match");
-        let via = matched.expect("relation-scoped interest should carry a via_relation");
-        assert_eq!(via.subject(), &sessions());
-        assert_eq!(via.key(), &PrimaryKey::RowId(1));
-
-        // A relation-scoped interest that doesn't match the event's relation
-        // key must yield no match.
-        let event_other_session = Event {
-            subject: messages(),
-            key: 9.into(),
-            relations: vec![Relation {
-                subject: sessions(),
-                key: 2.into(),
-            }],
-            payload: Arc::new(EventType::Insert),
-        };
-        assert!(interest.match_against(&event_other_session).is_none());
-    }
-
-    #[test]
-    fn match_against_relation_less_interest_yields_none_via() {
-        // `All`, row-scoped, and relation-less table interests all match with
-        // `via_relation == None`.
-        let all = Interest::All;
-        let table_plain = Interest::whole_table(schema::messages::table);
-        let row = Interest::row(schema::messages::table, 5);
-        let ev = Event {
-            subject: messages(),
-            key: 5.into(),
-            relations: vec![],
-            payload: Arc::new(EventType::Update),
-        };
-
-        for interest in [all, table_plain, row] {
-            assert_eq!(
-                interest.match_against(&ev),
-                Some(None),
-                "relation-less interests should match with via=None"
-            );
-        }
-    }
-
-    #[test]
-    fn matched_interests_reports_index_and_dedups_per_interest() {
-        // An event can satisfy multiple declared interests; `matched_interests`
-        // reports one entry per satisfying interest, with correct positional
-        // index, in declaration order.
-        let interests: Vec<Interest> = vec![
-            // index 0: matches (table on messages)
-            Interest::whole_table(schema::messages::table),
-            // index 1: does not match (row on sessions, event is on messages)
-            Interest::row(schema::sessions::table, 1),
-            // index 2: matches (messages scoped to sessions(1))
-            Interest::whole_table_with_relation(
-                schema::messages::table,
-                schema::sessions::table,
-                1,
-            ),
-            // index 3: does not match (messages scoped to sessions(2))
-            Interest::whole_table_with_relation(
-                schema::messages::table,
-                schema::sessions::table,
-                2,
-            ),
-        ];
-        let ev = Event {
-            subject: messages(),
-            key: 42.into(),
-            relations: vec![Relation {
-                subject: sessions(),
-                key: 1.into(),
-            }],
-            payload: Arc::new(EventType::Insert),
-        };
-
-        let matched = matched_interests(&interests, &ev);
-        let indices: Vec<usize> = matched.iter().map(|m| m.interest_index()).collect();
-        assert_eq!(indices, vec![0, 2]);
-
-        // The relation-scoped match (index 2) carries the declared relation;
-        // the plain table match (index 0) carries None.
-        let m0 = &matched[0];
-        let m2 = &matched[1];
-        assert!(m0.via_relation().is_none());
-        let via2 = m2
-            .via_relation()
-            .expect("relation-scoped match has via_relation");
-        assert_eq!(via2.subject(), &sessions());
-        assert_eq!(via2.key(), &PrimaryKey::RowId(1));
-    }
-
-    #[test]
     fn event_routes_to_session_scoped_interest_via_relation() {
-        // The emit entry point that the typing retrofit (L4) will use: a process
-        // marker `Typing` emits an Insert scoped to a session by carrying the
-        // `sessions(sid)` relation. A hand-built session-scoped interest (the
-        // shape `whole_table_with_relation` produces for diesel tables, but for
-        // a non-diesel subject) receives it with `via_relation` echoing the
-        // declared `sessions(sid)` relation.
+        // The general `event_without_payload` emit entry point routes a typing
+        // event to a session-scoped interest via the carried `sessions(sid)`
+        // relation. The interest is scoped by [`Interest::on_with_relation`];
+        // the matcher routes purely on `Subject` identity + the relation edge.
         struct Typing;
 
         let sid = 7;
@@ -791,21 +629,19 @@ mod tests {
         assert_eq!(ev.key(), &PrimaryKey::RowId(sid));
 
         let interest = Interest::on_with_relation::<Typing, schema::sessions::table>(sid);
-        let matched = matched_interests(std::slice::from_ref(&interest), &ev);
-        assert_eq!(matched.len(), 1);
-        assert_eq!(matched[0].interest_index(), 0);
-        let via = matched[0]
-            .via_relation()
-            .expect("relation-scoped process match carries via_relation");
-        assert_eq!(via.subject(), &sessions());
-        assert_eq!(via.key(), &PrimaryKey::RowId(sid));
-
-        // Delete reaches the same session-scoped interest.
-        let delete = event_without_payload::<Typing>(sid, vec![Relation::new(sessions(), sid)]);
-        assert_eq!(
-            matched_interests(std::slice::from_ref(&interest), &delete).len(),
-            1
+        assert!(
+            interest.is_interesting(&ev),
+            "session-scoped interest should match a relation-routed event"
         );
+
+        // A re-emit (e.g. a "stopped" delta) reaches the same interest.
+        let delete = event_without_payload::<Typing>(sid, vec![Relation::new(sessions(), sid)]);
+        assert!(interest.is_interesting(&delete));
+
+        // And a different session does not.
+        let other_session =
+            event_without_payload::<Typing>(sid, vec![Relation::new(sessions(), sid + 1)]);
+        assert!(!interest.is_interesting(&other_session));
     }
 
     #[test]
@@ -861,9 +697,5 @@ mod tests {
         let interest = Interest::on::<Typing>();
         let ev = event_without_payload::<Typing>(9, vec![Relation::new(sessions(), 3)]);
         assert!(interest.is_interesting(&ev));
-
-        // And reports None as via_relation (no declared relation to echo).
-        let matched = interest.match_against(&ev).expect("should match");
-        assert!(matched.is_none());
     }
 }

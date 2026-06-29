@@ -70,12 +70,7 @@ impl Attachment {
 impl EventObserving for Attachment {
     type Context = ModelContext<Self>;
 
-    fn observe(
-        &mut self,
-        ctx: Self::Context,
-        _event: Event,
-        _matched: &[crate::store::observer::MatchedInterest],
-    ) {
+    fn observe(&mut self, ctx: Self::Context, _event: Event) {
         if let Some(id) = self.attachment_id {
             self.fetch(ctx.storage(), id);
         }

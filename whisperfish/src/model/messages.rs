@@ -75,12 +75,7 @@ pub struct Message {
 impl EventObserving for Message {
     type Context = ModelContext<Self>;
 
-    fn observe(
-        &mut self,
-        ctx: Self::Context,
-        event: crate::store::observer::Event,
-        _matched: &[crate::store::observer::MatchedInterest],
-    ) {
+    fn observe(&mut self, ctx: Self::Context, event: crate::store::observer::Event) {
         if let Some(id) = self.message_id {
             if let Some(attachment_id) = event.relation_key_for(schema::attachments::table) {
                 // XXX Maybe we should just provide the session ID to match in the ActixEvent
@@ -305,12 +300,7 @@ impl EventObserving for Session {
     type Context = ModelContext<Self>;
 
     #[tracing::instrument(level = "trace", skip(self, ctx))]
-    fn observe(
-        &mut self,
-        ctx: Self::Context,
-        event: crate::store::observer::Event,
-        _matched: &[crate::store::observer::MatchedInterest],
-    ) {
+    fn observe(&mut self, ctx: Self::Context, event: crate::store::observer::Event) {
         let storage = ctx.storage();
         if let Some(session_id) = self.session_id {
             let message_id = event

@@ -97,12 +97,7 @@ pub struct Recipient {
 impl EventObserving for Recipient {
     type Context = ModelContext<Self>;
 
-    fn observe(
-        &mut self,
-        ctx: Self::Context,
-        _event: crate::store::observer::Event,
-        _matched: &[crate::store::observer::MatchedInterest],
-    ) {
+    fn observe(&mut self, ctx: Self::Context, _event: crate::store::observer::Event) {
         tracing::trace!("Observer recipient re-init");
         self.force_init = true;
         self.init(ctx);

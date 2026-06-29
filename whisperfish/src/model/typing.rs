@@ -139,12 +139,7 @@ impl TypingModel {
 impl EventObserving for TypingModel {
     type Context = ModelContext<Self>;
 
-    fn observe(
-        &mut self,
-        ctx: Self::Context,
-        event: Event,
-        _matched: &[crate::store::observer::MatchedInterest],
-    ) {
+    fn observe(&mut self, ctx: Self::Context, event: Event) {
         let Some(rid) = event.key().as_i32() else {
             return;
         };

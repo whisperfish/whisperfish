@@ -65,8 +65,8 @@ where
                         storage: self.storage.clone(),
                         addr: ctx.address(),
                     };
-                    let ActixEvent { event, matched } = event;
-                    model.observe(ctx, event, &matched);
+                    let ActixEvent { event } = event;
+                    model.observe(ctx, event);
                     model.interests()
                 }
                 None => {

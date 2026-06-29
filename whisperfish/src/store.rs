@@ -1,9 +1,7 @@
 use actix::prelude::*;
 use std::sync::Arc;
 use uuid::Uuid;
-use whisperfish_store::store::observer::{
-    Event, Interest, MatchedInterest, Observatory, matched_interests,
-};
+use whisperfish_store::store::observer::{Event, Interest, Observatory};
 pub use whisperfish_store::store::{
     AciOrPniStorage as CoreAciOrPniStorage, Storage as CoreStorage, *,
 };
@@ -21,20 +19,15 @@ pub struct Subscription {
 #[rtype(result = "Vec<Interest>")]
 pub struct ActixEvent {
     pub(crate) event: Event,
-    pub(crate) matched: Vec<MatchedInterest>,
 }
 
 impl ActixEvent {
-    pub fn new(event: Event, matched: Vec<MatchedInterest>) -> Self {
-        ActixEvent { event, matched }
+    pub fn new(event: Event) -> Self {
+        ActixEvent { event }
     }
 
     pub fn event(&self) -> &Event {
         &self.event
-    }
-
-    pub fn matched(&self) -> &[MatchedInterest] {
-        &self.matched
     }
 }
 
@@ -88,11 +81,14 @@ async fn distribute_event(subscriptions: &mut Vec<Subscription>, event: Event) {
     subscriptions.retain(|x| x.subscriber.upgrade().is_some());
 
     for subscription in subscriptions {
-        let matched = matched_interests(&subscription.interests, &event);
-        if !matched.is_empty() {
+        if subscription
+            .interests
+            .iter()
+            .any(|i| i.is_interesting(&event))
+        {
             match subscription.subscriber.upgrade() {
                 Some(subscriber) => {
-                    let event = ActixEvent::new(event.clone(), matched);
+                    let event = ActixEvent::new(event.clone());
                     match subscriber.send(event).await {
                         Ok(interests) => {
                             subscription.interests = interests;

@@ -25,12 +25,7 @@ pub struct Receipts {
 impl EventObserving for Receipts {
     type Context = ModelContext<Self>;
 
-    fn observe(
-        &mut self,
-        _ctx: Self::Context,
-        event: crate::store::observer::Event,
-        _matched: &[crate::store::observer::MatchedInterest],
-    ) {
+    fn observe(&mut self, _ctx: Self::Context, event: crate::store::observer::Event) {
         if event.for_table(schema::receipts::table) && !self.app.is_null() && self.message_id > 0 {
             self.receipts_changed();
         }

@@ -58,12 +58,7 @@ pub struct Group {
 impl EventObserving for Group {
     type Context = ModelContext<Self>;
 
-    fn observe(
-        &mut self,
-        ctx: Self::Context,
-        _event: crate::store::observer::Event,
-        _matched: &[crate::store::observer::MatchedInterest],
-    ) {
+    fn observe(&mut self, ctx: Self::Context, _event: crate::store::observer::Event) {
         if self.id.is_some() {
             self.init(ctx);
         }
