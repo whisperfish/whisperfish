@@ -24,13 +24,21 @@ const TYPING_EXPIRY: chrono::Duration = chrono::Duration::seconds(5);
 pub struct Typing;
 
 impl EventPayload for Typing {
-    type Payload = TypingPayload;
+    type Payload = TypingEvent;
 }
 
-/// Carried by a typing `Insert`. The recipient id rides on [`Event::key`].
+/// A typing lifecycle event carried on the [`Typing`] process channel.
+///
+/// Replaces the previous encoding where `EventType::Insert`/`Delete` stood in
+/// for "started"/"stopped"; the observer core does not interpret this enum, it
+/// only routes on [`Subject`] + [`Relation`]. The recipient id rides on
+/// [`Event::key`].
 #[derive(Clone, Debug, PartialEq)]
-pub struct TypingPayload {
-    pub sent_at: DateTime<Utc>,
+pub enum TypingEvent {
+    /// The sender started (or is refreshing) a typing indicator.
+    Started { sent_at: DateTime<Utc> },
+    /// The sender stopped typing.
+    Stopped,
 }
 
 /// Display name for a typer: prefer username, then profile given name, then the
@@ -148,30 +156,31 @@ impl EventObserving for TypingModel {
         let now_utc = Utc::now();
         let now_instant = Instant::now();
 
-        let names_changed = if event.is_insert() {
-            let Some(payload) = event.payload_of::<Typing>() else {
-                return;
-            };
-            let expiry = payload.sent_at + TYPING_EXPIRY;
-            if expiry <= now_utc {
-                return; // arrived too late
-            }
-            let expires_instant =
-                now_instant + (expiry - now_utc).to_std().unwrap_or(Duration::ZERO);
-            let name = ctx
-                .storage()
-                .fetch_recipient_by_id(rid)
-                .map(|r| typer_display_name(&r))
-                .unwrap_or_default();
-            let changed = self.insert_typer(rid, name, expires_instant);
-            self.maybe_rearm(now_instant, &ctx);
-            changed
-        } else {
-            let changed = self.state.remove(&rid).is_some();
-            if changed {
+        let names_changed = match event.payload_of::<Typing>() {
+            Some(TypingEvent::Started { sent_at }) => {
+                let expiry = *sent_at + TYPING_EXPIRY;
+                if expiry <= now_utc {
+                    return; // arrived too late
+                }
+                let expires_instant =
+                    now_instant + (expiry - now_utc).to_std().unwrap_or(Duration::ZERO);
+                let name = ctx
+                    .storage()
+                    .fetch_recipient_by_id(rid)
+                    .map(|r| typer_display_name(&r))
+                    .unwrap_or_default();
+                let changed = self.insert_typer(rid, name, expires_instant);
                 self.maybe_rearm(now_instant, &ctx);
+                changed
             }
-            changed
+            Some(TypingEvent::Stopped) => {
+                let changed = self.state.remove(&rid).is_some();
+                if changed {
+                    self.maybe_rearm(now_instant, &ctx);
+                }
+                changed
+            }
+            None => return,
         };
 
         if names_changed {

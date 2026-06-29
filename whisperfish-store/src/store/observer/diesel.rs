@@ -1,31 +1,19 @@
 //! Diesel-row observation support.
 //!
-//! Diesel tables are represented by [`DieselTable`] tokens. This module holds
-//! the diesel-bound [`DieselTable::of`] constructor, the diesel constructors
-//! for [`Interest`], the diesel predicates of [`Event`], the
-//! [`ObservationBuilder`], and the `Storage::observe_*` row-event emitters.
+//! This module is the diesel construction boundary: it turns diesel table
+//! types into [`Subject`]s (via [`Subject::of`]) and CRUD verbs into
+//! [`EventType`] payloads. The bounds `diesel::Table` and `diesel::JoinTo`
+//! live on these constructors, not on [`Subject`] itself — from the observer
+//! core's view diesel rows are "just another subject" (see [`DieselRow`]).
+//!
+//! [`DieselRow`]: super::DieselRow
 
 use super::*;
 
-impl DieselTable {
-    /// Construct a [`DieselTable`] token for the diesel table `T`.
-    pub fn of<T: ::diesel::Table + 'static>() -> Self {
-        Self {
-            tid: TypeId::of::<T>(),
-            name: std::any::type_name::<T>(),
-        }
-    }
-
-    /// Stable name suitable for `tracing`. Not part of equality.
-    pub fn name(&self) -> &'static str {
-        self.name
-    }
-}
-
 impl Interest {
     pub fn whole_table<T: ::diesel::Table + 'static>(_table: T) -> Self {
-        Interest::Table {
-            table: DieselTable::of::<T>(),
+        Interest::Subject {
+            subject: Subject::of::<T>(),
             relation: None,
         }
     }
@@ -42,10 +30,10 @@ impl Interest {
         U: ::diesel::Table + 'static,
         U: ::diesel::JoinTo<T>,
     {
-        Interest::Table {
-            table: DieselTable::of::<T>(),
+        Interest::Subject {
+            subject: Subject::of::<T>(),
             relation: Some(Relation {
-                table: DieselTable::of::<U>(),
+                subject: Subject::of::<U>(),
                 key: relation_key.into(),
             }),
         }
@@ -53,7 +41,7 @@ impl Interest {
 
     pub fn row<T: ::diesel::Table + 'static>(_table: T, key: impl Into<PrimaryKey>) -> Self {
         Interest::Row {
-            table: DieselTable::of::<T>(),
+            subject: Subject::of::<T>(),
             key: key.into(),
         }
     }
@@ -61,8 +49,7 @@ impl Interest {
 
 impl Event {
     pub fn for_table<T: ::diesel::Table + 'static>(&self, _table: T) -> bool {
-        let table = DieselTable::of::<T>();
-        matches!(self.subject, EventSubject::Table(ref t) if *t == table)
+        self.subject == Subject::of::<T>()
     }
 
     pub fn for_row<T: ::diesel::Table + 'static>(
@@ -70,22 +57,22 @@ impl Event {
         _table: T,
         key_test: impl Into<PrimaryKey>,
     ) -> bool {
-        let table = DieselTable::of::<T>();
-        match &self.subject {
-            EventSubject::Table(t) if *t == table => self.key.implies(&key_test.into()),
-            _ => false,
+        let subject = Subject::of::<T>();
+        if self.subject != subject {
+            return false;
         }
+        self.key.implies(&key_test.into())
     }
 
     pub fn relation_key_for<T: ::diesel::Table + 'static>(&self, _table: T) -> Option<&PrimaryKey> {
-        let table = DieselTable::of::<T>();
-        match &self.subject {
-            EventSubject::Table(t) if *t == table => Some(&self.key),
-            _ => self
-                .relations
+        let subject = Subject::of::<T>();
+        if self.subject == subject {
+            Some(&self.key)
+        } else {
+            self.relations
                 .iter()
-                .find(|relation| relation.table == table)
-                .map(|relation| &relation.key),
+                .find(|relation| relation.subject == subject)
+                .map(|relation| &relation.key)
         }
     }
 }
@@ -119,7 +106,7 @@ where
         U: ::diesel::JoinTo<T>,
     {
         self.event.relations.push(Relation {
-            table: DieselTable::of::<U>(),
+            subject: Subject::of::<U>(),
             key: relation_key.into(),
         });
         self
@@ -145,7 +132,7 @@ where
         Target: ::diesel::JoinTo<Via>,
     {
         self.event.relations.push(Relation {
-            table: DieselTable::of::<Target>(),
+            subject: Subject::of::<Target>(),
             key: relation_key.into(),
         });
         self
@@ -161,11 +148,10 @@ impl<O: Observable> crate::store::Storage<O> {
         ObservationBuilder {
             storage: self,
             event: Event {
-                subject: EventSubject::Table(DieselTable::of::<T>()),
+                subject: Subject::of::<T>(),
                 key: key.into(),
                 relations: Vec::new(),
-                r#type: EventType::Insert,
-                payload: None,
+                payload: Arc::new(EventType::Insert),
             },
             _table: diesel_table,
         }
@@ -179,11 +165,10 @@ impl<O: Observable> crate::store::Storage<O> {
         ObservationBuilder {
             storage: self,
             event: Event {
-                subject: EventSubject::Table(DieselTable::of::<T>()),
+                subject: Subject::of::<T>(),
                 key: key.into(),
                 relations: Vec::new(),
-                r#type: EventType::Upsert,
-                payload: None,
+                payload: Arc::new(EventType::Upsert),
             },
             _table: diesel_table,
         }
@@ -197,11 +182,10 @@ impl<O: Observable> crate::store::Storage<O> {
         ObservationBuilder {
             storage: self,
             event: Event {
-                subject: EventSubject::Table(DieselTable::of::<T>()),
+                subject: Subject::of::<T>(),
                 key: key.into(),
                 relations: Vec::new(),
-                r#type: EventType::Update,
-                payload: None,
+                payload: Arc::new(EventType::Update),
             },
             _table: diesel_table,
         }
@@ -215,11 +199,10 @@ impl<O: Observable> crate::store::Storage<O> {
         ObservationBuilder {
             storage: self,
             event: Event {
-                subject: EventSubject::Table(DieselTable::of::<T>()),
+                subject: Subject::of::<T>(),
                 key: key.into(),
                 relations: Vec::new(),
-                r#type: EventType::Delete,
-                payload: None,
+                payload: Arc::new(EventType::Delete),
             },
             _table: diesel_table,
         }

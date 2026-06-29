@@ -73,11 +73,11 @@ use crate::gui::StorageReady;
 #[cfg(feature = "calling")]
 use crate::model::Calls;
 use crate::model::DeviceModel;
-use crate::model::typing::{Typing, TypingPayload};
+use crate::model::typing::{Typing, TypingEvent};
 use crate::platform::QmlApp;
 use crate::store::AciOrPniStorage;
 use crate::store::Storage;
-use crate::store::observer::{DieselTable, EventType, Relation};
+use crate::store::observer::{Relation, Subject};
 use crate::store::orm::UnidentifiedAccessMode;
 use crate::worker::client::early_receipt_cache::CachedReceipt;
 use crate::worker::client::unidentified::CertType;
@@ -1425,7 +1425,7 @@ impl ClientActor {
         };
 
         let relations = vec![Relation::new(
-            DieselTable::of::<whisperfish_store::schema::sessions::table>(),
+            Subject::of::<whisperfish_store::schema::sessions::table>(),
             session.id,
         )];
 
@@ -1440,15 +1440,18 @@ impl ClientActor {
                     .unwrap_or_else(Utc::now);
                 tracing::info!("{svc_str} is typing");
                 storage.observe_process_event_with_payload::<Typing>(
-                    EventType::Insert,
                     recipient.id,
                     relations,
-                    TypingPayload { sent_at },
+                    TypingEvent::Started { sent_at },
                 );
             }
             Action::Stopped => {
                 tracing::info!("{svc_str} stopped typing");
-                storage.observe_process_event::<Typing>(EventType::Delete, recipient.id, relations);
+                storage.observe_process_event_with_payload::<Typing>(
+                    recipient.id,
+                    relations,
+                    TypingEvent::Stopped,
+                );
             }
         }
     }
