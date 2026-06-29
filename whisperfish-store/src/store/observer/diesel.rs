@@ -4,9 +4,7 @@
 //! types into [`Subject`]s (via [`Subject::of`]) and CRUD verbs into
 //! [`EventType`] payloads. The bounds `diesel::Table` and `diesel::JoinTo`
 //! live on these constructors, not on [`Subject`] itself — from the observer
-//! core's view diesel rows are "just another subject" (see [`DieselRow`]).
-//!
-//! [`DieselRow`]: super::DieselRow
+//! core's view diesel rows are "just another subject."
 
 use super::*;
 

@@ -2,7 +2,6 @@
 
 mod diesel;
 mod orm_interests;
-mod process;
 
 use std::any::{Any, TypeId};
 
@@ -60,34 +59,6 @@ impl std::hash::Hash for Subject {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.tid.hash(state);
     }
-}
-
-/// Links a marker type `P` to the concrete payload type it carries.
-///
-/// The payload is stored as `Arc<dyn Any + Send + Sync>` and recovered by the
-/// consumer through [`Event::payload_of::<P>()`].
-///
-/// - Diesel-row events use [`DieselRow`], whose payload is the CRUD
-///   [`EventType`]; the table identity lives on [`Event::subject`].
-/// - Process markers use their own marker type (e.g. `Typing`), whose payload
-///   is the domain verb (e.g. `TypingEvent`). Payloadless markers declare
-///   `type Payload = ()` and carry an `Arc::new(())`.
-pub trait EventPayload: 'static {
-    type Payload: Send + Sync + 'static;
-}
-
-/// Marker for diesel-row events. Its payload is the CRUD [`EventType`].
-///
-/// This is the diesel counterpart of a process marker like `Typing`: both are
-/// just [`Subject`]s at the core, and the "verb" rides in the payload,
-/// accessed via [`Event::payload_of::<DieselRow>()`] resp.
-/// [`Event::payload_of::<P>()`]. The only thing that makes `DieselRow`
-/// diesel-y is that its constructors live in [`diesel`] behind `diesel::Table`
-/// bounds; the core treat it as "just another process".
-pub struct DieselRow;
-
-impl EventPayload for DieselRow {
-    type Payload = EventType;
 }
 
 #[derive(Debug, Clone)]
@@ -159,10 +130,9 @@ pub struct Event {
     key: PrimaryKey,
     relations: Vec<Relation>,
     /// Typed payload carried by all events. Diesel-row events carry an
-    /// [`EventType`] (recovered via [`Event::payload_of::<DieselRow>()`]);
-    /// process events carry their domain verb (recovered via
-    /// [`Event::payload_of::<P>()`] for the marker `P`); payloadless markers
-    /// carry `()`.
+    /// [`EventType`]; process events carry their domain verb (e.g.
+    /// `TypingEvent`); payloadless process events carry `()`. Recovered by the
+    /// consumer via [`Event::payload_of::<T>()`].
     payload: Arc<dyn Any + Send + Sync>,
 }
 
@@ -224,32 +194,34 @@ impl From<String> for PrimaryKey {
 }
 
 impl Event {
-    /// Recover the payload for the marker type `P`, if any.
+    /// Recover the payload as `T`, if this event carries one.
     ///
-    /// For diesel-row events use [`DieselRow`]; for process markers use the
-    /// marker type `P`. Returns `None` when the stored payload is not `P::Payload`
-    /// (e.g. a `()`-stored event downcast to a typed payload).
-    pub fn payload_of<P: EventPayload>(&self) -> Option<&P::Payload> {
-        self.payload.downcast_ref::<P::Payload>()
+    /// Diesel-row events carry [`EventType`]; process events carry their
+    /// domain verb (e.g. `TypingEvent`); payloadless process events carry `()`,
+    /// which downcasts to any non-`()` `T` as `None`. This is a one-line
+    /// `downcast_ref` over [`Event::payload`]; the type association lives at
+    /// the call site, not in the event.
+    pub fn payload_of<T: Send + Sync + 'static>(&self) -> Option<&T> {
+        self.payload.downcast_ref::<T>()
     }
 
     pub fn is_insert(&self) -> bool {
-        matches!(self.payload_of::<DieselRow>(), Some(EventType::Insert))
+        matches!(self.payload_of::<EventType>(), Some(EventType::Insert))
     }
 
     pub fn is_update_or_insert(&self) -> bool {
         matches!(
-            self.payload_of::<DieselRow>(),
+            self.payload_of::<EventType>(),
             Some(EventType::Upsert | EventType::Insert | EventType::Update)
         )
     }
 
     pub fn is_update(&self) -> bool {
-        matches!(self.payload_of::<DieselRow>(), Some(EventType::Update))
+        matches!(self.payload_of::<EventType>(), Some(EventType::Update))
     }
 
     pub fn is_delete(&self) -> bool {
-        matches!(self.payload_of::<DieselRow>(), Some(EventType::Delete))
+        matches!(self.payload_of::<EventType>(), Some(EventType::Delete))
     }
 
     pub fn key(&self) -> &PrimaryKey {
@@ -288,6 +260,29 @@ fn match_relation<S: PartialEq>(
 }
 
 impl Interest {
+    /// Watch subject `T` for any event, regardless of relation. `T` is the
+    /// payload type for process events (subject = payload type under the fold
+    /// that unified them), or a marker for any other subject.
+    pub fn on<T: 'static>() -> Self {
+        Interest::Subject {
+            subject: Subject::of::<T>(),
+            relation: None,
+        }
+    }
+
+    /// Watch subject `T` for events related to row `relation_key` in subject
+    /// `U`. The relation anchor may be a diesel table or any other subject;
+    /// the matcher only routes on [`Subject`] identity.
+    pub fn on_with_relation<T: 'static, U: 'static>(relation_key: impl Into<PrimaryKey>) -> Self {
+        Interest::Subject {
+            subject: Subject::of::<T>(),
+            relation: Some(Relation {
+                subject: Subject::of::<U>(),
+                key: relation_key.into(),
+            }),
+        }
+    }
+
     /// Test whether `self` matches `ev`.
     ///
     /// Returns `Some(via_relation)` on a match, where `via_relation` is `None`
@@ -384,11 +379,58 @@ impl<O: Observable> super::Storage<O> {
     pub(super) fn distribute_event(&self, event: Event) {
         self.observatory.distribute_event(event);
     }
+
+    /// Emit an event whose subject is `Subject::of::<T>()` and whose payload is
+    /// `payload`. This is the general process constructor: for process
+    /// events, subject and payload type are the same, so `T` is inferred from
+    /// the `payload` value and no turbofish is needed at the call site.
+    pub fn observe_event<T: Send + Sync + 'static>(
+        &self,
+        key: impl Into<PrimaryKey>,
+        relations: Vec<Relation>,
+        payload: T,
+    ) {
+        self.distribute_event(event(key, relations, payload));
+    }
+}
+
+/// Construct an [`Event`] whose subject is `Subject::of::<T>()` and whose
+/// payload is `payload`. For process events the subject and payload type are
+/// the same, so `T` is inferred from `payload`.
+///
+/// Diesel-row events use `EventType` as the payload type but a diesel table
+/// as the subject (subject ≠ payload by design); those events go through the
+/// diesel constructors in [`diesel`] rather than this one.
+pub fn event<T: Send + Sync + 'static>(
+    key: impl Into<PrimaryKey>,
+    relations: Vec<Relation>,
+    payload: T,
+) -> Event {
+    Event {
+        subject: Subject::of::<T>(),
+        key: key.into(),
+        relations,
+        payload: Arc::new(payload),
+    }
+}
+
+/// Construct a payloadless [`Event`] whose subject is `Subject::of::<T>()`.
+/// The payload is `()`; consumers recover their payload type with
+/// [`Event::payload_of::<T>()`] and get `None`.
+pub fn event_without_payload<T: 'static>(
+    key: impl Into<PrimaryKey>,
+    relations: Vec<Relation>,
+) -> Event {
+    Event {
+        subject: Subject::of::<T>(),
+        key: key.into(),
+        relations,
+        payload: Arc::new(()),
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::process::{process_event, process_event_with_payload};
     use super::*;
     use crate::schema;
 
@@ -604,7 +646,7 @@ mod tests {
         // A process subject (here a `Typing` marker) is opaque to the matcher:
         // it routes purely on `Subject` identity + the relation edge to a real
         // DB row. This is the routing shape the typing retrofit will use — an
-        // observer scoped to `sessions(sid)` by [`Interest::process_with_relation`]
+        // observer scoped to `sessions(sid)` by [`Interest::on_with_relation`]
         // receives a `Typing` event that carries `sessions(sid)` as its
         // relation, *without* the matcher knowing what `Typing` is.
         struct Typing;
@@ -628,11 +670,10 @@ mod tests {
             payload: Arc::new(EventType::Update),
         };
 
-        // `process_with_relation` is the ergonomic constructor for process
+        // `on_with_relation` is the ergonomic constructor for process
         // interests scoped to a real diesel row; it's what a SessionModel-like
         // observer will declare for typing.
-        let scoped_to_session_1 =
-            Interest::process_with_relation(Typing, schema::sessions::table, 1);
+        let scoped_to_session_1 = Interest::on_with_relation::<Typing, schema::sessions::table>(1);
 
         assert!(scoped_to_session_1.is_interesting(&on_session_1));
         assert!(!scoped_to_session_1.is_interesting(&on_session_2));
@@ -749,7 +790,7 @@ mod tests {
     }
 
     #[test]
-    fn process_event_routes_to_session_scoped_interest_via_relation() {
+    fn event_routes_to_session_scoped_interest_via_relation() {
         // The emit entry point that the typing retrofit (L4) will use: a process
         // marker `Typing` emits an Insert scoped to a session by carrying the
         // `sessions(sid)` relation. A hand-built session-scoped interest (the
@@ -759,12 +800,12 @@ mod tests {
         struct Typing;
 
         let sid = 7;
-        let ev = process_event::<Typing>(sid, vec![Relation::new(sessions(), sid)]);
+        let ev = event_without_payload::<Typing>(sid, vec![Relation::new(sessions(), sid)]);
 
         assert_eq!(ev.subject, Subject::of::<Typing>());
         assert_eq!(ev.key(), &PrimaryKey::RowId(sid));
 
-        let interest = Interest::process_with_relation(Typing, schema::sessions::table, sid);
+        let interest = Interest::on_with_relation::<Typing, schema::sessions::table>(sid);
         let matched = matched_interests(std::slice::from_ref(&interest), &ev);
         assert_eq!(matched.len(), 1);
         assert_eq!(matched[0].interest_index(), 0);
@@ -775,7 +816,7 @@ mod tests {
         assert_eq!(via.key(), &PrimaryKey::RowId(sid));
 
         // Delete reaches the same session-scoped interest.
-        let delete = process_event::<Typing>(sid, vec![Relation::new(sessions(), sid)]);
+        let delete = event_without_payload::<Typing>(sid, vec![Relation::new(sessions(), sid)]);
         assert_eq!(
             matched_interests(std::slice::from_ref(&interest), &delete).len(),
             1
@@ -784,18 +825,15 @@ mod tests {
 
     #[test]
     fn process_payload_round_trips_via_payload_of() {
-        // The marker `Typing` declares its payload type via `EventPayload`;
-        // `payload_of::<Typing>()` is the one-line typed access at the
-        // consumer site. Diesel events and payloadless process events return
-        // `None`.
-        struct Typing;
+        // The general `event(payload)` constructor routes on `Subject::of::<T>()`
+        // where `T` is the payload type (inferred from the payload value);
+        // `payload_of::<T>()` is the one-line typed access at the consumer
+        // site (a `downcast_ref` over `Event::payload`). Payloadless process
+        // events and diesel-row events return `None`.
         #[derive(Debug, PartialEq)]
         struct Typer {
             id: i32,
             name: String,
-        }
-        impl EventPayload for Typing {
-            type Payload = Typer;
         }
 
         let sid = 7;
@@ -803,7 +841,7 @@ mod tests {
             id: 42,
             name: "alice".to_string(),
         };
-        let ev = process_event_with_payload::<Typing>(
+        let ev = super::event(
             42,
             vec![Relation::new(sessions(), sid)],
             Typer {
@@ -812,30 +850,31 @@ mod tests {
             },
         );
 
-        assert_eq!(ev.payload_of::<Typing>(), Some(&typer));
+        assert_eq!(ev.payload_of::<Typer>(), Some(&typer));
 
-        // A payloadless Delete has no payload to downcast — consumer reads key().
-        let delete = process_event::<Typing>(42, vec![Relation::new(sessions(), sid)]);
-        assert_eq!(delete.payload_of::<Typing>(), None);
+        // A payloadless process event has no payload to downcast — consumer reads key().
+        let delete = event_without_payload::<Typer>(42, vec![Relation::new(sessions(), sid)]);
+        assert_eq!(delete.payload_of::<Typer>(), None);
 
-        // Diesel events carry no payload.
+        // Diesel events carry an `EventType` payload, not a `Typer`.
         let db_ev = Event {
             subject: messages(),
             key: 1.into(),
             relations: vec![],
             payload: Arc::new(EventType::Insert),
         };
-        assert_eq!(db_ev.payload_of::<Typing>(), None);
+        assert_eq!(db_ev.payload_of::<Typer>(), None);
+        assert_eq!(db_ev.payload_of::<EventType>(), Some(&EventType::Insert));
     }
 
     #[test]
-    fn process_interest_without_relation_matches_any_process_event() {
-        // `Interest::process` (relation-less) matches any event on that process
+    fn on_interest_without_relation_matches_any_event() {
+        // `Interest::on` (relation-less) matches any event on that process
         // subject, in parallel with `Interest::whole_table` for diesel rows.
         struct Typing;
 
-        let interest = Interest::process(Typing);
-        let ev = process_event::<Typing>(9, vec![Relation::new(sessions(), 3)]);
+        let interest = Interest::on::<Typing>();
+        let ev = event_without_payload::<Typing>(9, vec![Relation::new(sessions(), 3)]);
         assert!(interest.is_interesting(&ev));
 
         // And reports None as via_relation (no declared relation to echo).

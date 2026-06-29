@@ -1,8 +1,8 @@
 #![allow(non_snake_case)]
 
-//! Per-session typing-indicator model. `Insert`/`Delete` deltas on the [`Typing`]
-//! process channel drive an in-memory typer set; a self-arming sweep expires
-//! stale entries. Nothing here is persisted.
+//! Per-session typing-indicator model. `TypingEvent::Started`/`Stopped`
+//! deltas on the typing observer channel drive an in-memory typer set; a
+//! self-arming sweep expires stale entries. Nothing here is persisted.
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -15,24 +15,19 @@ use whisperfish_store::{schema, store::orm};
 
 use crate::model::active_model::{ModelContext, ObservingModelActor};
 use crate::model::*;
-use crate::store::observer::{Event, EventObserving, EventPayload, Interest};
+use crate::store::observer::{Event, EventObserving, Interest};
 
 /// How long a typing indicator stays valid after the sender's timestamp.
 const TYPING_EXPIRY: chrono::Duration = chrono::Duration::seconds(5);
 
-/// Process marker for typing notifications.
-pub struct Typing;
-
-impl EventPayload for Typing {
-    type Payload = TypingEvent;
-}
-
-/// A typing lifecycle event carried on the [`Typing`] process channel.
+/// A typing lifecycle event carried on the typing observer channel.
 ///
-/// Replaces the previous encoding where `EventType::Insert`/`Delete` stood in
-/// for "started"/"stopped"; the observer core does not interpret this enum, it
-/// only routes on [`Subject`] + [`Relation`]. The recipient id rides on
-/// [`Event::key`].
+/// The observer core does not interpret this enum, it only routes on
+/// [`Subject`] + [`Relation`]. The recipient id rides on [`Event::key`].
+///
+/// Under the fold that unified process events, the routing subject *is*
+/// `TypingEvent` itself (subject = payload type): emit via
+/// `Storage::observe_event(.., TypingEvent::Started { .. })`, no turbofish.
 #[derive(Clone, Debug, PartialEq)]
 pub enum TypingEvent {
     /// The sender started (or is refreshing) a typing indicator.
@@ -156,7 +151,7 @@ impl EventObserving for TypingModel {
         let now_utc = Utc::now();
         let now_instant = Instant::now();
 
-        let names_changed = match event.payload_of::<Typing>() {
+        let names_changed = match event.payload_of::<TypingEvent>() {
             Some(TypingEvent::Started { sent_at }) => {
                 let expiry = *sent_at + TYPING_EXPIRY;
                 if expiry <= now_utc {
@@ -190,11 +185,10 @@ impl EventObserving for TypingModel {
 
     fn interests(&self) -> Vec<Interest> {
         if self.sessionId >= 0 {
-            vec![Interest::process_with_relation(
-                Typing,
+            vec![Interest::on_with_relation::<
+                TypingEvent,
                 schema::sessions::table,
-                self.sessionId,
-            )]
+            >(self.sessionId)]
         } else {
             Vec::new()
         }

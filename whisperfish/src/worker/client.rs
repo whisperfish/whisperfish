@@ -73,7 +73,7 @@ use crate::gui::StorageReady;
 #[cfg(feature = "calling")]
 use crate::model::Calls;
 use crate::model::DeviceModel;
-use crate::model::typing::{Typing, TypingEvent};
+use crate::model::typing::TypingEvent;
 use crate::platform::QmlApp;
 use crate::store::AciOrPniStorage;
 use crate::store::Storage;
@@ -1395,8 +1395,9 @@ impl ClientActor {
     }
 
     /// Resolve `(recipient, session)` for a typing message and emit the
-    /// matching `Insert`/`Delete` delta on the [`Typing`] observer channel.
-    /// The typing model owns the expiry; the client is just the ingress.
+    /// matching `TypingEvent::Started`/`Stopped` on the typing observer
+    /// channel. The typing model owns the expiry; the client is just the
+    /// ingress.
     fn handle_typing_message(&self, sender: ServiceId, typing: &TypingMessage) {
         let Some(storage) = self.storage.as_ref() else {
             return;
@@ -1439,19 +1440,11 @@ impl ClientActor {
                     })
                     .unwrap_or_else(Utc::now);
                 tracing::info!("{svc_str} is typing");
-                storage.observe_process_event_with_payload::<Typing>(
-                    recipient.id,
-                    relations,
-                    TypingEvent::Started { sent_at },
-                );
+                storage.observe_event(recipient.id, relations, TypingEvent::Started { sent_at });
             }
             Action::Stopped => {
                 tracing::info!("{svc_str} stopped typing");
-                storage.observe_process_event_with_payload::<Typing>(
-                    recipient.id,
-                    relations,
-                    TypingEvent::Stopped,
-                );
+                storage.observe_event(recipient.id, relations, TypingEvent::Stopped);
             }
         }
     }
