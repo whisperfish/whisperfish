@@ -18,16 +18,12 @@ pub struct Subscription {
 #[derive(Clone, Debug, Message)]
 #[rtype(result = "Vec<Interest>")]
 pub struct ActixEvent {
-    pub(crate) event: Event,
+    event: Event,
 }
 
-impl ActixEvent {
-    pub fn new(event: Event) -> Self {
+impl From<Event> for ActixEvent {
+    fn from(event: Event) -> Self {
         ActixEvent { event }
-    }
-
-    pub fn event(&self) -> &Event {
-        &self.event
     }
 }
 
@@ -88,7 +84,7 @@ async fn distribute_event(subscriptions: &mut Vec<Subscription>, event: Event) {
         {
             match subscription.subscriber.upgrade() {
                 Some(subscriber) => {
-                    let event = ActixEvent::new(event.clone());
+                    let event = ActixEvent::from(event.clone());
                     match subscriber.send(event).await {
                         Ok(interests) => {
                             subscription.interests = interests;
