@@ -67,7 +67,6 @@ use zkgroup::profiles::ProfileKey;
 
 use super::message_expiry::ExpiredMessagesStream;
 use crate::actor::SendReaction;
-use crate::actor::SessionActor;
 use crate::config::SettingsBridge;
 use crate::gui::StorageReady;
 #[cfg(feature = "calling")]
@@ -309,7 +308,6 @@ pub struct ClientWorker {
     connectedChanged: qt_signal!(),
 
     actor: Option<Addr<ClientActor>>,
-    session_actor: Option<Addr<SessionActor>>,
     device_model: Option<QObjectBox<DeviceModel>>,
 
     // Linked device management
@@ -556,7 +554,6 @@ pub fn message_notification(
 impl ClientActor {
     pub fn new(
         app: &mut QmlApp,
-        session_actor: Addr<SessionActor>,
         config: std::sync::Arc<crate::config::SignalConfig>,
     ) -> Result<Self, anyhow::Error> {
         let inner = QObjectBox::new(ClientWorker::default());
@@ -570,7 +567,6 @@ impl ClientActor {
         #[cfg(feature = "calling")]
         app.set_object_property("calls".into(), calls_model.pinned());
 
-        inner.pinned().borrow_mut().session_actor = Some(session_actor);
         inner.pinned().borrow_mut().device_model = Some(device_model);
 
         let transient_timestamps: HashSet<u64> =

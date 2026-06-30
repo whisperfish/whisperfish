@@ -241,7 +241,7 @@ impl AppState {
 
 pub struct WhisperfishApp {
     pub app_state: QObjectBox<AppState>,
-    pub session_actor: Addr<actor::SessionActor>,
+    pub session_methods: QObjectBox<actor::SessionMethods>,
     pub message_actor: Addr<actor::MessageActor>,
     pub contact_model: QObjectBox<model::ContactModel>,
     pub prompt: QObjectBox<model::Prompt>,
@@ -263,15 +263,25 @@ impl WhisperfishApp {
             .as_ref()
             .unwrap()
             .clone();
+        // SessionMethods is not an actor: set its storage directly. Set
+        // exactly once; a duplicate dispatch indicates a logic error
+        // upstream.
+        if self
+            .session_methods
+            .pinned()
+            .borrow()
+            .storage
+            .set(storage.clone())
+            .is_err()
+        {
+            tracing::error!("StorageReady dispatched twice; ignoring duplicate for SessionMethods");
+        } else {
+            tracing::trace!("SessionMethods has a registered storage");
+        }
+
         let msg = StorageReady { storage };
 
         futures::join! {
-            async {
-                if let Err(e) = self.session_actor
-                    .send(msg.clone()).await {
-                    tracing::error!("Error handling StorageReady: {}", e);
-                }
-            },
             async {
                 if let Err(e) = self.message_actor
                     .send(msg.clone()).await {
@@ -362,18 +372,15 @@ pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
         crate::qrustlegraphimageprovider::install(app.engine(), app_state.rustlegraphs.clone());
 
         // XXX Spaghetti
-        let session_actor = actor::SessionActor::new(&mut app).start();
-        let client_actor = worker::ClientActor::new(
-            &mut app,
-            session_actor.clone(),
-            std::sync::Arc::clone(&config),
-        )?
-        .start();
+        let session_methods = QObjectBox::new(actor::SessionMethods::default());
+        app.set_object_property("SessionModel".into(), session_methods.pinned());
+        let client_actor =
+            worker::ClientActor::new(&mut app, std::sync::Arc::clone(&config))?.start();
         let message_actor = actor::MessageActor::new(&mut app, client_actor.clone()).start();
 
         let whisperfish = Rc::new(WhisperfishApp {
             app_state: QObjectBox::new(app_state),
-            session_actor,
+            session_methods,
             message_actor,
             client_actor,
             contact_model: QObjectBox::new(model::ContactModel::default()),
