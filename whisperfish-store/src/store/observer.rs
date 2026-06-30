@@ -63,19 +63,19 @@ impl std::hash::Hash for Subject {
 
 #[derive(Debug, Clone)]
 pub enum Interest {
-    All,
+    /// Subject-scoped interest: matches any event on `subject`, regardless of
+    /// key or relations. The subject may be a diesel table or a process marker.
+    Any { subject: Subject },
     /// Row-scoped interest on a subject: matches a single row by key. The
     /// subject may be a diesel table or a process marker.
-    Row {
+    Keyed { subject: Subject, key: PrimaryKey },
+    /// Subject-scoped interest narrowed to events related to a specific row
+    /// via `relation`. The matcher preserves a wildcard: if the event carries
+    /// no relations, a `Related` interest still matches (permissive), so a
+    /// relation-scoped observer isn't blind to relationless/process emits.
+    Related {
         subject: Subject,
-        key: PrimaryKey,
-    },
-    /// Subject-scoped interest, optionally scoped to a real DB row via
-    /// `relation`. The subject may be a diesel table or a process marker;
-    /// diesel is "just another subject" from the matcher's perspective.
-    Subject {
-        subject: Subject,
-        relation: Option<Relation>,
+        relation: Relation,
     },
 }
 
@@ -213,9 +213,8 @@ impl Interest {
     /// payload type for process events (subject = payload type under the fold
     /// that unified them), or a marker for any other subject.
     pub fn on<T: 'static>() -> Self {
-        Interest::Subject {
+        Interest::Any {
             subject: Subject::of::<T>(),
-            relation: None,
         }
     }
 
@@ -223,12 +222,12 @@ impl Interest {
     /// `U`. The relation anchor may be a diesel table or any other subject;
     /// the matcher only routes on [`Subject`] identity.
     pub fn on_with_relation<T: 'static, U: 'static>(relation_key: impl Into<PrimaryKey>) -> Self {
-        Interest::Subject {
+        Interest::Related {
             subject: Subject::of::<T>(),
-            relation: Some(Relation {
+            relation: Relation {
                 subject: Subject::of::<U>(),
                 key: relation_key.into(),
-            }),
+            },
         }
     }
 
@@ -239,24 +238,22 @@ impl Interest {
     /// routing on [`Subject`] identity + [`Relation`] edges.
     pub fn is_interesting(&self, ev: &Event) -> bool {
         match self {
-            Interest::All => true,
-            Interest::Subject { subject, relation } => {
+            Interest::Any { subject } => subject == &ev.subject,
+            Interest::Related { subject, relation } => {
                 if subject != &ev.subject {
                     return false;
                 }
-                match relation {
-                    // Relation-less interest: any event on the subject matches.
-                    None => true,
-                    Some(declared) => {
-                        ev.relations.is_empty()
-                            || ev.relations.iter().any(|event_relation| {
-                                event_relation.subject == declared.subject
-                                    && event_relation.key == declared.key
-                            })
-                    }
-                }
+                // Wildcard: a relationless event (e.g. a payloadless process
+                // emit, or a diesel row with no derived relations) matches any
+                // relation-scoped interest on the same subject, so the scoped
+                // observer isn't blind to it.
+                ev.relations.is_empty()
+                    || ev.relations.iter().any(|event_relation| {
+                        event_relation.subject == relation.subject
+                            && event_relation.key == relation.key
+                    })
             }
-            Interest::Row { subject, key } => {
+            Interest::Keyed { subject, key } => {
                 if subject != &ev.subject {
                     return false;
                 }
@@ -487,8 +484,7 @@ mod tests {
 
     #[test]
     fn interest() {
-        let i_all = Interest::All;
-        let i_row = Interest::Row {
+        let i_row = Interest::Keyed {
             subject: messages(),
             key: 2.into(),
         };
@@ -525,7 +521,6 @@ mod tests {
             relations: vec![],
             payload: Arc::new(EventType::Insert),
         };
-        assert!(i_all.is_interesting(&e_1));
         assert!(!i_row.is_interesting(&e_1));
         assert!(i_row.is_interesting(&e_2));
         assert!(i_row.is_interesting(&e_u));
@@ -534,11 +529,11 @@ mod tests {
         let i_cln = i_row.clone();
         match (i_cln, i_row) {
             (
-                Interest::Row {
+                Interest::Keyed {
                     subject: t1,
                     key: k1,
                 },
-                Interest::Row {
+                Interest::Keyed {
                     subject: t2,
                     key: k2,
                 },
@@ -548,6 +543,33 @@ mod tests {
             }
             _ => unreachable!(),
         }
+    }
+
+    #[test]
+    fn any_matches_one_subject_only() {
+        // The subject-less `All` catch-all is gone; `Any { subject }` matches
+        // any event on that one subject (key/relation agnostic), and nothing
+        // on a different subject. This pins the narrowing.
+        let i_any_messages = Interest::Any {
+            subject: messages(),
+        };
+        let e_on_messages = Event {
+            subject: messages(),
+            key: 99.into(),
+            relations: vec![Relation {
+                subject: sessions(),
+                key: 7.into(),
+            }],
+            payload: Arc::new(EventType::Update),
+        };
+        let e_on_sessions = Event {
+            subject: sessions(),
+            key: 99.into(),
+            relations: vec![],
+            payload: Arc::new(EventType::Insert),
+        };
+        assert!(i_any_messages.is_interesting(&e_on_messages));
+        assert!(!i_any_messages.is_interesting(&e_on_sessions));
     }
 
     #[test]

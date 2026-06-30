@@ -10,9 +10,8 @@ use super::*;
 
 impl Interest {
     pub fn whole_table<T: ::diesel::Table + 'static>(_table: T) -> Self {
-        Interest::Subject {
+        Interest::Any {
             subject: Subject::of::<T>(),
-            relation: None,
         }
     }
 
@@ -28,17 +27,17 @@ impl Interest {
         U: ::diesel::Table + 'static,
         U: ::diesel::JoinTo<T>,
     {
-        Interest::Subject {
+        Interest::Related {
             subject: Subject::of::<T>(),
-            relation: Some(Relation {
+            relation: Relation {
                 subject: Subject::of::<U>(),
                 key: relation_key.into(),
-            }),
+            },
         }
     }
 
     pub fn row<T: ::diesel::Table + 'static>(_table: T, key: impl Into<PrimaryKey>) -> Self {
-        Interest::Row {
+        Interest::Keyed {
             subject: Subject::of::<T>(),
             key: key.into(),
         }
