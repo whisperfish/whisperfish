@@ -254,6 +254,18 @@ Page {
             }
 
             TextField {
+                readOnly: true
+                visible: text.length > 0
+                width: parent.width
+                anchors.horizontalCenter: parent.horizontalCenter
+                font.pixelSize: Theme.fontSizeMedium
+                //: Profile username field
+                //% "Username"
+                label: qsTrId("whisperfish-profile-username")
+                text: recipient.username != null ? recipient.username : ''
+            }
+
+            TextField {
                 id: profileAboutEdit
                 readOnly: true
                 visible: text.length > 0
