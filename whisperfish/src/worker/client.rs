@@ -66,7 +66,6 @@ use whisperfish_store::orm::shorten;
 use zkgroup::profiles::ProfileKey;
 
 use super::message_expiry::ExpiredMessagesStream;
-use crate::actor::SendReaction;
 use crate::config::SettingsBridge;
 use crate::gui::StorageReady;
 #[cfg(feature = "calling")]
@@ -2600,6 +2599,15 @@ impl Handler<SendTypingNotification> for ClientActor {
             }),
         )
     }
+}
+
+#[derive(actix::Message)]
+#[rtype(result = "()")]
+pub struct SendReaction {
+    pub message_id: i32,
+    pub sender_id: i32,
+    pub emoji: String,
+    pub remove: bool,
 }
 
 impl Handler<SendReaction> for ClientActor {

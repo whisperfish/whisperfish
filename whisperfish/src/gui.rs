@@ -242,7 +242,7 @@ impl AppState {
 pub struct WhisperfishApp {
     pub app_state: QObjectBox<AppState>,
     pub session_methods: QObjectBox<actor::SessionMethods>,
-    pub message_actor: Addr<actor::MessageActor>,
+    pub message_methods: QObjectBox<actor::MessageMethods>,
     pub contact_model: QObjectBox<model::ContactModel>,
     pub prompt: QObjectBox<model::Prompt>,
 
@@ -281,20 +281,9 @@ impl WhisperfishApp {
 
         let msg = StorageReady { storage };
 
-        futures::join! {
-            async {
-                if let Err(e) = self.message_actor
-                    .send(msg.clone()).await {
-                    tracing::error!("Error handling StorageReady: {}", e);
-                }
-            },
-            async {
-                if let Err(e) = self.client_actor
-                    .send(msg.clone()).await {
-                    tracing::error!("Error handling StorageReady: {}", e);
-                }
-            }
-        };
+        if let Err(e) = self.client_actor.send(msg).await {
+            tracing::error!("Error handling StorageReady: {}", e);
+        }
     }
 }
 
@@ -376,12 +365,14 @@ pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
         app.set_object_property("SessionModel".into(), session_methods.pinned());
         let client_actor =
             worker::ClientActor::new(&mut app, std::sync::Arc::clone(&config))?.start();
-        let message_actor = actor::MessageActor::new(&mut app, client_actor.clone()).start();
+        let message_methods = QObjectBox::new(actor::MessageMethods::default());
+        message_methods.pinned().borrow_mut().client_actor = Some(client_actor.clone());
+        app.set_object_property("MessageModel".into(), message_methods.pinned());
 
         let whisperfish = Rc::new(WhisperfishApp {
             app_state: QObjectBox::new(app_state),
             session_methods,
-            message_actor,
+            message_methods,
             client_actor,
             contact_model: QObjectBox::new(model::ContactModel::default()),
             prompt: QObjectBox::new(model::Prompt::default()),
