@@ -612,8 +612,12 @@ impl MessageListModel {
                 self.begin_remove_rows(pos as i32, pos as i32);
                 self.messages.remove(pos);
                 self.end_remove_rows();
-                return;
+            } else {
+                tracing::trace!(
+                    "Delete event for message {message_id} not present in model; no-op."
+                );
             }
+            return;
         } else if event.is_update_or_insert() || event.for_table(schema::reactions::table) {
             let message = storage
                 .fetch_augmented_message(message_id)

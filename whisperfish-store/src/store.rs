@@ -2652,7 +2652,7 @@ impl<O: Observable> Storage<O> {
 
     #[tracing::instrument(skip(self))]
     pub fn delete_expired_messages(&mut self) -> usize {
-        let deletions: Vec<i32> = diesel::delete(schema::messages::table)
+        let deletions: Vec<(i32, i32)> = diesel::delete(schema::messages::table)
             .filter(
                 sql::<Timestamp>(DELETE_AFTER)
                     .le(sql::<Timestamp>("DATETIME('now')"))
@@ -2663,20 +2663,21 @@ impl<O: Observable> Storage<O> {
                             .and(schema::messages::message_type.is_null()),
                     ),
             )
-            .returning(schema::messages::id)
+            .returning((schema::messages::id, schema::messages::session_id))
             .load(&mut *self.db())
             .expect("delete expired messages");
 
         tracing::trace_span!("deleting expired attachments").in_scope(|| {
-            for message_id in &deletions {
+            for (message_id, _session_id) in &deletions {
                 self.delete_attachments_for_message(*message_id);
             }
         });
 
         tracing::trace!("affected {} rows", deletions.len());
 
-        for deletion in &deletions {
-            self.observe_delete(schema::messages::table, *deletion);
+        for (message_id, session_id) in &deletions {
+            self.observe_delete(schema::messages::table, *message_id)
+                .with_relation(schema::sessions::table, *session_id);
         }
 
         deletions.len()
