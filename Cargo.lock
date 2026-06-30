@@ -5603,6 +5603,7 @@ dependencies = [
  "tracing",
  "tracing-futures",
  "tracing-subscriber",
+ "url",
  "uuid",
  "whisperfish-model-macro",
  "whisperfish-store",

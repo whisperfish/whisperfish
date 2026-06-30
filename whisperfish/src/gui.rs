@@ -46,6 +46,11 @@ pub struct AppState {
     kyberPrekeyCounts: qt_method!(fn(&self) -> QString),
 
     pub storage: RefCell<Option<Storage>>,
+    /// Address of the [`crate::worker::username::UsernameResolverActor`], set
+    /// once at startup in [`run`]. Reachable from QML-constructed observing
+    /// models (e.g. `CreateConversation`) via the auto-injected `app`
+    /// property, hence living here rather than on `WhisperfishApp`.
+    pub username_resolver: RefCell<Option<actix::Addr<crate::worker::username::UsernameResolver>>>,
     // XXX Is this really thread safe?
     pub rustlegraphs: Rc<RefCell<HashMap<String, Weak<rustlegraph::Vizualizer>>>>,
 
@@ -222,6 +227,7 @@ impl AppState {
             mayExit: Default::default(),
 
             storage: RefCell::default(),
+            username_resolver: RefCell::default(),
             rustlegraphs: Rc::new(RefCell::new(HashMap::new())),
             isEncrypted: Default::default(),
 
@@ -281,8 +287,25 @@ impl WhisperfishApp {
 
         let msg = StorageReady { storage };
 
-        if let Err(e) = self.client_actor.send(msg).await {
+        if let Err(e) = self.client_actor.send(msg.clone()).await {
             tracing::error!("Error handling StorageReady: {}", e);
+        }
+
+        // Username resolver subactor registers its storage the same way; lookups
+        // can't proceed (and be emitted on the observer bus) before this lands.
+        let resolver = self
+            .app_state
+            .pinned()
+            .borrow()
+            .username_resolver
+            .borrow()
+            .clone();
+        if let Some(resolver) = resolver {
+            if let Err(e) = resolver.send(msg).await {
+                tracing::error!("Error handling StorageReady (resolver): {}", e);
+            }
+        } else {
+            tracing::error!("UsernameResolverActor not spawned when StorageReady dispatched");
         }
     }
 }
@@ -365,6 +388,16 @@ pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
         app.set_object_property("SessionModel".into(), session_methods.pinned());
         let client_actor =
             worker::ClientActor::new(&mut app, std::sync::Arc::clone(&config))?.start();
+        // Username resolver is a standalone subactor (no ClientActor
+        // dependency): username/link lookups use the unidentified websocket,
+        // which needs no credentials. It receives `StorageReady` alongside
+        // the client actor below; lookups before that point are dropped.
+        let username_resolver =
+            worker::username::UsernameResolver::new(config.get_signal_server()).start();
+        app_state
+            .username_resolver
+            .borrow_mut()
+            .get_or_insert(username_resolver);
         let message_methods = QObjectBox::new(methods::MessageMethods::default());
         message_methods.pinned().borrow_mut().client_actor = Some(client_actor.clone());
         app.set_object_property("MessageModel".into(), message_methods.pinned());

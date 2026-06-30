@@ -1046,6 +1046,24 @@ impl<O: Observable> Storage<O> {
         }
     }
 
+    /// Stores the resolved Signal username (e.g. `johndoe.99`) on an existing
+    /// recipient, so the conversation list can display it as a name fallback
+    /// and so a later e164/PNI merge can carry it forward.
+    ///
+    /// Only emits an observer update when the value actually changes.
+    #[tracing::instrument(skip(self), fields(recipient_id = recipient_id))]
+    pub fn set_recipient_username(&self, recipient_id: i32, new_username: &str) {
+        use crate::schema::recipients::dsl::*;
+        let affected = diesel::update(recipients)
+            .set(username.eq(new_username))
+            .filter(id.eq(recipient_id))
+            .execute(&mut *self.db())
+            .expect("existing record updated");
+        if affected > 0 {
+            self.observe_update(recipients, recipient_id);
+        }
+    }
+
     #[tracing::instrument(skip(self, recipient), fields(recipient_uuid = recipient.uuid.as_ref().map(Uuid::to_string)))]
     pub fn mark_profile_outdated(&self, recipient: &orm::Recipient) {
         use crate::schema::recipients::dsl::*;
