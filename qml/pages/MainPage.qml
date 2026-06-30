@@ -91,6 +91,13 @@ Page {
                 }
             }
             MenuItem {
+                //: Whisperfish main menu item: start a conversation by username/QR
+                //% "New conversation"
+                text: qsTrId("whisperfish-new-conversation-menu")
+                visible: !SetupWorker.locked
+                onClicked: pageStack.push(Qt.resolvedUrl("CreateConversationPage.qml"), { query: "" })
+            }
+            MenuItem {
                 text: "Call test"
                 visible: SetupWorker.callingSupported && SettingsBridge.debug_mode
                 onClicked: pageStack.push(Qt.resolvedUrl("RingingDialog.qml"))
