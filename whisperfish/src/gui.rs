@@ -1,6 +1,6 @@
 use crate::platform::{MayExit, QmlApp, is_harbour};
 use crate::store::Storage;
-use crate::{actor, config::SettingsBridge, model, worker};
+use crate::{config::SettingsBridge, methods, model, worker};
 use actix::prelude::*;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
@@ -241,8 +241,8 @@ impl AppState {
 
 pub struct WhisperfishApp {
     pub app_state: QObjectBox<AppState>,
-    pub session_methods: QObjectBox<actor::SessionMethods>,
-    pub message_methods: QObjectBox<actor::MessageMethods>,
+    pub session_methods: QObjectBox<methods::SessionMethods>,
+    pub message_methods: QObjectBox<methods::MessageMethods>,
     pub contact_model: QObjectBox<model::ContactModel>,
     pub prompt: QObjectBox<model::Prompt>,
 
@@ -361,11 +361,11 @@ pub fn run(config: crate::config::SignalConfig) -> Result<(), anyhow::Error> {
         crate::qrustlegraphimageprovider::install(app.engine(), app_state.rustlegraphs.clone());
 
         // XXX Spaghetti
-        let session_methods = QObjectBox::new(actor::SessionMethods::default());
+        let session_methods = QObjectBox::new(methods::SessionMethods::default());
         app.set_object_property("SessionModel".into(), session_methods.pinned());
         let client_actor =
             worker::ClientActor::new(&mut app, std::sync::Arc::clone(&config))?.start();
-        let message_methods = QObjectBox::new(actor::MessageMethods::default());
+        let message_methods = QObjectBox::new(methods::MessageMethods::default());
         message_methods.pinned().borrow_mut().client_actor = Some(client_actor.clone());
         app.set_object_property("MessageModel".into(), message_methods.pinned());
 
