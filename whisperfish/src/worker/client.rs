@@ -29,6 +29,7 @@ use itertools::Itertools;
 use libsignal_service::ServiceIdExt;
 use libsignal_service::cipher::SealedSenderDecryptionError;
 use libsignal_service::groups_v2::Role;
+use libsignal_service::libsignal_account_keys::AccountEntropyPool;
 use libsignal_service::messagepipe::Incoming;
 use libsignal_service::proto::NullMessage;
 use libsignal_service::proto::SyncMessage;
@@ -51,7 +52,6 @@ use qmetaobject::QMetaType;
 use qttypes::QVariantMap;
 use tracing_futures::Instrument;
 use uuid::Uuid;
-use whisperfish_store::Settings;
 use whisperfish_store::TrustLevel;
 
 use tokio::sync::watch;
@@ -1302,10 +1302,14 @@ impl ClientActor {
                     sender.send_sync_message(SyncMessage {configuration: Some(configuration), ..SyncMessage::with_padding(&mut rand::rng())}).await?;
                 },
                 RequestType::Keys => {
-                    let master = storage.fetch_master_key();
-                    // XXX media root backup key, account entropy pool
-                    let keys = Some(Keys { master: master.map(|k| k.into()), account_entropy_pool: None, media_root_backup_key: None });
-                    sender.send_sync_message(SyncMessage {keys, ..SyncMessage::with_padding(&mut rand::rng())}).await?;
+                    let aep = storage.fetch_account_entropy_pool();
+                    let master_key = storage.fetch_master_key();
+                    let keys = Keys {
+                        master: master_key.map(|k| k.into()),
+                        account_entropy_pool: aep.map(|p| p.to_string()),
+                        media_root_backup_key: None,
+                    };
+                    sender.send_sync_message(SyncMessage { keys: Some(keys), ..SyncMessage::with_padding(&mut rand::rng())}).await?;
                 }
                 RequestType::Blocked => {
                     let blocked_acis = storage.fetch_blocked_acis();
@@ -1597,21 +1601,40 @@ impl ClientActor {
                     tracing::debug!("Sync Keys message");
                     if !is_primary {
                         tracing::debug!("We're the primary device, ignore Keys sync response.");
-                    } else {
-                        // Note: storage_key is deprecated; it's generated from master_key
-                        if let Some(bytes) = &keys.master {
+                    } else if let Some(aep) = &keys.account_entropy_pool {
+                        use std::str::FromStr;
+                        match AccountEntropyPool::from_str(aep.as_str()) {
+                            Ok(aep) => {
+                                storage.store_account_entropy_pool(&aep);
+                                let master_key =
+                                    MasterKey::from_slice(aep.derive_svr_key().as_slice()).unwrap();
+                                storage.store_master_key(Some(&master_key));
+                                let storage_key = StorageServiceKey::from_master_key(&master_key);
+                                storage.store_storage_service_key(Some(&storage_key));
+                                // XXX Storage Service Manifest
+                            }
+                            Err(e) => {
+                                // XXX Send SyncMessage::Keys request later?
+                                tracing::error!("{:?}", e)
+                            }
+                        };
+                    } else if let Some(bytes) = &keys.master {
+                        if storage.fetch_account_entropy_pool().is_none() {
+                            tracing::warn!(
+                                "Sync Keys: MasterKey is deprecated. We don't have AEP, saving MasterKey."
+                            );
                             if let Ok(master_key) = MasterKey::from_slice(bytes) {
                                 storage.store_master_key(Some(&master_key));
                                 let storage_key = StorageServiceKey::from_master_key(&master_key);
                                 storage.store_storage_service_key(Some(&storage_key));
+                                // XXX Storage Service Manifest
                             } else {
                                 tracing::error!("Keys sync message with invalid data");
                             };
-                        }
-                        if let Some(pool) = &keys.account_entropy_pool {
-                            // Consists of: [0-9a-zA-Z]
-                            tracing::warn!("Storing but otherwise ignoring account entropy pool");
-                            storage.write_setting(Settings::ACCOUNT_ENTROPY_POOL, pool.as_str());
+                        } else {
+                            tracing::error!(
+                                "Received MasterKey only with AEP already known; ignoring."
+                            )
                         }
                     }
                 }
@@ -3555,8 +3578,13 @@ impl Handler<RegisterLinked> for ClientActor {
                                         .expect("valid master key");
                                 storage.store_master_key(Some(&master_key));
 
-                                // let srv_key = account_entropy_pool.as_ref().map(|p| p.derive_svr_key());
-                                storage.store_account_entropy_pool(account_entropy_pool);
+                                if let Some(pool) = account_entropy_pool {
+                                    storage.store_account_entropy_pool(&pool);
+                                } else {
+                                    tracing::error!(
+                                        "Linking without account entropy pool! Continuing anyway."
+                                    );
+                                }
 
                                 res = Ok(RegisterLinkedResponse {
                                     storage: storage.clone(),

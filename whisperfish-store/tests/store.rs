@@ -3,6 +3,8 @@ mod common;
 use self::common::*;
 use chrono::prelude::*;
 use libsignal_service::content::Reaction;
+use libsignal_service::libsignal_account_keys::AccountEntropyPool;
+use libsignal_service::prelude::MasterKey;
 use libsignal_service::proto::DataMessage;
 use libsignal_service::protocol::{Aci, ServiceId};
 use libsignal_service::push_service::DEFAULT_DEVICE_ID;
@@ -1900,4 +1902,14 @@ async fn delete_message_with_attachments() {
         assert!(storage.delete_message(msg.id));
         assert!(!std::fs::exists(&camera_file).unwrap());
     }
+}
+
+#[test]
+fn master_key_smoke_test() {
+    let aep = AccountEntropyPool::generate(&mut rand::rng());
+    let master_a = aep.derive_svr_key();
+    let master_b = MasterKey::from_slice(aep.derive_svr_key().as_slice())
+        .unwrap()
+        .inner;
+    assert_eq!(master_a, master_b);
 }
