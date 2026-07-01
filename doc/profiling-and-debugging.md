@@ -21,4 +21,17 @@ To debug Signal websocket reconnection issues, you can manually kill the connect
 ss -K dst = '[2600:9000:a507:ab6d:4ce3:2f58:25d7:9cbf]'
 ```
 
-Use `ss -i | grep http` and `dig chat.signal.org` and `dig aaaa chat.signal.org` to figure out which TCP exactly to kill.
+## Diesel query instrumentation
+
+Whisperfish can compile in a Diesel [connection instrumentation] hook that observes
+every SQL statement run through `whisperfish-store`'s `SqliteConnection`. It is an
+optional, debug-only feature:
+
+```
+sfdk build --with diesel_instrumentation   # sailfish device build
+# or, on a host build:
+cargo check -p whisperfish --features diesel-instrumentation
+```
+
+The hook lives in `whisperfish-store/src/store/instrumentation.rs` and is wired up
+in `whisperfish-store/src/store.rs` behind `#[cfg(feature = "diesel-instrumentation")]`.
