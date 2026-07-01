@@ -179,6 +179,27 @@ build:host:stable:
     - key: rust-stable
       <<: *rust-cache
 
+# Guard against regressions of the optional `diesel_instrumentation` feature,
+# which historically broke (issue #749) when the diesel dependency dropped
+# below 2.2.
+check:host:stable:diesel-instrumentation:
+  <<: *rust
+  stage: build
+  needs:
+    - job: prep:host:vendor-tar-gz:stable
+  script:
+    - .ci/unpack-vendor.sh
+    - rustup override set $RUST_VERSION
+    - cargo check --offline --features bundled-sqlcipher,diesel-instrumentation
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - when: on_success
+  cache:
+    - key: rust-stable
+      <<: *rust-cache
+      policy: pull
+
 prep:host:vendor-tar-gz:stable:
   image: rust
   cache:
