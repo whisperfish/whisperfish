@@ -44,8 +44,8 @@ Page {
             exposureMode: Camera.ExposureAuto
         }
 
-        onStatusChanged: {
-            if (status === Camera.ActiveStatus) {
+        onCameraStatusChanged: {
+            if (cameraStatus === Camera.ActiveStatus) {
                 camera.unlock()
             }
         }
@@ -57,7 +57,7 @@ Page {
         fillMode: VideoOutput.PreserveAspectFit
         anchors.fill: parent
 
-        visible: camera.status === Camera.ActiveStatus
+        visible: camera.cameraStatus === Camera.ActiveStatus
 
         filters: [ qrFilter ]
 
@@ -71,7 +71,7 @@ Page {
     }
 
     ViewPlaceholder {
-        enabled: camera.status !== Camera.ActiveStatus
+        enabled: camera.cameraStatus !== Camera.ActiveStatus
         //: Hint shown while the camera is starting up
         //% "Starting camera…"
         text: qsTrId("whisperfish-username-qr-camera-starting")
@@ -90,8 +90,8 @@ Page {
         }
     }
 
-    Component.onDestructed: {
-        if (camera.status === Camera.ActiveStatus) {
+    Component.onDestruction: {
+        if (camera.cameraStatus === Camera.ActiveStatus) {
             camera.stop()
         }
     }
