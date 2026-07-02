@@ -1,5 +1,6 @@
 variables: &variables
   SFOS_VERSION: 5.0.0.43
+  RUST_VERSION: 1.89.0
   GIT_FETCH_EXTRA_FLAGS: --tags
   RUST_BACKTRACE: full
   # Output dir for the webrtc artifacts
@@ -178,6 +179,27 @@ build:host:stable:
     - key: rust-stable
       <<: *rust-cache
 
+# Guard against regressions of the optional `diesel_instrumentation` feature,
+# which historically broke (issue #749) when the diesel dependency dropped
+# below 2.2.
+check:host:stable:diesel-instrumentation:
+  <<: *rust
+  stage: build
+  needs:
+    - job: prep:host:vendor-tar-gz:stable
+  script:
+    - .ci/unpack-vendor.sh
+    - rustup override set $RUST_VERSION
+    - cargo check --offline --features bundled-sqlcipher,diesel-instrumentation
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - when: on_success
+  cache:
+    - key: rust-stable
+      <<: *rust-cache
+      policy: pull
+
 prep:host:vendor-tar-gz:stable:
   image: rust
   cache:
@@ -338,7 +360,7 @@ test:stable:diesel-schema:
   # Cargo fmt doesn't need even vendored sources
   needs: []
   script:
-    - rustup override set 1.89.0
+    - rustup override set $RUST_VERSION
     - rustup component add rustfmt
     # Diesel is not running a long time/often. We don't need the release
     # version here and the debug version is enough. We save a lot of
@@ -428,7 +450,7 @@ clippy:stable:
     - prep:host:vendor-tar-gz:stable
   script:
     - .ci/unpack-vendor.sh
-    - rustup override set 1.89.0
+    - rustup override set $RUST_VERSION
     - rustup component add clippy
     # the following command should be used but needs sailfish SDK
     # - cargo clippy --offline --all-targets --all-features
