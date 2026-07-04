@@ -80,7 +80,7 @@ async fn distribute_event(subscriptions: &mut Vec<Subscription>, event: Event) {
         if subscription
             .interests
             .iter()
-            .any(|x| x.is_interesting(&event))
+            .any(|i| i.is_interesting(&event))
         {
             match subscription.subscriber.upgrade() {
                 Some(subscriber) => {

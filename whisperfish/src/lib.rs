@@ -1,8 +1,8 @@
 #![recursion_limit = "512"]
 
-pub mod actor;
 pub mod config;
 pub mod gui;
+pub mod methods;
 pub mod model;
 pub mod platform;
 pub mod qblurhashimageprovider;

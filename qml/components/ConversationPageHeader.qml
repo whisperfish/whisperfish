@@ -43,6 +43,7 @@
 
 import QtQuick 2.6
 import Sailfish.Silica 1.0
+import be.rubdos.whisperfish 1.0
 // import "private/Util.js" as Util
 
 SilicaItem {
@@ -50,6 +51,7 @@ SilicaItem {
 
     property bool isGroup: false
     property string profilePicture: ''
+    property int sessionId: -1
 
     property alias title: headerText.text
     property string description: ''
@@ -62,10 +64,28 @@ SilicaItem {
     property real leftMargin: 1.5*Theme.horizontalPageMargin
     property real rightMargin: Theme.horizontalPageMargin
     property real _preferredHeight: page && page.isLandscape ? Theme.itemSizeSmall : Theme.itemSizeLarge
-    property string isTypingMessage: ""
+    property string isTypingMessage: {
+        var names = _typingModel.typingNames
+        var count = names.length
+        if (count === 1)
+            //: Text shown when one person is typing
+            //% "%1 is typing"
+            return qsTrId("whisperfish-typing-1").arg(names[0])
+        else if (count === 2)
+            //: Text shown when two persons are typing
+            //% "%1 and %2 are typing"
+            return qsTrId("whisperfish-typing-2").arg(names[0]).arg(names[1])
+        else if (count >= 3)
+            //: Text shown when three or more persons are typing
+            //% "%1 and %n others are typing"
+            return qsTrId("whisperfish-typing-3-plus").arg(names[0]).arg(count - 1)
+        return ""
+    }
 
-    onIsTypingMessageChanged: if (isTypingMessage.length > 0) {
-        clearTypingTimer.restart()
+    TypingModel {
+        id: _typingModel
+        sessionId: pageHeader.sessionId
+        app: AppState
     }
 
     Component.onCompleted: {
@@ -73,40 +93,6 @@ SilicaItem {
             // page = Util.findPage(pageHeader)
             page = pageStack.currentPage
         }
-    }
-
-    Connections {
-        target: SessionModel
-        onSendTypings: {
-            // Only ConversationPage.qml has `sessionId` property.
-            if(pageStack.currentPage.sessionId != typing_data.sid) {
-                return
-            }
-
-            var count = typing_data.names.length
-            if (count == 1)
-                //: Text shown when one person is typing
-                //% "%1 is typing"
-                isTypingMessage = qsTrId("whisperfish-typing-1").arg(typing_data.names[0])
-            else if (count == 2)
-                //: Text shown when two persons are typing
-                //% "%1 and %2 are typing"
-                isTypingMessage = qsTrId("whisperfish-typing-2").arg(typing_data.names[0]).arg(typing_data.names[1])
-            else if (count >= 3)
-                //: Text shown when three or more persons are typing
-                //% "%1 and %n others are typing"
-                typing = qsTrId("whisperfish-typing-3-plus").arg(typing_data.names[0]).arg(count - 1)
-            else
-                isTypingMessage = ""
-        }
-    }
-
-    Timer {
-        id: clearTypingTimer
-        running: false
-        interval: 5000
-        repeat: false
-        onTriggered: isTypingMessage = ""
     }
 
     width: parent ? parent.width : Screen.width

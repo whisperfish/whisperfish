@@ -1,20 +1,29 @@
 #![allow(non_snake_case)]
 
+use crate::worker::ClientActor;
 use crate::worker::{
     DeleteMessage, DeleteMessageForAll, ExportAttachment, NewAttachment, QueueExpiryUpdate,
-    QueueMessage,
+    QueueMessage, SendReaction,
 };
-
-use super::*;
+use actix::prelude::*;
 use futures::prelude::*;
 use qmeta_async::with_executor;
 use qmetaobject::QMetaType;
+use qmetaobject::prelude::*;
 use qttypes::{QVariantList, QVariantMap};
+
+pub fn pad_fingerprint(fp: &mut String) {
+    if fp.len() == 60 {
+        // twelve groups, eleven spaces.
+        for i in 1..12 {
+            fp.insert(6 * i - 1, ' ');
+        }
+    }
+}
 
 #[derive(QObject, Default)]
 pub struct MessageMethods {
     base: qt_base_class!(trait QObject),
-    pub actor: Option<Addr<MessageActor>>,
     pub client_actor: Option<Addr<ClientActor>>,
 
     createMessage: qt_method!(
@@ -194,5 +203,19 @@ impl MessageMethods {
         );
 
         tracing::trace!("Dispatched ExportAttachment({})", attachment_id);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn pad_fingerprint_smoke() {
+        let mut s = "892064087450853131489552767731995657884565179277972848560834".to_string();
+        pad_fingerprint(&mut s);
+        assert_eq!(
+            s,
+            "89206 40874 50853 13148 95527 67731 99565 78845 65179 27797 28485 60834"
+        );
     }
 }

@@ -93,6 +93,7 @@ Page {
 
     ConversationPageHeader {
         id: pageHeader
+        sessionId: root.sessionId
         title: (conversationName.length > 0
                 ? conversationName
                 : // Translated in SessionDelegate.qml

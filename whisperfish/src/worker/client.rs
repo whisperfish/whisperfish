@@ -66,16 +66,16 @@ use whisperfish_store::orm::shorten;
 use zkgroup::profiles::ProfileKey;
 
 use super::message_expiry::ExpiredMessagesStream;
-use crate::actor::SendReaction;
-use crate::actor::SessionActor;
 use crate::config::SettingsBridge;
 use crate::gui::StorageReady;
 #[cfg(feature = "calling")]
 use crate::model::Calls;
 use crate::model::DeviceModel;
+use crate::model::typing::TypingEvent;
 use crate::platform::QmlApp;
 use crate::store::AciOrPniStorage;
 use crate::store::Storage;
+use crate::store::observer::{Relation, Subject};
 use crate::store::orm::UnidentifiedAccessMode;
 use crate::worker::client::early_receipt_cache::CachedReceipt;
 use crate::worker::client::unidentified::CertType;
@@ -307,7 +307,6 @@ pub struct ClientWorker {
     connectedChanged: qt_signal!(),
 
     actor: Option<Addr<ClientActor>>,
-    session_actor: Option<Addr<SessionActor>>,
     device_model: Option<QObjectBox<DeviceModel>>,
 
     // Linked device management
@@ -554,7 +553,6 @@ pub fn message_notification(
 impl ClientActor {
     pub fn new(
         app: &mut QmlApp,
-        session_actor: Addr<SessionActor>,
         config: std::sync::Arc<crate::config::SignalConfig>,
     ) -> Result<Self, anyhow::Error> {
         let inner = QObjectBox::new(ClientWorker::default());
@@ -568,7 +566,6 @@ impl ClientActor {
         #[cfg(feature = "calling")]
         app.set_object_property("calls".into(), calls_model.pinned());
 
-        inner.pinned().borrow_mut().session_actor = Some(session_actor);
         inner.pinned().borrow_mut().device_model = Some(device_model);
 
         let transient_timestamps: HashSet<u64> =
@@ -1392,6 +1389,61 @@ impl ClientActor {
         }
     }
 
+    /// Resolve `(recipient, session)` for a typing message and emit the
+    /// matching `TypingEvent::Started`/`Stopped` on the typing observer
+    /// channel. The typing model owns the expiry; the client is just the
+    /// ingress.
+    fn handle_typing_message(&self, sender: ServiceId, typing: &TypingMessage) {
+        let Some(storage) = self.storage.as_ref() else {
+            return;
+        };
+        let Some(recipient) = storage.fetch_recipient(&sender) else {
+            tracing::trace!("No recipient for typing sender {sender:?}; dropping");
+            return;
+        };
+        let group_id = typing.group_id.as_ref().map(hex::encode);
+        let session = match &group_id {
+            Some(g) if g.len() == 32 => storage.fetch_session_by_group_v1_id(g),
+            Some(g) if g.len() == 64 => storage.fetch_session_by_group_v2_id(g),
+            Some(g) => {
+                tracing::warn!("Impossible group id {g} for typing message");
+                return;
+            }
+            None => storage.fetch_session_by_recipient_id(recipient.id),
+        };
+        let Some(session) = session else {
+            tracing::trace!(
+                "No session for typing sender {:?} in {:?}",
+                recipient.uuid,
+                group_id.as_deref().unwrap_or("1:1"),
+            );
+            return;
+        };
+
+        let relations = vec![Relation::new(
+            Subject::of::<whisperfish_store::schema::sessions::table>(),
+            session.id,
+        )];
+
+        let svc_str = sender.service_id_string();
+        match typing.action() {
+            Action::Started => {
+                let sent_at = typing
+                    .timestamp
+                    .map(|ts| {
+                        DateTime::<Utc>::from_naive_utc_and_offset(millis_to_naive_chrono(ts), Utc)
+                    })
+                    .unwrap_or_else(Utc::now);
+                tracing::info!("{svc_str} is typing");
+                storage.observe_event(recipient.id, relations, TypingEvent::Started { sent_at });
+            }
+            Action::Stopped => {
+                tracing::info!("{svc_str} stopped typing");
+                storage.observe_event(recipient.id, relations, TypingEvent::Stopped);
+            }
+        }
+    }
+
     #[tracing::instrument(
         level = "debug",
         skip(self, ctx),
@@ -1730,25 +1782,7 @@ impl ClientActor {
             }
             ContentBody::TypingMessage(typing) => {
                 if self.settings.get_enable_typing_indicators() {
-                    let svc_str = metadata.sender.service_id_string();
-                    match typing.action() {
-                        Action::Started => tracing::info!("{svc_str} is typing"),
-                        Action::Stopped => tracing::info!("{svc_str} stopped typing"),
-                    };
-                    let res = self
-                        .inner
-                        .pinned()
-                        .borrow()
-                        .session_actor
-                        .as_ref()
-                        .expect("session actor running")
-                        .try_send(crate::actor::TypingNotification {
-                            typing,
-                            sender: metadata.sender,
-                        });
-                    if let Err(e) = res {
-                        tracing::error!("Could not send typing notification to SessionActor: {e}");
-                    }
+                    self.handle_typing_message(metadata.sender, &typing);
                 } else {
                     tracing::debug!("Ignoring TypingMessage");
                 }
@@ -2565,6 +2599,15 @@ impl Handler<SendTypingNotification> for ClientActor {
             }),
         )
     }
+}
+
+#[derive(actix::Message)]
+#[rtype(result = "()")]
+pub struct SendReaction {
+    pub message_id: i32,
+    pub sender_id: i32,
+    pub emoji: String,
+    pub remove: bool,
 }
 
 impl Handler<SendReaction> for ClientActor {
