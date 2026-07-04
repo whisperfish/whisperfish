@@ -28,13 +28,13 @@
         <location filename="../qml/components/ConversationPageHeader.qml" line="73"/>
         <source>%1 is typing</source>
         <extracomment>Text shown when one person is typing</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 正在输入</translation>
     </message>
     <message id="whisperfish-typing-2">
         <location filename="../qml/components/ConversationPageHeader.qml" line="77"/>
         <source>%1 and %2 are typing</source>
         <extracomment>Text shown when two persons are typing</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 和%2正在输入</translation>
     </message>
     <message id="whisperfish-typing-3-plus">
         <location filename="../qml/components/ConversationPageHeader.qml" line="81"/>
