@@ -1540,7 +1540,7 @@ impl ClientActor {
                     // These are messages sent through a paired device.
                     let address = sent.parse_destination_service_id();
                     if address.is_none() {
-                        tracing::error!("Unparsable ServiceId: {}", sent.destination_service_id());
+                        tracing::error!("Unparsable ServiceId: {:?}/{:?}", sent.destination_service_id, sent.destination_service_id_binary);
                     }
                     let phonenumber = sent
                         .destination_e164
