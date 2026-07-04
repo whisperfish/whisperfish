@@ -1116,10 +1116,9 @@ impl ClientActor {
         }
 
         let is_unidentified = if let (Some(sent), Some(source_addr)) = (&sync_sent, &source_addr) {
-            let source_service_id = source_addr.service_id_string();
             sent.unidentified_status
                 .iter()
-                .any(|x| x.unidentified() && x.destination_service_id() == source_service_id)
+                .any(|x| x.unidentified() && x.parse_destination_service_id().as_ref() == Some(source_addr))
         } else {
             metadata.unidentified_sender
         };
