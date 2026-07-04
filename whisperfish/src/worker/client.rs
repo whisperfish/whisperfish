@@ -468,6 +468,8 @@ fn whisperfish_device_capabilities() -> DeviceCapabilities {
         transfer: false,
         attachment_backfill: false,
         spqr: true,
+        profiles_v2: false,
+        username_change_sync_message: true,
     }
 }
 
