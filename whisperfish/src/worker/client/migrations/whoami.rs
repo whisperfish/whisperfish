@@ -14,14 +14,14 @@ impl Handler<WhoAmI> for ClientActor {
 
         Box::pin(
             async move {
-                let mut i_ws = i_service
-                    .ws("/v1/websocket/", "/v1/keepalive", &[], Some(credentials))
-                    .await?;
-
                 if let (Some(aci), Some(pni)) = (config.get_aci(), config.get_pni()) {
                     tracing::trace!("ACI ({}) and PNI ({}) already set.", aci, pni);
                     return Ok(None);
                 }
+
+                let mut i_ws = i_service
+                    .ws("/v1/websocket/", "/v1/keepalive", &[], Some(credentials))
+                    .await?;
 
                 let response = i_ws.whoami().await?;
 
