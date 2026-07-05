@@ -30,7 +30,7 @@ const LAST_PROFILE_FETCH_THRESHOLD: chrono::Duration = chrono::Duration::days(1)
 
 fn debug_signal_service_profile(p: &SignalServiceProfile) -> String {
     format!(
-        "SignalServiceProfile {{ identity_key: {:?}, name: {:?}, about: {:?}, about_emoji: {:?}, avatar: {:?}, unidentified_access: {:?}, unrestricted_unidentified_access: {:?}, capabilities: {:?} }}",
+        "SignalServiceProfile {{ identity_key: {:?}, name: {:?}, about: {:?}, about_emoji: {:?}, avatar: {:?}, unidentified_access: {:?}, unrestricted_unidentified_access: {:?}, capabilities: {:?}, badges: {:?} }}",
         p.identity_key.as_ref().map(|_| "..."),
         p.name.as_ref().map(|_| "..."),
         p.about.as_ref().map(|_| "..."),
@@ -39,6 +39,7 @@ fn debug_signal_service_profile(p: &SignalServiceProfile) -> String {
         p.unidentified_access.as_ref().map(|_| "..."),
         p.unrestricted_unidentified_access,
         &p.capabilities,
+        &p.badges,
     )
 }
 
