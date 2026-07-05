@@ -1676,7 +1676,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="690"/>
         <source>Voice note codec</source>
         <extracomment>Voice note codec (dependeing on gstreamer version)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Codec note vocali</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
         <location filename="../qml/pages/Settings.qml" line="548"/>
@@ -2193,7 +2193,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="694"/>
         <source>Incompatible with Signal iOS</source>
         <extracomment>Short warning note that the voice note is being recorded in Opus format</extracomment>
-        <translation type="unfinished">Incompatibile con Signal per iOS</translation>
+        <translation>Non compatibile con Signal per iOS</translation>
     </message>
     <message id="whisperfish-chat-input-attachment-label" numerus="yes">
         <location filename="../qml/components/ChatTextInput.qml" line="303"/>
