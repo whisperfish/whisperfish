@@ -130,13 +130,13 @@
         <location filename="../qml/harbour-whisperfish-main.qml" line="412"/>
         <source>Mark as read</source>
         <extracomment>Notification action: mark message as read</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Merkitse luetuksi</translation>
     </message>
     <message id="whisperfish-notification-reply_to_message">
         <location filename="../qml/harbour-whisperfish-main.qml" line="422"/>
         <source>Reply</source>
         <extracomment>Notification action: Reply to (i.e. quote) the message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Vastaa</translation>
     </message>
     <message id="whisperfish-fatal-error-setup-client">
         <location filename="../qml/harbour-whisperfish-main.qml" line="522"/>
@@ -1507,43 +1507,43 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="227"/>
         <source>Image attachments quality</source>
         <extracomment>Settings page scale image attachments</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Lähetettävien kuvien laatu</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-high-text">
         <location filename="../qml/pages/Settings.qml" line="233"/>
         <source>High</source>
         <extracomment>Settings page, use high attachment quality</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Korkea</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-high-description">
         <location filename="../qml/pages/Settings.qml" line="236"/>
         <source>Resize images larger than 4096 pixels in width or height or 3.0MB in size. Using this increases data usage.</source>
         <extracomment>Settings page, high attachment quality description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Pienennä kuvat joiden korkeus tai leveys ylittää 4096 pikseliä tai koko ylittää 3,0MB. Tämä käyttää eniten dataa.</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-standard-text">
         <location filename="../qml/pages/Settings.qml" line="242"/>
         <source>Standard</source>
         <extracomment>Settings page, use standard (medium) attachment quality</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Keskitaso</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-standard-description">
         <location filename="../qml/pages/Settings.qml" line="245"/>
         <source>Resize images larger than 2048 pixels in width or height or over 1.5MB in size.</source>
         <extracomment>Settings page, standard (medium) attachment quality description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Pienennä kuvat joiden korkeus tai leveys ylittää 2048 pikseliä tai koko ylittää 1,5MB. Tämä käyttää eniten dataa.</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-low-text">
         <location filename="../qml/pages/Settings.qml" line="251"/>
         <source>Low</source>
         <extracomment>Settings page, use low attachment quality</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Matala</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-low-description">
         <location filename="../qml/pages/Settings.qml" line="254"/>
         <source>Resize images larger than 2048 pixels in width or height or 1.0MB in size. Recommened for low memory devices or minimizing data usage.</source>
         <extracomment>Settings page, low attachment quality description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Pienennä kuvat joiden korkeus tai leveys ylittää 2048 pikseliä tai koko ylittää 1,0MB. Tämä käyttää vähiten dataa. Suositellaan laitteille joissa on vähän muistia.</translation>
     </message>
     <message id="whisperfish-settings-save-attachments">
         <location filename="../qml/pages/Settings.qml" line="274"/>
@@ -1681,7 +1681,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="690"/>
         <source>Voice note codec</source>
         <extracomment>Voice note codec (dependeing on gstreamer version)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ääniviestien pakkausmuoto</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
         <location filename="../qml/pages/Settings.qml" line="548"/>
