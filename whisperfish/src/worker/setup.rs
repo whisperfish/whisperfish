@@ -2,6 +2,7 @@ use crate::gui::WhisperfishApp;
 use crate::store::Storage;
 use crate::store::TrustLevel;
 use anyhow::Context;
+use libsignal_service::libsignal_account_keys::AccountEntropyPool;
 use libsignal_service::prelude::MasterKey;
 use libsignal_service::prelude::StorageServiceKey;
 use libsignal_service::protocol::{self, Aci};
@@ -19,7 +20,7 @@ pub struct RegistrationResult {
     phonenumber: PhoneNumber,
     service_ids: ServiceIds,
     device_id: protocol::DeviceId,
-    profile_key: Option<[u8; 32]>,
+    profile_key: [u8; 32],
 }
 
 #[derive(QObject, Default)]
@@ -230,8 +231,10 @@ impl SetupWorker {
             use libsignal_service::master_key::MasterKeyStore;
 
             // FIXME: tracing::info doesn't seem to work here - why?
-            let master_key = MasterKey::generate(&mut rand::rng());
+            let aep = AccountEntropyPool::generate(&mut rand::rng());
+            let master_key = MasterKey::from_slice(aep.derive_svr_key().as_slice()).unwrap();
             let storage_key = StorageServiceKey::from_master_key(&master_key);
+            result.storage.store_account_entropy_pool(&aep);
             result.storage.store_master_key(Some(&master_key));
             result.storage.store_storage_service_key(Some(&storage_key));
 
@@ -257,14 +260,14 @@ impl SetupWorker {
         config.set_pni(reg.service_ids.pni);
         config.set_device_id(reg.device_id);
 
-        if let Some(profile_key) = reg.profile_key {
-            storage.update_profile_key(
-                Some(reg.phonenumber),
-                Some(Aci::from(reg.service_ids.aci).into()),
-                &profile_key,
-                TrustLevel::Certain,
-            );
-        }
+        let profile_key = reg.profile_key;
+
+        storage.update_profile_key(
+            Some(reg.phonenumber),
+            Some(Aci::from(reg.service_ids.aci).into()),
+            &profile_key,
+            TrustLevel::Certain,
+        );
 
         app.app_state.pinned().borrow().set_storage(storage);
 
@@ -310,7 +313,6 @@ impl SetupWorker {
             .client_actor
             .send(super::client::Register {
                 phonenumber: number.clone(),
-                password: password.to_string(),
                 transport,
                 captcha: config.override_captcha.clone(),
             })
@@ -329,7 +331,6 @@ impl SetupWorker {
                 .client_actor
                 .send(super::client::Register {
                     phonenumber: number.clone(),
-                    password: password.to_string(),
                     transport,
                     captcha: Some(captcha),
                 })
@@ -346,7 +347,7 @@ impl SetupWorker {
             .into();
         let code = code.parse()?;
 
-        let (storage, res) = app
+        let (storage, res, profile_key) = app
             .client_actor
             .send(super::client::ConfirmRegistration {
                 phonenumber: number.clone(),
@@ -366,7 +367,7 @@ impl SetupWorker {
                 pni: res.pni,
             },
             device_id: *DEFAULT_DEVICE_ID,
-            profile_key: None,
+            profile_key: profile_key.bytes,
         })
     }
 
@@ -406,7 +407,7 @@ impl SetupWorker {
                         phonenumber: res.phone_number,
                         service_ids: res.service_ids,
                         device_id: res.device_id,
-                        profile_key: Some(res.profile_key),
+                        profile_key: res.profile_key,
                     });
                 }
                 complete => return Err(anyhow::Error::msg("Linking to device completed without any result")),
