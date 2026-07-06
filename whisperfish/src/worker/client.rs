@@ -947,34 +947,7 @@ impl ClientActor {
         // Determine the message type and text body contents.
         // Message is visibly inserted to chat if MessageType is set
         // and/or alternative (i.e. placeholder) body text is given.
-        let (mut message_type, mut alt_body) = if flags & DataMessageFlags::EndSession as i32 != 0 {
-            let storage = storage.clone();
-            if let Some(svc_addr) = sender_recipient
-                .as_ref()
-                .and_then(|r| r.to_service_address())
-            {
-                let dest_identity = metadata.destination.kind();
-                actix::spawn(async move {
-                    if let Err(e) = match dest_identity {
-                        ServiceIdKind::Aci => {
-                            storage.aci_storage().delete_all_sessions(&svc_addr).await
-                        }
-                        ServiceIdKind::Pni => {
-                            storage.pni_storage().delete_all_sessions(&svc_addr).await
-                        }
-                    } {
-                        tracing::error!(
-                            "End session requested for {}, but could not end session: {:?}",
-                            &svc_addr.service_id_string(),
-                            e
-                        );
-                    };
-                });
-            } else {
-                tracing::error!("Requested session reset but no service address associated");
-            }
-            (Some(MessageType::EndSession), None)
-        } else if flags & DataMessageFlags::ProfileKeyUpdate as i32 != 0 {
+        let (mut message_type, mut alt_body) = if flags & DataMessageFlags::ProfileKeyUpdate as i32 != 0 {
             (Some(MessageType::ProfileKeyUpdate), None)
         } else if flags & DataMessageFlags::ExpirationTimerUpdate as i32 != 0 {
             (Some(MessageType::ExpirationTimerUpdate), Some("".into()))
