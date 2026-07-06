@@ -95,6 +95,7 @@ impl<O: Observable> MasterKeyStore for Storage<O> {
     fn fetch_master_key(&self) -> Option<MasterKey> {
         use base64::prelude::*;
 
+        // TODO: if not set, fall-back to AEP
         self.read_setting(Settings::MASTER_KEY).map(|key| {
             let key = BASE64_STANDARD.decode(key).unwrap();
             MasterKey::from_slice(&key).unwrap()

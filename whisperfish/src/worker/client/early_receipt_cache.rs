@@ -231,7 +231,7 @@ mod tests {
             sender: sender.clone(),
             destination: sender,
             sender_device: DeviceId::new(1).unwrap(),
-            timestamp,
+            client_timestamp: timestamp,
             server_timestamp: timestamp,
             needs_receipt: false,
             unidentified_sender: false,

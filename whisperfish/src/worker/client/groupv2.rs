@@ -687,6 +687,9 @@ fn group_change_to_service_message_json(group_change: &GroupChange) -> Option<St
             change = Some("member_label_access".into());
             value = Some(access_to_string(access));
         }
+        GroupChange::TerminateGroup => {
+            change = Some("terminate".into());
+        }
     };
 
     if change.is_some() {
@@ -1020,6 +1023,9 @@ impl Handler<GroupV2Update> for ClientActor {
                                 tracing::debug!("Member label access: {:?}", access);
                                 storage
                                     .update_group_v2_member_label_access(&group_v2, access.into());
+                            }
+                            GroupChange::TerminateGroup => {
+                                tracing::error!("group termination unimplemented");
                             }
                         }
                     }

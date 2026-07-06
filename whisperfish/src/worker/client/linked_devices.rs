@@ -155,13 +155,11 @@ impl Handler<LinkDevice> for ClientActor {
         let profile_key: Option<[u8; 32]> = store
             .fetch_self_recipient_profile_key()
             .and_then(|key| key.try_into().ok());
-        let master_key = store.fetch_master_key();
         let account_entropy_pool = store
             .fetch_account_entropy_pool()
             .expect("AEP when linking another device");
         let secrets = ProvisioningSecrets {
             credentials,
-            master_key,
             ephemeral_backup_key: None,
             account_entropy_pool,
             media_root_backup_key: None,
