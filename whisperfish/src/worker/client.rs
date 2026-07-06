@@ -2565,6 +2565,20 @@ impl Handler<SendTypingNotification> for ClientActor {
 
         Box::pin(
             async move {
+                // Mirrors Android's TypingSendJob: refuse typing indicators to
+                // terminated groups.
+                if let SessionType::GroupV2(group) = &session.r#type
+                    && group.terminated
+                {
+                    tracing::warn!(
+                        "Refusing typing notification to terminated group {} \
+                         (session {})",
+                        group.id,
+                        session.id
+                    );
+                    return Ok::<_, anyhow::Error>(session_id);
+                }
+
                 let group_id = match &session.r#type {
                     SessionType::DirectMessage(_) => None,
                     SessionType::GroupV1(group) => {
@@ -2674,6 +2688,18 @@ impl Handler<SendReaction> for ClientActor {
             sender_id, sender_recipient.id,
             "message sender recipient id mismatch"
         );
+
+        // Mirrors Android's ReactionSendJob: refuse reactions to terminated groups.
+        if let SessionType::GroupV2(group) = &session.r#type
+            && group.terminated
+        {
+            tracing::warn!(
+                "Refusing reaction to terminated group {} (session {})",
+                group.id,
+                session.id
+            );
+            return Box::pin(async {}.into_actor(self).map(|_, _, _| ()));
+        }
 
         self.clear_transient_timstamps();
         let now = Utc::now();
@@ -4203,6 +4229,19 @@ impl Handler<DeleteMessageForAll> for ClientActor {
         let session = storage
             .fetch_session_by_id(message.session_id)
             .expect("session to delete message from by id");
+
+        // Mirrors Android's RemoteDeleteSendJob: refuse remote deletes in
+        // terminated groups.
+        if let SessionType::GroupV2(group) = &session.r#type
+            && group.terminated
+        {
+            tracing::warn!(
+                "Refusing remote delete in terminated group {} (session {})",
+                group.id,
+                session.id
+            );
+            return;
+        }
 
         let now = Utc::now().timestamp_millis() as u64;
         self.transient_timestamps.insert(now);
