@@ -449,6 +449,10 @@ pub struct ClientActor {
 
     early_receipt_cache: EarlyReceiptCache,
 
+    /// GroupV2 ids for which a full `RequestGroupV2Info` refresh is already in
+    /// flight, used to dedup the self-healing revision-check path.
+    group_refresh_in_flight: HashSet<[u8; 32]>,
+
     start_time: DateTime<Local>,
 
     profile_updater: Option<Addr<ProfileUpdater>>,
@@ -595,6 +599,8 @@ impl ClientActor {
             attachment_resize_queue: resize_image::AttachmentResizeQueue::default(),
 
             early_receipt_cache: EarlyReceiptCache::new(),
+
+            group_refresh_in_flight: Default::default(),
 
             start_time: Local::now(),
 
@@ -1078,6 +1084,26 @@ impl ClientActor {
                     }
                     message_type = Some(MessageType::GroupChange);
                     ctx.notify(GroupV2Update(group_v2.clone(), session.clone()));
+                } else {
+                    // Ordinary chat message in a known group. If the sender's view of
+                    // the group is newer than ours, we missed an update (e.g. a crash
+                    // while a queued group-change was being processed). Request a full
+                    // refresh so local membership/state catches up.
+                    let group_id = store_v2.secret.get_group_identifier();
+                    let local_revision = session.unwrap_group_v2().revision as u32;
+                    let incoming_revision = store_v2.revision;
+                    if incoming_revision > local_revision
+                        && !self.group_refresh_in_flight.contains(&group_id)
+                    {
+                        tracing::info!(
+                            local_revision,
+                            incoming_revision,
+                            "Incoming group message carries a newer revision than local \
+                             state; requesting full group refresh."
+                        );
+                        self.group_refresh_in_flight.insert(group_id);
+                        ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
+                    }
                 }
             } else {
                 tracing::info!(
