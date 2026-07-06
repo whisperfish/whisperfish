@@ -1026,6 +1026,7 @@ impl Handler<GroupV2Update> for ClientActor {
                             }
                             GroupChange::TerminateGroup => {
                                 tracing::error!("group termination unimplemented");
+                                storage.terminate_group_v2(&group_v2);
                             }
                         }
                     }

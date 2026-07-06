@@ -2468,6 +2468,8 @@ impl<O: Observable> Storage<O> {
             avatar: None,
             description: Some("Group is being updated".into()),
             announcement_only: false,
+
+            terminated: false,
         };
 
         // Group does not exist, insert first.
@@ -5005,6 +5007,17 @@ impl<O: Observable> Storage<O> {
             );
             None
         }
+    }
+
+    pub fn terminate_group_v2(&self, group_v2: &orm::GroupV2) {
+        use crate::schema::group_v2s::dsl::*;
+
+        diesel::update(group_v2s.filter(id.eq(&group_v2.id)))
+            .set(terminated.eq(true))
+            .execute(&mut *self.db())
+            .expect("db");
+
+        self.observe_update(group_v2s, group_v2.id.clone());
     }
 
     pub fn get_prekey_counts(&self) -> (i64, i64) {

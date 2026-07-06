@@ -112,6 +112,8 @@ pub struct GroupV2 {
     pub announcement_only: bool,
 
     pub access_required_for_member_labels: i32,
+
+    pub terminated: bool,
 }
 
 impl Display for GroupV2 {

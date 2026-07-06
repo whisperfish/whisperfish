@@ -154,6 +154,7 @@ diesel::table! {
         description -> Nullable<Text>,
         announcement_only -> Bool,
         access_required_for_member_labels -> Integer,
+        terminated -> Bool,
     }
 }
 

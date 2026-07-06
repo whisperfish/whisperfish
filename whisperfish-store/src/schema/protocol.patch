@@ -1,5 +1,5 @@
---- whisperfish-store/src/schema/protocol.rs	2024-07-14 10:54:22.184549480 +0200
-+++ whisperfish-store/src/schema/protocol.rs	2024-07-14 10:57:21.805193071 +0200
+--- a/whisperfish-store/src/schema/protocol.rs
++++ b/whisperfish-store/src/schema/protocol.rs
 @@ -1,55 +1,72 @@
  // @generated automatically by Diesel CLI.
  
