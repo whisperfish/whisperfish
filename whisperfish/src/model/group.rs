@@ -47,6 +47,9 @@ pub struct Group {
     #[qt_property(READ: is_announcements_only, NOTIFY: group_changed)]
     isAnnouncementsOnly: bool,
 
+    #[qt_property(READ: is_terminated, NOTIFY: group_changed)]
+    isTerminated: bool,
+
     membership_list: QObjectBox<GroupMembershipListModel>,
 
     group_changed: qt_signal!(),
@@ -140,6 +143,12 @@ impl Group {
 
     fn is_announcements_only(&self, _ctx: Option<ModelContext<Self>>) -> bool {
         self.group_v2.as_ref().is_some_and(|g| g.announcement_only)
+    }
+
+    /// Whether this group has been terminated. Only meaningful for GV2;
+    /// GV1 groups never report as terminated.
+    fn is_terminated(&self, _ctx: Option<ModelContext<Self>>) -> bool {
+        self.group_v2.as_ref().is_some_and(|g| g.terminated)
     }
 
     #[with_executor]
