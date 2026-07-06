@@ -464,9 +464,9 @@ ApplicationWindow
         // TODO: On gstreamer older than 1.22, libav_aacenc crashes, so we can't use AAC.
         //       When detected, use Opus (Vorbis would work too) which won't work on iOS,
         //       but this luckily only affects older SFOS releases.
-        return AppState.gstreamer_version_major > 1
-               || AppState.gstreamer_version_major == 1
-                  && AppState.gstreamer_version_minor >= 22;
+        return AppState.gstreamerVersionMajor > 1
+               || AppState.gstreamerVersionMajor == 1
+                  && AppState.gstreamerVersionMinor >= 22;
     }
 
     Connections {
