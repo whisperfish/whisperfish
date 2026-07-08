@@ -3305,14 +3305,13 @@ impl Handler<Register> for ClientActor {
             captcha,
         } = reg;
 
-        let mut u_service = self.unauthenticated_service();
         let session = self.registration_session.clone();
+
+        let u_ws = self.unidentified_websocket();
 
         // XXX add profile key when #192 implemneted
         let registration_procedure = async move {
-            let mut u_ws: SignalWebSocket<Unidentified> = u_service
-                .ws("/v1/websocket/", "/v1/keepalive", &[], None)
-                .await?;
+            let mut u_ws: SignalWebSocket<Unidentified> = u_ws.await?;
             let mut session = if let Some(session) = session {
                 session
             } else {
@@ -3410,8 +3409,6 @@ impl Handler<ConfirmRegistration> for ClientActor {
         );
         let config = self.config.clone();
 
-        let mut u_service = self.unauthenticated_service();
-
         let mut session = self
             .registration_session
             .clone()
@@ -3420,10 +3417,10 @@ impl Handler<ConfirmRegistration> for ClientActor {
         let profile_key = ProfileKey::generate(rand::rng().random());
         let uak = profile_key.derive_access_key().to_vec();
 
+        let u_ws = self.unidentified_websocket();
+
         let confirmation_procedure = async move {
-            let mut u_ws: SignalWebSocket<Unidentified> = u_service
-                .ws("/v1/websocket/", "/v1/keepalive", &[], None)
-                .await?;
+            let mut u_ws = u_ws.await?;
             let storage_dir = config.get_share_dir().to_owned().into();
             let storage = Storage::new(
                 config.clone(),
