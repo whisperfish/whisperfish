@@ -314,14 +314,15 @@ impl Handler<RefreshProfileAttributes> for ClientActor {
 
                 let account_attributes = AccountAttributes {
                     registration_id,
+                    video: false,
+                    voice: false,
                     fetches_messages: true,
-                    pin: None,
                     registration_lock: None,
                     unidentified_access_key: unidentified_access_key.map(Vec::from),
                     unrestricted_unidentified_access: false,
                     discoverable_by_phone_number: true,
                     recovery_password: None,
-                    capabilities: whisperfish_device_capabilities(),
+                    capabilities: Some(whisperfish_device_capabilities()),
                     name: None, // TODO: DeviceName
                     pni_registration_id,
                 };

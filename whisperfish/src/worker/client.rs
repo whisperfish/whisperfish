@@ -3285,7 +3285,6 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
 #[rtype(result = "Result<VerificationCodeResponse, anyhow::Error>")]
 pub struct Register {
     pub phonenumber: PhoneNumber,
-    pub password: String,
     pub transport: VerificationTransport,
     pub captcha: Option<String>,
 }
@@ -3302,27 +3301,17 @@ impl Handler<Register> for ClientActor {
     fn handle(&mut self, reg: Register, _ctx: &mut Self::Context) -> Self::Result {
         let Register {
             phonenumber,
-            password,
             transport,
             captcha,
         } = reg;
 
-        let cred = ServiceCredentials {
-            aci: None,
-            pni: None,
-            phonenumber: E164::from_str(&phonenumber.to_string()).unwrap(), // TODO: E164 cleanup
-            password: Some(password.clone()),
-            device_id: None, // !77
-        };
-        let mut service = self.authenticated_service_with_credentials(cred.clone());
         let session = self.registration_session.clone();
+
+        let u_ws = self.unidentified_websocket();
 
         // XXX add profile key when #192 implemneted
         let registration_procedure = async move {
-            // XXX identified websocket from unidentified service (not ok? see below)
-            let mut u_ws: SignalWebSocket<Unidentified> = service
-                .ws("/v1/websocket/", "/v1/keepalive", &[], Some(cred))
-                .await?;
+            let mut u_ws: SignalWebSocket<Unidentified> = u_ws.await?;
             let mut session = if let Some(session) = session {
                 session
             } else {
@@ -3382,7 +3371,7 @@ impl Handler<Register> for ClientActor {
 
 #[derive(Message)]
 // XXX Refactor this into a ConfirmRegistrationResult struct
-#[rtype(result = "Result<(Storage, VerifyAccountResponse), anyhow::Error>")]
+#[rtype(result = "Result<(Storage, VerifyAccountResponse, ProfileKey), anyhow::Error>")]
 // XXX Maybe we can merge some fields from the linked registration into this struct.
 pub struct ConfirmRegistration {
     pub phonenumber: PhoneNumber,
@@ -3393,10 +3382,14 @@ pub struct ConfirmRegistration {
 
 impl Handler<ConfirmRegistration> for ClientActor {
     // storage, response
-    type Result = ResponseActFuture<Self, Result<(Storage, VerifyAccountResponse), anyhow::Error>>;
+    type Result = ResponseActFuture<
+        Self,
+        Result<(Storage, VerifyAccountResponse, ProfileKey), anyhow::Error>,
+    >;
 
     fn handle(&mut self, confirm: ConfirmRegistration, _ctx: &mut Self::Context) -> Self::Result {
         use libsignal_service::provisioning::*;
+        use rand::Rng;
 
         let ConfirmRegistration {
             phonenumber,
@@ -3416,25 +3409,18 @@ impl Handler<ConfirmRegistration> for ClientActor {
         );
         let config = self.config.clone();
 
-        let cred = ServiceCredentials {
-            aci: None,
-            pni: None,
-            phonenumber: E164::from_str(&phonenumber.to_string()).unwrap(), // TODO: E164 cleanup,
-            password: Some(password.clone()),
-            device_id: None, // !77
-        };
-        let mut service = self.authenticated_service_with_credentials(cred.clone());
-
         let mut session = self
             .registration_session
             .clone()
             .expect("confirm registration after creating registration session");
 
+        let profile_key = ProfileKey::generate(rand::rng().random());
+        let uak = profile_key.derive_access_key().to_vec();
+
+        let u_ws = self.unidentified_websocket();
+
         let confirmation_procedure = async move {
-            // XXX authenticated websocket from authenticated service (ok? see above)
-            let mut i_ws: SignalWebSocket<Identified> = service
-                .ws("/v1/websocket/", "/v1/keepalive", &[], Some(cred))
-                .await?;
+            let mut u_ws = u_ws.await?;
             let storage_dir = config.get_share_dir().to_owned().into();
             let storage = Storage::new(
                 config.clone(),
@@ -3449,19 +3435,20 @@ impl Handler<ConfirmRegistration> for ClientActor {
 
             // XXX centralize the place where attributes are generated.
             let account_attrs = AccountAttributes {
+                video: false,
+                voice: false,
                 registration_id,
                 fetches_messages: true,
-                pin: None,
                 registration_lock: None,
-                unidentified_access_key: None,
+                unidentified_access_key: Some(uak),
                 unrestricted_unidentified_access: false,
                 discoverable_by_phone_number: true,
                 recovery_password: None,
-                capabilities: whisperfish_device_capabilities(),
+                capabilities: Some(whisperfish_device_capabilities()),
                 name: None, // TODO: implement
                 pni_registration_id,
             };
-            session = i_ws
+            session = u_ws
                 .submit_verification_code(&session.id, &confirm_code)
                 .await?;
             if !session.verified {
@@ -3474,33 +3461,33 @@ impl Handler<ConfirmRegistration> for ClientActor {
             let mut aci_store = storage.aci_storage();
             let mut pni_store = storage.pni_storage();
 
-            // XXX: should we already supply a profile key?
-            let mut account_manager = AccountManager::new(service, i_ws, None);
-
             // XXX: We explicitely opt out of skipping device transfer (the false argument). Double
             //      check whether that's what we want!
-            let result = account_manager
+            let result = u_ws
                 .register_account(
                     &mut rand::rng(),
                     RegistrationMethod::SessionId(&session.id),
+                    None, /* No GCM token */
                     account_attrs,
                     &mut aci_store,
                     &mut pni_store,
-                    false,
+                    false, /* no device transfer */
+                    phonenumber,
+                    &password,
                 )
                 .await?;
 
-            Ok((storage, result))
+            Ok((storage, result, profile_key))
         };
 
         Box::pin(
             confirmation_procedure
                 .into_actor(self)
                 .map(move |result, act, _ctx| {
-                    let (storage, result) = result?;
+                    let (storage, result, profile_key) = result?;
                     act.registration_session = None;
                     act.storage = Some(storage.clone());
-                    Ok((storage, result))
+                    Ok((storage, result, profile_key))
                 }),
         )
     }
