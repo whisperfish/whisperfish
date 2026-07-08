@@ -29,7 +29,7 @@ reqwest-websocket = "0.4"
 blurhash = "=0.2.3"
 percent-encoding = "2.3"
 
-libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", default-features = false }
+libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", default-features = false, features = ["phonenumber"] }
 
 libsignal-protocol = { git = "https://github.com/signalapp/libsignal", tag = "v0.94.4" }
 zkgroup = { git = "https://github.com/signalapp/libsignal", tag = "v0.94.4" }

@@ -2399,7 +2399,7 @@ dependencies = [
 [[package]]
 name = "libsignal-service"
 version = "0.1.0"
-source = "git+https://github.com/whisperfish//libsignal-service-rs?rev=76c499becbbd59d05721bf985a995023d8de82c1#76c499becbbd59d05721bf985a995023d8de82c1"
+source = "git+https://github.com/whisperfish/libsignal-service-rs?branch=main#1b7def3e0ffd5aa393d163b87d1acda5adfb6dfe"
 dependencies = [
  "aes",
  "aes-gcm",
@@ -2418,6 +2418,7 @@ dependencies = [
  "libsignal-account-keys",
  "libsignal-core",
  "libsignal-protocol",
+ "phonenumber",
  "prost 0.14.3",
  "prost-build 0.14.3",
  "rand 0.9.4",
