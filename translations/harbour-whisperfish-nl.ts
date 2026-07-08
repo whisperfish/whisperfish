@@ -606,7 +606,7 @@
         <location filename="../qml/pages/MainPage.qml" line="96"/>
         <source>New conversation</source>
         <extracomment>Whisperfish main menu item: start a conversation by username/QR</extracomment>
-        <translation type="unfinished">Gesprek wordt aangemaakt</translation>
+        <translation>Nieuw gesprek</translation>
     </message>
     <message id="whisperfish-settings-menu">
         <location filename="../qml/pages/MainPage.qml" line="114"/>
@@ -808,7 +808,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="264"/>
         <source>Username</source>
         <extracomment>Profile username field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Gebruikersnaam</translation>
     </message>
     <message id="whisperfish-profile-about">
         <location filename="../qml/pages/ProfilePage.qml" line="291"/>
@@ -2865,68 +2865,68 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/CreateConversationPage.qml" line="47"/>
         <source>Usernames don&apos;t start with @.</source>
         <extracomment>Live validation hint for a leading @</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Gebruikersnamen starten niet met @.</translation>
     </message>
     <message id="whisperfish-username-format-hint">
         <location filename="../qml/pages/CreateConversationPage.qml" line="51"/>
         <source>Enter a username (e.g. johndoe.99) or a signal.me link.</source>
         <extracomment>Live validation hint when the entered text is neither a username nor a link</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Voer een gebruikersnaam (bv. johndoe.99) of een signal.me link in.</translation>
     </message>
     <message id="whisperfish-username-not-found-text">
         <location filename="../qml/pages/CreateConversationPage.qml" line="81"/>
         <source>%1 is not a Signal user. Make sure you&apos;ve entered the complete username.</source>
         <extracomment>Username lookup completed but no account matched</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 is geen Signalgebruiker. Controleer dat je de volledige gebruikersnaam hebt opgegeven.</translation>
     </message>
     <message id="whisperfish-username-resolver-unavailable-text">
         <location filename="../qml/pages/CreateConversationPage.qml" line="85"/>
         <source>Not ready yet. Please try again in a moment.</source>
         <extracomment>Username resolver actor not available (boot-window race)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nog niet beschikbaar. Probeer zodadelijk opnieuw.</translation>
     </message>
     <message id="whisperfish-username-lookup-failed-text">
         <location filename="../qml/pages/CreateConversationPage.qml" line="89"/>
         <source>Couldn&apos;t look up this username or link.</source>
         <extracomment>Username lookup failed for a generic reason (network / malformed link)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kon gebruikersnaam of link niet opzoeken.</translation>
     </message>
     <message id="whisperfish-username-scan-qr-menu">
         <location filename="../qml/pages/CreateConversationPage.qml" line="127"/>
         <source>Scan QR code</source>
         <extracomment>Pull-down menu item to scan a username-link QR code</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>QR-code scannen</translation>
     </message>
     <message id="whisperfish-username-clear-menu">
         <location filename="../qml/pages/CreateConversationPage.qml" line="134"/>
         <source>Clear</source>
         <extracomment>Pull-down menu item to clear the current query and retry</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Verwijderen</translation>
     </message>
     <message id="whisperfish-creating-conversation-title">
         <location filename="../qml/pages/CreateConversationPage.qml" line="153"/>
         <source>New conversation</source>
         <oldsource>Creating conversation</oldsource>
         <extracomment>Page header title when a new conversation is being created</extracomment>
-        <translation type="unfinished">Gesprek wordt aangemaakt</translation>
+        <translation>Gesprek wordt aangemaakt</translation>
     </message>
     <message id="whisperfish-username-instructions">
         <location filename="../qml/pages/CreateConversationPage.qml" line="170"/>
         <source>Enter a Signal username (like johndoe.99) or paste a signal.me link to start a conversation. You can also scan a QR code from the pull-down menu.</source>
         <extracomment>Instructional text on the empty create-conversation page</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Voer een Signal gebruikersnaam (bv. johndoe.99) in of plak een signal.me link om een gesprek te beginnen. Sleep omlaag om een QR-code te scannen.</translation>
     </message>
     <message id="whisperfish-username-query-placeholder">
         <location filename="../qml/pages/CreateConversationPage.qml" line="179"/>
         <source>Username or signal.me link</source>
         <extracomment>Placeholder for the username/link entry field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Gebruikersnaam of signal.me link</translation>
     </message>
     <message id="whisperfish-username-query-label">
         <location filename="../qml/pages/CreateConversationPage.qml" line="182"/>
         <source>Username</source>
         <extracomment>Label for the username/link entry field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Gebruikersnaam</translation>
     </message>
     <message id="whisperfish-captcha-test-title">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="15"/>
@@ -3186,13 +3186,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/UsernameQrScannerPage.qml" line="26"/>
         <source>Scan username link</source>
         <extracomment>QR scanner page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Scan gebruikersnaam link</translation>
     </message>
     <message id="whisperfish-username-qr-camera-starting">
         <location filename="../qml/pages/UsernameQrScannerPage.qml" line="77"/>
         <source>Starting camera…</source>
         <extracomment>Hint shown while the camera is starting up</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Camera starten…</translation>
     </message>
 </context>
 </TS>
