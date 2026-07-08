@@ -235,6 +235,7 @@ pub mod recipient;
 pub mod rustlegraph;
 pub mod sessions;
 pub mod typing;
+pub mod username_lookup;
 #[cfg(feature = "voice-note-recording")]
 pub mod voice_note_recorder;
 
@@ -259,6 +260,7 @@ pub use self::recipient::*;
 pub use self::rustlegraph::*;
 pub use self::sessions::*;
 pub use self::typing::*;
+pub use self::username_lookup::*;
 #[cfg(feature = "voice-note-recording")]
 pub use self::voice_note_recorder::*;
 
