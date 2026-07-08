@@ -290,6 +290,7 @@ Page {
                     "Ettore Atalan" + "\n" +
                     "Simon Hahne" + "\n" +
                     "Bernd Krause" + "\n" +
+                    "JPlexer" + "\n" +
                     "Peter G." + "\n" +
                     "Sebastian Maus" + "\n" +
                     "carlosgonz" + "\n" +
