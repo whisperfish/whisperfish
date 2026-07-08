@@ -923,7 +923,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="264"/>
         <source>Username</source>
         <extracomment>Profile username field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Käyttäjänimi</translation>
     </message>
     <message id="whisperfish-profile-about">
         <location filename="../qml/pages/ProfilePage.qml" line="291"/>
@@ -1601,7 +1601,7 @@ Settings page share contacts</extracomment>
         <source>Automatically transcribe voice notes to text upon reception. Configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note installed but not configured.</extracomment>
-        <translation>Literoi äänimuistiinpanot automaattisesti tekstiksi vastaanotettaessa. Tämän ominaisuuden käyttämiseksi, määritä &quot;Automaattisesti tunnistettu&quot; -malli Puhemuistiinpanossa.</translation>
+        <translation>Litteroi äänimuistiinpanot automaattisesti tekstiksi vastaanotettaessa. Tämän ominaisuuden käyttämiseksi, määritä &quot;Automaattisesti tunnistettu&quot; -malli Puhemuistiinpanossa.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-description-uninstalled">
         <location filename="../qml/pages/Settings.qml" line="353"/>
@@ -3044,7 +3044,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/CreateConversationPage.qml" line="182"/>
         <source>Username</source>
         <extracomment>Label for the username/link entry field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Käyttäjänimi</translation>
     </message>
     <message id="whisperfish-captcha-test-title">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="15"/>
