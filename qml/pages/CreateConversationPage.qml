@@ -78,7 +78,7 @@ Page {
         case "whisperfish-username-not-found":
             //: Username lookup completed but no account matched
             //% "%1 is not a Signal user. Make sure you've entered the complete username."
-            return qsTrId("whisperfish-username-not-found-text")
+            return qsTrId("whisperfish-username-not-found-text").arg(queryField.text)
         case "whisperfish-username-resolver-unavailable":
             //: Username resolver actor not available (boot-window race)
             //% "Not ready yet. Please try again in a moment."
