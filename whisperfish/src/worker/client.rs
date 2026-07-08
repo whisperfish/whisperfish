@@ -3470,11 +3470,12 @@ impl Handler<ConfirmRegistration> for ClientActor {
                 .register_account(
                     &mut rand::rng(),
                     RegistrationMethod::SessionId(&session.id),
+                    None, /* No GCM token */
                     account_attrs,
                     &mut aci_store,
                     &mut pni_store,
-                    false,
-                    &phonenumber.to_string(),
+                    false, /* no device transfer */
+                    phonenumber,
                     &password,
                 )
                 .await?;
