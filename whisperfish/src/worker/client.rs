@@ -3589,7 +3589,7 @@ impl Handler<RegisterLinked> for ClientActor {
                                     aci_public_key,
                                     pni_private_key,
                                     pni_public_key,
-                                    master_key,
+                                    master_key: _,
                                     account_entropy_pool,
                                 },
                             ) => {
@@ -3607,11 +3607,6 @@ impl Handler<RegisterLinked> for ClientActor {
                                 pni_store
                                     .write_identity_key_pair(pni_identity_key_pair)
                                     .await?;
-
-                                let master_key =
-                                    MasterKey::from_slice(master_key.unwrap().as_slice())
-                                        .expect("valid master key");
-                                storage.store_master_key(Some(&master_key));
 
                                 if let Some(pool) = account_entropy_pool {
                                     storage.store_account_entropy_pool(&pool);
