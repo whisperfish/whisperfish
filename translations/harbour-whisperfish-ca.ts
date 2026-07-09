@@ -15,7 +15,7 @@
         <location filename="../qml/delegates/SessionDelegate.qml" line="68"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Missatge de veu</translation>
     </message>
     <message id="whisperfish-session-delete-all">
         <location filename="../qml/delegates/SessionDelegate.qml" line="130"/>
@@ -76,7 +76,7 @@
         <source>Unmute conversation</source>
         <oldsource>Mark as unmuted</oldsource>
         <extracomment>Mark conversation as unmuted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Desmuteja la conversa</translation>
     </message>
     <message id="whisperfish-session-mark-muted">
         <location filename="../qml/delegates/SessionDelegate.qml" line="404"/>
@@ -107,13 +107,13 @@
         <location filename="../qml/harbour-whisperfish-main.qml" line="277"/>
         <source>Missed voice call</source>
         <extracomment>Notification text for missed call notification</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Trucada de veu perduda</translation>
     </message>
     <message id="whisperfish-notification-missed-video-call">
         <location filename="../qml/harbour-whisperfish-main.qml" line="281"/>
         <source>Missed video call</source>
         <extracomment>Notification text for missed call notification</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Trucada de vídeo perduda</translation>
     </message>
     <message id="whisperfish-notification-default-message">
         <location filename="../qml/harbour-whisperfish-main.qml" line="349"/>
@@ -125,13 +125,13 @@
         <location filename="../qml/harbour-whisperfish-main.qml" line="412"/>
         <source>Mark as read</source>
         <extracomment>Notification action: mark message as read</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Marca com a llegit</translation>
     </message>
     <message id="whisperfish-notification-reply_to_message">
         <location filename="../qml/harbour-whisperfish-main.qml" line="422"/>
         <source>Reply</source>
         <extracomment>Notification action: Reply to (i.e. quote) the message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Respon</translation>
     </message>
     <message id="whisperfish-fatal-error-setup-client">
         <location filename="../qml/harbour-whisperfish-main.qml" line="522"/>
@@ -186,13 +186,13 @@
         <location filename="../qml/pages/MainPage.qml" line="314"/>
         <source>Start a new conversation through a linked device, or let someone message you</source>
         <extracomment>No messages found, hint on what to do</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Comença una nova conversa des d&apos;un dispositiu enllaçat o permet que algú t&apos;envii missatges</translation>
     </message>
     <message id="whisperfish-no-archived-messages-hint-text">
         <location filename="../qml/pages/MainPage.qml" line="324"/>
         <source>No archived conversations</source>
         <extracomment>Showing archived conversations, but the list is empty</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>No tens cap conversa arxivada</translation>
     </message>
     <message id="whisperfish-session-section-pinned">
         <location filename="../qml/pages/MainPage.qml" line="342"/>
@@ -204,7 +204,7 @@
         <location filename="../qml/pages/MainPage.qml" line="362"/>
         <source>No messages</source>
         <extracomment>Session section label for never (i.e. no messages, no timestamp)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sense missatges</translation>
     </message>
     <message id="whisperfish-session-section-today">
         <location filename="../qml/pages/LinkedDevices.qml" line="109"/>
@@ -255,7 +255,7 @@
         <source>Whisperfish is an unofficial, but advanced Signal client for Sailfish OS. Whisperfish is highly usable, but is still considered beta quality software. Make sure to update regularily! Also, check our Wiki and feel free to contribute to it! Do not ever contact the Signal developers about a Whisperfish issue, contact us instead!</source>
         <oldsource>Whisperfish is an unofficial, but advanced Signal client for Sailfish OS. Whisperfish is highly usable, but is still considered beta quality software. Make sure to update regularily! Also, check our Wiki and feel free to contribute to it! Do not ever contact the Signal developers about a Whisperfish issue, contact us instead!.</oldsource>
         <extracomment>Whisperfish description, longer version, also for Jolla Store</extracomment>
-        <translation type="unfinished">Whisperfish es un client no oficial, però avançat, de Signal per Sailfish OS. Whisperfish es usable, però esta considerat programari de qualitat en fase beta. Asegurat d&apos;actualitzar regularment! També comprova la Wiki i no dubteu a contribuir an ella! No contacteu amb desenvolupadors de Signal sobre problemes amb Whisperfish, si us plau contacta&apos;ns a nosaltres!.</translation>
+        <translation>Whisperfish és un client no oficial, però avançat, de Signal per Sailfish OS. Whisperfish és utilitzable, però està considerat programari de qualitat en fase beta. Asegura&apos;t d&apos;actualitzar-lo regularment! També comprova la Wiki i no dubtis pas a contribuir-hi! No contacteu amb els desenvolupadors de Signal sobre problemes amb Whisperfish, si us plau contacta&apos;ns a nosaltres!.</translation>
     </message>
     <message id="whisperfish-build-id">
         <location filename="../qml/pages/About.qml" line="78"/>
@@ -267,37 +267,37 @@
         <location filename="../qml/pages/About.qml" line="177"/>
         <source>Translators</source>
         <extracomment>Translators heading in About page</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors</translation>
     </message>
     <message id="whisperfish-translators-nb_NO">
         <location filename="../qml/pages/About.qml" line="184"/>
         <source>Norwegian Bokmål translators</source>
         <extracomment>Norwegian Bokmål (nb_NO) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors de Noruec Bokmål</translation>
     </message>
     <message id="whisperfish-translators-nl_BE">
         <location filename="../qml/pages/About.qml" line="201"/>
         <source>Dutch (Belgium) translators</source>
         <extracomment>Dutch (Belgium) (nl_BE) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors de Neerlandès</translation>
     </message>
     <message id="whisperfish-translators-lt">
         <location filename="../qml/pages/About.qml" line="221"/>
         <source>Lithuanian translators</source>
         <extracomment>Lithuanian (lt) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors de Lituà</translation>
     </message>
     <message id="whisperfish-translators-nl">
         <location filename="../qml/pages/About.qml" line="237"/>
         <source>Dutch translators</source>
         <extracomment>Dutch (nl) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors de Neerlandès</translation>
     </message>
     <message id="whisperfish-translators-it">
         <location filename="../qml/pages/About.qml" line="257"/>
         <source>Italian translators</source>
         <extracomment>Italian (it) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors d&apos;Italià</translation>
     </message>
     <message id="whisperfish-translators-de">
         <location filename="../qml/pages/About.qml" line="275"/>
@@ -458,7 +458,7 @@
         <location filename="../qml/pages/AddDevice.qml" line="90"/>
         <source>Scan the QR code displayed by the Signal application that you wish to link</source>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Escaneja el codi QR que es mostra a l&apos;aplicació de Signal que vols enllaçar</translation>
     </message>
     <message id="whisperfish-device-url">
         <location filename="../qml/pages/AddDevice.qml" line="111"/>
@@ -471,7 +471,7 @@
         <source>Install Signal Desktop. Use e.g. the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</source>
         <oldsource>Install Signal Desktop. Use the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</oldsource>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
-        <translation type="unfinished">Instala Signal per escriptori. Utilitza l&apos;aplicació CodeReader per escanejar el codi QR mostrar al Signal per escriptori, copia i enganxa la URL aquí.</translation>
+        <translation>Instal·la Signal per escriptori. Utilitza p. ex. l&apos;aplicació CodeReader per escanejar el codi QR de Signal per escriptori, copia i enganxa la URL aquí.</translation>
     </message>
     <message id="whisperfish-select-picture">
         <source>Select picture</source>
@@ -517,7 +517,7 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="59"/>
         <source>Primary device</source>
         <extracomment>The nameless primary device in linked devices list</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Dispositiu principal</translation>
     </message>
     <message id="whisperfish-secondary-device-name">
         <location filename="../qml/pages/LinkedDevices.qml" line="63"/>
@@ -541,7 +541,7 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="134"/>
         <source>Rename</source>
         <extracomment>Rename the linked or primary device menu option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Reanomena</translation>
     </message>
     <message id="whisperfish-device-unlink">
         <location filename="../qml/pages/LinkedDevices.qml" line="145"/>
@@ -553,13 +553,13 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="195"/>
         <source>No linked device</source>
         <extracomment>Placeholder when no linked device yet</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>No hi ha cap dispositiu enllaçat</translation>
     </message>
     <message id="whisperfish-device-placeholder-hint">
         <location filename="../qml/pages/LinkedDevices.qml" line="198"/>
         <source>Pull down to link Whisperfish to another device</source>
         <extracomment>Placeholder hint when no linked device yet</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Llisca cap avall per enllaçar Whisperfish amb un altre dispositiu</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text">
         <location filename="../qml/pages/MainPage.qml" line="320"/>
@@ -589,19 +589,19 @@
         <location filename="../qml/pages/MainPage.qml" line="85"/>
         <source>Reconnect</source>
         <extracomment>Whisperfish main menu item: restart websocket/reconnect</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Reconnecta</translation>
     </message>
     <message id="whisperfish-reconnecting">
         <location filename="../qml/pages/MainPage.qml" line="90"/>
         <source>Reconnecting...</source>
         <extracomment>Main page notification message when Whisperfish is trying to reconnect</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Reconnectant...</translation>
     </message>
     <message id="whisperfish-new-conversation-menu">
         <location filename="../qml/pages/MainPage.qml" line="96"/>
         <source>New conversation</source>
         <extracomment>Whisperfish main menu item: start a conversation by username/QR</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nova conversa</translation>
     </message>
     <message id="whisperfish-settings-menu">
         <location filename="../qml/pages/MainPage.qml" line="114"/>
@@ -618,14 +618,14 @@
         <location filename="../qml/pages/MainPage.qml" line="286"/>
         <source>Disconnected</source>
         <extracomment>Whisperfish connection status message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Desconnectat</translation>
     </message>
     <message id="whisperfish-connection-status-reconnecting">
         <location filename="../qml/pages/MainPage.qml" line="289"/>
         <source>Loading messages</source>
         <oldsource>Synchronizing</oldsource>
         <extracomment>Whisperfish connection status message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Preparant els missatges</translation>
     </message>
     <message id="whisperfish-registration-required-message">
         <location filename="../qml/pages/MainPage.qml" line="304"/>
@@ -645,8 +645,8 @@
         <oldsource>Locally deleted %1 messages</oldsource>
         <extracomment>Remorse: *locally* deleted one or multiple message (past tense)</extracomment>
         <translation>
-            <numerusform>Borrat %n missatge local</numerusform>
-            <numerusform>Borrats %n missatges locals</numerusform>
+            <numerusform>Esborrat %n missatge local</numerusform>
+            <numerusform>Esborrats %n missatges locals</numerusform>
         </translation>
     </message>
     <message id="whisperfish-react-message-menu">
@@ -658,9 +658,9 @@
         <location filename="../qml/components/MessagesView.qml" line="194"/>
         <source>Deleted %n message(s) for everyone</source>
         <extracomment>Remorse: *globally* deleted one or multiple message (past tense)</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>El missatge %n s&apos;ha esborrat per a tothom</numerusform>
+            <numerusform>Els missatges %n s&apos;han esborrat per a tothom</numerusform>
         </translation>
     </message>
     <message id="whisperfish-copy-message-menu">
@@ -679,7 +679,7 @@
         <location filename="../qml/components/MessagesView.qml" line="485"/>
         <source>Transcribe</source>
         <extracomment>Transcribe message menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Transcriu</translation>
     </message>
     <message id="whisperfish-select-or-options-message-menu">
         <location filename="../qml/components/MessagesView.qml" line="492"/>
