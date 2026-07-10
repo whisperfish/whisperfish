@@ -489,7 +489,8 @@ Page {
                 horizontalAlignment: TextEdit.Center
                 readOnly: true
                 text: {
-                    "Jaume"
+                    "Jaume" + "\n" +
+                    "Marc"
                 }
             }
 
