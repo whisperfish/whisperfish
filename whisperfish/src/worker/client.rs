@@ -3344,10 +3344,17 @@ impl Handler<Register> for ClientActor {
                 anyhow::bail!("Push challenge requested after captcha is accepted.");
             }
 
+            // XXX The server may set `allowed_to_request_code = false` with empty
+            //      `requested_information` for reasons that are opaque to us (fraud /
+            //      Registration Service state). Signal-Android does *not* pre-bail
+            //      here; it proceeds to `POST /session/{id}/code` and reacts to the
+            //      429 the server returns. We do the same and let the server's
+            //      mapped error drive the UI rather than guessing client-side.
+            //      See docs/registration-error-codes.md in libsignal-service-rs.
             if !session.allowed_to_request_code {
-                anyhow::bail!(
-                    "Not allowed to request verification code, reason unknown: {:?}",
-                    session
+                tracing::warn!(
+                    session = ?session,
+                    "Session is not allowed to request a code; proceeding to /code and letting the server classify the refusal",
                 );
             }
 
