@@ -130,19 +130,19 @@
         <location filename="../qml/harbour-whisperfish-main.qml" line="412"/>
         <source>Mark as read</source>
         <extracomment>Notification action: mark message as read</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Markera som läst</translation>
     </message>
     <message id="whisperfish-notification-reply_to_message">
         <location filename="../qml/harbour-whisperfish-main.qml" line="422"/>
         <source>Reply</source>
         <extracomment>Notification action: Reply to (i.e. quote) the message</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Svara</translation>
     </message>
     <message id="whisperfish-fatal-error-setup-client">
         <location filename="../qml/harbour-whisperfish-main.qml" line="522"/>
         <source>Failed to setup Signal client</source>
         <extracomment>Failed to setup signal client error message</extracomment>
-        <translation>Det gick inte att konfigurera Signal -klienten</translation>
+        <translation>Det gick inte att ställa in Signal-app</translation>
     </message>
     <message id="whisperfish-fatal-error-invalid-datastore">
         <location filename="../qml/harbour-whisperfish-main.qml" line="527"/>
@@ -247,7 +247,7 @@
         <location filename="../qml/pages/About.qml" line="45"/>
         <source>Signal client for Sailfish OS</source>
         <extracomment>Whisperfish description</extracomment>
-        <translation>Signal klient för Sailfish OS</translation>
+        <translation>Signal-klient för Sailfish OS</translation>
     </message>
     <message id="whisperfish-description-section">
         <location filename="../qml/pages/About.qml" line="51"/>
@@ -260,7 +260,7 @@
         <source>Whisperfish is an unofficial, but advanced Signal client for Sailfish OS. Whisperfish is highly usable, but is still considered beta quality software. Make sure to update regularily! Also, check our Wiki and feel free to contribute to it! Do not ever contact the Signal developers about a Whisperfish issue, contact us instead!</source>
         <oldsource>Whisperfish is an unofficial, but advanced Signal client for Sailfish OS. Whisperfish is highly usable, but is still considered beta quality software. Make sure to update regularily! Also, check our Wiki and feel free to contribute to it! Do not ever contact the Signal developers about a Whisperfish issue, contact us instead!.</oldsource>
         <extracomment>Whisperfish description, longer version, also for Jolla Store</extracomment>
-        <translation>Whisperfish är en inofficiell, men avancerad Signal-klient för Sailfish OS. Whisperfish är mycket användbar, men anses fortfarande vara programvara av betakvalitet. Se till att uppdatera regelbundet! Kolla också vår Wiki och bidra gärna till den! Kontakta aldrig Signal-utvecklarna om ett problem med Whisperfish, kontakta oss istället!</translation>
+        <translation>Whisperfish är en inofficiell, men avancerad Signal-klient för Sailfish OS. Whisperfish är mycket användbar, men anses fortfarande vara programvara av beta-kvalitet. Se till att uppdatera regelbundet! Kolla också vår Wiki och bidra gärna till den! Kontakta aldrig Signal-utvecklarna om ett problem med Whisperfish, kontakta oss istället!</translation>
     </message>
     <message id="whisperfish-build-id">
         <location filename="../qml/pages/About.qml" line="78"/>
@@ -591,7 +591,7 @@
         <source>Install Signal Desktop. Use e.g. the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</source>
         <oldsource>Install Signal Desktop. Use the CodeReader application to scan the QR code displayed on Signal Desktop and copy and paste the URL here.</oldsource>
         <extracomment>Instructions on how to scan QR code for device linking</extracomment>
-        <translation type="unfinished">Installera Signal Desktop. Använd programmet CodeReader för att skanna QR-koden som visas på Signal Desktop och kopiera och klistra in webbadressen här.</translation>
+        <translation>Installera Signal-datorapp. Använd programmet CodeReader för att skanna QR-koden som visas på Signal Desktop och kopiera och klistra in webbadressen här.</translation>
     </message>
     <message id="whisperfish-select-picture">
         <source>Select picture</source>
@@ -637,13 +637,13 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="59"/>
         <source>Primary device</source>
         <extracomment>The nameless primary device in linked devices list</extracomment>
-        <translation type="unfinished">Primär enhet</translation>
+        <translation>Primär enhet</translation>
     </message>
     <message id="whisperfish-secondary-device-name">
         <location filename="../qml/pages/LinkedDevices.qml" line="63"/>
         <source>Device %1</source>
         <extracomment>A nameless secondary device in linked devices list</extracomment>
-        <translation type="unfinished">Enhet %1</translation>
+        <translation>Enhet %1</translation>
     </message>
     <message id="whisperfish-device-link-date">
         <location filename="../qml/pages/LinkedDevices.qml" line="84"/>
@@ -661,7 +661,7 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="134"/>
         <source>Rename</source>
         <extracomment>Rename the linked or primary device menu option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Byt namnet</translation>
     </message>
     <message id="whisperfish-device-unlink">
         <location filename="../qml/pages/LinkedDevices.qml" line="145"/>
@@ -673,13 +673,13 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="195"/>
         <source>No linked device</source>
         <extracomment>Placeholder when no linked device yet</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ingen enhet länkad</translation>
     </message>
     <message id="whisperfish-device-placeholder-hint">
         <location filename="../qml/pages/LinkedDevices.qml" line="198"/>
         <source>Pull down to link Whisperfish to another device</source>
         <extracomment>Placeholder hint when no linked device yet</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Dra nedåt för att länka till en annan enhet</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text">
         <location filename="../qml/pages/MainPage.qml" line="320"/>
@@ -715,13 +715,13 @@
         <location filename="../qml/pages/MainPage.qml" line="90"/>
         <source>Reconnecting...</source>
         <extracomment>Main page notification message when Whisperfish is trying to reconnect</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Återansluter...</translation>
     </message>
     <message id="whisperfish-new-conversation-menu">
         <location filename="../qml/pages/MainPage.qml" line="96"/>
         <source>New conversation</source>
         <extracomment>Whisperfish main menu item: start a conversation by username/QR</extracomment>
-        <translation type="unfinished">Skapar konversation</translation>
+        <translation>Skapar konversation</translation>
     </message>
     <message id="whisperfish-settings-menu">
         <location filename="../qml/pages/MainPage.qml" line="114"/>
@@ -745,7 +745,7 @@
         <source>Loading messages</source>
         <oldsource>Synchronizing</oldsource>
         <extracomment>Whisperfish connection status message</extracomment>
-        <translation type="unfinished">Synkroniserar</translation>
+        <translation>Laddar meddelanden</translation>
     </message>
     <message id="whisperfish-registration-required-message">
         <location filename="../qml/pages/MainPage.qml" line="304"/>
@@ -852,7 +852,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="75"/>
         <source>Refresh Signal profile</source>
         <extracomment>Refresh contact profile menu item</extracomment>
-        <translation>Uppdatera Signal -profil</translation>
+        <translation>Uppdatera Signal-profil</translation>
     </message>
     <message id="whisperfish-show-contact-page-menu">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="84"/>
@@ -923,7 +923,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="264"/>
         <source>Username</source>
         <extracomment>Profile username field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Användernamn</translation>
     </message>
     <message id="whisperfish-profile-about">
         <location filename="../qml/pages/ProfilePage.qml" line="291"/>
@@ -1220,7 +1220,7 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <location filename="../qml/pages/RegisterSecondaryPage.qml" line="19"/>
         <source>Please scan the QR code below using the Signal app.</source>
         <extracomment>User instructions</extracomment>
-        <translation>Vänligen skanna QR-koden nedan med Signal-appen.</translation>
+        <translation>Skanna QR-koden nedan med Signal-appen.</translation>
     </message>
     <message id="whisperfish-fatal-error-msg-not-registered">
         <location filename="../qml/pages/RegisterSecondaryPage.qml" line="35"/>
@@ -1260,7 +1260,7 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <source>Enter the phone number you want to register with Signal.</source>
         <oldsource>Connect with Signal</oldsource>
         <extracomment>registration prompt text</extracomment>
-        <translation>Ange telefonnumret du vill registrera med Signal.</translation>
+        <translation>Ange det telefonnummer du vill registrera hos Signal.</translation>
     </message>
     <message id="whisperfish-registration-country-or-area">
         <location filename="../qml/pages/RegisterPage.qml" line="113"/>
@@ -1288,7 +1288,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="297"/>
         <source>Allow Signal to use your local contact list, to find other Signal users.</source>
         <extracomment>Share contacts description</extracomment>
-        <translation>Tillåt Signal att använda din lokala kontaktlista för att hitta andra Signal-användare.</translation>
+        <translation>Tillåt Signal att använda telefonens kontaktuppgifter för att hitta andra Signal-användare.</translation>
     </message>
     <message id="whisperfish-verification-method-label">
         <location filename="../qml/pages/RegisterPage.qml" line="209"/>
@@ -1357,7 +1357,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ProofSubmitPage.qml" line="42"/>
         <source>Signal has requested additional capcha from you. Continue the captcha in order to restore ability to send messages.</source>
         <extracomment>Signal has requested additional captcha description</extracomment>
-        <translation>Signal har begärt ytterligare captcha från dig. Fortsätt med captcha för att återställa möjligheten att skicka meddelanden.</translation>
+        <translation>Signal kräver ytterligare en Captcha-verifiering. Slutför verifieringen för att låsa upp meddelandefunktionen.</translation>
     </message>
     <message id="whisperfish-captcha-requested-try-again">
         <location filename="../qml/pages/ProofSubmitPage.qml" line="45"/>
@@ -1496,7 +1496,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="154"/>
         <source>Create and send previews of the links you send in messages. Note: Feature not yet implemented in Whisperfish.</source>
         <extracomment>Settings page enable link previews description</extracomment>
-        <translation>Skapa och skicka förhandsvisningar av länkarna du skickar i meddelanden. OBS! Denna funktionen är ännu inte implementerad i Whisperfish.</translation>
+        <translation>Skapa och visa förhandsvisning av länkar i meddelanden. Obs, den här funktionen fungerar inte i Whisperfish ännu.</translation>
     </message>
     <message id="whisperfish-settings-country-code">
         <location filename="../qml/pages/Settings.qml" line="186"/>
@@ -1520,43 +1520,43 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="227"/>
         <source>Image attachments quality</source>
         <extracomment>Settings page scale image attachments</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Bildkvaliteten vid skickande</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-high-text">
         <location filename="../qml/pages/Settings.qml" line="233"/>
         <source>High</source>
         <extracomment>Settings page, use high attachment quality</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Hög</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-high-description">
         <location filename="../qml/pages/Settings.qml" line="236"/>
         <source>Resize images larger than 4096 pixels in width or height or 3.0MB in size. Using this increases data usage.</source>
         <extracomment>Settings page, high attachment quality description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Förminska stora bilder (över 4096 pixlar eller 3,0MB). Denna inställning kan öka data-användning.</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-standard-text">
         <location filename="../qml/pages/Settings.qml" line="242"/>
         <source>Standard</source>
         <extracomment>Settings page, use standard (medium) attachment quality</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Normal</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-standard-description">
         <location filename="../qml/pages/Settings.qml" line="245"/>
         <source>Resize images larger than 2048 pixels in width or height or over 1.5MB in size.</source>
         <extracomment>Settings page, standard (medium) attachment quality description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Förminska stora bilder (över 2048 pixlar eller 1,5MB).</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-low-text">
         <location filename="../qml/pages/Settings.qml" line="251"/>
         <source>Low</source>
         <extracomment>Settings page, use low attachment quality</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Låg</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-low-description">
         <location filename="../qml/pages/Settings.qml" line="254"/>
         <source>Resize images larger than 2048 pixels in width or height or 1.0MB in size. Recommened for low memory devices or minimizing data usage.</source>
         <extracomment>Settings page, low attachment quality description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Förminska stora bilder (över 2048 pixlar eller 1,0MB). Rekommenderas för enheter med lågt minne eller för att minimera dataförbrukning.</translation>
     </message>
     <message id="whisperfish-settings-save-attachments">
         <location filename="../qml/pages/Settings.qml" line="274"/>
@@ -1694,7 +1694,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="690"/>
         <source>Voice note codec</source>
         <extracomment>Voice note codec (dependeing on gstreamer version)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Röstmeddelande -codec</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
         <location filename="../qml/pages/Settings.qml" line="548"/>
@@ -1803,7 +1803,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="313"/>
         <source>Prefer Sailfish OS address book contact names and avatars over Signal Profile data.</source>
         <extracomment>Settings page prefer phone contacts description</extracomment>
-        <translation>Föredra kontaktnamn och avatarer i Sailfish OS adressbok framför Signal -profildata.</translation>
+        <translation>Föredra kontaktnamn och avatarer i Sailfish OS-adressbok framför Signal-profildata.</translation>
     </message>
     <message id="whisperfish-settings-show-phone-number">
         <location filename="../qml/pages/Settings.qml" line="449"/>
@@ -1961,7 +1961,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="677"/>
         <source>Signal Contacts</source>
         <extracomment>Settings page total signal contacts</extracomment>
-        <translation>Signal -kontakter</translation>
+        <translation>Signal-kontakter</translation>
     </message>
     <message id="whisperfish-settings-encrypted-keystore">
         <source>Encrypted Key Store</source>
@@ -2064,27 +2064,27 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="113"/>
         <source>Search</source>
         <extracomment>Show search field menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sök</translation>
     </message>
     <message id="whisperfish-announcements-switch-label">
         <location filename="../qml/pages/GroupProfilePage.qml" line="165"/>
         <source>Message sending allowed</source>
         <extracomment>Announcements only setting label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Meddelandesändning tillåten</translation>
     </message>
     <message id="whisperfish-announcements-admins-only">
         <location filename="../qml/pages/GroupProfilePage.qml" line="167"/>
         <location filename="../qml/pages/GroupProfilePage.qml" line="180"/>
         <source>Administrators only</source>
         <extracomment>Message sending allowed for admins only</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Endast administratörer</translation>
     </message>
     <message id="whisperfish-announcements-all-useres">
         <location filename="../qml/pages/GroupProfilePage.qml" line="168"/>
         <location filename="../qml/pages/GroupProfilePage.qml" line="175"/>
         <source>All users</source>
         <extracomment>Message sending allowed for all users</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Alla användare</translation>
     </message>
     <message id="whisperfish-group-member-admin">
         <location filename="../qml/components/GroupMemberListView.qml" line="19"/>
@@ -2180,13 +2180,13 @@ Settings page share contacts</extracomment>
         <source>Signal should have called you with a 6-digit verification code. Please wait a moment, or restart the process if you have not received a call.</source>
         <oldsource>Signal should have called you with a a 6-digit verification code. Please wait a moment, or restart the process if you have not received a call.</oldsource>
         <extracomment>verify registration instructions: voice</extracomment>
-        <translation>Signal borde ha ringt dig med en 6-siffrig verifieringskod. Vänta ett ögonblick eller starta om processen om du inte har fått något samtal.</translation>
+        <translation>Signal ringer upp dig inom kort med en sexsiffrig kod. Vänta en stund eller starta om ifall du inte får något samtal.</translation>
     </message>
     <message id="whisperfish-verify-instructions-sms">
         <location filename="../qml/pages/VerifyRegistrationPage.qml" line="27"/>
         <source>Signal should have sent you a 6-digit verification code via text message. Please wait a moment, or restart the process if you have not received a message.</source>
         <extracomment>verify registration instructions: text message</extracomment>
-        <translation>Signal torde ha skickat dig en 6-siffrig verifieringskod via sms. Vänta ett ögonblick eller starta om processen om du inte har fått något meddelande.</translation>
+        <translation>Signal skickar en sexsiffrig kod till dig via sms. Vänta en stund eller starta om ifall du inte får något meddelande.</translation>
     </message>
     <message id="whisperfish-verify-retry-prompt">
         <location filename="../qml/pages/VerifyRegistrationPage.qml" line="45"/>
@@ -2222,7 +2222,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="694"/>
         <source>Incompatible with Signal iOS</source>
         <extracomment>Short warning note that the voice note is being recorded in Opus format</extracomment>
-        <translation type="unfinished">Ej kompatibel med Signal iOS</translation>
+        <translation>Ej kompatibel med Signal iOS</translation>
     </message>
     <message id="whisperfish-chat-input-attachment-label" numerus="yes">
         <location filename="../qml/components/ChatTextInput.qml" line="303"/>
@@ -2237,7 +2237,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ChatTextInput.qml" line="313"/>
         <source>You are not member of the group</source>
         <extracomment>Chat text input placeholder for not being a member of the group</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Du är inte medlem i gruppen</translation>
     </message>
     <message id="whisperfish-chat-input-recipient-is-unregistered">
         <location filename="../qml/components/ChatTextInput.qml" line="317"/>
@@ -2255,7 +2255,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/components/ChatTextInput.qml" line="326"/>
         <source>Only administrators can send messages</source>
         <extracomment>Placeholder for administrators-only group</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Endast administratörer kan skicka meddelanden</translation>
     </message>
     <message id="whisperfish-chat-input-placeholder-default">
         <location filename="../qml/components/ChatTextInput.qml" line="330"/>
@@ -2325,7 +2325,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/SearchPage.qml" line="141"/>
         <source>(no name)</source>
         <extracomment>Placeholder name for a recipient who has no name available</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>(inget namn)</translation>
     </message>
     <message id="whisperfish-quoted-message-unknown-sender">
         <source>Unknown sender</source>
@@ -2544,103 +2544,103 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="176"/>
         <source>%1 banned %2</source>
         <extracomment>Group change: add banned member</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 bannade %2</translation>
     </message>
     <message id="whisperfish-service-message-group-change-announcement-only-on">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="181"/>
         <source>%1 restricted sending messages to administrators only</source>
         <extracomment>Group change: only admins can send messages</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 begränsade sändningen av meddelanden endast till administratörer</translation>
     </message>
     <message id="whisperfish-service-message-group-change-announcement-only-off">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="184"/>
         <source>%1 allowed everyone send messages</source>
         <extracomment>Group change: all members can send messages</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 tillät alla att skicka meddelanden</translation>
     </message>
     <message id="whisperfish-service-message-group-change-attribute-access">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="189"/>
         <source>%1 set group change permissions to &apos;%2&apos;</source>
         <extracomment>Group change: permissions to change group properties</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 gav gruppändringsbehörigheter till &apos;%2&apos;</translation>
     </message>
     <message id="whisperfish-service-message-group-change-avatar">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="193"/>
         <source>%1 changed the group avatar</source>
         <extracomment>Group change: title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 ändrade gruppbilden</translation>
     </message>
     <message id="whisperfish-service-message-group-change-delete-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="197"/>
         <source>%1 removed %2 from the group</source>
         <extracomment>Group change: delete member</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 tog bort %2 från gruppen</translation>
     </message>
     <message id="whisperfish-service-message-group-change-description">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="201"/>
         <source>%1 changed the group description to &apos;%2&apos;</source>
         <extracomment>Group change: desctiption changed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 ändrade gruppbeskrivningen till &apos;%2&apos;</translation>
     </message>
     <message id="whisperfish-service-message-group-change-invite-link-access">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="206"/>
         <source>%1 set invite link setting to &apos;%2&apos;</source>
         <extracomment>Group change: joining group via invite link setting</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 ställde inställningen för inbjudningslänk till &apos;%2&apos;</translation>
     </message>
     <message id="whisperfish-service-message-group-change-invite-link-password">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="210"/>
         <source>%1 changed the invite link password</source>
         <extracomment>Group change: set/change invite link password</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 ändrade lösenordet för inbjudningslänken</translation>
     </message>
     <message id="whisperfish-service-message-group-change-member-access">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="214"/>
         <source>%1 allowed &apos;%2&apos; add new members</source>
         <extracomment>Group change: change members joining setting</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 tillät &apos;%2&apos; att lägga till nya medlemmar</translation>
     </message>
     <message id="whisperfish-service-message-group-change-modify-member-role">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="218"/>
         <source>%1 changed %2 to %3</source>
         <extracomment>Group change: change member &quot;power level&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 satte användare %2 till nivå %3</translation>
     </message>
     <message id="whisperfish-service-message-group-change-new-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="222"/>
         <source>%1 added %2 to group</source>
         <extracomment>Group change: new member</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 lade till %2 i gruppen</translation>
     </message>
     <message id="whisperfish-service-message-group-change-new-pending-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="226"/>
         <source>%1 was invited to join the group</source>
         <extracomment>Group change: new pending member</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 blev inbjuden att gå med i gruppen</translation>
     </message>
     <message id="whisperfish-service-message-group-change-new-requesting-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="230"/>
         <source>%1 would like to join the group</source>
         <extracomment>Group change: new requesting member</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 vill gå med i gruppen</translation>
     </message>
     <message id="whisperfish-service-message-group-change-promote-pending-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="234"/>
         <source>%1 accepted %2 into the group</source>
         <extracomment>Group change: pending member was accepted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 godkände %2 i gruppen</translation>
     </message>
     <message id="whisperfish-service-message-group-change-promote-requesting-member">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="238"/>
         <source>%1 accepted %2 into the group</source>
         <extracomment>Group change: requesting member was accepted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 godkände %2 i gruppen</translation>
     </message>
     <message id="whisperfish-service-message-group-change-title">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="244"/>
         <source>%1 changed the group title to &apos;%2&apos;</source>
         <extracomment>Group change: title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 ändrade gruppnamnet till &apos;%2&apos;</translation>
     </message>
     <message id="whisperfish-service-message-call-group-self">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="267"/>
@@ -2702,20 +2702,20 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="319"/>
         <source>%1 sent you a sticker: %2</source>
         <extracomment>Message with a sticker, %1 is a name, %2 is an emoji</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 skickade ett klistermärke: %2</translation>
     </message>
     <message id="whisperfish-service-message-contact">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="323"/>
         <source>Contact cards can&apos;t yet be supported</source>
         <extracomment>Message with a contact card</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kontaktkort stöds inte ännu</translation>
     </message>
     <message id="whisperfish-service-message-not-supported">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="329"/>
         <source>This service message of is not yet supported by Whisperfish. Please file a bug report. (Flags: %1, Type: %2, Contents: &quot;%3&quot;)</source>
         <oldsource>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: %1)</oldsource>
         <extracomment>Service message, %1 is an integer, %2 is a word, %3 is the message text (if any)</extracomment>
-        <translation>Detta servicemeddelande stöds ännu inte av Whisperfish. Vänligen lämna en felrapport. (Id: &apos;%1&apos;.)</translation>
+        <translation>Whisperfish har inte stöd för detta systemmeddelande än. Skicka gärna en felrapport. (Id: &apos;%1&apos;.)</translation>
     </message>
     <message id="whisperfish-service-message-more-info">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="387"/>
@@ -2808,7 +2808,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="425"/>
         <source>Clear selection</source>
         <extracomment>Message action description, shown if one or more messages are selected</extracomment>
-        <translation type="unfinished">Rensa val</translation>
+        <translation>Rensa valet</translation>
     </message>
     <message id="whisperfish-message-action-copy" numerus="yes">
         <location filename="../qml/pages/ConversationPage.qml" line="436"/>
@@ -2854,9 +2854,9 @@ Settings page share contacts</extracomment>
         <source>Retry sending %n failed message(s)</source>
         <oldsource>Retry sending (the) failed message(s)</oldsource>
         <extracomment>Message action description</extracomment>
-        <translation type="unfinished">
-            <numerusform>Försök att skicka det misslyckade meddelandet igen</numerusform>
-            <numerusform>Försök att skicka de misslyckade meddelanden igen</numerusform>
+        <translation>
+            <numerusform>Försök att skicka misslyckat meddelande igen</numerusform>
+            <numerusform>Försök att skicka misslyckade meddelanden igen</numerusform>
         </translation>
     </message>
     <message id="whisperfish-message-action-transcribe" numerus="yes">
@@ -2864,9 +2864,9 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="566"/>
         <source>Transcribe %n message(s)</source>
         <extracomment>Message action description</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Transkribera %n meddelande</numerusform>
+            <numerusform>Transkribera %n meddelanden</numerusform>
         </translation>
     </message>
     <message id="whisperfish-group-request-information">
@@ -2907,7 +2907,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/SetupRegistrationTypePage.qml" line="19"/>
         <source>Do you want to register whisperfish as primariy device or link it as secondary device to an existing signal app?</source>
         <extracomment>registration type prompt text</extracomment>
-        <translation>Vill du registrera whisperfish som primär enhet eller länka den som sekundär enhet till en befintlig signalapp?</translation>
+        <translation>Vill du registrera Whisperfish som primär enhet eller länka den som sekundär enhet till ett befintligt Signal-konto?</translation>
     </message>
     <message id="whisperfish-register-primary-button-label">
         <location filename="../qml/pages/SetupRegistrationTypePage.qml" line="50"/>
@@ -2978,68 +2978,68 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/CreateConversationPage.qml" line="47"/>
         <source>Usernames don&apos;t start with @.</source>
         <extracomment>Live validation hint for a leading @</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Användernamnen börjar inte med @.</translation>
     </message>
     <message id="whisperfish-username-format-hint">
         <location filename="../qml/pages/CreateConversationPage.qml" line="51"/>
         <source>Enter a username (e.g. johndoe.99) or a signal.me link.</source>
         <extracomment>Live validation hint when the entered text is neither a username nor a link</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ange ett användarnamn (t.ex. användare.99) eller en signal.me-länk.</translation>
     </message>
     <message id="whisperfish-username-not-found-text">
         <location filename="../qml/pages/CreateConversationPage.qml" line="81"/>
         <source>%1 is not a Signal user. Make sure you&apos;ve entered the complete username.</source>
         <extracomment>Username lookup completed but no account matched</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 är inte en Signal-användare. Se till att du har angett hela användarnamnet.</translation>
     </message>
     <message id="whisperfish-username-resolver-unavailable-text">
         <location filename="../qml/pages/CreateConversationPage.qml" line="85"/>
         <source>Not ready yet. Please try again in a moment.</source>
         <extracomment>Username resolver actor not available (boot-window race)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Inte klart än. Försök igen om en stund.</translation>
     </message>
     <message id="whisperfish-username-lookup-failed-text">
         <location filename="../qml/pages/CreateConversationPage.qml" line="89"/>
         <source>Couldn&apos;t look up this username or link.</source>
         <extracomment>Username lookup failed for a generic reason (network / malformed link)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte söka upp det här användarnamnet eller länken.</translation>
     </message>
     <message id="whisperfish-username-scan-qr-menu">
         <location filename="../qml/pages/CreateConversationPage.qml" line="127"/>
         <source>Scan QR code</source>
         <extracomment>Pull-down menu item to scan a username-link QR code</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Skanna QR-kod</translation>
     </message>
     <message id="whisperfish-username-clear-menu">
         <location filename="../qml/pages/CreateConversationPage.qml" line="134"/>
         <source>Clear</source>
         <extracomment>Pull-down menu item to clear the current query and retry</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Rensa</translation>
     </message>
     <message id="whisperfish-creating-conversation-title">
         <location filename="../qml/pages/CreateConversationPage.qml" line="153"/>
         <source>New conversation</source>
         <oldsource>Creating conversation</oldsource>
         <extracomment>Page header title when a new conversation is being created</extracomment>
-        <translation type="unfinished">Skapar konversation</translation>
+        <translation>Ny konversation</translation>
     </message>
     <message id="whisperfish-username-instructions">
         <location filename="../qml/pages/CreateConversationPage.qml" line="170"/>
         <source>Enter a Signal username (like johndoe.99) or paste a signal.me link to start a conversation. You can also scan a QR code from the pull-down menu.</source>
         <extracomment>Instructional text on the empty create-conversation page</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ange ett Signal-användarnamn (som användare.99) eller klistra in en signal.me-länk för att starta en konversation. Du kan också skanna en QR-kod från rullgardinsmenyn.</translation>
     </message>
     <message id="whisperfish-username-query-placeholder">
         <location filename="../qml/pages/CreateConversationPage.qml" line="179"/>
         <source>Username or signal.me link</source>
         <extracomment>Placeholder for the username/link entry field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Användernamn eller signal.me-länk</translation>
     </message>
     <message id="whisperfish-username-query-label">
         <location filename="../qml/pages/CreateConversationPage.qml" line="182"/>
         <source>Username</source>
         <extracomment>Label for the username/link entry field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Användernamn</translation>
     </message>
     <message id="whisperfish-captcha-test-title">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="15"/>
@@ -3248,64 +3248,64 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RenameDevicePage.qml" line="28"/>
         <source>New device name</source>
         <extracomment>Short description for rename device input field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nytt enhetsnamn</translation>
     </message>
     <message id="whisperfish-rename-device-input-desc">
         <location filename="../qml/pages/RenameDevicePage.qml" line="31"/>
         <source>Rename device &quot;%1&quot;</source>
         <extracomment>Description for rename device input field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Byt enhetsnamn %1&quot;</translation>
     </message>
     <message id="whisperfish-search-title">
         <location filename="../qml/pages/SearchPage.qml" line="46"/>
         <source>Message search</source>
         <extracomment>Search page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Meddelandesökning</translation>
     </message>
     <message id="whisperfish-search-field-label">
         <location filename="../qml/pages/SearchPage.qml" line="77"/>
         <source>Search messages by text</source>
         <extracomment>Search field default text</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sök i meddelanden efter text</translation>
     </message>
     <message id="whisperfish-search-field-desc" numerus="yes">
         <location filename="../qml/pages/SearchPage.qml" line="80"/>
         <source>%n match(es)</source>
         <extracomment>Search field description</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n träff</numerusform>
+            <numerusform>%n träffar</numerusform>
         </translation>
     </message>
     <message id="whisperfish-search-select-session">
         <location filename="../qml/pages/SearchPage.qml" line="120"/>
         <source>Search from conversation</source>
         <extracomment>Search page, select session to search from, or all</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sök i konversation</translation>
     </message>
     <message id="whisperfish-search-from-all">
         <location filename="../qml/pages/SearchPage.qml" line="126"/>
         <source>All conversations</source>
         <extracomment>Search page, search from all conversations</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Alla konversationer</translation>
     </message>
     <message id="whisperfish-search-results-label">
         <location filename="../qml/pages/SearchPage.qml" line="270"/>
         <source>No messages</source>
         <extracomment>Search results placeholder text</extracomment>
-        <translation type="unfinished">Inga meddelanden</translation>
+        <translation>Inga meddelanden</translation>
     </message>
     <message id="whisperfish-username-qr-scan-title">
         <location filename="../qml/pages/UsernameQrScannerPage.qml" line="26"/>
         <source>Scan username link</source>
         <extracomment>QR scanner page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Skanna användernamn-länk</translation>
     </message>
     <message id="whisperfish-username-qr-camera-starting">
         <location filename="../qml/pages/UsernameQrScannerPage.qml" line="77"/>
         <source>Starting camera…</source>
         <extracomment>Hint shown while the camera is starting up</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Startar kameran…</translation>
     </message>
 </context>
 </TS>
