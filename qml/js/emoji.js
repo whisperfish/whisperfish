@@ -72,7 +72,7 @@ var Style = { // could be initialized on startup with user-configured values
     'openmoji': {
       name: 'OpenMoji',
       key: 'openmoji',
-      versions: ['15.0.0', '14.0.0', '13.1.0', '13.0.0'],
+      versions: ['17.0.0', '16.0.0', '15.1.0', '15.0.0', '14.0.0', '13.1.0', '13.0.0'],
       ext: 'svg',
       type: 'v',
       url: 'https://github.com/hfg-gmuend/openmoji/releases/',
@@ -81,7 +81,7 @@ var Style = { // could be initialized on startup with user-configured values
     'twemoji': {
       name: 'Twemoji',
       key: 'twemoji',
-      versions: ['15.1.0', '14.0.2', '13.0.1'],
+      versions: ['17.0.3', '16.0.1', '15.1.0', '14.0.2', '13.0.1'],
       ext: 'svg',
       type: 'v',
       url: 'https://github.com/jdecked/twemoji/releases',
@@ -90,7 +90,7 @@ var Style = { // could be initialized on startup with user-configured values
     'microsoft-3D-fluent': {
       name: 'Microsoft (glossy)',
       key: 'microsoft-3D-fluent',
-      versions: ['fluent-15.1'],
+      versions: ['fluent-16.0', 'fluent-15.1'],
       ext: 'png',
       type: 'r',
       url: 'https://emojipedia.org/microsoft-3D-fluent',
@@ -99,7 +99,7 @@ var Style = { // could be initialized on startup with user-configured values
     'google': {
       name: 'Google Noto',
       key: 'google',
-      versions: ['16.0', '15.1', '15.0', 'android-12l'],
+      versions: ['17.0', '16.0', '15.1', '15.0', 'android-12l'],
       ext: 'png',
       type: 'r',
       url: 'https://emojipedia.org/google',
@@ -108,7 +108,7 @@ var Style = { // could be initialized on startup with user-configured values
     'whatsapp': {
       name: 'WhatsApp',
       key: 'whatsapp',
-      versions: ['2.24.2.76', '2.23.2.72', '2.22.8.79', '2.21.23.23', '2.21.16.20', '2.21.11.17', '2.20.206.24'],
+      versions: ['2.26.22.71', '2.25.1.75', '2.24.2.76', '2.23.2.72', '2.22.8.79', '2.21.23.23', '2.21.16.20', '2.21.11.17', '2.20.206.24'],
       ext: 'png',
       type: 'r',
       url: 'https://emojipedia.org/whatsapp',
@@ -117,7 +117,7 @@ var Style = { // could be initialized on startup with user-configured values
     'apple': {
       name: 'Apple',
       key: 'apple',
-      versions: ['ios-17.4', 'ios-16.4', 'ios-15.4', 'ios-14.6', 'ios-14.5', 'ios-14.2'],
+      versions: ['ios-26.4', 'ios-18.4', 'ios-17.4', 'ios-16.4', 'ios-15.4', 'ios-14.6', 'ios-14.5', 'ios-14.2'],
       ext: 'png',
       type: 'r',
       url: 'https://emojipedia.org/apple',
