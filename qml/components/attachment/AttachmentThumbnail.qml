@@ -8,7 +8,7 @@ import be.rubdos.whisperfish 1.0
 MouseArea {
     id: root
     property int index: 0
-    property var attach: thumbsAttachments.get(index)
+    property var attach: attachments ? attachments.get(index) : null
     property var attachments: null
     property QtObject message
     property bool highlighted: containsPress
@@ -30,7 +30,7 @@ MouseArea {
             if (i != index) {
                 return;
             }
-            attach = thumbsAttachments.get(i);
+            attach = attachments.get(i);
         }
     }
 
@@ -41,24 +41,38 @@ MouseArea {
             _isAnimatedPaused = false
             animationLoader.item.paused = false
         } else {
-            var _debugMode = SettingsBridge.debug_mode
-            var _viewPage = _isVideo ? '../../pages/ViewVideoPage.qml' : '../../pages/ViewImagePage.qml'
+            if (_isVideo) {
+                var _debugMode = SettingsBridge.debug_mode
 
-            pageStack.push(Qt.resolvedUrl(_viewPage, {sessionId: session.sessionId}), {
-                'title': recipient.name,
-                // TODO don't show the file path once attachments work reliably (#many)
-                //      and attachments are saved in a WF-controlled directory (#253)
-                'subtitle': attach.original_name != null && attach.original_name.length > 0
-                    ? attach.original_name
-                    : attach.data,
-                // when not in debug mode, it is ok to fade the file path if it is too long
-                'titleOverlay.subtitleItem.wrapMode': _debugMode ? Text.Wrap : Text.NoWrap,
-                'path': attach.data,
-                'originalPath': attach.original_path,
-                'isAnimated': _isAnimated,
-                'attachment': attach,
-                'isViewOnce': false, // TODO: Implement attachment can only be viewed once
-            })
+                pageStack.push(Qt.resolvedUrl('../../pages/ViewVideoPage.qml'), {
+                    'sessionId': session.sessionId,
+                    'title': recipient.name,
+                    // TODO don't show the file path once attachments work reliably (#many)
+                    //      and attachments are saved in a WF-controlled directory (#253)
+                    'subtitle': attach.original_name != null && attach.original_name.length > 0
+                        ? attach.original_name
+                        : attach.data,
+                    // when not in debug mode, it is ok to fade the file path if it is too long
+                    'titleOverlay.subtitleItem.wrapMode': _debugMode ? Text.Wrap : Text.NoWrap,
+                    'path': attach.data,
+                    'originalPath': attach.original_path,
+                    'isAnimated': _isAnimated,
+                    'attachment': attach,
+                    'isViewOnce': false, // TODO: Implement attachment can only be viewed once
+                })
+            } else {
+                pageStack.push(Qt.resolvedUrl('../../pages/ViewImageGalleryPage.qml'), {
+                    'sessionId': session.sessionId,
+                    'title': recipient.name,
+                    'subtitle': attach.original_name != null && attach.original_name.length > 0
+                        ? attach.original_name
+                        : attach.data,
+                    'attachments': attachments,
+                    'initialIndex': index,
+                    'message': message,
+                    'isViewOnce': false, // TODO: Implement attachment can only be viewed once
+                })
+            }
         }
     }
 
