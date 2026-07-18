@@ -55,7 +55,7 @@
         <location filename="../qml/pages/ShareDestinationV2.qml" line="105"/>
         <source>Note to self</source>
         <extracomment>Name of the conversation with one&apos;s own number</extracomment>
-        <translation>Anteckning till mig själv</translation>
+        <translation>Egen anteckning</translation>
     </message>
     <message id="whisperfish-message-preview-draft">
         <location filename="../qml/cover/CoverPage.qml" line="150"/>
@@ -721,7 +721,7 @@
         <location filename="../qml/pages/MainPage.qml" line="96"/>
         <source>New conversation</source>
         <extracomment>Whisperfish main menu item: start a conversation by username/QR</extracomment>
-        <translation>Skapar konversation</translation>
+        <translation>Ny konversation</translation>
     </message>
     <message id="whisperfish-settings-menu">
         <location filename="../qml/pages/MainPage.qml" line="114"/>
@@ -930,7 +930,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="275"/>
         <source>Write something about yourself</source>
         <extracomment>Profile, about you (greeting/status) field</extracomment>
-        <translation>Skriv något om dig själv</translation>
+        <translation>Skriv några ord om dig själv</translation>
     </message>
     <message id="whisperfish-profile-unidentified">
         <location filename="../qml/pages/ProfilePage.qml" line="307"/>
@@ -1538,7 +1538,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="242"/>
         <source>Standard</source>
         <extracomment>Settings page, use standard (medium) attachment quality</extracomment>
-        <translation>Normal</translation>
+        <translation>Standard</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-standard-description">
         <location filename="../qml/pages/Settings.qml" line="245"/>
@@ -1569,7 +1569,7 @@ Settings page share contacts</extracomment>
         <source>Attachments are stored at %1. Currently, when disabled, attachments will not work.</source>
         <oldsource>Attachments are stored at %1</oldsource>
         <extracomment>Settings page save attachments description</extracomment>
-        <translation>Bilagor lagras på %1. För närvarande, när detta är inaktiverat, fungerar inte bilagorna.</translation>
+        <translation>Bilagor lagras på %1. Om detta är inaktiverat, fungerar inte bilagorna.</translation>
     </message>
     <message id="whisperfish-settings-enable-enter-send">
         <location filename="../qml/pages/Settings.qml" line="326"/>
@@ -1827,7 +1827,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="541"/>
         <source>Whisperfish does not have the permission to change the autostart settings. You can enable or disable autostart manually from the command line by running &apos;systemctl --user enable harbour-whisperfish.service&apos; or &apos;systemctl --user disable harbour-whisperfish.service&apos;</source>
         <extracomment>Settings page info how to enable autostart manually</extracomment>
-        <translation>Whisperfish har inte behörighet att ändra inställningarna för autostart. Du kan aktivera eller inaktivera autostart manuellt från kommandoraden genom att köra &apos;systemctl --user enable harbour-whisperfish.service&apos; eller &apos;systemctl --user disable harbour-whisperfish.service&apos;</translation>
+        <translation>Whisperfish har inte behörighet att ändra inställningarna för autostart. Du kan aktivera eller inaktivera autostart manuellt från kommandotolken genom att köra &apos;systemctl --user enable harbour-whisperfish.service&apos; eller &apos;systemctl --user disable harbour-whisperfish.service&apos;</translation>
     </message>
     <message id="whisperfish-settings-quit-button">
         <location filename="../qml/pages/Settings.qml" line="568"/>
@@ -2022,7 +2022,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/GroupProfilePage.qml" line="99"/>
         <source>Not updated to the new group format</source>
         <extracomment>Indicator for not yet updated groups</extracomment>
-        <translation>Inte uppdaterad till det nya gruppformatet</translation>
+        <translation>Inte uppdaterat till det nya gruppformatet</translation>
     </message>
     <message id="whisperfish-group-refresh">
         <location filename="../qml/pages/GroupProfilePage.qml" line="46"/>
@@ -3021,7 +3021,7 @@ Settings page share contacts</extracomment>
         <source>New conversation</source>
         <oldsource>Creating conversation</oldsource>
         <extracomment>Page header title when a new conversation is being created</extracomment>
-        <translation>Ny konversation</translation>
+        <translation>Skapar konversation</translation>
     </message>
     <message id="whisperfish-username-instructions">
         <location filename="../qml/pages/CreateConversationPage.qml" line="170"/>
