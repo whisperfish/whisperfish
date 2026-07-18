@@ -3254,7 +3254,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RenameDevicePage.qml" line="31"/>
         <source>Rename device &quot;%1&quot;</source>
         <extracomment>Description for rename device input field</extracomment>
-        <translation>Byt enhetsnamn %1&quot;</translation>
+        <translation>Byt enhetsnamn &quot;%1&quot;</translation>
     </message>
     <message id="whisperfish-search-title">
         <location filename="../qml/pages/SearchPage.qml" line="46"/>
