@@ -690,7 +690,7 @@
         <location filename="../qml/pages/MainPage.qml" line="96"/>
         <source>New conversation</source>
         <extracomment>Whisperfish main menu item: start a conversation by username/QR</extracomment>
-        <translation type="unfinished">Luodaan keskustelua</translation>
+        <translation>Uusi keskustelu</translation>
     </message>
     <message id="whisperfish-show-inbox-menu">
         <location filename="../qml/pages/MainPage.qml" line="134"/>
@@ -1013,7 +1013,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="241"/>
         <source>This user profile is broken and can&apos;t be used.</source>
         <extracomment>Warning about recipient UUID not existing or nil (all zeros)</extracomment>
-        <translation>Tämä käyttäjäprofiili on rikki eikä sitä voi käyttää.</translation>
+        <translation>Tämä käyttäjäprofiili on viallinen eikä sitä voi käyttää.</translation>
     </message>
     <message id="whisperfish-show-fingerprint">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="322"/>
@@ -1544,7 +1544,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="245"/>
         <source>Resize images larger than 2048 pixels in width or height or over 1.5MB in size.</source>
         <extracomment>Settings page, standard (medium) attachment quality description</extracomment>
-        <translation>Pienennä kuvat joiden korkeus tai leveys ylittää 2048 pikseliä tai koko ylittää 1,5MB. Tämä käyttää eniten dataa.</translation>
+        <translation>Pienennä kuvat joiden korkeus tai leveys ylittää 2048 pikseliä tai koko ylittää 1,5MB.</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-low-text">
         <location filename="../qml/pages/Settings.qml" line="251"/>
@@ -1569,7 +1569,7 @@ Settings page share contacts</extracomment>
         <source>Attachments are stored at %1. Currently, when disabled, attachments will not work.</source>
         <oldsource>Attachments are stored at %1</oldsource>
         <extracomment>Settings page save attachments description</extracomment>
-        <translation>Liitteet tallennetaan hakemistoon %1. Valinnan on oltava päällä, jotta liitteiden vastaanottaminen toimii.</translation>
+        <translation>Liitteet tallennetaan hakemistoon %1. Valinnan on oltava päällä, jotta liitteiden vastaanotto onnistuu.</translation>
     </message>
     <message id="whisperfish-settings-enable-enter-send">
         <location filename="../qml/pages/Settings.qml" line="326"/>
@@ -1582,7 +1582,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="329"/>
         <source>When enabled, the return key functions as a send key. Otherwise, the return key can be used for multi-line messages.</source>
         <extracomment>Settings page enable enter send description</extracomment>
-        <translation>Jos käytössä, rivinvaihto lähettää viestin. Muutoin rivinvaihtoa voi käyttää monirivisten viestien kirjoittamiseen.</translation>
+        <translation>Rivinvaihto lähettää viestin, jos valinta on käytössä - muutoin rivinvaihtoa voi käyttää monirivisten viestien kirjoittamiseen.</translation>
     </message>
     <message id="whisperfish-transcribe-voice-notes-label">
         <location filename="../qml/pages/Settings.qml" line="343"/>
@@ -1608,7 +1608,7 @@ Settings page share contacts</extracomment>
         <source>Automatically transcribe voice notes to text upon reception. Install and configure an &apos;Auto detected&apos; model in Speech Note to use this feature.</source>
         <oldsource>Automatically transcribe voice notes to text upon reception. Install and configure the English model in Speech Note to use this feature.</oldsource>
         <extracomment>Auto transcribe voice notes description, Speech Note not installed</extracomment>
-        <translation>Literoi äänimuistiinpanot automaattisesti tekstiksi vastaanotettaessa. Tämän ominaisuuden käyttämiseksi, asenna ja määritä &quot;Automaattisesti tunnistettu&quot; -malli Puhemuistiinpanossa.</translation>
+        <translation>Litteroi äänimuistiinpanot automaattisesti tekstiksi vastaanotettaessa. Tämän ominaisuuden käyttämiseksi, asenna ja määritä &quot;Automaattisesti tunnistettu&quot; -malli Puhemuistiinpanossa.</translation>
     </message>
     <message id="whisperfish-settings-privacy-section">
         <location filename="../qml/pages/Settings.qml" line="370"/>
@@ -1676,13 +1676,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="602"/>
         <source>Verbose journal log</source>
         <extracomment>Settings page, send verbose logs to systemd journal</extracomment>
-        <translation>Vianetsintätason journal-loki</translation>
+        <translation>Vianetsintäloki</translation>
     </message>
     <message id="whisperfish-settings-verbose-journal-description">
         <location filename="../qml/pages/Settings.qml" line="605"/>
         <source>When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect.</source>
         <extracomment>Settings page enable verbose logging description</extracomment>
-        <translation>Kun tämä on käytössä, Whisperfish lähettää vianetsintätason lokia journald:lle. Muutos vaatii Whisperfishin uudelleenkäynnistämisen.</translation>
+        <translation>Kun tämä on käytössä, Whisperfish kirjoittaa vianetsintälokia kohteeseen systemd journal. Muutos vaatii Whisperfishin uudelleenkäynnistämisen.</translation>
     </message>
     <message id="whisperfish-settings-gstreamer-version">
         <location filename="../qml/pages/Settings.qml" line="684"/>
@@ -2222,7 +2222,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="694"/>
         <source>Incompatible with Signal iOS</source>
         <extracomment>Short warning note that the voice note is being recorded in Opus format</extracomment>
-        <translation type="unfinished">Signal iOS ei tuettu</translation>
+        <translation>Signal-iOS ei ole tuettu</translation>
     </message>
     <message id="whisperfish-chat-input-attachment-label" numerus="yes">
         <location filename="../qml/components/ChatTextInput.qml" line="303"/>
@@ -2983,62 +2983,62 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/CreateConversationPage.qml" line="47"/>
         <source>Usernames don&apos;t start with @.</source>
         <extracomment>Live validation hint for a leading @</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Käyttäjätunnukset eivät ala merkillä @.</translation>
     </message>
     <message id="whisperfish-username-format-hint">
         <location filename="../qml/pages/CreateConversationPage.qml" line="51"/>
         <source>Enter a username (e.g. johndoe.99) or a signal.me link.</source>
         <extracomment>Live validation hint when the entered text is neither a username nor a link</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Syötä käyttäjänimi (esim. käyttäjä.99) tai signal.me-linkki.</translation>
     </message>
     <message id="whisperfish-username-not-found-text">
         <location filename="../qml/pages/CreateConversationPage.qml" line="81"/>
         <source>%1 is not a Signal user. Make sure you&apos;ve entered the complete username.</source>
         <extracomment>Username lookup completed but no account matched</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Käyttäjätunnuksella %1 ei löytynyt käyttäjiä. Varmista että olet syöttänyt koko käyttäjätunnuksen.</translation>
     </message>
     <message id="whisperfish-username-resolver-unavailable-text">
         <location filename="../qml/pages/CreateConversationPage.qml" line="85"/>
         <source>Not ready yet. Please try again in a moment.</source>
         <extracomment>Username resolver actor not available (boot-window race)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Toiminto ei ole valmiina. Yritä uudelleen hetken kuluttua.</translation>
     </message>
     <message id="whisperfish-username-lookup-failed-text">
         <location filename="../qml/pages/CreateConversationPage.qml" line="89"/>
         <source>Couldn&apos;t look up this username or link.</source>
         <extracomment>Username lookup failed for a generic reason (network / malformed link)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Käyttäjätunnuksen tai linkin etsiminen epäonnistui.</translation>
     </message>
     <message id="whisperfish-username-scan-qr-menu">
         <location filename="../qml/pages/CreateConversationPage.qml" line="127"/>
         <source>Scan QR code</source>
         <extracomment>Pull-down menu item to scan a username-link QR code</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Lue QR-koodi</translation>
     </message>
     <message id="whisperfish-username-clear-menu">
         <location filename="../qml/pages/CreateConversationPage.qml" line="134"/>
         <source>Clear</source>
         <extracomment>Pull-down menu item to clear the current query and retry</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Tyhjennä</translation>
     </message>
     <message id="whisperfish-creating-conversation-title">
         <location filename="../qml/pages/CreateConversationPage.qml" line="153"/>
         <source>New conversation</source>
         <oldsource>Creating conversation</oldsource>
         <extracomment>Page header title when a new conversation is being created</extracomment>
-        <translation type="unfinished">Luodaan keskustelua</translation>
+        <translation>Luodaan keskustelua</translation>
     </message>
     <message id="whisperfish-username-instructions">
         <location filename="../qml/pages/CreateConversationPage.qml" line="170"/>
         <source>Enter a Signal username (like johndoe.99) or paste a signal.me link to start a conversation. You can also scan a QR code from the pull-down menu.</source>
         <extracomment>Instructional text on the empty create-conversation page</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Syötä Signal käyttäjätunnus (esim. käyttäjä.99) tai liitä signal.me linkki aloittaaksesi keskustelun. Voit myös lukea QR-koodin vetovalikosta.</translation>
     </message>
     <message id="whisperfish-username-query-placeholder">
         <location filename="../qml/pages/CreateConversationPage.qml" line="179"/>
         <source>Username or signal.me link</source>
         <extracomment>Placeholder for the username/link entry field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Käyttäjätunnus tai signal.me-linkki</translation>
     </message>
     <message id="whisperfish-username-query-label">
         <location filename="../qml/pages/CreateConversationPage.qml" line="182"/>
@@ -3304,13 +3304,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/UsernameQrScannerPage.qml" line="26"/>
         <source>Scan username link</source>
         <extracomment>QR scanner page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Skannaa käyttäjätunnus</translation>
     </message>
     <message id="whisperfish-username-qr-camera-starting">
         <location filename="../qml/pages/UsernameQrScannerPage.qml" line="77"/>
         <source>Starting camera…</source>
         <extracomment>Hint shown while the camera is starting up</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Käynnistetään kameraa…</translation>
     </message>
 </context>
 </TS>
