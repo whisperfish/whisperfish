@@ -1785,7 +1785,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="167"/>
         <source>Minimise notifications</source>
         <extracomment>Settings page notifications show minimum number of notifications</extracomment>
-        <translation>Vähennä ilmoitusten määrää</translation>
+        <translation>Minimoi ilmoitusten määrä</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimise-description">
         <location filename="../qml/pages/Settings.qml" line="170"/>
@@ -2870,7 +2870,7 @@ Settings page share contacts</extracomment>
         <source>Transcribe %n message(s)</source>
         <extracomment>Message action description</extracomment>
         <translation>
-            <numerusform>Litteroi %1 viesti</numerusform>
+            <numerusform>Litteroi %n viesti</numerusform>
             <numerusform>Litteroi %n viestiä</numerusform>
         </translation>
     </message>
@@ -2878,13 +2878,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/ConversationPage.qml" line="615"/>
         <source>Let the group members message with you and let its members see your profile information?</source>
         <extracomment>Information about a pending or blocked group</extracomment>
-        <translation>Sallitaanko ryhmän jäsenten kommunikoida kanssasi ja ryhmän jäsenten nähdä käyttääprofiilisi?</translation>
+        <translation>Sallitaanko ryhmän jäsenten kommunikoida kanssasi ja ryhmän jäsenten nähdä käyttäjäprofiilisi?</translation>
     </message>
     <message id="whisperfish-message-request-information">
         <location filename="../qml/pages/ConversationPage.qml" line="618"/>
         <source>Let the contact message with you and let them see your profile information?</source>
         <extracomment>Information about a pending or blocked recipient</extracomment>
-        <translation>Sallitaanko yhteystiedon kommunikoida kanssasi ja nähdä profiilisi?</translation>
+        <translation>Sallitaanko käyttäjän kommunikoida kanssasi ja nähdä profiilisi?</translation>
     </message>
     <message id="whisperfish-share-page-title">
         <location filename="../qml/pages/ShareDestinationV1.qml" line="35"/>
@@ -3032,7 +3032,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/CreateConversationPage.qml" line="170"/>
         <source>Enter a Signal username (like johndoe.99) or paste a signal.me link to start a conversation. You can also scan a QR code from the pull-down menu.</source>
         <extracomment>Instructional text on the empty create-conversation page</extracomment>
-        <translation>Syötä Signal käyttäjätunnus (esim. käyttäjä.99) tai liitä signal.me linkki aloittaaksesi keskustelun. Voit myös lukea QR-koodin vetovalikosta.</translation>
+        <translation>Syötä Signal-käyttäjätunnus (esim. käyttäjä.99) tai liitä signal.me linkki aloittaaksesi keskustelun. Voit myös lukea QR-koodin vetovalikosta.</translation>
     </message>
     <message id="whisperfish-username-query-placeholder">
         <location filename="../qml/pages/CreateConversationPage.qml" line="179"/>
@@ -3259,7 +3259,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RenameDevicePage.qml" line="31"/>
         <source>Rename device &quot;%1&quot;</source>
         <extracomment>Description for rename device input field</extracomment>
-        <translation>Nimeä uudelleen laite &apos;%1&apos;</translation>
+        <translation>Nimeä uudelleen laite &quot;%1&quot;</translation>
     </message>
     <message id="whisperfish-search-title">
         <location filename="../qml/pages/SearchPage.qml" line="46"/>
