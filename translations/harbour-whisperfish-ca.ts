@@ -303,109 +303,109 @@
         <location filename="../qml/pages/About.qml" line="275"/>
         <source>German translators</source>
         <extracomment>German (de) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors de l&apos;alemany</translation>
     </message>
     <message id="whisperfish-translators-fr">
         <location filename="../qml/pages/About.qml" line="304"/>
         <source>French translators</source>
         <extracomment>French (fr) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors del francès</translation>
     </message>
     <message id="whisperfish-translators-fi">
         <location filename="../qml/pages/About.qml" line="327"/>
         <source>Finnish translators</source>
         <extracomment>Finnish (fi) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors del finès</translation>
     </message>
     <message id="whisperfish-translators-sl">
         <location filename="../qml/pages/About.qml" line="350"/>
         <source>Slovenian translators</source>
         <extracomment>Slovenian (sl) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors de l&apos;eslovè</translation>
     </message>
     <message id="whisperfish-translators-sv">
         <location filename="../qml/pages/About.qml" line="366"/>
         <source>Swedish translators</source>
         <extracomment>Swedish (sv) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors del suec</translation>
     </message>
     <message id="whisperfish-translators-pl">
         <location filename="../qml/pages/About.qml" line="386"/>
         <source>Polish translators</source>
         <extracomment>Polish (pl) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors del polonès</translation>
     </message>
     <message id="whisperfish-translators-zh_CN">
         <location filename="../qml/pages/About.qml" line="408"/>
         <source>Chinese (Simplified) translators</source>
         <extracomment>Chinese (Simplified) (zh_CN) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors del xinès (simplificat)</translation>
     </message>
     <message id="whisperfish-translators-hu">
         <location filename="../qml/pages/About.qml" line="429"/>
         <source>Hungarian translators</source>
         <extracomment>Hungarian (hu) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors de l&apos;hongarès</translation>
     </message>
     <message id="whisperfish-translators-pt_PT">
         <location filename="../qml/pages/About.qml" line="448"/>
         <source>Portuguese (Portugal) translators</source>
         <extracomment>Portuguese (Portugal) (pt_PT) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors del portuguès</translation>
     </message>
     <message id="whisperfish-translators-cs">
         <location filename="../qml/pages/About.qml" line="467"/>
         <source>Czech translators</source>
         <extracomment>Czech (cs) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors del txec</translation>
     </message>
     <message id="whisperfish-translators-ca">
         <location filename="../qml/pages/About.qml" line="483"/>
         <source>Catalan translators</source>
         <extracomment>Catalan (ca) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors del català</translation>
     </message>
     <message id="whisperfish-translators-ru">
         <location filename="../qml/pages/About.qml" line="500"/>
         <source>Russian translators</source>
         <extracomment>Russian (ru) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors del rus</translation>
     </message>
     <message id="whisperfish-translators-pt_BR">
         <location filename="../qml/pages/About.qml" line="517"/>
         <source>Portuguese (Brazil) translators</source>
         <extracomment>Portuguese (Brazil) (pt_BR) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors del portuguès (brasiler)</translation>
     </message>
     <message id="whisperfish-translators-ro">
         <location filename="../qml/pages/About.qml" line="534"/>
         <source>Romanian translators</source>
         <extracomment>Romanian (ro) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors del romanès</translation>
     </message>
     <message id="whisperfish-translators-tr">
         <location filename="../qml/pages/About.qml" line="551"/>
         <source>Turkish translators</source>
         <extracomment>Turkish (tr) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors del turc</translation>
     </message>
     <message id="whisperfish-translators-el">
         <location filename="../qml/pages/About.qml" line="567"/>
         <source>Greek translators</source>
         <extracomment>Greek (el) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors del grec</translation>
     </message>
     <message id="whisperfish-translators-eu">
         <location filename="../qml/pages/About.qml" line="584"/>
         <source>Basque translators</source>
         <extracomment>Basque (eu) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors de l&apos;èuscar</translation>
     </message>
     <message id="whisperfish-translators-es">
         <location filename="../qml/pages/About.qml" line="600"/>
         <source>Spanish translators</source>
         <extracomment>Spanish (es) language about page translation section</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Traductors del castellà</translation>
     </message>
     <message id="whisperfish-liberapay">
         <location filename="../qml/pages/About.qml" line="89"/>
@@ -523,7 +523,7 @@
         <location filename="../qml/pages/LinkedDevices.qml" line="63"/>
         <source>Device %1</source>
         <extracomment>A nameless secondary device in linked devices list</extracomment>
-        <translation type="unfinished">Dispositiu %1</translation>
+        <translation>Dispositiu %1</translation>
     </message>
     <message id="whisperfish-device-link-date">
         <location filename="../qml/pages/LinkedDevices.qml" line="84"/>
@@ -725,199 +725,199 @@
         <source>Secure session reset</source>
         <oldsource>Resetting secure session</oldsource>
         <extracomment>Reset secure session remorse message (past tense)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Restabliment segur de la sessió</translation>
     </message>
     <message id="whisperfish-refresh-profile-menu">
         <location filename="../qml/pages/ProfilePage.qml" line="114"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="75"/>
         <source>Refresh Signal profile</source>
         <extracomment>Refresh contact profile menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Refresca el perfil de Signal</translation>
     </message>
     <message id="whisperfish-show-contact-page-menu">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="84"/>
         <source>Show contact</source>
         <extracomment>Show a peer&apos;s system contact page (menu item)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mostra el contacte</translation>
     </message>
     <message id="whisperfish-revert-profile-changes-menu">
         <location filename="../qml/pages/ProfilePage.qml" line="123"/>
         <source>Discard changes</source>
         <extracomment>Undo changes and exit editing you profile details menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Descarta els canvis</translation>
     </message>
     <message id="whisperfish-save-profile-menu">
         <location filename="../qml/pages/ProfilePage.qml" line="132"/>
         <source>Save profile changes</source>
         <extracomment>Save changes to your profile menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Desa els canvis del perfil</translation>
     </message>
     <message id="whisperfish-edit-profile-menu">
         <location filename="../qml/pages/ProfilePage.qml" line="135"/>
         <source>Edit profile</source>
         <extracomment>Edit your own profile menu item</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Edita el perfil</translation>
     </message>
     <message id="whisperfish-profile-page-unregistered-profile">
         <location filename="../qml/pages/ProfilePage.qml" line="196"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="160"/>
         <source>The recipient is not currently registered to Signal, so sending and receiving messages is not possible.</source>
         <extracomment>Profile page, user is not registered warning</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>El destinatari no està registrat a Signal, doncs no és possible rebre ni enviar-li missatges.</translation>
     </message>
     <message id="whisperfish-profile-joined-name">
         <location filename="../qml/pages/ProfilePage.qml" line="209"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="191"/>
         <source>Name</source>
         <extracomment>Profile, name field (first name + last name)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nom</translation>
     </message>
     <message id="whisperfish-profile-given-name">
         <location filename="../qml/pages/ProfilePage.qml" line="223"/>
         <source>First name (required)</source>
         <extracomment>Profile, first (given) name field, required</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nom (necessari)</translation>
     </message>
     <message id="whisperfish-profile-family-name">
         <location filename="../qml/pages/ProfilePage.qml" line="241"/>
         <source>Last name (optional)</source>
         <extracomment>Profile, last (family) name field, optional</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Cognom (opcional)</translation>
     </message>
     <message id="whisperfish-profile-uuid">
         <location filename="../qml/pages/ProfilePage.qml" line="255"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="223"/>
         <source>UUID</source>
         <extracomment>Profile UUID field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>UUID</translation>
     </message>
     <message id="whisperfish-profile-phone-number">
         <location filename="../qml/pages/ProfilePage.qml" line="267"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="252"/>
         <source>Phone number</source>
         <extracomment>Profile phone number field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Número de telèfon</translation>
     </message>
     <message id="whisperfish-profile-username">
         <location filename="../qml/pages/ProfilePage.qml" line="279"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="264"/>
         <source>Username</source>
         <extracomment>Profile username field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nom d&apos;usuari</translation>
     </message>
     <message id="whisperfish-profile-about">
         <location filename="../qml/pages/ProfilePage.qml" line="291"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="275"/>
         <source>Write something about yourself</source>
         <extracomment>Profile, about you (greeting/status) field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Escriu alguna cosa sobre tu</translation>
     </message>
     <message id="whisperfish-profile-unidentified">
         <location filename="../qml/pages/ProfilePage.qml" line="307"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="290"/>
         <source>Sealed sending mode</source>
         <extracomment>Profile, sealed sending mode option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mode d&apos;enviament segellat</translation>
     </message>
     <message id="whisperfish-unidentified-unknown">
         <location filename="../qml/pages/ProfilePage.qml" line="314"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="296"/>
         <source>Unknown</source>
         <extracomment>Profile, sealed sending mode, unknown option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Desconegut</translation>
     </message>
     <message id="whisperfish-unidentified-disabled">
         <location filename="../qml/pages/ProfilePage.qml" line="319"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="300"/>
         <source>Disabled</source>
         <extracomment>Profile, sealed sending mode, disabled option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Desactivat</translation>
     </message>
     <message id="whisperfish-unidentified-enabled">
         <location filename="../qml/pages/ProfilePage.qml" line="324"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="304"/>
         <source>Enabled</source>
         <extracomment>Profile, sealed sending mode, enabled option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Activat</translation>
     </message>
     <message id="whisperfish-unidentified-unrestricted">
         <location filename="../qml/pages/ProfilePage.qml" line="329"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="308"/>
         <source>Unrestricted</source>
         <extracomment>Profile, sealed sending mode, unrestricted option</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sense restriccions</translation>
     </message>
     <message id="whisperfish-profile-emoji">
         <location filename="../qml/pages/ProfilePage.qml" line="344"/>
         <source>A few words about yourself</source>
         <extracomment>Profile, emoji symbol field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Algunes paraules sobre tu</translation>
     </message>
     <message id="whisperfish-recipient-unblock">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="61"/>
         <source>Unblock</source>
         <extracomment>Menu action to unblock a recipient</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Desbloqueja</translation>
     </message>
     <message id="whisperfish-recipient-block">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="64"/>
         <source>Block</source>
         <extracomment>Menu action to block a recipient</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Bloqueja</translation>
     </message>
     <message id="whisperfish-recipient-unlink">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="103"/>
         <source>Unlink contact</source>
         <extracomment>Menu action to unlink a Signal contact from a Sailfish OS contact</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Desenllaça el contacte</translation>
     </message>
     <message id="whisperfish-recipient-link">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="106"/>
         <source>Link contact</source>
         <extracomment>Menu action to pick a Sailfish OS contact to link the Signal user to</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Enllaça el contacte</translation>
     </message>
     <message id="whisperfish-profile-page-blocked-recipient">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="173"/>
         <source>You have blocked the recipient.</source>
         <extracomment>Recipient profile page, blocked recipient into</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Has bloquejat aquest destinatari.</translation>
     </message>
     <message id="whisperfish-profile-page-message-request-pending">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="176"/>
         <source>You can&apos;t communicate with the recipient until you accept their message request.</source>
         <extracomment>Recipient profile page, message request is pending</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>No pots comunicar-te amb el destinatari fins que acceptis la seva sol·licitud.</translation>
     </message>
     <message id="whisperfish-profile-uuid-invalid-warning">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="241"/>
         <source>This user profile is broken and can&apos;t be used.</source>
         <extracomment>Warning about recipient UUID not existing or nil (all zeros)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Aquest perfil d&apos;usuari està trencat i no es pot pas utilitzar.</translation>
     </message>
     <message id="whisperfish-show-fingerprint">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="322"/>
         <source>Show fingerprint</source>
         <extracomment>Show fingerprint button</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mostra l&apos;empremta</translation>
     </message>
     <message id="whisperfish-numeric-fingerprint-directions">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="366"/>
         <source>If you wish to verify the security of your end-to-end encryption with %1, compare the numbers above with the numbers on their device.</source>
         <extracomment>Numeric fingerprint instructions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Si vols verificar la seguretat del xifratge de punta a punta amb %1, compara els números d&apos;aquí sobre amb els números del seu dispositiu.</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="376"/>
         <source>Post-quantum keys in use</source>
         <extracomment>Profile page: whether a contact has post-quantum secure sessions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>S&apos;estan utilitzant claus post-quantum</translation>
     </message>
     <message id="whisperfish-profile-pq-enabled-description">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="379"/>
         <source>If checked, this session was initialized with post-quantum secure cryptography.</source>
         <extracomment>Profile page: description for post-quantum secure sessions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Si s&apos;ha comprovat, aquesta sessió s&apos;ha iniciat amb criptografia segura post quàntica.</translation>
     </message>
     <message id="whisperfish-kyber-click-explanation">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="389"/>
