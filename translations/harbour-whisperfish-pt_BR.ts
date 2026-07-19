@@ -1235,7 +1235,8 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-captcha-requested-message">
         <location filename="../qml/pages/ProofSubmitPage.qml" line="19"/>
         <location filename="../qml/pages/ProofSubmitPage.qml" line="42"/>
-        <source>Signal has requested additional capcha from you. Continue the captcha in order to restore ability to send messages.</source>
+        <source>Signal has requested an additional captcha from you. Complete the captcha in order to restore the ability to send messages.</source>
+        <oldsource>Signal has requested additional capcha from you. Continue the captcha in order to restore ability to send messages.</oldsource>
         <extracomment>Signal has requested additional captcha description</extracomment>
         <translation type="unfinished"></translation>
     </message>
@@ -1410,7 +1411,8 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-settings-attachment-quality-high-description">
         <location filename="../qml/pages/Settings.qml" line="236"/>
-        <source>Resize images larger than 4096 pixels in width or height or 3.0MB in size. Using this increases data usage.</source>
+        <source>Resize images larger than 4096 pixels in width or height or 3.0MB in size. Increases data usage over standard quality.</source>
+        <oldsource>Resize images larger than 4096 pixels in width or height or 3.0MB in size. Using this increases data usage.</oldsource>
         <extracomment>Settings page, high attachment quality description</extracomment>
         <translation type="unfinished"></translation>
     </message>
@@ -1434,7 +1436,8 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-settings-attachment-quality-low-description">
         <location filename="../qml/pages/Settings.qml" line="254"/>
-        <source>Resize images larger than 2048 pixels in width or height or 1.0MB in size. Recommened for low memory devices or minimizing data usage.</source>
+        <source>Resize images larger than 2048 pixels in width or height or 1.0MB in size. Recommended for low memory devices or for minimizing data usage.</source>
+        <oldsource>Resize images larger than 2048 pixels in width or height or 1.0MB in size. Recommened for low memory devices or minimizing data usage.</oldsource>
         <extracomment>Settings page, low attachment quality description</extracomment>
         <translation type="unfinished"></translation>
     </message>
@@ -2753,7 +2756,8 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-registration-type-message">
         <location filename="../qml/pages/SetupRegistrationTypePage.qml" line="19"/>
-        <source>Do you want to register whisperfish as primariy device or link it as secondary device to an existing signal app?</source>
+        <source>Do you want to register Whisperfish as primariy device or link it as secondary device to an existing Signal app?</source>
+        <oldsource>Do you want to register whisperfish as primariy device or link it as secondary device to an existing signal app?</oldsource>
         <extracomment>registration type prompt text</extracomment>
         <translation type="unfinished"></translation>
     </message>

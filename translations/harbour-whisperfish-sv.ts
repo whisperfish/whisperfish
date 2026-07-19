@@ -1355,9 +1355,10 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-captcha-requested-message">
         <location filename="../qml/pages/ProofSubmitPage.qml" line="19"/>
         <location filename="../qml/pages/ProofSubmitPage.qml" line="42"/>
-        <source>Signal has requested additional capcha from you. Continue the captcha in order to restore ability to send messages.</source>
+        <source>Signal has requested an additional captcha from you. Complete the captcha in order to restore the ability to send messages.</source>
+        <oldsource>Signal has requested additional capcha from you. Continue the captcha in order to restore ability to send messages.</oldsource>
         <extracomment>Signal has requested additional captcha description</extracomment>
-        <translation>Signal kräver ytterligare en Captcha-verifiering. Slutför verifieringen för att låsa upp meddelandefunktionen.</translation>
+        <translation type="unfinished">Signal kräver ytterligare en Captcha-verifiering. Slutför verifieringen för att låsa upp meddelandefunktionen.</translation>
     </message>
     <message id="whisperfish-captcha-requested-try-again">
         <location filename="../qml/pages/ProofSubmitPage.qml" line="45"/>
@@ -1530,9 +1531,10 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-settings-attachment-quality-high-description">
         <location filename="../qml/pages/Settings.qml" line="236"/>
-        <source>Resize images larger than 4096 pixels in width or height or 3.0MB in size. Using this increases data usage.</source>
+        <source>Resize images larger than 4096 pixels in width or height or 3.0MB in size. Increases data usage over standard quality.</source>
+        <oldsource>Resize images larger than 4096 pixels in width or height or 3.0MB in size. Using this increases data usage.</oldsource>
         <extracomment>Settings page, high attachment quality description</extracomment>
-        <translation>Förminska stora bilder (över 4096 pixlar eller 3,0MB). Denna inställning kan öka data-användning.</translation>
+        <translation type="unfinished">Förminska stora bilder (över 4096 pixlar eller 3,0MB). Denna inställning kan öka data-användning.</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-standard-text">
         <location filename="../qml/pages/Settings.qml" line="242"/>
@@ -1554,9 +1556,10 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-settings-attachment-quality-low-description">
         <location filename="../qml/pages/Settings.qml" line="254"/>
-        <source>Resize images larger than 2048 pixels in width or height or 1.0MB in size. Recommened for low memory devices or minimizing data usage.</source>
+        <source>Resize images larger than 2048 pixels in width or height or 1.0MB in size. Recommended for low memory devices or for minimizing data usage.</source>
+        <oldsource>Resize images larger than 2048 pixels in width or height or 1.0MB in size. Recommened for low memory devices or minimizing data usage.</oldsource>
         <extracomment>Settings page, low attachment quality description</extracomment>
-        <translation>Förminska stora bilder (över 2048 pixlar eller 1,0MB). Rekommenderas för enheter med lågt minne eller för att minimera dataförbrukning.</translation>
+        <translation type="unfinished">Förminska stora bilder (över 2048 pixlar eller 1,0MB). Rekommenderas för enheter med lågt minne eller för att minimera dataförbrukning.</translation>
     </message>
     <message id="whisperfish-settings-save-attachments">
         <location filename="../qml/pages/Settings.qml" line="274"/>
@@ -2905,9 +2908,10 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-registration-type-message">
         <location filename="../qml/pages/SetupRegistrationTypePage.qml" line="19"/>
-        <source>Do you want to register whisperfish as primariy device or link it as secondary device to an existing signal app?</source>
+        <source>Do you want to register Whisperfish as primariy device or link it as secondary device to an existing Signal app?</source>
+        <oldsource>Do you want to register whisperfish as primariy device or link it as secondary device to an existing signal app?</oldsource>
         <extracomment>registration type prompt text</extracomment>
-        <translation>Vill du registrera Whisperfish som primär enhet eller länka den som sekundär enhet till ett befintligt Signal-konto?</translation>
+        <translation type="unfinished">Vill du registrera Whisperfish som primär enhet eller länka den som sekundär enhet till ett befintligt Signal-konto?</translation>
     </message>
     <message id="whisperfish-register-primary-button-label">
         <location filename="../qml/pages/SetupRegistrationTypePage.qml" line="50"/>
