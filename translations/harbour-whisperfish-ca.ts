@@ -1205,13 +1205,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RegisterPage.qml" line="169"/>
         <source>Phone number</source>
         <extracomment>phone number input label</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Número de telèfon</translation>
     </message>
     <message id="whisperfish-registration-number-input-placeholder">
         <location filename="../qml/pages/RegisterPage.qml" line="173"/>
         <source>Phone number</source>
         <extracomment>phone number input placeholder</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Número de telèfon</translation>
     </message>
     <message id="whisperfish-voice-registration-directions">
         <location filename="../qml/pages/RegisterPage.qml" line="214"/>
@@ -1758,13 +1758,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="703"/>
         <source>Enabled</source>
         <extracomment>Settings page encrypted db enabled</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Activat</translation>
     </message>
     <message id="whisperfish-settings-encrypted-db-disabled">
         <location filename="../qml/pages/Settings.qml" line="706"/>
         <source>Disabled</source>
         <extracomment>Settings page encrypted db disabled</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Desactivat</translation>
     </message>
     <message id="whisperfish-verify-contact-identity-title">
         <location filename="../qml/pages/RecipientProfilePage.qml" line="316"/>
@@ -2754,7 +2754,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/CreateConversationPage.qml" line="182"/>
         <source>Username</source>
         <extracomment>Label for the username/link entry field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Nom d&apos;usuari</translation>
     </message>
     <message id="whisperfish-captcha-test-title">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="15"/>
