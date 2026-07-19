@@ -15,7 +15,7 @@ BlockingInfoPageBase {
     mainTitle: qsTrId("whisperfish-registration-title")
 
     //: registration type prompt text
-    //% "Do you want to register whisperfish as primariy device or link it as secondary device to an existing signal app?"
+    //% "Do you want to register Whisperfish as primariy device or link it as secondary device to an existing Signal app?"
     mainDescription: qsTrId("whisperfish-registration-type-message")
 
     signal registerPrimary

@@ -232,7 +232,7 @@ Page {
                         //% "High"
                         text: qsTrId("whisperfish-settings-attachment-quality-high-text")
                         //: Settings page, high attachment quality description
-                        //% "Resize images larger than 4096 pixels in width or height or 3.0MB in size. Using this increases data usage."
+                        //% "Resize images larger than 4096 pixels in width or height or 3.0MB in size. Increases data usage over standard quality."
                         property string description: qsTrId("whisperfish-settings-attachment-quality-high-description")
                     }
                     MenuItem {
@@ -250,7 +250,7 @@ Page {
                         //% "Low"
                         text: qsTrId("whisperfish-settings-attachment-quality-low-text")
                         //: Settings page, low attachment quality description
-                        //% "Resize images larger than 2048 pixels in width or height or 1.0MB in size. Recommened for low memory devices or minimizing data usage."
+                        //% "Resize images larger than 2048 pixels in width or height or 1.0MB in size. Recommended for low memory devices or for minimizing data usage."
                         property string description: qsTrId("whisperfish-settings-attachment-quality-low-description")
                     }
                 }

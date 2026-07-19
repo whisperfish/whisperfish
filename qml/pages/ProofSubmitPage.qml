@@ -15,7 +15,7 @@ BlockingInfoPageBase {
     mainTitle: qsTrId("whisperfish-captcha-requested-title")
 
     //: Signal has requested additional captcha description
-    //% "Signal has requested additional capcha from you. Continue the captcha in order to restore ability to send messages."
+    //% "Signal has requested an additional captcha from you. Complete the captcha in order to restore the ability to send messages."
     mainDescription: qsTrId("whisperfish-captcha-requested-message")
 
     busy: false
