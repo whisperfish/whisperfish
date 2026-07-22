@@ -218,10 +218,20 @@ ApplicationWindow
             // Only try to search for contact name if contact is a phone number
             contact = contactsReady ? resolvePeopleModel.personByPhoneNumber(e164, true) : null
         }
+        // When a Sailfish contact has no real name parts (first/last/nickname/
+        // company/…), its displayLabel is *not* empty — it falls back to a
+        // translatable placeholder such as "(Unnamed)". Treat that placeholder
+        // as "no contact name" so we still fall back to the Signal profile name
+        // (or e164, which recipient.name already falls back to) when
+        // 'Prefer device contacts' is enabled.
+        var hasContactName = contact != null
+            && contact.displayLabel !== ''
+            && contact.displayLabel !== resolvePeopleModel.placeholderDisplayLabel
         if(SettingsBridge.prefer_device_contacts) {
-            return (contact && contact.displayLabel !== '') ? contact.displayLabel : recipientName
+            return hasContactName ? contact.displayLabel : recipientName
         } else {
-            return (recipientName !== '') ? recipientName : (contact ? contact.displayLabel : e164)
+            return (recipientName !== '') ? recipientName
+                : (hasContactName ? contact.displayLabel : e164)
         }
     }
 
