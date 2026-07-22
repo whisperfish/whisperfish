@@ -388,8 +388,12 @@ ApplicationWindow
         var contactName = data.isGroup ? data.sessionName : name
 
         if(notification_privacy === "complete" || notification_privacy === "sender-only") {
-            m.previewSummary = data.senderName
-            m.summary = data.senderName
+            // Use the resolved name (respects 'Prefer device contacts' and
+            // falls back to the Signal profile name) rather than the raw
+            // Signal profile name from the payload, so notifications match
+            // the in-app sender display. Mirrors newMissedCallNotification().
+            m.previewSummary = name
+            m.summary = name
             if(m.subText !== undefined) {
                 m.subText = contactName
             }
