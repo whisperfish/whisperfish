@@ -7,6 +7,7 @@ Page {
     objectName: "linkedDevicesPage"
 
     property bool isPrimaryDevice: SettingsBridge.isPrimaryDevice()
+    property bool debugMode: SettingsBridge.debug_mode
 
     SilicaListView {
         id: listView
@@ -50,17 +51,20 @@ Page {
                 truncationMode: TruncationMode.Fade
                 font.pixelSize: Theme.fontSizeMedium
 
-                // TODO: handle the current device differently?
-                text: if (model.name) {
-                    model.name
-                } else if (model.id == 1) {
-                    //: The nameless primary device in linked devices list
-                    //% "Primary device"
-                    qsTrId("whisperfish-primary-device-name")
-                } else {
-                    //: A nameless secondary device in linked devices list
-                    //% "Device %1"
-                    qsTrId("whisperfish-secondary-device-name").arg(model.id)
+                text: {
+                    var val = debugMode ? "[" + model.id + "] " : "";
+                    if (model.name) {
+                        val += model.name
+                    } else if (model.id == 1) {
+                        //: The nameless primary device in linked devices list
+                        //% "Primary device"
+                        val += qsTrId("whisperfish-primary-device-name")
+                    } else {
+                        //: A nameless secondary device in linked devices list
+                        //% "Device %1"
+                        val += qsTrId("whisperfish-secondary-device-name").arg(model.id)
+                    }
+                    return val
                 }
             }
 
