@@ -2844,7 +2844,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/CreateConversationPage.qml" line="157"/>
         <source>Creating conversation</source>
         <extracomment>Repeat of the title in the header description when a name is known</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Å sette i gang en samtale</translation>
     </message>
     <message id="whisperfish-username-instructions">
         <location filename="../qml/pages/CreateConversationPage.qml" line="170"/>
