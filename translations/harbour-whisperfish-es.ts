@@ -109,56 +109,56 @@
         <translation>Eliminar conversación</translation>
     </message>
     <message id="whisperfish-notification-missed-voice-call">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="277"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="287"/>
         <source>Missed voice call</source>
         <extracomment>Notification text for missed call notification</extracomment>
         <translation>Llamada perdida</translation>
     </message>
     <message id="whisperfish-notification-missed-video-call">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="281"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="291"/>
         <source>Missed video call</source>
         <extracomment>Notification text for missed call notification</extracomment>
         <translation>Videollamada perdida</translation>
     </message>
     <message id="whisperfish-notification-default-message">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="349"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="359"/>
         <source>New Message</source>
         <extracomment>Default label for new message notification</extracomment>
         <translation>Nuevo mensaje</translation>
     </message>
     <message id="whisperfish-notification-mark_as_read">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="412"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="426"/>
         <source>Mark as read</source>
         <extracomment>Notification action: mark message as read</extracomment>
         <translation>Marcar como leído</translation>
     </message>
     <message id="whisperfish-notification-reply_to_message">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="422"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="436"/>
         <source>Reply</source>
         <extracomment>Notification action: Reply to (i.e. quote) the message</extracomment>
         <translation>Respuesta</translation>
     </message>
     <message id="whisperfish-fatal-error-setup-client">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="522"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="536"/>
         <source>Failed to setup Signal client</source>
         <extracomment>Failed to setup signal client error message</extracomment>
         <translation>Error al configurar el cliente Signal</translation>
     </message>
     <message id="whisperfish-fatal-error-invalid-datastore">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="527"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="541"/>
         <source>Failed to setup data storage</source>
         <oldsource>Failed to setup datastore</oldsource>
         <extracomment>Failed to setup datastore error message</extracomment>
         <translation>No se pudo configurar el almacenamiento de datos</translation>
     </message>
     <message id="permission-la-data">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="730"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="744"/>
         <source>Whisperfish data storage</source>
         <extracomment>Permission for Whisperfish data storage</extracomment>
         <translation>Almacenamiento de datos en Whisperfish</translation>
     </message>
     <message id="permission-la-data_description">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="734"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="748"/>
         <source>Store configuration and messages</source>
         <extracomment>Permission description for Whisperfish data storage</extracomment>
         <translation>Almacenar configuración y mensajes</translation>

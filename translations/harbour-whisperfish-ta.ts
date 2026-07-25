@@ -109,56 +109,56 @@
         <translation>உரையாடலை நீக்கு</translation>
     </message>
     <message id="whisperfish-notification-missed-voice-call">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="277"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="287"/>
         <source>Missed voice call</source>
         <extracomment>Notification text for missed call notification</extracomment>
         <translation>குரல் அழைப்பு தவறவிட்டது</translation>
     </message>
     <message id="whisperfish-notification-missed-video-call">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="281"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="291"/>
         <source>Missed video call</source>
         <extracomment>Notification text for missed call notification</extracomment>
         <translation>வீடியோ அழைப்பு தவறவிட்டது</translation>
     </message>
     <message id="whisperfish-notification-default-message">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="349"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="359"/>
         <source>New Message</source>
         <extracomment>Default label for new message notification</extracomment>
         <translation>புதிய செய்தி</translation>
     </message>
     <message id="whisperfish-notification-mark_as_read">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="412"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="426"/>
         <source>Mark as read</source>
         <extracomment>Notification action: mark message as read</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-notification-reply_to_message">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="422"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="436"/>
         <source>Reply</source>
         <extracomment>Notification action: Reply to (i.e. quote) the message</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-fatal-error-setup-client">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="522"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="536"/>
         <source>Failed to setup Signal client</source>
         <extracomment>Failed to setup signal client error message</extracomment>
         <translation>சிக்னல் கிளையண்டை அமைப்பதில் தோல்வி</translation>
     </message>
     <message id="whisperfish-fatal-error-invalid-datastore">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="527"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="541"/>
         <source>Failed to setup data storage</source>
         <oldsource>Failed to setup datastore</oldsource>
         <extracomment>Failed to setup datastore error message</extracomment>
         <translation>தரவு சேமிப்பிடத்தை அமைப்பதில் தோல்வி</translation>
     </message>
     <message id="permission-la-data">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="730"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="744"/>
         <source>Whisperfish data storage</source>
         <extracomment>Permission for Whisperfish data storage</extracomment>
         <translation>விச்பர்ஃபிச் தரவு சேமிப்பு</translation>
     </message>
     <message id="permission-la-data_description">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="734"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="748"/>
         <source>Store configuration and messages</source>
         <extracomment>Permission description for Whisperfish data storage</extracomment>
         <translation>உள்ளமைவு மற்றும் செய்திகளை சேமிக்கவும்</translation>
