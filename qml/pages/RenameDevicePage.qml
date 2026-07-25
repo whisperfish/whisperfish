@@ -2,13 +2,15 @@ import QtQuick 2.2
 import Sailfish.Silica 1.0
 
 Dialog {
-    property int device_id
-    property string device_name
+    id: root
+
+    property int deviceId
+    property string deviceName
 
     canAccept: newName.acceptableInput
 
     onAccepted: {
-        ClientWorker.renameLinkedDevice(device_id, newName.text);
+        ClientWorker.renameLinkedDevice(deviceId, newName.text);
     }
 
     Column {
@@ -18,7 +20,7 @@ Dialog {
             right: parent.right
         }
 
-        DialogHeader {}
+        DialogHeader { }
 
         TextField {
             id: newName
@@ -28,7 +30,7 @@ Dialog {
             label: qsTrId("whisperfish-rename-device-input-label")
             //: Description for rename device input field
             //% "Rename device \"%1\""
-            description: qsTrId("whisperfish-rename-device-input-desc").arg(device_name)
+            description: qsTrId("whisperfish-rename-device-input-desc").arg(root.deviceName)
             // EditDeviceNameFragment.kt -- MAX_LENGTH = 50
             acceptableInput: text.length > 0 && text.length <= 50
         }

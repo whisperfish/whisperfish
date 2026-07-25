@@ -2,11 +2,12 @@ import QtQuick 2.2
 import Sailfish.Silica 1.0
 
 Page {
-    id: linkedDevices
+    id: root
 
     objectName: "linkedDevicesPage"
 
-    property bool is_primary_device: SettingsBridge.isPrimaryDevice()
+    property bool isPrimaryDevice: SettingsBridge.isPrimaryDevice()
+    property bool debugMode: SettingsBridge.debug_mode
 
     SilicaListView {
         id: listView
@@ -24,8 +25,8 @@ Page {
         delegate: ListItem {
             id: delegate
 
-            contentHeight: created.y + created.height + lastSeen.height + Theme.paddingMedium
-            menu: deviceContextMenu
+            contentHeight: lastSeen.y + lastSeen.height + Theme.paddingMedium
+            menu: root.isPrimaryDevice ? deviceContextMenu : undefined
 
             function remove(contentItem) {
                 //: Unlinking remorse info message for unlinking secondary devices (past tense)
@@ -38,29 +39,45 @@ Page {
                     })
             }
 
-            Label {
-                id: name
+            Icon {
+                id: icon
 
                 anchors {
                     left: parent.left
                     leftMargin: Theme.horizontalPageMargin
+                    verticalCenter: parent.verticalCenter
+                }
+                source: model.id === 1
+                        ? "image://theme/icon-m-device"
+                         : "image://theme/icon-m-mobile-network"
+            }
+
+            Label {
+                id: name
+
+                anchors {
+                    left: icon.right
+                    leftMargin: Theme.paddingSmall
                     right: parent.right
                     rightMargin: Theme.horizontalPageMargin
                 }
                 truncationMode: TruncationMode.Fade
                 font.pixelSize: Theme.fontSizeMedium
 
-                // TODO: handle the current device differently?
-                text: if (model.name) {
-                    model.name
-                } else if (model.id == 1) {
-                    //: The nameless primary device in linked devices list
-                    //% "Primary device"
-                    qsTrId("whisperfish-primary-device-name")
-                } else {
-                    //: A nameless secondary device in linked devices list
-                    //% "Device %1"
-                    qsTrId("whisperfish-secondary-device-name").arg(model.id)
+                text: {
+                    var val = debugMode ? "[" + model.id + "] " : "";
+                    if (model.name) {
+                        val += model.name
+                    } else if (model.id == 1) {
+                        //: The nameless primary device in linked devices list
+                        //% "Primary device"
+                        val += qsTrId("whisperfish-primary-device-name")
+                    } else {
+                        //: A nameless secondary device in linked devices list
+                        //% "Device %1"
+                        val += qsTrId("whisperfish-secondary-device-name").arg(model.id)
+                    }
+                    return val
                 }
             }
 
@@ -69,8 +86,8 @@ Page {
 
                 anchors {
                     top: name.bottom
-                    left: parent.left
-                    leftMargin: Theme.horizontalPageMargin
+                    left: icon.right
+                    leftMargin: Theme.paddingSmall
                     right: parent.right
                     rightMargin: Theme.horizontalPageMargin
                 }
@@ -90,15 +107,13 @@ Page {
 
                 anchors {
                     top: created.bottom
-                    topMargin: Theme.paddingSmall
-                    left: parent.left
-                    leftMargin: Theme.horizontalPageMargin
+                    left: icon.right
+                    leftMargin: Theme.paddingSmall
                     right: parent.right
                     rightMargin: Theme.horizontalPageMargin
                 }
                 text: lastSeenTime()
                 font.pixelSize: Theme.fontSizeExtraSmall
-                font.italic: true
 
                 function lastSeenTime() {
                     var diff = (new Date()).valueOf() - model.lastSeen.valueOf()
@@ -124,8 +139,6 @@ Page {
                 ContextMenu {
                     id: menu
 
-                    enabled: is_primary_device
-                    visible: enabled
                     width: parent ? parent.width : Screen.width
 
                     MenuItem {
@@ -134,8 +147,8 @@ Page {
                         text: qsTrId("whisperfish-device-rename")
 
                         onClicked: pageStack.push(Qt.resolvedUrl("RenameDevicePage.qml"), {
-                            device_id: model.id,
-                            device_name: model.name
+                            deviceId: model.id,
+                            deviceName: model.name
                         })
                     }
 
@@ -154,7 +167,7 @@ Page {
 
         PullDownMenu {
             MenuItem {
-                enabled: is_primary_device
+                enabled: root.isPrimaryDevice
                 visible: enabled
                 //: Menu option to add new linked device
                 //% "Add"
@@ -184,7 +197,7 @@ Page {
             id: addDeviceLoader
 
             visible: false
-            source: is_primary_device ? "AddDevice.qml" : ""
+            source: root.isPrimaryDevice ? "AddDevice.qml" : ""
             asynchronous: true
         }
 
