@@ -147,8 +147,8 @@ Page {
                         text: qsTrId("whisperfish-device-rename")
 
                         onClicked: pageStack.push(Qt.resolvedUrl("RenameDevicePage.qml"), {
-                            device_id: model.id,
-                            device_name: model.name
+                            deviceId: model.id,
+                            deviceName: model.name
                         })
                     }
 
