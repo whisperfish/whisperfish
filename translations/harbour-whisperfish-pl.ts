@@ -212,14 +212,14 @@
         <translation>Brak wiadomości</translation>
     </message>
     <message id="whisperfish-session-section-today">
-        <location filename="../qml/pages/LinkedDevices.qml" line="109"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="124"/>
         <location filename="../qml/pages/MainPage.qml" line="347"/>
         <source>Today</source>
         <extracomment>Session section label for today</extracomment>
         <translation>Dzisiaj</translation>
     </message>
     <message id="whisperfish-session-section-yesterday">
-        <location filename="../qml/pages/LinkedDevices.qml" line="112"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="127"/>
         <location filename="../qml/pages/MainPage.qml" line="352"/>
         <source>Yesterday</source>
         <extracomment>Session section label for yesterday</extracomment>
@@ -484,25 +484,25 @@
         <translation type="vanished">Wybierz obrazek</translation>
     </message>
     <message id="whisperfish-add-linked-device">
-        <location filename="../qml/pages/LinkedDevices.qml" line="161"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="174"/>
         <source>Add</source>
         <extracomment>Menu option to add new linked device</extracomment>
         <translation>Dodaj</translation>
     </message>
     <message id="whisperfish-refresh-linked-devices">
-        <location filename="../qml/pages/LinkedDevices.qml" line="175"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="188"/>
         <source>Refresh</source>
         <extracomment>Menu option to refresh linked devices</extracomment>
         <translation>Odśwież</translation>
     </message>
     <message id="whisperfish-linked-devices">
-        <location filename="../qml/pages/LinkedDevices.qml" line="21"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="22"/>
         <source>Linked Devices</source>
         <extracomment>Title for Linked Devices page</extracomment>
         <translation>Połączone Urządzenia</translation>
     </message>
     <message id="whisperfish-device-unlink-message">
-        <location filename="../qml/pages/LinkedDevices.qml" line="33"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="34"/>
         <source>Unlinked</source>
         <oldsource>Unlinking</oldsource>
         <extracomment>Unlinking remorse info message for unlinking secondary devices (past tense)</extracomment>
@@ -519,49 +519,49 @@
         <translation type="vanished">Urządzenie %1</translation>
     </message>
     <message id="whisperfish-primary-device-name">
-        <location filename="../qml/pages/LinkedDevices.qml" line="59"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="74"/>
         <source>Primary device</source>
         <extracomment>The nameless primary device in linked devices list</extracomment>
         <translation>Urządzenie główne</translation>
     </message>
     <message id="whisperfish-secondary-device-name">
-        <location filename="../qml/pages/LinkedDevices.qml" line="63"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="78"/>
         <source>Device %1</source>
         <extracomment>A nameless secondary device in linked devices list</extracomment>
         <translation>Urządzenie %1</translation>
     </message>
     <message id="whisperfish-device-link-date">
-        <location filename="../qml/pages/LinkedDevices.qml" line="84"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="101"/>
         <source>Linked: %1</source>
         <extracomment>Linked device date</extracomment>
         <translation>Połączone: %1</translation>
     </message>
     <message id="whisperfish-device-last-active">
-        <location filename="../qml/pages/LinkedDevices.qml" line="118"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="133"/>
         <source>Last active: %1</source>
         <extracomment>Linked device last active date</extracomment>
         <translation>Ostatnio aktywne: %1</translation>
     </message>
     <message id="whisperfish-device-rename">
-        <location filename="../qml/pages/LinkedDevices.qml" line="134"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="147"/>
         <source>Rename</source>
         <extracomment>Rename the linked or primary device menu option</extracomment>
         <translation>Zmień nazwę</translation>
     </message>
     <message id="whisperfish-device-unlink">
-        <location filename="../qml/pages/LinkedDevices.qml" line="145"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="158"/>
         <source>Unlink</source>
         <extracomment>Device unlink menu option</extracomment>
         <translation>Odłącz</translation>
     </message>
     <message id="whisperfish-device-placeholder">
-        <location filename="../qml/pages/LinkedDevices.qml" line="195"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="208"/>
         <source>No linked device</source>
         <extracomment>Placeholder when no linked device yet</extracomment>
         <translation>Brak połączonych urządzeń</translation>
     </message>
     <message id="whisperfish-device-placeholder-hint">
-        <location filename="../qml/pages/LinkedDevices.qml" line="198"/>
+        <location filename="../qml/pages/LinkedDevices.qml" line="211"/>
         <source>Pull down to link Whisperfish to another device</source>
         <extracomment>Placeholder hint when no linked device yet</extracomment>
         <translation>Przeciągnij w dół, żeby połączyć nowe urządzenie z Whisperfish</translation>
@@ -2645,18 +2645,21 @@ Settings page share contacts</extracomment>
         <translation>od %1</translation>
     </message>
     <message id="whisperfish-export-image-menu">
+        <location filename="../qml/pages/ViewImageGalleryPage.qml" line="123"/>
         <location filename="../qml/pages/ViewImagePage.qml" line="70"/>
         <source>Export image</source>
         <extracomment>Copy the attachment image out of Whisperfish</extracomment>
         <translation>Eksportuj obraz</translation>
     </message>
     <message id="whisperfish-view-image-page-loading">
+        <location filename="../qml/components/PinchZoomImage.qml" line="229"/>
         <location filename="../qml/pages/ViewImagePage.qml" line="272"/>
         <source>Loading image</source>
         <extracomment>Full page placeholder shown while a large image is being loaded</extracomment>
         <translation>Ładowanie obrazu</translation>
     </message>
     <message id="whisperfish-view-image-page-error">
+        <location filename="../qml/components/PinchZoomImage.qml" line="239"/>
         <location filename="../qml/pages/ViewImagePage.qml" line="282"/>
         <source>Failed to load</source>
         <extracomment>Full page placeholder shown when an image failed to load</extracomment>
@@ -3169,13 +3172,13 @@ Settings page share contacts</extracomment>
         <translation>Rozłącz</translation>
     </message>
     <message id="whisperfish-rename-device-input-label">
-        <location filename="../qml/pages/RenameDevicePage.qml" line="28"/>
+        <location filename="../qml/pages/RenameDevicePage.qml" line="30"/>
         <source>New device name</source>
         <extracomment>Short description for rename device input field</extracomment>
         <translation>Nowa nazwa urządzenia</translation>
     </message>
     <message id="whisperfish-rename-device-input-desc">
-        <location filename="../qml/pages/RenameDevicePage.qml" line="31"/>
+        <location filename="../qml/pages/RenameDevicePage.qml" line="33"/>
         <source>Rename device &quot;%1&quot;</source>
         <extracomment>Description for rename device input field</extracomment>
         <translation>Zmień nazwę urządzenia &quot;%1&quot;</translation>
