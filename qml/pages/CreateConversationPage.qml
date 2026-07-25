@@ -154,7 +154,7 @@ Page {
                 description: createConversation.hasName
                     //: Repeat of the title in the header description when a name is known
                     //% "Creating conversation"
-                    ? qsTrId("whisperfish-creating-conversation-title")
+                    ? qsTrId("whisperfish-creating-conversation-description")
                     : ""
             }
 
