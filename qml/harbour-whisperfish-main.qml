@@ -414,7 +414,7 @@ ApplicationWindow
             // Doesn't work as-is.
             // TODO: Drop in Avatar image here.
             // "icon": "harbour-whisperfish",
-            "service": "be.rubdos.harbour-whisperfish.session",
+            "service": "be.rubdos.harbour-whisperfish",
             "path": "/be/rubdos/whisperfish/message",
             "iface": "be.rubdos.whisperfish.session",
             "method": "showConversation",
@@ -424,7 +424,7 @@ ApplicationWindow
             //: Notification action: mark message as read
             //% "Mark as read"
             "displayName": qsTrId("whisperfish-notification-mark_as_read"),
-            "service": "be.rubdos.whisperfish",
+            "service": "be.rubdos.harbour-whisperfish",
             "path": "/be/rubdos/whisperfish/app",
             "iface": "be.rubdos.whisperfish.app",
             "method": "markAsRead",
@@ -434,7 +434,7 @@ ApplicationWindow
             //: Notification action: Reply to (i.e. quote) the message
             //% "Reply"
             "displayName": qsTrId("whisperfish-notification-reply_to_message"),
-            "service": "be.rubdos.whisperfish",
+            "service": "be.rubdos.harbour-whisperfish",
             "path": "/be/rubdos/whisperfish/app",
             "iface": "be.rubdos.whisperfish.app",
             "input" : {
@@ -627,7 +627,7 @@ ApplicationWindow
         iface: "be.rubdos.whisperfish.app"
 
         function markAsRead(param1, messageId) {
-            if (param1 != "sessionId") return;
+            if (param1 != "messageId") return;
             ClientWorker.mark_messages_read([messageId])
         }
 
