@@ -218,10 +218,20 @@ ApplicationWindow
             // Only try to search for contact name if contact is a phone number
             contact = contactsReady ? resolvePeopleModel.personByPhoneNumber(e164, true) : null
         }
+        // When a Sailfish contact has no real name parts (first/last/nickname/
+        // company/…), its displayLabel is *not* empty — it falls back to a
+        // translatable placeholder such as "(Unnamed)". Treat that placeholder
+        // as "no contact name" so we still fall back to the Signal profile name
+        // (or e164, which recipient.name already falls back to) when
+        // 'Prefer device contacts' is enabled.
+        var hasContactName = contact != null
+            && contact.displayLabel !== ''
+            && contact.displayLabel !== resolvePeopleModel.placeholderDisplayLabel
         if(SettingsBridge.prefer_device_contacts) {
-            return (contact && contact.displayLabel !== '') ? contact.displayLabel : recipientName
+            return hasContactName ? contact.displayLabel : recipientName
         } else {
-            return (recipientName !== '') ? recipientName : (contact ? contact.displayLabel : e164)
+            return (recipientName !== '') ? recipientName
+                : (hasContactName ? contact.displayLabel : e164)
         }
     }
 
@@ -378,8 +388,12 @@ ApplicationWindow
         var contactName = data.isGroup ? data.sessionName : name
 
         if(notification_privacy === "complete" || notification_privacy === "sender-only") {
-            m.previewSummary = data.senderName
-            m.summary = data.senderName
+            // Use the resolved name (respects 'Prefer device contacts' and
+            // falls back to the Signal profile name) rather than the raw
+            // Signal profile name from the payload, so notifications match
+            // the in-app sender display. Mirrors newMissedCallNotification().
+            m.previewSummary = name
+            m.summary = name
             if(m.subText !== undefined) {
                 m.subText = contactName
             }
