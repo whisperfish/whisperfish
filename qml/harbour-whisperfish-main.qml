@@ -613,7 +613,7 @@ ApplicationWindow
         iface: "be.rubdos.whisperfish.app"
 
         function markAsRead(param1, messageId) {
-            if (param1 != "sessionId") return;
+            if (param1 != "messageId") return;
             ClientWorker.mark_messages_read([messageId])
         }
 
