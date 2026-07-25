@@ -2,11 +2,11 @@ import QtQuick 2.2
 import Sailfish.Silica 1.0
 
 Page {
-    id: linkedDevices
+    id: root
 
     objectName: "linkedDevicesPage"
 
-    property bool is_primary_device: SettingsBridge.isPrimaryDevice()
+    property bool isPrimaryDevice: SettingsBridge.isPrimaryDevice()
 
     SilicaListView {
         id: listView
@@ -25,7 +25,7 @@ Page {
             id: delegate
 
             contentHeight: created.y + created.height + lastSeen.height + Theme.paddingMedium
-            menu: deviceContextMenu
+            menu: root.isPrimaryDevice ? deviceContextMenu : undefined
 
             function remove(contentItem) {
                 //: Unlinking remorse info message for unlinking secondary devices (past tense)
@@ -124,8 +124,6 @@ Page {
                 ContextMenu {
                     id: menu
 
-                    enabled: is_primary_device
-                    visible: enabled
                     width: parent ? parent.width : Screen.width
 
                     MenuItem {
@@ -154,7 +152,7 @@ Page {
 
         PullDownMenu {
             MenuItem {
-                enabled: is_primary_device
+                enabled: root.isPrimaryDevice
                 visible: enabled
                 //: Menu option to add new linked device
                 //% "Add"
@@ -184,7 +182,7 @@ Page {
             id: addDeviceLoader
 
             visible: false
-            source: is_primary_device ? "AddDevice.qml" : ""
+            source: root.isPrimaryDevice ? "AddDevice.qml" : ""
             asynchronous: true
         }
 
