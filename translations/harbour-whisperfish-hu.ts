@@ -2851,6 +2851,12 @@ Settings page share contacts</extracomment>
         <extracomment>Page header title when a new conversation is being created</extracomment>
         <translation type="unfinished"></translation>
     </message>
+    <message id="whisperfish-creating-conversation-description">
+        <location filename="../qml/pages/CreateConversationPage.qml" line="157"/>
+        <source>Creating conversation</source>
+        <extracomment>Repeat of the title in the header description when a name is known</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-username-instructions">
         <location filename="../qml/pages/CreateConversationPage.qml" line="170"/>
         <source>Enter a Signal username (like johndoe.99) or paste a signal.me link to start a conversation. You can also scan a QR code from the pull-down menu.</source>
