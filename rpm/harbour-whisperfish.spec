@@ -115,11 +115,11 @@ BuildRequires:  perl-Time-Piece
 BuildRequires:  git-core
 %endif
 
-# %if %%{with calling}
-# # Ringrtc needs linking against -lssl and -lcrypto;
-# # currently no way to link against our vendored openssl
-# BuildRequires:  openssl-libs openssl-devel
-# %endif
+%if %{with calling}
+# Ringrtc needs linking against -lssl and -lcrypto;
+# currently no way to link against our vendored openssl
+BuildRequires:  pkgconfig(openssl)
+%endif
 
 BuildRequires:  pkgconfig(systemd)
 
