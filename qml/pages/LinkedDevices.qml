@@ -25,7 +25,7 @@ Page {
         delegate: ListItem {
             id: delegate
 
-            contentHeight: created.y + created.height + lastSeen.height + Theme.paddingMedium
+            contentHeight: lastSeen.y + lastSeen.height + Theme.paddingMedium
             menu: root.isPrimaryDevice ? deviceContextMenu : undefined
 
             function remove(contentItem) {
@@ -39,12 +39,25 @@ Page {
                     })
             }
 
-            Label {
-                id: name
+            Icon {
+                id: icon
 
                 anchors {
                     left: parent.left
                     leftMargin: Theme.horizontalPageMargin
+                    verticalCenter: parent.verticalCenter
+                }
+                source: model.id === 1
+                        ? "image://theme/icon-m-device"
+                         : "image://theme/icon-m-mobile-network"
+            }
+
+            Label {
+                id: name
+
+                anchors {
+                    left: icon.right
+                    leftMargin: Theme.paddingSmall
                     right: parent.right
                     rightMargin: Theme.horizontalPageMargin
                 }
@@ -73,8 +86,8 @@ Page {
 
                 anchors {
                     top: name.bottom
-                    left: parent.left
-                    leftMargin: Theme.horizontalPageMargin
+                    left: icon.right
+                    leftMargin: Theme.paddingSmall
                     right: parent.right
                     rightMargin: Theme.horizontalPageMargin
                 }
@@ -94,15 +107,13 @@ Page {
 
                 anchors {
                     top: created.bottom
-                    topMargin: Theme.paddingSmall
-                    left: parent.left
-                    leftMargin: Theme.horizontalPageMargin
+                    left: icon.right
+                    leftMargin: Theme.paddingSmall
                     right: parent.right
                     rightMargin: Theme.horizontalPageMargin
                 }
                 text: lastSeenTime()
                 font.pixelSize: Theme.fontSizeExtraSmall
-                font.italic: true
 
                 function lastSeenTime() {
                     var diff = (new Date()).valueOf() - model.lastSeen.valueOf()
