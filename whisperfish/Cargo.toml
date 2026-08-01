@@ -32,8 +32,8 @@ percent-encoding = "2.3"
 
 libsignal-service = { git = "https://github.com/whisperfish/libsignal-service-rs", branch = "main", default-features = false, features = ["phonenumber"] }
 
-libsignal-protocol = { git = "https://github.com/signalapp/libsignal", tag = "v0.94.4" }
-zkgroup = { git = "https://github.com/signalapp/libsignal", tag = "v0.94.4" }
+libsignal-protocol = { git = "https://github.com/signalapp/libsignal", tag = "v0.99.0" }
+zkgroup = { git = "https://github.com/signalapp/libsignal", tag = "v0.99.0" }
 
 proc-macro2 = "1.0"
 
