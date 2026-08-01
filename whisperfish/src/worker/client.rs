@@ -449,6 +449,10 @@ pub struct ClientActor {
 
     early_receipt_cache: EarlyReceiptCache,
 
+    /// GroupV2 ids for which a full `RequestGroupV2Info` refresh is already in
+    /// flight, used to dedup the self-healing revision-check path.
+    group_refresh_in_flight: HashSet<[u8; 32]>,
+
     start_time: DateTime<Local>,
 
     profile_updater: Option<Addr<ProfileUpdater>>,
@@ -597,6 +601,8 @@ impl ClientActor {
             attachment_resize_queue: resize_image::AttachmentResizeQueue::default(),
 
             early_receipt_cache: EarlyReceiptCache::new(),
+
+            group_refresh_in_flight: Default::default(),
 
             start_time: Local::now(),
 
@@ -1080,6 +1086,56 @@ impl ClientActor {
                     }
                     message_type = Some(MessageType::GroupChange);
                     ctx.notify(GroupV2Update(group_v2.clone(), session.clone()));
+                } else {
+                    // Ordinary chat message in a known group. Self-heal when local group
+                    // state is out of sync. Two triggers, deduped through a single
+                    // refresh dispatch via `group_refresh_in_flight`:
+                    //   1. The sender's revision is newer than ours (we missed a change).
+                    //   2. The sender is not recorded locally as a full member — a regular
+                    //      group DataMessage can only originate from a full member
+                    //      server-side, so a missing membership row means our state is
+                    //      behind (e.g. crash mid-update). Pending, requesting, banned, and
+                    //      entirely-unknown senders are all caught the same way: none of
+                    //      them can legitimately send a regular group message.
+                    let group_id = store_v2.secret.get_group_identifier();
+
+                    let local_revision = session.unwrap_group_v2().revision as u32;
+                    let incoming_revision = store_v2.revision;
+                    let revision_stale = incoming_revision > local_revision;
+
+                    // The membership backstop only applies to inbound messages
+                    // (sync-sent messages carry the destination, not a member).
+                    let member_missing = if revision_stale || is_sync_sent {
+                        false
+                    } else {
+                        sender_recipient
+                            .as_ref()
+                            .map(|r| {
+                                let gid_hex = hex::encode(group_id);
+                                storage.fetch_group_v2_member(&gid_hex, r.id).is_none()
+                            })
+                            .unwrap_or(false)
+                    };
+
+                    if (revision_stale || member_missing)
+                        && !self.group_refresh_in_flight.contains(&group_id)
+                    {
+                        if revision_stale {
+                            tracing::info!(
+                                local_revision,
+                                incoming_revision,
+                                "Incoming group message carries a newer revision than local \
+                                 state; requesting full group refresh."
+                            );
+                        } else {
+                            tracing::info!(
+                                "Sender not recorded as a group member locally; \
+                                 requesting full group refresh."
+                            );
+                        }
+                        self.group_refresh_in_flight.insert(group_id);
+                        ctx.notify(RequestGroupV2Info(store_v2.clone(), key_stack));
+                    }
                 }
             } else {
                 tracing::info!(

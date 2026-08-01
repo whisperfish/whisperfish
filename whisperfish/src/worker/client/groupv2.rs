@@ -91,6 +91,8 @@ impl Handler<RequestGroupV2Info> for ClientActor {
 
         let client = ctx.address();
 
+        let group_id_for_cleanup = group_id;
+
         Box::pin(
             async move {
             let u_ws = u_ws.await?;
@@ -368,7 +370,8 @@ impl Handler<RequestGroupV2Info> for ClientActor {
             }
             .instrument(tracing::info_span!("fetch group"))
             .into_actor(self)
-            .map(|result, _act, _ctx| {
+            .map(move |result, act, _ctx| {
+                let _ = act.group_refresh_in_flight.remove(&group_id_for_cleanup);
                 let _group = match result {
                     Ok(g) => g,
                     Err(e) => {
