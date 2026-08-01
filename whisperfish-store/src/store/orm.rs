@@ -1796,6 +1796,7 @@ mod tests {
             description: Some("desc".into()),
             announcement_only: false,
             access_required_for_member_labels: 0,
+            terminated: false,
         }
     }
 

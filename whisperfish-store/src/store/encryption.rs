@@ -44,7 +44,7 @@ impl StorageEncryption {
             tracing::trace!("Computed the storage key, salt was {:?}", salt_storage);
 
             // Derive database key
-            let params = scrypt::Params::new(14, 8, 1, 32).unwrap();
+            let params = scrypt::Params::new(14, 8, 1).unwrap();
             let mut key_database = [0u8; 32];
             scrypt::scrypt(password, &salt_database, &params, &mut key_database)
                 .context("Cannot compute database key")?;
@@ -63,8 +63,8 @@ impl StorageEncryption {
     /// Encrypt data in place. Uses the storage key. IV and MAC are appended to the msg vector.
     pub fn encrypt(&self, msg: &mut Vec<u8>) {
         // Load traits
-        use aes::cipher::{BlockEncryptMut, KeyIvInit, block_padding::Pkcs7};
-        use hmac::Mac;
+        use aes::cipher::{BlockModeEncrypt, KeyIvInit, block_padding::Pkcs7};
+        use hmac::{KeyInit, Mac};
         use rand::RngCore;
         type Aes128CbcEnc = cbc::Encryptor<aes::Aes128>;
 
@@ -76,7 +76,7 @@ impl StorageEncryption {
         //
         // Create cipher object
         let key = &self.key_storage.expose_secret()[0..16];
-        let cipher = Aes128CbcEnc::new(key.into(), &iv.into());
+        let cipher = Aes128CbcEnc::new_from_slices(key, &iv).expect("CBC initialization error");
 
         // The encrypt function expects a vector with the message and appropriate space for
         // padding. Padding is always necessary even if message length is a multiple of aes block
@@ -87,7 +87,7 @@ impl StorageEncryption {
 
         // Encrypt the message
         let encrypted_slice = cipher
-            .encrypt_padded_mut::<Pkcs7>(&mut msg[..], msg_len)
+            .encrypt_padded::<Pkcs7>(&mut msg[..], msg_len)
             .expect("AES CBC encryption error");
 
         // To be sure that msg vector really got encrypted we compare the length of the returned
@@ -117,10 +117,9 @@ impl StorageEncryption {
 
     /// Decrypts message in place. Expects IV and MAC also in msg vector.
     pub fn decrypt(&self, msg: &mut Vec<u8>) -> Result<(), anyhow::Error> {
-        use aes::cipher::{BlockDecryptMut, KeyIvInit, block_padding::Pkcs7};
-        use hmac::Mac;
+        use aes::cipher::{BlockModeDecrypt, KeyIvInit, block_padding::Pkcs7};
+        use hmac::{KeyInit, Mac};
         type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
-        use cipher::generic_array::GenericArray;
 
         const MIN_MESSAGE_LEN: usize = 16 + 32; // IV (16) + MSG (0) + MAC (32)
         anyhow::ensure!(
@@ -143,13 +142,13 @@ impl StorageEncryption {
         verifier.update(iv);
         verifier.update(content);
         verifier
-            .verify(GenericArray::from_slice(mac))
+            .verify_slice(mac)
             .map_err(|_| anyhow::anyhow!("MAC verification failed"))?;
 
         // Decrypt message
         let cipher = Aes128CbcDec::new_from_slices(key, iv).expect("CBC initialization error");
         let cleartext_len = cipher
-            .decrypt_padded_mut::<Pkcs7>(content)
+            .decrypt_padded::<Pkcs7>(content)
             .map_err(|_| anyhow::anyhow!("AES CBC decryption error"))?
             .len();
 
@@ -276,16 +275,16 @@ mod tests {
         let mut iv = [0u8; 16];
         rand::rng().fill_bytes(&mut iv);
 
-        use aes::cipher::{BlockEncryptMut, KeyIvInit, block_padding::Pkcs7};
-        use cipher::generic_array::GenericArray;
+        use aes::cipher::{BlockModeEncrypt, KeyIvInit, block_padding::Pkcs7};
         type Aes128CbcEnc = cbc::Encryptor<aes::Aes128>;
 
         // Encrypt
-        let cipher = Aes128CbcEnc::new(GenericArray::from_mut_slice(&mut key[..16]), &iv.into());
-        let ciphertext = cipher.encrypt_padded_vec_mut::<Pkcs7>(my_cleartext);
+        let cipher =
+            Aes128CbcEnc::new_from_slices(&key[..16], &iv).expect("CBC initialization error");
+        let ciphertext = cipher.encrypt_padded_vec::<Pkcs7>(my_cleartext);
 
         let mac = {
-            use hmac::{Hmac, Mac};
+            use hmac::{Hmac, KeyInit, Mac};
             use sha2::Sha256;
             // Verify HMAC SHA256, 32 last bytes
             let mut mac = Hmac::<Sha256>::new_from_slice(&key[16..]).expect("MAC keylength error");
