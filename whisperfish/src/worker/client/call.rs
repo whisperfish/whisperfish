@@ -121,7 +121,7 @@ impl super::ClientActor {
                 return;
             };
 
-            let age = Utc::now() - metadata.timestamp;
+            let age = Utc::now() - metadata.client_timestamp;
 
             let local_device_id = self.config.get_device_id();
 
@@ -167,7 +167,7 @@ impl super::ClientActor {
 
         let ringer_recipient = storage.fetch_or_insert_recipient_by_address(&metadata.sender);
 
-        let sent_time = metadata.timestamp;
+        let sent_time = metadata.client_timestamp;
         let age = Utc::now() - sent_time;
         let seconds = std::cmp::max(age.num_seconds(), 0);
         tracing::debug!(

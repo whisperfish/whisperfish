@@ -3219,9 +3219,13 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             break None;
                         }
                         // Capture sessions not existing in both sealed and authenticated cases.
-                        Err(ServiceError::SignalProtocolError(SignalProtocolError::SessionNotFound(sender))) |
+                        Err(ServiceError::SignalProtocolError(SignalProtocolError::SessionNotFound(
+                            SessionNotFound { address: Some(sender), .. },
+                        ))) |
                             Err(ServiceError::SealedSenderDecryptionError(SealedSenderDecryptionError {
-                            inner: SignalProtocolError::SessionNotFound(sender),
+                            inner: SignalProtocolError::SessionNotFound(
+                                SessionNotFound { address: Some(sender), .. },
+                            ),
                             // Force the sender to be present; this ensures the trust roots have
                             // been validated.  Additionally, the sender is known to be the same as
                             // the one used in the decryption attempt.

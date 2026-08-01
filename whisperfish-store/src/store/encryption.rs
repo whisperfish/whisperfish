@@ -150,7 +150,7 @@ impl StorageEncryption {
         let cipher = Aes128CbcDec::new_from_slices(key, iv).expect("CBC initialization error");
         let cleartext_len = cipher
             .decrypt_padded_mut::<Pkcs7>(content)
-            .context("AES CBC decryption error")?
+            .map_err(|_| anyhow::anyhow!("AES CBC decryption error"))?
             .len();
 
         // Remove padding at the end and replace the message reference with a reference to our

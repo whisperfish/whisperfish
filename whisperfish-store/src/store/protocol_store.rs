@@ -1,7 +1,7 @@
 use super::*;
 use libsignal_service::pre_keys::{KyberPreKeyStoreExt, PreKeysStore};
 use libsignal_service::protocol::{
-    self, GenericSignedPreKey, IdentityKeyPair, SignalProtocolError,
+    self, GenericSignedPreKey, IdentityKeyPair, SessionNotFound, SignalProtocolError,
 };
 use libsignal_service::protocol::{ServiceId, ServiceIdKind};
 use libsignal_service::session_store::SessionStoreExt;
@@ -1000,7 +1000,10 @@ impl<T: Identity<O>, O: Observable> SessionStoreExt for IdentityStorage<T, O> {
                 "Could not delete session {}, assuming non-existing.",
                 addr.to_string(),
             );
-            Err(SignalProtocolError::SessionNotFound(addr.clone()))
+            Err(SignalProtocolError::SessionNotFound(SessionNotFound::new(
+                addr.clone(),
+                "delete_session",
+            )))
         } else {
             Ok(())
         }
