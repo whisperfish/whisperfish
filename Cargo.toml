@@ -15,7 +15,6 @@ edition = "2024"
 
 [patch.crates-io]
 # Required for libsignal's lizard2 patches to c25519
-curve25519-dalek = { git = 'https://github.com/signalapp/curve25519-dalek', tag = 'signal-curve25519-4.1.3' }
 qttypes = { git = 'https://github.com/woboq/qmetaobject-rs' }
 qmetaobject = { git = 'https://github.com/woboq/qmetaobject-rs' }
 qmetaobject_impl = { git = 'https://github.com/woboq/qmetaobject-rs' }
