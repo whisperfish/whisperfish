@@ -29,12 +29,6 @@ pushd ~/whisperfish-build
 GIT_VERSION=$(git describe  --exclude release,tag --dirty=-dirty)
 export GIT_VERSION
 
-# This comes from job cache or the fetch scripy
-echo "Restoring ringrtc cache..."
-pwd
-sudo chown -R "$USER":"$USER" "$CI_PROJECT_DIR/ringrtc"
-mv "$CI_PROJECT_DIR/ringrtc" ringrtc
-
 if [ -z "$CARGO_HOME" ]; then
     echo "Warning: CARGO_HOME is not set, default to 'cargo'"
     export CARGO_HOME=cargo
@@ -81,6 +75,10 @@ if [ "$HARBOUR" == "1" ]; then
     FEATURES="--with harbour"
 else
     FEATURES="--with calling --with tools"
+    # This comes from job cache or the fetch scripy
+    echo "Restoring ringrtc cache..."
+    sudo chown -R "$USER":"$USER" "$CI_PROJECT_DIR/ringrtc"
+    mv "$CI_PROJECT_DIR/ringrtc" ringrtc
 fi
 
 echo "Building Whisperfish for SailfishOS-$SFOS_VERSION-$MER_ARCH..."
@@ -110,8 +108,10 @@ sudo mv target "$CI_PROJECT_DIR/target"
 echo "Moving CARGO_HOME to cache..."
 sudo mv $CARGO_HOME "$CI_PROJECT_DIR/cargo"
 
-echo "Moving ringrtc to cache..."
-sudo mv ringrtc "$CI_PROJECT_DIR/ringrtc"
+if [ "$HARBOUR" != "1" ]; then
+    echo "Moving ringrtc to cache..."
+    sudo mv ringrtc "$CI_PROJECT_DIR/ringrtc"
+fi
 
 popd
 
