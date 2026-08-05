@@ -2878,7 +2878,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/CreateConversationPage.qml" line="51"/>
         <source>Enter a username (e.g. johndoe.99) or a signal.me link.</source>
         <extracomment>Live validation hint when the entered text is neither a username nor a link</extracomment>
-        <translation>Voer een gebruikersnaam (bv. johndoe.99) of een signal.me link in.</translation>
+        <translation>Voer een gebruikersnaam (bv. johndoe.99) of een signal.me-link in.</translation>
     </message>
     <message id="whisperfish-username-not-found-text">
         <location filename="../qml/pages/CreateConversationPage.qml" line="81"/>
@@ -2915,7 +2915,7 @@ Settings page share contacts</extracomment>
         <source>New conversation</source>
         <oldsource>Creating conversation</oldsource>
         <extracomment>Page header title when a new conversation is being created</extracomment>
-        <translation>Gesprek wordt aangemaakt</translation>
+        <translation>Nieuw gesprek</translation>
     </message>
     <message id="whisperfish-creating-conversation-description">
         <location filename="../qml/pages/CreateConversationPage.qml" line="157"/>
@@ -2927,13 +2927,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/CreateConversationPage.qml" line="170"/>
         <source>Enter a Signal username (like johndoe.99) or paste a signal.me link to start a conversation. You can also scan a QR code from the pull-down menu.</source>
         <extracomment>Instructional text on the empty create-conversation page</extracomment>
-        <translation>Voer een Signal gebruikersnaam (bv. johndoe.99) in of plak een signal.me link om een gesprek te beginnen. Sleep omlaag om een QR-code te scannen.</translation>
+        <translation>Voer een Signal-gebruikersnaam (bv. johndoe.99) in of plak een signal.me-link om een gesprek te beginnen. Veeg omlaag om een QR-code te scannen.</translation>
     </message>
     <message id="whisperfish-username-query-placeholder">
         <location filename="../qml/pages/CreateConversationPage.qml" line="179"/>
         <source>Username or signal.me link</source>
         <extracomment>Placeholder for the username/link entry field</extracomment>
-        <translation>Gebruikersnaam of signal.me link</translation>
+        <translation>Gebruikersnaam of signal.me-link</translation>
     </message>
     <message id="whisperfish-username-query-label">
         <location filename="../qml/pages/CreateConversationPage.qml" line="182"/>
@@ -3199,7 +3199,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/UsernameQrScannerPage.qml" line="26"/>
         <source>Scan username link</source>
         <extracomment>QR scanner page title</extracomment>
-        <translation>Scan gebruikersnaam link</translation>
+        <translation>Gebruikersnaamlink scannen</translation>
     </message>
     <message id="whisperfish-username-qr-camera-starting">
         <location filename="../qml/pages/UsernameQrScannerPage.qml" line="77"/>
