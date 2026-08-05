@@ -1897,7 +1897,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="31"/>
         <source>Reset identity key</source>
         <extracomment>Reset identity key menu item</extracomment>
-        <translation>Réinitialissr la clé d&apos;identité</translation>
+        <translation>Réinitialiser la clé d&apos;identité</translation>
     </message>
     <message id="whisperfish-reset-identity-message">
         <location filename="../qml/components/GroupMemberListView.qml" line="128"/>
