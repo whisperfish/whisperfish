@@ -606,7 +606,7 @@
         <location filename="../qml/pages/MainPage.qml" line="96"/>
         <source>New conversation</source>
         <extracomment>Whisperfish main menu item: start a conversation by username/QR</extracomment>
-        <translation type="unfinished">’t Gesprek wordt aangemaakt</translation>
+        <translation>Nief gesprek</translation>
     </message>
     <message id="whisperfish-settings-menu">
         <location filename="../qml/pages/MainPage.qml" line="114"/>
@@ -630,7 +630,7 @@
         <source>Loading messages</source>
         <oldsource>Synchronizing</oldsource>
         <extracomment>Whisperfish connection status message</extracomment>
-        <translation type="unfinished">Synchroniseren</translation>
+        <translation>Berichten laden</translation>
     </message>
     <message id="whisperfish-registration-required-message">
         <location filename="../qml/pages/MainPage.qml" line="304"/>
@@ -808,7 +808,7 @@
         <location filename="../qml/pages/RecipientProfilePage.qml" line="264"/>
         <source>Username</source>
         <extracomment>Profile username field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Gebruikersnaam</translation>
     </message>
     <message id="whisperfish-profile-about">
         <location filename="../qml/pages/ProfilePage.qml" line="291"/>
@@ -1242,7 +1242,7 @@ Settings page share contacts</extracomment>
         <source>Signal has requested an additional captcha from you. Complete the captcha in order to restore the ability to send messages.</source>
         <oldsource>Signal has requested additional capcha from you. Continue the captcha in order to restore ability to send messages.</oldsource>
         <extracomment>Signal has requested additional captcha description</extracomment>
-        <translation type="unfinished">Signal vraagt van nog een captcha op te lossen. Lost de captcha op voôr terug berichten te kunnen sturen.</translation>
+        <translation>Signal vraagt nog een captcha. Lost de captcha op voôr terug berichten te kunnen sturen.</translation>
     </message>
     <message id="whisperfish-captcha-requested-try-again">
         <location filename="../qml/pages/ProofSubmitPage.qml" line="45"/>
@@ -1403,45 +1403,45 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="227"/>
         <source>Image attachments quality</source>
         <extracomment>Settings page scale image attachments</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kwaliteit van fotobijlagen</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-high-text">
         <location filename="../qml/pages/Settings.qml" line="233"/>
         <source>High</source>
         <extracomment>Settings page, use high attachment quality</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Hoôg</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-high-description">
         <location filename="../qml/pages/Settings.qml" line="236"/>
         <source>Resize images larger than 4096 pixels in width or height or 3.0MB in size. Increases data usage over standard quality.</source>
         <oldsource>Resize images larger than 4096 pixels in width or height or 3.0MB in size. Using this increases data usage.</oldsource>
         <extracomment>Settings page, high attachment quality description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Herschaalt fotookes grôter als 4096 pixels in breêdte of hoôgte of grôter als 3,0 MB. Hiermee verhoôgt wel u dataverbruik vergeleken me’ de standaardkwaliteit.</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-standard-text">
         <location filename="../qml/pages/Settings.qml" line="242"/>
         <source>Standard</source>
         <extracomment>Settings page, use standard (medium) attachment quality</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Standaard</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-standard-description">
         <location filename="../qml/pages/Settings.qml" line="245"/>
         <source>Resize images larger than 2048 pixels in width or height or over 1.5MB in size.</source>
         <extracomment>Settings page, standard (medium) attachment quality description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Herschaalt fotookes grôter als 2048 pixels in breêdte of hoôgte of grôter als 1,5 MB.</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-low-text">
         <location filename="../qml/pages/Settings.qml" line="251"/>
         <source>Low</source>
         <extracomment>Settings page, use low attachment quality</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Leêg</translation>
     </message>
     <message id="whisperfish-settings-attachment-quality-low-description">
         <location filename="../qml/pages/Settings.qml" line="254"/>
         <source>Resize images larger than 2048 pixels in width or height or 1.0MB in size. Recommended for low memory devices or for minimizing data usage.</source>
         <oldsource>Resize images larger than 2048 pixels in width or height or 1.0MB in size. Recommened for low memory devices or minimizing data usage.</oldsource>
         <extracomment>Settings page, low attachment quality description</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Herschaalt fotookes grôter als 2048 pixels in breêdte of hoôgte of grôter als 1,0 MB. Deze kwaliteit is aanbevolen voôr toestellen me weinig geheugen of voôr u dataverbruik te bepèrken.</translation>
     </message>
     <message id="whisperfish-settings-save-attachments">
         <location filename="../qml/pages/Settings.qml" line="274"/>
@@ -1579,7 +1579,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="690"/>
         <source>Voice note codec</source>
         <extracomment>Voice note codec (dependeing on gstreamer version)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Spraakberichtencodec</translation>
     </message>
     <message id="whisperfish-settings-enable-background-mode">
         <location filename="../qml/pages/Settings.qml" line="548"/>
@@ -2107,7 +2107,7 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/Settings.qml" line="694"/>
         <source>Incompatible with Signal iOS</source>
         <extracomment>Short warning note that the voice note is being recorded in Opus format</extracomment>
-        <translation type="unfinished">Ni compatibel me Signal iOS</translation>
+        <translation>Ni compatibel me Signal iOS</translation>
     </message>
     <message id="whisperfish-chat-input-attachment-label" numerus="yes">
         <location filename="../qml/components/ChatTextInput.qml" line="303"/>
@@ -2587,13 +2587,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="319"/>
         <source>%1 sent you a sticker: %2</source>
         <extracomment>Message with a sticker, %1 is a name, %2 is an emoji</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 heeft u ne sticker gestuurd: %2</translation>
     </message>
     <message id="whisperfish-service-message-contact">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="323"/>
         <source>Contact cards can&apos;t yet be supported</source>
         <extracomment>Message with a contact card</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Visitekaartjes worden nog ni ondersteund</translation>
     </message>
     <message id="whisperfish-service-message-not-supported">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="329"/>
@@ -2796,7 +2796,7 @@ Settings page share contacts</extracomment>
         <source>Do you want to register Whisperfish as primariy device or link it as secondary device to an existing Signal app?</source>
         <oldsource>Do you want to register whisperfish as primariy device or link it as secondary device to an existing signal app?</oldsource>
         <extracomment>registration type prompt text</extracomment>
-        <translation type="unfinished">Wilde Whisperfish registreren as primair toestel of wilde ’t as secundair toestel aan nen bestaande Signal-app koppelen?</translation>
+        <translation>Wilde Whisperfish registreren als primair toestel of wilde ’t als secundair toestel aan nen bestaande Signal-app koppelen?</translation>
     </message>
     <message id="whisperfish-register-primary-button-label">
         <location filename="../qml/pages/SetupRegistrationTypePage.qml" line="50"/>
@@ -2867,74 +2867,74 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/CreateConversationPage.qml" line="47"/>
         <source>Usernames don&apos;t start with @.</source>
         <extracomment>Live validation hint for a leading @</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Gebruikersnamen beginnen ni me @.</translation>
     </message>
     <message id="whisperfish-username-format-hint">
         <location filename="../qml/pages/CreateConversationPage.qml" line="51"/>
         <source>Enter a username (e.g. johndoe.99) or a signal.me link.</source>
         <extracomment>Live validation hint when the entered text is neither a username nor a link</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Geeft ne gebruikersnaam in (bv. rute.98) of ne signal.me-link.</translation>
     </message>
     <message id="whisperfish-username-not-found-text">
         <location filename="../qml/pages/CreateConversationPage.qml" line="81"/>
         <source>%1 is not a Signal user. Make sure you&apos;ve entered the complete username.</source>
         <extracomment>Username lookup completed but no account matched</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 gebruikt Signal ni. Controleert of da’ ge wel gans de gebruikersnaam hed ingetikt.</translation>
     </message>
     <message id="whisperfish-username-resolver-unavailable-text">
         <location filename="../qml/pages/CreateConversationPage.qml" line="85"/>
         <source>Not ready yet. Please try again in a moment.</source>
         <extracomment>Username resolver actor not available (boot-window race)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nog ni’ gereêd. Probeer ’t sebiet nog ne keêr.</translation>
     </message>
     <message id="whisperfish-username-lookup-failed-text">
         <location filename="../qml/pages/CreateConversationPage.qml" line="89"/>
         <source>Couldn&apos;t look up this username or link.</source>
         <extracomment>Username lookup failed for a generic reason (network / malformed link)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kost deze gebruikersnaam of link ni opzoeken.</translation>
     </message>
     <message id="whisperfish-username-scan-qr-menu">
         <location filename="../qml/pages/CreateConversationPage.qml" line="127"/>
         <source>Scan QR code</source>
         <extracomment>Pull-down menu item to scan a username-link QR code</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>QR-code scannen</translation>
     </message>
     <message id="whisperfish-username-clear-menu">
         <location filename="../qml/pages/CreateConversationPage.qml" line="134"/>
         <source>Clear</source>
         <extracomment>Pull-down menu item to clear the current query and retry</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Wissen</translation>
     </message>
     <message id="whisperfish-creating-conversation-title">
         <location filename="../qml/pages/CreateConversationPage.qml" line="153"/>
         <source>New conversation</source>
         <oldsource>Creating conversation</oldsource>
         <extracomment>Page header title when a new conversation is being created</extracomment>
-        <translation type="unfinished">’t Gesprek wordt aangemaakt</translation>
+        <translation>Nief gesprek</translation>
     </message>
     <message id="whisperfish-creating-conversation-description">
         <location filename="../qml/pages/CreateConversationPage.qml" line="157"/>
         <source>Creating conversation</source>
         <extracomment>Repeat of the title in the header description when a name is known</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Gesprek aanmaken</translation>
     </message>
     <message id="whisperfish-username-instructions">
         <location filename="../qml/pages/CreateConversationPage.qml" line="170"/>
         <source>Enter a Signal username (like johndoe.99) or paste a signal.me link to start a conversation. You can also scan a QR code from the pull-down menu.</source>
         <extracomment>Instructional text on the empty create-conversation page</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Geeft ne Signal-gebruikersnaam in (gelijk rute.98) of plakt ne signal.me-link voôr e gesprek te beginnen. Ge kunt oôk naar omleêg vagen voôr een QR-code te scannen.</translation>
     </message>
     <message id="whisperfish-username-query-placeholder">
         <location filename="../qml/pages/CreateConversationPage.qml" line="179"/>
         <source>Username or signal.me link</source>
         <extracomment>Placeholder for the username/link entry field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Gebruikersnaam of signal.me-link</translation>
     </message>
     <message id="whisperfish-username-query-label">
         <location filename="../qml/pages/CreateConversationPage.qml" line="182"/>
         <source>Username</source>
         <extracomment>Label for the username/link entry field</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Gebruikersnaam</translation>
     </message>
     <message id="whisperfish-captcha-test-title">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="15"/>
@@ -3194,13 +3194,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/UsernameQrScannerPage.qml" line="26"/>
         <source>Scan username link</source>
         <extracomment>QR scanner page title</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Gebruikersnaamlink scannen</translation>
     </message>
     <message id="whisperfish-username-qr-camera-starting">
         <location filename="../qml/pages/UsernameQrScannerPage.qml" line="77"/>
         <source>Starting camera…</source>
         <extracomment>Hint shown while the camera is starting up</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>De camera wor’ gestart…</translation>
     </message>
 </context>
 </TS>
