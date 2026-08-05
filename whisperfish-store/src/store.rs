@@ -1789,6 +1789,11 @@ impl<O: Observable> Storage<O> {
             if affected > 0 {
                 self.observe_upsert(schema::receipts::table, PrimaryKey::Unknown)
                     .with_relation(schema::messages::table, pointer.message_id)
+                    .with_transitive_relation(
+                        schema::messages::table,
+                        schema::sessions::table,
+                        pointer.session_id,
+                    )
                     .with_relation(schema::recipients::table, rcpt.id);
             }
         }
@@ -1929,6 +1934,11 @@ impl<O: Observable> Storage<O> {
             if affected > 0 {
                 self.observe_upsert(schema::receipts::table, PrimaryKey::Unknown)
                     .with_relation(schema::messages::table, pointer.message_id)
+                    .with_transitive_relation(
+                        schema::messages::table,
+                        schema::sessions::table,
+                        pointer.session_id,
+                    )
                     .with_relation(schema::recipients::table, rcpt.id);
             }
         }
