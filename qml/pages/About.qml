@@ -316,6 +316,7 @@ Page {
                     "Eric" + "\n" +
                     "Thomas Rouyer" + "\n" +
                     "Antoine BEAUJOT" + "\n" +
+                    "Nathan" + "\n" +
                     "Thibaut Vandervelden" + "\n" +
                     "carlosgonz"
                 }
