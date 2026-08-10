@@ -285,6 +285,8 @@ export RUSTFLAGS="$RUSTFLAGS -C target-feature=+sha2,+neon"
 export RUSTFLAGS="$RUSTFLAGS --cfg sha2_backend=\"soft\""
 %endif
 
+export CARGO_TARGET_I686_UNKNOWN_LINUX_GNU_RUSTFLAGS="--cfg sha2_backend=\"soft\""
+
 %if %{with tracy}
 FEATURES="$FEATURES,tracy"
 %endif
