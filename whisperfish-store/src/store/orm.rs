@@ -1959,7 +1959,7 @@ mod tests {
         let mut g2 = get_group_v2();
         assert_eq!(
             format!("{:?}", g2),
-            "GroupV2 { id: \"abc\", name: \"G2\", master_key: \"123\", revision: 42, invite_link_password: None, access_required_for_attributes: 0, access_required_for_members: 0, access_required_for_add_from_invite_link: 0, avatar: None, description: Some(\"desc\"), announcement_only: false, access_required_for_member_labels: 0 }"
+            "GroupV2 { id: \"abc\", name: \"G2\", master_key: \"123\", revision: 42, invite_link_password: None, access_required_for_attributes: 0, access_required_for_members: 0, access_required_for_add_from_invite_link: 0, avatar: None, description: Some(\"desc\"), announcement_only: false, access_required_for_member_labels: 0, terminated: false }"
         );
         g2.description = None;
         assert_eq!(format!("{}", g2), "GroupV2 { id: \"abc\", name: \"G2\" }");
