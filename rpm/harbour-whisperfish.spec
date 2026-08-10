@@ -280,6 +280,11 @@ export RUSTFLAGS="%{?rustflags}"
 export RUSTFLAGS="$RUSTFLAGS -C target-feature=+sha2,+neon"
 %endif
 
+%ifarch %arm
+# On armv7hl, force the sha2 backend to software
+export RUSTFLAGS="$RUSTFLAGS --cfg sha2_backend=\"soft\""
+%endif
+
 %if %{with tracy}
 FEATURES="$FEATURES,tracy"
 %endif
