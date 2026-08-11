@@ -36,6 +36,7 @@ use libsignal_service::proto::SyncMessage;
 use libsignal_service::proto::data_message::{Delete, Quote};
 use libsignal_service::proto::sync_message::Blocked;
 use libsignal_service::proto::sync_message::Configuration;
+use libsignal_service::proto::sync_message::Content as SyncMessageContent;
 use libsignal_service::proto::sync_message::Keys;
 use libsignal_service::proto::sync_message::MessageRequestResponse;
 use libsignal_service::proto::sync_message::Read;
@@ -900,7 +901,8 @@ impl ClientActor {
         edit: Option<NaiveDateTime>,
     ) -> bool {
         let mut is_valid = true;
-        let timestamp = metadata.timestamp.timestamp_millis() as u64;
+        // TODO: use the server_timestamp for whatever it's useful/correct!
+        let client_timestamp = metadata.client_timestamp.timestamp_millis() as u64;
         let is_sync_sent = sync_sent.is_some();
 
         let mut storage = self.storage.clone().expect("storage");
@@ -947,34 +949,9 @@ impl ClientActor {
         // Determine the message type and text body contents.
         // Message is visibly inserted to chat if MessageType is set
         // and/or alternative (i.e. placeholder) body text is given.
-        let (mut message_type, mut alt_body) = if flags & DataMessageFlags::EndSession as i32 != 0 {
-            let storage = storage.clone();
-            if let Some(svc_addr) = sender_recipient
-                .as_ref()
-                .and_then(|r| r.to_service_address())
-            {
-                let dest_identity = metadata.destination.kind();
-                actix::spawn(async move {
-                    if let Err(e) = match dest_identity {
-                        ServiceIdKind::Aci => {
-                            storage.aci_storage().delete_all_sessions(&svc_addr).await
-                        }
-                        ServiceIdKind::Pni => {
-                            storage.pni_storage().delete_all_sessions(&svc_addr).await
-                        }
-                    } {
-                        tracing::error!(
-                            "End session requested for {}, but could not end session: {:?}",
-                            &svc_addr.service_id_string(),
-                            e
-                        );
-                    };
-                });
-            } else {
-                tracing::error!("Requested session reset but no service address associated");
-            }
-            (Some(MessageType::EndSession), None)
-        } else if flags & DataMessageFlags::ProfileKeyUpdate as i32 != 0 {
+        let (mut message_type, mut alt_body) = if flags & DataMessageFlags::ProfileKeyUpdate as i32
+            != 0
+        {
             (Some(MessageType::ProfileKeyUpdate), None)
         } else if flags & DataMessageFlags::ExpirationTimerUpdate as i32 != 0 {
             (Some(MessageType::ExpirationTimerUpdate), Some("".into()))
@@ -1205,8 +1182,8 @@ impl ClientActor {
             );
         }
 
-        let timestamp = millis_to_naive_chrono(if is_sync_sent && timestamp > 0 {
-            timestamp
+        let timestamp = millis_to_naive_chrono(if is_sync_sent && client_timestamp > 0 {
+            client_timestamp
         } else {
             msg.timestamp()
         });
@@ -1353,27 +1330,25 @@ impl ClientActor {
                     sender.send_contact_details(&local_addr.into(), None, contacts, false, true).await?;
                 },
                 RequestType::Configuration => {
-                    sender.send_sync_message(SyncMessage {configuration: Some(configuration), ..SyncMessage::with_padding(&mut rand::rng())}).await?;
+                    sender.send_sync_message(configuration).await?;
                 },
                 RequestType::Keys => {
                     let aep = storage.fetch_account_entropy_pool();
-                    let master_key = storage.fetch_master_key();
                     let keys = Keys {
-                        master: master_key.map(|k| k.into()),
                         account_entropy_pool: aep.map(|p| p.to_string()),
                         media_root_backup_key: None,
                     };
-                    sender.send_sync_message(SyncMessage { keys: Some(keys), ..SyncMessage::with_padding(&mut rand::rng())}).await?;
+                    sender.send_sync_message(keys).await?;
                 }
                 RequestType::Blocked => {
                     let blocked_acis = storage.fetch_blocked_acis();
-                    let blocked = Some(Blocked {
+                    let blocked = Blocked {
                         numbers: storage.fetch_blocked_numbers().into_iter().map(|e| e.to_string()).collect_vec(),
                         acis: blocked_acis.iter().map(|e| e.to_string()).collect_vec(),
                         acis_binary: blocked_acis.iter().map(|e| e.as_bytes().to_vec()).collect_vec(),
                         group_ids: Vec::new(), // Group V1
-                    });
-                    sender.send_sync_message(SyncMessage {blocked, ..SyncMessage::with_padding(&mut rand::rng())}).await?;
+                    };
+                    sender.send_sync_message(blocked).await?;
                 }
             };
 
@@ -1386,7 +1361,6 @@ impl ClientActor {
             read_receipts: Some(self.settings.get_enable_read_receipts()),
             unidentified_delivery_indicators: None,
             typing_indicators: Some(self.settings.get_enable_typing_indicators()),
-            provisioning_version: None,
             link_previews: Some(self.settings.get_enable_link_previews()),
         }
     }
@@ -1568,94 +1542,11 @@ impl ClientActor {
             }
             // Destructure the message so we catch any changes
             ContentBody::SynchronizeMessage(message) => {
-                let SyncMessage {
-                    sent,
-                    contacts,
-                    request,
-                    read,
-                    blocked,
-                    verified,
-                    configuration,
-                    padding: _,
-                    sticker_pack_operation,
-                    view_once_open,
-                    fetch_latest,
-                    keys,
-                    message_request_response,
-                    outgoing_payment,
-                    viewed,
-                    pni_change_number,
-                    call_event,
-                    call_link_update,
-                    call_log_event,
-                    delete_for_me,
-                    attachment_backfill_request,
-                    attachment_backfill_response,
-                    device_name_change,
-                } = message;
-                if let Some(sent) = sent {
-                    tracing::trace!("SyncMessage sent");
-                    // These are messages sent through a paired device.
-                    let address = sent.parse_destination_service_id();
-                    if address.is_none() {
-                        tracing::error!(
-                            "Unparsable ServiceId: {:?}/{:?}",
-                            sent.destination_service_id,
-                            sent.destination_service_id_binary
-                        );
-                    }
-                    let phonenumber = sent
-                        .destination_e164
-                        .as_deref()
-                        .map(|s| phonenumber::parse(None, s))
-                        .transpose()
-                        .map_err(|_| {
-                            tracing::error!("Unparsable phonenumber: {}", sent.destination_e164())
-                        })
-                        .ok()
-                        .flatten();
-
-                    if let Some(message) = &sent.message {
-                        self.handle_message(
-                            ctx,
-                            // Empty string mainly when groups,
-                            // but maybe needs a check. TODO
-                            phonenumber,
-                            address,
-                            message,
-                            Some(sent.clone()),
-                            &metadata,
-                            None,
-                        );
-                    } else if let Some(edit) = &sent.edit_message {
-                        let message = edit.data_message.as_ref().expect("edit message");
-                        let edit = edit.target_sent_timestamp.expect("edit timestamp");
-
-                        self.handle_message(
-                            ctx,
-                            // Empty string mainly when groups,
-                            // but maybe needs a check. TODO
-                            phonenumber,
-                            address,
-                            message,
-                            Some(sent.clone()),
-                            &metadata,
-                            Some(millis_to_naive_chrono(edit)),
-                        );
-                    } else if let Some(story_message) = &sent.story_message {
-                        tracing::error!("SyncMessage story message is not implemented (#580)");
-                        tracing::trace!("{story_message:?}");
-                    } else {
-                        tracing::error!("SyncMessage sent with unhandled content: {sent:?}");
-                    }
-                }
-                if let Some(request) = request {
-                    tracing::trace!("SyncMessage request");
-                    self.handle_sync_request(metadata, request);
-                }
-                if !read.is_empty() {
+                // XXX process non-content sync message fields
+                if !message.read.is_empty() {
                     tracing::trace!("SyncMessage read");
-                    for read in &read {
+
+                    for read in &message.read {
                         // Signal uses timestamps in milliseconds, chrono has nanoseconds
                         // XXX: this should probably not be based on ts alone.
                         if let Some(timestamp) = read.timestamp.map(millis_to_naive_chrono) {
@@ -1677,168 +1568,228 @@ impl ClientActor {
                         }
                     }
                 }
-                if let Some(opened) = view_once_open {
-                    tracing::error!("SyncMessage view once open is not implemented");
-                    tracing::debug!("{opened:?}");
-                }
-                if !viewed.is_empty() {
+                if !message.viewed.is_empty() {
                     tracing::error!("SyncMessage viewed is not implemented");
-                    tracing::debug!("{:?}", viewed);
+                    tracing::debug!("{:?}", message.viewed);
                 }
-                if let Some(fetch) = fetch_latest {
-                    match fetch.r#type() {
-                        LatestType::Unknown => {
-                            tracing::error!("SyncMessage fetch latest unknown is unimplemented")
-                        }
-                        LatestType::LocalProfile => {
-                            tracing::trace!("Scheduling local profile refresh");
-                            ctx.notify(RefreshOwnProfile { force: true });
-                        }
-                        LatestType::StorageManifest => {
-                            // XXX
-                            tracing::error!(
-                                "SyncMessage fetch latest storage manifest is unimplemented"
-                            )
-                        }
-                        LatestType::SubscriptionStatus => {
-                            tracing::error!(
-                                "SyncMessage fetch latest subscription status is unimplemented"
-                            )
-                        }
-                    }
-                }
-                if let Some(response) = message_request_response {
-                    self.handle_message_request_response(&response);
-                }
-                if let Some(keys) = keys {
-                    tracing::debug!("Sync Keys message");
-                    if !is_primary {
-                        tracing::debug!("We're the primary device, ignore Keys sync response.");
-                    } else if let Some(aep) = &keys.account_entropy_pool {
-                        use std::str::FromStr;
-                        match AccountEntropyPool::from_str(aep.as_str()) {
-                            Ok(aep) => {
-                                storage.store_account_entropy_pool(&aep);
-                                let master_key =
-                                    MasterKey::from_slice(aep.derive_svr_key().as_slice()).unwrap();
-                                storage.store_master_key(Some(&master_key));
-                                let storage_key = StorageServiceKey::from_master_key(&master_key);
-                                storage.store_storage_service_key(Some(&storage_key));
-                                // XXX Storage Service Manifest
-                            }
-                            Err(e) => {
-                                // XXX Send SyncMessage::Keys request later?
-                                tracing::error!("{:?}", e)
-                            }
-                        };
-                    } else if let Some(bytes) = &keys.master {
-                        if storage.fetch_account_entropy_pool().is_none() {
-                            tracing::warn!(
-                                "Sync Keys: MasterKey is deprecated. We don't have AEP, saving MasterKey."
-                            );
-                            if let Ok(master_key) = MasterKey::from_slice(bytes) {
-                                storage.store_master_key(Some(&master_key));
-                                let storage_key = StorageServiceKey::from_master_key(&master_key);
-                                storage.store_storage_service_key(Some(&storage_key));
-                                // XXX Storage Service Manifest
-                            } else {
-                                tracing::error!("Keys sync message with invalid data");
-                            };
-                        } else {
-                            tracing::error!(
-                                "Received MasterKey only with AEP already known; ignoring."
-                            )
-                        }
-                    }
-                }
-                if let Some(blocked) = blocked {
-                    tracing::debug!("Sync blocked message");
-                    for e164 in blocked.numbers {
-                        let Ok(e164) = PhoneNumber::from_str(&e164) else {
-                            tracing::error!("Sync blocked: unparsable phone number: {e164}");
-                            continue;
-                        };
-                        storage.mark_recipient_blocked_by_e164(&e164);
-                    }
-                    for aci in blocked.acis {
-                        let Some(service_id) = ServiceId::parse_from_service_id_string(&aci) else {
-                            tracing::error!("Sync blocked: unparsable aci: {aci}");
-                            continue;
-                        };
-                        storage.mark_recipient_blocked_by_address(&service_id);
-                    }
-                    if !blocked.group_ids.is_empty() {
-                        tracing::error!("Blocking groups is not implemented");
-                    }
-                }
-                if let Some(contacts) = contacts {
-                    tracing::error!("SyncMessage contacts is not implemented");
-                    tracing::debug!("{contacts:?}");
-                }
-                if let Some(verified) = verified {
-                    tracing::error!("SyncMessage verified is not implemented");
-                    tracing::debug!("{verified:?}");
-                }
-                if let Some(pni_change_number) = pni_change_number {
-                    tracing::error!("SyncMessage pni change number is not implemented");
-                    tracing::debug!("{pni_change_number:?}");
-                }
-                if let Some(conf) = configuration {
-                    let mut settings = SettingsBridge::default();
-                    if let Some(value) = conf.read_receipts {
-                        settings.set_enable_read_receipts(value);
-                    }
-                    if conf.unidentified_delivery_indicators.is_some() {
-                        tracing::error!(
-                            "Configuration: unidentified delivery indicator is not implemented"
-                        );
-                    }
-                    if let Some(value) = conf.typing_indicators {
-                        settings.set_enable_typing_indicators(value);
-                    }
-                    if conf.provisioning_version.is_some() {
-                        // XXX Maybe this should go to database or config?
-                        tracing::error!("Configuration: provisioning version is not implemented");
-                    }
-                    if let Some(value) = conf.read_receipts {
-                        settings.set_enable_link_previews(value);
-                    }
-                }
-                if !sticker_pack_operation.is_empty() {
+                if !message.sticker_pack_operation.is_empty() {
                     tracing::error!("SyncMessage sticker pack operation is not implemented");
-                    tracing::debug!("{:?}", sticker_pack_operation);
+                    tracing::debug!("{:?}", message.sticker_pack_operation);
                 }
-                if let Some(payment) = outgoing_payment {
-                    tracing::error!("SyncMessage outgoing payment is not implemented");
-                    tracing::debug!("{payment:?}");
-                }
-                if let Some(delete) = delete_for_me {
-                    tracing::error!("SyncMessage delete for me is not implemented");
-                    tracing::debug!("{delete:?}");
-                }
-                if let Some(event) = call_event {
-                    tracing::error!("SyncMessage call event is not implemented");
-                    tracing::debug!("{event:?}");
-                }
-                if let Some(update) = call_link_update {
-                    tracing::error!("SyncMessage call link update is not implemented");
-                    tracing::debug!("{update:?}");
-                }
-                if let Some(event) = call_log_event {
-                    tracing::error!("SyncMessage call log event is not implemented");
-                    tracing::debug!("{event:?}");
-                }
-                if let Some(attachment_backfill_request) = attachment_backfill_request {
-                    tracing::error!("SyncMessage attachment backfill request is not implemented");
-                    tracing::debug!("{attachment_backfill_request:?}");
-                }
-                if let Some(attachment_backfill_response) = attachment_backfill_response {
-                    tracing::error!("SyncMessage attachment_backfill_response is not implemented");
-                    tracing::debug!("{attachment_backfill_response:?}");
-                }
-                if let Some(device_name_change) = device_name_change {
-                    tracing::error!("SyncMessage device name change is not implemented");
-                    tracing::debug!("{device_name_change:?}");
+                let Some(content) = message.content else {
+                    return;
+                };
+                match content {
+                    SyncMessageContent::Sent(sent) => {
+                        tracing::trace!("SyncMessage sent");
+                        // These are messages sent through a paired device.
+                        let address = sent.parse_destination_service_id();
+                        if address.is_none() {
+                            tracing::error!(
+                                "Unparsable ServiceId: {:?}/{:?}",
+                                sent.destination_service_id,
+                                sent.destination_service_id_binary
+                            );
+                        }
+                        let phonenumber = sent
+                            .destination_e164
+                            .as_deref()
+                            .map(|s| phonenumber::parse(None, s))
+                            .transpose()
+                            .map_err(|_| {
+                                tracing::error!(
+                                    "Unparsable phonenumber: {}",
+                                    sent.destination_e164()
+                                )
+                            })
+                            .ok()
+                            .flatten();
+
+                        if let Some(message) = &sent.message {
+                            self.handle_message(
+                                ctx,
+                                // Empty string mainly when groups,
+                                // but maybe needs a check. TODO
+                                phonenumber,
+                                address,
+                                message,
+                                Some(sent.clone()),
+                                &metadata,
+                                None,
+                            );
+                        } else if let Some(edit) = &sent.edit_message {
+                            let message = edit.data_message.as_ref().expect("edit message");
+                            let edit = edit.target_sent_timestamp.expect("edit timestamp");
+
+                            self.handle_message(
+                                ctx,
+                                // Empty string mainly when groups,
+                                // but maybe needs a check. TODO
+                                phonenumber,
+                                address,
+                                message,
+                                Some(sent.clone()),
+                                &metadata,
+                                Some(millis_to_naive_chrono(edit)),
+                            );
+                        } else if let Some(story_message) = &sent.story_message {
+                            tracing::error!("SyncMessage story message is not implemented (#580)");
+                            tracing::trace!("{story_message:?}");
+                        } else {
+                            tracing::error!("SyncMessage sent with unhandled content: {sent:?}");
+                        }
+                    }
+                    SyncMessageContent::Request(request) => {
+                        tracing::trace!("SyncMessage request");
+                        self.handle_sync_request(metadata, request);
+                    }
+                    SyncMessageContent::ViewOnceOpen(opened) => {
+                        tracing::error!("SyncMessage view once open is not implemented");
+                        tracing::debug!("{opened:?}");
+                    }
+                    SyncMessageContent::FetchLatest(fetch) => {
+                        match fetch.r#type() {
+                            LatestType::Unknown => {
+                                tracing::error!("SyncMessage fetch latest unknown is unimplemented")
+                            }
+                            LatestType::LocalProfile => {
+                                tracing::trace!("Scheduling local profile refresh");
+                                ctx.notify(RefreshOwnProfile { force: true });
+                            }
+                            LatestType::StorageManifest => {
+                                // XXX
+                                tracing::error!(
+                                    "SyncMessage fetch latest storage manifest is unimplemented"
+                                )
+                            }
+                            LatestType::SubscriptionStatus => {
+                                tracing::error!(
+                                    "SyncMessage fetch latest subscription status is unimplemented"
+                                )
+                            }
+                        }
+                    }
+                    SyncMessageContent::MessageRequestResponse(response) => {
+                        self.handle_message_request_response(&response);
+                    }
+                    SyncMessageContent::Keys(keys) => {
+                        tracing::debug!("Sync Keys message");
+                        if !is_primary {
+                            tracing::debug!("We're the primary device, ignore Keys sync response.");
+                        } else if let Some(aep) = &keys.account_entropy_pool {
+                            use std::str::FromStr;
+                            match AccountEntropyPool::from_str(aep.as_str()) {
+                                Ok(aep) => {
+                                    storage.store_account_entropy_pool(&aep);
+                                    let master_key =
+                                        MasterKey::from_slice(aep.derive_svr_key().as_slice())
+                                            .unwrap();
+                                    storage.store_master_key(Some(&master_key));
+                                    let storage_key =
+                                        StorageServiceKey::from_master_key(&master_key);
+                                    storage.store_storage_service_key(Some(&storage_key));
+                                    // XXX Storage Service Manifest
+                                }
+                                Err(e) => {
+                                    // XXX Send SyncMessage::Keys request later?
+                                    tracing::error!("{:?}", e)
+                                }
+                            };
+                        }
+                    }
+                    SyncMessageContent::Blocked(blocked) => {
+                        tracing::debug!("Sync blocked message");
+                        for e164 in blocked.numbers {
+                            let Ok(e164) = PhoneNumber::from_str(&e164) else {
+                                tracing::error!("Sync blocked: unparsable phone number: {e164}");
+                                continue;
+                            };
+                            storage.mark_recipient_blocked_by_e164(&e164);
+                        }
+                        for aci in blocked.acis {
+                            let Some(service_id) = ServiceId::parse_from_service_id_string(&aci)
+                            else {
+                                tracing::error!("Sync blocked: unparsable aci: {aci}");
+                                continue;
+                            };
+                            storage.mark_recipient_blocked_by_address(&service_id);
+                        }
+                        if !blocked.group_ids.is_empty() {
+                            tracing::error!("Blocking groups is not implemented");
+                        }
+                    }
+                    SyncMessageContent::Contacts(contacts) => {
+                        tracing::error!("SyncMessage contacts is not implemented");
+                        tracing::debug!("{contacts:?}");
+                    }
+                    SyncMessageContent::Verified(verified) => {
+                        tracing::error!("SyncMessage verified is not implemented");
+                        tracing::debug!("{verified:?}");
+                    }
+                    SyncMessageContent::PniChangeNumber(pni_change_number) => {
+                        tracing::error!("SyncMessage pni change number is not implemented");
+                        tracing::debug!("{pni_change_number:?}");
+                    }
+                    SyncMessageContent::Configuration(conf) => {
+                        let mut settings = SettingsBridge::default();
+                        if let Some(value) = conf.read_receipts {
+                            settings.set_enable_read_receipts(value);
+                        }
+                        if conf.unidentified_delivery_indicators.is_some() {
+                            tracing::error!(
+                                "Configuration: unidentified delivery indicator is not implemented"
+                            );
+                        }
+                        if let Some(value) = conf.typing_indicators {
+                            settings.set_enable_typing_indicators(value);
+                        }
+                        if let Some(value) = conf.read_receipts {
+                            settings.set_enable_link_previews(value);
+                        }
+                    }
+                    SyncMessageContent::OutgoingPayment(payment) => {
+                        tracing::error!("SyncMessage outgoing payment is not implemented");
+                        tracing::debug!("{payment:?}");
+                    }
+                    SyncMessageContent::DeleteForMe(delete) => {
+                        tracing::error!("SyncMessage delete for me is not implemented");
+                        tracing::debug!("{delete:?}");
+                    }
+                    SyncMessageContent::CallEvent(event) => {
+                        tracing::error!("SyncMessage call event is not implemented");
+                        tracing::debug!("{event:?}");
+                    }
+                    SyncMessageContent::CallLinkUpdate(update) => {
+                        tracing::error!("SyncMessage call link update is not implemented");
+                        tracing::debug!("{update:?}");
+                    }
+                    SyncMessageContent::CallLogEvent(event) => {
+                        tracing::error!("SyncMessage call log event is not implemented");
+                        tracing::debug!("{event:?}");
+                    }
+                    SyncMessageContent::AttachmentBackfillRequest(attachment_backfill_request) => {
+                        tracing::error!(
+                            "SyncMessage attachment backfill request is not implemented"
+                        );
+                        tracing::debug!("{attachment_backfill_request:?}");
+                    }
+                    SyncMessageContent::AttachmentBackfillResponse(
+                        attachment_backfill_response,
+                    ) => {
+                        tracing::error!(
+                            "SyncMessage attachment_backfill_response is not implemented"
+                        );
+                        tracing::debug!("{attachment_backfill_response:?}");
+                    }
+                    SyncMessageContent::DeviceNameChange(device_name_change) => {
+                        tracing::error!("SyncMessage device name change is not implemented");
+                        tracing::debug!("{device_name_change:?}");
+                    }
+                    SyncMessageContent::UsernameChange(_username_change) => {
+                        tracing::error!("SyncMessage usernamename change is not implemented");
+                        // UsernameChange is a nil-struct.
+                        // Way to implement: fetch username + username entropy from storage. Or scan your own QR code, that should update it as well (but not the entropy).
+                    }
                 }
             }
             ContentBody::TypingMessage(typing) => {
@@ -1857,7 +1808,7 @@ impl ClientActor {
                     .map(millis_to_naive_chrono)
                     .collect();
                 let rcpt_timestamp =
-                    millis_to_naive_chrono(metadata.timestamp.timestamp_millis() as u64);
+                    millis_to_naive_chrono(metadata.client_timestamp.timestamp_millis() as u64);
 
                 // Insert into cache first,
                 // only remove if messages were matched.
@@ -2614,6 +2565,20 @@ impl Handler<SendTypingNotification> for ClientActor {
 
         Box::pin(
             async move {
+                // Mirrors Android's TypingSendJob: refuse typing indicators to
+                // terminated groups.
+                if let SessionType::GroupV2(group) = &session.r#type
+                    && group.terminated
+                {
+                    tracing::warn!(
+                        "Refusing typing notification to terminated group {} \
+                         (session {})",
+                        group.id,
+                        session.id
+                    );
+                    return Ok::<_, anyhow::Error>(session_id);
+                }
+
                 let group_id = match &session.r#type {
                     SessionType::DirectMessage(_) => None,
                     SessionType::GroupV1(group) => {
@@ -2723,6 +2688,18 @@ impl Handler<SendReaction> for ClientActor {
             sender_id, sender_recipient.id,
             "message sender recipient id mismatch"
         );
+
+        // Mirrors Android's ReactionSendJob: refuse reactions to terminated groups.
+        if let SessionType::GroupV2(group) = &session.r#type
+            && group.terminated
+        {
+            tracing::warn!(
+                "Refusing reaction to terminated group {} (session {})",
+                group.id,
+                session.id
+            );
+            return Box::pin(async {}.into_actor(self).map(|_, _, _| ()));
+        }
 
         self.clear_transient_timstamps();
         let now = Utc::now();
@@ -3186,7 +3163,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
 
         let sender_address = msg
             .parse_source_service_id()
-            .zip(msg.source_device)
+            .zip(msg.source_device_id)
             .and_then(|(service_id, device_id)| {
                 Some(service_id.to_protocol_address(DeviceId::try_from(device_id).ok()?))
             });
@@ -3242,9 +3219,13 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             break None;
                         }
                         // Capture sessions not existing in both sealed and authenticated cases.
-                        Err(ServiceError::SignalProtocolError(SignalProtocolError::SessionNotFound(sender))) |
+                        Err(ServiceError::SignalProtocolError(SignalProtocolError::SessionNotFound(
+                            SessionNotFound { address: Some(sender), .. },
+                        ))) |
                             Err(ServiceError::SealedSenderDecryptionError(SealedSenderDecryptionError {
-                            inner: SignalProtocolError::SessionNotFound(sender),
+                            inner: SignalProtocolError::SessionNotFound(
+                                SessionNotFound { address: Some(sender), .. },
+                            ),
                             // Force the sender to be present; this ensures the trust roots have
                             // been validated.  Additionally, the sender is known to be the same as
                             // the one used in the decryption attempt.
@@ -3652,7 +3633,6 @@ impl Handler<RegisterLinked> for ClientActor {
                                     aci_public_key,
                                     pni_private_key,
                                     pni_public_key,
-                                    master_key: _,
                                     account_entropy_pool,
                                 },
                             ) => {
@@ -4110,14 +4090,14 @@ impl Handler<ProcessCachedReceipts> for ClientActor {
                     let _ = storage.mark_messages_delivered(
                         metadata.sender,
                         timestamps,
-                        millis_to_naive_chrono(metadata.timestamp.timestamp_millis() as u64),
+                        millis_to_naive_chrono(metadata.client_timestamp.timestamp_millis() as u64),
                     );
                 }
                 ReceiptType::Read => {
                     let _ = storage.mark_messages_read(
                         metadata.sender,
                         timestamps,
-                        millis_to_naive_chrono(metadata.timestamp.timestamp_millis() as u64),
+                        millis_to_naive_chrono(metadata.client_timestamp.timestamp_millis() as u64),
                     );
                 }
                 _ => {
@@ -4253,6 +4233,19 @@ impl Handler<DeleteMessageForAll> for ClientActor {
         let session = storage
             .fetch_session_by_id(message.session_id)
             .expect("session to delete message from by id");
+
+        // Mirrors Android's RemoteDeleteSendJob: refuse remote deletes in
+        // terminated groups.
+        if let SessionType::GroupV2(group) = &session.r#type
+            && group.terminated
+        {
+            tracing::warn!(
+                "Refusing remote delete in terminated group {} (session {})",
+                group.id,
+                session.id
+            );
+            return;
+        }
 
         let now = Utc::now().timestamp_millis() as u64;
         self.transient_timestamps.insert(now);
@@ -4438,10 +4431,7 @@ impl Handler<SendConfiguration> for ClientActor {
             return;
         };
         let sender = self.message_sender();
-        let configuration = SyncMessage {
-            configuration: Some(self.get_configuration()),
-            ..SyncMessage::with_padding(&mut rand::rng())
-        };
+        let configuration = self.get_configuration();
 
         actix::spawn(async move {
             let mut sender = sender.await.unwrap();

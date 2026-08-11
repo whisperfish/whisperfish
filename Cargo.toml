@@ -15,7 +15,6 @@ edition = "2024"
 
 [patch.crates-io]
 # Required for libsignal's lizard2 patches to c25519
-curve25519-dalek = { git = 'https://github.com/signalapp/curve25519-dalek', tag = 'signal-curve25519-4.1.3' }
 qttypes = { git = 'https://github.com/woboq/qmetaobject-rs' }
 qmetaobject = { git = 'https://github.com/woboq/qmetaobject-rs' }
 qmetaobject_impl = { git = 'https://github.com/woboq/qmetaobject-rs' }
@@ -31,12 +30,12 @@ qmetaobject_impl = { git = 'https://github.com/woboq/qmetaobject-rs' }
 # The source and target refs are the same URL. If we add another / in there,
 # cargo sees this as a valid patch.  Very ugly workaround.
 # https://github.com/rust-lang/cargo/issues/5478#issuecomment-1055365283
-zkgroup = { git = "https://github.com/signalapp//libsignal", tag = "v0.94.4" }
-libsignal-core = { git = "https://github.com/signalapp//libsignal", tag = "v0.94.4" }
-signal-crypto = { git = "https://github.com/signalapp//libsignal", tag = "v0.94.4" }
-libsignal-debug = { git = "https://github.com/signalapp//libsignal", tag = "v0.94.4" }
-poksho = { git = "https://github.com/signalapp//libsignal", tag = "v0.94.4" }
-libsignal-account-keys = { git = "https://github.com/signalapp//libsignal", tag = "v0.94.4" }
+zkgroup = { git = "https://github.com/signalapp//libsignal", tag = "v0.99.0" }
+libsignal-core = { git = "https://github.com/signalapp//libsignal", tag = "v0.99.0" }
+signal-crypto = { git = "https://github.com/signalapp//libsignal", tag = "v0.99.0" }
+libsignal-debug = { git = "https://github.com/signalapp//libsignal", tag = "v0.99.0" }
+poksho = { git = "https://github.com/signalapp//libsignal", tag = "v0.99.0" }
+libsignal-account-keys = { git = "https://github.com/signalapp//libsignal", tag = "v0.99.0" }
 
 # Smart dev mode: Compile most stuff in release mode, except for the things
 # that are actually maintained by our community

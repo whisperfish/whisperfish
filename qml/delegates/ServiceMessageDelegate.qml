@@ -238,6 +238,14 @@ ListItem {
                         return qsTrId("whisperfish-service-message-group-change-promote-requesting-member").arg(recipientName).arg(targetName)
                     case "timer":
                         return expiryMessage(_outgoing, recipientName, _data.value)
+                    case "terminate":
+                        return _outgoing
+                            //: Group change: group was terminated by someone else (%1)
+                            //% "Group was terminated by %1"
+                            ? qsTrId("whisperfish-service-message-group-peer-termination").arg(recipientName)
+                            //: Group change: group was terminated by the user
+                            //% "You terminated the group"
+                            : qsTrId("whisperfish-service-message-group-self-termination").arg(recipientName)
                     case "title":
                         //: Group change: title
                         //% "%1 changed the group title to '%2'"

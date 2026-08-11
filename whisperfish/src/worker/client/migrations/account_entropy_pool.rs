@@ -59,11 +59,8 @@ impl Handler<CheckAccountEntropyPool> for ClientActor {
 
                     match sender.await {
                         Ok(mut sender) => {
-                            let request_keys = SyncMessage {
-                                request: Some(sync_message::Request {
-                                    r#type: Some(RequestType::Keys.into()),
-                                }),
-                                ..SyncMessage::with_padding(&mut rand::rng())
+                            let request_keys = sync_message::Request {
+                                r#type: Some(RequestType::Keys.into()),
                             };
                             if let Err(e) = sender.send_sync_message(request_keys).await {
                                 tracing::error!("Error syncing Keys: {e:?}; continuing...");

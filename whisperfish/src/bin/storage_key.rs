@@ -5,7 +5,7 @@ fn main() -> anyhow::Result<()> {
     let password = rpassword::prompt_password("Whisperfish storage password: ").unwrap();
 
     // Derive database key
-    let params = scrypt::Params::new(14, 8, 1, 32).unwrap();
+    let params = scrypt::Params::new(14, 8, 1).unwrap();
     let mut key_database = [0u8; 32];
     scrypt::scrypt(password.as_bytes(), &salt, &params, &mut key_database)
         .context("Cannot compute database key")?;

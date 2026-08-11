@@ -47,6 +47,16 @@ impl Handler<RequestGroupV2InfoBySessionId> for ClientActor {
             .map(|s| s.r#type)
         {
             Some(orm::SessionType::GroupV2(group_v2)) => {
+                // Mirrors Android's RequestGroupV2InfoWorkerJob/ForceUpdateGroupV2WorkerJob:
+                // a terminated group is frozen server-side, so there is nothing to fetch.
+                if group_v2.terminated {
+                    tracing::info!(
+                        "Group v2 {} (session {}) is terminated, skipping refresh.",
+                        group_v2.id,
+                        sid,
+                    );
+                    return;
+                }
                 let mut key_stack = [0u8; zkgroup::GROUP_MASTER_KEY_LEN];
                 key_stack.clone_from_slice(&hex::decode(group_v2.master_key).expect("hex in db"));
                 let key = GroupMasterKey::new(key_stack);
@@ -687,6 +697,9 @@ fn group_change_to_service_message_json(group_change: &GroupChange) -> Option<St
             change = Some("member_label_access".into());
             value = Some(access_to_string(access));
         }
+        GroupChange::TerminateGroup => {
+            change = Some("terminate".into());
+        }
     };
 
     if change.is_some() {
@@ -1020,6 +1033,10 @@ impl Handler<GroupV2Update> for ClientActor {
                                 tracing::debug!("Member label access: {:?}", access);
                                 storage
                                     .update_group_v2_member_label_access(&group_v2, access.into());
+                            }
+                            GroupChange::TerminateGroup => {
+                                tracing::error!("group termination unimplemented");
+                                storage.terminate_group_v2(&group_v2);
                             }
                         }
                     }
