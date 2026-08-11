@@ -2461,13 +2461,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="245"/>
         <source>Group was terminated by %1</source>
         <extracomment>Group change: group was terminated by someone else (%1)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Gruppen ble avsluttet av %1</translation>
     </message>
     <message id="whisperfish-service-message-group-self-termination">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="248"/>
         <source>You terminated the group</source>
         <extracomment>Group change: group was terminated by the user</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Du avsluttet gruppen</translation>
     </message>
     <message id="whisperfish-service-message-group-change-title">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="252"/>
