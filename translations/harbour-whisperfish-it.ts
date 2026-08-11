@@ -2354,26 +2354,26 @@ Settings page share contacts</extracomment>
         <translation>questo messaggio è vuoto</translation>
     </message>
     <message id="whisperfish-service-message-joined-group-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="251"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="259"/>
         <source>You joined the group.</source>
         <oldsource>You joined the group “%1”.</oldsource>
         <extracomment>Service message</extracomment>
         <translation>Ti sei unito/a al gruppo.</translation>
     </message>
     <message id="whisperfish-service-message-left-group-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="259"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="267"/>
         <source>You left the group.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Hai lasciato il gruppo.</translation>
     </message>
     <message id="whisperfish-service-message-joined-group-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="254"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="262"/>
         <source>%1 joined the group.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 si è unito/a al gruppo.</translation>
     </message>
     <message id="whisperfish-service-message-left-group-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="262"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="270"/>
         <source>%1 left the group.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 ha lasciato il gruppo.</translation>
@@ -2389,28 +2389,28 @@ Settings page share contacts</extracomment>
         <translation type="vanished">Hai perso una videochiamata da %1.</translation>
     </message>
     <message id="whisperfish-service-message-call-voice-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="298"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="306"/>
         <source>You had a voice call with %1.</source>
         <oldsource>You called %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Hai chiamato %1.</translation>
     </message>
     <message id="whisperfish-service-message-call-video-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="290"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="298"/>
         <source>You had a video call with %1.</source>
         <oldsource>You started a video call with %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Hai videochiamato %1.</translation>
     </message>
     <message id="whisperfish-service-message-call-voice-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="302"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="310"/>
         <source>%1 had a voice call with you.</source>
         <oldsource>%1 called you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 ti ha chiamato.</translation>
     </message>
     <message id="whisperfish-service-message-call-video-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="294"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="302"/>
         <source>%1 had a video call with you.</source>
         <oldsource>%1 started a video call with you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
@@ -2623,89 +2623,101 @@ Settings page share contacts</extracomment>
         <extracomment>Group change: requesting member was accepted</extracomment>
         <translation>%1 ha accettato %2 nel gruppo</translation>
     </message>
+    <message id="whisperfish-service-message-group-peer-termination">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="245"/>
+        <source>Group was terminated by %1</source>
+        <extracomment>Group change: group was terminated by someone else (%1)</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="whisperfish-service-message-group-self-termination">
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="248"/>
+        <source>You terminated the group</source>
+        <extracomment>Group change: group was terminated by the user</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-service-message-group-change-title">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="244"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="252"/>
         <source>%1 changed the group title to &apos;%2&apos;</source>
         <extracomment>Group change: title</extracomment>
         <translation>%1 ha cambiato il titolo del gruppo a %2</translation>
     </message>
     <message id="whisperfish-service-message-call-group-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="267"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="275"/>
         <source>You had a group call.</source>
         <extracomment>Service message</extracomment>
         <translation>Hai avuto una chiamata di gruppo.</translation>
     </message>
     <message id="whisperfish-service-message-call-group-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="270"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="278"/>
         <source>%1 had a group call with you.</source>
         <extracomment>Service message, %1 is the person initiating the call.</extracomment>
         <translation>%1 ha avuto una chiamata di gruppo con te.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="275"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="283"/>
         <source>You missed a voice call from %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Chiamata vocale persa da %1.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-voice-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="278"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="286"/>
         <source>You tried to voice call %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Hai provato ad effettuare una chiamata vocale con %1.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-video-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="283"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="291"/>
         <source>You missed a video call from %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Videochiamata persa da %1.</translation>
     </message>
     <message id="whisperfish-service-message-missed-call-video-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="286"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="294"/>
         <source>You tried to video call %1.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Hai tentato di effettuare una videochiamata con %1.</translation>
     </message>
     <message id="whisperfish-service-message-fingerprint-changed">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="307"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="315"/>
         <source>Your safety number with %1 has changed. Swipe right to verify the new number.</source>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Il tuo numero di sicurezza con %1 è cambiato. Scorri verso destra per verificare il nuovo numero.</translation>
     </message>
     <message id="whisperfish-service-message-session-reset-self">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="312"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="320"/>
         <source>You reset the secure session with %1.</source>
         <oldsource>You have reset the secure session with %1.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>Hai reimpostato la sessione sicura con %1.</translation>
     </message>
     <message id="whisperfish-service-message-session-reset-peer">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="315"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="323"/>
         <source>%1 reset the secure session with you.</source>
         <oldsource>%1 has reset the secure session with you.</oldsource>
         <extracomment>Service message, %1 is a name</extracomment>
         <translation>%1 ha reimpostato la sessione sicura con te.</translation>
     </message>
     <message id="whisperfish-service-message-sticker">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="319"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="327"/>
         <source>%1 sent you a sticker: %2</source>
         <extracomment>Message with a sticker, %1 is a name, %2 is an emoji</extracomment>
         <translation>%1 ti ha inviato uno sticker: %2</translation>
     </message>
     <message id="whisperfish-service-message-contact">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="323"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="331"/>
         <source>Contact cards can&apos;t yet be supported</source>
         <extracomment>Message with a contact card</extracomment>
         <translation>Le schede dei contatti non sono ancora supportate</translation>
     </message>
     <message id="whisperfish-service-message-not-supported">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="329"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="337"/>
         <source>This service message of is not yet supported by Whisperfish. Please file a bug report. (Flags: %1, Type: %2, Contents: &quot;%3&quot;)</source>
         <oldsource>This service message is not yet supported by Whisperfish. Please file a bug report. (Type: %1)</oldsource>
         <extracomment>Service message, %1 is an integer, %2 is a word, %3 is the message text (if any)</extracomment>
         <translation>Questo messaggio di servizio non è ancora supportato da Whisperfish. Si prega di inviare una segnalazione di errore. (Flags: %1, Type: %2, Contents: &quot;%3&quot;)</translation>
     </message>
     <message id="whisperfish-service-message-more-info">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="387"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="395"/>
         <source>more information</source>
         <translation>più informazioni</translation>
     </message>
