@@ -925,9 +925,10 @@ impl<T: Identity<O>, O: Observable> IdentityStorage<T, O> {
     }
 }
 
-// BEGIN identity key block
-impl<O: Observable> Storage<O> {
-    /// Removes the identity matching ServiceId (ACI or PNI) from the database.
+impl<T: Identity<O>, O: Observable> IdentityStorage<T, O> {
+    /// Removes the identity record for the given remote `ServiceId` within this store's identity
+    /// partition (i.e. the local/destination account kind — Aci or Pni — that this
+    /// `IdentityStorage` instance represents).
     ///
     /// Does not lock the protocol storage.
     #[tracing::instrument(level = "warn", skip(self, addr), fields(addr = addr.service_id_string()))]
@@ -937,9 +938,9 @@ impl<O: Observable> Storage<O> {
             .filter(
                 address
                     .eq(addr.service_id_string())
-                    .and(identity.eq(orm::Identity::from(addr.kind()))),
+                    .and(identity.eq(self.1.identity())),
             )
-            .execute(&mut *self.db())
+            .execute(&mut *self.0.db())
             .expect("db")
             >= 1;
 
@@ -952,7 +953,6 @@ impl<O: Observable> Storage<O> {
         removed
     }
 }
-// END identity key
 
 #[async_trait::async_trait(?Send)]
 impl<T: Identity<O>, O: Observable> SessionStoreExt for IdentityStorage<T, O> {

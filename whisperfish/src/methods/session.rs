@@ -127,15 +127,14 @@ impl SessionMethods {
 
         let mut success = false;
 
-        success |= recipient
+        for address in recipient
             .to_aci_service_address()
-            .map(|aci| storage.delete_identity_key(&aci))
-            .unwrap_or(false);
-
-        success |= recipient
-            .to_pni_service_address()
-            .map(|pni| storage.delete_identity_key(&pni))
-            .unwrap_or(false);
+            .iter()
+            .chain(recipient.to_pni_service_address().iter())
+        {
+            success |= storage.aci_storage().delete_identity_key(&address);
+            success |= storage.pni_storage().delete_identity_key(&address);
+        }
 
         let session = storage.fetch_or_insert_session_by_recipient_id(recipient_id);
 
