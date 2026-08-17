@@ -98,27 +98,45 @@ impl Handler<FetchAttachment> for ClientActor {
                 use futures::io::AsyncReadExt;
                 use libsignal_service::attachment_cipher::*;
 
-                let mut download = loop {
+                let actual_len = ptr.size.unwrap() as usize;
+
+                let mut retries = 0;
+                const MAX_RETRIES: u32 = 3;
+                let mut stream = loop {
                     let r = service.get_attachment(&ptr).await;
                     match r {
-                        Ok(download) => break download,
-                        Err(ServiceError::Timeout { .. }) => {
-                            tracing::warn!("get_attachment timed out, retrying")
+                        Ok(download) => {
+                            if let Some(len) = download.content_length
+                                && len != actual_len as u64
+                            {
+                                tracing::warn!(
+                                    content_length = len,
+                                    expected = actual_len,
+                                    "attachment size mismatch"
+                                );
+                            }
+                            break download.stream;
+                        }
+                        Err(ServiceError::Timeout { .. }) if retries < MAX_RETRIES => {
+                            retries += 1;
+                            tracing::warn!(
+                                retries,
+                                MAX_RETRIES,
+                                "get_attachment timed out, retrying"
+                            );
                         }
                         Err(e) => return Err(e.into()),
                     }
                 };
 
                 // We need the whole file for the crypto to check out 😢
-                let actual_len = ptr.size.unwrap() as usize;
                 let mut ciphertext = Vec::with_capacity(actual_len);
 
                 let mut stream_len = 0;
                 let mut buf = vec![0u8; 128 * 1024];
                 let mut bytes_since_previous_report = 0;
-                // Use download.content_length ?
                 loop {
-                    let read = download.stream.read(&mut buf).await?;
+                    let read = stream.read(&mut buf).await?;
                     bytes_since_previous_report += read;
                     stream_len += read;
                     ciphertext.extend_from_slice(&buf[..read]);
