@@ -3257,6 +3257,11 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                                 session_id: session.id,
                                 source_addr: Some(dest_address),
                                 message_type: Some(MessageType::IdentityKeyChange),
+                                // Identity-key-change notices are trust-state markers, not
+                                // messages awaiting the user. Keep them read so they neither
+                                // inflate a session's unread count nor linger as unread
+                                // while a message request is pending.
+                                is_read: true,
                                 // XXX: Message timer?
                                 ..crate::store::NewMessage::new_incoming()
                             };
