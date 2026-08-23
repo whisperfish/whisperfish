@@ -130,7 +130,7 @@
         <location filename="../qml/harbour-whisperfish-main.qml" line="426"/>
         <source>Mark as read</source>
         <extracomment>Notification action: mark message as read</extracomment>
-        <translation>Als gelezen markeren</translation>
+        <translation>Markeren als gelezen</translation>
     </message>
     <message id="whisperfish-notification-reply_to_message">
         <location filename="../qml/harbour-whisperfish-main.qml" line="436"/>
@@ -2525,13 +2525,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="245"/>
         <source>Group was terminated by %1</source>
         <extracomment>Group change: group was terminated by someone else (%1)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>De groep is afgesloten deur %1</translation>
     </message>
     <message id="whisperfish-service-message-group-self-termination">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="248"/>
         <source>You terminated the group</source>
         <extracomment>Group change: group was terminated by the user</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>G’hed de groep afgesloten</translation>
     </message>
     <message id="whisperfish-service-message-group-change-title">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="252"/>
