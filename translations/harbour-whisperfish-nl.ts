@@ -130,7 +130,7 @@
         <location filename="../qml/harbour-whisperfish-main.qml" line="426"/>
         <source>Mark as read</source>
         <extracomment>Notification action: mark message as read</extracomment>
-        <translation>Als gelezen markeren</translation>
+        <translation>Markeren als gelezen</translation>
     </message>
     <message id="whisperfish-notification-reply_to_message">
         <location filename="../qml/harbour-whisperfish-main.qml" line="436"/>
