@@ -432,7 +432,7 @@ impl SessionListModel {
     fn unread(&self) -> usize {
         self.content
             .iter()
-            .map(|session| usize::from(!session.is_read()))
+            .map(|session| usize::from(!session.is_read() && session.is_accepted()))
             .sum()
     }
 }

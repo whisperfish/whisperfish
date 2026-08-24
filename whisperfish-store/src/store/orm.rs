@@ -1553,6 +1553,19 @@ impl AugmentedSession {
         }
     }
 
+    /// Whether the recipient has accepted the message request.
+    ///
+    /// Group sessions are always considered accepted. A pending direct-message
+    /// request (not yet accepted or blocked) returns false, which lets the unread
+    /// count exclude sessions whose last message is still awaiting a decision.
+    pub fn is_accepted(&self) -> bool {
+        match &self.inner.r#type {
+            SessionType::GroupV1(_group) => true,
+            SessionType::GroupV2(_group) => true,
+            SessionType::DirectMessage(recipient) => recipient.is_accepted,
+        }
+    }
+
     pub fn draft(&self) -> String {
         self.draft.clone().unwrap_or_default()
     }
