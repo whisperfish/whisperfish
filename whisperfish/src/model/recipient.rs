@@ -138,6 +138,7 @@ impl Recipient {
         if self.recipient_uuid.take().is_some() {
             self.recipient_changed();
         }
+        self.force_init = true;
         if let Some(ctx) = ctx {
             self.init(ctx);
         }
@@ -158,6 +159,7 @@ impl Recipient {
             tracing::warn!("QML requested unparsable UUID");
             self.recipient_uuid = None;
         }
+        self.force_init = true;
         if let Some(ctx) = ctx {
             self.init(ctx);
         }
