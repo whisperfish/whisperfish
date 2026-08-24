@@ -3238,7 +3238,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             break None;
                         }
                         Err(ServiceError::SignalProtocolError(
-                            SignalProtocolError::UntrustedIdentity(dest_protocol_address),
+                            SignalProtocolError::UntrustedIdentity(untrusted_address),
                         )) => {
                             // This branch is the only one that loops, and it *should not* loop more than once.
                             if visited {
@@ -3246,16 +3246,16 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             }
                             visited = true;
 
-                            let dest_address = ServiceId::parse_from_service_id_string(dest_protocol_address.name()).expect("valid ACI or PNI UUID in ProtocolAddress");
-                            tracing::warn!("Untrusted identity for {}; replacing identity and inserting a warning.", dest_protocol_address);
-                            let recipient = storage.fetch_or_insert_recipient_by_address(&dest_address);
-                            if dest_address.kind() == ServiceIdKind::Pni {
+                            let untrusted_service_id = ServiceId::parse_from_service_id_string(untrusted_address.name()).expect("valid ACI or PNI UUID in ProtocolAddress");
+                            tracing::warn!("Untrusted identity for {untrusted_address}; replacing identity and inserting a warning.");
+                            let recipient = storage.fetch_or_insert_recipient_by_address(&untrusted_service_id);
+                            if untrusted_service_id.kind() == ServiceIdKind::Pni {
                                 storage.mark_recipient_needs_pni_signature(&recipient, true);
                             }
                             let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
                             let msg = crate::store::NewMessage {
                                 session_id: session.id,
-                                source_addr: Some(dest_address),
+                                source_addr: Some(untrusted_service_id),
                                 message_type: Some(MessageType::IdentityKeyChange),
                                 // XXX: Message timer?
                                 ..crate::store::NewMessage::new_incoming()
@@ -3264,11 +3264,11 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
 
                             if !recipient.is_registered {
                                 tracing::warn!("Recipient was marked as unregistered, marking as registered.");
-                                storage.mark_recipient_registered(dest_address, true);
+                                storage.mark_recipient_registered(untrusted_service_id, true);
                             }
 
-                            if !storage.delete_identity_key(&dest_address) {
-                                tracing::error!("Could not remove identity key for {}.  Please file a bug.", dest_protocol_address);
+                            if !storage.aci_or_pni(incoming_address.kind()).delete_identity_key(&untrusted_service_id) {
+                                tracing::error!("Could not remove identity key for {}.  Please file a bug.", untrusted_address);
                                 break None;
                             }
                         }
