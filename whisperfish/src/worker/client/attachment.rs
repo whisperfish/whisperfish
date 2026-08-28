@@ -98,10 +98,10 @@ impl Handler<FetchAttachment> for ClientActor {
                 use futures::io::AsyncReadExt;
                 use libsignal_service::attachment_cipher::*;
 
-                let mut stream = loop {
+                let mut download = loop {
                     let r = service.get_attachment(&ptr).await;
                     match r {
-                        Ok(stream) => break stream,
+                        Ok(download) => break download,
                         Err(ServiceError::Timeout { .. }) => {
                             tracing::warn!("get_attachment timed out, retrying")
                         }
@@ -116,8 +116,9 @@ impl Handler<FetchAttachment> for ClientActor {
                 let mut stream_len = 0;
                 let mut buf = vec![0u8; 128 * 1024];
                 let mut bytes_since_previous_report = 0;
+                // Use download.content_length ?
                 loop {
-                    let read = stream.read(&mut buf).await?;
+                    let read = download.stream.read(&mut buf).await?;
                     bytes_since_previous_report += read;
                     stream_len += read;
                     ciphertext.extend_from_slice(&buf[..read]);
