@@ -1890,10 +1890,6 @@ impl ClientActor {
                 tracing::error!("Received a Story, which is not yet implemented (#580)");
                 tracing::trace!("{story:?}");
             }
-            ContentBody::PniSignatureMessage(pni) => {
-                tracing::error!("Received a PniSignatureMessage, which is not yet implemented.");
-                tracing::trace!("{pni:?}");
-            }
         }
     }
 
