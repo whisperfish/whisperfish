@@ -3639,6 +3639,8 @@ impl Handler<RegisterLinked> for ClientActor {
                                     pni_private_key,
                                     pni_public_key,
                                     account_entropy_pool,
+                                    // XXX handle backup key
+                                    ephemeral_backup_key: _,
                                 },
                             ) => {
                                 let aci_identity_key_pair =
