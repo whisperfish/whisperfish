@@ -231,6 +231,7 @@ mod tests {
             sender: sender.clone(),
             destination: sender,
             sender_device: DeviceId::new(1).unwrap(),
+            pni_verified: None,
             client_timestamp: timestamp,
             server_timestamp: timestamp,
             needs_receipt: false,
