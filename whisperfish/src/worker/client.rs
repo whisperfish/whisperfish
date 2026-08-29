@@ -1890,10 +1890,6 @@ impl ClientActor {
                 tracing::error!("Received a Story, which is not yet implemented (#580)");
                 tracing::trace!("{story:?}");
             }
-            ContentBody::PniSignatureMessage(pni) => {
-                tracing::error!("Received a PniSignatureMessage, which is not yet implemented.");
-                tracing::trace!("{pni:?}");
-            }
         }
     }
 
@@ -3639,6 +3635,8 @@ impl Handler<RegisterLinked> for ClientActor {
                                     pni_private_key,
                                     pni_public_key,
                                     account_entropy_pool,
+                                    // XXX handle backup key
+                                    ephemeral_backup_key: _,
                                 },
                             ) => {
                                 let aci_identity_key_pair =
