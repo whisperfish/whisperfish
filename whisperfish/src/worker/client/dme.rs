@@ -35,6 +35,14 @@ impl Handler<NoSenderKeyDme> for ClientActor {
         failed_timestamp = msg.failed_timestamp,
     ))]
     fn handle(&mut self, msg: NoSenderKeyDme, _ctx: &mut Self::Context) {
+        // Prune entries older than the window so the map stays bounded (the
+        // send loop that follows can never list more than one entry per
+        // (recipient, device, distribution_id) within a SESSION_RESET_INTERVAL
+        // window).
+        self.last_dme_dispatch.retain(|_, sent_at| {
+            Utc::now().signed_duration_since(*sent_at) < SESSION_RESET_INTERVAL
+        });
+
         let key = (msg.recipient, msg.failed_device, msg.distribution_id);
         if let Some(sent_at) = self.last_dme_dispatch.get(&key)
             && Utc::now().signed_duration_since(*sent_at) < SESSION_RESET_INTERVAL
