@@ -228,7 +228,7 @@ mod tests {
     fn create_metadata(sender: ServiceId, timestamp: i64) -> Metadata {
         let timestamp = chrono::DateTime::UNIX_EPOCH + chrono::Duration::milliseconds(timestamp);
         Metadata {
-            sender: sender.clone(),
+            sender,
             destination: sender,
             sender_device: DeviceId::new(1).unwrap(),
             pni_verified: None,
@@ -247,7 +247,7 @@ mod tests {
         let sender = create_service_id("55555555-1234-5678-1234-555555555555");
         let message = create_receipt_message(vec![1000]);
 
-        assert!(cache.add(create_metadata(sender.clone(), 1000), message));
+        assert!(cache.add(create_metadata(sender, 1000), message));
         assert_eq!(cache.len(), 1);
 
         // Take should return the receipt
@@ -309,7 +309,7 @@ mod tests {
         // Add more than MAX_CACHE_SIZE receipts
         for i in 0..MAX_CACHE_SIZE + 5 {
             let message = create_receipt_message(vec![i as u64 * 1000]);
-            cache.add(create_metadata(sender.clone(), i as i64 * 1000), message);
+            cache.add(create_metadata(sender, i as i64 * 1000), message);
         }
 
         // Should be trimmed to MAX_CACHE_SIZE
@@ -323,7 +323,7 @@ mod tests {
         let sender = create_service_id("55555555-1234-5678-1234-555555555555");
         let message = create_receipt_message(vec![1000]);
 
-        assert!(cache.add(create_metadata(sender.clone(), 1000), message));
+        assert!(cache.add(create_metadata(sender, 1000), message));
         assert_eq!(cache.len(), 1);
 
         cache
