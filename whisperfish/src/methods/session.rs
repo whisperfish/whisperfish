@@ -132,8 +132,8 @@ impl SessionMethods {
             .iter()
             .chain(recipient.to_pni_service_address().iter())
         {
-            success |= storage.aci_storage().delete_identity_key(&address);
-            success |= storage.pni_storage().delete_identity_key(&address);
+            success |= storage.aci_storage().delete_identity_key(address);
+            success |= storage.pni_storage().delete_identity_key(address);
         }
 
         let session = storage.fetch_or_insert_session_by_recipient_id(recipient_id);
