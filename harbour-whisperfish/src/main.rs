@@ -177,13 +177,13 @@ fn main() -> anyhow::Result<()> {
             std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
             std::env::set_var("RUST_BACKTRACE", "full");
         }
-        "whisperfish=trace,libsignal_service=trace"
+        "whisperfish=trace,libsignal_service=trace,libsignal_protocol=debug"
     } else if opt.verbose == 1 {
         unsafe {
             std::env::set_var("QT_LOGGING_TO_CONSOLE", "1");
             std::env::set_var("RUST_BACKTRACE", "full");
         }
-        "whisperfish=debug,libsignal_service=debug"
+        "whisperfish=debug,libsignal_service=debug,libsignal_protocol=debug"
     } else {
         "whisperfish=info,warn"
     };
