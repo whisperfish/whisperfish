@@ -150,7 +150,7 @@ Page {
                     ? createConversation.name
                     //: Page header title when a new conversation is being created
                     //% "New conversation"
-                    : qsTrId("whisperfish-creating-conversation-title")
+                    : qsTrId("whisperfish-new-conversation-title")
                 description: createConversation.hasName
                     //: Repeat of the title in the header description when a name is known
                     //% "Creating conversation"
