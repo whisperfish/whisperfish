@@ -4,6 +4,7 @@ pub mod migrations;
 mod attachment;
 #[cfg(feature = "calling")]
 mod call;
+mod dme;
 mod early_receipt_cache;
 mod groupv2;
 mod linked_devices;
@@ -78,6 +79,7 @@ use crate::store::AciOrPniStorage;
 use crate::store::Storage;
 use crate::store::observer::{Relation, Subject};
 use crate::store::orm::UnidentifiedAccessMode;
+use crate::worker::client::dme::NoSenderKeyDme;
 use crate::worker::client::early_receipt_cache::CachedReceipt;
 use crate::worker::client::unidentified::CertType;
 use crate::worker::profile_refresh::ProfileUpdater;
@@ -454,6 +456,12 @@ pub struct ClientActor {
     /// flight, used to dedup the self-healing revision-check path.
     group_refresh_in_flight: HashSet<[u8; 32]>,
 
+    /// Last dispatch time of a DME (DecryptionErrorMessage / retry receipt) per
+    /// (sender ServiceId, sender device id, sender-key distribution id). Used
+    /// to rate-limit the outgoing DME on `NoSenderKeyState` so a single broken
+    /// sender key only kicks one DME per [`SESSION_RESET_INTERVAL`] window.
+    pub(crate) last_dme_dispatch: HashMap<(ServiceId, DeviceId, Uuid), DateTime<Utc>>,
+
     start_time: DateTime<Local>,
 
     profile_updater: Option<Addr<ProfileUpdater>>,
@@ -604,6 +612,8 @@ impl ClientActor {
             early_receipt_cache: EarlyReceiptCache::new(),
 
             group_refresh_in_flight: Default::default(),
+
+            last_dme_dispatch: Default::default(),
 
             start_time: Local::now(),
 
@@ -3196,6 +3206,20 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             };
 
                             let _span = tracing::warn_span!("handling NoSenderKeyState", %distribution_id, authenticated_sender=%sender).entered();
+
+                            // Best-effort DME (retry receipt) so the sender re-shares its
+                            // sender key for `distribution_id`.
+                            if let Some(recipient) = ServiceId::parse_from_service_id_string(sender.name()) {
+                                let _ = this.try_send(NoSenderKeyDme {
+                                    recipient,
+                                    failed_device: sender.device_id(),
+                                    distribution_id,
+                                    failed_timestamp: msg.client_timestamp(),
+                                });
+                            } else {
+                                tracing::warn!(%sender, %distribution_id, "could not parse sender ServiceId; skipping DME");
+                            }
+
                             let _ = this.send(ResetSession::Device(sender)).await;
 
                             tracing::info!("dropping envelope");
@@ -3209,6 +3233,20 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             sender: Some(sender),
                         })) => {
                             let _span = tracing::warn_span!("handling NoSenderKeyState", %distribution_id, sealed_sender=%sender).entered();
+
+                            // Best-effort DME (retry receipt) so the sender re-shares its
+                            // sender key for `distribution_id`.
+                            if let Some(recipient) = ServiceId::parse_from_service_id_string(sender.name()) {
+                                let _ = this.try_send(NoSenderKeyDme {
+                                    recipient,
+                                    failed_device: sender.device_id(),
+                                    distribution_id,
+                                    failed_timestamp: msg.client_timestamp(),
+                                });
+                            } else {
+                                tracing::warn!(%sender, %distribution_id, "could not parse sender ServiceId; skipping DME");
+                            }
+
                             let _ = this.send(ResetSession::Device(sender)).await;
 
                             tracing::info!("dropping envelope");
