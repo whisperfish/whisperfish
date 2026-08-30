@@ -2750,12 +2750,17 @@ Settings page share contacts</extracomment>
         <extracomment>Pull-down menu item to clear the current query and retry</extracomment>
         <translation type="unfinished"></translation>
     </message>
-    <message id="whisperfish-creating-conversation-title">
+    <message id="whisperfish-new-conversation-title">
         <location filename="../qml/pages/CreateConversationPage.qml" line="153"/>
+        <source>New conversation</source>
+        <extracomment>Page header title when a new conversation is being created</extracomment>
+        <translation type="unfinished">Nova conversa</translation>
+    </message>
+    <message id="whisperfish-creating-conversation-title">
         <source>New conversation</source>
         <oldsource>Creating conversation</oldsource>
         <extracomment>Page header title when a new conversation is being created</extracomment>
-        <translation type="unfinished">Nova conversa</translation>
+        <translation type="obsolete">Nova conversa</translation>
     </message>
     <message id="whisperfish-creating-conversation-description">
         <location filename="../qml/pages/CreateConversationPage.qml" line="157"/>
