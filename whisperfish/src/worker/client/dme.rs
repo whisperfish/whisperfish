@@ -78,7 +78,7 @@ impl Handler<NoSenderKeyDme> for ClientActor {
             match sender
                 .send_sender_key_decryption_error_message(
                     &msg.recipient,
-                    unidentified_access,
+                    unidentified_access.as_ref(),
                     msg.failed_timestamp,
                     msg.failed_device,
                 )

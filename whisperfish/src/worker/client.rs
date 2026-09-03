@@ -2882,7 +2882,7 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                             sender
                                 .send_message(
                                     &svc,
-                                    access,
+                                    access.as_ref(),
                                     content.clone(),
                                     timestamp,
                                     recipient.needs_pni_signature,
