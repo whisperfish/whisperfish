@@ -1963,6 +1963,36 @@ impl<O: Observable> Storage<O> {
         })
     }
 
+    /// Group sessions (v1 and v2) with `recipient_id` as a member, excluding
+    /// terminated group_v2 sessions (the analogue of inactive groups).
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_common_group_sessions(&self, recipient_id: i32) -> Vec<orm::Session> {
+        use schema::{group_v1_members, group_v2_members, sessions};
+        let ids: Vec<i32> = sessions::table
+            .inner_join(
+                group_v2_members::table
+                    .on(sessions::group_v2_id.eq(group_v2_members::group_v2_id.nullable())),
+            )
+            .filter(group_v2_members::recipient_id.eq(recipient_id))
+            .select(sessions::id)
+            .union(
+                sessions::table
+                    .inner_join(
+                        group_v1_members::table
+                            .on(sessions::group_v1_id.eq(group_v1_members::group_v1_id.nullable())),
+                    )
+                    .filter(group_v1_members::recipient_id.eq(recipient_id))
+                    .select(sessions::id),
+            )
+            .load(&mut *self.db())
+            .expect("common group sessions");
+
+        ids.into_iter()
+            .filter_map(|id| self.fetch_session_by_id(id))
+            .filter(|session| !session.is_terminated_group())
+            .collect()
+    }
+
     #[tracing::instrument(skip(self))]
     pub fn fetch_session_by_id(&self, sid: i32) -> Option<orm::Session> {
         fetch_session!(self.db(), |query| {
@@ -2812,6 +2842,78 @@ impl<O: Observable> Storage<O> {
         } else {
             tracing::trace!("Recipient {service_address:?} already {un}registered");
         }
+    }
+
+    /// Handle an `UntrustedIdentity` failure for `untrusted_service_id`, mirroring
+    /// Signal-Android's identity-key-change flow (see
+    /// [`SignalBaseIdentityKeyStore.saveIdentity`](https://github.com/signalapp/Signal-Android/blob/main/app/src/main/java/org/thoughtcrime/securesms/crypto/storage/SignalBaseIdentityKeyStore.java)):
+    /// notify common group/DM sessions, refresh staleness, delete the mismatched
+    /// key, and archive sessions so other devices recover cleanly.
+    ///
+    /// `local_identity_kind` selects the identity store (ACI or PNI) addressed.
+    /// Returns whether a stored identity was actually removed; `false` is
+    /// unexpected for a genuine `UntrustedIdentity`.
+    #[tracing::instrument(skip(self), fields(?untrusted_service_id))]
+    pub async fn recover_untrusted_identity(
+        &self,
+        untrusted_service_id: &ServiceId,
+        local_identity_kind: ServiceIdKind,
+    ) -> bool {
+        tracing::warn!(
+            "Untrusted identity for {}; replacing identity and inserting a warning.",
+            untrusted_service_id.service_id_string()
+        );
+        let recipient = self.fetch_or_insert_recipient_by_address(untrusted_service_id);
+        if untrusted_service_id.kind() == ServiceIdKind::Pni {
+            self.mark_recipient_needs_pni_signature(&recipient, true);
+        }
+
+        let group_sessions = self.fetch_common_group_sessions(recipient.id);
+        let mut target_sessions = group_sessions;
+
+        // The notice is visible in common groups. Only push to the direct session
+        // if it already exists, or create it if there are no common groups.
+        if target_sessions.is_empty() {
+            target_sessions.push(self.fetch_or_insert_session_by_recipient_id(recipient.id));
+        } else if let Some(session) = self.fetch_session_by_recipient_id(recipient.id) {
+            target_sessions.push(session);
+        }
+
+        for session in target_sessions {
+            let msg = NewMessage {
+                session_id: session.id,
+                source_addr: Some(*untrusted_service_id),
+                message_type: Some(MessageType::IdentityKeyChange),
+                // Trust-state markers, not user messages; keep them read.
+                is_read: true,
+                ..NewMessage::new_incoming()
+            };
+            self.create_message(&msg);
+        }
+
+        if !recipient.is_registered {
+            tracing::warn!("Recipient was marked as unregistered, marking as registered.");
+            self.mark_recipient_registered(*untrusted_service_id, true);
+        }
+
+        if !self
+            .aci_or_pni(local_identity_kind)
+            .delete_identity_key(untrusted_service_id)
+        {
+            tracing::error!("Could not remove identity key. Please file a bug.");
+            return false;
+        }
+
+        // Archive sessions under the replaced key so other devices re-establish cleanly.
+        match self
+            .aci_or_pni(local_identity_kind)
+            .delete_all_sessions(untrusted_service_id)
+            .await
+        {
+            Ok(count) => tracing::debug!("Archived {count} sessions"),
+            Err(e) => tracing::warn!("Could not archive sessions: {e}"),
+        }
+        true
     }
 
     #[tracing::instrument(skip(self))]

@@ -1091,6 +1091,12 @@ impl Session {
         self.r#type.is_group_v2()
     }
 
+    /// Terminated group v2 sessions are the analogue of Signal-Android's
+    /// inactive groups.
+    pub fn is_terminated_group(&self) -> bool {
+        matches!(&self.r#type, SessionType::GroupV2(group) if group.terminated)
+    }
+
     pub fn unwrap_dm(&self) -> &Recipient {
         self.r#type.unwrap_dm()
     }
