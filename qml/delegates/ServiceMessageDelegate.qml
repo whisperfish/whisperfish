@@ -341,7 +341,7 @@ ListItem {
         var locale = Qt.locale().name.replace(/_.*$/, '').toLowerCase()
         if (!/[a-z][a-z]/.test(locale)) locale = "en-us"
 
-        if (_type === "fingerprint_changed") {
+        if (_type === "identity_reset") {
             // "What is a safety number and why do I see that it changed?"
             Qt.openUrlExternally('https://support.signal.org/hc/%1/articles/360007060632'.arg(locale))
         } else if (_type === "session_reset") {
