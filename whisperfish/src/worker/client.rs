@@ -11,6 +11,7 @@ mod linked_devices;
 mod message_expiry;
 mod profile_upload;
 pub mod resize_image;
+mod retofu;
 mod service_error_ext;
 mod unidentified;
 #[cfg(feature = "voice-note-transcription")]
@@ -3174,7 +3175,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                 Some(service_id.to_protocol_address(DeviceId::try_from(device_id).ok()?))
             });
 
-        let mut cipher = self.cipher(incoming_address.kind());
+        let cipher = self.cipher(incoming_address.kind());
 
         let storage = self.storage.clone().expect("initialized storage");
 
@@ -3183,28 +3184,21 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
         let this = ctx.address();
         ctx.spawn(
             async move {
-                let mut visited = false;
-                let content = loop {
-                    match cipher.open_envelope(msg.clone(), &mut rand::rng()).await {
-                        Ok(Some(content)) => {
+                let content = match retofu::maybe_reset_identity(&storage, incoming_address.kind(), || async {
+                    let mut cipher = cipher.clone();
+                    cipher.open_envelope(msg.clone(), &mut rand::rng()).await
+                }).await {
+                    Ok(Some(content)) => {
                             storage.mark_recipient_registered(content.metadata.sender, true);
-                            break Some(content);
+                            Some(content)
                         }
                         Ok(None) => {
                             tracing::warn!("Empty envelope");
-                            break None;
+                            None
                         }
                         // Capture NoSenderKeyState with authenticated sender
                         Err(ServiceError::SignalProtocolError(SignalProtocolError::NoSenderKeyState{distribution_id})) => {
-                            let Some(sender) = sender_address else {
-                                tracing::warn!(%distribution_id, "non-sealed sending without clear-text sender when handling NoSenderKeyState");
-                                break None;
-                            };
-                            let Ok(sender) = sender else {
-                                tracing::warn!(%distribution_id, "non-sealed sending with invalid sender device id when handling NoSenderKeyState");
-                                break None;
-                            };
-
+                            if let Some(Ok(sender)) = sender_address {
                             let _span = tracing::warn_span!("handling NoSenderKeyState", %distribution_id, authenticated_sender=%sender).entered();
 
                             // Best-effort DME (retry receipt) so the sender re-shares its
@@ -3223,7 +3217,10 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             let _ = this.send(ResetSession::Device(sender)).await;
 
                             tracing::info!("dropping envelope");
-                            break None;
+                            } else {
+                                tracing::warn!(%distribution_id, "non-sealed sending without clear-text sender when handling NoSenderKeyState");
+                            }
+                            None
                         }
                         // Capture NoSenderKeyState with sealed sender
                         Err(ServiceError::SealedSenderDecryptionError(SealedSenderDecryptionError {
@@ -3250,7 +3247,7 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             let _ = this.send(ResetSession::Device(sender)).await;
 
                             tracing::info!("dropping envelope");
-                            break None;
+                            None
                         }
                         // Capture sessions not existing in both sealed and authenticated cases.
                         Err(ServiceError::SignalProtocolError(SignalProtocolError::SessionNotFound(
@@ -3269,53 +3266,12 @@ impl StreamHandler<Result<Incoming, ServiceError>> for ClientActor {
                             let _ = this.send(ResetSession::Device(sender)).await;
 
                             tracing::info!("dropping envelope");
-                            break None;
-                        }
-                        Err(ServiceError::SignalProtocolError(
-                            SignalProtocolError::UntrustedIdentity(untrusted_address),
-                        )) => {
-                            // This branch is the only one that loops, and it *should not* loop more than once.
-                            if visited {
-                                tracing::warn!("ServiceError::SignalProtocolError visited more than once!");
-                            }
-                            visited = true;
-
-                            let untrusted_service_id = ServiceId::parse_from_service_id_string(untrusted_address.name()).expect("valid ACI or PNI UUID in ProtocolAddress");
-                            tracing::warn!("Untrusted identity for {untrusted_address}; replacing identity and inserting a warning.");
-                            let recipient = storage.fetch_or_insert_recipient_by_address(&untrusted_service_id);
-                            if untrusted_service_id.kind() == ServiceIdKind::Pni {
-                                storage.mark_recipient_needs_pni_signature(&recipient, true);
-                            }
-                            let session = storage.fetch_or_insert_session_by_recipient_id(recipient.id);
-                            let msg = crate::store::NewMessage {
-                                session_id: session.id,
-                                source_addr: Some(untrusted_service_id),
-                                message_type: Some(MessageType::IdentityKeyChange),
-                                // Identity-key-change notices are trust-state markers, not
-                                // messages awaiting the user. Keep them read so they neither
-                                // inflate a session's unread count nor linger as unread
-                                // while a message request is pending.
-                                is_read: true,
-                                // XXX: Message timer?
-                                ..crate::store::NewMessage::new_incoming()
-                            };
-                            storage.create_message(&msg);
-
-                            if !recipient.is_registered {
-                                tracing::warn!("Recipient was marked as unregistered, marking as registered.");
-                                storage.mark_recipient_registered(untrusted_service_id, true);
-                            }
-
-                            if !storage.aci_or_pni(incoming_address.kind()).delete_identity_key(&untrusted_service_id) {
-                                tracing::error!("Could not remove identity key for {}.  Please file a bug.", untrusted_address);
-                                break None;
-                            }
+                            None
                         }
                         Err(e) => {
                             tracing::error!("Error opening envelope: {:?}", e);
-                            break None;
+                            None
                         }
-                    }
                 };
 
                 if let Some(content) = content.as_ref() {
