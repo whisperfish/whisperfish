@@ -3,18 +3,15 @@
 use std::future::Future;
 
 use libsignal_protocol::{ServiceId, ServiceIdKind, SignalProtocolError};
+use libsignal_service::cipher::SealedSenderDecryptionError;
 use libsignal_service::content::ServiceError;
 use libsignal_service::sender::MessageSenderError;
 
 use crate::store::Storage;
 
-/// Extract the recipient [`ServiceId`] whose stored identity key mismatched,
-/// if this error represents an untrusted-identity failure.
-///
-/// Implemented for both the receive path ([`ServiceError`], where the mismatch
-/// surfaces as [`SignalProtocolError::UntrustedIdentity`]) and the send path
-/// ([`MessageSenderError::UntrustedIdentity`]), so that
-/// [`maybe_reset_identity`] can recover either the same way.
+/// The `ServiceId` whose stored identity key mismatched, if `self` is an
+/// untrusted-identity failure. `MessageSenderError` carries the mismatch twice
+/// (dedicated variant and `#[from]` `ProtocolError`); match both.
 pub trait UntrustedIdentityAddress {
     fn untrusted_identity(&self) -> Option<ServiceId>;
 }
@@ -22,9 +19,11 @@ pub trait UntrustedIdentityAddress {
 impl UntrustedIdentityAddress for ServiceError {
     fn untrusted_identity(&self) -> Option<ServiceId> {
         match self {
-            ServiceError::SignalProtocolError(SignalProtocolError::UntrustedIdentity(address)) => {
-                ServiceId::parse_from_service_id_string(address.name())
-            }
+            ServiceError::SignalProtocolError(SignalProtocolError::UntrustedIdentity(address))
+            | ServiceError::SealedSenderDecryptionError(SealedSenderDecryptionError {
+                inner: SignalProtocolError::UntrustedIdentity(address),
+                ..
+            }) => ServiceId::parse_from_service_id_string(address.name()),
             _ => None,
         }
     }
@@ -33,6 +32,10 @@ impl UntrustedIdentityAddress for ServiceError {
 impl UntrustedIdentityAddress for MessageSenderError {
     fn untrusted_identity(&self) -> Option<ServiceId> {
         match self {
+            MessageSenderError::ProtocolError(SignalProtocolError::UntrustedIdentity(address)) => {
+                ServiceId::parse_from_service_id_string(address.name())
+            }
+            MessageSenderError::ServiceError(e) => e.untrusted_identity(),
             MessageSenderError::UntrustedIdentity { address } => Some(*address),
             _ => None,
         }
