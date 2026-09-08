@@ -2614,7 +2614,27 @@ impl Handler<SendTypingNotification> for ClientActor {
                     for_story: false,
                 })
                 .await?
-                .map(|_unidentified| session_id)
+                .map(|results| {
+                    let mut failures = 0;
+                    for result in &results {
+                        if let Err(e) = result {
+                            failures += 1;
+                            tracing::trace!(%e, "typing notification not delivered");
+                        }
+                    }
+                    if failures > 0 {
+                        tracing::debug!(
+                            failures,
+                            session_id,
+                            "typing notification not delivered to all devices"
+                        );
+                    }
+                })?;
+
+                // DeliverMessage collects per-device results; surface failures
+                // instead of pretending the whole fan-out succeeded.
+
+                Ok::<_, anyhow::Error>(session_id)
             }
             .into_actor(self)
             .map(move |res, _act, _ctx| {
@@ -2880,16 +2900,27 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                         }
 
                         vec![
-                            sender
-                                .send_message(
-                                    &svc,
-                                    access.as_ref(),
-                                    content.clone(),
-                                    timestamp,
-                                    recipient.needs_pni_signature,
-                                    online,
-                                )
-                                .await,
+                            // XXX: upstream Signal requests explicit permission (blocking the
+                            //      UI until the identity reset is acknowledged) for a reset event.
+                            //      We accept the reset and trigger a message in the session.
+                            retofu::maybe_reset_identity(&storage, ServiceIdKind::Aci, || {
+                                let mut sender = sender.clone();
+                                let content = content.clone();
+                                let access = access.as_ref();
+                                async move {
+                                    sender
+                                        .send_message(
+                                            &svc,
+                                            access,
+                                            content,
+                                            timestamp,
+                                            recipient.needs_pni_signature,
+                                            online,
+                                        )
+                                        .await
+                                }
+                            })
+                            .await,
                         ]
                     } else {
                         anyhow::bail!("Recipient id {} has no UUID", recipient.id);
