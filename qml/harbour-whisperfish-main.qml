@@ -180,6 +180,27 @@ ApplicationWindow
         return ""
     }
 
+    // Resolve the avatar to show as the notification icon. Groups use the
+    // group avatar, direct messages the peer's avatar (respecting the
+    // 'Prefer device contacts' setting). Without an avatar, fall back to the
+    // same theme glyph the session overview renders behind it. The overview's
+    // colored disc is deliberately not reproduced: it is a translucent
+    // ambience color composited over the list background, which would not
+    // match on a notification surface (and would go stale on ambience change).
+    function getNotificationIcon(data) {
+        if (data.isGroup) {
+            return getGroupAvatar(data.groupId) || "image://theme/icon-m-users"
+        }
+        var avatar = getRecipientAvatar(data.sessionE164, data.sessionUuid, data.sessionExternalId)
+        if (avatar) {
+            return avatar
+        }
+        if (data.sessionUuid === SetupWorker.uuid) {
+            return "image://theme/icon-m-note"
+        }
+        return "image://theme/icon-m-contact"
+    }
+
     // Return either given peer name or device contacts name based on
     // user selected preference. Fallback to e164.
     //
@@ -276,6 +297,7 @@ ApplicationWindow
         }
 
         var m = callNotification.createObject(null)
+        m.icon = getNotificationIcon(data)
         m.itemCount = 1
         var setting = SettingsBridge.notification_privacy.toString();
         if(setting === "off") {
@@ -344,6 +366,7 @@ ApplicationWindow
         }
 
         var m = messageNotification.createObject(null)
+        m.icon = getNotificationIcon(data)
         m.itemCount = 1
 
         var notification_privacy = SettingsBridge.notification_privacy.toString();
