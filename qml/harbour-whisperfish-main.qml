@@ -343,8 +343,8 @@ ApplicationWindow
             "method": "showConversation",
             "arguments": [ "sessionId", data.sessionId ]
         } ]
-        m.publish()
         m.sessionId = data.sessionId
+        m.publish()
     }
 
     function flushNotifications() {
@@ -466,18 +466,19 @@ ApplicationWindow
             "method": "replyToMessage",
             "arguments": [ "sessionId", data.sessionId, "messageId", data.messageId ]
         } ]
+        m.messageId = data.messageId
+        if(data.sessionId in notificationMap && !SettingsBridge.minimise_notify) {
+              notificationMap[data.sessionId].push(m)
+        } else {
+              notificationMap[data.sessionId] = [m]
+        }
+
         if (!ClientWorker.queueEmpty) {
             console.log("Adding to queue")
             notificationQueue.push(m)
         } else {
             console.log("Publishing immediately")
             m.publish()
-        }
-        m.messageId = data.messageId
-        if(data.sessionId in notificationMap && !SettingsBridge.minimise_notify) {
-              notificationMap[data.sessionId].push(m)
-        } else {
-              notificationMap[data.sessionId] = [m]
         }
     }
 
