@@ -284,9 +284,6 @@ ApplicationWindow
     }
 
     function newMissedCallNotification(data) {
-        var senderName = getRecipientName(data.senderE164, undefined, data.senderName)
-        var contactName = data.isGroup ? data.sessionName : senderName
-
         // Only ConversationPage.qml has `sessionId` property.
         if(Qt.application.state == Qt.ApplicationActive &&
            (pageStack.currentPage == _mainPage || pageStack.currentPage.sessionId == data.sessionId)) {
@@ -314,10 +311,13 @@ ApplicationWindow
         }
 
         if(setting === "complete" || setting === "sender-only") {
-            m.previewSummary = senderName
-            m.summary = senderName
+            var rcptName = getRecipientName(data.senderE164, undefined, data.senderName)
+            var chatName = data.isGroup ? data.sessionName : rcptName
+
+            m.previewSummary = rcptName
+            m.summary = rcptName
             if(m.subText !== undefined) {
-                m.subText = contactName
+                m.subText = chatName
             }
             m.icon = getNotificationIcon(data)
         }
@@ -406,18 +406,14 @@ ApplicationWindow
             m.itemCount = first_message.itemCount + 1
         }
 
-        var name = getRecipientName(data.senderE164, undefined, data.senderName)
-        var contactName = data.isGroup ? data.sessionName : name
-
         if(notification_privacy === "complete" || notification_privacy === "sender-only") {
-            // Use the resolved name (respects 'Prefer device contacts' and
-            // falls back to the Signal profile name) rather than the raw
-            // Signal profile name from the payload, so notifications match
-            // the in-app sender display. Mirrors newMissedCallNotification().
-            m.previewSummary = name
-            m.summary = name
+            var rcptName = getRecipientName(data.senderE164, undefined, data.senderName)
+            var chatName = data.isGroup ? data.sessionName : rcptName
+
+            m.previewSummary = rcptName
+            m.summary = rcptName
             if(m.subText !== undefined) {
-                m.subText = contactName
+                m.subText = chatName
             }
             m.icon = getNotificationIcon(data)
         }
