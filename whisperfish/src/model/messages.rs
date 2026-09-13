@@ -100,14 +100,18 @@ impl EventObserving for Message {
             } else if event.relation_key_for(schema::receipts::table).is_some() {
                 let storage = ctx.storage();
                 let msg = self.augmented_message.as_mut().unwrap();
-                let old_counts = &msg.receipt_counts;
-                let new_counts = storage.count_message_receipts(id);
-                let has_changes = (old_counts.delivered > 0) != (new_counts.delivered > 0)
-                    || (old_counts.read > 0) != (new_counts.read > 0)
-                    || (old_counts.viewed > 0) != (new_counts.viewed > 0);
 
-                msg.receipt_counts = new_counts;
+                let rcpts = &mut msg.has_receipts;
+                let new_rcpts = storage.count_message_receipts(id);
+
+                let has_changes = rcpts.delivered != new_rcpts.delivered
+                    || rcpts.read != new_rcpts.read
+                    || rcpts.viewed != new_rcpts.viewed;
+
                 if has_changes {
+                    rcpts.delivered = new_rcpts.delivered;
+                    rcpts.read = new_rcpts.read;
+                    rcpts.viewed = new_rcpts.viewed;
                     self.message_changed();
                 }
             } else {
@@ -501,9 +505,9 @@ define_model_roles! {
         SenderLabel(fn sender_label(&self) via qstring_from_option): "senderLabel",
         SenderLabelEmoji(fn sender_label_emoji(&self) via qstring_from_option): "senderLabelEmoji",
 
-        HasDeliveries(receipt_counts.delivered via bool_from_usize): "hasDeliveries",
-        HasReads(receipt_counts.read via bool_from_usize):    "hasReads",
-        HasViews(receipt_counts.viewed via bool_from_usize):  "hasViews",
+        HasDeliveries(has_receipts.delivered):                "hasDeliveries",
+        HasReads(has_receipts.read):                          "hasReads",
+        HasViews(has_receipts.viewed):                        "hasViews",
         IsRead(is_read):                                      "isRead", // Is the message unread or read by self
 
         Sent(fn sent(&self)):                                 "sent",
@@ -638,6 +642,20 @@ impl MessageListModel {
                     self.end_remove_rows();
                 }
                 Ok(existing_index) => {
+                    let old_message = &self.messages[existing_index];
+
+                    // Receipt-table events touch only receipts by construction.
+                    // If no tick crosses zero, the row is visually unchanged —
+                    // skip without comparing anything else.
+                    if event.for_table(schema::receipts::table)
+                        && old_message.has_receipts.delivered == message.has_receipts.delivered
+                        && old_message.has_receipts.read == message.has_receipts.read
+                        && old_message.has_receipts.viewed == message.has_receipts.viewed
+                    {
+                        tracing::debug!("Skip insignificant update event.");
+                        return;
+                    }
+
                     // Update, and message is the latest revision. Update it.
                     tracing::debug!("Handling update event.");
                     self.messages[existing_index] = message;

@@ -1269,30 +1269,10 @@ impl SessionType {
 
 /// Counts of different types of receipts for a message.
 #[derive(Clone, Default, Debug)]
-pub struct ReceiptCounts {
-    pub read: usize,
-    pub delivered: usize,
-    pub viewed: usize,
-}
-
-impl ReceiptCounts {
-    /// Create a new ReceiptCounts from a vector of receipts
-    pub fn from_receipts(receipts: &[(Receipt, Recipient)]) -> Self {
-        Self {
-            read: receipts
-                .iter()
-                .filter(|(receipt, _)| receipt.read.is_some())
-                .count(),
-            delivered: receipts
-                .iter()
-                .filter(|(receipt, _)| receipt.delivered.is_some())
-                .count(),
-            viewed: receipts
-                .iter()
-                .filter(|(receipt, _)| receipt.viewed.is_some())
-                .count(),
-        }
-    }
+pub struct HasReceipts {
+    pub read: bool,
+    pub delivered: bool,
+    pub viewed: bool,
 }
 
 /// [`Message`] augmented with its sender, attachment count and receipts.
@@ -1306,7 +1286,7 @@ pub struct AugmentedMessage {
     pub attachments: usize,
     pub reactions: usize,
     pub is_voice_note: bool,
-    pub receipt_counts: ReceiptCounts,
+    pub has_receipts: HasReceipts,
     pub body_ranges: Vec<crate::store::protos::body_range_list::BodyRange>,
     pub mentions: std::collections::HashMap<uuid::Uuid, Recipient>,
     pub sender_membership: Option<GroupV2Member>,
@@ -1319,9 +1299,9 @@ impl Display for AugmentedMessage {
             "AugmentedMessage {{ attachments: {}, reactions: {}, hasReadRcpts: {}, hasDeliveredRcpts: {}, hasViewedRcpts: {}, inner: {} }}",
             &self.attachments,
             &self.reactions,
-            self.receipt_counts.read > 0,
-            self.receipt_counts.delivered > 0,
-            self.receipt_counts.viewed > 0,
+            self.has_receipts.read,
+            self.has_receipts.delivered,
+            self.has_receipts.viewed,
             &self.inner
         )
     }
@@ -1640,23 +1620,31 @@ impl AugmentedSession {
             .unwrap_or(true)
     }
 
-    pub fn delivered(&self) -> usize {
+    pub fn delivered(&self) -> bool {
         if let Some(m) = &self.last_message {
-            m.receipt_counts.delivered
+            m.has_receipts.delivered
         } else {
-            0
+            false
         }
     }
 
-    pub fn read(&self) -> usize {
+    pub fn read(&self) -> bool {
         if let Some(m) = &self.last_message {
             if m.message_type.is_some() && m.is_read {
-                1
+                true
             } else {
-                m.receipt_counts.read
+                m.has_receipts.read
             }
         } else {
-            0
+            false
+        }
+    }
+
+    pub fn viewed(&self) -> bool {
+        if let Some(m) = &self.last_message {
+            m.has_receipts.viewed
+        } else {
+            false
         }
     }
 
@@ -1670,14 +1658,6 @@ impl AugmentedSession {
 
     pub fn is_pinned(&self) -> bool {
         self.is_pinned
-    }
-
-    pub fn viewed(&self) -> usize {
-        if let Some(m) = &self.last_message {
-            m.receipt_counts.viewed
-        } else {
-            0
-        }
     }
 }
 
@@ -1942,10 +1922,10 @@ mod tests {
             attachments: 2,
             inner: get_message(),
             is_voice_note: false,
-            receipt_counts: ReceiptCounts {
-                read: 1,
-                delivered: 1,
-                viewed: 1,
+            has_receipts: HasReceipts {
+                read: true,
+                delivered: true,
+                viewed: true,
             },
             reactions: 0,
             body_ranges: vec![],
@@ -2290,9 +2270,9 @@ mod tests {
         let a = get_augmented_message();
         assert!(!a.sent());
         assert!(!a.queued());
-        assert_eq!(a.receipt_counts.delivered, 1);
-        assert_eq!(a.receipt_counts.read, 1);
-        assert_eq!(a.receipt_counts.viewed, 1);
+        assert!(a.has_receipts.delivered);
+        assert!(a.has_receipts.read);
+        assert!(a.has_receipts.viewed);
         assert_eq!(a.attachments(), 2);
     }
 
@@ -2322,11 +2302,11 @@ mod tests {
         assert!(a.is_pinned());
         assert_eq!(a.section(), "pinned");
         assert!(!a.is_read());
-        assert_eq!(a.read(), 1);
-        assert_eq!(a.delivered(), 1);
+        assert!(a.delivered());
+        assert!(a.read());
+        assert!(a.viewed());
         assert!(!a.is_muted());
         assert!(!a.is_archived());
-        assert_eq!(a.viewed(), 1);
 
         a = AugmentedSession {
             inner: get_dm_session(),

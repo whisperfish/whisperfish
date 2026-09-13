@@ -327,10 +327,6 @@ fn int_from_duration_option(val: Option<Duration>) -> i32 {
     }
 }
 
-fn bool_from_usize(val: usize) -> bool {
-    val > 0
-}
-
 fn int_from_device_id(val: DeviceId) -> u32 {
     val.into()
 }
