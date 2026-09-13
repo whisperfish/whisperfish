@@ -297,7 +297,6 @@ ApplicationWindow
         }
 
         var m = callNotification.createObject(null)
-        m.icon = getNotificationIcon(data)
         m.itemCount = 1
         var setting = SettingsBridge.notification_privacy.toString();
         if(setting === "off") {
@@ -320,6 +319,7 @@ ApplicationWindow
             if(m.subText !== undefined) {
                 m.subText = contactName
             }
+            m.icon = getNotificationIcon(data)
         }
 
         m.previewBody = m.body
@@ -366,7 +366,6 @@ ApplicationWindow
         }
 
         var m = messageNotification.createObject(null)
-        m.icon = getNotificationIcon(data)
         m.itemCount = 1
 
         var notification_privacy = SettingsBridge.notification_privacy.toString();
@@ -420,6 +419,7 @@ ApplicationWindow
             if(m.subText !== undefined) {
                 m.subText = contactName
             }
+            m.icon = getNotificationIcon(data)
         }
         // XXX: maybe we do want a summary?
 
