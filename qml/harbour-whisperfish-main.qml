@@ -293,21 +293,22 @@ ApplicationWindow
             return
         }
 
-        var m = callNotification.createObject(null)
-        m.itemCount = 1
         var setting = SettingsBridge.notification_privacy.toString();
         if(setting === "off") {
             return;
+        }
+
+        var m = callNotification.createObject(null)
+        m.itemCount = 1
+
+        if (!data.isVideoCall) {
+            //: Notification text for missed call notification
+            //% "Missed voice call"
+            m.body = qsTrId("whisperfish-notification-missed-voice-call")
         } else {
-            if (!data.isVideoCall) {
-                //: Notification text for missed call notification
-                //% "Missed voice call"
-                m.body = qsTrId("whisperfish-notification-missed-voice-call")
-            } else {
-                //: Notification text for missed call notification
-                //% "Missed video call"
-                m.body = qsTrId("whisperfish-notification-missed-video-call")
-            }
+            //: Notification text for missed call notification
+            //% "Missed video call"
+            m.body = qsTrId("whisperfish-notification-missed-video-call")
         }
 
         if(setting === "complete" || setting === "sender-only") {
@@ -365,10 +366,14 @@ ApplicationWindow
             return
         }
 
+        var notification_privacy = SettingsBridge.notification_privacy.toString()
+        if (notification_privacy == "off") {
+            return
+        }
+
         var m = messageNotification.createObject(null)
         m.itemCount = 1
 
-        var notification_privacy = SettingsBridge.notification_privacy.toString();
         switch (notification_privacy) {
         case "complete":
             // TODO: Service messages show up as empty message (instead of even raw JSON)
@@ -380,10 +385,8 @@ ApplicationWindow
             //% "New Message"
             m.body = qsTrId("whisperfish-notification-default-message")
             break;
-        case "off":
-            return;
         default:
-            console.error("Unrecognised notification privacy setting:", notification_privacy);
+            console.error("Unhandled notification privacy setting:", notification_privacy)
             return;
         }
 
