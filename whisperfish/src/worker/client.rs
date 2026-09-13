@@ -499,17 +499,37 @@ pub fn message_notification(
     message_id: Option<i32>,
     message_text: Option<String>,
 ) -> QVariantMap {
-    let (session_name, is_group) = match session.r#type {
-        SessionType::GroupV1(group) => (group.name, true),
-        SessionType::GroupV2(group) => (group.name, true),
-        SessionType::DirectMessage(recipient) => (
-            match recipient.profile_joined_name {
-                Some(name) => name,
-                None => recipient.e164_or_address(),
-            },
-            false,
-        ),
+    let mut notification = QVariantMap::default();
+
+    let session_name = match &session.r#type {
+        SessionType::GroupV1(group) => {
+            notification.insert("isGroup".into(), QVariant::from(true));
+            notification.insert("groupId".into(), group.id.to_qvariant());
+            group.name.to_qvariant()
+        }
+        SessionType::GroupV2(group) => {
+            notification.insert("isGroup".into(), QVariant::from(true));
+            notification.insert("groupId".into(), group.id.to_qvariant());
+            group.name.to_qvariant()
+        }
+        SessionType::DirectMessage(recipient) => {
+            notification.insert("isGroup".into(), QVariant::from(false));
+            if let Some(uuid) = recipient.uuid {
+                notification.insert("sessionUuid".into(), uuid.to_string().to_qvariant());
+            }
+            if let Some(e164) = recipient.e164.as_ref() {
+                notification.insert("sessionE164".into(), e164.to_string().to_qvariant());
+            }
+            if let Some(external_id) = recipient.external_id.as_ref() {
+                notification.insert("sessionExternalId".into(), external_id.to_qvariant());
+            }
+            match &recipient.profile_joined_name {
+                Some(name) => name.to_qvariant(),
+                None => recipient.e164_or_address().to_qvariant(),
+            }
+        }
     };
+
     let sender_name = QString::from(
         sender_recipient
             .as_ref()
@@ -525,13 +545,12 @@ pub fn message_notification(
     let message_text = QString::from(message_text.unwrap_or_default());
     let message_id = message_id.unwrap_or(-1);
 
-    let mut notification = QVariantMap::default();
     notification.insert("sessionId".into(), QVariant::from(session.id));
     notification.insert("messageId".into(), QVariant::from(message_id));
-    notification.insert("sessionName".into(), session_name.to_qvariant());
+    // TODO: this sessionName thing is an old artifact, refactor the JS side to not use it anymore?
+    notification.insert("sessionName".into(), session_name);
     notification.insert("senderName".into(), sender_name.to_qvariant());
     notification.insert("senderE164".into(), sender_e164.to_qvariant());
-    notification.insert("isGroup".into(), QVariant::from(is_group));
 
     // JS object contains either "message" or "isVideoCall"
     match notification_type {
