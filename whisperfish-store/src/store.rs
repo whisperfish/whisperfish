@@ -1573,7 +1573,7 @@ impl<O: Observable> Storage<O> {
         session_id: i32,
     ) -> Option<orm::AugmentedMessage> {
         let msg = self.fetch_last_message_by_session_id(session_id)?;
-        self.fetch_augmented_message(msg.id)
+        self.fetch_augmented_message(msg.id, Some(session_id))
     }
 
     #[tracing::instrument(skip(self))]
@@ -3351,6 +3351,19 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
+    /// Fetch a message by both message id and session id; both must match.
+    pub fn fetch_message_by_id_from_session(&self, m_id: i32, s_id: i32) -> Option<orm::Message> {
+        schema::messages::table
+            .filter(
+                schema::messages::id
+                    .eq(m_id)
+                    .and(schema::messages::session_id.eq(s_id)),
+            )
+            .first(&mut *self.db())
+            .ok()
+    }
+
+    #[tracing::instrument(skip(self))]
     pub fn fetch_messages_by_ids(&self, ids: Vec<i32>) -> Vec<orm::Message> {
         schema::messages::table
             .filter(schema::messages::id.eq_any(ids))
@@ -3424,8 +3437,15 @@ impl<O: Observable> Storage<O> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn fetch_augmented_message(&self, message_id: i32) -> Option<orm::AugmentedMessage> {
-        let message = self.fetch_message_by_id(message_id)?;
+    pub fn fetch_augmented_message(
+        &self,
+        message_id: i32,
+        session_id: Option<i32>,
+    ) -> Option<orm::AugmentedMessage> {
+        let message = match session_id {
+            None => self.fetch_message_by_id(message_id)?,
+            Some(session_id) => self.fetch_message_by_id_from_session(message_id, session_id)?,
+        };
         let receipt_counts = self.count_message_receipts(message.id);
         let attachments: i64 = schema::attachments::table
             .filter(schema::attachments::message_id.eq(message_id))

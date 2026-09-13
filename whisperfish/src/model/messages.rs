@@ -166,7 +166,7 @@ impl Message {
     }
 
     fn fetch(&mut self, storage: Storage, id: i32) {
-        self.augmented_message = storage.fetch_augmented_message(id);
+        self.augmented_message = storage.fetch_augmented_message(id, None);
         self.fetch_attachments(storage, id);
     }
 
@@ -619,13 +619,12 @@ impl MessageListModel {
             }
             return;
         } else if event.is_update_or_insert() || event.for_table(schema::reactions::table) {
-            let message = storage
-                .fetch_augmented_message(message_id)
-                .expect("inserted message");
-            if message.session_id != session_id {
-                tracing::trace!("Ignoring message insert/update for different session.");
+            let Some(message) = storage.fetch_augmented_message(message_id, Some(session_id))
+            else {
+                tracing::debug!("Ignoring message insert/update for different session.");
                 return;
-            }
+            };
+
             let pos = self.messages.binary_search_by_key(
                 &std::cmp::Reverse((message.server_timestamp, message.id)),
                 |message| std::cmp::Reverse((message.server_timestamp, message.id)),
