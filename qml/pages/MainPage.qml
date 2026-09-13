@@ -171,8 +171,9 @@ Page {
             // This triggers the placement logic.
             function clearItemGroup(sessionId) {
                 var item
+                var i
                 if(filterOnGroup === "active") {
-                    for(var i = 0; i < activeItems.count; i++) {
+                    for(i = 0; i < activeItems.count; i++) {
                         item = activeItems.get(i)
                         if(item.model.id === sessionId) {
                             item.groups = "unsorted"
@@ -180,7 +181,7 @@ Page {
                         }
                     }
                 } else {
-                    for(var i = 0; i < archivedItems.count; i++) {
+                    for(i = 0; i < archivedItems.count; i++) {
                         item = archivedItems.get(i)
                         if(item.model.id === sessionId) {
                             item.groups = "unsorted"
