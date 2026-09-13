@@ -826,44 +826,41 @@ impl ClientActor {
         read_receipts_enabled: bool,
     ) {
         let storage = self.storage.as_ref().unwrap();
+
+        // Process only common incoming messages.
         let mut messages = storage.fetch_messages_by_ids(message_ids);
         messages.retain(|m| m.message_type.is_none());
-        let mut sessions: HashMap<i32, orm::Session> = HashMap::new();
 
-        // Iterate over messages
-
-        for message in messages.iter() {
-            sessions.entry(message.session_id).or_insert_with(|| {
-                storage
-                    .fetch_session_by_id(message.session_id)
-                    .expect("existing session for message")
-            });
+        // Fetch sender / send-to recipients in a batch
+        let mut recipients: HashMap<i32, orm::Recipient> = HashMap::new();
+        for m in messages.iter() {
+            if let Some(r_id) = m.sender_recipient_id {
+                recipients.entry(r_id).or_insert_with(|| {
+                    storage
+                        .fetch_recipient_by_id(r_id)
+                        .expect("existing sender recipient for message")
+                });
+            }
         }
 
         tracing::trace!(
-            "Sending read receipts for {} messages in {} sessions",
+            "Sending read receipts for {} messages from {} senders",
             messages.len(),
-            sessions.len()
+            recipients.len()
         );
 
-        // Synchronize to other own devices (if any)
+        // Sync to own devices.
         let read: Vec<Read> = messages
             .iter()
             .filter_map(|m| {
-                if let Some(r_id) = m.sender_recipient_id {
-                    // XXX database query in a loop
-                    if let Some(recipient) = storage.fetch_recipient_by_id(r_id) {
-                        Some(Read {
-                            sender_aci: recipient.uuid.map(|u| u.to_string()),
-                            sender_aci_binary: recipient.uuid.map(|u| u.as_bytes().to_vec()),
-                            timestamp: Some(m.server_timestamp.and_utc().timestamp_millis() as u64),
-                        })
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
+                let r_id = m.sender_recipient_id?;
+                let recipient = recipients.get(&r_id)?;
+                let uuid = recipient.uuid;
+                Some(Read {
+                    sender_aci: uuid.map(|u| u.to_string()),
+                    sender_aci_binary: uuid.map(|u| u.as_bytes().to_vec()),
+                    timestamp: Some(m.server_timestamp.and_utc().timestamp_millis() as u64),
+                })
             })
             .collect();
         let sync = SyncMessage {
@@ -872,13 +869,23 @@ impl ClientActor {
         };
         ctx.notify(DeliverSyncMessage(sync));
 
+        // Always send the receipts to the *sender*, not to the group.
         if read_receipts_enabled {
-            for (session_id, session) in sessions {
-                let timestamp: Vec<u64> = messages
-                    .iter()
-                    .filter(|m| m.session_id == session_id)
-                    .map(|m| m.server_timestamp.and_utc().timestamp_millis() as u64)
-                    .collect();
+            let mut by_sender: HashMap<i32, Vec<u64>> = HashMap::new();
+            for m in messages.iter() {
+                if let Some(r_id) = m.sender_recipient_id {
+                    by_sender
+                        .entry(r_id)
+                        .or_default()
+                        .push(m.server_timestamp.and_utc().timestamp_millis() as u64);
+                }
+            }
+
+            for (r_id, timestamp) in by_sender {
+                let recipient = match recipients.get(&r_id) {
+                    Some(r) => r,
+                    None => continue,
+                };
 
                 let content = ReceiptMessage {
                     r#type: Some(ReceiptType::Read as _),
@@ -888,7 +895,11 @@ impl ClientActor {
                 ctx.notify(DeliverMessage {
                     content,
                     timestamp: Utc::now().timestamp_millis() as u64,
-                    destination: session.r#type.into(),
+                    destination: DeliveryRecipient::ServiceId(
+                        recipient
+                            .to_service_address()
+                            .expect("recipient service address in receipt DeliverMessage"),
+                    ),
                     online: false,
                     for_story: false,
                 });
