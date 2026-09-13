@@ -637,11 +637,8 @@ Page {
                         root.isGroup
                             ? ClientWorker.handleGroupInvite(group.groupId, "block") // XXX
                             : ClientWorker.handleMessageRequest(recipient.recipientUuid, "block")
-                            enabled: false
-                        // XXX Workaround until recipient update propagates back
                         _blocked = true
                         _accepted = false
-                        recipient.recipientUuid = recipient.recipientUuid
                         maybeShowPanel()
                     }
                 }
