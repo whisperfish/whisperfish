@@ -167,8 +167,8 @@ ApplicationWindow
         var contact_avatar = (contact && contact.avatarPath) ? contact.avatarPath.toString() : ''
         var contact_avatar_ok = contact_avatar !== '' && contact_avatar.indexOf('image://theme/') !== 0
 
-        var signal_avatar = uuid !== undefined ? "file://" + SettingsBridge.avatar_dir + "/" + uuid : ''
-        var signal_avatar_ok = uuid !== undefined ? SettingsBridge.avatarExists(uuid) : false
+        var signal_avatar = uuid ? "file://" + SettingsBridge.avatar_dir + "/" + uuid : ''
+        var signal_avatar_ok = uuid ? SettingsBridge.avatarExists(uuid) : false
 
         if(signal_avatar_ok && contact_avatar_ok) {
             return SettingsBridge.prefer_device_contacts ? contact_avatar : signal_avatar
