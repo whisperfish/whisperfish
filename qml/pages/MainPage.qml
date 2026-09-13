@@ -148,24 +148,21 @@ Page {
          */
         DelegateModel {
             id: visualSessionModel
-            property bool hasArchived: false
+            property bool hasArchived: archivedItems.count > 0
 
             // Take the messages from "unsorted" group, and
             // push them either into "archived" or "artive"
             function sortToGroups() {
                 var item
-                var atLeastOneArchived = false
                 while (unsortedItems.count > 0) {
                     item = unsortedItems.get(0)
 
                     if(item.model.isArchived) {
                         item.groups = "archived"
-                        atLeastOneArchived = true
                     } else {
                         item.groups = "active"
                     }
                 }
-                visualSessionModel.hasArchived = atLeastOneArchived
             }
 
             // "Update was requested."
