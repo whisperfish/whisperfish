@@ -38,7 +38,7 @@ ApplicationWindow
         // This ensures that we resolve numbers to contacts appropriately, in
         // the case where we attempt to message a newly-created contact via
         // the action shortcut icon in the contact card.
-        requiredProperty: PeopleModel.PhoneNumberRequired
+        requiredProperty: Contacts.PeopleModel.PhoneNumberRequired
 
         property var person: Component { Contacts.Person { } }
 
