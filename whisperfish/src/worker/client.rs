@@ -2885,9 +2885,29 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                         })
                         .collect::<Vec<_>>();
                     // Clone + async closure means we can use an immutable borrow.
-                    sender
+                    let results = sender
                         .send_message_to_group(&members, content, timestamp, online)
-                        .await
+                        .await;
+
+                    // `send_message_to_group` returns one result per member, in
+                    // `members` order. For every member we carried a PNI signature
+                    // for and that sent successfully, clear the flag again so we do
+                    // not re-attach the signature (and re-assert the PNI↔ACI link)
+                    // on every subsequent outbound send. Unlike Signal Android, we
+                    // clear on the first send rather than on delivery-receipt
+                    // acknowledgement of every device (signal-android
+                    // PendingPniSignatureMessageTable).
+                    for ((member, _, needs_pni_signature), result) in
+                        members.iter().zip(results.iter())
+                    {
+                        if *needs_pni_signature && result.is_ok() {
+                            if let Some(recipient) = storage.fetch_recipient(member) {
+                                storage.mark_recipient_needs_pni_signature(&recipient, false);
+                            }
+                        }
+                    }
+
+                    results
                 }
                 DeliveryRecipient::Session(SessionType::DirectMessage(recipient)) => {
                     let svc = recipient.to_service_address();
@@ -2899,10 +2919,10 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                             anyhow::bail!("Unregistered recipient {}", svc.service_id_string());
                         }
 
-                        vec![
-                            // XXX: upstream Signal requests explicit permission (blocking the
-                            //      UI until the identity reset is acknowledged) for a reset event.
-                            //      We accept the reset and trigger a message in the session.
+                        // XXX: upstream Signal requests explicit permission (blocking the
+                        //      UI until the identity reset is acknowledged) for a reset event.
+                        //      We accept the reset and trigger a message in the session.
+                        let result =
                             retofu::maybe_reset_identity(&storage, ServiceIdKind::Aci, || {
                                 let mut sender = sender.clone();
                                 let content = content.clone();
@@ -2920,8 +2940,18 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                                         .await
                                 }
                             })
-                            .await,
-                        ]
+                            .await;
+
+                        // If we just carried a PNI signature to this recipient and
+                        // the send succeeded, clear the flag so we do not re-attach
+                        // the signature (and re-assert the PNI<->ACI link) on every
+                        // subsequent outbound send. See the group path for a note on
+                        // this shortcut over Signal Android.
+                        if recipient.needs_pni_signature && result.is_ok() {
+                            storage.mark_recipient_needs_pni_signature(recipient, false);
+                        }
+
+                        vec![result]
                     } else {
                         anyhow::bail!("Recipient id {} has no UUID", recipient.id);
                     }
