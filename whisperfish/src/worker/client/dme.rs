@@ -1,10 +1,10 @@
 use actix::prelude::*;
 use chrono::Utc;
-use libsignal_service::protocol::{DeviceId, ServiceId};
+use libsignal_service::protocol::{DeviceId, ServiceId, ServiceIdKind};
 use uuid::Uuid;
 
 use super::unidentified::CertType;
-use super::{ClientActor, SESSION_RESET_INTERVAL};
+use super::{ClientActor, SESSION_RESET_INTERVAL, retofu};
 
 /// Ask the client to send a DME (DecryptionErrorMessage / "retry receipt") to
 /// a sender whose group message failed to decrypt locally with
@@ -54,7 +54,7 @@ impl Handler<NoSenderKeyDme> for ClientActor {
 
         // Sealed-sender access, resolved exactly as for ordinary sends.  When
         // the recipient isn't in storage we fall back to identified delivery.
-        let storage = self.storage.clone();
+        let storage = self.storage.clone().expect("storage initialized");
         let certs = self.unidentified_certificates.clone();
         let cert_type = if self.settings.get_share_phone_number() {
             CertType::UuidOnly
@@ -62,30 +62,41 @@ impl Handler<NoSenderKeyDme> for ClientActor {
             CertType::Complete
         };
         let unidentified_access = storage
-            .as_ref()
-            .and_then(|storage| storage.fetch_recipient(&msg.recipient))
+            .fetch_recipient(&msg.recipient)
             .and_then(|recipient| certs.access_for(cert_type, &recipient, false));
 
         let sender = self.message_sender();
         actix::spawn(async move {
-            let mut sender = match sender.await {
+            let sender = match sender.await {
                 Ok(sender) => sender,
                 Err(e) => {
                     tracing::warn!(?e, "could not construct MessageSender for DME; skipping");
                     return;
                 }
             };
-            match sender
-                .send_sender_key_decryption_error_message(
-                    &msg.recipient,
-                    unidentified_access.as_ref(),
-                    msg.failed_timestamp,
-                    msg.failed_device,
-                )
-                .await
+
+            match retofu::maybe_reset_identity(&storage, ServiceIdKind::Aci, || {
+                let mut sender = sender.clone();
+                let unidentified_access = unidentified_access.as_ref();
+                async move {
+                    sender
+                        .send_sender_key_decryption_error_message(
+                            &msg.recipient,
+                            unidentified_access,
+                            msg.failed_timestamp,
+                            msg.failed_device,
+                        )
+                        .await
+                }
+            })
+            .await
             {
-                Ok(()) => tracing::info!("sent DME (retry receipt) for NoSenderKeyState"),
-                Err(e) => tracing::warn!(?e, "failed to send DME"),
+                Ok(()) => {
+                    tracing::info!("sent DME (retry receipt) for NoSenderKeyState");
+                }
+                Err(e) => {
+                    tracing::warn!(?e, "failed to send DME");
+                }
             }
         });
     }
