@@ -441,6 +441,8 @@ pub struct ClientActor {
     storage: Option<Storage>,
     config: std::sync::Arc<crate::config::SignalConfig>,
     identified_websocket: watch::Sender<Option<std::sync::Arc<SignalWebSocket<Identified>>>>,
+    unauthenticated_service: Option<PushService>,
+    authenticated_service: Option<PushService>,
 
     message_stream_handle: Option<SpawnHandle>,
 
@@ -599,6 +601,8 @@ impl ClientActor {
             storage: None,
             config,
             identified_websocket: watch::channel(None).0,
+            authenticated_service: None,
+            unauthenticated_service: None,
 
             message_stream_handle: None,
 
@@ -657,20 +661,27 @@ impl ClientActor {
         crate::user_agent()
     }
 
-    fn unauthenticated_service(&self) -> PushService {
-        PushService::new(self.signal_server(), None, self.user_agent())
-    }
-
-    fn authenticated_service_with_credentials(
-        &self,
-        credentials: ServiceCredentials,
-    ) -> PushService {
-        PushService::new(self.signal_server(), Some(credentials), self.user_agent())
+    fn unauthenticated_service(&mut self) -> PushService {
+        if let Some(u_service) = &self.unauthenticated_service {
+            return u_service.clone();
+        }
+        let u_service = PushService::new(self.signal_server(), None, self.user_agent());
+        self.unauthenticated_service = Some(u_service.clone());
+        u_service
     }
 
     /// Panics if no authentication credentials are set.
-    fn authenticated_service(&self) -> PushService {
-        self.authenticated_service_with_credentials(self.credentials.clone().unwrap())
+    fn authenticated_service(&mut self) -> PushService {
+        if let Some(i_service) = &self.authenticated_service {
+            return i_service.clone();
+        }
+        let i_service = PushService::new(
+            self.signal_server(),
+            Some(self.credentials.clone().unwrap()),
+            self.user_agent(),
+        );
+        self.authenticated_service = Some(i_service.clone());
+        i_service
     }
 
     fn identified_websocket(
@@ -697,7 +708,7 @@ impl ClientActor {
     }
 
     fn unidentified_websocket(
-        &self,
+        &mut self,
     ) -> impl Future<Output = Result<SignalWebSocket<Unidentified>, ServiceError>> + use<> {
         let mut u_service = self.unauthenticated_service();
         async move {
@@ -708,7 +719,7 @@ impl ClientActor {
     }
 
     fn message_sender(
-        &self,
+        &mut self,
     ) -> impl Future<Output = Result<MessageSender<AciOrPniStorage>, ServiceError>> + use<> {
         let storage = self.storage.clone().unwrap();
         let service = self.authenticated_service();
@@ -4206,12 +4217,12 @@ impl Handler<ProofResponse> for ClientActor {
             ProfileKey::create(key)
         });
 
-        let cred = self.credentials.clone().unwrap();
-        let mut service = self.authenticated_service_with_credentials(cred.clone());
+        let cred = self.credentials.clone();
+        let mut service = self.authenticated_service();
 
         let proc = async move {
             let i_ws: SignalWebSocket<Identified> = service
-                .ws("/v1/websocket/", "/v1/keepalive", &[], Some(cred))
+                .ws("/v1/websocket/", "/v1/keepalive", &[], cred)
                 .await?;
             let mut am = AccountManager::new(service, i_ws, profile_key);
             am.submit_recaptcha_challenge(&proof.token, &proof.response)
