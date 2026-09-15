@@ -57,9 +57,6 @@ Page {
         groupId: session.valid && session.groupId != null ? session.groupId : ""
         onValidChanged: if (valid) {
             maybeShowPanel()
-            if (!!groupId) {
-                pageStack.pushAttached(Qt.resolvedUrl("GroupProfilePage.qml"), { session: session })
-            }
         }
     }
 
@@ -70,11 +67,6 @@ Page {
         onValidChanged: if (valid) {
             if (recipientId != -1) {
                 maybeShowPanel()
-                if (session.recipientUuid !== SetupWorker.uuid) {
-                    pageStack.pushAttached(Qt.resolvedUrl("RecipientProfilePage.qml"), { session: session, recipient: recipient })
-                } else {
-                    pageStack.pushAttached(Qt.resolvedUrl("ProfilePage.qml"), { session: session })
-                }
             }
         }
     }
@@ -87,6 +79,21 @@ Page {
                 // TODO: Re-think what marking session as read means
                 //SessionModel.markRead(sessionId)
                 unreadMessageChecker.shouldRun = true
+            }
+        }
+    }
+
+    onStatusChanged: {
+        if (status !== PageStatus.Active || !!pageStack.nextPage()) {
+            return
+        }
+        if (root.isGroup) {
+            pageStack.pushAttached(Qt.resolvedUrl("GroupProfilePage.qml"), { session: session })
+        } else {
+            if (session.recipientUuid !== SetupWorker.uuid) {
+                pageStack.pushAttached(Qt.resolvedUrl("RecipientProfilePage.qml"), { session: session, recipient: recipient })
+            } else {
+                pageStack.pushAttached(Qt.resolvedUrl("ProfilePage.qml"), { session: session })
             }
         }
     }
