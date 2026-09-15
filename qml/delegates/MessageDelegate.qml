@@ -277,8 +277,11 @@ ListItem {
                 font.italic: isRemoteDeleted
                 wrapMode: Text.Wrap
                 anchors { left: parent.left; right: parent.right }
-                horizontalAlignment: emojiOnly ? Text.AlignHCenter :
-                                                 (isOutbound ? Text.AlignRight : Text.AlignLeft) // TODO make configurable
+                horizontalAlignment: emojiOnly
+                                     ? Text.AlignHCenter
+                                     : (Qt.application.layoutDirection === Qt.RightToLeft
+                                        ? Text.AlignRight
+                                        : Text.AlignLeft)
                 color: isEmpty ?
                            (highlighted ? Theme.secondaryHighlightColor :
                                           (isOutbound ? Theme.secondaryHighlightColor :
