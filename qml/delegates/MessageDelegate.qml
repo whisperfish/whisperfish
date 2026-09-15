@@ -9,12 +9,6 @@ import "../components/message"
 ListItem {
     id: root
 
-    contentHeight: contentContainer.height
-    highlighted: down || menuOpen || replyArea.pressed || isSelected
-    _backgroundColor: "transparent"
-    hidden: !!(isSelected && listView.hideSelected)
-    enabled: !modelData.remoteDeleted
-
     // REQUIRED PROPERTIES
     property QtObject modelData
     property bool isInGroup
@@ -42,19 +36,6 @@ ListItem {
 
     readonly property string _message: fullMessageText !== "" ? fullMessageText : (hasData ? (modelData.styledMessage.trim() !== "" ? modelData.styledMessage.trim() : (isAudioTranscription ? ("🎤 <i>" + attachmentsLoader.audioTranscription + "</i>") : "") ) : '')
     readonly property bool isAudioTranscription: attachmentsLoader.audioTranscription !== "" && hasData && modelData.styledMessage.trim() === ""
-    // TODO implement shared locations (show a map etc.; is probably not an attachment)
-
-    Loader {
-        id: sender
-        active: showSender
-        asynchronous: false
-        sourceComponent: Component {
-            Recipient {
-                app: AppState
-                recipientId: modelData.senderRecipientId
-            }
-        }
-    }
 
     // TODO: Don't query recipient name for each message separately
     readonly property string contactName: (showSender && sender.loaded) ? getRecipientName(sender.item.e164, sender.item.externalId, sender.item.name, false) : "..."
@@ -97,17 +78,28 @@ ListItem {
     property bool isExpanded: false
     property bool isSelected: listView !== null && listView.selectedMessages[modelData.id] !== undefined
 
-    Loader {
-        id: reactions
-        active: hasReactions
-        asynchronous: false
-        sourceComponent: Component {
-            GroupedReactions {
-                app: AppState
-                messageId: modelData.id
-            }
+    contentHeight: contentContainer.height
+    highlighted: down || menuOpen || replyArea.pressed || isSelected
+    _backgroundColor: "transparent"
+    hidden: !!(isSelected && listView.hideSelected)
+    enabled: !modelData.remoteDeleted
+
+    states: [
+        State {
+            name: "outbound"; when: isOutbound
+            AnchorChanges { target: contentContainer; anchors.right: parent.right }
+            AnchorChanges { target: replyArea; anchors.left: parent.left }
+            AnchorChanges { target: emojiItem; anchors.left: parent.left; anchors.right: undefined }
+            AnchorChanges { target: infoItem; anchors.left: undefined; anchors.right: parent.right }
+        },
+        State {
+            name: "inbound"; when: !isOutbound
+            AnchorChanges { target: contentContainer; anchors.left: parent.left }
+            AnchorChanges { target: replyArea; anchors.right: parent.right }
+            AnchorChanges { target: emojiItem; anchors.left: undefined; anchors.right: parent.right }
+            AnchorChanges { target: infoItem; anchors.left: parent.left; anchors.right: undefined }
         }
-    }
+    ]
 
     function handleExternalPressAndHold(mouse) {
         if (openMenuOnPressAndHold) openMenu()
@@ -138,8 +130,35 @@ ListItem {
         }
     }
 
+    Loader {
+        id: sender
+
+        active: showSender
+        asynchronous: false
+        sourceComponent: Component {
+            Recipient {
+                app: AppState
+                recipientId: modelData.senderRecipientId
+            }
+        }
+    }
+
+    Loader {
+        id: reactions
+
+        active: hasReactions
+        asynchronous: false
+        sourceComponent: Component {
+            GroupedReactions {
+                app: AppState
+                messageId: modelData.id
+            }
+        }
+    }
+
     TextMetrics {
         id: metrics
+
         text: messageLabel.plainText
         font: messageLabel.font
     }
@@ -151,26 +170,36 @@ ListItem {
         // TODO There is a some flickering which can't be avoided this way. (We need a better solution.)
         // TODO Sometimes jumping back fails...
         id: expansionTimer
+
         interval: isEmpty ? 0 : 5*_message.length/shortenThreshold
+
         onTriggered: {
             listView.positionViewAtIndex(index, ListView.End)
         }
     }
 
     RoundedRect {
-        id: background
         radius: backgroundCornerRadius
-        anchors { fill: contentContainer; margins: contentPadding/3 }
-        roundedCorners: isOutbound ? bottomLeft | topRight : bottomRight | topLeft
+        anchors {
+            fill: contentContainer
+            margins: contentPadding / 3
+        }
+        roundedCorners: isOutbound ? (bottomLeft | topRight) : (bottomRight | topLeft)
         color: (down || replyArea.pressed || isSelected) ? Theme.highlightBackgroundColor : Theme.secondaryColor
-        opacity: (down || replyArea.pressed || isSelected) ?
-                     (isOutbound ? 0.7*Theme.opacityFaint : 1.0*Theme.opacityFaint) :
-                     (isOutbound ? 0.4*Theme.opacityFaint : 0.8*Theme.opacityFaint)
+        opacity: (down || replyArea.pressed || isSelected)
+                  ? isOutbound
+                    ? (0.7 * Theme.opacityFaint)
+                    : (1.0 * Theme.opacityFaint)
+                  : isOutbound
+                    ? (0.4 * Theme.opacityFaint)
+                    : (0.8 * Theme.opacityFaint)
     }
 
     Loader {
         id: replyArea
+
         property bool pressed: item && item.down
+
         asynchronous: true
         anchors { bottom: parent.bottom; top: parent.top }
         width: parent.width/2
@@ -181,6 +210,7 @@ ListItem {
 
     Column {
         id: contentContainer
+
         // IMPORTANT Never use 'parent.width' in this content container!
         // This breaks width calculations here and in derived items.
         // Always use delegateContentWidth instead.
@@ -196,6 +226,7 @@ ListItem {
 
         SenderNameLabel {
             id: senderNameLabel
+
             enabled: listView !== null && !listView.isSelecting
             visible: showSender
             source: contactNameValid
@@ -217,11 +248,13 @@ ListItem {
 
         Loader {
             id: quoteItem
+
             active: showQuotedMessage
             asynchronous: false
             sourceComponent: Component {
                 QuotedMessagePreview {
                     id: quoteItem
+
                     visible: showQuotedMessage
                     width: delegateContentWidth
                     maximumWidth: maxMessageWidth
@@ -230,8 +263,7 @@ ListItem {
                     messageId: modelData.quotedMessageId
                     backgroundItem.roundedCorners: backgroundItem.bottomLeft |
                                                    backgroundItem.bottomRight |
-                                                   (isOutbound ? backgroundItem.topRight :
-                                                               backgroundItem.topLeft)
+                                                   (isOutbound ? backgroundItem.topRight : backgroundItem.topLeft)
                     onClicked: {
                         if (listView.isSelecting) root.clicked(mouse)
                         else quoteClickedSignal(quoteItem.messageId)
@@ -240,10 +272,15 @@ ListItem {
             }
         }
 
-        Item { width: 1; height: quoteItem.shown ? Theme.paddingSmall : 0 }
+        Item {
+            // FIXME: Is this needed?
+            width: 1
+            height: quoteItem.shown ? Theme.paddingSmall : 0
+        }
 
         AttachmentsLoader {
             id: attachmentsLoader
+
             asynchronous: true
             enabled: hasAttachments && !isRemoteDeleted
             visible: enabled
@@ -254,23 +291,33 @@ ListItem {
             messageId: modelData.id
         }
 
-        Item { width: 1; height: hasAttachments ? Theme.paddingSmall : 0 }
+        Item {
+            // FIXME: Is this needed?
+            width: 1
+            height: hasAttachments ? Theme.paddingSmall : 0
+        }
 
         Column {
             id: contentColumn
+
             width: delegateContentWidth
             height: (hasText || isEmpty) ? childrenRect.height : 0
 
             LinkedEmojiLabel {
                 id: messageLabel
+
                 visible: isEmpty || hasText
-                plainText:  //: Placeholder note for a deleted message
-                            //% "this message was deleted"
-                            isRemoteDeleted ? qsTrId("whisperfish-message-deleted-note") :
-                            //: Placeholder note if an empty message is encountered.
-                            //% "this message is empty"
-                            (isEmpty ? qsTrId("whisperfish-message-empty-note") :
-                            ((needsRichText ? cssStyle : '') + (isExpanded ? _message : _message.substr(0, shortenThreshold) + (showExpand ? ' ...' : ''))))
+                plainText:  isRemoteDeleted
+                            ? //: Placeholder note for a deleted message
+                              //% "this message was deleted"
+                              qsTrId("whisperfish-message-deleted-note")
+                            : isEmpty
+                              ? //: Placeholder note if an empty message is encountered.
+                                //% "this message is empty"
+                                qsTrId("whisperfish-message-empty-note")
+                              : ((needsRichText ? cssStyle : '')
+                                + (isExpanded ? _message : _message.substr(0, shortenThreshold))
+                                + (showExpand ? ' ...' : ''))
                 bypassLinking: true
                 needsRichText: modelData.hasStrikeThrough || modelData.hasSpoilers
                 hasSpoilers: modelData.hasSpoilers // Set to 'false' when text is clicked
@@ -282,61 +329,61 @@ ListItem {
                                      : (Qt.application.layoutDirection === Qt.RightToLeft
                                         ? Text.AlignRight
                                         : Text.AlignLeft)
-                color: isEmpty ?
-                           (highlighted ? Theme.secondaryHighlightColor :
-                                          (isOutbound ? Theme.secondaryHighlightColor :
-                                                        Theme.secondaryColor)) :
-                           (highlighted ? Theme.highlightColor :
-                                          (isOutbound ? Theme.highlightColor :
-                                                        Theme.primaryColor))
-                linkColor: highlighted ? Theme.secondaryHighlightColor :
-                                         Theme.secondaryColor
+                color: isEmpty
+                       ? highlighted
+                         ? Theme.secondaryHighlightColor
+                         : isOutbound
+                           ? Theme.secondaryHighlightColor
+                           : Theme.secondaryColor
+                       : highlighted
+                         ? Theme.highlightColor
+                         : isOutbound
+                           ? Theme.highlightColor
+                           : Theme.primaryColor
+
+                linkColor: highlighted
+                           ? Theme.secondaryHighlightColor
+                           : Theme.secondaryColor
+
                 enableCounts: true
                 emojiOnlyThreshold: 5 // treat long messages as text
-                font.pixelSize: emojiOnly ?
-                                    (emojiCount <= 2 ? 1.5*Theme.fontSizeLarge :
-                                                       1.0*Theme.fontSizeLarge) :
-                                    Theme.fontSizeSmall // TODO make configurable
+
+                font.pixelSize: emojiOnly
+                                ? emojiCount <= 2
+                                  ? Theme.fontSizeExtraLarge
+                                  : Theme.fontSizeLarge
+                                : Theme.fontSizeSmall
+
                 defaultLinkActions: listView !== null && !listView.isSelecting
             }
         }
 
         Item {
             id: infoRow
+
+            property real minContentWidth: emojiItem.width + Theme.paddingSmall + infoItem.width
+
             anchors {
                 topMargin: Theme.paddingSmall * (hasReactions ? 2 : 1)
             }
-            property real minContentWidth: emojiItem.width + Theme.paddingSmall + infoItem.width
             width: delegateContentWidth
-            height: emojiItem.visible ? (emojiItem.height + Theme.paddingSmall) : infoItem.height
+            height: emojiItem.visible
+                    ? (emojiItem.height + Theme.paddingSmall)
+                    : infoItem.height
 
             EmojiItem {
                 id: emojiItem
+
                 reactions: reactions.status === Loader.Ready ? reactions.item.groupedReactions : ""
                 anchors.top: parent.top
             }
+
             InfoItem {
                 id: infoItem
+
                 height: Theme.fontSizeExtraSmall
                 anchors.bottom: parent.bottom
             }
         }
     }
-
-    states: [
-        State {
-            name: "outbound"; when: isOutbound
-            AnchorChanges { target: contentContainer; anchors.right: parent.right }
-            AnchorChanges { target: replyArea; anchors.left: parent.left }
-            AnchorChanges { target: emojiItem; anchors.left: parent.left; anchors.right: undefined }
-            AnchorChanges { target: infoItem; anchors.left: undefined; anchors.right: parent.right }
-        },
-        State {
-            name: "inbound"; when: !isOutbound
-            AnchorChanges { target: contentContainer; anchors.left: parent.left }
-            AnchorChanges { target: replyArea; anchors.right: parent.right }
-            AnchorChanges { target: emojiItem; anchors.left: undefined; anchors.right: parent.right }
-            AnchorChanges { target: infoItem; anchors.left: parent.left; anchors.right: undefined }
-        }
-    ]
 }
