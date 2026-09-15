@@ -23,7 +23,7 @@ SilicaListView {
         }
     }
 
-    model: group.members
+    model: group ? group.members : undefined
     delegate: ListItem {
         id: item
         contentHeight: Theme.itemSizeMedium

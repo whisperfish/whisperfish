@@ -203,7 +203,7 @@ Page {
             width: parent.width
             height: contentHeight
 
-            group: group
+            group: groupProfile.status === PageStatus.Active ? group : null
         }
     }
 }
