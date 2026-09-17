@@ -57,11 +57,11 @@ impl WhisperfishServiceErrorExt for ServiceError {
                 // XXX This might not be ideal; we're assuming we'll also be able to retry the
                 // handshake.
                 reqwest_websocket::Error::Handshake(_) => return RetryAction::Retry,
-                reqwest_websocket::Error::Reqwest(error) => {
-                    if error.is_connect() | error.is_timeout() {
-                        // XXX: maybe we *can* find the timeout case's timeout.
-                        return RetryAction::Retry;
-                    }
+                reqwest_websocket::Error::Reqwest(error)
+                    if error.is_connect() | error.is_timeout() =>
+                {
+                    // XXX: maybe we *can* find the timeout case's timeout.
+                    return RetryAction::Retry;
                 }
                 reqwest_websocket::Error::Tungstenite(error) => {
                     // XXX: these are many, many, nested error variants. I'm sure some of them show

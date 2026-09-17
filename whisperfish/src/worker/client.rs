@@ -2922,10 +2922,11 @@ impl<T: Into<ContentBody>> Handler<DeliverMessage<T>> for ClientActor {
                     for ((member, _, needs_pni_signature), result) in
                         members.iter().zip(results.iter())
                     {
-                        if *needs_pni_signature && result.is_ok() {
-                            if let Some(recipient) = storage.fetch_recipient(member) {
-                                storage.mark_recipient_needs_pni_signature(&recipient, false);
-                            }
+                        if *needs_pni_signature
+                            && result.is_ok()
+                            && let Some(recipient) = storage.fetch_recipient(member)
+                        {
+                            storage.mark_recipient_needs_pni_signature(&recipient, false);
                         }
                     }
 
