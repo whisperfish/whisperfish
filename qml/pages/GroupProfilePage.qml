@@ -30,10 +30,20 @@ Page {
         id: remorse
     }
 
+    PageBusyIndicator {
+        id: busyIndicator
+
+        running: !groupMembers.group
+    }
+
     SilicaFlickable {
         id: flickable
+
+        opacity: busyIndicator.running ? 0.0 : 1.0
         anchors.fill: parent
-        contentHeight: column.height + groupMembers.height
+        contentHeight: column.height
+
+        Behavior on opacity { NumberAnimation { } }
 
         VerticalScrollDecorator {
             flickable: flickable

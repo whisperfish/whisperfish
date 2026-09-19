@@ -7,6 +7,8 @@ SilicaListView {
     property QtObject group
     property bool youAreAdmin
 
+    height: contentHeight
+
     section {
         property: 'role'
         delegate: SectionHeader {
