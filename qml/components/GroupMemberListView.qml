@@ -24,6 +24,13 @@ SilicaListView {
     }
 
     model: group ? group.members : undefined
+
+    onModelChanged: {
+        if (!model) {
+            root.youAreAdmin = false
+        }
+    }
+
     delegate: ListItem {
         id: item
         contentHeight: Theme.itemSizeMedium
