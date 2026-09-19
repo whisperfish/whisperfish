@@ -4,6 +4,7 @@ import be.rubdos.whisperfish 1.0
 
 SilicaListView {
     id: root
+
     property QtObject group
     property bool youAreAdmin
 
@@ -35,17 +36,14 @@ SilicaListView {
 
     delegate: ListItem {
         id: item
-        contentHeight: Theme.itemSizeMedium
-        anchors {
-            left: parent.left
-            right: parent.right
-        }
 
         //property bool isVerified: false // TODO implement in backend;  model.isVerified
         property bool isSelf: recipient.recipientUuid == SetupWorker.uuid
-        property string profilePicture: getRecipientAvatar(recipient.e164, recipient.uuid, recipient.externalId)
         property string name: getRecipientName(recipient.e164, recipient.externalId, recipient.name, false)
         property bool isUnknownContact: name.length == 0
+
+        contentHeight: Theme.itemSizeMedium
+        width: parent.width
 
         onClicked: {
             if (recipient.uuid === SetupWorker.uuid) {
@@ -63,6 +61,7 @@ SilicaListView {
         // For when we need the augmented fields
         Recipient {
             id: recipient
+
             recipientUuid: model.uuid
             app: AppState
         }
@@ -82,7 +81,7 @@ SilicaListView {
                     qsTrId("whisperfish-group-member-menu-open-note-to-self") :
                     //: Menu item to open the private chat with a group member
                     //% "Message to %1"
-                    qsTrId("whisperfish-group-member-menu-direct-message").arg(isUnknownContact ? (recipient.e164 ? recipient.e164 : recipient.uuid) : name)
+                    qsTrId("whisperfish-group-member-menu-direct-message").arg(isUnknownContact ? (recipient.e164 || recipient.uuid) : name)
                     onClicked: {
                         var main = pageStack.find(function (page) {
                             return page.objectName == "mainPage";
@@ -96,13 +95,13 @@ SilicaListView {
                 MenuItem {
                     //: Menu item to start a new private chat with a group member
                     //% "Start conversation with %1"
-                    text: qsTrId("whisperfish-group-member-menu-new-direct-message").arg(isUnknownContact ? (recipient.e164 ? recipient.e164 : recipient.uuid) : name)
+                    text: qsTrId("whisperfish-group-member-menu-new-direct-message").arg(isUnknownContact ? (recipient.e164 || recipient.uuid) : name)
                     onClicked: {
                         var main = pageStack.find(function (page) {
                             return page.objectName == "mainPage";
                         });
                         pageStack.replaceAbove(main, Qt.resolvedUrl("../pages/CreateConversationPage.qml"), {
-                            name: (isUnknownContact ? (recipient.e164 ? recipient.e164 : recipient.uuid) : name),
+                            name: (isUnknownContact ? (recipient.e164 || recipient.uuid) : name),
                             // Group members always have an ACI.
                             // If the group member is invited, it might be PNI
                             // XXX: add serviceId field to recipient, expose, and use here.
@@ -159,9 +158,10 @@ SilicaListView {
 
         ProfilePicture {
             id: avatar
+
             highlighted: item.down
             labelsHighlighted: highlighted
-            imageSource: item.profilePicture
+            imageSource: getRecipientAvatar(recipient.e164, recipient.uuid, recipient.externalId)
             isGroup: false // groups can't be members of groups
             showInfoMark: false
             anchors {
@@ -194,6 +194,7 @@ SilicaListView {
                 }
                 Label {
                     id: nameLabel
+
                     font.pixelSize: Theme.fontSizeMedium
                     text: item.isSelf ? //: Title for the user's entry in a list of group members
                     //% "You"
@@ -209,7 +210,7 @@ SilicaListView {
             Label {
                 color: item.down ? Theme.secondaryHighlightColor : Theme.secondaryColor
                 font.pixelSize: Theme.fontSizeSmall
-                text: recipient.e164 ? recipient.e164 : ''
+                text: recipient.e164 || ''
             }
         }
     }

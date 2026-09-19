@@ -1,4 +1,4 @@
-import QtQuick 2.2
+import QtQuick 2.6
 import Sailfish.Silica 1.0
 import be.rubdos.whisperfish 1.0
 import "../components"
@@ -22,7 +22,6 @@ Page {
     // For new message notifications
     property int sessionId: !!session ? session.sessionId : -1
 
-    property bool youAreAdmin: groupMembers.youAreAdmin // TODO: This feels like a hack; add to group properties.
     // This variable is needed because MenuItem doesn't see inside SilicaListView.header container
     property int newDuration: -1
 
@@ -81,7 +80,7 @@ Page {
             MenuItem {
                 // Translation in ProfilePage.qml
                 text: qsTrId("whisperfish-save-message-expiry")
-                visible: youAreAdmin && session != null && groupProfile.newDuration !== session.expiringMessageTimeout
+                visible: groupMembers.youAreAdmin && session != null && groupProfile.newDuration !== session.expiringMessageTimeout
                 onClicked: MessageModel.createExpiryUpdate(sessionId, groupProfile.newDuration)
             }
             MenuItem {
@@ -94,12 +93,10 @@ Page {
 
         Column {
             id: column
-            anchors {
-                top: parent.top
-                left: parent.left
-                right: parent.right
-            }
+
+            width: parent.width
             spacing: Theme.paddingMedium
+            bottomPadding: Theme.paddingLarge
 
             PageHeader {
                 title: session.groupName
@@ -154,7 +151,7 @@ Page {
             }
 
             ExpiringMessagesComboBox {
-                enabled: youAreAdmin
+                enabled: groupMembers.youAreAdmin
                 // This height hack is required to prevent the newly-created
                 // page from scrolling up a bit when the page is creaged
                 // and first getting rendered.
@@ -176,8 +173,7 @@ Page {
                 value: currentIndex == 1
                     ? qsTrId("whisperfish-announcements-admins-only")
                     : qsTrId("whisperfish-announcements-all-useres")
-                property bool announcementsOnly: group.isAnnouncementsOnly
-                currentIndex: announcementsOnly ? 1 : 0
+                currentIndex: group.isAnnouncementsOnly ? 1 : 0
                 menu: ContextMenu {
                     MenuItem {
                         //: Message sending allowed for all users
@@ -190,30 +186,14 @@ Page {
                         text: qsTrId("whisperfish-announcements-admins-only")
                     }
                 }
-                onCurrentIndexChanged: {
-                    if ((currentIndex == 1) != group.isAnnouncementsOnly) {
-                        // XXX: sending group updates is not implemented
-                        console.log("announcements only mode", currentIndex == 1 ? "enabled" : "disabled")
-                    }
-                }
-                onAnnouncementsOnlyChanged: {
-                    if (announcementsOnly) {
-                        currentIndex = 1
-                    } else {
-                        currentIndex = 0
-                    }
-                }
             }
-        }
 
-        GroupMemberListView {
-            id: groupMembers
+            GroupMemberListView {
+                id: groupMembers
 
-            anchors.top: column.bottom
-            width: parent.width
-            height: contentHeight
-
-            group: groupProfile.status === PageStatus.Active ? group : null
+                width: parent.width
+                group: groupProfile.status === PageStatus.Active ? group : null
+            }
         }
     }
 }
