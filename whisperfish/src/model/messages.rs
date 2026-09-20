@@ -652,7 +652,7 @@ impl MessageListModel {
                         && old_message.has_receipts.read == message.has_receipts.read
                         && old_message.has_receipts.viewed == message.has_receipts.viewed
                     {
-                        tracing::debug!("Skip insignificant update event.");
+                        tracing::trace!("Skip insignificant update event.");
                         return;
                     }
 
