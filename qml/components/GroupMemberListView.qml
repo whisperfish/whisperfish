@@ -5,10 +5,8 @@ import be.rubdos.whisperfish 1.0
 SilicaListView {
     id: root
 
-    property QtObject group
-    property bool youAreAdmin
-
-    height: contentHeight
+    property string ownUuid: SetupWorker.uuid
+    property bool debugMode: SettingsBridge.debug_mode
 
     section {
         property: 'role'
@@ -26,19 +24,11 @@ SilicaListView {
         }
     }
 
-    model: group ? group.members : undefined
-
-    onModelChanged: {
-        if (!model) {
-            root.youAreAdmin = false
-        }
-    }
-
     delegate: ListItem {
         id: item
 
         //property bool isVerified: false // TODO implement in backend;  model.isVerified
-        property bool isSelf: recipient.recipientUuid == SetupWorker.uuid
+        property bool isSelf: recipient.recipientUuid == ownUuid
         property string name: getRecipientName(recipient.e164, recipient.externalId, recipient.name, false)
         property bool isUnknownContact: name.length == 0
 
@@ -46,7 +36,7 @@ SilicaListView {
         width: parent.width
 
         onClicked: {
-            if (recipient.uuid === SetupWorker.uuid) {
+            if (isSelf) {
                 pageStack.push(Qt.resolvedUrl("../pages/ProfilePage.qml"), {
                     groupContext: true
                 });
@@ -64,12 +54,6 @@ SilicaListView {
 
             recipientUuid: model.uuid
             app: AppState
-        }
-
-        Component.onCompleted: {
-            if (isSelf && role === 2) {
-                root.youAreAdmin = true;
-            }
         }
 
         menu: Component {
@@ -128,7 +112,7 @@ SilicaListView {
                 MenuItem {
                     // Reused from ProfilePage.qml
                     text: qsTrId("whisperfish-reset-identity-menu")
-                    visible: SettingsBridge.debug_mode
+                    visible: root.debugMode
                     onClicked: {
                         var sessionMethods = SessionModel;
                         //: Reset identity key remorse message (past tense)
@@ -142,7 +126,7 @@ SilicaListView {
                 MenuItem {
                     // Reused from ProfilePage.qml
                     text: qsTrId("whisperfish-reset-session-menu")
-                    visible: SettingsBridge.debug_mode
+                    visible: root.debugMode
                     onClicked: {
                         var messageMethods = MessageModel;
                         //: Reset secure session remorse message (past tense)
@@ -184,7 +168,7 @@ SilicaListView {
             Row {
                 spacing: Theme.paddingSmall
                 Label {
-                    visible: SettingsBridge.debug_mode && !isSelf
+                    visible: root.debugMode && !isSelf
                     width: visible ? implicitWidth : 0
                     height: nameLabel.height
                     font.pixelSize: Theme.fontSizeTiny
