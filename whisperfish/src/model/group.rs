@@ -154,7 +154,12 @@ impl Group {
     #[with_executor]
     #[tracing::instrument(skip(self, ctx))]
     fn set_group_id(&mut self, ctx: Option<ModelContext<Self>>, id: QString) {
-        self.id = Some(id.to_string());
+        let new_id = id.to_string();
+        if self.id.as_ref() == Some(&new_id) {
+            return;
+        }
+
+        self.id = Some(new_id);
         if let Some(ctx) = ctx {
             self.init(ctx);
         }
