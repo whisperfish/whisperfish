@@ -17,6 +17,8 @@ Page {
         id: group
         app: AppState
         groupId: session ? session.groupId : ""
+
+        property bool youAreAdmin: group.ownRole == "admin"
     }
 
     // For new message notifications
@@ -32,68 +34,20 @@ Page {
     PageBusyIndicator {
         id: busyIndicator
 
-        running: !groupMembers.group
+        running: !groupMembers.model
     }
 
-    SilicaFlickable {
-        id: flickable
+    GroupMemberListView {
+        id: groupMembers
 
         opacity: busyIndicator.running ? 0.0 : 1.0
-        anchors.fill: parent
-        contentHeight: column.height
-
         Behavior on opacity { NumberAnimation { } }
 
-        VerticalScrollDecorator {
-            flickable: flickable
-        }
+        anchors.fill: parent
 
-        PullDownMenu {
-            MenuItem {
-                //: Refresh group menu item
-                //% "Refresh group"
-                text: qsTrId("whisperfish-group-refresh")
-                onClicked: {
-                    console.log("Refreshing group for session", sessionId);
-                    ClientWorker.refresh_group_v2(sessionId);
-                }
-            }
-            MenuItem {
-                //: Leave group menu item
-                //% "Leave this group"
-                text: qsTrId("whisperfish-group-leave-menu")
-                onClicked: {
-                    // TODO Leaving a group should *never* delete its messages.
-                    //      Two different destructive actions should require two different
-                    //      inputs and two confirmations.
-                    //      Is it enough to remove the 'remove' line?
-                    //: Leave group remorse message (past tense)
-                    //% "Left group and deleted all messages"
-                    remorse.execute(qsTrId("whisperfish-group-leave-remorse"), function () {
-                        console.log("Leaving group");
-                        MessageModel.leaveGroup();
-                        SessionModel.remove(sessionId);
-                        mainWindow.showMainPage();
-                    });
-                }
-            }
-            MenuItem {
-                // Translation in ProfilePage.qml
-                text: qsTrId("whisperfish-save-message-expiry")
-                visible: groupMembers.youAreAdmin && session != null && groupProfile.newDuration !== session.expiringMessageTimeout
-                onClicked: MessageModel.createExpiryUpdate(sessionId, groupProfile.newDuration)
-            }
-            MenuItem {
-                // Translated in MainPage.qml
-                text: qsTrId("whisperfish-search-menu")
-                visible: !SetupWorker.locked
-                onClicked: pageStack.push(Qt.resolvedUrl("SearchPage.qml"),{ sessionId: session.sessionId })
-            }
-        }
+        model: groupProfile.status === PageStatus.Active ? group.members : undefined
 
-        Column {
-            id: column
-
+        header: Column {
             width: parent.width
             spacing: Theme.paddingMedium
             bottomPadding: Theme.paddingLarge
@@ -151,7 +105,7 @@ Page {
             }
 
             ExpiringMessagesComboBox {
-                enabled: groupMembers.youAreAdmin
+                enabled: group.youAreAdmin
                 // This height hack is required to prevent the newly-created
                 // page from scrolling up a bit when the page is creaged
                 // and first getting rendered.
@@ -187,12 +141,50 @@ Page {
                     }
                 }
             }
+        }
 
-            GroupMemberListView {
-                id: groupMembers
+        pullDownMenu: PullDownMenu {
+            flickable: groupMembers
 
-                width: parent.width
-                group: groupProfile.status === PageStatus.Active ? group : null
+            MenuItem {
+                //: Refresh group menu item
+                //% "Refresh group"
+                text: qsTrId("whisperfish-group-refresh")
+                onClicked: {
+                    console.log("Refreshing group for session", sessionId);
+                    ClientWorker.refresh_group_v2(sessionId);
+                }
+            }
+            MenuItem {
+                //: Leave group menu item
+                //% "Leave this group"
+                text: qsTrId("whisperfish-group-leave-menu")
+                onClicked: {
+                    // TODO Leaving a group should *never* delete its messages.
+                    //      Two different destructive actions should require two different
+                    //      inputs and two confirmations.
+                    //      Is it enough to remove the 'remove' line?
+                    //: Leave group remorse message (past tense)
+                    //% "Left group and deleted all messages"
+                    remorse.execute(qsTrId("whisperfish-group-leave-remorse"), function () {
+                        console.log("Leaving group");
+                        MessageModel.leaveGroup();
+                        SessionModel.remove(sessionId);
+                        mainWindow.showMainPage();
+                    });
+                }
+            }
+            MenuItem {
+                // Translation in ProfilePage.qml
+                text: qsTrId("whisperfish-save-message-expiry")
+                visible: group.youAreAdmin && session != null && groupProfile.newDuration !== session.expiringMessageTimeout
+                onClicked: MessageModel.createExpiryUpdate(sessionId, groupProfile.newDuration)
+            }
+            MenuItem {
+                // Translated in MainPage.qml
+                text: qsTrId("whisperfish-search-menu")
+                visible: !SetupWorker.locked
+                onClicked: pageStack.push(Qt.resolvedUrl("SearchPage.qml"),{ sessionId: session.sessionId })
             }
         }
     }

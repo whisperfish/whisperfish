@@ -6,6 +6,7 @@ use crate::model::*;
 use crate::store::Storage;
 use crate::store::observer::{EventObserving, Interest};
 use crate::store::orm::{GroupV1Member, GroupV2Member};
+use libsignal_service::groups_v2::Role;
 use qmeta_async::with_executor;
 use qmetaobject::prelude::*;
 use uuid::Uuid;
@@ -44,6 +45,9 @@ pub struct Group {
     #[qt_property(READ: has_self_as_member, NOTIFY: group_changed)]
     hasSelfAsMember: bool,
 
+    #[qt_property(READ: get_own_role, NOTIFY: group_changed)]
+    ownRole: QString,
+
     #[qt_property(READ: is_announcements_only, NOTIFY: group_changed)]
     isAnnouncementsOnly: bool,
 
@@ -56,6 +60,7 @@ pub struct Group {
     members_model_changed: qt_signal!(),
 
     own_aci: Option<Uuid>,
+    own_role: Option<Role>,
 }
 
 impl EventObserving for Group {
@@ -141,6 +146,16 @@ impl Group {
         }
     }
 
+    fn get_own_role(&self, _ctx: Option<ModelContext<Self>>) -> QString {
+        match self.own_role {
+            Some(Role::Administrator) => "admin",
+            Some(Role::Default) => "member",
+            Some(Role::Unknown) => "",
+            None => "",
+        }
+        .into()
+    }
+
     fn is_announcements_only(&self, _ctx: Option<ModelContext<Self>>) -> bool {
         self.group_v2.as_ref().is_some_and(|g| g.announcement_only)
     }
@@ -154,7 +169,12 @@ impl Group {
     #[with_executor]
     #[tracing::instrument(skip(self, ctx))]
     fn set_group_id(&mut self, ctx: Option<ModelContext<Self>>, id: QString) {
-        self.id = Some(id.to_string());
+        let new_id = id.to_string();
+        if self.id.as_ref() == Some(&new_id) {
+            return;
+        }
+
+        self.id = Some(new_id);
         if let Some(ctx) = ctx {
             self.init(ctx);
         }
@@ -176,6 +196,13 @@ impl Group {
                     .load_v1(storage, id);
             } else if id.len() == 64 {
                 self.group_v2 = storage.fetch_group_by_group_v2_id(id);
+                self.own_role = storage
+                    .fetch_group_v2_self_member(id)
+                    .map(|r| match r.role {
+                        2 => Role::Administrator,
+                        1 => Role::Default,
+                        _ => Role::Unknown,
+                    });
                 self.membership_list
                     .pinned()
                     .borrow_mut()
