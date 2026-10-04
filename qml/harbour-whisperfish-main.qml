@@ -167,8 +167,8 @@ ApplicationWindow
         var contact_avatar = (contact && contact.avatarPath) ? contact.avatarPath.toString() : ''
         var contact_avatar_ok = contact_avatar !== '' && contact_avatar.indexOf('image://theme/') !== 0
 
-        var signal_avatar = uuid !== undefined ? "file://" + SettingsBridge.avatar_dir + "/" + uuid : ''
-        var signal_avatar_ok = uuid !== undefined ? SettingsBridge.avatarExists(uuid) : false
+        var signal_avatar = uuid ? "file://" + SettingsBridge.avatar_dir + "/" + uuid : ''
+        var signal_avatar_ok = uuid ? SettingsBridge.avatarExists(uuid) : false
 
         if(signal_avatar_ok && contact_avatar_ok) {
             return SettingsBridge.prefer_device_contacts ? contact_avatar : signal_avatar
@@ -178,6 +178,27 @@ ApplicationWindow
             return contact_avatar
         }
         return ""
+    }
+
+    // Resolve the avatar to show as the notification icon. Groups use the
+    // group avatar, direct messages the peer's avatar (respecting the
+    // 'Prefer device contacts' setting). Without an avatar, fall back to the
+    // same theme glyph the session overview renders behind it. The overview's
+    // colored disc is deliberately not reproduced: it is a translucent
+    // ambience color composited over the list background, which would not
+    // match on a notification surface (and would go stale on ambience change).
+    function getNotificationIcon(data) {
+        if (data.isGroup) {
+            return getGroupAvatar(data.groupId) || "image://theme/icon-m-users"
+        }
+        var avatar = getRecipientAvatar(data.sessionE164, data.sessionUuid, data.sessionExternalId)
+        if (avatar) {
+            return avatar
+        }
+        if (data.sessionUuid === SetupWorker.uuid) {
+            return "image://theme/icon-m-note"
+        }
+        return "image://theme/icon-m-contact"
     }
 
     // Return either given peer name or device contacts name based on
@@ -298,6 +319,7 @@ ApplicationWindow
             if(m.subText !== undefined) {
                 m.subText = contactName
             }
+            m.icon = getNotificationIcon(data)
         }
 
         m.previewBody = m.body
@@ -397,6 +419,7 @@ ApplicationWindow
             if(m.subText !== undefined) {
                 m.subText = contactName
             }
+            m.icon = getNotificationIcon(data)
         }
         // XXX: maybe we do want a summary?
 
