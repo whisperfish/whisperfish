@@ -82,6 +82,9 @@ else
 fi
 
 echo "Building Whisperfish for SailfishOS-$SFOS_VERSION-$MER_ARCH..."
+# The stderr filter must be line-buffered (sed -u): busybox grep block-buffers,
+# so a failing build's last output - including the actual cargo/rustc error -
+# is lost when the container is torn down at job cleanup.
 mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" --no-snapshot=force build \
     --enable-debug \
     --no-check \
@@ -93,7 +96,7 @@ mb2 -t "SailfishOS-$SFOS_VERSION-$MER_ARCH" --no-snapshot=force build \
     --with lto \
     --with sccache \
     $FEATURES \
-    2> >(busybox grep -vE "Path not found for FD")
+    2> >(sed -u '/Path not found for FD/d')
 
 rm -rf "$TMPDIR"
 export TMPDIR="$TMPDIR2"
