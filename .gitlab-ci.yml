@@ -36,6 +36,12 @@ stages:
     - cargo --version
     - rustc --version
 
+# The target caches below must be keyed by SDK image version: they contain
+# host binaries (cargo build scripts) which are linked against the tooling's
+# glibc.  Caches produced by a different SDK image can be unloadable in the
+# current tooling (GLIBC_x.y not found), and cargo fingerprints cannot detect
+# that, so a cache produced by a different image version silently breaks the
+# build.  Do not share these caches across SFOS_VERSION values.
 .build-sailfishos: &build-sailfishos
   image: registry.gitlab.com/whisperfish/sailo-rs/rust-$MER_ARCH-$SFOS_VERSION:latest
   stage: build
@@ -69,7 +75,7 @@ build:sf:latest:armv7hl:
     - when: on_success
   cache:
     <<: *sfos-cache
-    key: target-armv7hl
+    key: target-armv7hl-$SFOS_VERSION
   script:
     - ./fetch-webrtc.sh armv7hl
     - .ci/unpack-vendor.sh
@@ -86,7 +92,7 @@ build:sf:latest:i486:
     - when: on_success
   cache:
     <<: *sfos-cache
-    key: target-i486
+    key: target-i486-$SFOS_VERSION
   script:
     - ./fetch-webrtc.sh i486
     - .ci/unpack-vendor.sh
@@ -103,7 +109,7 @@ build:sf:latest:aarch64:
     - when: on_success
   cache:
     <<: *sfos-cache
-    key: target-aarch64
+    key: target-aarch64-$SFOS_VERSION
   script:
     - ./fetch-webrtc.sh aarch64
     - .ci/unpack-vendor.sh
@@ -121,7 +127,7 @@ build:harbour:latest:armv7hl:
     - when: on_success
   cache:
     <<: *sfos-cache
-    key: target-armv7hl
+    key: target-armv7hl-$SFOS_VERSION
   script:
     # - ./fetch-webrtc.sh armv7hl
     - .ci/unpack-vendor.sh
@@ -139,7 +145,7 @@ build:harbour:latest:i486:
     - when: on_success
   cache:
     <<: *sfos-cache
-    key: target-i486
+    key: target-i486-$SFOS_VERSION
   script:
     # - ./fetch-webrtc.sh i486
     - .ci/unpack-vendor.sh
@@ -157,7 +163,7 @@ build:harbour:latest:aarch64:
     - when: on_success
   cache:
     <<: *sfos-cache
-    key: target-aarch64
+    key: target-aarch64-$SFOS_VERSION
   script:
     # - ./fetch-webrtc.sh aarch64
     - .ci/unpack-vendor.sh
