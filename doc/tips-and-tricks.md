@@ -203,24 +203,24 @@ and CI from spinning up the pipeline only to get stuck on something
 ```bash
 #!/bin/bash
 
+export LANG=C
 export QMAKE=/usr/bin/qmake
 export TOOLCHAIN="+1.89-x86_64-unknown-linux-gnu"
 export CARGO="$TASKSET cargo --jobs 16 $TOOLCHAIN"
 export RETVAL=0
 
-fmt() {
-  if [ "$2" -eq 0 ]; then
-  echo -e "$1:\tOK"
-  else
-  echo -e "$1:\tFAILED"
-  fi
-}
-
 check() {
-  RETVAL=$(("$RETVAL + $1"))
-  if [ "$RETVAL" -gt 0 ]; then
-    echo -e "\nErrors were found."
-    exit 1
+  local name="$1"
+  local res="$2"
+  local allow_fail="$3"
+
+  if [ "$res" -eq 0 ]; then
+    echo -e "${name}:\tOK"
+  elif [ "$allow_fail" == "allow_fail" ]; then
+    echo -e "${name}:\tWARNING"
+  else
+    echo -e "${name}:\tFAILED"
+    RETVAL=$(("RETVAL + 1"))
   fi
 }
 
@@ -230,57 +230,65 @@ grepper() {
     echo -e "$1:\t$(rg "/.*$1" "$2" | wc -l)"
 }
 
+title() {
+    echo ""
+    echo "----------"
+    echo " $*"
+    echo "----------"
+    echo ""
+}
+
 RETVAL=0
 
-echo -e "-----\nRunning qmllint...\n-----\n"
+title "running: qmllint"
 find qml/ -name "*.qml" -print0 | xargs -0 qmllint
 E_QML=$?
-check $E_QML
 
-echo -e "-----\nRunning lupdate...\n-----\n"
+title "running: lupdate"
 LOG=$(mktemp)
 TSDIR=$(mktemp -d)
 cp translations/*.ts "$TSDIR"
 lupdate qml/ -ts translations/*.ts 2>&1 | tee "$LOG"
 mv "$TSDIR"/*.ts translations/
 rmdir "$TSDIR"
-sed -i -E '/^Scanning|^Updating|^    Found|^Removed plural forms|^If this sounds wrong|^    Same-text heuristic provided|^    Kept [0-9]+ obsolete|^lupdate warning: Message with id .* has no source/d' "$LOG"
+sed -i -E '/^Scanning|^Updating|^    Found|^Removed plural forms|^If this sounds wrong|^    Same-text heuristic provided|^    Kept [0-9]+ obsolete/d' "$LOG"
 E_TR=$(wc -l < "$LOG")
 E_TR=$(("$E_TR"))
 rm "$LOG"
-check $E_TR
 
-echo -e "-----\nRunning format...\n-----\n"
+title "running: cargo fmt"
 $CARGO fmt --check -- --color never
 E_FMT=$?
-check $E_FMT
 
-echo -e "-----\nRunning tests...\n-----\n"
+title "running: cargo test"
 $CARGO test --color never -- --color never
 E_TEST=$?
-check $E_TEST
 
-echo -e "-----\nRunning clippy...\n-----\n"
+title "running: cargo clippy"
 $CARGO clippy --color never --no-deps --all-targets -- -D warnings -A clippy::useless_transmute -A clippy::too-many-arguments -A clippy::invalid_regex -A dead_code
 E_CLIPPY=$?
-check $E_CLIPPY
 
-echo -e "-----\nRunning shellcheck...\n-----\n"
+title "running: cargo deny"
+$CARGO deny --config ./deny.toml check
+E_DENY=$?
+
+title "running: shellcheck"
 find . -name "*.sh" | grep -vE "^\./vendor/|^\./target/" | xargs -n1 shellcheck --severity=warning
-E_SH=0
-check $E_SH
+E_SH=$?
 
-echo ""
+title "counters"
 grepper FIXME "$SRC"
 grepper TODO "$SRC"
 grepper XXX "$SRC"
-echo ""
-fmt QML $E_QML
-fmt qsTrId $E_TR
-fmt Tests $E_TEST
-fmt Format $E_FMT
-fmt Clippy $E_CLIPPY
-fmt Shell $E_SH
+
+title "results"
+check QML $E_QML
+check qsTrId $E_TR
+check Tests $E_TEST
+check Format $E_FMT
+check Clippy $E_CLIPPY
+check Deny $E_DENY allow_fail
+check Shell $E_SH
 echo ""
 
 exit $RETVAL

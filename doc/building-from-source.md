@@ -52,6 +52,10 @@ Let's build Whisperfish:
       rust                                     1.89.0+git1-1
     [...]
 
+Using LTO [seems to be required](https://gitlab.com/whisperfish/whisperfish/-/work_items/825) for some devices, enable it during the build like this if you encounter crashes:
+
+     sfdk build -- --with lto
+
 The dependencies are installed in the build target as needed. There's no such mechanism for tooling, that's why we had to do it manually.
 
 To verify the installation, early in the build log `rustc` and `cargo` versions are reported:
@@ -81,11 +85,13 @@ It's recommened to let the first build complete with the defaults, i.e. single t
 
     sfdk build -- --define 'jobs 4'
 
+This limitation is finally going away! The fix for it has been merged to the tooling upstream and already being tested by us.
+
 # Building Whisperfish in Sailfish community OBS
 
 Whisperfish gained the ability to be built on OBS in late 2024, but it was lost again due to newer Rust requirements. You can check out the current development package [here](https://build.sailfishos.org/package/show/home:rubdos:whisperfish/Whisperfish).
 
-Chum and OBS don't let us insert e.g. `--with lto` and such, so that needs to be handled differently. Chum sets `%_chum` and the project Whisperfish is built in (manually) sets `%_obs`, so we have [hardwired](https://gitlab.com/whisperfish/whisperfish/-/merge_requests/657/diffs?commit_id=f8bec68a800769c40669136b7d437300852bfbaa) the presence of either of those into `bcond_with` flags.
+Chum, i.e. the community OBS, doesn't let us insert e.g. `--with lto` and such, so that needs to be handled differently. Chum sets `%_chum` and the project Whisperfish is built in (manually) sets `%_obs`, so we have [hardwired](https://gitlab.com/whisperfish/whisperfish/-/merge_requests/657/diffs?commit_id=f8bec68a800769c40669136b7d437300852bfbaa) the presence of either of those into `bcond_with` flags.
 
 To mimic OBS build locally, you can use this command:
 
@@ -111,6 +117,12 @@ sfdk build -- --with vendor
 Another thing about the `vendor.*` files: they are currently excluded from the git repository on purpose. There is a CI job to generate them however. 
 
 # Experimental or incomplete features
+
+Most of the time experimental builds are non-invasive, but sometimes they introduce database migrations. We try to make them reversible, but undoing a database migration on live database can still be a challenge. Sometimes the changes are not reversible, so you are more or less stuck with the changes.
+
+Look for new `.sql` files in the `migrations` folder structure.
+
+And as always, if you're unsure about something, ask us what to do!
 
 ## Voice and video calls
 

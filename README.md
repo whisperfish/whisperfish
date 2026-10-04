@@ -4,7 +4,8 @@ Whisperfish is a native [Signal](https://www.whispersystems.org/) client
 for [Sailfish OS](https://sailfishos.org/). The user interface is
 heavily based on the jolla-messages application written by Jolla Ltd.
 
-Whisperfish has plenty of features these days and is in a mostly usable state.
+Whisperfish has plenty of features these days and is in a mostly usable state,
+but having a Signal Destop as a linked device is highly recommened.
 Join our development channel on Matrix
 ([#whisperfish:rubdos.be](https://matrix.to/#/#whisperfish:rubdos.be))
 or Libera.Chat (#whisperfish) to get in touch, and check
@@ -31,11 +32,11 @@ byte), and we don't eat homework.
 
 ## Project Status
 
-This project started from a now outdated Go-based SailfishOS client for
-Signal. This version, 0.6 and onwards, is a complete rewrite, and uses
-[libsignal-client](https://github.com/signalapp/libsignal-client)
-instead. This means we aim for better maintainability. It also means the
-whole SailfishOS app had to be rewritten, and you may want to make a
+This project started as a Go-based SailfishOS client for Signal.
+Version 0.6 (and onwards) is a complete rewrite, and uses
+[libsignal-service](https://github.com/whisperfish/libsignal-service-rs),
+(which then uses [libsignal-client](https://github.com/signalapp/libsignal))
+for better maintainability. You may want to make a
 back-up of your current files if you still come from 0.5. Specifically:
 
 - `.local/share/harbour-whisperfish` contains all your data.
@@ -54,6 +55,7 @@ In current releases the paths have changed:
 - [x] Group messages
 - [ ] Editing messages
 - [x] Sealed sending
+- [x] Voice messages
 - [x] Storing conversations
 - [x] Sending attachments
 - [x] Taking a photo as an attachment
@@ -101,24 +103,11 @@ you can create a plain SQLite database with `create-database.sh`.
 
 ## Troubleshooting
 
-Whisperfish connects to Signal using Websockets. For a better user
-experience try adjusting the power settings on your Jolla to disable
-late suspend. This should keep the network interfaces up and allow
-Whisperfish to maintain websocket connections even when the device is in
-"sleep". This could potentially impact your battery life depending on
-your usage. Otherwise every time your device goes into deep sleep, the
-Websocket connection is broken and you may not receive messages until
-the next time the OS wakes up and Whisperfish reconnects.
-
-To disable late suspend and enable "early suspend" run:
-
-    mcetool --set-suspend-policy=early
-
-See here for more information.
-
-1. <https://together.jolla.com/question/55056/dynamic-pm-in-jolla/>
-2. <http://talk.maemo.org/showpost.php?p=1401956&postcount=29>
-3. <https://sailfishos.org/wiki/Sailfish_OS_Cheat_Sheet#Blocking_Device_Suspend>
+Typically the first step in troubleshooting is either grabbing
+a screenshot of the issue (visual bugs) or
+[capturing logs](https://gitlab.com/whisperfish/whisperfish/-/wikis/home#debugging-and-logging).
+When sending screenshots mind the privacy of yourself and your contacts --
+[censor your logs](https://gitlab.com/whisperfish/whisperfish/-/wikis/home#censor-your-logs)!
 
 ## License
 
