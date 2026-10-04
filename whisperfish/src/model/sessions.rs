@@ -459,9 +459,9 @@ define_model_roles! {
         Timestamp(fn timestamp(&self) via qdatetime_from_naive_option):    "timestamp",
         IsRead(fn is_read(&self)):                                         "read", // TODO Give session its own timestamp?
         Sent(fn sent(&self)):                                              "sent", // TODO cf. isPreviewReceived (#151)
-        HasDeliveries(fn delivered(&self) via bool_from_usize):            "hasDeliveries",
-        HasReads(fn read(&self) via bool_from_usize):                      "hasReads",
-        HasViews(fn viewed(&self) via bool_from_usize):                    "hasViews",
+        HasDeliveries(fn delivered(&self)):                                "hasDeliveries",
+        HasReads(fn read(&self)):                                          "hasReads",
+        HasViews(fn viewed(&self)):                                        "hasViews",
         IsMuted(fn is_muted(&self)):                                       "isMuted",
         IsArchived(fn is_archived(&self)):                                 "isArchived",
         IsPinned(fn is_pinned(&self)):                                     "isPinned",

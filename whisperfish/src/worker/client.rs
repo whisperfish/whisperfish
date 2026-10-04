@@ -3933,15 +3933,34 @@ impl ClientWorker {
     }
 
     #[with_executor]
-    pub fn mark_messages_read(&self, mut msg_id_list: QVariantList) {
-        let mut message_ids: Vec<i32> = vec![];
-        while !msg_id_list.is_empty() {
-            let msg_id_qvar = msg_id_list.remove(0);
-            // QMetaType::Int = 2
-            if msg_id_qvar.user_type() == 2 {
-                message_ids.push(msg_id_qvar.to_int().try_into().unwrap());
-            }
-        }
+    #[tracing::instrument(skip(self, msg_id_list))]
+    pub fn mark_messages_read(&self, msg_id_list: QVariantList) {
+        let message_ids: Vec<i32> = msg_id_list
+            .into_iter()
+            .filter_map(|msg_id_qv| match msg_id_qv.user_type() {
+                // QMetaType::Int = 2
+                2 => Some(msg_id_qv.to_int() as i32),
+                // QMetaType::QString = 10
+                10 => {
+                    let msg_id = msg_id_qv.to_qbytearray().to_string();
+                    match msg_id.parse::<i32>() {
+                        Ok(id) if id > 0 => Some(id),
+                        Ok(msg_id) => {
+                            tracing::warn!(%msg_id, "bad numeric message id");
+                            None
+                        }
+                        Err(e) => {
+                            tracing::warn!(%msg_id, "non-numeric message id string: {:?}", e);
+                            None
+                        }
+                    }
+                }
+                qv_type => {
+                    tracing::warn!(%qv_type, "message id {:?} has unexpected QVariant type", msg_id_qv);
+                    None
+                }
+            })
+            .collect();
 
         let actor = self.actor.clone().unwrap();
         actix::spawn(async move {

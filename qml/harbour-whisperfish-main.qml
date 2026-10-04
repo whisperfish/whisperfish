@@ -283,6 +283,40 @@ ApplicationWindow
         }
     }
 
+    function closeMessageNotifications(sessionId, messageIds) {
+        // Build a lookup once. String-keyed to preserve the loose-compare
+        // behavior of the original (number vs string messageId both
+        // coerce to the same string key).
+        var wanted = {}
+        for (var k = 0; k < messageIds.length; k++) {
+            wanted[String(messageIds[k])] = true
+        }
+
+        // Scan this session's notifications once. Iterate backwards so
+        // splice() doesn't shift indices we haven't visited yet.
+        if (sessionId in notificationMap) {
+            var arr = notificationMap[sessionId]
+            for (var i = arr.length - 1; i >= 0; i--) {
+                if (wanted[String(arr[i].messageId)]) {
+                    console.log("Close message notification for sid", sessionId, "mid", arr[i].messageId)
+                    arr[i].close()
+                    arr.splice(i, 1)
+                }
+            }
+            if (arr.length === 0) {
+                delete notificationMap[sessionId]
+            }
+        }
+
+        // Scan the queue once, same backwards-splice pattern.
+        for (var j = notificationQueue.length - 1; j >= 0; j--) {
+            if (wanted[String(notificationQueue[j].messageId)]) {
+                console.log("Removing from queue, mid", notificationQueue[j].messageId)
+                notificationQueue.splice(j, 1)
+            }
+        }
+    }
+
     function newMissedCallNotification(data) {
         var senderName = getRecipientName(data.senderE164, undefined, data.senderName)
         var contactName = data.isGroup ? data.sessionName : senderName

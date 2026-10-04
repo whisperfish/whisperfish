@@ -1601,7 +1601,7 @@ impl<O: Observable> Storage<O> {
     ///
     /// This is more efficient than fetching all receipts when only counts are needed.
     #[tracing::instrument(skip(self))]
-    pub fn count_message_receipts(&self, message_id: i32) -> orm::ReceiptCounts {
+    pub fn count_message_receipts(&self, message_id: i32) -> orm::HasReceipts {
         use schema::receipts;
 
         let read_count: i64 = receipts::table
@@ -1634,10 +1634,10 @@ impl<O: Observable> Storage<O> {
             .get_result(&mut *self.db())
             .expect("db");
 
-        orm::ReceiptCounts {
-            read: read_count as usize,
-            delivered: delivered_count as usize,
-            viewed: viewed_count as usize,
+        orm::HasReceipts {
+            delivered: delivered_count > 0,
+            read: read_count > 0,
+            viewed: viewed_count > 0,
         }
     }
 
@@ -3446,7 +3446,7 @@ impl<O: Observable> Storage<O> {
             None => self.fetch_message_by_id(message_id)?,
             Some(session_id) => self.fetch_message_by_id_from_session(message_id, session_id)?,
         };
-        let receipt_counts = self.count_message_receipts(message.id);
+        let receipts = self.count_message_receipts(message.id);
         let attachments: i64 = schema::attachments::table
             .filter(schema::attachments::message_id.eq(message_id))
             .count()
@@ -3481,7 +3481,7 @@ impl<O: Observable> Storage<O> {
         Some(AugmentedMessage {
             inner: message,
             is_voice_note,
-            receipt_counts,
+            has_receipts: receipts,
             attachments: attachments as usize,
             reactions: reactions as usize,
             mentions,
@@ -3683,41 +3683,44 @@ impl<O: Observable> Storage<O> {
                         0
                     };
 
-                    // Look up receipt counts for this message
-                    let read_count = if read_counts_iter
-                        .peek()
-                        .map(|(id, _)| *id == message.id)
-                        .unwrap_or(false)
-                    {
-                        let (_, count) = read_counts_iter.next().unwrap();
-                        count
-                    } else {
-                        0
-                    };
-                    let delivered_count = if delivered_counts_iter
+                    // Look up receipts for this message
+                    let delivered = if delivered_counts_iter
                         .peek()
                         .map(|(id, _)| *id == message.id)
                         .unwrap_or(false)
                     {
                         let (_, count) = delivered_counts_iter.next().unwrap();
-                        count
+                        count > 0
                     } else {
-                        0
+                        false
                     };
-                    let viewed_count = if viewed_counts_iter
+
+                    let read = if read_counts_iter
+                        .peek()
+                        .map(|(id, _)| *id == message.id)
+                        .unwrap_or(false)
+                    {
+                        let (_, count) = read_counts_iter.next().unwrap();
+                        count > 0
+                    } else {
+                        false
+                    };
+
+                    let viewed = if viewed_counts_iter
                         .peek()
                         .map(|(id, _)| *id == message.id)
                         .unwrap_or(false)
                     {
                         let (_, count) = viewed_counts_iter.next().unwrap();
-                        count
+                        count > 0
                     } else {
-                        0
+                        false
                     };
-                    let receipt_counts = orm::ReceiptCounts {
-                        read: read_count as usize,
-                        delivered: delivered_count as usize,
-                        viewed: viewed_count as usize,
+
+                    let has_receipts = orm::HasReceipts {
+                        delivered,
+                        read,
+                        viewed,
                     };
 
                     let body_ranges = if let Some(r) = &message.message_ranges {
@@ -3737,7 +3740,7 @@ impl<O: Observable> Storage<O> {
                         is_voice_note,
                         attachments,
                         reactions,
-                        receipt_counts,
+                        has_receipts,
                         body_ranges,
                         mentions,
                         sender_membership,
