@@ -125,16 +125,13 @@ impl super::ClientActor {
 
             let local_device_id = self.config.get_device_id();
 
-            self.call_state()
-                .manager
-                .received_call_message(
-                    metadata.sender.raw_uuid().into_bytes().to_vec(),
-                    metadata.sender_device.into(),
-                    local_device_id.into(),
-                    opaque,
-                    age.to_std().unwrap_or(std::time::Duration::ZERO),
-                )
-                .expect("handled opaque message");
+            self.call_state().manager.received_call_message(
+                metadata.sender.raw_uuid().into_bytes().to_vec(),
+                metadata.sender_device.into(),
+                local_device_id.into(),
+                opaque,
+                age.to_std().unwrap_or(std::time::Duration::ZERO),
+            );
         }
     }
 
@@ -230,14 +227,11 @@ impl super::ClientActor {
                 age: age.to_std().unwrap_or(std::time::Duration::ZERO),
                 sender_device_id: sender_device_id.into(),
                 receiver_device_id: self_device_id.into(),
-                receiver_device_is_primary: self_device_id == *DEFAULT_DEVICE_ID,
                 sender_identity_key,
                 receiver_identity_key,
             };
 
-            call_manager
-                .received_offer(remote_peer, call_id, received_offer)
-                .expect("handled call offer");
+            call_manager.received_offer(remote_peer, call_id, received_offer);
         };
         actix::spawn(receive_offer);
     }
@@ -257,6 +251,7 @@ impl super::ClientActor {
             return;
         };
 
+        let remote_peer = peer.id.to_string();
         let mut manager = self.call_state().manager.clone();
 
         let Some(opaque) = answer.opaque else {
@@ -302,9 +297,7 @@ impl super::ClientActor {
                 receiver_identity_key,
             };
 
-            manager
-                .received_answer(call_id, answer)
-                .expect("handled call answer");
+            manager.received_answer(remote_peer, call_id, answer);
         };
         actix::spawn(handle_answer);
     }
@@ -340,8 +333,7 @@ impl super::ClientActor {
             };
             self.call_state()
                 .manager
-                .received_ice(call_id, received_ice)
-                .expect("handled ICE update");
+                .received_ice(peer.id.to_string(), call_id, received_ice);
         }
     }
 
@@ -359,15 +351,13 @@ impl super::ClientActor {
             tracing::warn!("Busy message did not have a call ID. Ignoring.");
             return;
         };
-        self.call_state()
-            .manager
-            .received_busy(
-                call_id,
-                ReceivedBusy {
-                    sender_device_id: metadata.sender_device.into(),
-                },
-            )
-            .expect("handled busy message");
+        self.call_state().manager.received_busy(
+            peer.id.to_string(),
+            call_id,
+            ReceivedBusy {
+                sender_device_id: metadata.sender_device.into(),
+            },
+        );
     }
 
     #[tracing::instrument(skip(self, _ctx, metadata, _destination_device_id))]
@@ -400,16 +390,14 @@ impl super::ClientActor {
             ),
             ProtoHangupType::HangupNeedPermission => Hangup::NeedPermission(hangup.device_id),
         };
-        self.call_state()
-            .manager
-            .received_hangup(
-                call_id,
-                ReceivedHangup {
-                    sender_device_id: metadata.sender_device.into(),
-                    hangup,
-                },
-            )
-            .expect("handled hangup message");
+        self.call_state().manager.received_hangup(
+            peer.id.to_string(),
+            call_id,
+            ReceivedHangup {
+                sender_device_id: metadata.sender_device.into(),
+                hangup,
+            },
+        );
     }
 }
 
@@ -501,34 +489,18 @@ impl Handler<CallState> for super::ClientActor {
                     false,
                 );
             }
-            ringrtc::native::CallState::Ended(reason) => {
+            ringrtc::native::CallState::Ended(reason, summary) => {
                 // TODO: insert updates
-                match reason {
-                    ringrtc::native::EndReason::LocalHangup
-                    | ringrtc::native::EndReason::RemoteHangup
-                    | ringrtc::native::EndReason::RemoteHangupNeedPermission
-                    | ringrtc::native::EndReason::Declined
-                    | ringrtc::native::EndReason::Busy
-                    | ringrtc::native::EndReason::Glare
-                    | ringrtc::native::EndReason::ReCall
-                    | ringrtc::native::EndReason::ReceivedOfferExpired { age: _ }
-                    | ringrtc::native::EndReason::ReceivedOfferWhileActive
-                    | ringrtc::native::EndReason::ReceivedOfferWithGlare
-                    | ringrtc::native::EndReason::SignalingFailure
-                    | ringrtc::native::EndReason::GlareFailure
-                    | ringrtc::native::EndReason::ConnectionFailure
-                    | ringrtc::native::EndReason::InternalFailure
-                    | ringrtc::native::EndReason::Timeout
-                    | ringrtc::native::EndReason::AcceptedOnAnotherDevice
-                    | ringrtc::native::EndReason::DeclinedOnAnotherDevice
-                    | ringrtc::native::EndReason::BusyOnAnotherDevice => {
-                        tracing::warn!("Call ended, unprocessed reason: {:?}", reason);
-                    }
-                }
+                tracing::warn!(
+                    "Call ended, unprocessed reason: {:?} ({:?})",
+                    reason,
+                    summary
+                );
             }
             ringrtc::native::CallState::Ringing
             | ringrtc::native::CallState::Connected
             | ringrtc::native::CallState::Connecting
+            | ringrtc::native::CallState::Rejected(_)
             | ringrtc::native::CallState::Concluded => tracing::error!("unimplemented call state"),
         }
 
@@ -551,10 +523,7 @@ impl Handler<AnswerCall> for super::ClientActor {
     ) -> Self::Result {
         tracing::info!("accepting call");
         let call_state = self.call_state();
-        call_state
-            .manager
-            .accept_call(call_id)
-            .expect("answered call");
+        call_state.manager.accept_call(call_id);
         // call_state
         //     .manager
         //     .proceed(
@@ -577,7 +546,7 @@ impl Handler<HangupCall> for super::ClientActor {
         _ctx: &mut Self::Context,
     ) -> Self::Result {
         tracing::info!("declining call");
-        self.call_state().manager.hangup().expect("declined call");
+        self.call_state().manager.hangup();
     }
 }
 
@@ -597,8 +566,7 @@ impl Handler<InitiateCall> for super::ClientActor {
         let device_id = self.config.get_device_id().into();
         self.call_state()
             .manager
-            .call(recipient_id.to_string(), r#type, device_id)
-            .expect("initiate call");
+            .call(recipient_id.to_string(), r#type, device_id);
     }
 }
 
