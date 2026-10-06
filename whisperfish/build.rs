@@ -46,13 +46,29 @@ fn configure_webrtc() -> anyhow::Result<()> {
     // We download it, and verify the SHA384 hash.
     // Keep in sync with `fetch-webrtc.sh`
     //
-    // There are two possible legal hashes for each arch, because we have two different versions of the library:
-    // one is built with OpenSSL 1.1.1, the other with OpenSSL 3.2.2. These differ in ABI.
+    // There are three possible legal hashes for each arch, because we have two different versions of the library:
+    // one is built with OpenSSL 1.1.1, one with OpenSSL 3.5.8, one with OpenSSL 3.6.5. These differ in ABI.
     let files = [
-        ("arm", &["56d4809b7d034816185b2f165a56514e29a799a6a5be1528a53c72a42990e275bf6c2895076fce991704f9899acfe280", "56e28c6c02fec08dd6b39eab5d08b43fcb50342b0328cb127962b794ecb2c0b0031e0846c2318fe1efcac65363c74e1a"] as &[&str]),
-        ("arm64", &["28e0605917aa99b34303ee8b59eb0495b2bb3056ca9be2a5a553d34ac21d067324afd0bef06ac91cb266a7ad04dac4ba", "fc325ad89677706d61c7fed82f2ff753f591f93636f6ab615a5042fdd4ba681cc1aed70e0d5ce1d22391957640efd11f"]),
-        ("x64", &["337860360916a03c0a0da3e44f002f9cf3083c38ad4b4de9a9052a6ff50c9fc909433cabccaf6075554056d29408558f", "29db5abda6f5a9ccfa4d748f295a16b212b275bcf1441ac3856de6ee6cff855b89e6cf3a510d4da4d0abdcbcd3553434"]),
-        ("x86", &["89143eb3464547263770cffc66bb741e4407366ac4a21e695510fb3474ddef4b5bf30eb5b1abac3060b1d9b562c6cbab", "3752471a15b21dc40703e9a00bc7de2a18e3a60bb8a76c8c18665aa4a4cf14b7e7674e4d0342a051516bbbf63e16adfc"]),
+        ("arm", &[
+            "3ee0e141db54729e3224f95032f02672f277fe462536d734bf4c21c42e4cad373e773a7ee327222bd1aba2b907bf9443",
+            "7eccc8fc8347dce26d1f54a67d25c4b137035b73f59816a0cc30d79cfb0d9da5e5b39334b9564025c142cedc3b56a35d",
+            "7a86dacfc4dea3fd94284ee22c6221ed9c4858ae23cd05bea8c335f25d0f3881ecf92fceacee346b2201e2205af79c3f",
+        ] as &[&str]),
+        ("arm64", &[
+            "a30ec6e40c37fb61ec608373d68b2ce4e8c82cbdacc05967e37a293fe8f9bf16266d88b9b408ca409027d806bcb7d269",
+            "7d1bf9a285ef55c4547fe013b6660e0600afd7fa3ac895af000264cde6d1b22891d42e970da892e5c809d71f1dbb4660",
+            "0de6c8cec509cbaa7f5a33760ae87fdfac0e8e80c63247572064da11cf24ee5bdccc258f29486d016b2883fd8f2152c1",
+        ]),
+        ("x86", &[
+            "697e6c14f3ee32bd80f69db12e062f6be16fedfbc9969911fc4a85e9004c801a8d59aea0b1c04d94cd183098f404dbe8",
+            "a04061f6c83d407bc1ace23109ba4772a2d1ba2c3346f34d93c191a5947ccb0119eaba3ba4ab1e6b543e3c161c0fa0b2",
+            "0702a115ff693eef0ba4534e2af9de43c3eaebf7bae58bfaf108a35ee5c0199e0c6e5adf6f0d7ef6ef4964be3f07c875",
+        ]),
+        ("x64", &[
+            "1c1e0cf95316e914bf73a7962f92c00b5fd5d4297553a86b3693f62dfcec12cd34664a7d0b3ebd56188652322ebc8092",
+            "dc077a619de00a7c57c5d87dcedcec59656bf51f7d02b733bdf851defc9496e71124b948f22455410a045d180053ffbd",
+            "9cf4d8b9d036c784f92a1b8216879bb71f4939329eca09cace6f1496dda1af06a141c2c304d6e5d0b857755e542a6945",
+        ]),
     ].iter().cloned().collect::<std::collections::HashMap<&str, &[&str]>>();
 
     // This maps the target arch to the webrtc arch. Google has weird conventions
