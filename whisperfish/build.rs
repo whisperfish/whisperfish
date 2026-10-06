@@ -90,7 +90,7 @@ fn configure_webrtc() -> anyhow::Result<()> {
         std::env::var("OUTPUT_DIR").unwrap_or_else(|_| {
             let manifest = std::env::var("CARGO_MANIFEST_DIR").unwrap();
             let target = std::env::var("TARGET").unwrap();
-            format!("{manifest}/../ringrtc/322/{target}")
+            format!("{manifest}/../ringrtc/358/{target}")
         })
     );
     let target_path = std::path::Path::new(&target_path);
