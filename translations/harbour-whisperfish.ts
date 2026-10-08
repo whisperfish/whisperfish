@@ -44,7 +44,7 @@
     </message>
     <message id="whisperfish-session-note-to-self">
         <location filename="../qml/delegates/SessionDelegate.qml" line="230"/>
-        <location filename="../qml/harbour-whisperfish-main.qml" line="224"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="242"/>
         <location filename="../qml/pages/SearchPage.qml" line="144"/>
         <location filename="../qml/pages/ShareDestinationV1.qml" line="106"/>
         <location filename="../qml/pages/ShareDestinationV2.qml" line="105"/>
@@ -104,56 +104,56 @@
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-notification-missed-voice-call">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="342"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="362"/>
         <source>Missed voice call</source>
         <extracomment>Notification text for missed call notification</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-notification-missed-video-call">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="346"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="366"/>
         <source>Missed video call</source>
         <extracomment>Notification text for missed call notification</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-notification-default-message">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="415"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="441"/>
         <source>New Message</source>
         <extracomment>Default label for new message notification</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-notification-mark_as_read">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="483"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="503"/>
         <source>Mark as read</source>
         <extracomment>Notification action: mark message as read</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-notification-reply_to_message">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="493"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="513"/>
         <source>Reply</source>
         <extracomment>Notification action: Reply to (i.e. quote) the message</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-fatal-error-setup-client">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="593"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="614"/>
         <source>Failed to setup Signal client</source>
         <extracomment>Failed to setup signal client error message</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-fatal-error-invalid-datastore">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="598"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="619"/>
         <source>Failed to setup data storage</source>
         <oldsource>Failed to setup datastore</oldsource>
         <extracomment>Failed to setup datastore error message</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="permission-la-data">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="801"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="823"/>
         <source>Whisperfish data storage</source>
         <extracomment>Permission for Whisperfish data storage</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="permission-la-data_description">
-        <location filename="../qml/harbour-whisperfish-main.qml" line="805"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="827"/>
         <source>Store configuration and messages</source>
         <extracomment>Permission description for Whisperfish data storage</extracomment>
         <translation type="unfinished"></translation>
@@ -2022,7 +2022,7 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-sender-name-label-outgoing">
         <location filename="../qml/components/QuotedMessagePreview.qml" line="116"/>
         <location filename="../qml/components/SenderNameLabel.qml" line="51"/>
-        <location filename="../qml/harbour-whisperfish-main.qml" line="228"/>
+        <location filename="../qml/harbour-whisperfish-main.qml" line="246"/>
         <location filename="../qml/pages/SearchPage.qml" line="210"/>
         <location filename="../qml/pages/SearchPage.qml" line="219"/>
         <source>You</source>
