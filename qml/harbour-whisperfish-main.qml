@@ -11,27 +11,34 @@ import "pages"
 ApplicationWindow
 {
     id: mainWindow
+
     cover: Qt.resolvedUrl("cover/CoverPage.qml")
-    initialPage: Component { LandingPage { } }
+    initialPage: Component {
+        LandingPage { }
+    }
     allowedOrientations: Orientation.All
     _defaultPageOrientations: Orientation.All
     _defaultLabelFormat: Text.PlainText
 
     property var notificationMap: ({})
     property var notificationQueue: ([])
-    property var _mainPage: null
+    property var _mainPage
 
     // setting this to "true" will block global navigation
     // methods (showMainPage() etc.)
-    property bool fatalOccurred: false
+    property bool fatalOccurred
 
     property alias contactsReady: resolvePeopleModel.populated
 
-    property string shareClientId: ""
-    property string proofCaptchaToken: ''
+    property string shareClientId
+    property string proofCaptchaToken
 
     Contacts.PeopleModel {
         id: resolvePeopleModel
+
+        property var person: Component {
+            Contacts.Person { }
+        }
 
         // Specify the PhoneNumberRequired flag to ensure that all phone number
         // data will be loaded before the model emits populated.
@@ -39,8 +46,6 @@ ApplicationWindow
         // the case where we attempt to message a newly-created contact via
         // the action shortcut icon in the contact card.
         requiredProperty: Contacts.PeopleModel.PhoneNumberRequired
-
-        property var person: Component { Contacts.Person { } }
 
         function createContact(e164, first, last) {
             return person.createObject(null, {
@@ -57,29 +62,37 @@ ApplicationWindow
 
     Component {
         id: messageNotification
+
         Notification {
             property int messageId
+
             appIcon: "harbour-whisperfish"
             appName: "Whisperfish"
             category: "harbour-whisperfish-message"
+
             Component.onDestruction: close()
         }
     }
 
     Component {
         id: callNotification
+
         Notification {
             property int sessionId
+
             appIcon: "harbour-whisperfish"
             appName: "Whisperfish"
             category: "harbour-whisperfish-call"
+
             Component.onDestruction: close()
         }
     }
 
     Notification {
         id: quietMessageNotification
+
         property bool isSupported: false
+
         appName: "Whisperfish"
         category: "harbour-whisperfish-message"
 
@@ -99,26 +112,26 @@ ApplicationWindow
     DBusInterface {
         id: profiledInterface
 
+        // Empty until the first get_profile reply / profile_changed arrives.
+        // Canonical silent profile is "silent"; treat anything else as audible.
+        property string profileName: ""
+
         service: "com.nokia.profiled"
         path: "/com/nokia/profiled"
         iface: "com.nokia.profiled"
 
         signalsEnabled: true
 
-        // Empty until the first get_profile reply / profile_changed arrives.
-        // Canonical silent profile is "silent"; treat anything else as audible.
-        property string profileName: ""
+        function profile_changed(changed, active, profile, values) {
+            if (active)
+                profiledInterface.profileName = profile
+        }
 
         Component.onCompleted: {
             // Fetch the active profile once at startup; call() is async.
             profiledInterface.typedCall("get_profile", [], function(result) {
                 profiledInterface.profileName = result
             })
-        }
-
-        function profile_changed(changed, active, profile, values) {
-            if (active)
-                profiledInterface.profileName = profile
         }
     }
 
@@ -155,10 +168,12 @@ ApplicationWindow
     function getRecipientAvatar(e164, uuid, extId) {
         var contact = null
         // In Sailfish OS, extId is a number
+        //
         if (extId != null) {
             extId = parseInt(extId)
             contact = contactsReady ? resolvePeopleModel.personById(extId) : null
         }
+
         if (contact == null && e164 != null && e164[0] === '+') {
             // Only try to search for contact name if contact is a phone number
             contact = contactsReady ? resolvePeopleModel.personByPhoneNumber(e164, true) : null
@@ -191,13 +206,16 @@ ApplicationWindow
         if (data.isGroup) {
             return getGroupAvatar(data.groupId) || "image://theme/icon-m-users"
         }
+
         var avatar = getRecipientAvatar(data.sessionE164, data.sessionUuid, data.sessionExternalId)
         if (avatar) {
             return avatar
         }
+
         if (data.sessionUuid === SetupWorker.uuid) {
             return "image://theme/icon-m-note"
         }
+
         return "image://theme/icon-m-contact"
     }
 
@@ -205,7 +223,7 @@ ApplicationWindow
     // user selected preference. Fallback to e164.
     //
     // e164:           phone number
-    // recipientName:       Signal profile username
+    // recipientName:  Signal profile username
     // showNoteToSelf: true:      show "You"
     //                 false:     show "Note to self"
     //                 undefined: show own name instead
@@ -235,10 +253,12 @@ ApplicationWindow
             extId = parseInt(extId)
             contact = contactsReady && extId > 0 ? resolvePeopleModel.personById(extId) : null
         }
+
         if (contact == null && e164 != null && e164[0] === '+') {
             // Only try to search for contact name if contact is a phone number
             contact = contactsReady ? resolvePeopleModel.personByPhoneNumber(e164, true) : null
         }
+
         // When a Sailfish contact has no real name parts (first/last/nickname/
         // company/…), its displayLabel is *not* empty — it falls back to a
         // translatable placeholder such as "(Unnamed)". Treat that placeholder
@@ -248,6 +268,7 @@ ApplicationWindow
         var hasContactName = contact != null
             && contact.displayLabel !== ''
             && contact.displayLabel !== resolvePeopleModel.placeholderDisplayLabel
+
         if(SettingsBridge.prefer_device_contacts) {
             return hasContactName ? contact.displayLabel : recipientName
         } else {
@@ -318,9 +339,6 @@ ApplicationWindow
     }
 
     function newMissedCallNotification(data) {
-        var senderName = getRecipientName(data.senderE164, undefined, data.senderName)
-        var contactName = data.isGroup ? data.sessionName : senderName
-
         // Only ConversationPage.qml has `sessionId` property.
         if(Qt.application.state == Qt.ApplicationActive &&
            (pageStack.currentPage == _mainPage || pageStack.currentPage.sessionId == data.sessionId)) {
@@ -330,28 +348,32 @@ ApplicationWindow
             return
         }
 
+        var setting = SettingsBridge.notification_privacy.toString()
+        if(setting === "off") {
+            return
+        }
+
         var m = callNotification.createObject(null)
         m.itemCount = 1
-        var setting = SettingsBridge.notification_privacy.toString();
-        if(setting === "off") {
-            return;
+
+        if (!data.isVideoCall) {
+            //: Notification text for missed call notification
+            //% "Missed voice call"
+            m.body = qsTrId("whisperfish-notification-missed-voice-call")
         } else {
-            if (!data.isVideoCall) {
-                //: Notification text for missed call notification
-                //% "Missed voice call"
-                m.body = qsTrId("whisperfish-notification-missed-voice-call")
-            } else {
-                //: Notification text for missed call notification
-                //% "Missed video call"
-                m.body = qsTrId("whisperfish-notification-missed-video-call")
-            }
+            //: Notification text for missed call notification
+            //% "Missed video call"
+            m.body = qsTrId("whisperfish-notification-missed-video-call")
         }
 
         if(setting === "complete" || setting === "sender-only") {
-            m.previewSummary = senderName
-            m.summary = senderName
+            var rcptName = getRecipientName(data.senderE164, undefined, data.senderName)
+            var chatName = data.isGroup ? data.sessionName : rcptName
+
+            m.previewSummary = rcptName
+            m.summary = rcptName
             if(m.subText !== undefined) {
-                m.subText = contactName
+                m.subText = chatName
             }
             m.icon = getNotificationIcon(data)
         }
@@ -376,8 +398,8 @@ ApplicationWindow
             "method": "showConversation",
             "arguments": [ "sessionId", data.sessionId ]
         } ]
-        m.publish()
         m.sessionId = data.sessionId
+        m.publish()
     }
 
     function flushNotifications() {
@@ -399,26 +421,28 @@ ApplicationWindow
             return
         }
 
+        var notification_privacy = SettingsBridge.notification_privacy.toString()
+        if (notification_privacy == "off") {
+            return
+        }
+
         var m = messageNotification.createObject(null)
         m.itemCount = 1
 
-        var notification_privacy = SettingsBridge.notification_privacy.toString();
         switch (notification_privacy) {
         case "complete":
             // TODO: Service messages show up as empty message (instead of even raw JSON)
             m.body = data.message
-            break;
+            break
         case "minimal":
         case "sender-only":
             //: Default label for new message notification
             //% "New Message"
             m.body = qsTrId("whisperfish-notification-default-message")
-            break;
-        case "off":
-            return;
+            break
         default:
-            console.error("Unrecognised notification privacy setting:", notification_privacy);
-            return;
+            console.error("Unhandled notification privacy setting:", notification_privacy)
+            return
         }
 
         // Does this notification replace an existing one?
@@ -440,18 +464,14 @@ ApplicationWindow
             m.itemCount = first_message.itemCount + 1
         }
 
-        var name = getRecipientName(data.senderE164, undefined, data.senderName)
-        var contactName = data.isGroup ? data.sessionName : name
-
         if(notification_privacy === "complete" || notification_privacy === "sender-only") {
-            // Use the resolved name (respects 'Prefer device contacts' and
-            // falls back to the Signal profile name) rather than the raw
-            // Signal profile name from the payload, so notifications match
-            // the in-app sender display. Mirrors newMissedCallNotification().
-            m.previewSummary = name
-            m.summary = name
+            var rcptName = getRecipientName(data.senderE164, undefined, data.senderName)
+            var chatName = data.isGroup ? data.sessionName : rcptName
+
+            m.previewSummary = rcptName
+            m.summary = rcptName
             if(m.subText !== undefined) {
-                m.subText = contactName
+                m.subText = chatName
             }
             m.icon = getNotificationIcon(data)
         }
@@ -501,18 +521,19 @@ ApplicationWindow
             "method": "replyToMessage",
             "arguments": [ "sessionId", data.sessionId, "messageId", data.messageId ]
         } ]
+        m.messageId = data.messageId
+        if(data.sessionId in notificationMap && !SettingsBridge.minimise_notify) {
+              notificationMap[data.sessionId].push(m)
+        } else {
+              notificationMap[data.sessionId] = [m]
+        }
+
         if (!ClientWorker.queueEmpty) {
             console.log("Adding to queue")
             notificationQueue.push(m)
         } else {
             console.log("Publishing immediately")
             m.publish()
-        }
-        m.messageId = data.messageId
-        if(data.sessionId in notificationMap && !SettingsBridge.minimise_notify) {
-              notificationMap[data.sessionId].push(m)
-        } else {
-              notificationMap[data.sessionId] = [m]
         }
     }
 
@@ -537,7 +558,7 @@ ApplicationWindow
         //       but this luckily only affects older SFOS releases.
         return AppState.gstreamerVersionMajor > 1
                || AppState.gstreamerVersionMajor == 1
-                  && AppState.gstreamerVersionMinor >= 22;
+                  && AppState.gstreamerVersionMinor >= 22
     }
 
     Connections {
@@ -636,13 +657,20 @@ ApplicationWindow
             showMainPage()
             AppState.setClosed()
             if (AppState.mayExit()) {
-                Qt.quit();
+                Qt.quit()
             }
         }
     }
 
     DBusInterface {
         id: dbusSpeechInterface
+
+        // 3 == Idle
+        property bool available: installed && _state === 3 && _autoSTTAvailable
+        property bool installed: status == DBusInterface.Available
+
+        property var _state
+        property bool _autoSTTAvailable: false
 
         // https://github.com/mkiol/dsnote/blob/main/dbus/org.mkiol.Speech.xml
         service: 'org.mkiol.Speech'
@@ -654,18 +682,6 @@ ApplicationWindow
         signalsEnabled: true
         propertiesEnabled: true
 
-        // 3 == Idle
-        property bool available: installed && _state === 3 && _autoSTTAvailable
-        property bool installed: status == DBusInterface.Available
-
-        property var _state
-        property bool _autoSTTAvailable: false
-
-        Component.onCompleted: {
-            // We need to read e.g. State once to trigger updates
-            _state = getProperty("State");
-        }
-
         function statePropertyChanged(state) {
             console.log("statePropertyChanged:", state)
             _state = state
@@ -673,8 +689,13 @@ ApplicationWindow
 
         function sttLangsPropertyChanged(langs) {
             console.log("sttLangsPropertyChanged:", JSON.stringify(langs))
-            _autoSTTAvailable = "auto" in langs;
-            console.log("Automatic language detection available:", _autoSTTAvailable);
+            _autoSTTAvailable = "auto" in langs
+            console.log("Automatic language detection available:", _autoSTTAvailable)
+        }
+
+        Component.onCompleted: {
+            // We need to read e.g. State once to trigger updates
+            _state = getProperty("State")
         }
     }
 
@@ -684,15 +705,15 @@ ApplicationWindow
         iface: "be.rubdos.whisperfish.app"
 
         function markAsRead(param1, messageId) {
-            if (param1 != "messageId") return;
+            if (param1 != "messageId") return
             ClientWorker.mark_messages_read([messageId])
         }
 
         function replyToMessage(param1, sessionId, param2, messageId, replyText) {
             // XXX Better verification?
-            if (param1 != "sessionId") return;
-            if (param2 != "messageId") return;
-            if (replyText == "") return;
+            if (param1 != "sessionId") return
+            if (param2 != "messageId") return
+            if (replyText == "") return
             ClientWorker.mark_messages_read([messageId])
             MessageModel.createMessage(sessionId, replyText, [], messageId, true, false)
         }
@@ -715,9 +736,9 @@ ApplicationWindow
         }
 
         function handleShareV1(clientId, source, content) {
-            console.log("DBus app.handleShare() (v1) call received");
-            console.log("DBus Share Client:", clientId);
-            console.log("DBus source:", source);
+            console.log("DBus app.handleShare() (v1) call received")
+            console.log("DBus Share Client:", clientId)
+            console.log("DBus source:", source)
             console.log("DBus content:", content)
             pageStack.push(
                 Qt.resolvedUrl("pages/ShareDestinationV1.qml"),
@@ -731,9 +752,9 @@ ApplicationWindow
         }
 
         function handleShareV2(clientId, shareObject) {
-            console.log("DBus app.handleShare() (v2) call received");
-            console.log("DBus Share Client:", clientId);
-            console.log("DBus Share object:", JSON.stringify(shareObject));
+            console.log("DBus app.handleShare() (v2) call received")
+            console.log("DBus Share Client:", clientId)
+            console.log("DBus Share object:", JSON.stringify(shareObject))
 
             shareClientId = clientId
             pageStack.push(
@@ -747,6 +768,7 @@ ApplicationWindow
     }
     DBusInterface {
         id: dbusShareClient
+
         service: "be.rubdos.harbour-whisperfish.shareClient.c" + shareClientId
         path: "/be/rubdos/whisperfish/shareClient/c" + shareClientId
         iface: "be.rubdos.whisperfish.shareClient"
@@ -798,10 +820,10 @@ ApplicationWindow
 
         //: Permission for Whisperfish data storage
         //% "Whisperfish data storage"
-        var f = qsTrId("permission-la-data");
+        var f = qsTrId("permission-la-data")
 
         //: Permission description for Whisperfish data storage
         //% "Store configuration and messages"
-        var f = qsTrId("permission-la-data_description");
+        var f = qsTrId("permission-la-data_description")
     }
 }
