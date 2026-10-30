@@ -90,16 +90,20 @@ var Style = { // could be initialized on startup with user-configured values
     'microsoft-3D-fluent': {
       name: 'Microsoft (glossy)',
       key: 'microsoft-3D-fluent',
-      versions: ['fluent-16.0', 'fluent-15.1'],
+      versions: ['fluent-17.0', 'fluent-16.0', 'fluent-15.1'],
       ext: 'png',
       type: 'r',
       url: 'https://emojipedia.org/microsoft-3D-fluent',
       license: 'proprietary'
     },
     'google': {
+      // Starting with version '18.0' (the 'emoji-18.0' release on Emojipedia),
+      // Google switched to the 'Noto 3D' redesign (first released on Pixel 11
+      // devices). Up to and including '17.0', this style consists of the flat
+      // Noto Color Emoji designs.
       name: 'Google Noto',
       key: 'google',
-      versions: ['17.0', '16.0', '15.1', '15.0', 'android-12l'],
+      versions: ['18.0', '17.0', '16.0', '15.1', '15.0', 'android-12l'],
       ext: 'png',
       type: 'r',
       url: 'https://emojipedia.org/google',
@@ -108,7 +112,7 @@ var Style = { // could be initialized on startup with user-configured values
     'whatsapp': {
       name: 'WhatsApp',
       key: 'whatsapp',
-      versions: ['2.26.22.71', '2.25.1.75', '2.24.2.76', '2.23.2.72', '2.22.8.79', '2.21.23.23', '2.21.16.20', '2.21.11.17', '2.20.206.24'],
+      versions: ['2.26.35.74', '2.26.27.85', '2.26.22.71', '2.25.1.75', '2.24.2.76', '2.23.2.72', '2.22.8.79', '2.21.23.23', '2.21.16.20', '2.21.11.17', '2.20.206.24'],
       ext: 'png',
       type: 'r',
       url: 'https://emojipedia.org/whatsapp',
