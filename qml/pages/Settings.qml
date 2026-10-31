@@ -163,7 +163,6 @@ Page {
 
             ComboBox {
                 id: countryCombo
-                property string _setting: SettingsBridge.country_code
                 width: parent.width
                 //: Settings page country code
                 //% "Country Code"
@@ -185,7 +184,7 @@ Page {
                             property string iso: Countries.c[index].i
                             text: iso + " - " + names
                             Component.onCompleted: {
-                                if (iso === countryCombo._setting) {
+                                if (iso === SettingsBridge.country_code) {
                                     countryCombo.currentIndex = index
                                 }
                             }
@@ -346,7 +345,6 @@ Page {
                 onClicked: SettingsBridge.share_phone_number = !SettingsBridge.share_phone_number
             }
             ComboBox {
-                property string _setting: SettingsBridge.notification_privacy
                 width: parent.width
                 //: Settings page notification privacy
                 //% "Notification privacy"
