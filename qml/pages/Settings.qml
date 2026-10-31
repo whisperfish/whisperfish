@@ -111,7 +111,6 @@ Page {
             }
             IconTextSwitch {
                 enabled: isPrimaryDevice
-                anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page use typing indicators
                 //% "Enable typing indicators"
                 text: qsTrId("whisperfish-settings-enable-typing-indicators")
@@ -125,7 +124,6 @@ Page {
             }
             IconTextSwitch {
                 enabled: isPrimaryDevice
-                anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page use read receipts
                 //% "Enable read receipts"
                 text: qsTrId("whisperfish-settings-enable-read-receipts")
@@ -139,7 +137,6 @@ Page {
             }
             IconTextSwitch {
                 enabled: isPrimaryDevice
-                anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page enable link previews
                 //% "Link previews"
                 text: qsTrId("whisperfish-settings-enable-link-previews")
@@ -152,7 +149,6 @@ Page {
                 onClicked: SettingsBridge.enable_link_previews = !SettingsBridge.enable_link_previews
             }
             IconTextSwitch {
-                anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page notifications show minimum number of notifications
                 //% "Minimise notifications"
                 text: qsTrId("whisperfish-settings-notifications-minimise")
@@ -256,7 +252,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page save attachments
                 //% "Save Attachments"
                 text: qsTrId("whisperfish-settings-save-attachments")
@@ -273,7 +268,6 @@ Page {
             }
             IconTextSwitch {
                 visible: false // XXX: Unimplemented
-                anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page share contacts
                 //% "Share Contacts"
                 text: qsTrId("whisperfish-share-contacts-label")
@@ -286,7 +280,6 @@ Page {
                 onClicked: SettingsBridge.share_contacts = !SettingsBridge.share_contacts
             }
             IconTextSwitch {
-                anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page prefer phone contacts
                 //% "Prefer device contacts"
                 text: qsTrId("whisperfish-settings-notifications-prefer-device-contacts")
@@ -299,7 +292,6 @@ Page {
                 onClicked: SettingsBridge.prefer_device_contacts = !SettingsBridge.prefer_device_contacts
             }
             IconTextSwitch {
-                anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page enable enter send
                 //% "Return key send"
                 text: qsTrId("whisperfish-settings-enable-enter-send")
@@ -313,7 +305,6 @@ Page {
             }
             IconTextSwitch {
                 visible: !AppState.isHarbour()
-                anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page auto transcribe voice notes
                 //% "Transcribe voice notes"
                 text: qsTrId("whisperfish-transcribe-voice-notes-label")
@@ -343,7 +334,6 @@ Page {
                 text: qsTrId("whisperfish-settings-privacy-section")
             }
             IconTextSwitch {
-                anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page, share recipient phone number with contacts
                 //% "Share phone number"
                 text: qsTrId("whisperfish-settings-share-phone-number")
@@ -413,7 +403,6 @@ Page {
                 }
             }
             IconTextSwitch {
-                anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page, show recipient phone number in conversation view
                 //% "Show phone number"
                 text: qsTrId("whisperfish-settings-show-phone-number")
@@ -439,7 +428,6 @@ Page {
                     text: qsTrId("whisperfish-settings-startup-shutdown-section")
                 }
                 IconTextSwitch {
-                    anchors.horizontalCenter: parent.horizontalCenter
                     //: Settings page enable autostart
                     //% "Autostart after boot"
                     text: qsTrId("whisperfish-settings-enable-autostart")
@@ -482,7 +470,6 @@ Page {
                 }
                 TextArea {
                     visible: encryptedDatabase
-                    anchors.horizontalCenter: parent.horizontalCenter
                     readOnly: true
                     width: parent.width
                     font.pixelSize: Theme.fontSizeSmall
@@ -493,7 +480,6 @@ Page {
                 }
                 TextArea {
                     visible: !autostartService.serviceExists
-                    anchors.horizontalCenter: parent.horizontalCenter
                     readOnly: true
                     width: parent.width
                     font.pixelSize: Theme.fontSizeSmall
@@ -504,7 +490,6 @@ Page {
                 }
                 IconTextSwitch {
                     id: enableQuitOnUiClose
-                    anchors.horizontalCenter: parent.horizontalCenter
                     //: Settings page enable background mode
                     //% "Background mode"
                     text: qsTrId("whisperfish-settings-enable-background-mode")
@@ -541,7 +526,6 @@ Page {
                 text: qsTrId("whisperfish-settings-advanced-section")
             }
             IconTextSwitch {
-                anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page: debug info toggle
                 //% "Debug mode"
                 text: qsTrId("whisperfish-settings-debug-mode")
@@ -554,7 +538,6 @@ Page {
                 onClicked: SettingsBridge.debug_mode = !SettingsBridge.debug_mode
             }
             IconTextSwitch {
-                anchors.horizontalCenter: parent.horizontalCenter
                 //: Settings page, send verbose logs to systemd journal
                 //% "Verbose journal log"
                 text: qsTrId("whisperfish-settings-verbose-journal")
