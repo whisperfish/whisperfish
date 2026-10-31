@@ -15,6 +15,7 @@ ListItem {
     property bool isArchived: model.isArchived
     property bool isRegistered: model.isRegistered
     property bool isBlocked: model.isBlocked
+    property bool isMuted: model.isMuted
     property bool hasDraft: model.draft.length > 0
     property string draft: model.draft
     property string profilePicture: model !== undefined ? (isGroup
@@ -28,7 +29,7 @@ ListItem {
     property bool isRemoteDeleted: hasLastMessage && lastMessage.remoteDeleted
     property bool hasText: lastMessage.message !== undefined && lastMessage.message !== ''
     property bool hasLastMessage: lastMessage.valid && lastMessage.messageId > 0
-    property int expiringMessages: hasLastMessage && model.expiringMessageTimeout != -1
+    property bool expiringMessages: hasLastMessage && model.expiringMessageTimeout != -1
     property real previewTextHeight
     property string _name: !isGroup && recipient.status == Loader.Ready ? getRecipientName(recipient.item.e164, recipient.item.externalId, recipient.item.name, true) : ''
     property string name: isGroup
