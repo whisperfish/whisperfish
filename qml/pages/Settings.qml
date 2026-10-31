@@ -118,13 +118,10 @@ Page {
                 //: Settings page typing indicators description
                 //% "See when others are typing, and let others see when you are typing, if they also have this enabled."
                 description: qsTrId("whisperfish-settings-enable-typing-indicators-description")
+                automaticCheck: false
                 checked: SettingsBridge.enable_typing_indicators
                 icon.source: "image://theme/icon-m-activity-messaging"
-                onCheckedChanged: {
-                    if(checked != SettingsBridge.enable_typing_indicators) {
-                        SettingsBridge.enable_typing_indicators = checked
-                    }
-                }
+                onClicked: SettingsBridge.enable_typing_indicators = !SettingsBridge.enable_typing_indicators
             }
             IconTextSwitch {
                 enabled: isPrimaryDevice
@@ -135,13 +132,10 @@ Page {
                 //: Settings page read receipts description
                 //% "See when others have read your messages, and let others see when you are have read theirs, if they also have this enabled."
                 description: qsTrId("whisperfish-settings-enable-read-receipts-description")
+                automaticCheck: false
                 checked: SettingsBridge.enable_read_receipts
                 icon.source: "image://theme/icon-m-activity-messaging"
-                onCheckedChanged: {
-                    if(checked != SettingsBridge.enable_read_receipts) {
-                        SettingsBridge.enable_read_receipts = checked
-                    }
-                }
+                onClicked: SettingsBridge.enable_read_receipts = !SettingsBridge.enable_read_receipts
             }
             IconTextSwitch {
                 enabled: isPrimaryDevice
@@ -152,13 +146,10 @@ Page {
                 //: Settings page enable link previews description
                 //% "Create and send previews of the links you send in messages. Note: Feature not yet implemented in Whisperfish."
                 description: qsTrId("whisperfish-settings-enable-link-previews-description")
+                automaticCheck: false
                 checked: SettingsBridge.enable_link_previews
                 icon.source: "image://theme/icon-m-website"
-                onCheckedChanged: {
-                    if(checked != SettingsBridge.enable_link_previews) {
-                        SettingsBridge.enable_link_previews = checked
-                    }
-                }
+                onClicked: SettingsBridge.enable_link_previews = !SettingsBridge.enable_link_previews
             }
             IconTextSwitch {
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -168,13 +159,10 @@ Page {
                 //: Settings page notifications show minimum number of notifications description
                 //% "If turned on, Whisperfish will suppress all but the first notification from each session."
                 description: qsTrId("whisperfish-settings-notifications-minimise-description")
+                automaticCheck: false
                 checked: SettingsBridge.minimise_notify
                 icon.source: "image://theme/icon-m-repeat-single"
-                onCheckedChanged: {
-                    if(checked != SettingsBridge.minimise_notify) {
-                        SettingsBridge.minimise_notify = checked
-                    }
-                }
+                onClicked: SettingsBridge.minimise_notify = !SettingsBridge.minimise_notify
             }
 
             ComboBox {
@@ -278,13 +266,10 @@ Page {
                     qsTrId("whisperfish-settings-save-attachments-description")
                         .arg(SettingsBridge.attachment_dir)
                 }
+                automaticCheck: false
                 checked: SettingsBridge.save_attachments
                 icon.source: "image://theme/icon-m-attach"
-                onCheckedChanged: {
-                    if(checked != SettingsBridge.save_attachments) {
-                        SettingsBridge.save_attachments = checked
-                    }
-                }
+                onClicked: SettingsBridge.save_attachments = !SettingsBridge.save_attachments
             }
             IconTextSwitch {
                 visible: false // XXX: Unimplemented
@@ -295,13 +280,10 @@ Page {
                 //: Share contacts description
                 //% "Allow Signal to use your local contact list, to find other Signal users."
                 description: qsTrId("whisperfish-share-contacts-description")
+                automaticCheck: false
                 checked: SettingsBridge.share_contacts
                 icon.source: "image://theme/icon-m-file-vcard"
-                onCheckedChanged: {
-                    if(checked != SettingsBridge.share_contacts) {
-                        SettingsBridge.share_contacts = checked
-                    }
-                }
+                onClicked: SettingsBridge.share_contacts = !SettingsBridge.share_contacts
             }
             IconTextSwitch {
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -311,13 +293,10 @@ Page {
                 //: Settings page prefer phone contacts description
                 //% "Prefer Sailfish OS address book contact names and avatars over Signal Profile data."
                 description: qsTrId("whisperfish-settings-notifications-prefer-device-contacts-description")
+                automaticCheck: false
                 checked: SettingsBridge.prefer_device_contacts
                 icon.source: "image://theme/icon-m-people"
-                onCheckedChanged: {
-                    if(checked != SettingsBridge.prefer_device_contacts) {
-                        SettingsBridge.prefer_device_contacts = checked
-                    }
-                }
+                onClicked: SettingsBridge.prefer_device_contacts = !SettingsBridge.prefer_device_contacts
             }
             IconTextSwitch {
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -327,13 +306,10 @@ Page {
                 //: Settings page enable enter send description
                 //% "When enabled, the return key functions as a send key. Otherwise, the return key can be used for multi-line messages."
                 description: qsTrId("whisperfish-settings-enable-enter-send-description")
+                automaticCheck: false
                 checked: SettingsBridge.enable_enter_send
                 icon.source: "image://theme/icon-m-enter"
-                onCheckedChanged: {
-                    if(checked != SettingsBridge.enable_enter_send) {
-                        SettingsBridge.enable_enter_send = checked
-                    }
-                }
+                onClicked: SettingsBridge.enable_enter_send = !SettingsBridge.enable_enter_send
             }
             IconTextSwitch {
                 visible: !AppState.isHarbour()
@@ -352,14 +328,11 @@ Page {
                     //% "Automatically transcribe voice notes to text upon reception. Install and configure an 'Auto detected' model in Speech Note to use this feature."
                     qsTrId("whisperfish-transcribe-voice-notes-description-uninstalled")
                 )
+                automaticCheck: false
                 checked: SettingsBridge.transcribe_voice_notes
                 enabled: dbusSpeechInterface.available
                 icon.source: "image://theme/icon-m-file-note-dark"
-                onCheckedChanged: {
-                    if(checked != SettingsBridge.transcribe_voice_notes) {
-                        SettingsBridge.transcribe_voice_notes = checked
-                    }
-                }
+                onClicked: SettingsBridge.transcribe_voice_notes = !SettingsBridge.transcribe_voice_notes
             }
             // ------ END GENERAL SETTINGS ------
 
@@ -377,13 +350,10 @@ Page {
                 //: Settings page, share recipient phone number with contacts description
                 //% "When enabled, your contacts can see your phone number when you message them."
                 description: qsTrId("whisperfish-settings-share-phone-number-description")
+                automaticCheck: false
                 checked: SettingsBridge.share_phone_number
                 icon.source: "image://theme/icon-m-dialpad"
-                onCheckedChanged: {
-                    if(checked!= SettingsBridge.share_phone_number) {
-                        SettingsBridge.share_phone_number = checked
-                    }
-                }
+                onClicked: SettingsBridge.share_phone_number = !SettingsBridge.share_phone_number
             }
             ComboBox {
                 property string _setting: SettingsBridge.notification_privacy
@@ -450,13 +420,10 @@ Page {
                 //: Settings page, show recipient phone number in conversation view description
                 //% "Show the phone number of the recipient in the conversation page header."
                 description: qsTrId("whisperfish-settings-show-phone-number-description")
+                automaticCheck: false
                 checked: SettingsBridge.show_phone_number
                 icon.source: "image://theme/icon-m-phone"
-                onCheckedChanged: {
-                    if(checked!= SettingsBridge.show_phone_number) {
-                        SettingsBridge.show_phone_number = checked
-                    }
-                }
+                onClicked: SettingsBridge.show_phone_number = !SettingsBridge.show_phone_number
             }
             // ------ END PRIVACY SETTINGS ------
 
@@ -480,17 +447,12 @@ Page {
                     //% "When enabled, Whisperfish starts automatically after each boot. If storage encryption is enabled or background-mode is off, the UI will be shown, otherwise the app starts in the background."
                     description: qsTrId("whisperfish-settings-enable-autostart-description")
                     enabled: autostartService.serviceExists
+                    automaticCheck: false
                     checked: autostartService.serviceEnabled
                     icon.source: "image://theme/icon-m-toy"
-                    onCheckedChanged: {
-                        if (enabled) {
-                            if (checked) {
-                                autostartService.enableService()
-                            } else {
-                                autostartService.disableService()
-                            }
-                        }
-                    }
+                    onClicked: autostartService.serviceEnabled
+                               ? autostartService.disableService()
+                               : autostartService.enableService()
                 }
                 TextField {
                     id: passwordField
@@ -549,14 +511,13 @@ Page {
                     //: Settings page enable background mode description
                     //% "When enabled, Whisperfish keeps running in the background and can send notifications after the app window has been closed."
                     description: qsTrId("whisperfish-settings-enable-background-mode-description")
+                    automaticCheck: false
                     checked: !SettingsBridge.quit_on_ui_close
                     icon.source: "image://theme/icon-m-levels"
                     icon.rotation: 180
-                    onCheckedChanged: {
-                        if(checked == SettingsBridge.quit_on_ui_close) {
-                            SettingsBridge.quit_on_ui_close = !checked
-                            AppState.setMayExit(!checked)
-                        }
+                    onClicked: {
+                        SettingsBridge.quit_on_ui_close = !SettingsBridge.quit_on_ui_close
+                        AppState.setMayExit(SettingsBridge.quit_on_ui_close)
                     }
                 }
                 Button {
@@ -587,13 +548,10 @@ Page {
                 //: Settings page: debug info toggle extended description
                 //% "Show debugging information and controls in the user interface."
                 description: qsTrId("whisperfish-settings-debug-mode-description")
+                automaticCheck: false
                 checked: debugMode
                 icon.source: "image://theme/icon-m-developer-mode"
-                onCheckedChanged: {
-                    if(checked != debugMode) {
-                        SettingsBridge.debug_mode = checked
-                    }
-                }
+                onClicked: SettingsBridge.debug_mode = !SettingsBridge.debug_mode
             }
             IconTextSwitch {
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -603,13 +561,10 @@ Page {
                 //: Settings page enable verbose logging description
                 //% "When enabled, Whisperfish sends verbose output to systemd journal. Requires a restart to take effect."
                 description: qsTrId("whisperfish-settings-verbose-journal-description")
+                automaticCheck: false
                 checked: SettingsBridge.verbose
                 icon.source: "image://theme/icon-m-about"
-                onCheckedChanged: {
-                    if(checked != SettingsBridge.verbose) {
-                        SettingsBridge.verbose = checked
-                    }
-                }
+                onClicked: SettingsBridge.verbose = !SettingsBridge.verbose
             }
             Button {
                 visible: debugMode
