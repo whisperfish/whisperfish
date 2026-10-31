@@ -18,23 +18,11 @@ Page {
     readonly property bool isPrimaryDevice: SettingsBridge.isPrimaryDevice()
     readonly property bool debugMode: SettingsBridge.debug_mode
 
-    // Triggers to send Syng Type::Configuration after closing the page
-    property bool _typingIndicators: false
-    property bool _readReceipts: false
-    property bool _linkPreviews: false
-
-    Component.onCompleted: {
-        _typingIndicators = SettingsBridge.enable_typing_indicators
-        _readReceipts = SettingsBridge.enable_read_receipts
-        _linkPreviews = SettingsBridge.enable_link_previews
-    }
+    // Trigger to send Sync Type::Configuration after closing the page
+    property bool _configDirty: false
 
     Component.onDestruction: {
-        if (
-            _typingIndicators != SettingsBridge.enable_typing_indicators ||
-            _readReceipts != SettingsBridge.enable_read_receipts ||
-            _linkPreviews != SettingsBridge.enable_link_previews
-         ) {
+        if (_configDirty) {
             console.log("Configuration sync needed")
             ClientWorker.sendConfiguration()
         }
@@ -120,7 +108,10 @@ Page {
                 automaticCheck: false
                 checked: SettingsBridge.enable_typing_indicators
                 icon.source: "image://theme/icon-m-activity-messaging"
-                onClicked: SettingsBridge.enable_typing_indicators = !SettingsBridge.enable_typing_indicators
+                onClicked: {
+                    SettingsBridge.enable_typing_indicators = !SettingsBridge.enable_typing_indicators
+                    _configDirty = true
+                }
             }
             IconTextSwitch {
                 enabled: isPrimaryDevice
@@ -133,7 +124,10 @@ Page {
                 automaticCheck: false
                 checked: SettingsBridge.enable_read_receipts
                 icon.source: "image://theme/icon-m-activity-messaging"
-                onClicked: SettingsBridge.enable_read_receipts = !SettingsBridge.enable_read_receipts
+                onClicked: {
+                    SettingsBridge.enable_read_receipts = !SettingsBridge.enable_read_receipts
+                    _configDirty = true
+                }
             }
             IconTextSwitch {
                 enabled: isPrimaryDevice
@@ -146,7 +140,10 @@ Page {
                 automaticCheck: false
                 checked: SettingsBridge.enable_link_previews
                 icon.source: "image://theme/icon-m-website"
-                onClicked: SettingsBridge.enable_link_previews = !SettingsBridge.enable_link_previews
+                onClicked: {
+                    SettingsBridge.enable_link_previews = !SettingsBridge.enable_link_previews
+                    _configDirty = true
+                }
             }
             IconTextSwitch {
                 //: Settings page notifications show minimum number of notifications
