@@ -167,47 +167,50 @@ Page {
                 //: Settings page country code description
                 //% "The selected country code determines what happens when a local phone number is entered."
                 description: qsTrId("whisperfish-settings-country-code-description")
-                //: settings page country code selection: nothing selected
-                //% "none"
-                value: currentIndex < 0 ?
-                           qsTrId("whisperfish-settings-country-code-empty") :
-                           currentItem.iso
-                currentIndex: -1
+                value: currentItem
+                       ? currentItem.iso
+                       : //: settings page country code selection: nothing selected
+                         //% "none"
+                         qsTrId("whisperfish-settings-country-code-empty")
+
+                currentIndex: {
+                    var country_code = SettingsBridge.country_code
+                    for (var i = 0; i < Countries.c.length; i++) {
+                        if (Countries.c[i].i == country_code) {
+                            return i
+                        }
+                    }
+                    return -1
+                }
                 menu: ContextMenu {
                     Repeater {
                         model: Countries.c
                         MenuItem {
-                            property string names: Countries.c[index].n
-                            property string iso: Countries.c[index].i
-                            text: iso + " - " + names
-                            Component.onCompleted: {
-                                if (iso === SettingsBridge.country_code) {
-                                    countryCombo.currentIndex = index
-                                }
-                            }
+                            property string name: modelData.n
+                            property string iso: modelData.i
+
+                            text: "%1 - %2".arg(iso).arg(name)
+
+                            onClicked: SettingsBridge.country_code = iso
                         }
-                    }
-                }
-                onCurrentIndexChanged: {
-                    if(
-                        currentIndex > -1
-                        && currentItem !== null
-                        && SettingsBridge.country_code !== currentItem.iso
-                    ) {
-                        SettingsBridge.country_code = currentItem.iso
                     }
                 }
             }
             ComboBox {
                 id: attachmentQualityCombo
-                property string attachment_quality: SettingsBridge.attachment_quality.toString()
+
+                // Sync this with settings.rs (and with the menu items)
+                property var values: ["high", "standard", "low"]
+
                 width: parent.width
                 //: Settings page scale image attachments
                 //% "Image attachments quality"
                 label: qsTrId("whisperfish-settings-attachment-quality-text")
+                description: currentItem ? currentItem.description : ""
+                currentIndex: values.indexOf(SettingsBridge.attachment_quality.toString())
                 menu: ContextMenu {
                     MenuItem {
-                        property string value: "high"
+                        property string value: attachmentQualityCombo.values[0]
                         //: Settings page, use high attachment quality
                         //% "High"
                         text: qsTrId("whisperfish-settings-attachment-quality-high-text")
@@ -216,7 +219,7 @@ Page {
                         property string description: qsTrId("whisperfish-settings-attachment-quality-high-description")
                     }
                     MenuItem {
-                        property string value: "standard"
+                        property string value: attachmentQualityCombo.values[1]
                         //: Settings page, use standard (medium) attachment quality
                         //% "Standard"
                         text: qsTrId("whisperfish-settings-attachment-quality-standard-text")
@@ -225,7 +228,7 @@ Page {
                         property string description: qsTrId("whisperfish-settings-attachment-quality-standard-description")
                     }
                     MenuItem {
-                        property string value: "low"
+                        property string value: attachmentQualityCombo.values[2]
                         //: Settings page, use low attachment quality
                         //% "Low"
                         text: qsTrId("whisperfish-settings-attachment-quality-low-text")
@@ -236,15 +239,8 @@ Page {
                 }
                 onCurrentItemChanged: {
                     if (currentItem != null) {
-                        if (attachment_quality != currentItem.value) {
-                            SettingsBridge.attachment_quality = currentItem.value
-                        }
-                        attachmentQualityCombo.description = currentItem.description
+                        SettingsBridge.attachment_quality = currentItem.value
                     }
-                }
-                Component.onCompleted: {
-                    var i = ["high", "standard", "low"].indexOf(attachment_quality)
-                    attachmentQualityCombo.currentIndex = i
                 }
             }
             IconTextSwitch {
