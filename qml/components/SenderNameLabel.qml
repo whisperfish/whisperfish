@@ -13,10 +13,12 @@ BackgroundItem {
     property string labelText: ""
     property string labelEmoji: ""
 
-    readonly property real _pillWidth: memberLabelPill.visible
-        ? Theme.paddingSmall + memberLabelPill.width : 0
+    readonly property real contentWidth: label.width
+                                         + (memberLabelPill.visible
+                                            ? Theme.paddingSmall + memberLabelPill.width
+                                            : 0)
 
-    implicitWidth: Math.max(label.width + _pillWidth, minimumWidth)
+    implicitWidth: Math.max(contentWidth, minimumWidth)
     implicitHeight: label.height + (enabled ? backgroundGrow : 0)
     width: Math.min(implicitWidth, maximumWidth)
     height: implicitHeight
