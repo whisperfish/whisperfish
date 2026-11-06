@@ -39,7 +39,7 @@ Page {
         //% "Please check for updates"
         previewSummary: qsTrId("whisperfish-update-reminder-summary")
 
-        //: About whisperfish menu item
+        //: Update reminder notification body text
         //% "This Whisperfish release is more than 90 days old. Please check for an update in order to keep Whisperfish running smoothly."
         previewBody: qsTrId("whisperfish-update-reminder-body")
     }

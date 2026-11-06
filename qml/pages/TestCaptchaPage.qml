@@ -75,7 +75,7 @@ BlockingInfoPageBase {
         spacing: Theme.paddingLarge
 
         Button {
-            //: continue button label
+            //: Captcha test start button label
             //% "Start"
             text: qsTrId("whisperfish-start-test-button-label")
             enabled: !root.busy

@@ -72,7 +72,7 @@ Page {
 
                         //: Summary of all selected recipients, e.g. "Bob, Jane, 75553243"
                         //% "Members"
-                        summaryPlaceholderText: qsTrId("whisperfish-new-group-message-members")
+                        summaryPlaceholderText: qsTrId("whisperfish-new-group-message-members-summary")
 
                         onSelectionChanged: {
                             console.log("Selected contact count: " + selectedContacts.count);
@@ -103,7 +103,7 @@ Page {
                     // TODO rewrite
                     // TODO support attachments
                     if (selectedContacts.count === 0) {
-                        //: Invalid recipient error
+                        //: Invalid group members error
                         //% "Please select group members"
                         errorLabel.text = qsTrId("whisperfish-error-invalid-group-members")
                     } else if(groupName.text == "") {

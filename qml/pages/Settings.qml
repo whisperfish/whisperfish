@@ -132,7 +132,7 @@ Page {
                 //: Settings page use read receipts
                 //% "Enable read receipts"
                 text: qsTrId("whisperfish-settings-enable-read-receipts")
-                //: Settings page scale read receipts description
+                //: Settings page read receipts description
                 //% "See when others have read your messages, and let others see when you are have read theirs, if they also have this enabled."
                 description: qsTrId("whisperfish-settings-enable-read-receipts-description")
                 checked: SettingsBridge.enable_read_receipts
@@ -374,7 +374,7 @@ Page {
                 //: Settings page, share recipient phone number with contacts
                 //% "Share phone number"
                 text: qsTrId("whisperfish-settings-share-phone-number")
-                //: Settings page, share recipient phone number with contacts
+                //: Settings page, share recipient phone number with contacts description
                 //% "When enabled, your contacts can see your phone number when you message them."
                 description: qsTrId("whisperfish-settings-share-phone-number-description")
                 checked: SettingsBridge.share_phone_number
@@ -427,7 +427,7 @@ Page {
                         //: Settings page, complete notifications
                         //% "Complete notifications"
                         text: qsTrId("whisperfish-settings-notifications-complete")
-                        //: Settings page, sender-only notifications description
+                        //: Settings page, complete notifications description
                         //% "Notifications displaying the contents and sender of a message"
                         property string description: qsTrId("whisperfish-settings-notifications-complete-description")
                     }
