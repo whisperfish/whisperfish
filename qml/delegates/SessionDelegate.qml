@@ -29,6 +29,7 @@ ListItem {
     property bool hasText: lastMessage.message !== undefined && lastMessage.message !== ''
     property bool hasLastMessage: lastMessage.valid && lastMessage.messageId > 0
     property int expiringMessages: hasLastMessage && model.expiringMessageTimeout != -1
+    property real previewTextHeight
     property string _name: !isGroup && recipient.status == Loader.Ready ? getRecipientName(recipient.item.e164, recipient.item.externalId, recipient.item.name, true) : ''
     property string name: isGroup
                           ? model.groupName
@@ -239,7 +240,7 @@ ListItem {
                 left: nameLabel.left; right: unreadBackground.left
                 top: nameLabel.bottom
             }
-            height: fontMetrics.height + fontMetrics.lineSpacing + fontMetrics.descent/2
+            height: previewTextHeight
             wrapMode: Text.Wrap
             clip: true
 
@@ -265,12 +266,6 @@ ListItem {
             sourceItem: messageLabel
             enabled: messageLabel.contentHeight > messageLabel.height
             direction: OpacityRamp.LeftToRight
-        }
-
-        FontMetrics {
-            id: fontMetrics
-            font.family: messageLabel.font.family
-            font.pixelSize: messageLabel.font.pixelSize
         }
 
         Row {
