@@ -2432,6 +2432,9 @@ impl Handler<SendMessage> for ClientActor {
                     }
                     Err(e) => {
                         tracing::error!("Sending message: {}", e);
+                        // Persist the failed state, so the message does not stay
+                        // queued forever (e.g. on attachment upload failures).
+                        act.storage.as_ref().unwrap().fail_message(mid);
                         act.inner.pinned().borrow().messageNotSent(session_id, mid);
                         if let Some(MessageSenderError::NotFound { .. }) = e.downcast_ref() {
                             // Handles session-is-not-a-group ok
