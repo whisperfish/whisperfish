@@ -29,6 +29,17 @@ Page {
         app: AppState
     }
 
+    FontMetrics {
+        id: previewMetrics
+
+        font.family: Theme.fontFamily
+        font.pixelSize: Theme.fontSizeExtraSmall
+    }
+
+    readonly property real previewTextHeight: previewMetrics.height
+                                              + previewMetrics.lineSpacing
+                                              + previewMetrics.descent/2
+
     Notification {
         id: updateNotification
         appIcon: "harbour-whisperfish"
@@ -225,6 +236,7 @@ Page {
             model: sessions.sessions
             delegate: SessionDelegate {
                 id: sessionDelegate
+                previewTextHeight: main.previewTextHeight
                 onClicked: {
                     console.log("Activating session: " + model.id)
                     pageStack.push(Qt.resolvedUrl("ConversationPage.qml"), { sessionId: model.id })

@@ -23,8 +23,15 @@ BackgroundItem {
     readonly property bool shown: quotedMessage.valid && visible
     readonly property bool hasAttachments: quotedMessage.thumbsAttachmentsCount > 0
 
-    implicitWidth: shown ? Math.min(Math.max(senderNameLabel.implicitWidth+2*contentPadding,
-                                             metrics.width), maximumWidth) : 0
+    readonly property real _sideSpace: contentPadding + attachThumb.width
+                                       + (showCloseButton
+                                          ? closeButton.width+Theme.paddingMedium
+                                          : contentPadding)
+
+
+    implicitWidth: shown
+                   ? Math.min(Math.max(senderNameLabel.contentWidth, metrics.width) + _sideSpace, maximumWidth)
+                   : 0
     implicitHeight: shown ? Math.max(quoteColumn.height, attachThumb.height) : 0
     height: implicitHeight
     width: implicitWidth

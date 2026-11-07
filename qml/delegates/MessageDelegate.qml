@@ -46,7 +46,9 @@ ListItem {
     // incoming/outbound messages. The bubble extends slightly over the contents.
     default property alias delegateContents: contentColumn.data
     property real contentPadding: 2*Theme.paddingMedium
-    property real delegateContentWidth: isExpanded ? _expandedWidth : _unexpandedWidth
+    property real delegateContentWidth: isExpanded
+                                        ? _expandedWidth
+                                        : Math.min(Math.max(_unexpandedWidth, minMessageWidth), maxMessageWidth)
     property real _expandedWidth: width - 2*Theme.horizontalPageMargin // page width
     property real _unexpandedWidth: hasAttachments ?
                                         maxMessageWidth :
@@ -54,8 +56,8 @@ ListItem {
                                                           messageLabel.font.pixelSize, infoRow.minContentWidth) +
                                                  Theme.paddingMedium, maxMessageWidth)
     property real maxMessageWidth: parent.width - 6*Theme.horizontalPageMargin
-    property real minMessageWidth: Math.max(senderNameLabel.visible ? senderNameLabel.implicitWidth : 0,
-                                            showQuotedMessage ? quoteItem.implicitWidth : 0,
+    property real minMessageWidth: Math.max(senderNameLabel.visible ? senderNameLabel.contentWidth : 0,
+                                            showQuotedMessage && quoteItem.item ? quoteItem.item.implicitWidth : 0,
                                             showExpand ? maxMessageWidth : infoRow.minContentWidth)
     property int shortenThreshold: 600 // in characters
     property int extraPageTreshold: 1500 // in characters
@@ -238,7 +240,7 @@ ListItem {
             isInGroup: isInGroup
             outbound: root.isOutbound
             maximumWidth: maxMessageWidth
-            minimumWidth: _unexpandedWidth
+            minimumWidth: delegateContentWidth
             highlighted: down || root.highlighted
             backgroundGrow: contentPadding/2
             radius: backgroundCornerRadius
@@ -251,9 +253,10 @@ ListItem {
 
             active: showQuotedMessage
             asynchronous: false
+            width: delegateContentWidth
             sourceComponent: Component {
                 QuotedMessagePreview {
-                    id: quoteItem
+                    id: quotePreview
 
                     visible: showQuotedMessage
                     width: delegateContentWidth
@@ -266,16 +269,15 @@ ListItem {
                                                    (isOutbound ? backgroundItem.topRight : backgroundItem.topLeft)
                     onClicked: {
                         if (listView.isSelecting) root.clicked(mouse)
-                        else quoteClickedSignal(quoteItem.messageId)
+                        else quoteClickedSignal(quotePreview.messageId)
                     }
                 }
             }
         }
 
         Item {
-            // FIXME: Is this needed?
             width: 1
-            height: quoteItem.shown ? Theme.paddingSmall : 0
+            height: quoteItem.item && quoteItem.item.shown ? Theme.paddingSmall : 0
         }
 
         AttachmentsLoader {
