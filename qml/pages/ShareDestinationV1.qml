@@ -11,10 +11,7 @@ Page {
     property string source: ''
     property var content: ({})
 
-    Sessions {
-        id: sessions
-        app: AppState
-    }
+    property Sessions sessions
 
     SilicaListView {
         id: sessionList

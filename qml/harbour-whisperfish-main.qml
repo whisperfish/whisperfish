@@ -3,7 +3,9 @@ import Sailfish.Silica 1.0
 import Nemo.Notifications 1.0
 import Nemo.DBus 2.0
 import org.nemomobile.contacts 1.0 as Contacts
+import be.rubdos.whisperfish 1.0
 import "pages"
+import "cover"
 
 // Note: This is the main QML file for Whisperfish.
 // The signalcaptcha helper uses harbour-whisperfish.qml by design.
@@ -12,7 +14,13 @@ ApplicationWindow
 {
     id: mainWindow
 
-    cover: Qt.resolvedUrl("cover/CoverPage.qml")
+    cover: Component {
+        CoverPage {
+            id: coverPage
+
+            sessions: sessionsLoader.item
+        }
+    }
     initialPage: Component {
         LandingPage { }
     }
@@ -57,6 +65,17 @@ ApplicationWindow
                     'index': -1
                 }]
             })
+        }
+    }
+
+    Loader {
+        id: sessionsLoader
+
+        active: false
+        asynchronous: false
+        onStatusChanged: console.log("sessions loader status:", status)
+        sourceComponent: Sessions {
+            app: AppState
         }
     }
 
@@ -744,7 +763,8 @@ ApplicationWindow
                 Qt.resolvedUrl("pages/ShareDestinationV1.qml"),
                 {
                     source: source,
-                    content: content
+                    content: content,
+                    sessions: sessionsLoader.item
                 }
             )
             mainWindow.activate()
@@ -759,7 +779,10 @@ ApplicationWindow
             shareClientId = clientId
             pageStack.push(
                 Qt.resolvedUrl("pages/ShareDestinationV2.qml"),
-                { shareObject: shareObject },
+                {
+                    shareObject: shareObject,
+                    sessions: sessionsLoader.item
+                },
                 PageStackAction.Immediate
             )
             mainWindow.activate()
@@ -804,7 +827,11 @@ ApplicationWindow
         if (_mainPage) {
             pageStack.pop(_mainPage, operationType)
         } else {
-            pageStack.replaceAbove(null, Qt.resolvedUrl("pages/MainPage.qml"), {}, operationType)
+            sessionsLoader.active = true
+            pageStack.replaceAbove(null,
+                                   Qt.resolvedUrl("pages/MainPage.qml"),
+                                   { sessions: sessionsLoader.item },
+                                   operationType)
             _mainPage = pageStack.currentPage
         }
     }

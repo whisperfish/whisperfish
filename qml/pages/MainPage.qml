@@ -24,10 +24,7 @@ Page {
         expireTimeout: 3000
     }
 
-    Sessions {
-        id: sessions
-        app: AppState
-    }
+    property Sessions sessions
 
     Notification {
         id: updateNotification
