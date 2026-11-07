@@ -41,11 +41,14 @@
         <extracomment>Text shown when two persons are typing</extracomment>
         <translation>%1 மற்றும் %2 தட்டச்சு செய்கின்றன</translation>
     </message>
-    <message id="whisperfish-typing-3-plus">
+    <message id="whisperfish-typing-3-plus" numerus="yes">
         <location filename="../qml/components/ConversationPageHeader.qml" line="81"/>
         <source>%1 and %n others are typing</source>
         <extracomment>Text shown when three or more persons are typing</extracomment>
-        <translation>%1 மற்றும் %n மற்றவர்கள் தட்டச்சு செய்கிறார்கள்</translation>
+        <translation type="unfinished">
+            <numerusform>%1 மற்றும் %n மற்றவர்கள் தட்டச்சு செய்கிறார்கள்</numerusform>
+            <numerusform></numerusform>
+        </translation>
     </message>
     <message id="whisperfish-session-note-to-self">
         <location filename="../qml/delegates/SessionDelegate.qml" line="230"/>
@@ -582,7 +585,7 @@
     <message id="whisperfish-update-reminder-body">
         <location filename="../qml/pages/MainPage.qml" line="44"/>
         <source>This Whisperfish release is more than 90 days old. Please check for an update in order to keep Whisperfish running smoothly.</source>
-        <extracomment>About whisperfish menu item</extracomment>
+        <extracomment>Update reminder notification body text</extracomment>
         <translation>இந்த விச்பர்ஃபிச் வெளியீடு 90 நாட்களுக்கு மேல் உள்ளது. விச்பர்ஃபிச் சீராக இயங்குவதற்கு புதுப்பிப்பைச் சரிபார்க்கவும்.</translation>
     </message>
     <message id="whisperfish-reconnect">
@@ -956,6 +959,12 @@
         <extracomment>New message page title</extracomment>
         <translation>புதிய செய்தி</translation>
     </message>
+    <message id="whisperfish-new-message-recipient-summary">
+        <location filename="../qml/pages/NewMessage.qml" line="120"/>
+        <source>Recipient</source>
+        <extracomment>Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extracomment>
+        <translation type="unfinished">பெறுநர்</translation>
+    </message>
     <message id="whisperfish-new-group-title">
         <location filename="../qml/pages/NewGroup.qml" line="40"/>
         <source>New Group</source>
@@ -976,20 +985,20 @@
     </message>
     <message id="whisperfish-new-group-message-members">
         <location filename="../qml/pages/NewGroup.qml" line="71"/>
+        <source>Members</source>
+        <extracomment>New group message members label</extracomment>
+        <translation>உறுப்பினர்கள்</translation>
+    </message>
+    <message id="whisperfish-new-group-message-members-summary">
         <location filename="../qml/pages/NewGroup.qml" line="75"/>
         <source>Members</source>
-        <extracomment>New group message members label
-----------
-Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extracomment>
-        <translation>உறுப்பினர்கள்</translation>
+        <extracomment>Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extracomment>
+        <translation type="unfinished">உறுப்பினர்கள்</translation>
     </message>
     <message id="whisperfish-new-message-recipient">
         <location filename="../qml/pages/NewMessage.qml" line="116"/>
-        <location filename="../qml/pages/NewMessage.qml" line="120"/>
         <source>Recipient</source>
-        <extracomment>New message recipient label
-----------
-Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extracomment>
+        <extracomment>New message recipient label</extracomment>
         <translation>பெறுநர்</translation>
     </message>
     <message id="whisperfish-error-invalid-group-name">
@@ -1001,7 +1010,7 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
     <message id="whisperfish-error-invalid-group-members">
         <location filename="../qml/pages/NewGroup.qml" line="108"/>
         <source>Please select group members</source>
-        <extracomment>Invalid recipient error</extracomment>
+        <extracomment>Invalid group members error</extracomment>
         <translation>குழு உறுப்பினர்களைத் தேர்ந்தெடுக்கவும்</translation>
     </message>
     <message id="whisperfish-error-invalid-recipient">
@@ -1150,7 +1159,7 @@ Summary of all selected recipients, e.g. &quot;Bob, Jane, 75553243&quot;</extrac
         <translation>தேர்ந்தெடுக்கப்படவில்லை</translation>
     </message>
     <message id="whisperfish-share-contacts-label">
-        <location filename="../qml/pages/RegisterPage.qml" line="242"/>
+        <location filename="../qml/pages/RegisterPage.qml" line="243"/>
         <location filename="../qml/pages/Settings.qml" line="294"/>
         <source>Share Contacts</source>
         <extracomment>Share contacts label
@@ -1159,7 +1168,7 @@ Settings page share contacts</extracomment>
         <translation>தொடர்புகளைப் பகிரவும்</translation>
     </message>
     <message id="whisperfish-share-contacts-description">
-        <location filename="../qml/pages/RegisterPage.qml" line="245"/>
+        <location filename="../qml/pages/RegisterPage.qml" line="246"/>
         <location filename="../qml/pages/Settings.qml" line="297"/>
         <source>Allow Signal to use your local contact list, to find other Signal users.</source>
         <extracomment>Share contacts description</extracomment>
@@ -1172,13 +1181,13 @@ Settings page share contacts</extracomment>
         <translation>சரிபார்ப்பு முறை</translation>
     </message>
     <message id="whisperfish-use-voice-verification">
-        <location filename="../qml/pages/RegisterPage.qml" line="227"/>
+        <location filename="../qml/pages/RegisterPage.qml" line="228"/>
         <source>Use voice verification</source>
         <extracomment>Voice verification</extracomment>
         <translation>குரல் சரிபார்ப்பைப் பயன்படுத்துங்கள்</translation>
     </message>
     <message id="whisperfish-use-text-verification">
-        <location filename="../qml/pages/RegisterPage.qml" line="222"/>
+        <location filename="../qml/pages/RegisterPage.qml" line="223"/>
         <source>Use text verification</source>
         <extracomment>Text verification</extracomment>
         <translation>உரை சரிபார்ப்பைப் பயன்படுத்தவும்</translation>
@@ -1212,12 +1221,13 @@ Settings page share contacts</extracomment>
         <location filename="../qml/pages/RegisterPage.qml" line="214"/>
         <source>Signal will call you with a 6-digit verification code. Please be ready to write it down.</source>
         <oldsource>Signal will call you with a 6-digit verification code. Please be ready to write this down.</oldsource>
-        <extracomment>Registration directions</extracomment>
+        <extracomment>Registration directions, voice verification</extracomment>
         <translation>சிக்னல் 6 இலக்க சரிபார்ப்புக் குறியீட்டைக் கொண்டு உங்களை அழைக்கும். தயவுசெய்து அதை எழுத தயாராக இருங்கள்.</translation>
     </message>
     <message id="whisperfish-text-registration-directions">
-        <location filename="../qml/pages/RegisterPage.qml" line="216"/>
+        <location filename="../qml/pages/RegisterPage.qml" line="217"/>
         <source>Signal will text you a 6-digit verification code.</source>
+        <extracomment>Registration directions, text message verification</extracomment>
         <translation>சிக்னல் உங்களுக்கு 6 இலக்க சரிபார்ப்புக் குறியீட்டை உரை செய்யும்.</translation>
     </message>
     <message id="whisperfish-captcha-requested-title">
@@ -1250,7 +1260,7 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-continue-button-label">
         <location filename="../qml/pages/ProofSubmitPage.qml" line="100"/>
-        <location filename="../qml/pages/RegisterPage.qml" line="258"/>
+        <location filename="../qml/pages/RegisterPage.qml" line="259"/>
         <location filename="../qml/pages/SetupPasswordPage.qml" line="130"/>
         <location filename="../qml/pages/VerifyRegistrationPage.qml" line="130"/>
         <source>Continue</source>
@@ -1441,7 +1451,7 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-settings-notifications-complete-description">
         <location filename="../qml/pages/Settings.qml" line="432"/>
         <source>Notifications displaying the contents and sender of a message</source>
-        <extracomment>Settings page, sender-only notifications description</extracomment>
+        <extracomment>Settings page, complete notifications description</extracomment>
         <translation>உள்ளடக்கங்களை காண்பிக்கும் அறிவிப்புகள் மற்றும் ஒரு செய்தியை அனுப்பு</translation>
     </message>
     <message id="whisperfish-settings-notifications-minimise">
@@ -1466,7 +1476,7 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-settings-enable-read-receipts-description">
         <location filename="../qml/pages/Settings.qml" line="137"/>
         <source>See when others have read your messages, and let others see when you are have read theirs, if they also have this enabled.</source>
-        <extracomment>Settings page scale read receipts description</extracomment>
+        <extracomment>Settings page read receipts description</extracomment>
         <translation>மற்றவர்கள் உங்கள் செய்திகளைப் படித்தபோது பாருங்கள், நீங்கள் அவர்களைப் படித்தபோது மற்றவர்கள் பார்க்கட்டும், அவர்களும் இதை இயக்கியிருந்தால்.</translation>
     </message>
     <message id="whisperfish-settings-enable-link-previews">
@@ -1584,7 +1594,7 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-settings-share-phone-number-description">
         <location filename="../qml/pages/Settings.qml" line="379"/>
         <source>When enabled, your contacts can see your phone number when you message them.</source>
-        <extracomment>Settings page, share recipient phone number with contacts</extracomment>
+        <extracomment>Settings page, share recipient phone number with contacts description</extracomment>
         <translation>இயக்கப்பட்டால், உங்கள் தொலைபேசி எண்ணை நீங்கள் செய்தி அனுப்பும்போது அவற்றைக் காணலாம்.</translation>
     </message>
     <message id="whisperfish-settings-show-phone-number">
@@ -2347,7 +2357,7 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-service-message-group-change-avatar">
         <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="193"/>
         <source>%1 changed the group avatar</source>
-        <extracomment>Group change: title</extracomment>
+        <extracomment>Group change: avatar</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-service-message-group-change-delete-member">
@@ -2510,8 +2520,9 @@ Settings page share contacts</extracomment>
         <translation>இந்த பணி செய்தி இன்னும் விச்பர்ஃபிச் ஆதரிக்கவில்லை. பிழை அறிக்கையை தாக்கல் செய்யுங்கள். (கொடிகள்: %1, வகை: %2, பொருளடக்கம்: &quot; %3&quot;)</translation>
     </message>
     <message id="whisperfish-service-message-more-info">
-        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="395"/>
+        <location filename="../qml/delegates/ServiceMessageDelegate.qml" line="396"/>
         <source>more information</source>
+        <extracomment>Link at the end of a service message, opens its details</extracomment>
         <translation>மேலும் செய்தி</translation>
     </message>
     <message id="whisperfish-contact-card-page-save">
@@ -2866,7 +2877,7 @@ Settings page share contacts</extracomment>
     <message id="whisperfish-start-test-button-label">
         <location filename="../qml/pages/TestCaptchaPage.qml" line="80"/>
         <source>Start</source>
-        <extracomment>continue button label</extracomment>
+        <extracomment>Captcha test start button label</extracomment>
         <translation>தொடங்கு</translation>
     </message>
     <message id="whisperfish-captcha-test-started">
