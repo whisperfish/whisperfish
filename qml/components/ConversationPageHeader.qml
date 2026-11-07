@@ -78,7 +78,7 @@ SilicaItem {
         else if (count >= 3)
             //: Text shown when three or more persons are typing
             //% "%1 and %n others are typing"
-            return qsTrId("whisperfish-typing-3-plus").arg(names[0]).arg(count - 1)
+            return qsTrId("whisperfish-typing-3-plus", count - 1).arg(names[0])
         return ""
     }
 

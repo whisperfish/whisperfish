@@ -117,7 +117,7 @@ Page {
 
                         //: Summary of all selected recipients, e.g. "Bob, Jane, 75553243"
                         //% "Recipient"
-                        summaryPlaceholderText: qsTrId("whisperfish-new-message-recipient")
+                        summaryPlaceholderText: qsTrId("whisperfish-new-message-recipient-summary")
 
                         onSelectionChanged: {
                             console.log("Selected recipient name: " + recipientName);

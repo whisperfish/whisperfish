@@ -208,12 +208,13 @@ BlockingInfoPageBase {
             //% "Verification method"
             label: qsTrId("whisperfish-verification-method-label")
 
-            //: Registration directions
             description: SetupWorker.useVoice
-                //% "Signal will call you with a 6-digit verification code. Please be ready to write it down."
-                ? qsTrId("whisperfish-voice-registration-directions")
-                //% "Signal will text you a 6-digit verification code."
-                : qsTrId("whisperfish-text-registration-directions")
+                ? //: Registration directions, voice verification
+                  //% "Signal will call you with a 6-digit verification code. Please be ready to write it down."
+                  qsTrId("whisperfish-voice-registration-directions")
+                : //: Registration directions, text message verification
+                  //% "Signal will text you a 6-digit verification code."
+                  qsTrId("whisperfish-text-registration-directions")
 
             menu: ContextMenu {
                 MenuItem {

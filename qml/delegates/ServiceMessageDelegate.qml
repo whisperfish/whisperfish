@@ -188,7 +188,7 @@ ListItem {
                         //% "%1 set group change permissions to '%2'"
                         return qsTrId("whisperfish-service-message-group-change-attribute-access").arg(recipientName).arg(_data.value)
                     case "avatar":
-                        //: Group change: title
+                        //: Group change: avatar
                         //% "%1 changed the group avatar"
                         return qsTrId("whisperfish-service-message-group-change-avatar").arg(recipientName)
                     case "delete_member":
@@ -391,6 +391,7 @@ ListItem {
             visible: _canShowDetails
             width: parent.width
             horizontalAlignment: Text.AlignHCenter
+            //: Link at the end of a service message, opens its details
             //% "more information"
             text: "<a href='#'>"+qsTrId("whisperfish-service-message-more-info")+"</a>"
             textFormat: Text.StyledText
