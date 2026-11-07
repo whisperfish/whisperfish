@@ -24,10 +24,7 @@ Page {
         expireTimeout: 3000
     }
 
-    Sessions {
-        id: sessions
-        app: AppState
-    }
+    property Sessions sessions
 
     FontMetrics {
         id: previewMetrics

@@ -10,10 +10,7 @@ Page {
 
     property var shareObject
 
-    Sessions {
-        id: sessions
-        app: AppState
-    }
+    property Sessions sessions
 
     SilicaListView {
         id: sessionList

@@ -7,10 +7,8 @@ import "../delegates"
 CoverBackground {
     property bool rightToLeft: Qt.application.layoutDirection === Qt.RightToLeft
 
-    Sessions {
-        id: sessions
-        app: AppState
-    }
+    property Sessions sessions
+    property bool loaded: !!sessions
 
     Label {
         id: placeholderLabel
@@ -28,7 +26,7 @@ CoverBackground {
 
     Label {
         id: unreadCount
-        text: sessions.unread
+        text: loaded ? sessions.unread : ""
         anchors {
             top: parent.top
             left: rightToLeft ? undefined : parent.left
@@ -40,7 +38,7 @@ CoverBackground {
         font.pixelSize: Theme.fontSizeHuge
 
         visible: opacity > 0.0
-        opacity: sessions.unread > 0 ? 1.0 : 0.0
+        opacity: loaded && sessions.unread > 0 ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation {} }
     }
 
@@ -49,7 +47,7 @@ CoverBackground {
 
         //: Unread messages count cover label. Code requires exact line break tag "<br/>".
         //% "Unread<br/>message(s)"
-        text: qsTrId("whisperfish-cover-unread-label", sessions.unread).replace("<br/>", "\n")
+        text: qsTrId("whisperfish-cover-unread-label", loaded ? sessions.unread : 0).replace("<br/>", "\n")
         font.pixelSize: Theme.fontSizeExtraSmall
         maximumLineCount: 2
         wrapMode: Text.Wrap
@@ -59,7 +57,7 @@ CoverBackground {
         verticalAlignment: Text.AlignVCenter
 
         visible: opacity > 0.0
-        opacity: sessions.unread > 0 ? 1.0 : 0.0
+        opacity: loaded && sessions.unread > 0 ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation {} }
 
         anchors {
@@ -86,7 +84,7 @@ CoverBackground {
             top: parent.top
             left: parent.left
             right: parent.right
-            topMargin: Theme.paddingMedium + (sessions.unread > 0 ? unreadCount.height : Theme.paddingMedium)
+            topMargin: Theme.paddingMedium + (loaded && sessions.unread > 0 ? unreadCount.height : Theme.paddingMedium)
             leftMargin: Theme.paddingLarge
             rightMargin: Theme.paddingLarge
             bottom: coverActionArea.top
@@ -95,7 +93,7 @@ CoverBackground {
 
         // XXX Maybe we can use a delegate model to resort without pinning.
         //     Pins don't make a lot of sense in this context
-        model: sessions.sessions
+        model: loaded ? sessions.sessions : []
         spacing: Theme.paddingSmall
 
         delegate: Item {
