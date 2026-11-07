@@ -1,4 +1,5 @@
 import QtQuick 2.2
+import QtQml.Models 2.2
 import Sailfish.Silica 1.0
 import be.rubdos.whisperfish 1.0
 import "../components"
@@ -9,6 +10,12 @@ CoverBackground {
 
     property Sessions sessions
     property bool loaded: !!sessions
+
+    Connections {
+        target: loaded ? sessions.sessions : null
+        onDataChanged: sortedModel.resortAll()
+        onModelReset: sortedModel.resortAll()
+    }
 
     Label {
         id: placeholderLabel
@@ -91,16 +98,99 @@ CoverBackground {
             Behavior on topMargin { NumberAnimation {} }
         }
 
-        // XXX Maybe we can use a delegate model to resort without pinning.
-        //     Pins don't make a lot of sense in this context
-        model: loaded ? sessions.sessions : []
+        model: sortedModel
         spacing: Theme.paddingSmall
+    }
+
+    DelegateModel {
+        id: sortedModel
+
+        property bool _sorting
+
+        function inOrder(left, right) {
+            if (right.timestamp === undefined) return true // anything precedes undefined
+            if (left.timestamp === undefined) return false // undefined always yields
+            return left.timestamp > right.timestamp
+        }
+
+        // Binary search within [lo, sortedItems.count) for where itemModel belongs.
+        function tailPosition(itemModel, lo) {
+            var mid
+            var hi = sortedItems.count
+            while (lo < hi) {
+                mid = Math.floor(lo + (hi - lo) / 2)
+                if (inOrder(itemModel, sortedItems.get(mid).model)) hi = mid
+                else lo = mid + 1
+            }
+            return lo
+        }
+
+        // Session model is already sorted by pinned and date descending,
+        // so all we have to do here is merge the two runs.
+        function mergeRuns() {
+            var n = sortedItems.count
+            var item
+            var i
+            for (i = 1; i < n; i++) {
+                item = sortedItems.get(i)
+                if (inOrder(item.model, sortedItems.get(i - 1).model)) {
+                    sortedItems.move(i, tailPosition(item.model, 0))
+                }
+            }
+        }
+
+        function sortToGroups() {
+            if (_sorting || unsortedItems.count === 0) {
+                return
+            }
+            _sorting = true
+
+            if (sortedItems.count === 0) {
+                unsortedItems.setGroups(0, unsortedItems.count, "sorted")
+                mergeRuns()
+            } else {
+                var item
+                while (unsortedItems.count > 0) {
+                    item = unsortedItems.get(0)
+                    var index = tailPosition(item.model, 0)
+                    item.groups = "sorted"
+                    sortedItems.move(item.sortedIndex, index)
+                }
+            }
+            _sorting = false
+        }
+
+        function resortAll() {
+            if (sortedItems.count > 0) {
+                sortedItems.setGroups(0, sortedItems.count, "unsorted")
+            }
+        }
+
+        items.includeByDefault: false
+        filterOnGroup: "sorted"
+
+        groups: [
+            DelegateModelGroup {
+                id: unsortedItems
+                name: "unsorted"
+                includeByDefault: true
+                onChanged: sortedModel.sortToGroups()
+                onCountChanged: sortedModel.sortToGroups()
+            },
+            DelegateModelGroup {
+                id: sortedItems
+                name: "sorted"
+                includeByDefault: false
+            }
+        ]
+
+        model: loaded ? sessions.sessions : null
 
         delegate: Item {
-            enabled: !model.isArchived
-            visible: enabled
+            // Only show non-archived sessions with one or more messages
+            visible: !model.isArchived && model.timestamp !== undefined
             width: sessionList.width
-            height: enabled ? messageLabel.height + recipientLabel.height : 0
+            height: visible ? messageLabel.height + recipientLabel.height : 0
 
             Message {
                 id: lastMessage
@@ -154,7 +244,12 @@ CoverBackground {
                     }
 
                     if (lastMessage.messageType != null) {
-                       return "<i>" + serviceMessage.item._message + "</i>"
+                        return "<i>" + serviceMessage.item
+                                       ? serviceMessage.item._message
+                                       //: Placeholder for service message without message string
+                                       //% "Unknown service message"
+                                       : qsTrId("whisperfish-service-unknown")
+                                     + "</i>"
                     }
 
                     var newText = ""
