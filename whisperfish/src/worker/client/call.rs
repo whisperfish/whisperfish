@@ -512,7 +512,12 @@ impl Handler<CallState> for super::ClientActor {
             }
             ringrtc::native::CallState::Ringing
             | ringrtc::native::CallState::Rejected(_)
-            | ringrtc::native::CallState::Concluded => tracing::error!("unimplemented call state"),
+            | ringrtc::native::CallState::Concluded => {
+                // No call log updates:
+                // - Ringing means the connection is set up, but the call is not answered yet.
+                // - Rejected calls never rang, so no call was recorded.
+                // - Concluded arrives after the end state was processed.
+            }
         }
 
         // Map the call state to the UI
