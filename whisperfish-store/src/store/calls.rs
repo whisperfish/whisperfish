@@ -89,7 +89,8 @@ impl<O: Observable + Default> super::Storage<O> {
             .get_result(&mut *self.db())
             .expect("inserting a call log message");
 
-        self.observe_insert(messages, new_message_id);
+        self.observe_insert(messages, new_message_id)
+            .with_relation(crate::schema::sessions::table, session);
 
         new_message_id
     }
