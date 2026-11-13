@@ -14,7 +14,7 @@ use libsignal_service::{
     push_service::DEFAULT_DEVICE_ID,
 };
 use ringrtc::{
-    common::{CallId, CallMediaType},
+    common::{CallEndReason, CallId, CallMediaType},
     core::{
         call_manager::CallManager,
         signaling::{
@@ -503,12 +503,35 @@ impl Handler<CallState> for super::ClientActor {
                 }
             }
             ringrtc::native::CallState::Ended(reason, summary) => {
-                // TODO: insert updates
-                tracing::warn!(
-                    "Call ended, unprocessed reason: {:?} ({:?})",
-                    reason,
-                    summary
-                );
+                tracing::debug!("Call ended: {:?} ({:?})", reason, summary);
+                if let Some(call) = storage.fetch_one_to_one_call(call_id.into(), remote_peer_id) {
+                    // Answered calls were concluded when the connection was established.
+                    if call.event != orm::EventType::Accepted {
+                        let event = if call.is_outbound {
+                            // The remote never answered; the exact reason does not matter.
+                            orm::EventType::NotAccepted
+                        } else {
+                            match reason {
+                                // We, or another device of ours, declined the call.
+                                CallEndReason::LocalHangup
+                                | CallEndReason::AppDroppedCall
+                                | CallEndReason::RemoteHangupDeclined => orm::EventType::Declined,
+                                // Another device of ours answered the call.
+                                CallEndReason::RemoteHangupAccepted => orm::EventType::Accepted,
+                                // The call could not be set up: busy or glare.
+                                CallEndReason::RemoteHangupBusy
+                                | CallEndReason::RemoteBusy
+                                | CallEndReason::RemoteGlare
+                                | CallEndReason::RemoteReCall => orm::EventType::NotAccepted,
+                                // The remote hung up before we answered, or the call failed.
+                                _ => orm::EventType::Missed,
+                            }
+                        };
+                        storage.update_one_to_one_call_event(call_id.into(), remote_peer_id, event);
+                    }
+                } else {
+                    tracing::warn!("Call ended, but no call was recorded; not updating.");
+                }
             }
             ringrtc::native::CallState::Ringing
             | ringrtc::native::CallState::Rejected(_)
