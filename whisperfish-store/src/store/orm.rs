@@ -251,6 +251,11 @@ pub enum MessageType {
 
 impl MessageType {
     // Kotlin: CallTable.Call.getMessageType
+    //
+    // XXX: This denormalizes the call state into the message type,
+    //      which must then be kept in sync with the calls table.
+    //      Rendering call log messages live from the associated calls row,
+    //      as Signal does, would remove that duplication.
     pub fn from_call_type(ty: CallType, is_outgoing: bool, event: EventType) -> Self {
         match (ty, is_outgoing) {
             (CallType::Group, _) | (CallType::AdHoc, _) => Self::GroupCall,
