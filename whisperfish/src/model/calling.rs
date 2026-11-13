@@ -83,14 +83,9 @@ impl Calls {
                 self.direction = 0;
                 self.ringing_changed();
             }
-            CallState::Ended(reason, summary) => {
-                // We probably don't have to care about the reason in the UI,
+            CallState::Ended(_reason, _summary) => {
+                // We don't have to care about the reason in the UI,
                 // and instead pull it out of the database when it needs rendering.
-                tracing::warn!(
-                    "Call ended, unprocessed reason: {:?} ({:?})",
-                    reason,
-                    summary
-                );
                 self.ringing_recipient_id = -1;
                 self.call_id = None;
                 self.direction = -1;
