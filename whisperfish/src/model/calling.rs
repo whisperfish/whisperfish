@@ -9,22 +9,32 @@ use ringrtc::{
     native::CallState,
 };
 
-#[derive(QObject)]
+/// A call that is currently in progress.
+struct LiveCall {
+    call_id: CallId,
+    remote_peer_id: i32,
+    media_type: CallMediaType,
+    is_outgoing: bool,
+}
+
+#[derive(Default, QObject)]
 pub struct Calls {
     base: qt_base_class!(trait QObject),
 
     client: Option<Addr<ClientActor>>,
 
-    // XXX We could gather all these fields in an optional/enumed struct,
-    //     and use getters instead.  Would make it less error-prone
+    live_call: Option<LiveCall>,
+
     // 0 - audio, 1 - video
-    call_type: qt_property!(i32; NOTIFY ringing_changed ALIAS callType),
-    call_id: Option<CallId>,
+    // -1 if no call is in progress.
+    call_type: qt_property!(i32; READ call_type NOTIFY ringing_changed ALIAS callType),
     // 0 - outgoing, 1 - incoming
-    direction: qt_property!(i32; NOTIFY ringing_changed),
+    // -1 if no call is in progress.
+    direction: qt_property!(i32; READ direction NOTIFY ringing_changed),
 
     // Recipient id that's currently calling
-    ringing_recipient_id: qt_property!(i32; NOTIFY ringing_changed ALIAS ringingRecipientId),
+    // -1 if no call is in progress.
+    ringing_recipient_id: qt_property!(i32; READ ringing_recipient_id NOTIFY ringing_changed ALIAS ringingRecipientId),
 
     ringing_changed: qt_signal!(),
     hungup: qt_signal!(),
@@ -36,21 +46,31 @@ pub struct Calls {
 
 impl Calls {
     pub fn new() -> Calls {
-        Calls {
-            base: Default::default(),
-            client: None,
+        Calls::default()
+    }
 
-            call_type: -1,
-            call_id: None,
-            ringing_recipient_id: -1,
-            direction: -1,
+    fn ringing_recipient_id(&self) -> i32 {
+        let Some(live_call) = &self.live_call else {
+            return -1;
+        };
+        live_call.remote_peer_id
+    }
 
-            ringing_changed: Default::default(),
-            hungup: Default::default(),
-            answer: Default::default(),
-            hangup: Default::default(),
-            call: Default::default(),
+    fn call_type(&self) -> i32 {
+        let Some(live_call) = &self.live_call else {
+            return -1;
+        };
+        match live_call.media_type {
+            CallMediaType::Audio => 0,
+            CallMediaType::Video => 1,
         }
+    }
+
+    fn direction(&self) -> i32 {
+        let Some(live_call) = &self.live_call else {
+            return -1;
+        };
+        if live_call.is_outgoing { 0 } else { 1 }
     }
 
     fn client(&self) -> Addr<ClientActor> {
@@ -64,47 +84,43 @@ impl Calls {
     pub fn handle_state(&mut self, remote_peer_id: i32, call_id: CallId, state: CallState) {
         match state {
             CallState::Incoming(incoming) => {
-                self.ringing_recipient_id = remote_peer_id;
-                self.call_id = Some(call_id);
-                self.call_type = match incoming {
-                    CallMediaType::Audio => 0,
-                    CallMediaType::Video => 1,
-                };
-                self.direction = 1;
+                self.live_call = Some(LiveCall {
+                    call_id,
+                    remote_peer_id,
+                    media_type: incoming,
+                    is_outgoing: false,
+                });
                 self.ringing_changed();
             }
             CallState::Outgoing(outgoing) => {
-                self.ringing_recipient_id = remote_peer_id;
-                self.call_id = Some(call_id);
-                self.call_type = match outgoing {
-                    CallMediaType::Audio => 0,
-                    CallMediaType::Video => 1,
-                };
-                self.direction = 0;
+                self.live_call = Some(LiveCall {
+                    call_id,
+                    remote_peer_id,
+                    media_type: outgoing,
+                    is_outgoing: true,
+                });
                 self.ringing_changed();
             }
-            CallState::Ended(_reason, _summary) => {
-                // We don't have to care about the reason in the UI,
-                // and instead pull it out of the database when it needs rendering.
-                self.ringing_recipient_id = -1;
-                self.call_id = None;
-                self.direction = -1;
-
+            CallState::Ended(..) | CallState::Rejected(_) => {
+                // The end reason is rendered from the call log in the database.
+                self.live_call = None;
                 self.ringing_changed();
                 self.hungup();
             }
-            CallState::Rejected(_) => {
-                self.ringing_recipient_id = -1;
-                self.call_id = None;
-                self.direction = -1;
-
-                self.ringing_changed();
-                self.hungup();
+            CallState::Ringing | CallState::Connected | CallState::Connecting => {
+                // No UI state change for now
             }
-            CallState::Ringing
-            | CallState::Connected
-            | CallState::Connecting
-            | CallState::Concluded => tracing::error!("unimplemented call state"),
+            CallState::Concluded => {
+                // Ended or Rejected should have reset the call state already.
+                if self.live_call.as_ref().map(|call| call.call_id) == Some(call_id) {
+                    tracing::error!(
+                        "Call {call_id} concluded without an end state; resetting call state."
+                    );
+                    self.live_call = None;
+                    self.ringing_changed();
+                    self.hungup();
+                }
+            }
         }
     }
 
@@ -120,18 +136,22 @@ impl Calls {
     }
 
     pub fn answer(&self) {
-        let Some(call_id) = self.call_id else {
-            tracing::error!("No call_id to answer");
+        let Some(call) = &self.live_call else {
+            tracing::error!("No call to answer");
             return;
         };
-        self.client().do_send(AnswerCall { call_id });
+        self.client().do_send(AnswerCall {
+            call_id: call.call_id,
+        });
     }
 
     pub fn hangup(&self) {
-        let Some(call_id) = self.call_id else {
-            tracing::error!("No call_id to hangup");
+        let Some(call) = &self.live_call else {
+            tracing::error!("No call to hang up");
             return;
         };
-        self.client().do_send(HangupCall { call_id });
+        self.client().do_send(HangupCall {
+            call_id: call.call_id,
+        });
     }
 }
