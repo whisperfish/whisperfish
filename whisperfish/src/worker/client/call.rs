@@ -484,7 +484,7 @@ impl Handler<CallState> for super::ClientActor {
                     remote_peer_id,
                     call_type_from_call_media_type(media),
                     true,
-                    orm::EventType::Ringing,
+                    orm::EventType::OutgoingRing,
                     // XXX: unidentified?
                     false,
                 );
