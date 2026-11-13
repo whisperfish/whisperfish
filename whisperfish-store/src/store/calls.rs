@@ -60,6 +60,70 @@ impl<O: Observable + Default> super::Storage<O> {
         (session, new_call_id)
     }
 
+    /// Fetch the one-to-one call row belonging to a call ID and peer.
+    ///
+    /// Returns `None` if no call was recorded for this peer and call ID.
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_one_to_one_call(&self, call_id: u64, recipient_id: i32) -> Option<orm::Call> {
+        let session = self.fetch_session_by_recipient_id(recipient_id)?;
+        use crate::schema::calls;
+        calls::table
+            .filter(calls::call_id.eq(call_id as i32))
+            .filter(calls::session_id.eq(session.id))
+            .first(&mut *self.db())
+            .optional()
+            .expect("fetching a call")
+    }
+
+    /// Update the lifecycle state of a one-to-one call,
+    /// and keep the call log message's type in sync.
+    ///
+    /// Returns the updated call log message ID,
+    /// or `None` if the call or its message could not be found.
+    #[tracing::instrument(skip(self))]
+    pub fn update_one_to_one_call_event(
+        &self,
+        call_id: u64,
+        recipient_id: i32,
+        event: orm::EventType,
+    ) -> Option<i32> {
+        let session = self.fetch_session_by_recipient_id(recipient_id)?;
+        use crate::schema::{calls, messages};
+
+        let call: orm::Call = calls::table
+            .filter(calls::call_id.eq(call_id as i32))
+            .filter(calls::session_id.eq(session.id))
+            .first(&mut *self.db())
+            .optional()
+            .expect("fetching a call")?;
+
+        diesel::update(calls::table)
+            .filter(calls::id.eq(call.id))
+            .set(calls::event.eq(event))
+            .execute(&mut *self.db())
+            .expect("updating a call");
+
+        let Some(message_id) = call.message_id else {
+            tracing::warn!(
+                "Call log message for call {} was deleted; not updating.",
+                call.id
+            );
+            return None;
+        };
+
+        let message_type = orm::MessageType::from_call_type(call.r#type, call.is_outbound, event);
+        diesel::update(messages::table)
+            .filter(messages::id.eq(message_id))
+            .set(messages::message_type.eq(Some(message_type)))
+            .execute(&mut *self.db())
+            .expect("updating a call log message");
+
+        self.observe_update(messages::table, message_id)
+            .with_relation(crate::schema::sessions::table, session.id);
+
+        Some(message_id)
+    }
+
     #[tracing::instrument(skip(self))]
     fn insert_call_log(
         &self,
