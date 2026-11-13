@@ -489,6 +489,19 @@ impl Handler<CallState> for super::ClientActor {
                     false,
                 );
             }
+            ringrtc::native::CallState::Connected | ringrtc::native::CallState::Connecting => {
+                // The call was answered; conclude the call log accordingly,
+                // so that the eventual end state does not mark the call as missed.
+                if let Some(call) = storage.fetch_one_to_one_call(call_id.into(), remote_peer_id)
+                    && call.event != orm::EventType::Accepted
+                {
+                    storage.update_one_to_one_call_event(
+                        call_id.into(),
+                        remote_peer_id,
+                        orm::EventType::Accepted,
+                    );
+                }
+            }
             ringrtc::native::CallState::Ended(reason, summary) => {
                 // TODO: insert updates
                 tracing::warn!(
@@ -498,8 +511,6 @@ impl Handler<CallState> for super::ClientActor {
                 );
             }
             ringrtc::native::CallState::Ringing
-            | ringrtc::native::CallState::Connected
-            | ringrtc::native::CallState::Connecting
             | ringrtc::native::CallState::Rejected(_)
             | ringrtc::native::CallState::Concluded => tracing::error!("unimplemented call state"),
         }
