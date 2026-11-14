@@ -375,18 +375,28 @@ impl super::ClientActor {
             tracing::warn!("Hangup message did not have a call ID. Ignoring.");
             return;
         };
-        let hangup = match hangup.r#type() {
-            ProtoHangupType::HangupNormal => Hangup::Normal,
-            ProtoHangupType::HangupAccepted => Hangup::AcceptedOnAnotherDevice(
-                hangup.device_id.expect("device_id set for accepted hangup") as u32,
-            ),
-            ProtoHangupType::HangupDeclined => Hangup::DeclinedOnAnotherDevice(
-                hangup.device_id.expect("device_id set for declined hangup") as u32,
-            ),
-            ProtoHangupType::HangupBusy => Hangup::BusyOnAnotherDevice(
-                hangup.device_id.expect("device_id set for busy hangup") as u32,
-            ),
-            ProtoHangupType::HangupNeedPermission => Hangup::NeedPermission(hangup.device_id),
+        let hangup = match (hangup.r#type(), hangup.device_id) {
+            (ProtoHangupType::HangupNormal, _) => Hangup::Normal,
+            (ProtoHangupType::HangupAccepted, Some(device_id)) => {
+                Hangup::AcceptedOnAnotherDevice(device_id)
+            }
+            (ProtoHangupType::HangupDeclined, Some(device_id)) => {
+                Hangup::DeclinedOnAnotherDevice(device_id)
+            }
+            (ProtoHangupType::HangupBusy, Some(device_id)) => {
+                Hangup::BusyOnAnotherDevice(device_id)
+            }
+            // NeedPermission may legitimately arrive without a device ID.
+            (ProtoHangupType::HangupNeedPermission, device_id) => Hangup::NeedPermission(device_id),
+            (ProtoHangupType::HangupAccepted, None)
+            | (ProtoHangupType::HangupDeclined, None)
+            | (ProtoHangupType::HangupBusy, None) => {
+                tracing::warn!(
+                    "Hangup of type {:?} did not have a device ID. Ignoring.",
+                    hangup.r#type()
+                );
+                return;
+            }
         };
         self.call_state().manager.received_hangup(
             peer.id.to_string(),
