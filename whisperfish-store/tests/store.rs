@@ -1913,3 +1913,76 @@ fn master_key_smoke_test() {
         .inner;
     assert_eq!(master_a, master_b);
 }
+
+#[rstest]
+#[tokio::test]
+async fn conclude_stale_calls(storage_with_self_recipient: impl Future<Output = InMemoryDb>) {
+    use whisperfish_store::orm::{CallType, EventType, MessageType};
+
+    let (storage, _temp_dir) = storage_with_self_recipient.await;
+
+    let phonenumber = phonenumber::parse(None, "+358501234567").unwrap();
+    let session = storage.fetch_or_insert_session_by_phonenumber(&phonenumber);
+    let recipient_id = storage
+        .fetch_session_by_id(session.id)
+        .unwrap()
+        .unwrap_dm()
+        .id;
+
+    // An incoming and an outgoing call, both still ringing.
+    storage.insert_one_to_one_call(
+        1234,
+        chrono::Utc::now().naive_utc(),
+        recipient_id,
+        CallType::Audio,
+        false,
+        EventType::Ringing,
+        false,
+    );
+    let incoming_message_id = storage
+        .fetch_one_to_one_call(1234, recipient_id)
+        .unwrap()
+        .message_id
+        .unwrap();
+    let outgoing_message_id = {
+        storage.insert_one_to_one_call(
+            5678,
+            chrono::Utc::now().naive_utc(),
+            recipient_id,
+            CallType::Video,
+            true,
+            EventType::OutgoingRing,
+            false,
+        );
+        storage
+            .fetch_one_to_one_call(5678, recipient_id)
+            .unwrap()
+            .message_id
+            .unwrap()
+    };
+
+    // The sweep concludes both calls,
+    // incoming as missed, outgoing as not accepted.
+    assert_eq!(storage.conclude_stale_calls(), 2);
+
+    let call = storage.fetch_one_to_one_call(1234, recipient_id).unwrap();
+    assert_eq!(call.event, EventType::Missed);
+    let message = storage.fetch_message_by_id(incoming_message_id).unwrap();
+    assert_eq!(message.message_type, Some(MessageType::MissedAudioCall));
+
+    let call = storage.fetch_one_to_one_call(5678, recipient_id).unwrap();
+    assert_eq!(call.event, EventType::NotAccepted);
+    let message = storage.fetch_message_by_id(outgoing_message_id).unwrap();
+    assert_eq!(message.message_type, Some(MessageType::MissedVideoCall));
+
+    // The sweep is idempotent.
+    assert_eq!(storage.conclude_stale_calls(), 0);
+
+    // Concluded calls are not swept again,
+    // and late corrections remain possible.
+    storage.update_one_to_one_call_event(1234, recipient_id, EventType::Accepted);
+    let call = storage.fetch_one_to_one_call(1234, recipient_id).unwrap();
+    assert_eq!(call.event, EventType::Accepted);
+    let message = storage.fetch_message_by_id(incoming_message_id).unwrap();
+    assert_eq!(message.message_type, Some(MessageType::IncomingAudioCall));
+}
