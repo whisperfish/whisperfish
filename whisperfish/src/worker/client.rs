@@ -3079,6 +3079,16 @@ impl Handler<StorageReady> for ClientActor {
 
         storage.mark_pending_messages_failed();
 
+        #[cfg(feature = "calling")]
+        {
+            // Calls that were ringing when the application stopped
+            // cannot be in progress anymore.
+            let stale = storage.conclude_stale_calls();
+            if stale > 0 {
+                tracing::info!("Concluded {stale} call(s) that were ringing at shutdown");
+            }
+        }
+
         let credentials = ServiceCredentials {
             aci,
             pni,

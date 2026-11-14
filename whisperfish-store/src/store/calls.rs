@@ -124,6 +124,71 @@ impl<O: Observable + Default> super::Storage<O> {
         Some(message_id)
     }
 
+    /// Conclude all calls that are ringing.
+    ///
+    /// To be called on startup, to end calls that were ringing when the application stopped.
+    ///
+    /// Returns the number of concluded calls.
+    #[tracing::instrument(skip(self))]
+    pub fn conclude_stale_calls(&self) -> usize {
+        use crate::schema::messages;
+
+        let mut swept =
+            self.conclude_calls_with_event(orm::EventType::Ringing, orm::EventType::Missed);
+        swept.extend(
+            self.conclude_calls_with_event(
+                orm::EventType::OutgoingRing,
+                orm::EventType::NotAccepted,
+            ),
+        );
+
+        // All swept calls are unanswered, so their message type
+        // only depends on the call's media type.
+        for call_type in [orm::CallType::Audio, orm::CallType::Video] {
+            let missed_message_type =
+                orm::MessageType::from_call_type(call_type, false, orm::EventType::Missed);
+            let missed_message_ids: Vec<i32> = swept
+                .iter()
+                .filter(|(_, _, ty)| *ty == call_type)
+                .filter_map(|(message_id, _, _)| *message_id)
+                .collect();
+            if missed_message_ids.is_empty() {
+                continue;
+            }
+            diesel::update(messages::table)
+                .filter(messages::id.eq_any(missed_message_ids))
+                .set(messages::message_type.eq(Some(missed_message_type)))
+                .execute(&mut *self.db())
+                .expect("updating call log messages");
+        }
+
+        for (message_id, session_id, _) in &swept {
+            if let Some(message_id) = message_id {
+                self.observe_update(messages::table, *message_id)
+                    .with_relation(crate::schema::sessions::table, *session_id);
+            }
+        }
+
+        swept.len()
+    }
+
+    /// Conclude all calls in a given stale lifecycle state.
+    ///
+    /// Returns concluded call log message, session, and media type.
+    fn conclude_calls_with_event(
+        &self,
+        stale: orm::EventType,
+        concluded: orm::EventType,
+    ) -> Vec<(Option<i32>, i32, orm::CallType)> {
+        use crate::schema::calls;
+        diesel::update(calls::table)
+            .filter(calls::event.eq(stale))
+            .set(calls::event.eq(concluded))
+            .returning((calls::message_id, calls::session_id, calls::type_))
+            .get_results(&mut *self.db())
+            .expect("concluding stale calls")
+    }
+
     #[tracing::instrument(skip(self))]
     fn insert_call_log(
         &self,
