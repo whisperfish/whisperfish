@@ -1,3 +1,4 @@
+use futures::prelude::*;
 use rstest::fixture;
 use std::future::Future;
 use std::sync::Arc;
@@ -23,16 +24,22 @@ pub type SimpleStorage = Storage<DummyObservatory>;
 
 pub type InMemoryDb = (SimpleStorage, StorageLocation<tempfile::TempDir>);
 
-/// We do not want to test on a live db, use temporary dir
+pub type InMemoryDbWithConfig = (
+    SimpleStorage,
+    Arc<SignalConfig>,
+    StorageLocation<tempfile::TempDir>,
+);
+
+/// Storage fixture which additionally yields the config
 #[fixture]
 #[allow(clippy::manual_async_fn)]
-pub fn storage() -> impl Future<Output = InMemoryDb> {
+pub fn storage_with_config() -> impl Future<Output = InMemoryDbWithConfig> {
     async {
+        let config = Arc::new(SignalConfig::default());
         let temp = temp();
         (
             Storage::new(
-                // XXX add tempdir to this cfg
-                Arc::new(SignalConfig::default()),
+                config.clone(),
                 &temp,
                 None,
                 12345,
@@ -43,7 +50,36 @@ pub fn storage() -> impl Future<Output = InMemoryDb> {
             )
             .await
             .expect("Failed to initalize storage"),
+            config,
             temp,
         )
+    }
+}
+
+/// We do not want to test on a live db, use temporary dir
+#[fixture]
+#[allow(clippy::manual_async_fn)]
+pub fn storage(
+    storage_with_config: impl Future<Output = InMemoryDbWithConfig>,
+) -> impl Future<Output = InMemoryDb> {
+    storage_with_config.map(|(storage, _config, temp)| (storage, temp))
+}
+
+/// Like [`storage`], but with a self recipient,
+/// which outgoing calls require as their ringer.
+#[fixture]
+#[allow(clippy::manual_async_fn)]
+pub fn storage_with_self_recipient(
+    storage_with_config: impl Future<Output = InMemoryDbWithConfig>,
+) -> impl Future<Output = InMemoryDb> {
+    async {
+        let (storage, config, temp) = storage_with_config.await;
+
+        let self_e164 = phonenumber::parse(None, "+35850999888777").expect("valid phone number");
+        config.set_tel(self_e164);
+
+        // Eagerly create the self recipient.
+        storage.fetch_self_recipient_id();
+        (storage, temp)
     }
 }
