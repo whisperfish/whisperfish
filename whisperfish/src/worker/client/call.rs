@@ -43,8 +43,6 @@ impl WhisperfishCallManager {
     }
 }
 
-impl WhisperfishCallManager {}
-
 impl super::ClientActor {
     fn call_state(&mut self) -> &mut WhisperfishCallManager {
         self.call_state.as_mut().expect("initialized call state")
