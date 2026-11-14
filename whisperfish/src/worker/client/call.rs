@@ -62,7 +62,7 @@ impl super::ClientActor {
             .unwrap_or(*DEFAULT_DEVICE_ID);
 
         if call.destination_device_id.is_none() {
-            tracing::warn!("CallMessage did not have a destination_device_id set. Defaulting.");
+            tracing::debug!("CallMessage did not have a destination_device_id set. Defaulting.");
         }
 
         let num_fields_set = [
