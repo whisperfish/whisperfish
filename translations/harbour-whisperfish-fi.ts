@@ -3,8 +3,14 @@
 <TS version="2.1" language="fi_FI">
 <context>
     <name></name>
+    <message id="whisperfish-service-unknown">
+        <location filename="../qml/cover/CoverPage.qml" line="251"/>
+        <source>Unknown service message</source>
+        <extracomment>Placeholder for service message without message string</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-session-has-attachment">
-        <location filename="../qml/cover/CoverPage.qml" line="172"/>
+        <location filename="../qml/cover/CoverPage.qml" line="267"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="77"/>
         <source>Attachment</source>
         <extracomment>Session contains an attachment label</extracomment>
@@ -16,7 +22,7 @@
         <translation type="vanished">Palveluviesti</translation>
     </message>
     <message id="whisperfish-session-is-voice-note">
-        <location filename="../qml/cover/CoverPage.qml" line="166"/>
+        <location filename="../qml/cover/CoverPage.qml" line="261"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="70"/>
         <source>Voice Message</source>
         <extracomment>Session is a voice note</extracomment>
@@ -61,7 +67,7 @@
         <translation>Omat viestit</translation>
     </message>
     <message id="whisperfish-message-preview-draft">
-        <location filename="../qml/cover/CoverPage.qml" line="148"/>
+        <location filename="../qml/cover/CoverPage.qml" line="238"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="256"/>
         <source>Draft: %1</source>
         <extracomment>Message preview for a saved, unsent message</extracomment>
@@ -2377,7 +2383,7 @@ Settings page share contacts</extracomment>
         <translation type="vanished">ei lähettäjää</translation>
     </message>
     <message id="whisperfish-message-deleted-note">
-        <location filename="../qml/cover/CoverPage.qml" line="153"/>
+        <location filename="../qml/cover/CoverPage.qml" line="243"/>
         <location filename="../qml/delegates/MessageDelegate.qml" line="315"/>
         <location filename="../qml/delegates/SessionDelegate.qml" line="53"/>
         <source>this message was deleted</source>
@@ -2940,7 +2946,7 @@ Settings page share contacts</extracomment>
         <translation>Signal Captcha</translation>
     </message>
     <message id="whisperfish-cover-unread-label" numerus="yes">
-        <location filename="../qml/cover/CoverPage.qml" line="50"/>
+        <location filename="../qml/cover/CoverPage.qml" line="57"/>
         <source>Unread&lt;br/&gt;message(s)</source>
         <extracomment>Unread messages count cover label. Code requires exact line break tag &quot;&lt;br/&gt;&quot;.</extracomment>
         <translation>
