@@ -92,7 +92,6 @@ impl Sessions {
                 },
             });
         }
-        tracing::debug!("Found {} sessions", sessions.len());
         sessions.sort_by(|a, b| a.name.cmp(&b.name));
         let mut qvl = QVariantList::default();
         for session in sessions {
@@ -117,7 +116,6 @@ impl Sessions {
             );
             qvl.push(qvm.to_qvariant());
         }
-        tracing::debug!("Generated {} QVariantMaps", qvl.len());
         qvl
     }
 
