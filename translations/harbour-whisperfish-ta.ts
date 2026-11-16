@@ -167,69 +167,75 @@
         <translation>உள்ளமைவு மற்றும் செய்திகளை சேமிக்கவும்</translation>
     </message>
     <message id="whisperfish-show-archived-menu">
-        <location filename="../qml/pages/MainPage.qml" line="139"/>
+        <location filename="../qml/pages/MainPage.qml" line="128"/>
         <source>Show archived conversations</source>
         <extracomment>Menu item for showing archived conversations</extracomment>
         <translation>காப்பகப்படுத்தப்பட்ட உரையாடல்களைக் காட்டு</translation>
     </message>
     <message id="whisperfish-show-inbox-menu">
-        <location filename="../qml/pages/MainPage.qml" line="142"/>
+        <location filename="../qml/pages/MainPage.qml" line="125"/>
         <source>Return to conversations</source>
         <extracomment>Menu item for returning to &quot;inbox&quot; from archived sessions</extracomment>
         <translation>உரையாடல்களுக்குத் திரும்பு</translation>
     </message>
     <message id="whisperfish-subtitle-active-conversations">
-        <location filename="../qml/pages/MainPage.qml" line="260"/>
+        <location filename="../qml/pages/MainPage.qml" line="152"/>
         <source>Conversations</source>
         <extracomment>Whisperfish subtitle for active conversations aka. &quot;inbox&quot;</extracomment>
         <translation>உரையாடல்கள்</translation>
     </message>
     <message id="whisperfish-subtitle-archived-conversations">
-        <location filename="../qml/pages/MainPage.qml" line="263"/>
+        <location filename="../qml/pages/MainPage.qml" line="149"/>
         <source>Archived conversations</source>
         <extracomment>Whisperfish subtitle for archived conversations</extracomment>
         <translation>காப்பகப்படுத்தப்பட்ட உரையாடல்கள்</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text-237">
-        <location filename="../qml/pages/MainPage.qml" line="321"/>
+        <location filename="../qml/pages/MainPage.qml" line="222"/>
         <source>Start a new conversation through a linked device, or let someone message you</source>
         <extracomment>No messages found, hint on what to do</extracomment>
         <translation>இணைக்கப்பட்ட சாதனம் மூலம் புதிய உரையாடலைத் தொடங்கவும், அல்லது யாராவது உங்களுக்கு செய்தி அனுப்பவும்</translation>
     </message>
     <message id="whisperfish-no-archived-messages-hint-text">
-        <location filename="../qml/pages/MainPage.qml" line="331"/>
+        <location filename="../qml/pages/MainPage.qml" line="216"/>
         <source>No archived conversations</source>
         <extracomment>Showing archived conversations, but the list is empty</extracomment>
         <translation>காப்பகப்படுத்தப்பட்ட உரையாடல்கள் இல்லை</translation>
     </message>
+    <message id="whisperfish-no-search-results-hint-text">
+        <location filename="../qml/pages/MainPage.qml" line="212"/>
+        <source>No matching conversations</source>
+        <extracomment>No conversations matched the search text</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-session-section-pinned">
-        <location filename="../qml/pages/MainPage.qml" line="349"/>
+        <location filename="../qml/pages/MainPage.qml" line="236"/>
         <source>Pinned</source>
         <extracomment>Session section label for pinned messages</extracomment>
         <translation>பின்</translation>
     </message>
     <message id="whisperfish-session-section-never">
-        <location filename="../qml/pages/MainPage.qml" line="369"/>
+        <location filename="../qml/pages/MainPage.qml" line="256"/>
         <source>No messages</source>
         <extracomment>Session section label for never (i.e. no messages, no timestamp)</extracomment>
         <translation>செய்திகள் இல்லை</translation>
     </message>
     <message id="whisperfish-session-section-today">
         <location filename="../qml/pages/LinkedDevices.qml" line="124"/>
-        <location filename="../qml/pages/MainPage.qml" line="354"/>
+        <location filename="../qml/pages/MainPage.qml" line="241"/>
         <source>Today</source>
         <extracomment>Session section label for today</extracomment>
         <translation>இன்று</translation>
     </message>
     <message id="whisperfish-session-section-yesterday">
         <location filename="../qml/pages/LinkedDevices.qml" line="127"/>
-        <location filename="../qml/pages/MainPage.qml" line="359"/>
+        <location filename="../qml/pages/MainPage.qml" line="246"/>
         <source>Yesterday</source>
         <extracomment>Session section label for yesterday</extracomment>
         <translation>நேற்று</translation>
     </message>
     <message id="whisperfish-session-section-older">
-        <location filename="../qml/pages/MainPage.qml" line="364"/>
+        <location filename="../qml/pages/MainPage.qml" line="251"/>
         <source>Older</source>
         <extracomment>Session section label for older</extracomment>
         <translation>பழைய</translation>
@@ -565,49 +571,54 @@
         <translation>விஸ்பர்ஃபிஷை வேறொரு சாதனத்துடன் இணைக்கக் கீழே இழு</translation>
     </message>
     <message id="whisperfish-no-messages-hint-text">
-        <location filename="../qml/pages/MainPage.qml" line="327"/>
         <source>Pull down to start a new conversation.</source>
         <extracomment>No messages found, hint on what to do</extracomment>
-        <translation>புதிய உரையாடலைத் தொடங்க கீழே இழுக்கவும்.</translation>
+        <translation type="vanished">புதிய உரையாடலைத் தொடங்க கீழே இழுக்கவும்.</translation>
     </message>
     <message id="whisperfish-about-menu">
-        <location filename="../qml/pages/MainPage.qml" line="116"/>
+        <location filename="../qml/pages/MainPage.qml" line="100"/>
         <source>About Whisperfish</source>
         <extracomment>About whisperfish menu item</extracomment>
         <translation>விச்பர்ஃபிச் பற்றி</translation>
     </message>
+    <message id="whisperfish-session-search-placeholder">
+        <location filename="../qml/pages/MainPage.qml" line="342"/>
+        <source>Search conversations</source>
+        <extracomment>Placeholder for the conversation search field</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="whisperfish-update-reminder-summary">
-        <location filename="../qml/pages/MainPage.qml" line="48"/>
+        <location filename="../qml/pages/MainPage.qml" line="504"/>
         <source>Please check for updates</source>
         <extracomment>Update notification title text</extracomment>
         <translation>புதுப்பிப்புகளை சரிபார்க்கவும்</translation>
     </message>
     <message id="whisperfish-update-reminder-body">
-        <location filename="../qml/pages/MainPage.qml" line="52"/>
+        <location filename="../qml/pages/MainPage.qml" line="508"/>
         <source>This Whisperfish release is more than 90 days old. Please check for an update in order to keep Whisperfish running smoothly.</source>
-        <extracomment>Update reminder notification body text</extracomment>
+        <extracomment>About whisperfish menu item</extracomment>
         <translation>இந்த விச்பர்ஃபிச் வெளியீடு 90 நாட்களுக்கு மேல் உள்ளது. விச்பர்ஃபிச் சீராக இயங்குவதற்கு புதுப்பிப்பைச் சரிபார்க்கவும்.</translation>
     </message>
     <message id="whisperfish-reconnect">
-        <location filename="../qml/pages/MainPage.qml" line="93"/>
+        <location filename="../qml/pages/MainPage.qml" line="74"/>
         <source>Reconnect</source>
         <extracomment>Whisperfish main menu item: restart websocket/reconnect</extracomment>
         <translation>மீண்டும்இணை</translation>
     </message>
     <message id="whisperfish-reconnecting">
-        <location filename="../qml/pages/MainPage.qml" line="98"/>
+        <location filename="../qml/pages/MainPage.qml" line="79"/>
         <source>Reconnecting...</source>
         <extracomment>Main page notification message when Whisperfish is trying to reconnect</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message id="whisperfish-new-conversation-menu">
-        <location filename="../qml/pages/MainPage.qml" line="104"/>
+        <location filename="../qml/pages/MainPage.qml" line="86"/>
         <source>New conversation</source>
         <extracomment>Whisperfish main menu item: start a conversation by username/QR</extracomment>
         <translation type="unfinished">உரையாடலை உருவாக்குதல்</translation>
     </message>
     <message id="whisperfish-settings-menu">
-        <location filename="../qml/pages/MainPage.qml" line="122"/>
+        <location filename="../qml/pages/MainPage.qml" line="107"/>
         <source>Settings</source>
         <extracomment>Whisperfish settings menu item</extracomment>
         <translation>அமைப்புகள்</translation>
@@ -618,26 +629,26 @@
         <translation type="vanished">புதிய செய்தி</translation>
     </message>
     <message id="whisperfish-connection-status-disconnected">
-        <location filename="../qml/pages/MainPage.qml" line="293"/>
+        <location filename="../qml/pages/MainPage.qml" line="185"/>
         <source>Disconnected</source>
         <extracomment>Whisperfish connection status message</extracomment>
         <translation>துண்டிக்கப்பட்டது</translation>
     </message>
     <message id="whisperfish-connection-status-reconnecting">
-        <location filename="../qml/pages/MainPage.qml" line="296"/>
+        <location filename="../qml/pages/MainPage.qml" line="188"/>
         <source>Loading messages</source>
         <oldsource>Synchronizing</oldsource>
         <extracomment>Whisperfish connection status message</extracomment>
         <translation type="unfinished">ஒத்தியக்கும்</translation>
     </message>
     <message id="whisperfish-registration-required-message">
-        <location filename="../qml/pages/MainPage.qml" line="311"/>
+        <location filename="../qml/pages/MainPage.qml" line="204"/>
         <source>Registration required</source>
         <extracomment>Whisperfish registration required message</extracomment>
         <translation>பதிவு தேவை</translation>
     </message>
     <message id="whisperfish-locked-message">
-        <location filename="../qml/pages/MainPage.qml" line="315"/>
+        <location filename="../qml/pages/MainPage.qml" line="208"/>
         <source>Locked</source>
         <extracomment>Whisperfish locked message</extracomment>
         <translation>பூட்டப்பட்டுள்ளது</translation>
@@ -1864,7 +1875,7 @@ Settings page share contacts</extracomment>
     </message>
     <message id="whisperfish-search-menu">
         <location filename="../qml/pages/GroupProfilePage.qml" line="185"/>
-        <location filename="../qml/pages/MainPage.qml" line="129"/>
+        <location filename="../qml/pages/MainPage.qml" line="115"/>
         <location filename="../qml/pages/ProfilePage.qml" line="141"/>
         <location filename="../qml/pages/RecipientProfilePage.qml" line="113"/>
         <source>Search</source>
