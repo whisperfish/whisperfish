@@ -306,7 +306,7 @@ FEATURES="$FEATURES,diesel-instrumentation"
 %if %{with calling}
 FEATURES="$FEATURES,calling"
 # ringrtc requires an output directory for the WebRTC artifacts
-export OUTPUT_DIR=`realpath .`/ringrtc/322/${SB2_RUST_TARGET_TRIPLE}
+export OUTPUT_DIR=`realpath .`/ringrtc/358/${SB2_RUST_TARGET_TRIPLE}
 %endif
 
 # We could use the %%(version) and %%(release), but SFDK will include a datetime stamp,

@@ -153,6 +153,16 @@ impl SignalingSender for WhisperfishSignalingSender {
     ) -> ringrtc::common::Result<()> {
         todo!("group calls")
     }
+
+    fn send_call_message_to_adhoc_group(
+        &self,
+        _message: Vec<u8>,
+        _urgency: ringrtc::core::group_call::SignalingMessageUrgency,
+        _expiration: u64,
+        _recipients_to_endorsements: std::collections::HashMap<ringrtc::lite::sfu::UserId, Vec<u8>>,
+    ) -> ringrtc::common::Result<()> {
+        todo!("ad-hoc group calls")
+    }
 }
 
 #[derive(Debug)]
@@ -246,7 +256,10 @@ impl GroupUpdateHandler for WhisperfishGroupUpdateHandler {
 pub fn new_native_platform(
     client: actix::Addr<crate::worker::ClientActor>,
 ) -> anyhow::Result<ringrtc::native::NativePlatform> {
-    let connection_factory = PeerConnectionFactory::new(&AudioConfig::default(), false)?;
+    let field_trials = ""; // TODO: sync this config option with whatever Signal says we need to
+    // trial "in the field".
+    let connection_factory =
+        PeerConnectionFactory::new(&AudioConfig::default(), false, field_trials, None)?;
     let signaling_sender = Box::new(WhisperfishSignalingSender {
         client: client.clone(),
     });

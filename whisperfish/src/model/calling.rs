@@ -62,7 +62,6 @@ impl Calls {
     }
 
     pub fn handle_state(&mut self, remote_peer_id: i32, call_id: CallId, state: CallState) {
-        use ringrtc::native::EndReason;
         match state {
             CallState::Incoming(incoming) => {
                 self.ringing_recipient_id = remote_peer_id;
@@ -84,31 +83,22 @@ impl Calls {
                 self.direction = 0;
                 self.ringing_changed();
             }
-            CallState::Ended(reason) => {
+            CallState::Ended(reason, summary) => {
                 // We probably don't have to care about the reason in the UI,
                 // and instead pull it out of the database when it needs rendering.
-                match reason {
-                    EndReason::LocalHangup
-                    | EndReason::RemoteHangup
-                    | EndReason::RemoteHangupNeedPermission
-                    | EndReason::Declined
-                    | EndReason::Busy
-                    | EndReason::Glare
-                    | EndReason::ReCall
-                    | EndReason::ReceivedOfferExpired { age: _ }
-                    | EndReason::ReceivedOfferWhileActive
-                    | EndReason::ReceivedOfferWithGlare
-                    | EndReason::SignalingFailure
-                    | EndReason::GlareFailure
-                    | EndReason::ConnectionFailure
-                    | EndReason::InternalFailure
-                    | EndReason::Timeout
-                    | EndReason::AcceptedOnAnotherDevice
-                    | EndReason::DeclinedOnAnotherDevice
-                    | EndReason::BusyOnAnotherDevice => {
-                        tracing::warn!("Call ended, unprocessed reason: {:?}", reason);
-                    }
-                }
+                tracing::warn!(
+                    "Call ended, unprocessed reason: {:?} ({:?})",
+                    reason,
+                    summary
+                );
+                self.ringing_recipient_id = -1;
+                self.call_id = None;
+                self.direction = -1;
+
+                self.ringing_changed();
+                self.hungup();
+            }
+            CallState::Rejected(_) => {
                 self.ringing_recipient_id = -1;
                 self.call_id = None;
                 self.direction = -1;
