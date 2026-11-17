@@ -354,8 +354,9 @@ pub struct ClientWorker {
 /// All envelopes are identified by their server GUID, and initially stored in the `Processing` state.
 /// When the "done" signal is received, we transition to the `SignalSeen` state, and we stop adding
 /// any new envelopes to the state machine.  We then wait for all envelopes to be processed,
-/// and move to the `Done` state when the last envelope is processed.
-#[derive(Default, Debug)]
+/// and move to the `Done` state when the last envelope is processed.  If they all were processed
+/// before the signal arrived, the signal moves us to `Done` directly.
+#[derive(Default)]
 enum QueueProcessState {
     #[default]
     Starting,
@@ -366,6 +367,23 @@ enum QueueProcessState {
         expected_envelopes: Vec<Uuid>,
     },
     Done,
+}
+
+impl std::fmt::Debug for QueueProcessState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Starting => f.write_str("Starting"),
+            Self::Processing { expected_envelopes } => f
+                .debug_struct("Processing")
+                .field("expected_envelopes.len()", &expected_envelopes.len())
+                .finish(),
+            Self::SignalSeen { expected_envelopes } => f
+                .debug_struct("SignalSeen")
+                .field("expected_envelopes.len()", &expected_envelopes.len())
+                .finish(),
+            Self::Done => f.write_str("Done"),
+        }
+    }
 }
 
 impl QueueProcessState {
@@ -409,6 +427,9 @@ impl QueueProcessState {
     #[tracing::instrument(level = "trace")]
     fn observe_signal(&mut self) {
         match self {
+            Self::Processing { expected_envelopes } if expected_envelopes.is_empty() => {
+                *self = Self::Done
+            }
             Self::Processing { expected_envelopes } => {
                 *self = Self::SignalSeen {
                     expected_envelopes: std::mem::take(expected_envelopes),
@@ -4782,6 +4803,60 @@ impl Handler<Search> for ClientActor {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn queue_state_empty_queue_is_done_on_signal() {
+        let mut state = QueueProcessState::default();
+
+        state.observe_signal();
+
+        assert!(state.is_done());
+    }
+
+    #[test]
+    fn queue_state_is_done_when_signal_follows_the_last_envelope() {
+        let (a, b) = (Uuid::from_u128(1), Uuid::from_u128(2));
+        let mut state = QueueProcessState::default();
+
+        state.observe_guid(a);
+        state.observe_guid(b);
+        state.processed_guid(a);
+        state.processed_guid(b);
+        assert!(!state.is_done());
+
+        state.observe_signal();
+
+        assert!(state.is_done());
+    }
+
+    #[test]
+    fn queue_state_waits_for_envelopes_still_in_progress() {
+        let (a, b) = (Uuid::from_u128(1), Uuid::from_u128(2));
+        let mut state = QueueProcessState::default();
+
+        state.observe_guid(a);
+        state.observe_guid(b);
+        state.processed_guid(a);
+        state.observe_signal();
+        assert!(!state.is_done());
+
+        state.processed_guid(b);
+
+        assert!(state.is_done());
+    }
+
+    #[test]
+    fn queue_state_ignores_envelopes_after_the_signal() {
+        let (a, late) = (Uuid::from_u128(1), Uuid::from_u128(2));
+        let mut state = QueueProcessState::default();
+
+        state.observe_guid(a);
+        state.observe_signal();
+        state.observe_guid(late);
+        state.processed_guid(a);
+
+        assert!(state.is_done());
+    }
 
     #[test]
     fn queue_message_without_attachments() {
