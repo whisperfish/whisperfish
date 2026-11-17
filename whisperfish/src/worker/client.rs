@@ -356,7 +356,7 @@ pub struct ClientWorker {
 /// any new envelopes to the state machine.  We then wait for all envelopes to be processed,
 /// and move to the `Done` state when the last envelope is processed.  If they all were processed
 /// before the signal arrived, the signal moves us to `Done` directly.
-#[derive(Default, Debug)]
+#[derive(Default)]
 enum QueueProcessState {
     #[default]
     Starting,
@@ -367,6 +367,23 @@ enum QueueProcessState {
         expected_envelopes: Vec<Uuid>,
     },
     Done,
+}
+
+impl std::fmt::Debug for QueueProcessState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Starting => f.write_str("Starting"),
+            Self::Processing { expected_envelopes } => f
+                .debug_struct("Processing")
+                .field("expected_envelopes.len()", &expected_envelopes.len())
+                .finish(),
+            Self::SignalSeen { expected_envelopes } => f
+                .debug_struct("SignalSeen")
+                .field("expected_envelopes.len()", &expected_envelopes.len())
+                .finish(),
+            Self::Done => f.write_str("Done"),
+        }
+    }
 }
 
 impl QueueProcessState {
