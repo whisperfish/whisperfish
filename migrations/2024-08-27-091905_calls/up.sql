@@ -1,5 +1,8 @@
 CREATE TABLE calls (
     id INTEGER PRIMARY KEY NOT NULL,
+    -- XXX: call_id should be a 64-bit integer;
+    --      calling code on the Rust side truncates and hence it "works",
+    --      but ideally this table is re-materialized with a BIGINT for call_id.
     call_id INTEGER NOT NULL,
     message_id INTEGER DEFAULT NULL REFERENCES messages(id) ON DELETE SET NULL,
     session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,

@@ -14,7 +14,7 @@ use libsignal_service::{
     push_service::DEFAULT_DEVICE_ID,
 };
 use ringrtc::{
-    common::{CallId, CallMediaType},
+    common::{CallEndReason, CallId, CallMediaType},
     core::{
         call_manager::CallManager,
         signaling::{
@@ -43,8 +43,6 @@ impl WhisperfishCallManager {
     }
 }
 
-impl WhisperfishCallManager {}
-
 impl super::ClientActor {
     fn call_state(&mut self) -> &mut WhisperfishCallManager {
         self.call_state.as_mut().expect("initialized call state")
@@ -64,7 +62,7 @@ impl super::ClientActor {
             .unwrap_or(*DEFAULT_DEVICE_ID);
 
         if call.destination_device_id.is_none() {
-            tracing::warn!("CallMessage did not have a destination_device_id set. Defaulting.");
+            tracing::debug!("CallMessage did not have a destination_device_id set. Defaulting.");
         }
 
         let num_fields_set = [
@@ -377,18 +375,28 @@ impl super::ClientActor {
             tracing::warn!("Hangup message did not have a call ID. Ignoring.");
             return;
         };
-        let hangup = match hangup.r#type() {
-            ProtoHangupType::HangupNormal => Hangup::Normal,
-            ProtoHangupType::HangupAccepted => Hangup::AcceptedOnAnotherDevice(
-                hangup.device_id.expect("device_id set for accepted hangup") as u32,
-            ),
-            ProtoHangupType::HangupDeclined => Hangup::DeclinedOnAnotherDevice(
-                hangup.device_id.expect("device_id set for declined hangup") as u32,
-            ),
-            ProtoHangupType::HangupBusy => Hangup::BusyOnAnotherDevice(
-                hangup.device_id.expect("device_id set for busy hangup") as u32,
-            ),
-            ProtoHangupType::HangupNeedPermission => Hangup::NeedPermission(hangup.device_id),
+        let hangup = match (hangup.r#type(), hangup.device_id) {
+            (ProtoHangupType::HangupNormal, _) => Hangup::Normal,
+            (ProtoHangupType::HangupAccepted, Some(device_id)) => {
+                Hangup::AcceptedOnAnotherDevice(device_id)
+            }
+            (ProtoHangupType::HangupDeclined, Some(device_id)) => {
+                Hangup::DeclinedOnAnotherDevice(device_id)
+            }
+            (ProtoHangupType::HangupBusy, Some(device_id)) => {
+                Hangup::BusyOnAnotherDevice(device_id)
+            }
+            // NeedPermission may legitimately arrive without a device ID.
+            (ProtoHangupType::HangupNeedPermission, device_id) => Hangup::NeedPermission(device_id),
+            (ProtoHangupType::HangupAccepted, None)
+            | (ProtoHangupType::HangupDeclined, None)
+            | (ProtoHangupType::HangupBusy, None) => {
+                tracing::warn!(
+                    "Hangup of type {:?} did not have a device ID. Ignoring.",
+                    hangup.r#type()
+                );
+                return;
+            }
         };
         self.call_state().manager.received_hangup(
             peer.id.to_string(),
@@ -484,24 +492,63 @@ impl Handler<CallState> for super::ClientActor {
                     remote_peer_id,
                     call_type_from_call_media_type(media),
                     true,
-                    orm::EventType::Ringing,
+                    orm::EventType::OutgoingRing,
                     // XXX: unidentified?
                     false,
                 );
             }
+            ringrtc::native::CallState::Connected | ringrtc::native::CallState::Connecting => {
+                // The call was answered; conclude the call log accordingly,
+                // so that the eventual end state does not mark the call as missed.
+                if let Some(call) = storage.fetch_one_to_one_call(call_id.into(), remote_peer_id)
+                    && call.event != orm::EventType::Accepted
+                {
+                    storage.update_one_to_one_call_event(
+                        call_id.into(),
+                        remote_peer_id,
+                        orm::EventType::Accepted,
+                    );
+                }
+            }
             ringrtc::native::CallState::Ended(reason, summary) => {
-                // TODO: insert updates
-                tracing::warn!(
-                    "Call ended, unprocessed reason: {:?} ({:?})",
-                    reason,
-                    summary
-                );
+                tracing::debug!("Call ended: {:?} ({:?})", reason, summary);
+                if let Some(call) = storage.fetch_one_to_one_call(call_id.into(), remote_peer_id) {
+                    // Answered calls were concluded when the connection was established.
+                    if call.event != orm::EventType::Accepted {
+                        let event = if call.is_outbound {
+                            // The remote never answered; the exact reason does not matter.
+                            orm::EventType::NotAccepted
+                        } else {
+                            match reason {
+                                // We, or another device of ours, declined the call.
+                                CallEndReason::LocalHangup
+                                | CallEndReason::AppDroppedCall
+                                | CallEndReason::RemoteHangupDeclined => orm::EventType::Declined,
+                                // Another device of ours answered the call.
+                                CallEndReason::RemoteHangupAccepted => orm::EventType::Accepted,
+                                // The call could not be set up: busy or glare.
+                                CallEndReason::RemoteHangupBusy
+                                | CallEndReason::RemoteBusy
+                                | CallEndReason::RemoteGlare
+                                | CallEndReason::RemoteReCall => orm::EventType::NotAccepted,
+                                // The remote hung up before we answered, or the call failed.
+                                _ => orm::EventType::Missed,
+                            }
+                        };
+                        storage.update_one_to_one_call_event(call_id.into(), remote_peer_id, event);
+                    }
+                } else {
+                    tracing::warn!("Call ended, but no call was recorded; not updating.");
+                }
             }
             ringrtc::native::CallState::Ringing
-            | ringrtc::native::CallState::Connected
-            | ringrtc::native::CallState::Connecting
             | ringrtc::native::CallState::Rejected(_)
-            | ringrtc::native::CallState::Concluded => tracing::error!("unimplemented call state"),
+            | ringrtc::native::CallState::Concluded => {
+                // No call log updates:
+                // - Ringing means the connection is set up, but the call is not answered yet.
+                // - Rejected calls never rang, so no call was recorded.
+                // - Concluded arrives after the end state was processed.
+            }
         }
 
         // Map the call state to the UI

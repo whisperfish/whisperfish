@@ -60,6 +60,135 @@ impl<O: Observable + Default> super::Storage<O> {
         (session, new_call_id)
     }
 
+    /// Fetch the one-to-one call row belonging to a call ID and peer.
+    ///
+    /// Returns `None` if no call was recorded for this peer and call ID.
+    #[tracing::instrument(skip(self))]
+    pub fn fetch_one_to_one_call(&self, call_id: u64, recipient_id: i32) -> Option<orm::Call> {
+        let session = self.fetch_session_by_recipient_id(recipient_id)?;
+        use crate::schema::calls;
+        calls::table
+            .filter(calls::call_id.eq(call_id as i32))
+            .filter(calls::session_id.eq(session.id))
+            .first(&mut *self.db())
+            .optional()
+            .expect("fetching a call")
+    }
+
+    /// Update the lifecycle state of a one-to-one call,
+    /// and keep the call log message's type in sync.
+    ///
+    /// Returns the updated call log message ID,
+    /// or `None` if the call or its message could not be found.
+    #[tracing::instrument(skip(self))]
+    pub fn update_one_to_one_call_event(
+        &self,
+        call_id: u64,
+        recipient_id: i32,
+        event: orm::EventType,
+    ) -> Option<i32> {
+        let session = self.fetch_session_by_recipient_id(recipient_id)?;
+        use crate::schema::{calls, messages};
+
+        let call: orm::Call = calls::table
+            .filter(calls::call_id.eq(call_id as i32))
+            .filter(calls::session_id.eq(session.id))
+            .first(&mut *self.db())
+            .optional()
+            .expect("fetching a call")?;
+
+        diesel::update(calls::table)
+            .filter(calls::id.eq(call.id))
+            .set(calls::event.eq(event))
+            .execute(&mut *self.db())
+            .expect("updating a call");
+
+        let Some(message_id) = call.message_id else {
+            tracing::warn!(
+                "Call log message for call {} was deleted; not updating.",
+                call.id
+            );
+            return None;
+        };
+
+        let message_type = orm::MessageType::from_call_type(call.r#type, call.is_outbound, event);
+        diesel::update(messages::table)
+            .filter(messages::id.eq(message_id))
+            .set(messages::message_type.eq(Some(message_type)))
+            .execute(&mut *self.db())
+            .expect("updating a call log message");
+
+        self.observe_update(messages::table, message_id)
+            .with_relation(crate::schema::sessions::table, session.id);
+
+        Some(message_id)
+    }
+
+    /// Conclude all calls that are ringing.
+    ///
+    /// To be called on startup, to end calls that were ringing when the application stopped.
+    ///
+    /// Returns the number of concluded calls.
+    #[tracing::instrument(skip(self))]
+    pub fn conclude_stale_calls(&self) -> usize {
+        use crate::schema::messages;
+
+        let mut swept =
+            self.conclude_calls_with_event(orm::EventType::Ringing, orm::EventType::Missed);
+        swept.extend(
+            self.conclude_calls_with_event(
+                orm::EventType::OutgoingRing,
+                orm::EventType::NotAccepted,
+            ),
+        );
+
+        // All swept calls are unanswered, so their message type
+        // only depends on the call's media type.
+        for call_type in [orm::CallType::Audio, orm::CallType::Video] {
+            let missed_message_type =
+                orm::MessageType::from_call_type(call_type, false, orm::EventType::Missed);
+            let missed_message_ids: Vec<i32> = swept
+                .iter()
+                .filter(|(_, _, ty)| *ty == call_type)
+                .filter_map(|(message_id, _, _)| *message_id)
+                .collect();
+            if missed_message_ids.is_empty() {
+                continue;
+            }
+            diesel::update(messages::table)
+                .filter(messages::id.eq_any(missed_message_ids))
+                .set(messages::message_type.eq(Some(missed_message_type)))
+                .execute(&mut *self.db())
+                .expect("updating call log messages");
+        }
+
+        for (message_id, session_id, _) in &swept {
+            if let Some(message_id) = message_id {
+                self.observe_update(messages::table, *message_id)
+                    .with_relation(crate::schema::sessions::table, *session_id);
+            }
+        }
+
+        swept.len()
+    }
+
+    /// Conclude all calls in a given stale lifecycle state.
+    ///
+    /// Returns concluded call log message, session, and media type.
+    fn conclude_calls_with_event(
+        &self,
+        stale: orm::EventType,
+        concluded: orm::EventType,
+    ) -> Vec<(Option<i32>, i32, orm::CallType)> {
+        use crate::schema::calls;
+        diesel::update(calls::table)
+            .filter(calls::event.eq(stale))
+            .set(calls::event.eq(concluded))
+            .returning((calls::message_id, calls::session_id, calls::type_))
+            .get_results(&mut *self.db())
+            .expect("concluding stale calls")
+    }
+
     #[tracing::instrument(skip(self))]
     fn insert_call_log(
         &self,
@@ -89,7 +218,8 @@ impl<O: Observable + Default> super::Storage<O> {
             .get_result(&mut *self.db())
             .expect("inserting a call log message");
 
-        self.observe_insert(messages, new_message_id);
+        self.observe_insert(messages, new_message_id)
+            .with_relation(crate::schema::sessions::table, session);
 
         new_message_id
     }

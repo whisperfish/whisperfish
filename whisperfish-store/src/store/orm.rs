@@ -251,13 +251,19 @@ pub enum MessageType {
 
 impl MessageType {
     // Kotlin: CallTable.Call.getMessageType
+    //
+    // XXX: This denormalizes the call state into the message type,
+    //      which must then be kept in sync with the calls table.
+    //      Rendering call log messages live from the associated calls row,
+    //      as Signal does, would remove that duplication.
     pub fn from_call_type(ty: CallType, is_outgoing: bool, event: EventType) -> Self {
         match (ty, is_outgoing) {
             (CallType::Group, _) | (CallType::AdHoc, _) => Self::GroupCall,
-            // Incoming missed
-            (CallType::Audio, false) if event.is_missed_call() => Self::MissedAudioCall,
-            (CallType::Video, false) if event.is_missed_call() => Self::MissedVideoCall,
-            // Incoming not missed
+            // Unanswered calls render as missed calls,
+            // whether missed, declined, or otherwise not accepted.
+            (CallType::Audio, _) if event.is_unanswered_call() => Self::MissedAudioCall,
+            (CallType::Video, _) if event.is_unanswered_call() => Self::MissedVideoCall,
+            // Incoming answered
             (CallType::Audio, false) => Self::IncomingAudioCall,
             (CallType::Video, false) => Self::IncomingVideoCall,
             // Outgoing
@@ -315,8 +321,12 @@ pub enum EventType {
 }
 
 impl EventType {
-    pub fn is_missed_call(&self) -> bool {
-        *self == Self::Missed // || self == Self::MissedNotificationProfile
+    /// Whether the call never got answered.
+    ///
+    /// Missed, declined, and not-accepted calls
+    /// all render as missed calls in the message log.
+    pub fn is_unanswered_call(&self) -> bool {
+        matches!(self, Self::Missed | Self::Declined | Self::NotAccepted)
     }
 }
 
@@ -387,11 +397,12 @@ pub struct Call {
     pub id: i32,
     pub call_id: i32,
     pub message_id: Option<i32>,
-    pub session_id: Option<i32>,
+    pub session_id: i32,
     pub r#type: CallType,
     pub is_outbound: bool,
     pub event: EventType,
     pub timestamp: NaiveDateTime,
+    pub ringer: i32,
     pub deletion_timestamp: Option<NaiveDateTime>,
     pub is_read: bool,
     pub local_joined: bool,
